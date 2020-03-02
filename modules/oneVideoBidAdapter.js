@@ -104,7 +104,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, responses, consentData) {
-    let { gdprApplies, consentString = '' } = consentData;
+    let { gdprApplies = '', consentString = '' } = consentData || {};
 
     if (syncOptions.pixelEnabled) {
       return [{
