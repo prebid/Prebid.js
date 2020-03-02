@@ -188,8 +188,9 @@ describe('Adyoulike Adapter', function () {
       canonicalQuery.restore();
     });
 
-    it('should add gdpr consent information to the request', function () {
+    it('should add gdpr/usp consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let uspConsentData = '1YCC';
       let bidderRequest = {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
@@ -197,8 +198,10 @@ describe('Adyoulike Adapter', function () {
         'gdprConsent': {
           consentString: consentString,
           gdprApplies: true
-        }
+        },
+        'uspConsent': uspConsentData
       };
+
       bidderRequest.bids = bidRequestWithSinglePlacement;
 
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
@@ -207,6 +210,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent).to.exist;
       expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
+      expect(payload.uspConsent).to.exist.and.to.equal(uspConsentData);
     });
 
     it('sends bid request to endpoint with single placement', function () {
