@@ -17,7 +17,6 @@ import {
 import {config} from 'src/config.js';
 import {makeSlot} from '../integration/faker/googletag.js';
 
-
 let expect = require('chai').expect;
 
 describe('Real time module', function() {
