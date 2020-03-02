@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/logicadBidAdapter';
-import * as utils from 'src/utils';
+import {spec} from '../../../modules/logicadBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('LogicadAdapter', function () {
   const bidRequests = [{

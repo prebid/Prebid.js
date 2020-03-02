@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 
-import * as utils from 'src/utils';
-import { config } from 'src/config';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 
-import { spec } from 'modules/33acrossBidAdapter';
+import { spec } from 'modules/33acrossBidAdapter.js';
 
 describe('33acrossBidAdapter:', function () {
   const BIDDER_CODE = '33across';
@@ -75,7 +75,7 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.withViewabiliuty = viewability => {
+    this.withViewability = viewability => {
       Object.assign(ttxRequest.imp[0].banner, {
         ext: {
           ttx: { viewability }
@@ -100,6 +100,14 @@ describe('33acrossBidAdapter:', function () {
 
     this.withSite = site => {
       Object.assign(ttxRequest, { site });
+      return this;
+    };
+
+    this.withPageUrl = pageUrl => {
+      Object.assign(ttxRequest.site, {
+        page: pageUrl
+      });
+
       return this;
     };
 
@@ -267,7 +275,7 @@ describe('33acrossBidAdapter:', function () {
     context('when element is fully in view', function() {
       it('returns 100', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 100})
+          .withViewability({amount: 100})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -282,7 +290,7 @@ describe('33acrossBidAdapter:', function () {
     context('when element is out of view', function() {
       it('returns 0', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 0})
+          .withViewability({amount: 0})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -297,7 +305,7 @@ describe('33acrossBidAdapter:', function () {
     context('when element is partially in view', function() {
       it('returns percentage', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 75})
+          .withViewability({amount: 75})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -313,7 +321,7 @@ describe('33acrossBidAdapter:', function () {
       it('try to use alternative values', function() {
         const ttxRequest = new TtxRequestBuilder()
           .withSizes([{ w: 800, h: 2400, ext: {} }])
-          .withViewabiliuty({amount: 25})
+          .withViewability({amount: 25})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -329,7 +337,7 @@ describe('33acrossBidAdapter:', function () {
     context('when nested iframes', function() {
       it('returns \'nm\'', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: spec.NON_MEASURABLE})
+          .withViewability({amount: spec.NON_MEASURABLE})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -349,7 +357,7 @@ describe('33acrossBidAdapter:', function () {
     context('when tab is inactive', function() {
       it('returns 0', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 0})
+          .withViewability({amount: 0})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -440,6 +448,45 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .withUrl('https://foo.com/hb/')
           .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when referer value is available', function() {
+      it('returns corresponding server requests with site.page set', function() {
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'http://foo.com/bar'
+          }
+        };
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withPageUrl('http://foo.com/bar')
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when referer value is not available', function() {
+      it('returns corresponding server requests without site.page set', function() {
+        const bidderRequest = {
+          refererInfo: {}
+        };
+
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+
         const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);

@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { parse } from '../../../src/url';
+import { parse } from '../../../src/url.js';
 
-import { spec } from 'modules/adyoulikeBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/adyoulikeBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('Adyoulike Adapter', function () {
   const canonicalUrl = 'https://canonical.url/?t=%26';

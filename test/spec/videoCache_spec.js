@@ -1,8 +1,7 @@
-import 'mocha/mocha';
 import chai from 'chai';
-import { getCacheUrl, store } from 'src/videoCache';
-import { config } from 'src/config';
-import { server } from 'test/mocks/xhr';
+import { getCacheUrl, store } from 'src/videoCache.js';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 
 const should = chai.should();
 

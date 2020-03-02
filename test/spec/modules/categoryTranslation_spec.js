@@ -1,6 +1,6 @@
-import { getAdserverCategoryHook, initTranslation } from 'modules/categoryTranslation';
-import { config } from 'src/config';
-import * as utils from 'src/utils';
+import { getAdserverCategoryHook, initTranslation } from 'modules/categoryTranslation.js';
+import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
 import { expect } from 'chai';
 
 describe('category translation', function () {
