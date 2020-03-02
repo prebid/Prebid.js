@@ -8,7 +8,11 @@ const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
+
+  // This adapter was previously named playgroundxyz - this alias ensures
+  // backwards compatibility for publishers
   aliases: ['playgroundxyz'],
+
   supportedMediaTypes: [BANNER],
 
   /**
