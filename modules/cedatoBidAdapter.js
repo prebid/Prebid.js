@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'cedato';
 const BID_URL = 'https://h.cedatoplayer.com/hb';
@@ -188,7 +188,7 @@ function newBid(serverBid, bidderRequest) {
 
 const getSync = (type, gdprConsent, uspConsent = '') => {
   const syncUrl = SYNC_URL;
-  let params = '&type=' + type + '&us_privacy=' + uspConsent;
+  let params = '?type=' + type + '&us_privacy=' + uspConsent;
   if (gdprConsent && typeof gdprConsent.consentString === 'string') {
     if (typeof gdprConsent.gdprApplies === 'boolean') {
       params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;

@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'aardvark';
 const DEFAULT_ENDPOINT = 'bidder.rtk.io';
@@ -19,7 +19,7 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     return ((typeof bid.params.ai === 'string') && !!bid.params.ai.length &&
-        (typeof bid.params.sc === 'string') && !!bid.params.sc.length);
+      (typeof bid.params.sc === 'string') && !!bid.params.sc.length);
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -82,7 +82,7 @@ export const spec = {
           });
         }
 
-        if (bidderRequest && bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent) {
           rMap.payload.gdpr = false;
           if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
             rMap.payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
@@ -96,11 +96,15 @@ export const spec = {
         auctionCodes.push(b.params.ai);
       }
 
+      if (bidderRequest.uspConsent) {
+        rMap.payload.us_privacy = bidderRequest.uspConsent
+      }
+
       rMap.shortCodes.push(b.params.sc);
       rMap.payload[b.params.sc] = b.bidId;
 
       if ((typeof b.params.host === 'string') && b.params.host.length &&
-          (b.params.host !== rMap.endpoint)) {
+        (b.params.host !== rMap.endpoint)) {
         rMap.endpoint = b.params.host;
       }
     });
@@ -166,28 +170,42 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    var url = 'https://' + SYNC_ENDPOINT + '/cs';
+    const params = [];
     var gdprApplies = false;
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
       gdprApplies = gdprConsent.gdprApplies;
     }
 
-    if (syncOptions.iframeEnabled) {
-      if (!hasSynced) {
-        hasSynced = true;
-        if (gdprApplies) {
-          url = url + '?g=1&c=' + encodeURIComponent(gdprConsent.consentString);
-        }
-        syncs.push({
-          type: 'iframe',
-          url: url
-        });
-      }
-    } else {
+    if (!syncOptions.iframeEnabled) {
       utils.logWarn('Aardvark: Please enable iframe based user sync.');
+      return syncs;
     }
+
+    if (hasSynced) {
+      return syncs;
+    }
+
+    hasSynced = true;
+    if (gdprApplies) {
+      params.push(['g', '1']);
+      params.push(['c', gdprConsent.consentString]);
+    }
+
+    if (uspConsent) {
+      params.push(['us_privacy', uspConsent]);
+    }
+
+    var queryStr = '';
+    if (params.length) {
+      queryStr = '?' + params.map(p => p[0] + '=' + encodeURIComponent(p[1])).join('&')
+    }
+
+    syncs.push({
+      type: 'iframe',
+      url: `https://${SYNC_ENDPOINT}/cs${queryStr}`
+    });
     return syncs;
   },
 

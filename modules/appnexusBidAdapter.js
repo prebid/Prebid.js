@@ -1,12 +1,12 @@
-import { Renderer } from '../src/Renderer';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes';
-import { auctionManager } from '../src/auctionManager';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import { OUTSTREAM, INSTREAM } from '../src/video';
+import { Renderer } from '../src/Renderer.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
+import { auctionManager } from '../src/auctionManager.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -182,12 +182,12 @@ export const spec = {
       });
     }
 
-    const rtusId = utils.deepAccess(bidRequests[0], `userId.criteortus.${BIDDER_CODE}.userid`);
-    if (rtusId) {
+    const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
+    if (criteoId) {
       let tpuids = [];
       tpuids.push({
         'provider': 'criteo',
-        'user_id': rtusId
+        'user_id': criteoId
       });
       payload.tpuids = tpuids;
     }

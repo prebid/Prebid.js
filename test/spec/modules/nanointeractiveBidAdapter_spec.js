@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import * as utils from 'src/utils';
+import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
 
 import {
@@ -13,7 +13,7 @@ import {
   REF,
   spec,
   SUB_ID
-} from '../../../modules/nanointeractiveBidAdapter';
+} from '../../../modules/nanointeractiveBidAdapter.js';
 
 describe('nanointeractive adapter tests', function () {
   const SIZES_PARAM = 'sizes';

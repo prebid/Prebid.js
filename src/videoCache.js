@@ -9,8 +9,8 @@
  * This trickery helps integrate with ad servers, which set character limits on request params.
  */
 
-import { ajax } from './ajax';
-import { config } from '../src/config';
+import { ajax } from './ajax.js';
+import { config } from '../src/config.js';
 
 /**
  * @typedef {object} CacheableUrlBid

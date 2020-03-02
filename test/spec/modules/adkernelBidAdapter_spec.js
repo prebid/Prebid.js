@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adkernelBidAdapter';
-import * as utils from 'src/utils';
+import {spec} from 'modules/adkernelBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
@@ -238,7 +238,7 @@ describe('Adkernel adapter', function () {
       expect(bidRequest.device).to.have.property('dnt', 1);
     });
 
-    it('shouldn\'t contain gdpr-related information for default request', function () {
+    it('shouldn\'t contain gdpr nor ccpa information for default request', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests[0]).to.not.have.property('regs');
       expect(bidRequests[0]).to.not.have.property('user');
@@ -247,10 +247,10 @@ describe('Adkernel adapter', function () {
     it('should contain gdpr-related information if consent is configured', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1],
         buildBidderRequest('https://example.com/index.html',
-          {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}}));
+          {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}, uspConsent: '1YNN'}));
       let bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
-      expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1});
+      expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1, 'us_privacy': '1YNN'});
       expect(bidRequest).to.have.property('user');
       expect(bidRequest.user.ext).to.be.eql({'consent': 'test-consent-string'});
     });

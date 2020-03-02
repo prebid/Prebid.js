@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/emx_digitalBidAdapter';
-import * as utils from 'src/utils';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/emx_digitalBidAdapter.js';
+import * as utils from 'src/utils.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('emx_digital Adapter', function () {
   describe('callBids', function () {

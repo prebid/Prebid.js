@@ -1,9 +1,9 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import {config} from '../src/config';
-import {getPriceBucketString} from '../src/cpmBucketManager';
-import { Renderer } from '../src/Renderer';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {getPriceBucketString} from '../src/cpmBucketManager.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'ozone';
 

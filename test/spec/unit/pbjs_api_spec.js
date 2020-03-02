@@ -7,14 +7,14 @@ import {
   getTargetingKeysBidLandscape,
   getAdUnits,
   createBidReceived
-} from 'test/fixtures/fixtures';
-import { auctionManager, newAuctionManager } from 'src/auctionManager';
-import { targeting, newTargeting, filters } from 'src/targeting';
-import { config as configObj } from 'src/config';
-import * as ajaxLib from 'src/ajax';
-import * as auctionModule from 'src/auction';
-import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
-import find from 'core-js/library/fn/array/find';
+} from 'test/fixtures/fixtures.js';
+import { auctionManager, newAuctionManager } from 'src/auctionManager.js';
+import { targeting, newTargeting, filters } from 'src/targeting.js';
+import { config as configObj } from 'src/config.js';
+import * as ajaxLib from 'src/ajax.js';
+import * as auctionModule from 'src/auction.js';
+import { newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
+import find from 'core-js/library/fn/array/find.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -867,6 +867,33 @@ describe('Unit: Prebid Module', function () {
       });
 
       assert.deepEqual(slots[1].spySetTargeting.args, targeting, 'google tag targeting options not matching');
+    });
+
+    it('should set googletag targeting keys to specific slot with customSlotMatching', function () {
+      // same ad unit code but two differnt divs
+      // we make sure we can set targeting for a specific one with customSlotMatching
+
+      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: false });
+
+      var slots = [
+        new Slot('div-id-one', config.adUnitCodes[0]),
+        new Slot('div-id-two', config.adUnitCodes[0]),
+        new Slot(config.adUnitElementIDs[2], config.adUnitCodes[2])
+      ];
+
+      slots[0].spySetTargeting.resetHistory();
+      slots[1].spySetTargeting.resetHistory();
+      window.googletag.pubads().setSlots(slots);
+
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]], (slot) => {
+        return (adUnitCode) => {
+          return slots[0].getSlotElementId() === slot.getSlotElementId();
+        };
+      });
+
+      var expected = getTargetingKeys();
+      expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
+      expect(slots[1].spySetTargeting.args).to.not.deep.contain.members(expected);
     });
 
     it('should set targeting when passed a string ad unit code with enableSendAllBids', function () {

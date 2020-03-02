@@ -9,11 +9,11 @@ import {
   setStorageItem,
   getStorageItem,
   removeStorageItem,
-  getPubcidConfig } from 'modules/pubCommonId';
-import { getAdUnits } from 'test/fixtures/fixtures';
-import * as auctionModule from 'src/auction';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+  getPubcidConfig } from 'modules/pubCommonId.js';
+import { getAdUnits } from 'test/fixtures/fixtures.js';
+import * as auctionModule from 'src/auction.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 let events = require('src/events');
 let constants = require('src/constants.json');

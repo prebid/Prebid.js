@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/admixerBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/admixerBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'admixer';
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.0.aspx';

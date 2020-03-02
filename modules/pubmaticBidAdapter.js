@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes';
-import {config} from '../src/config';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -496,6 +496,26 @@ function _createVideoRequest(bid) {
   return videoObj;
 }
 
+// support for PMP deals
+function _addPMPDealsInImpression(impObj, bid) {
+  if (bid.params.deals) {
+    if (utils.isArray(bid.params.deals)) {
+      bid.params.deals.forEach(function(dealId) {
+        if (utils.isStr(dealId) && dealId.length > 3) {
+          if (!impObj.pmp) {
+            impObj.pmp = { private_auction: 0, deals: [] };
+          }
+          impObj.pmp.deals.push({ id: dealId });
+        } else {
+          utils.logWarn(LOG_WARN_PREFIX + 'Error: deal-id present in array bid.params.deals should be a strings with more than 3 charaters length, deal-id ignored: ' + dealId);
+        }
+      });
+    } else {
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: bid.params.deals should be an array of strings.');
+    }
+  }
+}
+
 function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj;
@@ -515,6 +535,8 @@ function _createImpressionObject(bid, conf) {
     },
     bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
   };
+
+  _addPMPDealsInImpression(impObj, bid);
 
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
@@ -747,7 +769,7 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
       }
     })
     .map(category => category.trim()) // trim all
-    .filter(function(category, index, arr) { // minimum 3 charaters length
+    .filter(function(category, index, arr) { // more than 3 charaters length
       if (category.length > 3) {
         return arr.indexOf(category) === index; // unique value only
       } else {
