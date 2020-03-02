@@ -486,12 +486,21 @@ function _createVideoRequest(bid) {
       }
     }
     // read playersize and assign to h and w.
-    if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
-      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0][0], 10);
-      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[0][1], 10);
-    } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
-      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
-      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
+    if (bid.mediaTypes.video.playerSize) {
+      if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+        videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0][0], 10);
+        videoObj.h = parseInt(bid.mediaTypes.video.playerSize[0][1], 10);
+      } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
+        videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
+        videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
+      }
+    } else if (bid.mediaTypes.video.w && bid.mediaTypes.video.h) {
+      videoObj.w = parseInt(bid.mediaTypes.video.w, 10);
+      videoObj.h = parseInt(bid.mediaTypes.video.h, 10);
+    } else {
+      videoObj = UNDEFINED;
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: Video size params(playersize or w&h) missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
+      return videoObj;
     }
     if (bid.params.video.hasOwnProperty('skippable')) {
       videoObj.ext = {
