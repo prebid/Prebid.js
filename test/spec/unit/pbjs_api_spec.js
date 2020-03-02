@@ -7,14 +7,14 @@ import {
   getTargetingKeysBidLandscape,
   getAdUnits,
   createBidReceived
-} from 'test/fixtures/fixtures';
-import { auctionManager, newAuctionManager } from 'src/auctionManager';
-import { targeting, newTargeting, filters } from 'src/targeting';
-import { config as configObj } from 'src/config';
-import * as ajaxLib from 'src/ajax';
-import * as auctionModule from 'src/auction';
-import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
-import find from 'core-js/library/fn/array/find';
+} from 'test/fixtures/fixtures.js';
+import { auctionManager, newAuctionManager } from 'src/auctionManager.js';
+import { targeting, newTargeting, filters } from 'src/targeting.js';
+import { config as configObj } from 'src/config.js';
+import * as ajaxLib from 'src/ajax.js';
+import * as auctionModule from 'src/auction.js';
+import { newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
+import find from 'core-js/library/fn/array/find.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;

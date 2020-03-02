@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/cpmstarBidAdapter';
-import { deepClone } from 'src/utils';
+import { spec } from 'modules/cpmstarBidAdapter.js';
+import { deepClone } from 'src/utils.js';
 
 describe('Cpmstar Bid Adapter', function () {
   describe('isBidRequestValid', function () {

@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'playgroundxyz';
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
@@ -49,13 +49,24 @@ export const spec = {
         language: navigator.language,
         devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
       },
-      imp: bidRequests.map(mapImpression)
+      imp: bidRequests.map(mapImpression),
+      Regs: { ext: {} }
     };
 
+    // GDPR
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      payload.regs = {ext: {gdpr: gdpr}};
+      const consentString = bidderRequest.gdprConsent.consentString;
+      utils.logInfo(`PXYZ: GDPR applies ${gdpr}`);
+      utils.logInfo(`PXYZ: GDPR consent string ${consentString}`);
+      payload.Regs.ext.gdpr = gdpr;
+      payload.User = { ext: { consent: consentString } };
+    }
+
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.logInfo(`PXYZ: USP Consent ${bidderRequest.uspConsent}`);
+      payload.Regs.ext['us_privacy'] = bidderRequest.uspConsent;
     }
 
     return {

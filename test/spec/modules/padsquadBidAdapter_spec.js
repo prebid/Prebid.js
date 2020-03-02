@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/padsquadBidAdapter';
+import {spec} from 'modules/padsquadBidAdapter.js';
 
 const REQUEST = {
   'bidderCode': 'padsquad',

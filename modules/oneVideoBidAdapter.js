@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
@@ -202,6 +202,8 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.rewarded) {
       bidData.imp[0].ext.rewarded = bid.params.video.rewarded
     }
+    bidData.imp[0].video.linearity = 1;
+    bidData.imp[0].video.protocols = bid.params.video.protocols || [2, 5];
   } else if (bid.params.video.display == 1) {
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
@@ -240,7 +242,7 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.regs.ext.gdpr = 1
     }
 
-    if (consentData.consentString) {
+    if (consentData && consentData.consentString) {
       bidData.user = {
         ext: {
           consent: consentData.consentString

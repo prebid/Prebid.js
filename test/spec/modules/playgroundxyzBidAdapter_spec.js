@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/playgroundxyzBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
+import { spec } from 'modules/playgroundxyzBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
 
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
 const GDPR_CONSENT = 'XYZ-CONSENT';
@@ -75,13 +75,35 @@ describe('playgroundxyzBidAdapter', function () {
       expect(request.method).to.equal('POST');
     });
 
+    describe('CCPA', function () {
+      describe('when USP consent object is NOT present in bidder request', function () {
+        const request = spec.buildRequests(bidRequests, BIDDER_REQUEST);
+        const data = JSON.parse(request.data);
+        it('should not populate ext.gdpr or ext.consent', function () {
+          expect(data).to.not.have.property('Regs.ext.us_privacy');
+        });
+      });
+
+      describe('when USP consent object is present in bidder request', function () {
+        describe('when GDPR is applicable', function () {
+          const request = spec.buildRequests(
+            bidRequests,
+            Object.assign({}, BIDDER_REQUEST, { uspConsent: '1YYY' })
+          );
+          const data = JSON.parse(request.data);
+          it('should set Regs.ext.us_privacy with the correct value', function () {
+            expect(data.Regs.ext['us_privacy']).to.equal('1YYY');
+          });
+        });
+      });
+    });
+
     describe('GDPR', function () {
       describe('when no GDPR consent object is present in bidder request', function () {
         const request = spec.buildRequests(bidRequests, BIDDER_REQUEST);
         const data = JSON.parse(request.data);
         it('should not populate ext.gdpr or ext.consent', function () {
-          expect(data).to.not.have.property('user');
-          expect(data).to.not.have.property('regs');
+          expect(data).to.not.have.property('Regs.ext.consent');
         });
       });
 
@@ -95,10 +117,10 @@ describe('playgroundxyzBidAdapter', function () {
           );
           const data = JSON.parse(request.data);
           it('should set ext.gdpr with 1', function () {
-            expect(data.regs.ext.gdpr).to.equal(1);
+            expect(data.Regs.ext.gdpr).to.equal(1);
           });
           it('should set ext.consent', function () {
-            expect(data.user.ext.consent).to.equal('XYZ-CONSENT');
+            expect(data.User.ext.consent).to.equal('XYZ-CONSENT');
           });
         });
         describe('when GDPR is NOT applicable', function () {
@@ -110,10 +132,10 @@ describe('playgroundxyzBidAdapter', function () {
           );
           const data = JSON.parse(request.data);
           it('should set ext.gdpr to 0', function () {
-            expect(data.regs.ext.gdpr).to.equal(0);
+            expect(data.Regs.ext.gdpr).to.equal(0);
           });
           it('should populate ext.consent', function () {
-            expect(data.user.ext.consent).to.equal('XYZ-CONSENT');
+            expect(data.User.ext.consent).to.equal('XYZ-CONSENT');
           });
         });
       });

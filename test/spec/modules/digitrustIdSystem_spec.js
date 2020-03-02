@@ -1,7 +1,7 @@
 import {
   digiTrustIdSubmodule,
   surfaceTestHook
-} from 'modules/digiTrustIdSystem';
+} from 'modules/digiTrustIdSystem.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;

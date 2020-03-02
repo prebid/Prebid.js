@@ -1,11 +1,11 @@
-import adapter from '../src/AnalyticsAdapter'
-import adaptermanager from '../src/adapterManager'
+import adapter from '../src/AnalyticsAdapter.js'
+import adaptermanager from '../src/adapterManager.js'
 import CONSTANTS from '../src/constants.json'
-import {ajaxBuilder} from '../src/ajax'
-import * as utils from '../src/utils'
-import {config} from '../src/config'
-import find from 'core-js/library/fn/array/find'
-import includes from 'core-js/library/fn/array/includes'
+import {ajaxBuilder} from '../src/ajax.js'
+import * as utils from '../src/utils.js'
+import {config} from '../src/config.js'
+import find from 'core-js/library/fn/array/find.js'
+import includes from 'core-js/library/fn/array/includes.js'
 
 const ajax = ajaxBuilder(0)
 

@@ -9,9 +9,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils'
-import { ajax } from '../src/ajax';
-import { submodule } from '../src/hook';
+import * as utils from '../src/utils.js'
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
 
 var fallbackTimeout = 1550; // timeout value that allows userId system to execute first
 var fallbackTimer = 0; // timer Id for fallback init so we don't double call

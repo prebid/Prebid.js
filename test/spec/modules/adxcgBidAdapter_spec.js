@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import * as url from 'src/url';
-import {spec} from 'modules/adxcgBidAdapter';
-import {deepClone} from '../../../src/utils';
+import * as url from 'src/url.js';
+import {spec} from 'modules/adxcgBidAdapter.js';
+import {deepClone} from '../../../src/utils.js';
 
 describe('AdxcgAdapter', function () {
   let bidBanner = {
