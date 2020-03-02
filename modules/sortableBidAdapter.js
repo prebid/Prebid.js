@@ -5,7 +5,7 @@ import { parse } from '../src/url.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'sortable';
-const SERVER_URL = 'c.deployads.com';
+const SERVER_URL = 'https://c.deployads.com';
 
 function setAssetRequired(native, asset) {
   if (native.required) {
@@ -261,7 +261,7 @@ export const spec = {
     }
     return {
       method: 'POST',
-      url: `//${SERVER_URL}/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${loc.hostname}`,
+      url: `${SERVER_URL}/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${loc.hostname}`,
       data: JSON.stringify(sortableBidReq),
       options: {contentType: 'text/plain'}
     };
@@ -329,7 +329,7 @@ export const spec = {
   },
 
   onTimeout(details) {
-    fetch(`//${SERVER_URL}/prebid/timeout`, {
+    fetch(`${SERVER_URL}/prebid/timeout`, {
       method: 'POST',
       body: JSON.stringify(details),
       mode: 'no-cors',

@@ -181,7 +181,7 @@ describe('sortableBidAdapter', function() {
     });
 
     it('attaches source and version to endpoint URL as query params', function () {
-      const ENDPOINT = `//c.deployads.com/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=example.com`;
+      const ENDPOINT = `https://c.deployads.com/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=example.com`;
       expect(request.url).to.equal(ENDPOINT);
     });
 

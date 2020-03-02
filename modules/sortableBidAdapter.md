@@ -16,7 +16,11 @@ Sortable's adapter integration to the Prebid library. Posts plain-text JSON to t
 var adUnits = [
   {
     code: 'test-pb-leaderboard',
-    sizes: [[728, 90]],
+    mediaTypes: {
+        banner: {
+            sizes: [[728, 90]],
+        }
+    },
     bids: [{
       bidder: 'sortable',
       params: {
@@ -30,7 +34,11 @@ var adUnits = [
     }]
   }, {
     code: 'test-pb-banner',
-    sizes: [[300, 250]],
+    mediaTypes: {
+        banner: {
+            sizes: [[300, 250]],
+        }
+    },
     bids: [{
       bidder: 'sortable',
       params: {
@@ -40,7 +48,11 @@ var adUnits = [
     }]
   }, {
     code: 'test-pb-sidebar',
-    size: [[160, 600]],
+    mediaTypes: {
+        banner: {
+            sizes: [[160, 600]],
+        }
+    },
     bids: [{
       bidder: 'sortable',
       params: {
