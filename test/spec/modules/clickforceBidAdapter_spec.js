@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/clickforceBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/clickforceBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('ClickforceAdapter', function () {
   const adapter = newBidder(spec);

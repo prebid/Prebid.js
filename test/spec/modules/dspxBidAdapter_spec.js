@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/dspxBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/dspxBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';

@@ -1,6 +1,6 @@
-import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter';
+import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter.js';
 import {expect} from 'chai';
-import {server} from 'test/mocks/xhr';
+import {server} from 'test/mocks/xhr.js';
 let events = require('src/events');
 let constants = require('src/constants.json');
 

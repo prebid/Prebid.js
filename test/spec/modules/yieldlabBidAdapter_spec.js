@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import { spec } from 'modules/yieldlabBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
+import { spec } from 'modules/yieldlabBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const REQUEST = {
   'bidder': 'yieldlab',

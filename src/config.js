@@ -12,15 +12,15 @@
  * @property {(string|Object)} [video-outstream]
  */
 
-import { isValidPriceConfig } from './cpmBucketManager';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import Set from 'core-js/library/fn/set';
-import { parseQS } from './url';
+import { isValidPriceConfig } from './cpmBucketManager.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import Set from 'core-js/library/fn/set.js';
+import { parseQS } from './url.js';
 
-const from = require('core-js/library/fn/array/from');
-const utils = require('./utils');
-const CONSTANTS = require('./constants');
+const from = require('core-js/library/fn/array/from.js');
+const utils = require('./utils.js');
+const CONSTANTS = require('./constants.json');
 
 const DEFAULT_DEBUG = (parseQS(window.location.search)[CONSTANTS.DEBUG_MODE] || '').toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
