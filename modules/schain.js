@@ -1,6 +1,6 @@
-import { config } from '../src/config';
-import adapterManager from '../src/adapterManager';
-import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger, _each, logWarn } from '../src/utils';
+import { config } from '../src/config.js';
+import adapterManager from '../src/adapterManager.js';
+import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger, _each, logWarn } from '../src/utils.js';
 
 // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
 

@@ -1,19 +1,19 @@
 import { expect } from 'chai';
-import adapterManager, { gdprDataHandler } from 'src/adapterManager';
+import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import {
   getAdUnits,
   getServerTestingConfig,
   getServerTestingsAds,
   getBidRequests
-} from 'test/fixtures/fixtures';
+} from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { setSizeConfig } from 'src/sizeMapping';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import s2sTesting from 'modules/s2sTesting';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { setSizeConfig } from 'src/sizeMapping.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import s2sTesting from 'modules/s2sTesting.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {

@@ -1,9 +1,9 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import {ajax} from '../src/ajax';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'revcontent';
 const NATIVE_PARAMS = {
@@ -56,6 +56,11 @@ export const spec = {
       endpoint = endpoint + '&widgetId=' + widgetId;
     }
 
+    let bidfloor = 0.1;
+    if (!isNaN(validBidRequests[0].params.bidfloor) && validBidRequests[0].params.bidfloor > 0) {
+      bidfloor = validBidRequests[0].params.bidfloor;
+    }
+
     const imp = validBidRequests.map((bid, id) => {
       if (bid.hasOwnProperty('nativeParams')) {
         const assets = utils._map(bid.nativeParams, (bidParams, key) => {
@@ -98,15 +103,15 @@ export const spec = {
               ver: '1.1',
               context: 2,
               contextsubtype: 21,
-              plcmttype: 4,
-              plcmtcnt: 4,
+              plcmttype: 1,
+              plcmtcnt: 1,
               assets: assets
             },
             ver: '1.1',
             battr: [1, 3, 8, 11, 17]
           },
           instl: 0,
-          bidfloor: 0.1,
+          bidfloor: bidfloor,
           secure: '1'
         };
       }
@@ -150,7 +155,6 @@ export const spec = {
         'IAB26-4'
       ]
     };
-
     serverRequests.push({
       method: 'POST',
       options: {
@@ -167,7 +171,6 @@ export const spec = {
     if (!serverResponse.body) {
       return;
     }
-
     const seatbid = serverResponse.body.seatbid[0];
     const bidResponses = [];
 

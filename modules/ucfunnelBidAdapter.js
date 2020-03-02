@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
@@ -125,7 +125,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: 'https://cdn.aralego.com/ucfad/cookie/sync.html'
+        url: 'https://cdn.aralego.net/ucfad/cookie/sync.html'
       }];
     } else if (syncOptions.pixelEnabled) {
       return [{

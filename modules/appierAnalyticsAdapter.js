@@ -1,9 +1,9 @@
-import {ajax} from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
+import {ajax} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import {getGlobal} from '../src/prebidGlobal';
-import {logError, logInfo, deepClone} from '../src/utils';
+import adapterManager from '../src/adapterManager.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {logError, logInfo, deepClone} from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 

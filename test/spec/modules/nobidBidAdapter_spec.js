@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/nobidBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
+import * as utils from 'src/utils.js';
+import { spec } from 'modules/nobidBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('Nobid Adapter', function () {
   const adapter = newBidder(spec);
@@ -278,6 +278,59 @@ describe('Nobid Adapter', function () {
       }
       let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
       expect(nobid.refreshLimit).to.equal(REFRESH_LIMIT);
+    });
+  });
+
+  describe('interpretResponseWithUserLimit', function () {
+    const CREATIVE_ID_300x250 = 'CREATIVE-100';
+    const ADUNIT_300x250 = 'ADUNIT-1';
+    const ADMARKUP_300x250 = 'ADMARKUP-300x250';
+    const PRICE_300x250 = 0.51;
+    const REQUEST_ID = '3db3773286ee59';
+    const DEAL_ID = 'deal123';
+    const ULIMIT = 1;
+    let response = {
+      country: 'US',
+      ip: '68.83.15.75',
+      device: 'COMPUTER',
+      site: 2,
+      ublock: ULIMIT,
+      bids: [
+        {id: 1,
+          bdrid: 101,
+          divid: ADUNIT_300x250,
+          dealid: DEAL_ID,
+          creativeid: CREATIVE_ID_300x250,
+          size: {'w': 300, 'h': 250},
+          adm: ADMARKUP_300x250,
+          price: '' + PRICE_300x250
+        }
+      ]
+    };
+
+    it('should ULimit be respected', function () {
+      const bidderRequest = {
+        bids: [{
+          bidId: REQUEST_ID,
+          adUnitCode: ADUNIT_300x250
+        }]
+      }
+      const bidRequests = [
+        {
+          'bidder': 'nobid',
+          'params': {
+            'siteId': 2
+          },
+          'adUnitCode': 'adunit-code',
+          'sizes': [[300, 250]],
+          'bidId': '30b31c1838de1e',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+        }
+      ];
+      spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request).to.equal(undefined);
     });
   });
 

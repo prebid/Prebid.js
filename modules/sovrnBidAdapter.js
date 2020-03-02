@@ -1,7 +1,7 @@
-import * as utils from '../src/utils'
-import {parse} from '../src/url'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { BANNER } from '../src/mediaTypes'
+import * as utils from '../src/utils.js'
+import {parse} from '../src/url.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
 
 export const spec = {
   code: 'sovrn',

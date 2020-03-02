@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { spec } from 'modules/appnexusBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as bidderFactory from 'src/adapters/bidderFactory';
-import { auctionManager } from 'src/auctionManager';
-import { deepClone } from 'src/utils';
-import { config } from 'src/config';
+import { spec } from 'modules/appnexusBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as bidderFactory from 'src/adapters/bidderFactory.js';
+import { auctionManager } from 'src/auctionManager.js';
+import { deepClone } from 'src/utils.js';
+import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 
@@ -681,11 +681,7 @@ describe('AppNexusAdapter', function () {
     it('should populate tpids array when userId is available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
-          criteortus: {
-            appnexus: {
-              userid: 'sample-userid'
-            }
-          }
+          criteoId: 'sample-userid'
         }
       });
 
