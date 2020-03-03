@@ -4,16 +4,15 @@ import {uspDataHandler} from '../../../src/adapterManager.js';
 import {server} from 'test/mocks/xhr.js';
 
 const PUBLISHER_ID = '89899';
+const defaultConfigParams = {publisherId: PUBLISHER_ID};
+const responseHeader = {'Content-Type': 'application/json'}
 
 describe('LiveIntentId', function () {
+  let pixel = {};
   let logErrorStub;
   let consentDataStub;
   let getCookieStub;
   let getDataFromLocalStorageStub;
-
-  const defaultConfigParams = {publisherId: PUBLISHER_ID};
-  const responseHeader = {'Content-Type': 'application/json'}
-  let pixel = {};
   let imgStub;
 
   beforeEach(function () {
