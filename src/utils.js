@@ -845,8 +845,8 @@ export function getCookie(name) {
 }
 
 export function setCookie(key, value, expires, sameSite, domain) {
-  const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : ''
-  const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : ''
+  const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
+  const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
   document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}`;
 }
 
