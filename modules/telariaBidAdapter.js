@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import {createBid as createBidFactory} from '../src/bidfactory';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {VIDEO} from '../src/mediaTypes';
-import {STATUS} from '../src/constants';
+import * as utils from '../src/utils.js';
+import {createBid as createBidFactory} from '../src/bidfactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {VIDEO} from '../src/mediaTypes.js';
+import {STATUS} from '../src/constants.json';
 
 const BIDDER_CODE = 'telaria';
 const DOMAIN = 'tremorhub.com';

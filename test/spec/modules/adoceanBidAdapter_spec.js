@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adoceanBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/adoceanBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('AdoceanAdapter', function () {
   const adapter = newBidder(spec);

@@ -1,9 +1,9 @@
-import { Renderer } from '../src/Renderer';
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
+import { Renderer } from '../src/Renderer.js';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 const BIDDER_CODE = 'xhb';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';

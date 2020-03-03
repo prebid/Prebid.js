@@ -1,6 +1,6 @@
 import {expect, assert} from 'chai';
-import {spec} from 'modules/kargoBidAdapter';
-import {config} from 'src/config';
+import {spec} from 'modules/kargoBidAdapter.js';
+import {config} from 'src/config.js';
 
 describe('kargo adapter tests', function () {
   var sandbox, clock, frozenNow = new Date();

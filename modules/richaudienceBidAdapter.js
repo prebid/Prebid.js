@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {config} from '../src/config';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';

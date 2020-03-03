@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adtelligentBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/adtelligentBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://ghb.adtelligent.com/auction/';
 

@@ -1,12 +1,12 @@
-import rubiconAnalyticsAdapter, { SEND_TIMEOUT, parseBidResponse } from 'modules/rubiconAnalyticsAdapter';
+import rubiconAnalyticsAdapter, { SEND_TIMEOUT, parseBidResponse } from 'modules/rubiconAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
-import { config } from 'src/config';
-import { server } from 'test/mocks/xhr';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 
 import {
   setConfig,
   addBidResponseHook,
-} from 'modules/currency';
+} from 'modules/currency.js';
 
 let Ajv = require('ajv');
 let schema = require('./rubiconAnalyticsSchema.json');
@@ -21,7 +21,7 @@ function validate(message) {
   expect(validator.errors).to.deep.equal(null);
 }
 
-// using es6 "import * as events from 'src/events'" causes the events.getEvents stub not to work...
+// using es6 "import * as events from 'src/events.js'" causes the events.getEvents stub not to work...
 let events = require('src/events');
 let ajax = require('src/ajax');
 let utils = require('src/utils');
@@ -274,6 +274,7 @@ const ANALYTICS_MESSAGE = {
   'integration': 'pbjs',
   'version': '$prebid.version$',
   'referrerUri': 'http://www.test.com/page.html',
+  'referrerHostname': 'www.test.com',
   'auctions': [
     {
       'clientTimeoutMillis': 3000,

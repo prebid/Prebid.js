@@ -1,9 +1,9 @@
 import {expect} from 'chai';
-import {spec, resetBoPixel} from 'modules/openxBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {userSync} from 'src/userSync';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
+import {spec, resetBoPixel} from 'modules/openxBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {userSync} from 'src/userSync.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
 
 const URLBASE = '/w/1.0/arj';
 const URLBASEVIDEO = '/v/1.0/avjp';
@@ -1140,6 +1140,37 @@ describe('OpenxAdapter', function () {
           }];
           const request = spec.buildRequests(bidRequestsWithLiveRampEnvelope, mockBidderRequest);
           expect(request[0].data.lre).to.equal('00000000-aaaa-1111-bbbb-222222222222');
+        });
+      });
+
+      describe('with the criteo id for exchanges', function () {
+        it('should not send a criteoid query param when there is no userId.criteoId defined in the bid requests', function () {
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+          expect(request[0].data).to.not.have.any.keys('criteoid');
+        });
+
+        it('should send a criteoid query param when userId.criteoId is defined in the bid requests', function () {
+          const bidRequestsWithCriteo = [{
+            bidder: 'openx',
+            params: {
+              unit: '11',
+              delDomain: 'test-del-domain'
+            },
+            userId: {
+              criteoId: '00000000-aaaa-1111-bbbb-222222222222'
+            },
+            adUnitCode: 'adunit-code',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [300, 600]]
+              }
+            },
+            bidId: 'test-bid-id-1',
+            bidderRequestId: 'test-bid-request-1',
+            auctionId: 'test-auction-1'
+          }];
+          const request = spec.buildRequests(bidRequestsWithCriteo, mockBidderRequest);
+          expect(request[0].data.criteoid).to.equal('00000000-aaaa-1111-bbbb-222222222222');
         });
       });
     });

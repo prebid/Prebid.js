@@ -1,7 +1,7 @@
 import { expect } from 'chai'
-import { spec } from 'modules/videoNowBidAdapter'
-import { replaceAuctionPrice } from 'src/utils'
-import * as utils from 'src/utils';
+import { spec } from 'modules/videoNowBidAdapter.js'
+import { replaceAuctionPrice } from 'src/utils.js'
+import * as utils from 'src/utils.js';
 
 // childNode.remove polyfill for ie11
 // suggested by: https://developer.mozilla.org/en-US/docs/Web/API/ChildNode/remove

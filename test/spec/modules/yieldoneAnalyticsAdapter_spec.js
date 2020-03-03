@@ -1,5 +1,5 @@
-import yieldoneAnalytics from 'modules/yieldoneAnalyticsAdapter';
-import { targeting } from 'src/targeting';
+import yieldoneAnalytics from 'modules/yieldoneAnalyticsAdapter.js';
+import { targeting } from 'src/targeting.js';
 import { expect } from 'chai';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;

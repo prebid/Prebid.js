@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/orbidderBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import openxAdapter from '../../../modules/openxAnalyticsAdapter';
-import {detectReferer} from 'src/refererDetection';
+import {spec} from 'modules/orbidderBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import openxAdapter from '../../../modules/openxAnalyticsAdapter.js';
+import {detectReferer} from 'src/refererDetection.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);

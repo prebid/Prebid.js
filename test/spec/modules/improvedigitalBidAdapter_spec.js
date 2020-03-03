@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { ImproveDigitalAdServerJSClient, spec } from 'modules/improvedigitalBidAdapter';
-import { config } from 'src/config';
-import { userSync } from 'src/userSync';
+import { ImproveDigitalAdServerJSClient, spec } from 'modules/improvedigitalBidAdapter.js';
+import { config } from 'src/config.js';
+import { userSync } from 'src/userSync.js';
 
 describe('Improve Digital Adapter Tests', function () {
   let idClient = new ImproveDigitalAdServerJSClient('hb');

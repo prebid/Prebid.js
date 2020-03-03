@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/teadsBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/teadsBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
