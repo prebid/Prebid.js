@@ -76,8 +76,8 @@ function getSegmentsAsync(adUnits, onDone) {
       if (req.status === 200) {
         try {
           const data = JSON.parse(response);
-          setData(data);
           if (data && data.audigent_segments) {
+            setData(data);
             let dataToReturn = adUnits.reduce((rp, cau) => {
               const adUnitCode = cau && cau.code;
               if (!adUnitCode) { return rp }
