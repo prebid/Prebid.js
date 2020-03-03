@@ -4,7 +4,6 @@
 
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf');
-var path = require('path')
 var karmaConstants = require('karma').constants;
 
 function newWebpackConfig(codeCoverage) {
