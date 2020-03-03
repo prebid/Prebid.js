@@ -234,7 +234,7 @@ describe('Real time module', function() {
         dataReceived.adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid.realTimeData).to.have.property('audigent_segments');
-            expect(bid.realTimeData.audigent_segments).to.equal(audigentSegments.audigent_segments);
+            expect(bid.realTimeData.audigent_segments).to.deep.equal(audigentSegments.audigent_segments);
           });
         });
       }, 200);
