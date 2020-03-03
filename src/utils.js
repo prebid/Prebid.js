@@ -849,6 +849,12 @@ export function setCookie(key, value, expires, sameSite, domain) {
   document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}`;
 }
 
+/**
+ * Returns all cookie values from the jar whose names contain the `keyLike`
+ * Needs to exist in `utils.js` as it follows the StorageHandler interface defined in live-connect-js. If that module were to be removed, this function can go as well.
+ * @param {string} keyLike
+ * @return {[]}
+ */
 export function findSimilarCookies(keyLike) {
   const all = [];
   const cookies = document.cookie.split(';');
