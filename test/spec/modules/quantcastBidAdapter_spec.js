@@ -492,5 +492,33 @@ describe('Quantcast adapter', function () {
 
       expect(interpretedResponse.length).to.equal(0);
     });
+
+    it('should return pixel url when available userSync available', function () {
+      const syncOptions = {
+        pixelEnabled: true
+      };
+      const serverResponses = [
+        {
+          body: {
+            userSync: {
+              url: 'http://quantcast.com/pixelUrl'
+            }
+          }
+        },
+        {
+          body: {
+
+          }
+        }
+      ];
+
+      const actualSyncs = qcSpec.getUserSyncs(syncOptions, serverResponses);
+      const expectedSync = {
+        type: 'image',
+        url: 'http://quantcast.com/pixelUrl'
+      };
+      expect(actualSyncs.length).to.equal(1);
+      expect(actualSyncs[0]).to.deep.equal(expectedSync);
+    });
   });
 });
