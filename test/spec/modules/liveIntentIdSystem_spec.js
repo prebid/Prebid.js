@@ -186,7 +186,6 @@ describe('LiveIntentId', function () {
         'identifiersToResolve': ['_thirdPC']
       }
     };
-
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
@@ -209,7 +208,6 @@ describe('LiveIntentId', function () {
         'identifiersToResolve': ['_thirdPC']
       }
     };
-
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
