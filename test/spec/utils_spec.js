@@ -356,7 +356,7 @@ describe('Utils', function () {
     });
   });
 
-  describe ('cookie opts', function() {
+  describe('cookie opts', function() {
     it('returns an array of cookies in a jar that have a similar name', function() {
       utils.setCookie('cookie-a', 'cookie-value-a');
       utils.setCookie('cookie-b', 'cookie-value-b');
