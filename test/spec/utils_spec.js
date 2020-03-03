@@ -356,14 +356,6 @@ describe('Utils', function () {
     });
   });
 
-  describe('cookie opts', function() {
-    it('returns an array of cookies in a jar that have a similar name', function() {
-      utils.setCookie('cookie-a', 'cookie-value-a');
-      utils.setCookie('cookie-b', 'cookie-value-b');
-      expect(utils.findSimilarCookies('cookie')).to.include.members(['cookie-value-a', 'cookie-value-b']);
-    });
-  })
-
   describe('isStr', function () {
     it('should return true with input string', function () {
       var output = utils.isStr(obj_string);
