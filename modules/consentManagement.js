@@ -153,9 +153,9 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     } else if (cmpVersion === 2) {
       cmpFunction('addEventListener', cmpVersion, v2CmpResponseCallback);
     }
-  } else if (inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
+  } else if (cmpVersion === 1 && inASafeFrame() && typeof window.$sf.ext.cmp === 'function') {
+    // this safeframe workflow is only supported with TCF v1 spec; the v2 recommends to use the iframe postMessage route instead (even if you are in a safeframe).
     utils.logInfo('Detected Prebid.js is encased in a SafeFrame and CMP is registered, calling it now...');
-    cmpVersion = 1;
     callCmpWhileInSafeFrame('getConsentData', v1CallbackHandler.consentDataCallback);
     callCmpWhileInSafeFrame('getVendorConsents', v1CallbackHandler.vendorConsentsCallback);
   } else {
