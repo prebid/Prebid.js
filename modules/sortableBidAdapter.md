@@ -63,6 +63,47 @@ var adUnits = [
         }
       }
     }]
+  }, {
+    code: 'test-pb-native',
+    mediaTypes: {
+      native: {
+        title: {
+          required: true,
+          len: 800
+        },
+        image: {
+          required: true,
+          sizes: [790, 294],
+        },
+        sponsoredBy: {
+          required: true
+        }
+      }
+    },
+    bids: [{
+      bidder: 'sortable',
+      params: {
+        tagId: 'test-pb-native',
+        siteId: 'prebid.example.com'
+      }
+    }]
+  }, {
+    code: 'test-pb-video',
+    mediaTypes: {
+      video: {
+        playerSize: [640,480],
+        context: 'instream'
+      }
+    },
+    bids: [
+      {
+        bidder: 'sortable',
+        params: {
+          tagId: 'test-pb-video',
+          siteId: 'prebid.example.com'
+        }
+      }
+    ]
   }
 ]
 ```
