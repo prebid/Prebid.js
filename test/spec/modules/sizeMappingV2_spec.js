@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import * as utils from '../../../src/utils';
+import * as utils from '../../../src/utils.js';
 
 import {
   isUsingNewSizeMapping,
@@ -14,9 +14,9 @@ import {
   getFilteredMediaTypes,
   getBids,
   internal
-} from '../../../modules/sizeMappingV2';
+} from '../../../modules/sizeMappingV2.js';
 
-import { adUnitSetupChecks } from '../../../src/prebid';
+import { adUnitSetupChecks } from '../../../src/prebid.js';
 
 const AD_UNITS = [{
   code: 'div-gpt-ad-1460505748561-0',

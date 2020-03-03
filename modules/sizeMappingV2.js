@@ -3,14 +3,14 @@
  * This implementation replaces global sizeConfig with a adUnit/bidder level sizeConfig with support for labels.
  */
 
-import * as utils from '../src/utils';
-import { processNativeAdUnitParams } from '../src/native';
-import { adunitCounter } from '../src/adUnits';
-import includes from 'core-js/library/fn/array/includes';
-import { getHook } from '../src/hook';
+import * as utils from '../src/utils.js';
+import { processNativeAdUnitParams } from '../src/native.js';
+import { adunitCounter } from '../src/adUnits.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import { getHook } from '../src/hook.js';
 import {
   adUnitSetupChecks
-} from '../src/prebid';
+} from '../src/prebid.js';
 
 // allows for sinon.spy, sinon.stub, etc to unit test calls made to these functions internally
 export const internal = {
