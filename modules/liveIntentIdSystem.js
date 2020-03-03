@@ -4,10 +4,11 @@
  * @module modules/liveIntentIdSystem
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils';
-import { submodule } from '../src/hook';
-import { LiveConnect } from 'live-connect-js/cjs/live-connect';
-import { uspDataHandler } from '../src/adapterManager';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
+import { uspDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = 'liveIntentId';
 
@@ -81,7 +82,8 @@ function initializeLiveConnect(configParams) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
   }
 
-  liveConnect = LiveConnect(liveConnectConfig);
+  // The second param is the storage object, which means that all LS & Cookie manipulation will go through PBJS utils.
+  liveConnect = LiveConnect(liveConnectConfig, utils);
   return liveConnect;
 }
 
@@ -136,7 +138,22 @@ export const liveIntentIdSubmodule = {
       return;
     }
     tryFireEvent();
-    return { callback: liveConnect.resolve };
+    // Don't do the internal ajax call, but use the composed url and fire it via PBJS ajax module
+    const url = liveConnect.resolutionCallUrl();
+    const result = function (callback) {
+      ajax(url, response => {
+        let responseObj = {};
+        if (response) {
+          try {
+            responseObj = JSON.parse(response);
+          } catch (error) {
+            utils.logError(error);
+          }
+        }
+        callback(responseObj);
+      }, undefined, { method: 'GET', withCredentials: true });
+    };
+    return {callback: result};
   }
 };
 

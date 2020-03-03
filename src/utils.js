@@ -844,8 +844,24 @@ export function getCookie(name) {
   return m ? decodeURIComponent(m[2]) : null;
 }
 
-export function setCookie(key, value, expires, sameSite) {
-  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
+export function setCookie(key, value, expires, sameSite, domain) {
+  const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : ''
+  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}`;
+}
+
+export function findSimilarCookies(keyLike) {
+  const all = [];
+  const cookies = document.cookie.split(';');
+  while (cookies.length) {
+    const cookie = cookies.pop();
+    let separatorIndex = cookie.indexOf('=');
+    separatorIndex = separatorIndex < 0 ? cookie.length : separatorIndex;
+    const cookieName = decodeURIComponent(cookie.slice(0, separatorIndex).replace(/^\s+/, ''));
+    if (cookieName.indexOf(keyLike) >= 0) {
+      all.push(decodeURIComponent(cookie.slice(separatorIndex + 1)));
+    }
+  }
+  return all;
 }
 
 /**
