@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { getAdagioScript, spec } from 'modules/adagioBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { getAdagioScript, spec } from 'modules/adagioBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 describe('adagioAdapter', () => {
   let utilsMock;

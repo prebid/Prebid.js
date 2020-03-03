@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.0';
+window.nobidVersion = '1.2.1';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -10,6 +10,15 @@ window.nobid.bidWonTotal = 0;
 window.nobid.refreshCount = 0;
 function log(msg, obj) {
   utils.logInfo('-NoBid- ' + msg, obj)
+}
+function nobidSetCookie(cname, cvalue, hours) {
+  var d = new Date();
+  d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
+  var expires = 'expires=' + d.toUTCString();
+  utils.setCookie(cname, cvalue, expires);
+}
+function nobidGetCookie(cname) {
+  return utils.getCookie(cname);
 }
 function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
@@ -146,6 +155,11 @@ function nobidBuildRequests(bids, bidderRequest) {
   if (typeof window.nobid.refreshLimit !== 'undefined') {
     if (window.nobid.refreshLimit < window.nobid.refreshCount) return false;
   }
+  let ublock = nobidGetCookie('_ublock');
+  if (ublock) {
+    log('Request blocked for user. hours: ', ublock);
+    return false;
+  }
   /* DISCOVER SLOTS */
   var divids = [];
   var siteId = 0;
@@ -180,7 +194,13 @@ function nobidInterpretResponse(response, bidRequest) {
   var setRefreshLimit = function(response) {
     if (response && typeof response.rlimit !== 'undefined') window.nobid.refreshLimit = response.rlimit;
   }
+  var setUserBlock = function(response) {
+    if (response && typeof response.ublock !== 'undefined') {
+      nobidSetCookie('_ublock', '1', response.ublock);
+    }
+  }
   setRefreshLimit(response);
+  setUserBlock(response);
   var bidResponses = [];
   for (var i = 0; response.bids && i < response.bids.length; i++) {
     var bid = response.bids[i];
@@ -273,8 +293,8 @@ export const spec = {
      * @return {Bid[]} An array of bids which were nested inside the server.
      */
   interpretResponse: function(serverResponse, bidRequest) {
-    log('interpretResponse', serverResponse);
-    log('interpretResponse', bidRequest);
+    log('interpretResponse -> serverResponse', serverResponse);
+    log('interpretResponse -> bidRequest', bidRequest);
     return nobidInterpretResponse(serverResponse.body, bidRequest);
   },
 
@@ -305,6 +325,17 @@ export const spec = {
         type: 'iframe',
         url: 'https://public.servenobid.com/sync.html' + params
       }];
+    } else if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+      let syncs = [];
+      if (serverResponses[0].body.syncs && serverResponses[0].body.syncs.length > 0) {
+        serverResponses[0].body.syncs.forEach(element => {
+          syncs.push({
+            type: 'image',
+            url: element
+          });
+        })
+      }
+      return syncs;
     } else {
       utils.logWarn('-NoBid- Please enable iframe based user sync.', syncOptions);
       return [];

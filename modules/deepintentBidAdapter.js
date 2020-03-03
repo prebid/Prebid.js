@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER} from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 const BIDDER_CODE = 'deepintent';
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
@@ -37,8 +37,12 @@ export const spec = {
       imp: validBidRequests.map(bid => buildImpression(bid)),
       site: buildSite(bidderRequest),
       device: buildDevice(),
-      user: user && user.length == 1 ? user[0] : {}
+      user: user && user.length === 1 ? user[0] : {}
     };
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
 
     return {
       method: 'POST',
@@ -127,13 +131,15 @@ function buildBanner(bid) {
       if (utils.isArray(sizes) && sizes.length > 0) {
         return {
           h: sizes[0][1],
-          w: sizes[0][0]
+          w: sizes[0][0],
+          pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
         }
       }
     } else {
       return {
         h: bid.params.height,
-        w: bid.params.width
+        w: bid.params.width,
+        pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
       }
     }
   }
