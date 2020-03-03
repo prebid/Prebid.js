@@ -1,13 +1,31 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { spec } from 'modules/ixBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec } from 'modules/ixBidAdapter.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://as-sec.casalemedia.com/cygnus';
   const VIDEO_ENDPOINT_VERSION = 8.1;
   const BANNER_ENDPOINT_VERSION = 7.2;
+
+  const SAMPLE_SCHAIN = {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'indirectseller.com',
+        'sid': '00001',
+        'hp': 1
+      },
+
+      {
+        'asi': 'indirectseller-2.com',
+        'sid': '00002',
+        'hp': 2
+      }
+    ]
+  };
 
   const DEFAULT_BANNER_VALID_BID = [
     {
@@ -26,7 +44,8 @@ describe('IndexexchangeAdapter', function () {
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
-      auctionId: '1aa2bb3cc4dd'
+      auctionId: '1aa2bb3cc4dd',
+      schain: SAMPLE_SCHAIN
     }
   ];
 
@@ -56,7 +75,8 @@ describe('IndexexchangeAdapter', function () {
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
-      auctionId: '1aa2bb3cc4de'
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
     }
   ];
 
@@ -483,6 +503,11 @@ describe('IndexexchangeAdapter', function () {
     const requestMethod = request.method;
     const query = request.data;
 
+    const bidWithoutSchain = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+    delete bidWithoutSchain[0].schain;
+    const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
+    const queryWithoutSchain = requestWithoutSchain.data;
+
     const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
     delete bidWithoutMediaType[0].mediaTypes;
     bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
@@ -505,16 +530,21 @@ describe('IndexexchangeAdapter', function () {
 
     it('payload should have correct format and value', function () {
       const payload = JSON.parse(query.r);
-
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
       expect(payload.site).to.exist;
       expect(payload.site.page).to.equal(DEFAULT_OPTION.refererInfo.referer);
       expect(payload.site.ref).to.equal(document.referrer);
       expect(payload.ext).to.exist;
       expect(payload.ext.source).to.equal('prebid');
+      expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.exist;
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
+    });
+
+    it('payload should not include schain when not provided', function () {
+      const payload = JSON.parse(queryWithoutSchain.r);
+      expect(payload.source).to.not.exist; // source object currently only written for schain
     });
 
     it('impression should have correct format and value', function () {

@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {spec} from 'modules/pubmaticBidAdapter';
-import * as utils from 'src/utils';
-import {config} from 'src/config';
+import {spec} from 'modules/pubmaticBidAdapter.js';
+import * as utils from 'src/utils.js';
+import {config} from 'src/config.js';
 const constants = require('src/constants.json');
 
 describe('PubMatic adapter', function () {
@@ -2297,6 +2297,112 @@ describe('PubMatic adapter', function () {
       data = JSON.parse(request.data);
 
       expect(data.site.ext).to.not.exist;
+    });
+
+    it('Request params deals check', function () {
+      let multipleBidRequests = [
+        {
+          bidder: 'pubmatic',
+          params: {
+            publisherId: '301',
+            adSlot: '/15671365/DMDemo@300x250:0',
+            kadfloor: '1.2',
+            pmzoneid: 'aabc, ddef',
+            kadpageurl: 'www.publisher.com',
+            yob: '1986',
+            gender: 'M',
+            lat: '12.3',
+            lon: '23.7',
+            wiid: '1234567890',
+            profId: '100',
+            verId: '200',
+            currency: 'AUD',
+            deals: ['deal-id-1', 'deal-id-2', 'dea'] // "dea" will not be passed as more than 3 characters needed
+          },
+          placementCode: '/19968336/header-bid-tag-1',
+          sizes: [[300, 250], [300, 600]],
+          bidId: '23acc48ad47af5',
+          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+          bidderRequestId: '1c56ad30b9b8ca8',
+          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+        },
+        {
+          bidder: 'pubmatic',
+          params: {
+            publisherId: '301',
+            adSlot: '/15671365/DMDemo@300x250:0',
+            kadfloor: '1.2',
+            pmzoneid: 'aabc, ddef',
+            kadpageurl: 'www.publisher.com',
+            yob: '1986',
+            gender: 'M',
+            lat: '12.3',
+            lon: '23.7',
+            wiid: '1234567890',
+            profId: '100',
+            verId: '200',
+            currency: 'GBP',
+            deals: ['deal-id-100', 'deal-id-200']
+          },
+          placementCode: '/19968336/header-bid-tag-1',
+          sizes: [[300, 250], [300, 600]],
+          bidId: '23acc48ad47af5',
+          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+          bidderRequestId: '1c56ad30b9b8ca8',
+          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+        }
+      ];
+
+      let request = spec.buildRequests(multipleBidRequests);
+      let data = JSON.parse(request.data);
+      // case 1 - deals are passed as expected, ['', ''] , in both adUnits
+      expect(data.imp[0].pmp).to.deep.equal({
+        'private_auction': 0,
+        'deals': [
+          {
+            'id': 'deal-id-1'
+          },
+          {
+            'id': 'deal-id-2'
+          }
+        ]
+      });
+      expect(data.imp[1].pmp).to.deep.equal({
+        'private_auction': 0,
+        'deals': [
+          {
+            'id': 'deal-id-100'
+          },
+          {
+            'id': 'deal-id-200'
+          }
+        ]
+      });
+
+      // case 2 - deals not present in adunit[0]
+      delete multipleBidRequests[0].params.deals;
+      request = spec.buildRequests(multipleBidRequests);
+      data = JSON.parse(request.data);
+      expect(data.imp[0].pmp).to.not.exist;
+
+      // case 3 - deals is present in adunit[0], but is not an array
+      multipleBidRequests[0].params.deals = 123;
+      request = spec.buildRequests(multipleBidRequests);
+      data = JSON.parse(request.data);
+      expect(data.imp[0].pmp).to.not.exist;
+
+      // case 4 - deals is present in adunit[0] as an array but one of the value is not a string
+      multipleBidRequests[0].params.deals = [123, 'deal-id-1'];
+      request = spec.buildRequests(multipleBidRequests);
+      data = JSON.parse(request.data);
+      expect(data.imp[0].pmp).to.deep.equal({
+        'private_auction': 0,
+        'deals': [
+          {
+            'id': 'deal-id-1'
+          }
+        ]
+      });
     });
 
     describe('Request param bcat checking', function() {

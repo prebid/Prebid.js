@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/radsBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/radsBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const RADS_ENDPOINT_URL = 'https://rads.recognified.net/md.request.php';
 

@@ -1,8 +1,8 @@
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import {parse} from '../src/url';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {parse} from '../src/url.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
@@ -12,7 +12,8 @@ const BIDDER_VERSION = '3.0.1';
 const USER_ID_CODE_TO_QUERY_ARG = {
   idl_env: 'lre', // liveramp
   pubcid: 'pubcid', // publisher common id
-  tdid: 'ttduuid' // the trade desk
+  tdid: 'ttduuid', // the trade desk
+  criteoId: 'criteoid' // criteo id
 };
 
 export const spec = {

@@ -1,11 +1,11 @@
-import { newBidder, registerBidder, preloadBidderMappingFile } from 'src/adapters/bidderFactory';
-import adapterManager from 'src/adapterManager';
-import * as ajax from 'src/ajax';
+import { newBidder, registerBidder, preloadBidderMappingFile } from 'src/adapters/bidderFactory.js';
+import adapterManager from 'src/adapterManager.js';
+import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
-import { STATUS } from 'src/constants';
-import { userSync } from 'src/userSync'
-import * as utils from 'src/utils';
-import { config } from 'src/config';
+import { userSync } from 'src/userSync.js'
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -792,7 +792,7 @@ describe('preload mapping url hook', function() {
   let adapterManagerStub;
 
   beforeEach(function () {
-    fakeTranslationServer = sinon.fakeServer.create();
+    fakeTranslationServer = server;
     getLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
     adapterManagerStub = sinon.stub(adapterManager, 'getBidAdapter');
   });

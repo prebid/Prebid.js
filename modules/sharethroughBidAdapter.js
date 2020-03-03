@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-const VERSION = '3.2.0';
+const VERSION = '3.2.1';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
@@ -39,6 +39,10 @@ export const sharethroughAdapterSpec = {
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         query.consent_required = !!bidderRequest.gdprConsent.gdprApplies;
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        query.us_privacy = bidderRequest.uspConsent
       }
 
       if (bidRequest.userId && bidRequest.userId.tdid) {
@@ -97,7 +101,8 @@ export const sharethroughAdapterSpec = {
     }];
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const syncParams = uspConsent ? `&us_privacy=${uspConsent}` : '';
     const syncs = [];
     const shouldCookieSync = syncOptions.pixelEnabled &&
       serverResponses.length > 0 &&
@@ -106,7 +111,7 @@ export const sharethroughAdapterSpec = {
 
     if (shouldCookieSync) {
       serverResponses[0].body.cookieSyncUrls.forEach(url => {
-        syncs.push({ type: 'image', url: url });
+        syncs.push({ type: 'image', url: url + syncParams });
       });
     }
 
@@ -148,7 +153,7 @@ function generateAd(body, req) {
 
   if (req.strData.skipIframeBusting) {
     // Don't break out of iframe
-    adMarkup = adMarkup + `<script src="//native.sharethrough.com/assets/sfp.js"></script>`;
+    adMarkup = adMarkup + `<script src="https://native.sharethrough.com/assets/sfp.js"></script>`;
   } else {
     // Add logic to the markup that detects whether or not in top level document is accessible
     // this logic will deploy sfp.js and/or iframe buster script(s) as appropriate

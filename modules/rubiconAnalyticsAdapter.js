@@ -1,9 +1,10 @@
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import * as utils from '../src/utils';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
+import * as urlLib from '../src/url.js'
 
 const {
   EVENTS: {
@@ -34,6 +35,13 @@ const cache = {
   auctions: {},
   targeting: {},
   timeouts: {},
+};
+
+let referrerHostname;
+
+function getHostNameFromReferer(referer) {
+  referrerHostname = urlLib.parse(referer).hostname;
+  return referrerHostname;
 };
 
 function stringProperties(obj) {
@@ -115,7 +123,8 @@ function sendMessage(auctionId, bidWonId) {
     eventTimeMillis: Date.now(),
     integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
     version: '$prebid.version$',
-    referrerUri: referrer
+    referrerUri: referrer,
+    referrerHostname: referrerHostname || getHostNameFromReferer(referrer)
   };
   const wrapperName = config.getConfig('rubicon.wrapperName');
   if (wrapperName) {
@@ -416,10 +425,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
         bid.bidResponse = parseBidResponse(args, bid.bidResponse);
-        // RP server banner overwrites bidId with bid.seatBidId
-        if (utils.deepAccess(bid, 'bidResponse.seatBidId') && bid.bidder === 'rubicon' && bid.source === 'server' && ['video', 'banner'].some(i => utils.deepAccess(bid, 'bidResponse.mediaType') === i)) {
-          bid.seatBidId = bid.bidResponse.seatBidId;
-        }
         break;
       case BIDDER_DONE:
         args.bids.forEach(bid => {

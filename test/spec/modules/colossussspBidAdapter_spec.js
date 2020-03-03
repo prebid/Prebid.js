@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/colossussspBidAdapter';
+import {spec} from '../../../modules/colossussspBidAdapter.js';
 
 describe('ColossussspAdapter', function () {
   let bid = {

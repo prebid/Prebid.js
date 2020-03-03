@@ -1,11 +1,11 @@
-import * as utils from '../src/utils';
-import { parse as parseUrl } from '../src/url';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { VIDEO, BANNER } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
+import * as utils from '../src/utils.js';
+import { parse as parseUrl } from '../src/url.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 const ADAPTER_VERSION = '1.9';
 const ADAPTER_NAME = 'BFIO_PREBID';

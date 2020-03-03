@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import {parse as parseUrl} from '../src/url';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {parse as parseUrl} from '../src/url.js';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -49,22 +49,23 @@ function canonicalizeSizesArray(sizes) {
   return sizes;
 }
 
-function buildRequestParams(tags, auctionId, transactionId, gdprConsent, refInfo) {
+function buildRequestParams(tags, auctionId, transactionId, gdprConsent, uspConsent, refInfo) {
   let req = {
     id: auctionId,
     tid: transactionId,
     site: buildSite(refInfo),
     imp: tags
   };
-
-  if (gdprConsent && (gdprConsent.gdprApplies !== undefined || gdprConsent.consentString !== undefined)) {
-    req.user = {};
+  if (gdprConsent) {
     if (gdprConsent.gdprApplies !== undefined) {
-      req.user.gdpr = ~~(gdprConsent.gdprApplies);
+      utils.deepSetValue(req, 'user.gdpr', ~~gdprConsent.gdprApplies);
     }
     if (gdprConsent.consentString !== undefined) {
-      req.user.consent = gdprConsent.consentString;
+      utils.deepSetValue(req, 'user.consent', gdprConsent.consentString);
     }
+  }
+  if (uspConsent) {
+    utils.deepSetValue(req, 'user.us_privacy', uspConsent);
   }
   return req;
 }
@@ -132,11 +133,11 @@ export const spec = {
         return acc;
       }, {});
 
-    let {auctionId, gdprConsent, transactionId, refererInfo} = bidderRequest;
+    let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
     let requests = [];
     Object.keys(dispatch).forEach(host => {
       Object.keys(dispatch[host]).forEach(pubId => {
-        let request = buildRequestParams(dispatch[host][pubId], auctionId, transactionId, gdprConsent, refererInfo);
+        let request = buildRequestParams(dispatch[host][pubId], auctionId, transactionId, gdprConsent, uspConsent, refererInfo);
         requests.push({
           method: 'POST',
           url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(refererInfo) ? '&debug=1' : ''}`,
