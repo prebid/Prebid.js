@@ -1,9 +1,9 @@
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import * as utils from '../src/utils';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
 
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
@@ -209,7 +209,7 @@ function executeBidsLoggerCall(auctionId) {
   outputObj['to'] = '' + auctionCache.timeout;
   outputObj['purl'] = referrer;
   outputObj['orig'] = getDomainFromUrl(referrer);
-  outputObj['tst'] = (new window.Date()).getTime();
+  outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
 
@@ -251,7 +251,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
-  pixelURL += '&tst=' + (new window.Date()).getTime();
+  pixelURL += '&tst=' + Math.round((new window.Date()).getTime() / 1000);
   pixelURL += '&iid=' + enc(auctionId);
   pixelURL += '&bidid=' + enc(winningBidId);
   pixelURL += '&pid=' + enc(profileId);

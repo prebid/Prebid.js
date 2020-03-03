@@ -1,10 +1,10 @@
-import pubmaticAnalyticsAdapter from 'modules/pubmaticAnalyticsAdapter';
+import pubmaticAnalyticsAdapter from 'modules/pubmaticAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
-import { config } from 'src/config';
+import { config } from 'src/config.js';
 import {
   setConfig,
   addBidResponseHook,
-} from 'modules/currency';
+} from 'modules/currency.js';
 
 // using es6 "import * as events from 'src/events'" causes the events.getEvents stub not to work...
 let events = require('src/events');
@@ -312,7 +312,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.to).to.equal('3000');
       expect(data.purl).to.equal('http://www.test.com/page.html');
       expect(data.orig).to.equal('www.test.com');
-      expect(data.tst).to.equal(1519767015781);
+      expect(data.tst).to.equal(1519767016);
       expect(data.cns).to.equal('here-goes-gdpr-consent-string');
       expect(data.gdpr).to.equal(1);
       expect(data.s).to.be.an('array');
@@ -370,7 +370,7 @@ describe('pubmatic analytics adapter', function () {
       firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
       expect(data.pubid).to.equal('9999');
       expect(decodeURIComponent(data.purl)).to.equal('http://www.test.com/page.html');
-      expect(data.tst).to.equal('1519767013781');
+      expect(data.tst).to.equal('1519767014');
       expect(data.iid).to.equal('25c6d7f5-699a-4bfc-87c9-996f915341fa');
       expect(data.bidid).to.equal('2ecff0db240757');
       expect(data.pid).to.equal('1111');
