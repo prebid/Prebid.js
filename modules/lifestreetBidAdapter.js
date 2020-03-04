@@ -65,8 +65,13 @@ function formatBidRequest(bid, bidderRequest) {
       url += gdpr;
     }
     if (bidderRequest.gdprConsent.consentString !== undefined) {
-      url += '&__consent=' + bidderRequest.gdprConsent.consentString;
+      url += `&__consent=${bidderRequest.gdprConsent.consentString}`;
     }
+  }
+
+  // ccpa support
+  if (bidderRequest && bidderRequest.uspConsent) {
+    url += `&__us_privacy=${bidderRequest.uspConsent}`
   }
 
   return {
@@ -90,14 +95,17 @@ export const spec = {
   isBidRequestValid: bid => {
     return !!(bid.params.slot && bid.params.adkey && bid.params.ad_size);
   },
+
   buildRequests: (validBidRequests, bidderRequest) => {
-    return validBidRequests.map(bid => {
+    const res = validBidRequests.map(bid => {
       return formatBidRequest(bid, bidderRequest)
     });
+    return res;
   },
   interpretResponse: (serverResponse, bidRequest) => {
     const bidResponses = [];
     let response = serverResponse.body;
+
     if (!isResponseValid(response)) {
       return bidResponses;
     }
@@ -116,13 +124,13 @@ export const spec = {
     if (response.hasOwnProperty('dealId')) {
       bidResponse.dealId = response.dealId;
     }
-
     if (response.content_type.indexOf('vast') > -1) {
       if (typeof response.vastUrl !== 'undefined') {
         bidResponse.vastUrl = response.vastUrl;
       } else {
         bidResponse.vastXml = response.content;
       }
+
       bidResponse.mediaType = VIDEO;
     } else {
       bidResponse.ad = response.content;
