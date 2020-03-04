@@ -42,7 +42,6 @@ function template(strings, ...keys) {
  * @param {BidRequest} bid The bid params to use for formatting a request
  */
 function formatBidRequest(bid, bidderRequest) {
-  console.log('bidderRequest', bidderRequest)
   const {params} = bid;
   const {refererInfo: {referer}} = bidderRequest;
   let url = urlTemplate({
