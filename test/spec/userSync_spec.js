@@ -424,8 +424,8 @@ describe('user sync', function () {
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
     expect(triggerPixelStub.getCall(1)).to.be.null;
-
   });
+
   it('should override default image syncs if setConfig used all filter', function() {
     const userSync = newUserSync({
       config: config.getConfig('userSync'),
