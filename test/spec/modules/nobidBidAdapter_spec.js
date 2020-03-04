@@ -70,7 +70,7 @@ describe('Nobid Adapter', function () {
       refererInfo: {referer: REFERER}
     }
 
-    it('should add source and verison to the tag', function () {
+    it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.sid).to.equal(SITE_ID);
@@ -278,6 +278,51 @@ describe('Nobid Adapter', function () {
       }
       let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
       expect(nobid.refreshLimit).to.equal(REFRESH_LIMIT);
+    });
+  });
+
+  describe('buildRequestsWithSupplyChain', function () {
+    const SITE_ID = 2;
+    let bidRequests = [
+      {
+        bidder: 'nobid',
+        params: {
+          siteId: SITE_ID
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        schain: {
+		    validation: 'strict',
+		    config: {
+		      ver: '1.0',
+		      complete: 1,
+		      nodes: [
+		        {
+		          asi: 'indirectseller.com',
+		          sid: '00001',
+		          name: 'name.com',
+		          hp: 1
+		        }
+		      ]
+		    }
+        }
+      }
+    ];
+
+    it('schain exist', function () {
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.schain).to.exist;
+      expect(payload.schain.validation).to.exist.and.to.equal('strict');
+      expect(payload.schain.config.ver).to.exist.and.to.equal('1.0');
+      expect(payload.schain.config.complete).to.exist.and.to.equal(1);
+      expect(payload.schain.config.nodes[0].asi).to.exist.and.to.equal('indirectseller.com');
+      expect(payload.schain.config.nodes[0].sid).to.exist.and.to.equal('00001');
+      expect(payload.schain.config.nodes[0].name).to.exist.and.to.equal('name.com');
+      expect(payload.schain.config.nodes[0].hp).to.exist.and.to.equal(1);
     });
   });
 

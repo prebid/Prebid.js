@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.1';
+window.nobidVersion = '1.2.3';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -57,6 +57,12 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return uspConsent;
     }
+    var schain = function(bids) {
+      if (bids && bids.length>0) {
+        return bids[0].schain
+      }
+      return null;
+	}
     var topLocation = function(bidderRequest) {
       var ret = '';
       if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -99,6 +105,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['ref'] = document.referrer;
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
+    state['schain'] = schain(bids);
     return state;
   }
   function newAdunit(adunitObject, adunits) {
@@ -269,7 +276,7 @@ export const spec = {
     var buildEndpoint = function() {
       return resolveEndpoint() + 'adreq?cb=' + Math.floor(Math.random() * 11000);
     }
-    log('buildRequests', validBidRequests);
+    log('validBidRequests', validBidRequests);
     if (!validBidRequests || validBidRequests.length <= 0) {
       log('Empty validBidRequests');
       return;
