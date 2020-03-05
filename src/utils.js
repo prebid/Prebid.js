@@ -5,7 +5,7 @@ import includes from 'core-js/library/fn/array/includes.js';
 
 const CONSTANTS = require('./constants.json');
 
-export { default as deepAccess } from 'dlv';
+export { default as deepAccess } from 'dlv/index.js';
 export { default as deepSetValue } from 'dset';
 
 var tArr = 'Array';
