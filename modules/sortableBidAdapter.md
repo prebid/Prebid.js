@@ -16,7 +16,11 @@ Sortable's adapter integration to the Prebid library. Posts plain-text JSON to t
 var adUnits = [
   {
     code: 'test-pb-leaderboard',
-    sizes: [[728, 90]],
+    mediaTypes: {
+        banner: {
+            sizes: [[728, 90]],
+        }
+    },
     bids: [{
       bidder: 'sortable',
       params: {
@@ -30,7 +34,11 @@ var adUnits = [
     }]
   }, {
     code: 'test-pb-banner',
-    sizes: [[300, 250]],
+    mediaTypes: {
+        banner: {
+            sizes: [[300, 250]],
+        }
+    },
     bids: [{
       bidder: 'sortable',
       params: {
@@ -40,7 +48,11 @@ var adUnits = [
     }]
   }, {
     code: 'test-pb-sidebar',
-    size: [[160, 600]],
+    mediaTypes: {
+        banner: {
+            sizes: [[160, 600]],
+        }
+    },
     bids: [{
       bidder: 'sortable',
       params: {
@@ -51,6 +63,47 @@ var adUnits = [
         }
       }
     }]
+  }, {
+    code: 'test-pb-native',
+    mediaTypes: {
+      native: {
+        title: {
+          required: true,
+          len: 800
+        },
+        image: {
+          required: true,
+          sizes: [790, 294],
+        },
+        sponsoredBy: {
+          required: true
+        }
+      }
+    },
+    bids: [{
+      bidder: 'sortable',
+      params: {
+        tagId: 'test-pb-native',
+        siteId: 'prebid.example.com'
+      }
+    }]
+  }, {
+    code: 'test-pb-video',
+    mediaTypes: {
+      video: {
+        playerSize: [640,480],
+        context: 'instream'
+      }
+    },
+    bids: [
+      {
+        bidder: 'sortable',
+        params: {
+          tagId: 'test-pb-video',
+          siteId: 'prebid.example.com'
+        }
+      }
+    ]
   }
 ]
 ```
