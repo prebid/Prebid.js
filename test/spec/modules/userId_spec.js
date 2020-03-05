@@ -271,7 +271,7 @@ describe('User ID', function() {
     it('handles config with empty usersync object', function () {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule]);
       init(config);
-      config.setConfig({ usersync: {} });
+      config.setConfig({ userSync: {} });
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
@@ -279,7 +279,7 @@ describe('User ID', function() {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule]);
       init(config);
       config.setConfig({
-        usersync: {
+        userSync: {
           userIds: [{}]
         }
       });
@@ -290,7 +290,7 @@ describe('User ID', function() {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule]);
       init(config);
       config.setConfig({
-        usersync: {
+        userSync: {
           userIds: [{
             name: '',
             value: { test: '1' }
@@ -315,7 +315,7 @@ describe('User ID', function() {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule]);
       init(config);
       config.setConfig({
-        usersync: {
+        userSync: {
           syncDelay: 0,
           userIds: [{
             name: 'pubCommonId', value: {'pubcid': '11111'}
@@ -347,7 +347,7 @@ describe('User ID', function() {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule]);
       init(config);
       config.setConfig({
-        usersync: {
+        userSync: {
           syncDelay: 99,
           userIds: [{
             name: 'unifiedId',
@@ -362,7 +362,7 @@ describe('User ID', function() {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule]);
       init(config);
       config.setConfig({
-        usersync: {
+        userSync: {
           auctionDelay: 100,
           userIds: [{
             name: 'unifiedId',
@@ -377,7 +377,7 @@ describe('User ID', function() {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule]);
       init(config);
       config.setConfig({
-        usersync: {
+        userSync: {
           auctionDelay: '',
           userIds: [{
             name: 'unifiedId',
@@ -436,7 +436,7 @@ describe('User ID', function() {
 
     it('delays auction if auctionDelay is set, timing out at auction delay', function() {
       config.setConfig({
-        usersync: {
+        userSync: {
           auctionDelay: 33,
           syncDelay: 77,
           userIds: [{
@@ -469,7 +469,7 @@ describe('User ID', function() {
 
     it('delays auction if auctionDelay is set, continuing auction if ids are fetched before timing out', function(done) {
       config.setConfig({
-        usersync: {
+        userSync: {
           auctionDelay: 33,
           syncDelay: 77,
           userIds: [{
@@ -507,7 +507,7 @@ describe('User ID', function() {
 
     it('does not delay auction if not set, delays id fetch after auction ends with syncDelay', function() {
       config.setConfig({
-        usersync: {
+        userSync: {
           syncDelay: 77,
           userIds: [{
             name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
@@ -543,7 +543,7 @@ describe('User ID', function() {
 
     it('does not delay user id sync after auction ends if set to 0', function() {
       config.setConfig({
-        usersync: {
+        userSync: {
           syncDelay: 0,
           userIds: [{
             name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
@@ -574,7 +574,7 @@ describe('User ID', function() {
       utils.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
 
       config.setConfig({
-        usersync: {
+        userSync: {
           auctionDelay: 33,
           syncDelay: 77,
           userIds: [{
@@ -986,7 +986,7 @@ describe('User ID', function() {
       init(config);
 
       config.setConfig({
-        usersync: {
+        userSync: {
           syncDelay: 0,
           userIds: [{
             name: 'pubCommonId', storage: { name: 'pubcid', type: 'cookie' }
