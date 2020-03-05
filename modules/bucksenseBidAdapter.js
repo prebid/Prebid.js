@@ -4,7 +4,7 @@ import * as utils from '../src/utils.js';
 
 const WHO = 'BKSHBID-005';
 const BIDDER_CODE = 'bucksense';
-const URL = 'https://prebid.bksn.se:445/prebidjs/';
+const URL = 'https://prebid.bksn.se/prebidjs/';
 
 export const spec = {
   code: BIDDER_CODE,
