@@ -221,11 +221,15 @@ describe('EvolutionTechMediaBidAdapter', function () {
   describe('getUserSyncs', function () {
     let userSync = spec.getUserSyncs();
     it('Returns valid URL and type', function () {
-      expect(userSync).to.be.an('array').with.lengthOf(1);
-      expect(userSync[0].type).to.exist;
-      expect(userSync[0].url).to.exist;
-      expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('https://service.e-volution.ai/?c=o&m=sync');
+      if(spec.noSync){
+        expect(userSync).to.be.equal(false);
+      } else {
+        expect(userSync).to.be.an('array').with.lengthOf(1);
+        expect(userSync[0].type).to.exist;
+        expect(userSync[0].url).to.exist;
+        expect(userSync[0].type).to.be.equal('image');
+        expect(userSync[0].url).to.be.equal('https://service.e-volution.ai/?c=o&m=sync');
+      }
     });
   });
 });
