@@ -1015,6 +1015,24 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 }
 
 /**
+ * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ */
+export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+  let matchingSlot;
+  if (isGptPubadsDefined()) {
+    // find the first matching gpt slot on the page
+    matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
+  }
+  if (matchingSlot) {
+    return {
+      gptSlot: matchingSlot.getAdUnitPath(),
+      divId: matchingSlot.getSlotElementId()
+    }
+  }
+  return {};
+};
+
+/**
  * Constructs warning message for when unsupported bidders are dropped from an adunit
  * @param {Object} adUnit ad unit from which the bidder is being dropped
  * @param {string} bidder bidder code that is not compatible with the adUnit

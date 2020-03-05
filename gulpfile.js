@@ -238,8 +238,8 @@ function test(done) {
       ];
     }
 
-    //run mock-server
-    const mockServer = spawn('node', ['./test/mock-server/index.js', '--port='+mockServerPort]);
+    // run mock-server
+    const mockServer = spawn('node', ['./test/mock-server/index.js', '--port=' + mockServerPort]);
     mockServer.stdout.on('data', (data) => {
       console.log(`stdout: ${data}`);
     });
@@ -249,13 +249,13 @@ function test(done) {
 
     execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
       .then(stdout => {
-        //kill mock server
+        // kill mock server
         mockServer.kill('SIGINT');
         done();
         process.exit(0);
       })
       .catch(err => {
-        //kill mock server
+        // kill mock server
         mockServer.kill('SIGINT');
         done(new Error(`Tests failed with error: ${err}`));
         process.exit(1);
@@ -326,10 +326,10 @@ function setupE2e(done) {
   done();
 }
 
-gulp.task('updatepath', function(){
+gulp.task('updatepath', function() {
   return gulp.src(['build/dist/*.js'])
-  .pipe(replace('ib.adnxs.com/ut/v3/prebid', host + ':' + mockServerPort + '/'))
-  .pipe(gulp.dest('build/dist'));
+    .pipe(replace('ib.adnxs.com/ut/v3/prebid', host + ':' + mockServerPort + '/'))
+    .pipe(gulp.dest('build/dist'));
 });
 
 // support tasks
