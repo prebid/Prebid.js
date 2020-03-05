@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/nobidBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as bidderFactory from 'src/adapters/bidderFactory.js';
 
 describe('Nobid Adapter', function () {
   const adapter = newBidder(spec);
@@ -294,6 +295,7 @@ describe('Nobid Adapter', function () {
         bidId: '30b31c1838de1e',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
+        coppa: true,
         schain: {
 		    validation: 'strict',
 		    config: {
@@ -323,6 +325,10 @@ describe('Nobid Adapter', function () {
       expect(payload.schain.config.nodes[0].sid).to.exist.and.to.equal('00001');
       expect(payload.schain.config.nodes[0].name).to.exist.and.to.equal('name.com');
       expect(payload.schain.config.nodes[0].hp).to.exist.and.to.equal(1);
+      expect(payload.coppa).to.exist;
+      expect(payload.coppa).to.exist.and.to.be.true;
+      expect(payload.a).to.be.lengthOf(1);
+      expect(request.method).to.equal('POST');
     });
   });
 
@@ -402,6 +408,13 @@ describe('Nobid Adapter', function () {
     it('should get correct user sync when !iframeEnabled', function () {
       let pixel = spec.getUserSyncs({iframeEnabled: false})
       expect(pixel.length).to.equal(0);
+    });
+
+    it('should get correct user sync when !iframeEnabled and pixelEnabled', function () {
+      let pixel = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{body: {syncs: ['sync_url']}}])
+      expect(pixel.length).to.equal(1);
+      expect(pixel[0].type).to.equal('image');
+      expect(pixel[0].url).to.equal('sync_url');
     });
 
     it('should get correct user sync when !iframeEnabled', function () {

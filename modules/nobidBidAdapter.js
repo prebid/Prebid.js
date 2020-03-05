@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'nobid';
@@ -58,11 +59,20 @@ function nobidBuildRequests(bids, bidderRequest) {
       return uspConsent;
     }
     var schain = function(bids) {
-      if (bids && bids.length>0) {
+      if (bids && bids.length > 0) {
         return bids[0].schain
       }
       return null;
-	}
+    }
+    var coppa = function() {
+      if (config.getConfig('coppa') === true) {
+        return {'coppa': true};
+      }
+      if (bids && bids.length > 0) {
+        return bids[0].coppa
+      }
+      return null;
+    }
     var topLocation = function(bidderRequest) {
       var ret = '';
       if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -105,7 +115,10 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['ref'] = document.referrer;
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
-    state['schain'] = schain(bids);
+    const sch = schain(bids);
+    if (sch) state['schain'] = sch;
+    const cop = coppa();
+    if (cop) state['coppa'] = cop;
     return state;
   }
   function newAdunit(adunitObject, adunits) {
