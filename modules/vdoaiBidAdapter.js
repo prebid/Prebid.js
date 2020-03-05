@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER} from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'vdo.ai';
 const ENDPOINT_URL = 'https://prebid.vdo.ai/auction';
