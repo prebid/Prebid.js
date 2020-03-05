@@ -99,12 +99,12 @@ export const spec = {
 
   getUserSyncs: (syncOptions, serverResponses) => {
     if (NO_SYNC) {
-        return false
+      return false
     } else {
-        return [{
-            type: 'image',
-            url: URL_SYNC
-        }];
+      return [{
+        type: 'image',
+        url: URL_SYNC
+      }];
     }
   }
 
