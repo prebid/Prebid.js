@@ -1,7 +1,7 @@
 // see http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import adapter from '../src/AnalyticsAdapter.js';
+import CONSTANTS from '../src/constants.json';
+import adaptermanager from '../src/adaptermanager.js';
 
 const analyticsType = 'endpoint';
 // const url = 'URL_TO_SERVER_ENDPOINT';
