@@ -240,7 +240,7 @@ function normalizeRulesForAuction(floorData, adUnitCode) {
   let delimiter = floorData.schema.delimiter
 
   // if we are building the floor data form an ad unit, we need to append adUnit code as to not cause collisions
-  let prependAdUnitCode = adUnitCode && !fields.includes('adUnitCode') && fields.unshift('adUnitCode');
+  let prependAdUnitCode = adUnitCode && fields.indexOf('adUnitCode') === -1 && fields.unshift('adUnitCode');
   return Object.keys(floorData.values).reduce((rulesHash, oldKey) => {
     let newKey = prependAdUnitCode ? `${adUnitCode}${delimiter}${oldKey}` : oldKey
     // we store the rule keys as lower case for case insensitive compare
@@ -336,7 +336,7 @@ export function continueAuction(hookConfig) {
 }
 
 function validateSchemaFields(fields) {
-  if (Array.isArray(fields) && fields.length > 0 && fields.every(field => allowedFields.includes(field))) {
+  if (Array.isArray(fields) && fields.length > 0 && fields.every(field => allowedFields.indexOf(field) !== -1)) {
     return true;
   }
   utils.logError(`${MODULE_NAME}: Fields recieved do not match allowed fields`);
