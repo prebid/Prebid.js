@@ -217,7 +217,6 @@ function site(bidRequests, bidderRequest) {
   const siteId = bidRequests && bidRequests.length > 0 ? bidRequests[0].params.siteId : '0';
   const appParams = bidRequests[0].params.app;
   if (!appParams) {
-
     return {
       publisher: {
         id: pubId.toString(),
@@ -313,22 +312,19 @@ function nativeResponse(imp, bid) {
 }
 
 function getDomainFromUrl(url) {
-    if (typeof window.URL === 'function') {
-        return (new window.URL(url)).hostname;
+  if (typeof window.URL === 'function') {
+    return (new window.URL(url)).hostname;
+  } else {
+    var domain = url;
+    if (url.indexOf('//') > -1) {
+      domain = url.split('/')[2];
     } else {
-        var domain = url;
-
-        if (url.indexOf('//') > -1) {
-            domain = url.split('/')[2];
-        } else {
-            domain = url.split('/')[0];
-        }
-
-        domain = domain.split(':')[0];
-        domain = domain.split('?')[0];
-
-        return domain;
+      domain = url.split('/')[0];
     }
+    domain = domain.split(':')[0];
+    domain = domain.split('?')[0];
+    return domain;
+  }
 }
 
 registerBidder(spec);
