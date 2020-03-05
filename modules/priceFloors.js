@@ -84,7 +84,7 @@ export let fieldMatchingFunctions = {
 function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
   // generate combination of all exact matches and catch all for each field type
   return floorFields.reduce((accum, field) => {
-    let exactMatch = fieldMatchingFunctions[field](bidObject, responseObject);
+    let exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
     // storing exact matches as lowerCase since we want to compare case insensitively
     accum.push(exactMatch === '*' ? ['*'] : [exactMatch.toLowerCase(), '*']);
     return accum;
@@ -503,7 +503,7 @@ export function handleSetFloorsConfig(config) {
     'enabled', enabled => enabled !== false, // defaults to true
     'auctionDelay', auctionDelay => auctionDelay || 0,
     'endpoint', endpoint => endpoint || {},
-    'enforcement', enforcement => utils.pick(enforcement, [
+    'enforcement', enforcement => utils.pick(enforcement || {}, [
       'enforceJS', enforceJS => enforceJS !== false, // defaults to true
       'enforcePBS', enforcePBS => enforcePBS === true, // defaults to false
       'floorDeals', floorDeals => floorDeals === true, // defaults to false
