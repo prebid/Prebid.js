@@ -3,8 +3,8 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'e_volution';
-const AD_URL = 'https://ssp.e-volution.ai/?c=o&m=multi';
-const URL_SYNC = 'https://ssp.e-volution.ai/?c=o&m=sync';
+const AD_URL = 'https://http://service.e-volution.ai//?c=o&m=multi';
+const URL_SYNC = 'https://http://service.e-volution.ai//?c=o&m=sync';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||

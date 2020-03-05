@@ -33,7 +33,7 @@ describe('EvolutionTechMediaBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://ssp.e-volution.ai/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://service.e-volution.ai/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -225,7 +225,7 @@ describe('EvolutionTechMediaBidAdapter', function () {
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
       expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('https://ssp.e-volution.ai/?c=o&m=sync');
+      expect(userSync[0].url).to.be.equal('https://service.e-volution.ai/?c=o&m=sync');
     });
   });
 });
