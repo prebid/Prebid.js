@@ -41,5 +41,12 @@ function addAudigentSegments() {
 }
 ```
 
+To view an example of the segments returned by Audigent's backends:
+
+`gulp serve --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,rubiconBidAdapter`
+
+and then point your browser at:
+
+`http://localhost:9999/integrationExamples/gpt/audigentSegments_example.html`
 
 
