@@ -103,8 +103,8 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, responses, consentData) {
-    let { gdprApplies = '', consentString = '' } = consentData || {};
+  getUserSyncs: function(syncOptions, responses, consentData = {}) {
+    let { gdprApplies, consentString = '' } = consentData;
 
     if (syncOptions.pixelEnabled) {
       return [{
