@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import includes from 'core-js/library/fn/array/includes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -217,6 +217,7 @@ function site(bidRequests, bidderRequest) {
   const siteId = bidRequests && bidRequests.length > 0 ? bidRequests[0].params.siteId : '0';
   const appParams = bidRequests[0].params.app;
   if (!appParams) {
+
     return {
       publisher: {
         id: pubId.toString(),
@@ -312,22 +313,22 @@ function nativeResponse(imp, bid) {
 }
 
 function getDomainFromUrl(url) {
-  if (typeof window.URL === 'function') {
-    return (new window.URL(url)).hostname;
-  } else {
-    var domain = url;
-
-    if (url.indexOf('//') > -1) {
-      domain = url.split('/')[2];
+    if (typeof window.URL === 'function') {
+        return (new window.URL(url)).hostname;
     } else {
-      domain = url.split('/')[0];
+        var domain = url;
+
+        if (url.indexOf('//') > -1) {
+            domain = url.split('/')[2];
+        } else {
+            domain = url.split('/')[0];
+        }
+
+        domain = domain.split(':')[0];
+        domain = domain.split('?')[0];
+
+        return domain;
     }
-
-    domain = domain.split(':')[0];
-    domain = domain.split('?')[0];
-
-    return domain;
-  }
 }
 
 registerBidder(spec);
