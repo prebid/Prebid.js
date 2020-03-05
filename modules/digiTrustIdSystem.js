@@ -207,9 +207,9 @@ var gdprConsent = {
     var consentAnswer = false;
     if (typeof (window.__cmp) !== 'undefined') {
       stopTimer = setTimeout(function () {
-        consentAnswer = true;
-        consentCb(consentAnswer);
+        consentAnswer = false;
         processed = true;
+        consentCb(consentAnswer);
       }, options.consentTimeout);
 
       window.__cmp('ping', null, function(pingAnswer) {
@@ -227,9 +227,12 @@ var gdprConsent = {
           consentCb(consentAnswer);
         }
       });
+    } else {
+      // __cmp library is not preset.
+      // ignore this check and rely on id system GDPR consent management
+      consentAnswer = true;
+      consentCb(consentAnswer);
     }
-    consentAnswer = true;
-    consentCb(consentAnswer);
   }
 }
 
