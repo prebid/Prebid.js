@@ -104,19 +104,22 @@ const interpretResponse = (serverResponse, request) => {
   utils.logInfo('[UNICORN] interpretResponse.serverResponse:', serverResponse);
   utils.logInfo('[UNICORN] interpretResponse.request:', request);
   const res = serverResponse.body;
-  const bids = res.seatbid.flatMap(sb =>
-    sb.bid.flatMap(b => ({
-      requestId: b.impid,
-      cpm: b.price || 0,
-      width: b.w,
-      height: b.h,
-      ad: b.adm,
-      ttl: 1000,
-      creativeId: b.crid,
-      netRevenue: false,
-      currency: res.cur
-    }))
-  );
+  var bids = []
+  res.seatbid.forEach(sb => {
+    sb.bid.forEach(b => {
+      bids.push({
+        requestId: b.impid,
+        cpm: b.price || 0,
+        width: b.w,
+        height: b.h,
+        ad: b.adm,
+        ttl: 1000,
+        creativeId: b.crid,
+        netRevenue: false,
+        currency: res.cur
+      })
+    })
+  });
   utils.logInfo('[UNICORN] interpretResponse bids:', bids);
   return bids;
 };
