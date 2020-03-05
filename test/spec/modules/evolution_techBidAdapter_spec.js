@@ -221,7 +221,7 @@ describe('EvolutionTechMediaBidAdapter', function () {
   describe('getUserSyncs', function () {
     let userSync = spec.getUserSyncs();
     it('Returns valid URL and type', function () {
-      if(spec.noSync){
+      if (spec.noSync) {
         expect(userSync).to.be.equal(false);
       } else {
         expect(userSync).to.be.an('array').with.lengthOf(1);

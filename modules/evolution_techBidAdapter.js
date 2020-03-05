@@ -5,6 +5,7 @@ import * as utils from '../src/utils.js';
 const BIDDER_CODE = 'e_volution';
 const AD_URL = 'https://service.e-volution.ai/?c=o&m=multi';
 const URL_SYNC = 'https://service.e-volution.ai/?c=o&m=sync';
+const NO_SYNC = true;
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -26,7 +27,7 @@ function isBidResponseValid(bid) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  noSync: true,
+  noSync: NO_SYNC,
 
   isBidRequestValid: (bid) => {
     return Boolean(bid.bidId && bid.params && !isNaN(bid.params.placementId));
@@ -97,7 +98,7 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses) => {
-    if(noSync){
+    if (NO_SYNC) {
         return false
     } else {
         return [{
