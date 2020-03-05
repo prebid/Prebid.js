@@ -160,7 +160,7 @@ export function calculateAdjustedFloor(oldFloor, newFloor) {
 const getMediaTypesSizes = {
   banner: (bid) => utils.deepAccess(bid, 'mediaTypes.banner.sizes') || [],
   video: (bid) => utils.deepAccess(bid, 'mediaTypes.video.playerSize') || [],
-  native: (bid) => [utils.deepAccess(bid, 'mediaTypes.native.image.sizes')] || [],
+  native: (bid) => utils.deepAccess(bid, 'mediaTypes.native.image.sizes') ? [utils.deepAccess(bid, 'mediaTypes.native.image.sizes')] : []
 }
 
 /**
