@@ -41,9 +41,9 @@ function template(strings, ...keys) {
  *
  * @param {BidRequest} bid The bid params to use for formatting a request
  */
-function formatBidRequest(bid, bidderRequest) {
+function formatBidRequest(bid, bidderRequest = {}) {
   const {params} = bid;
-  const {refererInfo: {referer}} = bidderRequest;
+  const {referer} = (bidderRequest.refererInfo || {});
   let url = urlTemplate({
     adapter: 'prebid',
     slot: params.slot,
@@ -59,7 +59,7 @@ function formatBidRequest(bid, bidderRequest) {
     hbver: ADAPTER_VERSION
   });
 
-  if (bidderRequest && bidderRequest.gdprConsent) {
+  if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
       const gdpr = '&__gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0');
       url += gdpr;
@@ -70,7 +70,7 @@ function formatBidRequest(bid, bidderRequest) {
   }
 
   // ccpa support
-  if (bidderRequest && bidderRequest.uspConsent) {
+  if (bidderRequest.uspConsent) {
     url += `&__us_privacy=${bidderRequest.uspConsent}`
   }
 
@@ -82,6 +82,7 @@ function formatBidRequest(bid, bidderRequest) {
 }
 
 function isResponseValid(response) {
+  console.log(response)
   return !/^\s*\{\s*"advertisementAvailable"\s*:\s*false/i.test(response.content) &&
     response.content.indexOf('<VAST version="2.0"></VAST>') === -1 && (typeof response.cpm !== 'undefined') &&
     response.status === 1;
@@ -92,15 +93,15 @@ export const spec = {
   aliases: ['lsm'],
   supportedMediaTypes: [BANNER, VIDEO],
 
-  isBidRequestValid: bid => {
-    return !!(bid.params.slot && bid.params.adkey && bid.params.ad_size);
+  isBidRequestValid: (bid = {}) => {
+    const {params = {}} = bid
+    return !!(params.slot && params.adkey && params.ad_size);
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    const res = validBidRequests.map(bid => {
+    return validBidRequests.map(bid => {
       return formatBidRequest(bid, bidderRequest)
     });
-    return res;
   },
   interpretResponse: (serverResponse, bidRequest) => {
     const bidResponses = [];

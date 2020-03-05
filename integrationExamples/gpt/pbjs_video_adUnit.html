@@ -4,12 +4,9 @@
   <meta charset="utf-8" />
   <title>Prebid.js video adUnit example</title>
 
-  <link rel="stylesheet" href="http://vjs.zencdn.net/5.9.2/video-js.css">
-  <script type="text/javascript" src="http://vjs.zencdn.net/5.9.2/video.js"></script>
-
-  <!-- videojs-vast-vpaid -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs.vast.vpaid.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
+  <link href="http://vjs.zencdn.net/4.7.1/video-js.css" rel="stylesheet">
+  <link href="https://raw.githubusercontent.com/theonion/videojs-vast-plugin/master/lib/videojs-contrib-ads/videojs.ads.css" rel="stylesheet" type="text/css">
+  <link href="https://raw.githubusercontent.com/theonion/videojs-vast-plugin/master/videojs.vast.css" rel="stylesheet" type="text/css">
 
   <style type="text/css">
     .description {
@@ -25,119 +22,88 @@
     }
   </style>
   <script src="/build/dev/prebid.js" async=true></script>
-    <script>
+  <script>
 
-        var pbjs = pbjs || {};
-        pbjs.que = pbjs.que || [];
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
 
-        /*
-         Prebid Video adUnit
-         */
+      /*
+      adUnits can support video demand requests by setting 'mediaType' to
+      'video'. When an adUnit is configured to support video, all bidders
+      within that adUnit must be video-enabled as well, as configured in
+      adapters.json.
+      */
+      var videoAdUnit = {
+          code: 'video1',
+          sizes: [640,480],
+          mediaTypes: { video: {} },
+          bids: [
+              {
+                  bidder: 'appnexusAst',
+                  params: {
+                      placementId: '123456',
+                      video: {
+                          id: 123,
+                          skipppable: true,
+                          playback_method: ['auto_play_sound_off']
+                      }
+                  }
+              }
+          ]
+      };
 
-        var videoAdUnit = {
-            code: 'video1',
-            sizes: [640,480],
-            mediaTypes: {
-                video: {context: 'instream',  playerSize: [640, 480]}
-            },
-            bids: [
-                {
-                    bidder: 'appnexus',
-                    params: {
-                        placementId: '9333431',
-                        video: {
-                            skipppable: false,
-                            playback_methods: ['auto_play_sound_off']
-                        }
-                    }
-                }
-            ]
-        };
+      pbjs.que.push(function(){
+          pbjs.addAdUnits(videoAdUnit);
+          pbjs.requestBids({
+              timeout : 3000,
+              bidsBackHandler : function(bids) {
+                  var adserverTag = '<dfp_tag>'; // base ad server tag, see: https://support.google.com/dfp_premium/answer/1068325
+                  var options = {
+                      'adserver': 'dfp',
+                      'code': 'video1' //code that matches the video adUnit declared above
+                  };
+                  //generate URL
+                  var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+                  //send masterTagUrl to the video player
+                  invokeVideoPlayer(masterTagUrl);
 
-        pbjs.que.push(function(){
-            pbjs.addAdUnits(videoAdUnit);
-            pbjs.requestBids({
-                timeout : 700,
-                bidsBackHandler : function(bids) {
-                        console.log(bids)
-                        var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
-                        adUnit: videoAdUnit,
-                        params: {
-                            iu: '/19968336/prebid_cache_video_adunit'
-                        }
-                    });
+              }
+          });
+      });
 
-                    invokeVideoPlayer(videoUrl);
-                }
-            });
-        });
 
-        pbjs.bidderSettings =
-            {
-                standard: {
-                    adserverTargeting: [
-                        {
-                            key: "hb_bidder",
-                            val: function (bidResponse) {
-                                return bidResponse.bidderCode;
-                            }
-                        }, {
-                            key: "hb_adid",
-                            val: function (bidResponse) {
-                                return bidResponse.adId;
-                            }
-                        }, {
-                            key: "hb_pb",
-                            val: function (bidResponse) {
-                                return "10.00";
-                            }
-                        }, {
-                            key: "hb_size",
-                            val: function (bidResponse) {
-                                return bidResponse.size;
-
-                            }
-                        }
-                    ]
-                }
-            };
-    </script>
+  </script>
 </head>
 <body>
 
-  <div class="example-video-container">
-    <video id="vid1" class="video-js vjs-default-skin" autoplay controls preload="auto"
-        poster="http://video-js.zencoder.com/oceans-clip.png"
-        data-setup='{}'
-        width='640'
-        height='480'
-        >
-      <source src="http://vjs.zencdn.net/v/oceans.mp4" type='video/mp4'>
+<div class="example-video-container">
+  <video id="vid1" class="video-js vjs-default-skin" autoplay controls preload="auto"
+         poster="http://video-js.zencoder.com/oceans-clip.png"
+         data-setup='{}'
+         width='640'
+         height='480'
+  >
+    <source src="http://vjs.zencdn.net/v/oceans.mp4" type='video/mp4'>
 
-      <p>Video Playback Not Supported</p>
-    </video>
-  </div>
+    <p>Video Playback Not Supported</p>
+  </video>
+</div>
 
-  <script>
+<script>
+
+    var vid1 = videojs('vid1');
+    vid1.muted(true);
+    vid1.ads();
+
     /*
     This function called after prebid is back
      */
     function invokeVideoPlayer(url) {
-        videojs("vid1").ready(function() {
-            this.vastClient({
-                adTagUrl: url,
-                playAdAlways: true,
-                verbosity: 4,
-                vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
-                autoplay: true
-            });
-
-            this.muted(true);
-            this.play();
+        vid1.vast({
+            url: url
         });
-
     }
-  </script>
+</script>
 
 </body>
 </html>
