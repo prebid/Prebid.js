@@ -61,7 +61,7 @@ function roundUp(number, precision) {
 
 let referrerHostname;
 function getHostNameFromReferer(referer) {
-  referrerHostname = urlParse(referer).hostname;
+  referrerHostname = urlParse(referer, {noDecodeWholeURL: true}).hostname;
   return referrerHostname;
 }
 
