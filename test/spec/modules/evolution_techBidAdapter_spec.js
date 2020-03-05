@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/evolution_techBidAdapter.js';
 
-describe('EvolutionTechMediaBidAdapter', function () {
+describe('EvolutionTechBidAdapter', function () {
   let bid = {
     bidId: '23fhj33i987f',
     bidder: 'e_volution',
