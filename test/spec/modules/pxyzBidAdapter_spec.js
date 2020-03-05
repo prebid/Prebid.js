@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/playgroundxyzBidAdapter.js';
+import { spec } from 'modules/pxyzBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from 'src/utils.js';
 
@@ -12,7 +12,7 @@ const BIDDER_REQUEST = {
   }
 };
 
-describe('playgroundxyzBidAdapter', function () {
+describe('pxyzBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -23,7 +23,7 @@ describe('playgroundxyzBidAdapter', function () {
 
   describe('isBidRequestValid', function () {
     let bid = {
-      'bidder': 'playgroundxyz',
+      'bidder': 'pxyz',
       'params': {
         'placementId': '10433394'
       },
@@ -51,7 +51,7 @@ describe('playgroundxyzBidAdapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [
       {
-        'bidder': 'playgroundxyz',
+        'bidder': 'pxyz',
         'params': {
           'placementId': '10433394'
         },
@@ -176,7 +176,7 @@ describe('playgroundxyzBidAdapter', function () {
     };
 
     let bidderRequest = {
-      'bidderCode': 'playgroundxyz'
+      'bidderCode': 'pxyz'
     };
 
     it('should get correct bid response', function () {
