@@ -430,9 +430,9 @@ describe('unicornBidAdapterTest', () => {
         delete data['site']['id'];
         delete data['site']['page'];
         delete data['id'];
-        for (var imp of data['imp']) {
+        data['imp'].forEach(imp => {
           delete imp['id'];
-        }
+        })
         delete data['user']['id'];
         return data;
       };
