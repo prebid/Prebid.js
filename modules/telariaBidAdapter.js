@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import {createBid as createBidFactory} from '../src/bidfactory';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {VIDEO} from '../src/mediaTypes';
-import {STATUS} from '../src/constants';
+import * as utils from '../src/utils.js';
+import {createBid as createBidFactory} from '../src/bidfactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {VIDEO} from '../src/mediaTypes.js';
+import {STATUS} from '../src/constants.json';
 
 const BIDDER_CODE = 'telaria';
 const DOMAIN = 'tremorhub.com';
@@ -119,12 +119,8 @@ export const spec = {
   }
 };
 
-function getScheme() {
-  return ((document.location.protocol === 'https:') ? 'https' : 'http') + '://';
-}
-
-function getSrcPageUrl(params) {
-  return (params && params['srcPageUrl']) || encodeURIComponent(document.location.href);
+function getDefaultSrcPageUrl() {
+  return encodeURIComponent(document.location.href);
 }
 
 function getEncodedValIfNotEmpty(val) {
@@ -177,9 +173,12 @@ export const getTimeoutUrl = function(timeoutData) {
   let params = utils.deepAccess(timeoutData, '0.params.0');
 
   if (!utils.isEmpty(params)) {
-    let url = `${getScheme()}${EVENTS_ENDPOINT}`;
+    let url = `https://${EVENTS_ENDPOINT}`;
 
-    url += `?srcPageUrl=${getSrcPageUrl(params)}`;
+    params = Object.assign({
+      srcPageUrl: getDefaultSrcPageUrl()
+    }, params);
+
     url += `${getUrlParams(params)}`;
 
     url += '&hb=1&evt=TO';
@@ -216,7 +215,7 @@ function generateUrl(bid, bidderRequest) {
   let adCode = utils.deepAccess(bid, 'params.adCode');
 
   if (supplyCode && adCode) {
-    let url = `${getScheme()}${supplyCode}.${TAG_ENDPOINT}?adCode=${adCode}`;
+    let url = `https://${supplyCode}.${TAG_ENDPOINT}?adCode=${adCode}`;
 
     if (width) {
       url += (`&playerWidth=${width}`);
@@ -225,9 +224,12 @@ function generateUrl(bid, bidderRequest) {
       url += (`&playerHeight=${height}`);
     }
 
-    url += `${getUrlParams(bid.params, bid.schain)}`;
+    const params = Object.assign({
+      srcPageUrl: getDefaultSrcPageUrl()
+    }, bid.params);
+    delete params.adCode;
 
-    url += `&srcPageUrl=${getSrcPageUrl(bid.params)}`;
+    url += `${getUrlParams(params, bid.schain)}`;
 
     url += (`&transactionId=${bid.transactionId}`);
 

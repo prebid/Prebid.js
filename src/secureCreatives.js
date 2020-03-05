@@ -3,18 +3,18 @@
    access to a publisher page from creative payloads.
  */
 
-import events from './events';
-import { fireNativeTrackers, getAssetMessage } from './native';
-import { EVENTS } from './constants';
-import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils';
-import { auctionManager } from './auctionManager';
-import find from 'core-js/library/fn/array/find';
-import { isRendererRequired, executeRenderer } from './Renderer';
+import events from './events.js';
+import { fireNativeTrackers, getAssetMessage } from './native.js';
+import { EVENTS } from './constants.json';
+import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils.js';
+import { auctionManager } from './auctionManager.js';
+import find from 'core-js/library/fn/array/find.js';
+import { isRendererRequired, executeRenderer } from './Renderer.js';
 
 const BID_WON = EVENTS.BID_WON;
 
 export function listenMessagesFromCreative() {
-  addEventListener('message', receiveMessage, false);
+  window.addEventListener('message', receiveMessage, false);
 }
 
 function receiveMessage(ev) {

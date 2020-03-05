@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'bidfluence';
 
 function stdTimezoneOffset(t) {
@@ -81,7 +81,7 @@ export const spec = {
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
-      url: `//bdf${payload.bids[0].pid}.bidfluence.com/Prebid`,
+      url: `https://bdf${payload.bids[0].pid}.bidfluence.com/Prebid`,
       data: payloadString,
       options: { contentType: 'text/plain' }
     };

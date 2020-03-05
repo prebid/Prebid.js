@@ -1,13 +1,13 @@
-import { ajax } from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import { ajax } from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as url from '../src/url';
-import * as utils from '../src/utils';
+import * as url from '../src/url.js';
+import * as utils from '../src/utils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const yuktamediaAnalyticsVersion = 'v1.0.0';
+const yuktamediaAnalyticsVersion = 'v2.0.0';
 
 let initOptions;
 let auctionTimestamp;
@@ -55,7 +55,7 @@ function mapBidRequests(params) {
         requestId: bid.bidderRequestId,
         auctionId: bid.auctionId,
         transactionId: bid.transactionId,
-        sizes: utils.parseSizesInput(bid.sizes).toString(),
+        sizes: utils.parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
         renderStatus: 1,
         requestTimestamp: params.auctionStart
       });
@@ -109,15 +109,14 @@ function mapBidResponse(bidResponse, status) {
 }
 
 function send(data, status) {
-  let location = utils.getTopWindowLocation();
-  let secure = location.protocol == 'https:';
+  let location = utils.getWindowLocation();
   if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-    data.auctionInit = Object.assign({ host: location.host, path: location.pathname, hash: location.hash, search: location.search }, data.auctionInit);
+    data.auctionInit = Object.assign({ host: location.host, path: location.pathname, search: location.search }, data.auctionInit);
   }
   data.initOptions = initOptions;
 
   let yuktamediaAnalyticsRequestUrl = url.format({
-    protocol: secure ? 'https' : 'http',
+    protocol: 'https',
     hostname: 'analytics-prebid.yuktamedia.com',
     pathname: status == 'auctionEnd' ? '/api/bids' : '/api/bid/won',
     search: {
@@ -127,7 +126,7 @@ function send(data, status) {
     }
   });
 
-  ajax(yuktamediaAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'application/json' });
+  ajax(yuktamediaAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/plain' });
 }
 
 yuktamediaAnalyticsAdapter.originEnableAnalytics = yuktamediaAnalyticsAdapter.enableAnalytics;

@@ -1,9 +1,9 @@
-import adapter from '../src/AnalyticsAdapter';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import { config } from '../src/config';
-import { ajax } from '../src/ajax';
-import * as utils from '../src/utils';
+import adapterManager from '../src/adapterManager.js';
+import { config } from '../src/config.js';
+import { ajax } from '../src/ajax.js';
+import * as utils from '../src/utils.js';
 
 const {
   EVENTS: { AUCTION_INIT, BID_REQUESTED, BID_RESPONSE, BID_TIMEOUT, BID_WON }
@@ -11,7 +11,7 @@ const {
 
 const SLOT_LOADED = 'slotOnload';
 
-const ENDPOINT = '//ads.openx.net/w/1.0/pban';
+const ENDPOINT = 'https://ads.openx.net/w/1.0/pban';
 
 let initOptions;
 

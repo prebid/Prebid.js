@@ -1,10 +1,10 @@
-import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp, deepAccess, deepClone, logError, logWarn, logInfo } from './utils';
-import { config } from './config';
-import { NATIVE_TARGETING_KEYS } from './native';
-import { auctionManager } from './auctionManager';
-import { sizeSupported } from './sizeMapping';
-import { ADPOD } from './mediaTypes';
-import includes from 'core-js/library/fn/array/includes';
+import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp, deepAccess, deepClone, logError, logWarn, logInfo } from './utils.js';
+import { config } from './config.js';
+import { NATIVE_TARGETING_KEYS } from './native.js';
+import { auctionManager } from './auctionManager.js';
+import { sizeSupported } from './sizeMapping.js';
+import { ADPOD } from './mediaTypes.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -21,8 +21,8 @@ export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
 // return unexpired bids
 const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
 
-// return bids whose status is not set. Winning bid can have status `targetingSet` or `rendered`.
-const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.BID_TARGETING_SET, CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
+// return bids whose status is not set. Winning bids can only have a status of `rendered`.
+const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
 
 export let filters = {
   isBidNotExpired,

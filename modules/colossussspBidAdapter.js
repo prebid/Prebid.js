@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
@@ -63,6 +63,12 @@ export const spec = {
       'placements': placements
     };
 
+    if (bidderRequest) {
+      if (bidderRequest.uspConsent) {
+        request.ccpa = bidderRequest.uspConsent;
+      }
+    }
+
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
       let traff = bid.params.traffic || BANNER
@@ -72,6 +78,9 @@ export const spec = {
         sizes: bid.mediaTypes[traff].sizes,
         traffic: traff
       };
+      if (bid.schain) {
+        placement.schain = bid.schain;
+      }
       placements.push(placement);
     }
     return {

@@ -1,15 +1,26 @@
 /*
  * Module for getting and setting Prebid configuration.
  */
-import { isValidPriceConfig } from './cpmBucketManager';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import Set from 'core-js/library/fn/set';
-import { parseQS } from './url';
 
-const from = require('core-js/library/fn/array/from');
-const utils = require('./utils');
-const CONSTANTS = require('./constants');
+/**
+ * @typedef {Object} MediaTypePriceGranularity
+ *
+ * @property {(string|Object)} [banner]
+ * @property {(string|Object)} [native]
+ * @property {(string|Object)} [video]
+ * @property {(string|Object)} [video-instream]
+ * @property {(string|Object)} [video-outstream]
+ */
+
+import { isValidPriceConfig } from './cpmBucketManager.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import Set from 'core-js/library/fn/set.js';
+import { parseQS } from './url.js';
+
+const from = require('core-js/library/fn/array/from.js');
+const utils = require('./utils.js');
+const CONSTANTS = require('./constants.json');
 
 const DEFAULT_DEBUG = (parseQS(window.location.search)[CONSTANTS.DEBUG_MODE] || '').toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
@@ -106,7 +117,12 @@ export function newConfig() {
         return this._customPriceBucket;
       },
 
+      /**
+       * mediaTypePriceGranularity
+       * @type {MediaTypePriceGranularity}
+       */
       _mediaTypePriceGranularity: {},
+
       get mediaTypePriceGranularity() {
         return this._mediaTypePriceGranularity;
       },
