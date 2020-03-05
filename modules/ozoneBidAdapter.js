@@ -10,6 +10,7 @@ const ALLOWED_LOTAME_PARAMS = ['oz_lotameid', 'oz_lotamepid', 'oz_lotametpid'];
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
+
 const OZONEVERSION = '2.3.0';
 
 export const spec = {
@@ -78,11 +79,13 @@ export const spec = {
       }
     }
     if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
-      if (!bid.mediaTypes.video.hasOwnProperty('context')) {
+      if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
         utils.logError('OZONE: No context key/value in bid. Rejecting bid: ', bid);
         return false;
       }
-      if (bid.mediaTypes.video.context !== 'outstream') {
+      if (bid.mediaTypes[VIDEO].context === 'instream') {
+        utils.logWarn('OZONE: video.context instream is not supported. Only outstream video is supported. Video will not be used for Bid: ', bid);
+      } else if (bid.mediaTypes.video.context !== 'outstream') {
         utils.logError('OZONE: video.context is invalid. Only outstream video is supported. Rejecting bid: ', bid);
         return false;
       }
@@ -175,7 +178,7 @@ export const spec = {
           arrBannerSizes = ozoneBidRequest.mediaTypes[BANNER].sizes; /* Note - if there is a sizes element in the config root it will be pushed into here */
           utils.logInfo('OZONE: setting banner size from the mediaTypes.banner element for bidId ' + obj.id + ': ', arrBannerSizes);
         }
-        if (ozoneBidRequest.mediaTypes.hasOwnProperty(VIDEO)) {
+        if (ozoneBidRequest.mediaTypes.hasOwnProperty(VIDEO) && ozoneBidRequest.mediaTypes[VIDEO].context === 'outstream') {
           obj.video = ozoneBidRequest.mediaTypes[VIDEO];
           // we need to duplicate some of the video values
           let wh = getWidthAndHeightFromVideoObject(obj.video);
@@ -636,13 +639,13 @@ export const spec = {
       utils.logError('OZONE: Will not validate GDPR on the client : oz_enforceGdpr is not set to true');
       return false;
     }
-    //
-    // FROM HERE ON : WE ARE DOING GDPR CHECKS
-    //
     // maybe the module was built without consentManagement module so we won't find any gdpr information
     if (!bidderRequest.hasOwnProperty('gdprConsent')) {
       return false;
     }
+    //
+    // FROM HERE ON : WE ARE DOING GDPR CHECKS
+    //
     // If there is indeterminate GDPR (gdprConsent.consentString == undefined or not a string), we will DITCH this:
     if (typeof bidderRequest.gdprConsent.consentString !== 'string') {
       utils.logError('OZONE: Will block the request - bidderRequest.gdprConsent.consentString is not a string');
@@ -660,10 +663,6 @@ export const spec = {
    * @return {boolean}
    */
   failsGdprCheck(bidderRequest) {
-    // maybe the module was built without consentManagement module
-    if (!bidderRequest.hasOwnProperty('gdprConsent')) {
-      return false;
-    }
     let consentRequired = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true;
     if (consentRequired) {
       let vendorConsentsObject = utils.deepAccess(bidderRequest.gdprConsent, 'vendorData');

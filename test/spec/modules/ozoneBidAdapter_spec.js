@@ -781,25 +781,6 @@ describe('ozone Adapter', function () {
       expect(spec.isBidRequestValid(xBadLotame)).to.equal(false);
     });
 
-    var xBadVideoContext = {
-      bidder: BIDDER_CODE,
-      params: {
-        'placementId': '1234567890',
-        'publisherId': '9876abcd12-3',
-        'lotameData': {},
-        siteId: '1234567890'
-      },
-      mediaTypes: {
-        video: {
-          mimes: ['video/mp4'],
-          'context': 'instream'},
-      }
-    };
-
-    it('should not validate video instream being sent', function () {
-      expect(spec.isBidRequestValid(xBadVideoContext)).to.equal(false);
-    });
-
     var xBadVideoContext2 = {
       bidder: BIDDER_CODE,
       params: {
@@ -834,6 +815,11 @@ describe('ozone Adapter', function () {
 
     it('should validate video outstream being sent', function () {
       expect(spec.isBidRequestValid(validVideoBidReq)).to.equal(true);
+    });
+    it('should validate video instream being sent even though its not properly supported yet', function () {
+      let instreamVid = JSON.parse(JSON.stringify(validVideoBidReq));
+      instreamVid.mediaTypes.video.context = 'instream';
+      expect(spec.isBidRequestValid(instreamVid)).to.equal(true);
     });
     // validate lotame override parameters
     it('should validate lotame override params', function () {
@@ -1426,7 +1412,7 @@ describe('ozone Adapter', function () {
       expect(result).to.be.false;
       config.resetConfig();
     });
-    it('should return false if gdprConsent does not exist', function() {
+    it('should return false if gdprConsent key does not exist', function() {
       let req = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
       config.setConfig({'ozone': {'oz_enforceGdpr': true}});
       delete req.gdprConsent;
