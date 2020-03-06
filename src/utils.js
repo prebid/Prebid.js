@@ -874,7 +874,10 @@ export function getCookie(name) {
  * @param {string} value
  * @param {string} [expires='']
  * @param {string} [sameSite='/']
- * @param {(string|undefined)} [domain='']
+ * @param {string} [domain] domain (e.g., 'example.com' or 'subdomain.example.com').
+ * If not specified, defaults to the host portion of the current document location.
+ * If a domain is specified, subdomains are always included.
+ * Domain must match the domain of the JavaScript origin. Setting cookies to foreign domains will be silently ignored.
  */
 export function setCookie(key, value, expires, sameSite, domain) {
   if (hasDeviceAccess()) {
