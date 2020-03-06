@@ -90,7 +90,7 @@ export const spec = {
         bidId: bid.bidId,
         sizes: bid.mediaTypes[traff].sizes,
         traffic: traff,
-        eids : []
+        eids: []
       };
       if (bid.schain) {
         placement.schain = bid.schain;
