@@ -40,8 +40,13 @@ const cache = {
 let referrerHostname;
 
 function getHostNameFromReferer(referer) {
-  referrerHostname = urlLib.parse(referer, {noDecodeWholeURL: true}).hostname;
-  return referrerHostname;
+  try {
+    referrerHostname = urlLib.parse(referer, {noDecodeWholeURL: true}).hostname;
+  } catch (e) {
+    utils.logError('Rubicon Analytics: Unable to parse hostname from supplied url: ', referer, e);
+    referrerHostname = '';
+  }
+  return referrerHostname
 };
 
 function stringProperties(obj) {
