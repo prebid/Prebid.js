@@ -74,7 +74,6 @@ export const spec = {
       'host': location.host,
       'page': location.pathname,
       'placements': placements,
-      'ortb_user_ext': {}
     };
 
     if (bidderRequest) {
