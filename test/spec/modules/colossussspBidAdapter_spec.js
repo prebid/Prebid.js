@@ -88,7 +88,7 @@ describe('ColossussspAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'bidId', 'traffic', 'sizes', 'schain');
+        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
