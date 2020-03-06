@@ -104,6 +104,7 @@ import {getGlobal} from '../../src/prebidGlobal.js';
 import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import {module} from '../../src/hook.js';
+import {createEidsArray} from './eids.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -267,11 +268,13 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
     return;
   }
   const combinedSubmoduleIds = getCombinedSubmoduleIds(submodules);
+  const combinedSubmoduleIdsAsEids = createEidsArray(combinedSubmoduleIds);
   if (Object.keys(combinedSubmoduleIds).length) {
     adUnits.forEach(adUnit => {
       adUnit.bids.forEach(bid => {
         // create a User ID object on the bid,
         bid.userId = combinedSubmoduleIds;
+        bid.userIdAsEids = combinedSubmoduleIdsAsEids;
       });
     });
   }

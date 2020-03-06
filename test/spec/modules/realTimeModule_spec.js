@@ -10,6 +10,10 @@ import {
   isIdMatchingAdUnit,
   setData
 } from 'modules/browsiRtdProvider.js';
+import {
+  init as audigentInit,
+  setData as setAudigentData
+} from 'modules/audigentRtdProvider.js';
 import {config} from 'src/config.js';
 import {makeSlot} from '../integration/faker/googletag.js';
 
@@ -27,8 +31,9 @@ describe('Real time module', function() {
           'pubKey': 'testPub',
           'keyName': 'bv'
         }
+      }, {
+        'name': 'audigent'
       }]
-
     }
   };
 
@@ -57,6 +62,10 @@ describe('Real time module', function() {
       }
     }
     };
+
+  const audigentSegments = {
+    audigent_segments: {'a': 1, 'b': 2}
+  }
 
   function getAdUnitMock(code = 'adUnit-code') {
     return {
@@ -188,5 +197,47 @@ describe('Real time module', function() {
       expect(test3).to.equal(false);
       expect(test4).to.equal(true);
     })
+  });
+
+  describe('Real time module with Audigent provider', function() {
+    afterEach(function () {
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+    });
+
+    let targeting = [];
+    init(config);
+    audigentInit(config);
+    config.setConfig(conf);
+    setAudigentData(audigentSegments);
+
+    it('check module using requestBidsHook', function () {
+      let adUnits1 = [getAdUnitMock('audigentAd_1')];
+      let targeting = [];
+      let dataReceived = null;
+
+      // set slot
+      const slotsB = createSlots();
+      window.googletag.pubads().setSlots(slotsB);
+
+      function afterBidHook(data) {
+        dataReceived = data;
+        slotsB.map(s => {
+          targeting = [];
+          s.getTargeting().map(value => {
+            targeting.push(Object.keys(value).toString());
+          });
+        });
+      }
+
+      requestBidsHook(afterBidHook, {adUnits: adUnits1});
+      setTimeout(() => {
+        dataReceived.adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid.realTimeData).to.have.property('audigent_segments');
+            expect(bid.realTimeData.audigent_segments).to.deep.equal(audigentSegments.audigent_segments);
+          });
+        });
+      }, 200);
+    });
   });
 });
