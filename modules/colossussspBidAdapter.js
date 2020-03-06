@@ -81,14 +81,6 @@ export const spec = {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
       }
-      if (bidRequest.userId) {
-        request.ortb_user_ext.eids = [];
-        getUserId(request.ortb_user_ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
-        getUserId(request.ortb_user_ext.eids, bidRequest.userId.idl_env, 'identityLink');
-        getUserId(request.ortb_user_ext.eids, bidRequest.userId.tdid, 'adserver.org', {
-          rtiPartner: 'TDID'
-        });
-      }
     }
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -98,10 +90,18 @@ export const spec = {
         placementId: bid.params.placement_id,
         bidId: bid.bidId,
         sizes: bid.mediaTypes[traff].sizes,
-        traffic: traff
+        traffic: traff,
+        eids : []
       };
       if (bid.schain) {
         placement.schain = bid.schain;
+      }
+      if (bid.userId) {
+        getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
+        getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
+        getUserId(placement.eids, bid.userId.tdid, 'adserver.org', {
+          rtiPartner: 'TDID'
+        });
       }
       placements.push(placement);
     }
