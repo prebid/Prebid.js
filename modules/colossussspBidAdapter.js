@@ -104,7 +104,6 @@ export const spec = {
       }
       placements.push(placement);
     }
-    console.log(JSON.stringify(request))
     return {
       method: 'POST',
       url: G_URL,
