@@ -4,6 +4,7 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
+import * as urlLib from '../src/url.js'
 
 const {
   EVENTS: {
@@ -34,6 +35,13 @@ const cache = {
   auctions: {},
   targeting: {},
   timeouts: {},
+};
+
+let referrerHostname;
+
+function getHostNameFromReferer(referer) {
+  referrerHostname = urlLib.parse(referer).hostname;
+  return referrerHostname;
 };
 
 function stringProperties(obj) {
@@ -115,7 +123,8 @@ function sendMessage(auctionId, bidWonId) {
     eventTimeMillis: Date.now(),
     integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
     version: '$prebid.version$',
-    referrerUri: referrer
+    referrerUri: referrer,
+    referrerHostname: referrerHostname || getHostNameFromReferer(referrer)
   };
   const wrapperName = config.getConfig('rubicon.wrapperName');
   if (wrapperName) {
