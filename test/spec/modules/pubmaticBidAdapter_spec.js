@@ -2605,24 +2605,30 @@ describe('PubMatic adapter', function () {
 
     describe('getUserSyncs', function() {
       const syncurl_iframe = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=5670';
+      const syncurl_image = 'https://image8.pubmatic.com/AdServer/ImgSync?p=5670';
       let sandbox;
       beforeEach(function () {
         sandbox = sinon.sandbox.create();
       });
       afterEach(function() {
         sandbox.restore();
-      })
+      });
 
-      it('execute only if iframeEnabled', function() {
+      it('execute as per config', function() {
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
           type: 'iframe', url: syncurl_iframe
         }]);
-        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.equal(undefined);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'image', url: syncurl_image
+        }]);
       });
 
       it('CCPA/USP', function() {
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&us_privacy=1NYN`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, '1NYN')).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&us_privacy=1NYN`
         }]);
       });
 
@@ -2636,6 +2642,16 @@ describe('PubMatic adapter', function () {
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=`
         }]);
+
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&gdpr=0&gdpr_consent=foo`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=`
+        }]);
       });
 
       it('COPPA: true', function() {
@@ -2647,6 +2663,9 @@ describe('PubMatic adapter', function () {
         });
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&coppa=1`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&coppa=1`
         }]);
       });
 
@@ -2660,6 +2679,9 @@ describe('PubMatic adapter', function () {
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}`
         }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}`
+        }]);
       });
 
       it('GDPR + COPPA:true + CCPA/USP', function() {
@@ -2671,6 +2693,9 @@ describe('PubMatic adapter', function () {
         });
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
         }]);
       });
     });
