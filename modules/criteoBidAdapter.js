@@ -54,7 +54,11 @@ export const spec = {
     let url;
     let data;
 
-    Object.assign(bidderRequest, { ceh: config.getConfig('criteo.ceh') });
+    Object.assign(bidderRequest, {
+      publisherExt: config.getConfig('fpd.context'),
+      userExt: config.getConfig('fpd.user'),
+      ceh: config.getConfig('criteo.ceh')
+    });
 
     // If publisher tag not already loaded try to get it from fast bid
     if (!publisherTagAvailable()) {
@@ -248,6 +252,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   const request = {
     publisher: {
       url: context.url,
+      ext: bidderRequest.publisherExt
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
@@ -259,6 +264,12 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       };
       if (bidRequest.params.zoneId) {
         slot.zoneid = bidRequest.params.zoneId;
+      }
+      if (bidRequest.fpd && bidRequest.fpd.context) {
+        slot.ext = bidRequest.fpd.context;
+      }
+      if (bidRequest.params.ext) {
+        slot.ext = Object.assign({}, slot.ext, bidRequest.params.ext);
       }
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
@@ -289,7 +300,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (networkId) {
     request.publisher.networkid = networkId;
   }
-  request.user = {};
+  request.user = {
+    ext: bidderRequest.userExt
+  };
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }
