@@ -1014,17 +1014,29 @@ describe('AppNexusAdapter', function () {
 
     it('should add deal_priority and deal_code', function() {
       let responseWithDeal = deepClone(response);
-      responseWithDeal.tags[0].ads[0].deal_priority = 'high';
+      responseWithDeal.tags[0].ads[0].ad_type = 'video';
+      responseWithDeal.tags[0].ads[0].deal_priority = 5;
       responseWithDeal.tags[0].ads[0].deal_code = '123';
+      responseWithDeal.tags[0].ads[0].rtb.video = {
+        duration_ms: 1500,
+        player_width: 640,
+        player_height: 340,
+      };
 
       let bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
-          adUnitCode: 'code'
+          adUnitCode: 'code',
+          mediaTypes: {
+            video: {
+              context: 'adpod'
+            }
+          }
         }]
       }
       let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
       expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
+      expect(result[0].video.dealTier).to.equal(5);
     });
 
     it('should add advertiser id', function() {
