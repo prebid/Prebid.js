@@ -47,12 +47,12 @@ export function newUserSync(userSyncDependencies) {
   let usConfig = userSyncDependencies.config;
   // Update if it's (re)set
   config.getConfig('userSync', (conf) => {
-    // if userSync.filterSettings only contains iframe, merge in default image config to ensure image pixels are fired
+    // Added this logic for https://github.com/prebid/Prebid.js/issues/4864
+    // if userSync.filterSettings does not contain image/all configs, merge in default image config to ensure image pixels are fired
     if (conf.userSync) {
       let fs = conf.userSync.filterSettings;
       if (utils.isPlainObject(fs)) {
-        let fsKeys = Object.keys(fs);
-        if (fsKeys.length === 1 && fsKeys[0] === 'iframe') {
+        if (!fs.image && !fs.all) {
           conf.userSync.filterSettings.image = {
             bidders: '*',
             filter: 'include'
