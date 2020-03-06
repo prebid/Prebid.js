@@ -53,7 +53,7 @@ function newPluginsArray(browserstack) {
   return plugins;
 }
 
-function setReporters(karmaConf, browserstack) {
+function setReporters(karmaConf, codeCoverage, browserstack) {
   // In browserstack, the default 'progress' reporter floods the logs.
   // The karma-spec-reporter reports failures more concisely
   if (browserstack) {
@@ -63,6 +63,16 @@ function setReporters(karmaConf, browserstack) {
       suppressErrorSummary: false,
       suppressSkipped: false,
       suppressPassed: true
+    };
+  }
+
+  if (codeCoverage) {
+    karmaConf.reporters.push('coverage');
+    karmaConf.coverageReporter = {
+      dir: 'build/coverage',
+      reporters: [
+        { type: 'html', subdir: 'karma-html' }
+      ]
     };
   }
 }
@@ -142,18 +152,11 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
 
-    reporters: ['mocha', 'coverage'],
+    reporters: ['mocha'],
 
     mochaReporter: {
       showDiff: true,
       output: 'minimal'
-    },
-
-    coverageReporter: {
-      dir: 'build/coverage',
-      reporters: [
-        { type: 'html', subdir: 'karma-html' }
-      ]
     },
 
     // Continuous Integration mode
@@ -166,7 +169,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     plugins: plugins
   }
-  setReporters(config, browserstack);
+  setReporters(config, codeCoverage, browserstack);
   setBrowsers(config, browserstack);
   return config;
 }
