@@ -7,7 +7,7 @@ import sha256 from 'crypto-js/sha256.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adagio';
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
