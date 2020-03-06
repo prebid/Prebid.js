@@ -88,8 +88,9 @@ export const spec = {
       netRevenue: true,
       adUnitCode: bidRequest.adUnitCode
     };
-    if (bid.nurl) {
+    if (bid.nurl && bid.adm) {
       bidResponse.vastUrl = bid.nurl;
+      bidResponse.vastXml = bid.adm;
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
