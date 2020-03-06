@@ -40,7 +40,7 @@ const cache = {
 let referrerHostname;
 
 function getHostNameFromReferer(referer) {
-  referrerHostname = urlLib.parse(referer).hostname;
+  referrerHostname = urlLib.parse(referer, {noDecodeWholeURL: true}).hostname;
   return referrerHostname;
 };
 
