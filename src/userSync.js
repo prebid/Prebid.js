@@ -1,21 +1,23 @@
-import * as utils from './utils';
-import { config } from './config';
-import includes from 'core-js/library/fn/array/includes';
+import * as utils from './utils.js';
+import { config } from './config.js';
+import includes from 'core-js/library/fn/array/includes.js';
+
+export const USERSYNC_DEFAULT_CONFIG = {
+  syncEnabled: true,
+  filterSettings: {
+    image: {
+      bidders: '*',
+      filter: 'include'
+    }
+  },
+  syncsPerBidder: 5,
+  syncDelay: 3000,
+  auctionDelay: 0
+};
 
 // Set userSync default values
 config.setDefaults({
-  'userSync': {
-    syncEnabled: true,
-    filterSettings: {
-      image: {
-        bidders: '*',
-        filter: 'include'
-      }
-    },
-    syncsPerBidder: 5,
-    syncDelay: 3000,
-    auctionDelay: 0
-  }
+  'userSync': utils.deepClone(USERSYNC_DEFAULT_CONFIG)
 });
 
 /**
@@ -45,6 +47,20 @@ export function newUserSync(userSyncDependencies) {
   let usConfig = userSyncDependencies.config;
   // Update if it's (re)set
   config.getConfig('userSync', (conf) => {
+    // if userSync.filterSettings only contains iframe, merge in default image config to ensure image pixels are fired
+    if (conf.userSync) {
+      let fs = conf.userSync.filterSettings;
+      if (utils.isPlainObject(fs)) {
+        let fsKeys = Object.keys(fs);
+        if (fsKeys.length === 1 && fsKeys[0] === 'iframe') {
+          conf.userSync.filterSettings.image = {
+            bidders: '*',
+            filter: 'include'
+          };
+        }
+      }
+    }
+
     usConfig = Object.assign(usConfig, conf.userSync);
   });
 

@@ -1,5 +1,5 @@
 
-import * as adloader from 'src/adloader';
+import * as adloader from 'src/adloader.js';
 
 // this export is for adloader's tests against actual implementation
 export let loadExternalScript = adloader.loadExternalScript;

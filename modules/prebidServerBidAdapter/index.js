@@ -1,17 +1,17 @@
-import Adapter from '../../src/adapter';
-import { createBid } from '../../src/bidfactory';
-import * as utils from '../../src/utils';
-import { STATUS, S2S, EVENTS } from '../../src/constants';
-import adapterManager from '../../src/adapterManager';
-import { config } from '../../src/config';
-import { VIDEO, NATIVE } from '../../src/mediaTypes';
-import { processNativeAdUnitParams } from '../../src/native';
-import { isValid } from '../../src/adapters/bidderFactory';
-import events from '../../src/events';
-import includes from 'core-js/library/fn/array/includes';
+import Adapter from '../../src/adapter.js';
+import { createBid } from '../../src/bidfactory.js';
+import * as utils from '../../src/utils.js';
+import { STATUS, S2S, EVENTS } from '../../src/constants.json';
+import adapterManager from '../../src/adapterManager.js';
+import { config } from '../../src/config.js';
+import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
+import { processNativeAdUnitParams } from '../../src/native.js';
+import { isValid } from '../../src/adapters/bidderFactory.js';
+import events from '../../src/events.js';
+import includes from 'core-js/library/fn/array/includes.js';
 import { S2S_VENDORS } from './config.js';
-import { ajax } from '../../src/ajax';
-import find from 'core-js/library/fn/array/find';
+import { ajax } from '../../src/ajax.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const getConfig = config.getConfig;
 
@@ -284,6 +284,32 @@ function _appendSiteAppDevice(request, pageUrl) {
   }
   if (!request.device.h) {
     request.device.h = window.innerHeight;
+  }
+}
+
+function addBidderFirstPartyDataToRequest(request) {
+  const bidderConfig = config.getBidderConfig();
+  const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
+    const currBidderConfig = bidderConfig[bidder];
+    if (currBidderConfig.fpd) {
+      const fpd = {};
+      if (currBidderConfig.fpd.context) {
+        fpd.site = currBidderConfig.fpd.context;
+      }
+      if (currBidderConfig.fpd.user) {
+        fpd.user = currBidderConfig.fpd.user;
+      }
+
+      acc.push({
+        bidders: [ bidder ],
+        config: { fpd }
+      });
+    }
+    return acc;
+  }, []);
+
+  if (fpdConfigs.length) {
+    utils.deepSetValue(request, 'ext.prebid.bidderconfig', fpdConfigs);
   }
 }
 
@@ -563,7 +589,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.criteoId || bidUserId.britepoolid)) {
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.criteoId || bidUserId.britepoolid || bidUserId.idl_env)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 
       if (bidUserId.tdid) {
@@ -638,6 +664,24 @@ const OPEN_RTB_PROTOCOL = {
           }]
         });
       }
+
+      if (bidUserId.idl_env) {
+        request.user.ext.eids.push({
+          source: 'liveramp.com',
+          uids: [{
+            id: bidUserId.idl_env
+          }]
+        })
+      }
+
+      if (bidUserId.netId) {
+        request.user.ext.eids.push({
+          source: 'netid.de',
+          uids: [{
+            id: bidUserId.netId
+          }]
+        })
+      }
     }
 
     if (bidRequests) {
@@ -660,6 +704,15 @@ const OPEN_RTB_PROTOCOL = {
     if (getConfig('coppa') === true) {
       utils.deepSetValue(request, 'regs.coppa', 1);
     }
+
+    const commonFpd = getConfig('fpd') || {};
+    if (commonFpd.context) {
+      utils.deepSetValue(request, 'site.ext.data', commonFpd.context);
+    }
+    if (commonFpd.user) {
+      utils.deepSetValue(request, 'user.ext.data', commonFpd.user);
+    }
+    addBidderFirstPartyDataToRequest(request);
 
     return request;
   },
@@ -709,7 +762,7 @@ const OPEN_RTB_PROTOCOL = {
             bidObject.playerHeight = sizes[0];
             bidObject.playerWidth = sizes[1];
 
-            // try to get cache values from 'response.ext.prebid.cache'
+            // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
             if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
               bidObject.videoCacheKey = bid.ext.prebid.cache.vastXml.cacheId;

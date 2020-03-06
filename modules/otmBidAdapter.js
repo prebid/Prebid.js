@@ -1,5 +1,5 @@
-import {BANNER} from '../src/mediaTypes';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 export const spec = {
   code: 'otm',

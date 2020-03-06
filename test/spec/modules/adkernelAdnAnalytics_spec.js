@@ -1,6 +1,6 @@
-import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter';
+import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter.js';
 import {expect} from 'chai';
-import adapterManager from 'src/adapterManager';
+import adapterManager from 'src/adapterManager.js';
 import CONSTANTS from 'src/constants.json';
 
 const events = require('../../../src/events');

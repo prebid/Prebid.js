@@ -1,6 +1,6 @@
-import { liveIntentIdSubmodule } from 'modules/liveIntentIdSystem';
-import * as utils from 'src/utils';
-import { server } from 'test/mocks/xhr';
+import { liveIntentIdSubmodule } from 'modules/liveIntentIdSystem.js';
+import * as utils from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 
 describe('LiveIntentId', function() {
   let getCookieStub;

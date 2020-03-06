@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { deepAccess } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr'

@@ -8,9 +8,9 @@ import {
   QUANTCAST_PROTOCOL,
   QUANTCAST_PORT,
   spec as qcSpec
-} from '../../../modules/quantcastBidAdapter';
-import { newBidder } from '../../../src/adapters/bidderFactory';
-import { parse } from 'src/url';
+} from '../../../modules/quantcastBidAdapter.js';
+import { newBidder } from '../../../src/adapters/bidderFactory.js';
+import { parse } from 'src/url.js';
 
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
