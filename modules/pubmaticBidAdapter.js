@@ -956,6 +956,15 @@ export const spec = {
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
 
+    // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
+    if (typeof config.getConfig('app') === 'object') {
+      payload.app = config.getConfig('app');
+      // not copying domain from site as it is a derived value from page
+      payload.app.publisher = payload.site.publisher;
+      payload.app.ext = payload.site.ext || null;
+      payload.site = null;
+    }
+
     return {
       method: 'POST',
       url: ENDPOINT,
