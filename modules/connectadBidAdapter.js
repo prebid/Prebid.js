@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes'
-import {config} from '../src/config';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js'
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
