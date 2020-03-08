@@ -6,7 +6,7 @@
 
 ## Release Schedule
 
-We push a new release of Prebid.js every other week on Tuesday. During the adoption phase for 1.x, we are releasing updates for 1.x and 0.x at the same time.
+We aim to push a new release of Prebid.js every week on Tuesday.
 
 While the releases will be available immediately for those using direct Git access,
 it will be about a week before the Prebid Org [Download Page](http://prebid.org/download.html) will be updated.  
@@ -19,7 +19,7 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
 
 _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for your repo, all of the following git commands will have to be modified to reference the proper remote (e.g. `upstream`)_
 
-1. Make Sure all browserstack tests are passing. On PR merge to master CircleCI will run unit tests on browserstack. Checking the last CircleCI build [here](https://circleci.com/gh/prebid) for master branch will show you detailed results. 
+1. Make Sure all browserstack tests are passing. On PR merge to master CircleCI will run unit tests on browserstack. Checking the last CircleCI build [here](https://circleci.com/gh/prebid/Prebid.js) for master branch will show you detailed results. 
   
    In case of failure do following, 
      - Try to fix the failing tests.
@@ -128,7 +128,7 @@ Characteristics of a `GA` release:
 
 ## FAQs
 
-**1. Is there flexibility in the 2-week schedule?**
+**1. Is there flexibility in the schedule?**
 
 If a major bug is found in the current release, a maintenance patch will be done as soon as possible.
 

@@ -1,8 +1,8 @@
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
-const utils = require('src/utils');
+import {ajax} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+import CONSTANTS from '../src/constants.json';
+const utils = require('../src/utils.js');
 
 /****
  * PubWise.io Analytics
@@ -120,7 +120,7 @@ pubwiseAnalytics.enableAnalytics = function (config) {
   pubwiseAnalytics.adapterEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: pubwiseAnalytics,
   code: 'pubwise'
 });

@@ -1,4 +1,4 @@
-import { detectReferer } from 'src/refererDetection';
+import { detectReferer } from 'src/refererDetection.js';
 import { expect } from 'chai';
 
 var mocks = {
@@ -26,6 +26,11 @@ describe('referer detection', () => {
     let mockIframe2WinObject = mocks.createFakeWindow('http://example.com/iframe1.html', 'http://example.com/iframe2.html');
     let mockIframe1WinObject = mocks.createFakeWindow('http://example.com/page.html', 'http://example.com/iframe1.html');
     let mainWinObject = mocks.createFakeWindow('http://example.com/page.html', 'http://example.com/page.html');
+    mainWinObject.document.querySelector = function() {
+      return {
+        href: 'http://prebid.org'
+      }
+    }
     mockIframe2WinObject.parent = mockIframe1WinObject;
     mockIframe2WinObject.top = mainWinObject;
     mockIframe1WinObject.parent = mainWinObject;
@@ -35,14 +40,15 @@ describe('referer detection', () => {
     const getRefererInfo = detectReferer(mockIframe2WinObject);
     let result = getRefererInfo();
     let expectedResult = {
-      referer: 'http%3A%2F%2Fexample.com%2Fpage.html',
+      referer: 'http://example.com/page.html',
       reachedTop: true,
       numIframes: 2,
       stack: [
-        'http%3A%2F%2Fexample.com%2Fpage.html',
-        'http%3A%2F%2Fexample.com%2Fiframe1.html',
-        'http%3A%2F%2Fexample.com%2Fiframe2.html'
-      ]
+        'http://example.com/page.html',
+        'http://example.com/iframe1.html',
+        'http://example.com/iframe2.html'
+      ],
+      canonicalUrl: 'http://prebid.org'
     };
     expect(result).to.deep.equal(expectedResult);
   });
@@ -66,14 +72,15 @@ describe('referer detection', () => {
     const getRefererInfo = detectReferer(mockIframe2WinObject);
     let result = getRefererInfo();
     let expectedResult = {
-      referer: 'http%3A%2F%2Faaa.com%2Fiframe1.html',
+      referer: 'http://aaa.com/iframe1.html',
       reachedTop: false,
       numIframes: 2,
       stack: [
         null,
-        'http%3A%2F%2Faaa.com%2Fiframe1.html',
-        'http%3A%2F%2Fbbb.com%2Fiframe2.html'
-      ]
+        'http://aaa.com/iframe1.html',
+        'http://bbb.com/iframe2.html'
+      ],
+      canonicalUrl: undefined
     };
     expect(result).to.deep.equal(expectedResult);
   });

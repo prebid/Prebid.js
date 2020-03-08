@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import { spec } from 'modules/yieldlabBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
+import { spec } from 'modules/yieldlabBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const REQUEST = {
   'bidder': 'yieldlab',
@@ -11,7 +11,8 @@ const REQUEST = {
     'targeting': {
       'key1': 'value1',
       'key2': 'value2'
-    }
+    },
+    'extId': 'abc'
   },
   'bidderRequestId': '143346cf0f1731',
   'auctionId': '2e41f65424c87c',
@@ -26,8 +27,13 @@ const RESPONSE = {
   format: 0,
   id: 1111,
   price: 1,
-  pid: 2222
+  pid: 2222,
+  adtype: 'BANNER'
 }
+
+const VIDEO_RESPONSE = Object.assign({}, RESPONSE, {
+  'adtype': 'VIDEO'
+})
 
 describe('yieldlabBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -85,17 +91,13 @@ describe('yieldlabBidAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    const validRequests = {
-      validBidRequests: [REQUEST]
-    }
-
     it('handles nobid responses', function () {
       expect(spec.interpretResponse({body: {}}, {validBidRequests: []}).length).to.equal(0)
       expect(spec.interpretResponse({body: []}, {validBidRequests: []}).length).to.equal(0)
     })
 
     it('should get correct bid response', function () {
-      const result = spec.interpretResponse({body: [RESPONSE]}, validRequests)
+      const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [REQUEST]})
 
       expect(result[0].requestId).to.equal('2d925f27f5079f')
       expect(result[0].cpm).to.equal(0.01)
@@ -108,6 +110,31 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].ttl).to.equal(300)
       expect(result[0].referrer).to.equal('')
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/728x90?ts=')
+      expect(result[0].ad).to.include('&id=abc')
+    })
+
+    it('should get correct bid response when passing more than one size', function () {
+      const REQUEST2 = Object.assign({}, REQUEST, {
+        'sizes': [
+          [800, 250],
+          [728, 90],
+          [970, 90],
+        ]
+      })
+      const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [REQUEST2]})
+
+      expect(result[0].requestId).to.equal('2d925f27f5079f')
+      expect(result[0].cpm).to.equal(0.01)
+      expect(result[0].width).to.equal(728)
+      expect(result[0].height).to.equal(90)
+      expect(result[0].creativeId).to.equal('1111')
+      expect(result[0].dealId).to.equal(2222)
+      expect(result[0].currency).to.equal('EUR')
+      expect(result[0].netRevenue).to.equal(false)
+      expect(result[0].ttl).to.equal(300)
+      expect(result[0].referrer).to.equal('')
+      expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/728x90?ts=')
+      expect(result[0].ad).to.include('&id=abc')
     })
 
     it('should add vastUrl when type is video', function () {
@@ -118,15 +145,30 @@ describe('yieldlabBidAdapter', function () {
           }
         }
       })
-      const validRequests = {
-        validBidRequests: [VIDEO_REQUEST]
-      }
-      const result = spec.interpretResponse({body: [RESPONSE]}, validRequests)
+      const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST]})
 
       expect(result[0].requestId).to.equal('2d925f27f5079f')
       expect(result[0].cpm).to.equal(0.01)
       expect(result[0].mediaType).to.equal('video')
       expect(result[0].vastUrl).to.include('https://ad.yieldlab.net/d/1111/2222/728x90?ts=')
+      expect(result[0].vastUrl).to.include('&id=abc')
+    })
+
+    it('should add renderer if outstream context', function () {
+      const OUTSTREAM_REQUEST = Object.assign({}, REQUEST, {
+        'mediaTypes': {
+          'video': {
+            'playerSize': [[640, 480]],
+            'context': 'outstream'
+          }
+        }
+      })
+      const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [OUTSTREAM_REQUEST]})
+
+      expect(result[0].renderer.id).to.equal('2d925f27f5079f')
+      expect(result[0].renderer.url).to.equal('https://ad2.movad.net/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event')
+      expect(result[0].width).to.equal(640)
+      expect(result[0].height).to.equal(480)
     })
   })
 })
