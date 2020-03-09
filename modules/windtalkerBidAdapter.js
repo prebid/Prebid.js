@@ -315,7 +315,7 @@ function getDomainFromUrl(url) {
   if (typeof window.URL === 'function') {
     return (new window.URL(url)).hostname;
   } else {
-    var domain = url;
+    var domain;
     if (url.indexOf('//') > -1) {
       domain = url.split('/')[2];
     } else {
