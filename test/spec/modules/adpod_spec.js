@@ -138,7 +138,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 300,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -220,7 +220,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -282,7 +282,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30],
             requireExactDuration: true
@@ -376,7 +376,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -465,7 +465,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -525,7 +525,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -602,7 +602,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -675,7 +675,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -748,7 +748,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -826,7 +826,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 300,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -922,7 +922,7 @@ describe('adpod.js', function () {
           },
           video: {
             context: 'adpod',
-            playerSize: [300, 250],
+            playerSize: [[300, 250]],
             durationRangeSec: [15, 30, 45],
             adPodDurationSec: 300
           }
@@ -941,7 +941,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 360,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: true
@@ -989,7 +989,7 @@ describe('adpod.js', function () {
       mediaTypes: {
         video: {
           context: ADPOD,
-          playerSize: [300, 400],
+          playerSize: [[300, 400]],
           durationRangeSec: [15, 45],
           requireExactDuration: false,
           adPodDurationSec: 300
@@ -1000,7 +1000,7 @@ describe('adpod.js', function () {
       mediaTypes: {
         video: {
           context: ADPOD,
-          playerSize: [300, 400],
+          playerSize: [[300, 400]],
           durationRangeSec: [15, 30, 45, 60],
           requireExactDuration: true,
           adPodDurationSec: 300
