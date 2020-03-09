@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/nobidBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as bidderFactory from 'src/adapters/bidderFactory.js';
 
 describe('Nobid Adapter', function () {
   const adapter = newBidder(spec);
@@ -70,7 +71,7 @@ describe('Nobid Adapter', function () {
       refererInfo: {referer: REFERER}
     }
 
-    it('should add source and verison to the tag', function () {
+    it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.sid).to.equal(SITE_ID);
@@ -281,6 +282,56 @@ describe('Nobid Adapter', function () {
     });
   });
 
+  describe('buildRequestsWithSupplyChain', function () {
+    const SITE_ID = 2;
+    let bidRequests = [
+      {
+        bidder: 'nobid',
+        params: {
+          siteId: SITE_ID
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        coppa: true,
+        schain: {
+		    validation: 'strict',
+		    config: {
+		      ver: '1.0',
+		      complete: 1,
+		      nodes: [
+		        {
+		          asi: 'indirectseller.com',
+		          sid: '00001',
+		          name: 'name.com',
+		          hp: 1
+		        }
+		      ]
+		    }
+        }
+      }
+    ];
+
+    it('schain exist', function () {
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.schain).to.exist;
+      expect(payload.schain.validation).to.exist.and.to.equal('strict');
+      expect(payload.schain.config.ver).to.exist.and.to.equal('1.0');
+      expect(payload.schain.config.complete).to.exist.and.to.equal(1);
+      expect(payload.schain.config.nodes[0].asi).to.exist.and.to.equal('indirectseller.com');
+      expect(payload.schain.config.nodes[0].sid).to.exist.and.to.equal('00001');
+      expect(payload.schain.config.nodes[0].name).to.exist.and.to.equal('name.com');
+      expect(payload.schain.config.nodes[0].hp).to.exist.and.to.equal(1);
+      expect(payload.coppa).to.exist;
+      expect(payload.coppa).to.exist.and.to.be.true;
+      expect(payload.a).to.be.lengthOf(1);
+      expect(request.method).to.equal('POST');
+    });
+  });
+
   describe('interpretResponseWithUserLimit', function () {
     const CREATIVE_ID_300x250 = 'CREATIVE-100';
     const ADUNIT_300x250 = 'ADUNIT-1';
@@ -357,6 +408,13 @@ describe('Nobid Adapter', function () {
     it('should get correct user sync when !iframeEnabled', function () {
       let pixel = spec.getUserSyncs({iframeEnabled: false})
       expect(pixel.length).to.equal(0);
+    });
+
+    it('should get correct user sync when !iframeEnabled and pixelEnabled', function () {
+      let pixel = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{body: {syncs: ['sync_url']}}])
+      expect(pixel.length).to.equal(1);
+      expect(pixel[0].type).to.equal('image');
+      expect(pixel[0].url).to.equal('sync_url');
     });
 
     it('should get correct user sync when !iframeEnabled', function () {
