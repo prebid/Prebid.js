@@ -4,10 +4,11 @@
  */
 
 import { fireNativeTrackers, getAssetMessage } from './native.js';
-import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils.js';
+import { logWarn, replaceAuctionPrice } from './utils.js';
 import { auctionManager } from './auctionManager.js';
 import find from 'core-js/library/fn/array/find.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 export function listenMessagesFromCreative() {
   window.addEventListener('message', receiveMessage, false);
@@ -72,7 +73,7 @@ export function _sendAdToCreative(adObject, remoteDomain, source) {
   }
 }
 
-function resizeRemoteCreative({ adUnitCode, width, height }) {
+function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render
@@ -87,14 +88,14 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
   });
 
   function getElementByAdUnit(elmType) {
-    let id = getElementIdBasedOnAdServer(adUnitCode);
+    let id = getElementIdBasedOnAdServer(adId, adUnitCode);
     let parentDivEle = document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
-  function getElementIdBasedOnAdServer(adUnitCode) {
+  function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (window.googletag) {
-      return getDfpElementId(adUnitCode)
+      return getDfpElementId(adId)
     } else if (window.apntag) {
       return getAstElementId(adUnitCode)
     } else {
@@ -102,8 +103,12 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
     }
   }
 
-  function getDfpElementId(adUnitCode) {
-    return find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot).getSlotElementId()
+  function getDfpElementId(adId) {
+    return find(window.googletag.pubads().getSlots(), slot => {
+      return find(slot.getTargetingKeys(), key => {
+        return includes(slot.getTargeting(key), adId);
+      });
+    }).getSlotElementId();
   }
 
   function getAstElementId(adUnitCode) {
