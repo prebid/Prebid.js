@@ -366,7 +366,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    let adapterDone = doneCb.bind(bidRequest);
+    const adapterDone = doneCb.bind(bidRequest);
     try {
       config.runWithBidder(
         bidRequest.bidderCode,
