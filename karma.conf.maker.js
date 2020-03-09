@@ -165,7 +165,8 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     browserDisconnectTimeout: 10000, // default 2000
     browserDisconnectTolerance: 1, // default 0
     browserNoActivityTimeout: 4 * 60 * 1000, // default 10000
-    captureTimeout: 4 * 60 * 1000, // default 60000
+    captureTimeout: 4 * 60 * 1000, // default 60000,
+    processKillTimeout: 10000, // default 2000
 
     plugins: plugins
   }
