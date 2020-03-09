@@ -930,4 +930,34 @@ describe('Utils', function () {
       });
     });
   });
+
+  describe('mergeDeep', function() {
+    it('properly merge objects that share same property names', function() {
+      const object1 = {
+        propA: {
+          subPropA: 'abc'
+        }
+      };
+      const object2 = {
+        propA: {
+          subPropB: 'def'
+        }
+      };
+      
+      const resultWithoutMergeDeep = Object.assign({}, object1, object2);
+      expect(resultWithoutMergeDeep).to.deep.equal({
+        propA: {
+          subPropB: 'def'
+        }
+      });
+
+      const resultWithMergeDeep = utils.mergeDeep({}, object1, object2);
+      expect(resultWithMergeDeep).to.deep.equal({
+        propA: {
+          subPropA: 'abc',
+          subPropB: 'def'
+        }
+      });
+    });
+  });
 });
