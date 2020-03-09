@@ -24,72 +24,72 @@
   <script src="/build/dev/prebid.js" async=true></script>
   <script>
 
-      var pbjs = pbjs || {};
-      pbjs.que = pbjs.que || [];
+  var pbjs = pbjs || {};
+  pbjs.que = pbjs.que || [];
 
-      /*
-      adUnits can support video demand requests by setting 'mediaType' to
-      'video'. When an adUnit is configured to support video, all bidders
-      within that adUnit must be video-enabled as well, as configured in
-      adapters.json.
-      */
-      var videoAdUnit = {
-          code: 'video1',
-          sizes: [640,480],
-          mediaTypes: { video: {} },
-          bids: [
-              {
-                  bidder: 'appnexusAst',
-                  params: {
-                      placementId: '123456',
-                      video: {
-                          id: 123,
-                          skipppable: true,
-                          playback_method: ['auto_play_sound_off']
-                      }
-                  }
-              }
-          ]
-      };
+/*
+adUnits can support video demand requests by setting 'mediaType' to
+'video'. When an adUnit is configured to support video, all bidders
+within that adUnit must be video-enabled as well, as configured in
+adapters.json.
+*/
+  var videoAdUnit = {
+    code: 'video1',
+    sizes: [640,480],
+    mediaTypes: { video: {} },
+    bids: [
+      {
+        bidder: 'appnexusAst',
+        params: {
+          placementId: '123456',
+          video: {
+            id: 123,
+            skipppable: true,
+            playback_method: ['auto_play_sound_off']
+          }
+        }
+      }
+    ]
+  };
 
-      pbjs.que.push(function(){
-          pbjs.addAdUnits(videoAdUnit);
-          pbjs.requestBids({
-              timeout : 3000,
-              bidsBackHandler : function(bids) {
-                  var adserverTag = '<dfp_tag>'; // base ad server tag, see: https://support.google.com/dfp_premium/answer/1068325
-                  var options = {
-                      'adserver': 'dfp',
-                      'code': 'video1' //code that matches the video adUnit declared above
-                  };
-                  //generate URL
-                  var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
-                  //send masterTagUrl to the video player
-                  invokeVideoPlayer(masterTagUrl);
+  pbjs.que.push(function(){
+    pbjs.addAdUnits(videoAdUnit);
+    pbjs.requestBids({
+      timeout : 3000,
+      bidsBackHandler : function(bids) {
+        var adserverTag = '<dfp_tag>'; // base ad server tag, see: https://support.google.com/dfp_premium/answer/1068325
+        var options = {
+          'adserver': 'dfp',
+          'code': 'video1' //code that matches the video adUnit declared above
+         };
+        //generate URL
+        var masterTagUrl = pbjs.buildMasterVideoTagFromAdserverTag(adserverTag, options);
+        //send masterTagUrl to the video player
+        invokeVideoPlayer(masterTagUrl);
 
-              }
-          });
-      });
+      }
+    });
+  });
 
 
   </script>
 </head>
 <body>
 
-<div class="example-video-container">
-  <video id="vid1" class="video-js vjs-default-skin" autoplay controls preload="auto"
-         poster="http://video-js.zencoder.com/oceans-clip.png"
-         data-setup='{}'
-         width='640'
-         height='480'
-  >
-    <source src="http://vjs.zencdn.net/v/oceans.mp4" type='video/mp4'>
+  <div class="example-video-container">
+    <video id="vid1" class="video-js vjs-default-skin" autoplay controls preload="auto"
+        poster="http://video-js.zencoder.com/oceans-clip.png"
+        data-setup='{}'
+        width='640'
+        height='480'
+        >
+      <source src="http://vjs.zencdn.net/v/oceans.mp4" type='video/mp4'>
 
-    <p>Video Playback Not Supported</p>
-  </video>
-</div>
+      <p>Video Playback Not Supported</p>
+    </video>
+  </div>
 
-<script>
+  <script>
 
     var vid1 = videojs('vid1');
     vid1.muted(true);
@@ -99,11 +99,11 @@
     This function called after prebid is back
      */
     function invokeVideoPlayer(url) {
-        vid1.vast({
-            url: url
-        });
+      vid1.vast({
+        url: url
+      });
     }
-</script>
+  </script>
 
 </body>
 </html>
