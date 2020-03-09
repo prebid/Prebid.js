@@ -1,8 +1,8 @@
 /**
  * events.js
  */
-var utils = require('./utils');
-var CONSTANTS = require('./constants');
+var utils = require('./utils.js');
+var CONSTANTS = require('./constants.json');
 var slice = Array.prototype.slice;
 var push = Array.prototype.push;
 

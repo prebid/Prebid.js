@@ -1,12 +1,12 @@
 import {expect} from 'chai';
-import adapterManager from 'src/adapterManager';
-import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
+import adapterManager from 'src/adapterManager.js';
+import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {userSync} from 'src/userSync';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
-import find from 'core-js/library/fn/array/find';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {userSync} from 'src/userSync.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import find from 'core-js/library/fn/array/find.js';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -224,8 +224,10 @@ describe('the rubicon adapter', function () {
       lipb: {
         lipbid: '0000-1111-2222-3333',
         segments: ['segA', 'segB']
-      }
-    }
+      },
+      idl_env: '1111-2222-3333-4444'
+    };
+    bid.storedAuctionResponse = 11111;
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -979,6 +981,51 @@ describe('the rubicon adapter', function () {
               expect(data[key]).to.equal(value);
             });
           });
+
+          it('should use first party data from getConfig over the bid params, if present', () => {
+            const context = {
+              keywords: ['e', 'f'],
+              rating: '4-star'
+            };
+            const user = {
+              keywords: ['d'],
+              gender: 'M',
+              yob: '1984',
+              geo: { country: 'ca' }
+            };
+
+            sandbox.stub(config, 'getConfig').callsFake(key => {
+              const config = {
+                fpd: {
+                  context,
+                  user
+                }
+              };
+              return utils.deepAccess(config, key);
+            });
+
+            const expectedQuery = {
+              'kw': 'a,b,c,d,e,f',
+              'tg_v.ucat': 'new',
+              'tg_v.lastsearch': 'iphone',
+              'tg_v.likes': 'sports,video games',
+              'tg_v.gender': 'M',
+              'tg_v.yob': '1984',
+              'tg_v.geo': '{"country":"ca"}',
+              'tg_i.rating': '4-star',
+              'tg_i.prodtype': 'tech,mobile',
+            };
+
+            // get the built request
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            // make sure that tg_v, tg_i, and kw values are correct
+            Object.keys(expectedQuery).forEach(key => {
+              let value = expectedQuery[key];
+              expect(data[key]).to.deep.equal(value);
+            });
+          });
         });
 
         describe('singleRequest config', function () {
@@ -1259,7 +1306,91 @@ describe('the rubicon adapter', function () {
               expect(unescapedData.indexOf('&tg_v.LIseg=segD,segE&') !== -1).to.equal(true);
             });
           });
+
+          describe('LiveRamp support', function () {
+            it('should send tpid_liveramp.com when userId defines idl_env', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                idl_env: '1111-2222-3333-4444'
+              };
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['tpid_liveramp.com']).to.equal('1111-2222-3333-4444');
+            });
+          });
         })
+
+        describe('Prebid AdSlot', function () {
+          beforeEach(function () {
+            // enforce that the bid at 0 does not have a 'context' property
+            if (bidderRequest.bids[0].hasOwnProperty('fpd')) {
+              delete bidderRequest.bids[0].fpd;
+            }
+          });
+
+          it('should not send \"tg_i.dfp_ad_unit_code\" if \"fpd.context\" object is not valid', function () {
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
+          });
+
+          it('should not send \"tg_i.dfp_ad_unit_code\" if \"fpd.context.pbAdSlot\" is undefined', function () {
+            bidderRequest.bids[0].fpd = {};
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
+          });
+
+          it('should not send \"tg_i.dfp_ad_unit_code\" if \"fpd.context.pbAdSlot\" value is an empty string', function () {
+            bidderRequest.bids[0].fpd = {
+              context: {
+                pbAdSlot: ''
+              }
+            };
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
+          });
+
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"fpd.context.pbAdSlot\" value is a valid string', function () {
+            bidderRequest.bids[0].fpd = {
+              context: {
+                pbAdSlot: 'abc'
+              }
+            }
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.have.property('tg_i.dfp_ad_unit_code');
+            expect(data['tg_i.dfp_ad_unit_code']).to.equal('abc');
+          });
+
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"fpd.context.pbAdSlot\" value is a valid string, but all leading slash characters should be removed', function () {
+            bidderRequest.bids[0].fpd = {
+              context: {
+                pbAdSlot: '/a/b/c'
+              }
+            };
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.have.property('tg_i.dfp_ad_unit_code');
+            expect(data['tg_i.dfp_ad_unit_code']).to.equal('a/b/c');
+          });
+        });
       });
 
       describe('for video requests', function () {
@@ -1301,6 +1432,9 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.tpid).that.is.an('object');
           expect(post.user.ext.tpid.source).to.equal('liveintent.com');
           expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
+          // LiveRamp should exist
+          expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
+          expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.rp).that.is.an('object');
           expect(post.rp.target).that.is.an('object');
           expect(post.rp.target.LIseg).that.is.an('array');
@@ -1568,6 +1702,92 @@ describe('the rubicon adapter', function () {
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.regs.coppa).to.equal(1);
         });
+
+        it('should include first party data', () => {
+          createVideoBidderRequest();
+
+          const context = {
+            keywords: ['e', 'f'],
+            rating: '4-star'
+          };
+          const user = {
+            keywords: ['d'],
+            gender: 'M',
+            yob: '1984',
+            geo: { country: 'ca' }
+          };
+
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              fpd: {
+                context,
+                user
+              }
+            };
+            return utils.deepAccess(config, key);
+          });
+
+          const expected = [{
+            bidders: [ 'rubicon' ],
+            config: {
+              fpd: {
+                site: Object.assign({}, bidderRequest.bids[0].params.inventory, context),
+                user: Object.assign({}, bidderRequest.bids[0].params.visitor, user)
+              }
+            }
+          }];
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.ext.prebid.bidderconfig).to.deep.equal(expected);
+        });
+
+        it('should include storedAuctionResponse in video bid request', function () {
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp).to.exist.and.to.be.a('array');
+          expect(request.data.imp).to.have.lengthOf(1);
+          expect(request.data.imp[0].ext).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid.storedauctionresponse).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
+        });
+
+        it('should include pbAdSlot in bid request', function () {
+          createVideoBidderRequest();
+          bidderRequest.bids[0].fpd = {
+            context: {
+              pbAdSlot: '1234567890'
+            }
+          };
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
+        });
+      });
+
+      it('should include pbAdSlot in bid request', function () {
+        createVideoBidderRequest();
+        bidderRequest.bids[0].fpd = {
+          context: {
+            pbAdSlot: '1234567890'
+          }
+        };
+
+        sandbox.stub(Date, 'now').callsFake(() =>
+          bidderRequest.auctionStart + 100
+        );
+
+        const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+        expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
       });
 
       describe('combineSlotUrlParams', function () {

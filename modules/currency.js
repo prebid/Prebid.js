@@ -1,8 +1,8 @@
-import { createBid } from '../src/bidfactory';
-import { STATUS } from '../src/constants';
-import { ajax } from '../src/ajax';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
+import { createBid } from '../src/bidfactory.js';
+import { STATUS } from '../src/constants.json';
+import { ajax } from '../src/ajax.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';

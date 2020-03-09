@@ -3,11 +3,12 @@ import {
   requestBidsHook,
   resetConsentData,
   consentAPI,
-  consentTimeout
-} from 'modules/consentManagementUsp';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { uspDataHandler } from 'src/adapterManager';
+  consentTimeout,
+  staticConsentData
+} from 'modules/consentManagementUsp.js';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { uspDataHandler } from 'src/adapterManager.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -82,6 +83,31 @@ describe('consentManagement', function () {
         setConsentConfig(allConfig);
         expect(consentAPI).to.be.equal('daa');
         expect(consentTimeout).to.be.equal(7500);
+      });
+    });
+
+    describe('static consent string setConsentConfig value', () => {
+      afterEach(() => {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+      });
+      it('results in user settings overriding system defaults', () => {
+        let staticConfig = {
+          usp: {
+            cmpApi: 'static',
+            timeout: 7500,
+            consentData: {
+              getUSPData: {
+                uspString: '1YYY'
+              }
+            }
+          }
+        };
+
+        setConsentConfig(staticConfig);
+        expect(consentAPI).to.be.equal('static');
+        expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
+        expect(staticConsentData.usPrivacy).to.be.equal(staticConfig.usp.consentData.getUSPData.uspString);
       });
     });
   });
