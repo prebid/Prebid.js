@@ -1,8 +1,9 @@
+import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'lifestreet';
-const ADAPTER_VERSION = 'prebidJS-3.0';
+const ADAPTER_VERSION = '$prebid.version$';
 
 const urlTemplate = template`https://ads.lfstmedia.com/gate/${'adapter'}/${'slot'}?adkey=${'adkey'}&ad_size=${'ad_size'}&__location=${'location'}&__referrer=${'referrer'}&__wn=${'wn'}&__sf=${'sf'}&__fif=${'fif'}&__if=${'if'}&__stamp=${'stamp'}&__pp=1&__hb=1&_prebid_json=1&__gz=1&deferred_format=vast_2_0,vast_3_0&__hbver=${'hbver'}`;
 
@@ -14,14 +15,6 @@ function boolToString(value) {
 }
 
 /**
- * A helper function for template
- */
-function isInteger(value) {
-  return typeof value === 'number' &&
-    isFinite(value) && Math.floor(value) === value;
-}
-
-/**
  * A helper function to form URL from the template
  */
 function template(strings, ...keys) {
@@ -29,7 +22,7 @@ function template(strings, ...keys) {
     let dict = values[values.length - 1] || {};
     let result = [strings[0]];
     keys.forEach(function(key, i) {
-      let value = isInteger(key) ? values[key] : dict[key];
+      let value = utils.isInteger(key) ? values[key] : dict[key];
       result.push(value, strings[i + 1]);
     });
     return result.join('');
@@ -82,7 +75,6 @@ function formatBidRequest(bid, bidderRequest = {}) {
 }
 
 function isResponseValid(response) {
-  console.log(response)
   return !/^\s*\{\s*"advertisementAvailable"\s*:\s*false/i.test(response.content) &&
     response.content.indexOf('<VAST version="2.0"></VAST>') === -1 && (typeof response.cpm !== 'undefined') &&
     response.status === 1;
@@ -94,7 +86,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid = {}) => {
-    const {params = {}} = bid
+    const {params = {}} = bid;
     return !!(params.slot && params.adkey && params.ad_size);
   },
 
@@ -103,6 +95,7 @@ export const spec = {
       return formatBidRequest(bid, bidderRequest)
     });
   },
+
   interpretResponse: (serverResponse, bidRequest) => {
     const bidResponses = [];
     let response = serverResponse.body;
