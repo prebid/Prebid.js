@@ -59,6 +59,12 @@ export const spec = {
     const bidResponses = [];
     for (let bidId in bids) {
       let adUnit = bids[bidId];
+      let meta;
+      if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
+        meta = {
+          clickUrl: adUnit.metadata.landingPageDomain
+        };
+      }
       bidResponses.push({
         requestId: bidId,
         cpm: Number(adUnit.cpm),
@@ -69,7 +75,8 @@ export const spec = {
         creativeId: adUnit.id,
         dealId: adUnit.targetingCustom,
         netRevenue: true,
-        currency: bidRequest.currency
+        currency: bidRequest.currency,
+        meta: meta
       });
     }
     return bidResponses;
