@@ -273,7 +273,7 @@ export function getFloorDataFromAdUnits(adUnits) {
 /**
  * @summary This function takes the adUnits for the auction and update them accordingly as well as returns the rules hashmap for the auction
  */
-export function updateAdUnitsForAuction(adUnits, floorData, skipped) {
+export function updateAdUnitsForAuction(adUnits, floorData, skipped, auctionId) {
   adUnits.forEach((adUnit) => {
     adUnit.bids.forEach(bid => {
       if (skipped) {
@@ -282,6 +282,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, skipped) {
         bid.getFloor = getFloor;
       }
       // information for bid and analytics adapters
+      bid.auctionId = auctionId;
       bid.floorData = {
         skipped,
         modelVersion: utils.deepAccess(floorData, 'data.modelVersion') || '',
@@ -294,7 +295,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, skipped) {
 /**
  * @summary Updates the adUnits accordingly and returns the necessary floorsData for the current auction
  */
-export function createFloorsDataForAuction(adUnits) {
+export function createFloorsDataForAuction(adUnits, auctionId) {
   let resolvedFloorsData = utils.deepClone(_floorsConfig);
 
   // if we do not have a floors data set, we will try to use data set on adUnits
@@ -311,7 +312,7 @@ export function createFloorsDataForAuction(adUnits) {
   // determine the skip rate now
   const isSkipped = Math.random() * 100 < parseFloat(utils.deepAccess(resolvedFloorsData, 'data.skipRate') || 0);
   resolvedFloorsData.skipped = isSkipped;
-  updateAdUnitsForAuction(adUnits, resolvedFloorsData, isSkipped);
+  updateAdUnitsForAuction(adUnits, resolvedFloorsData, isSkipped, auctionId);
   return resolvedFloorsData;
 }
 
@@ -328,7 +329,7 @@ export function continueAuction(hookConfig) {
     hookConfig.reqBidsConfigObj.auctionId = hookConfig.reqBidsConfigObj.auctionId || utils.generateUUID();
 
     // now we do what we need to with adUnits and save the data object to be used for getFloor and enforcement calls
-    _floorDataForAuction[hookConfig.reqBidsConfigObj.auctionId] = createFloorsDataForAuction(hookConfig.reqBidsConfigObj.adUnits || getGlobal().adUnits);
+    _floorDataForAuction[hookConfig.reqBidsConfigObj.auctionId] = createFloorsDataForAuction(hookConfig.reqBidsConfigObj.adUnits || getGlobal().adUnits, hookConfig.reqBidsConfigObj.auctionId);
 
     hookConfig.nextFn.apply(hookConfig.context, [hookConfig.reqBidsConfigObj]);
     hookConfig.hasExited = true;
