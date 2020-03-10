@@ -120,10 +120,10 @@ describe('ColossussspAdapter', function () {
         expect(placement.eids.length).to.be.equal(3)
         for (let v of placement.eids) {
           expect(v).to.have.all.keys('source', 'uids')
-          expect(v.source).to.be.oneOf('britepool.com', 'identityLink', 'adserver.org')
+          expect(v.source).to.be.oneOf(['britepool.com', 'identityLink', 'adserver.org'])
           expect(v.uids).to.be.an('array').with.length.equal(1);
           expect(v.uids[0]).to.have.property('id')
-          expect(v.uids[0].id).to.be.oneOf('britepoolid123', 'idl_env123', 'tdid123')
+          expect(v.uids[0].id).to.be.oneOf(['britepoolid123', 'idl_env123', 'tdid123'])
         }
       }
     });
