@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
 import find from 'core-js/library/fn/array/find.js';
