@@ -25,8 +25,6 @@ import find from 'core-js/library/fn/array/find.js';
 import { auctionManager } from '../src/auctionManager.js';
 import CONSTANTS from '../src/constants.json';
 
-const from = require('core-js/library/fn/array/from.js');
-
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
 
@@ -163,7 +161,7 @@ function updateBidQueue(auctionInstance, bidResponse, afterBidAdded) {
   let bidListIter = bidCacheRegistry.getBids(bidResponse);
 
   if (bidListIter) {
-    let bidListArr = from(bidListIter);
+    let bidListArr = Array.from(bidListIter);
     let callDispatcher = bidCacheRegistry.getQueueDispatcher(bidResponse);
     let killQueue = !!(auctionInstance.getAuctionStatus() !== AUCTION_IN_PROGRESS);
     callDispatcher(auctionInstance, bidListArr, afterBidAdded, killQueue);
