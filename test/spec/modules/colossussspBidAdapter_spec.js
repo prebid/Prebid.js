@@ -104,6 +104,7 @@ describe('ColossussspAdapter', function () {
   });
 
   describe('buildRequests with user ids', function () {
+    bid.userId = {}
     bid.userId.britepoolid = 'britepoolid123';
     bid.userId.idl_env = 'idl_env123';
     bid.userId.tdid = 'tdid123';
