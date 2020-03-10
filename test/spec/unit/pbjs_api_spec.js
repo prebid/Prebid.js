@@ -880,7 +880,6 @@ describe('Unit: Prebid Module', function () {
 
       var invokedTargeting = [];
 
-      // console.log(invokedTargetingMap);
       Object.getOwnPropertyNames(invokedTargetingMap).map(function (key) {
         const value = Array.isArray(invokedTargetingMap[key]) ? invokedTargetingMap[key] : [invokedTargetingMap[key]]; // values are always returned as array in googletag
         invokedTargeting.push([key, value]);
