@@ -37,16 +37,14 @@ const cache = {
   timeouts: {},
 };
 
-let referrerHostname;
-
-function getHostNameFromReferer(referer) {
+export function getHostNameFromReferer(referer) {
   try {
-    referrerHostname = urlLib.parse(referer, {noDecodeWholeURL: true}).hostname;
+    rubiconAdapter.referrerHostname = urlLib.parse(referer, {noDecodeWholeURL: true}).hostname;
   } catch (e) {
     utils.logError('Rubicon Analytics: Unable to parse hostname from supplied url: ', referer, e);
-    referrerHostname = '';
+    rubiconAdapter.referrerHostname = '';
   }
-  return referrerHostname
+  return rubiconAdapter.referrerHostname
 };
 
 function stringProperties(obj) {
@@ -129,7 +127,7 @@ function sendMessage(auctionId, bidWonId) {
     integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
     version: '$prebid.version$',
     referrerUri: referrer,
-    referrerHostname: referrerHostname || getHostNameFromReferer(referrer)
+    referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer)
   };
   const wrapperName = config.getConfig('rubicon.wrapperName');
   if (wrapperName) {
@@ -274,6 +272,7 @@ function setRubiconAliases(aliasRegistry) {
 
 let baseAdapter = adapter({analyticsType: 'endpoint'});
 let rubiconAdapter = Object.assign({}, baseAdapter, {
+  referrerHostname: '',
   enableAnalytics(config = {}) {
     let error = false;
     samplingFactor = 1;
