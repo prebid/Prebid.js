@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec } from 'modules/hybridBidAdapter'
+import { spec } from 'modules/hybridBidAdapter.js'
 
 function getSlotConfigs(mediaTypes, params) {
   return {
