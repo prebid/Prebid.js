@@ -24,38 +24,6 @@ For `ad_size`, please use one of that values in following format: `ad_size: WIDT
     const ALL_VIDEO_SIZES = [
       [640, 480], [650, 520], [970, 580]
     ]
-    const adUnits = [
-        // Banner adUnit
-        {
-            code: 'test-ad',
-            sizes: [[160, 600]],
-            bids: [
-                {
-                    bidder: 'lifestreet',
-                    params: {
-                        slot: 'slot166704',
-                        adkey: '78c',
-                        ad_size: '160x600'
-                    }
-                }
-            ]
-        },
-        // Video instream adUnit
-        {
-            code: 'test-video-ad',
-            sizes: [[640, 480]],
-            bids: [
-                {
-                    bidder: 'lifestreet',
-                    params: {
-                        slot: 'slot1227631',
-                        adkey: 'a98',
-                        ad_size: '640x480'
-                    }
-                }
-            ]
-        }
-    ];
 ```
 
 # Test Parameters (Banner)
@@ -63,7 +31,11 @@ For `ad_size`, please use one of that values in following format: `ad_size: WIDT
     const adUnits = [
         {
             code: 'test-ad',
-            sizes: [[160, 600]],
+            mediaTypes: {
+                banner: {
+                    sizes: [[160, 600]],
+                }
+            },
             bids: [
                 {
                     bidder: 'lifestreet',
@@ -83,7 +55,12 @@ For `ad_size`, please use one of that values in following format: `ad_size: WIDT
     const adUnits = [
         {
             code: 'test-video-ad',
-            sizes: [[640, 480]],
+            mediaTypes: {
+                video: {
+                    playerSize: [[640, 480]],
+                    context: 'instream'
+                }
+            },
             bids: [
                 {
                     bidder: 'lifestreet',
