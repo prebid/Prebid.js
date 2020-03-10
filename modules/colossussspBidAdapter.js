@@ -80,6 +80,10 @@ export const spec = {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
       }
+      if (bidderRequest.gdprConsent) {
+        request.gdpr = bidderRequest.gdprConsent.consentString
+        request.gdprRequire = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+      }
     }
 
     for (let i = 0; i < validBidRequests.length; i++) {
