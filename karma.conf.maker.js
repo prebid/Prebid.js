@@ -71,7 +71,7 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
     karmaConf.coverageReporter = {
       dir: 'build/coverage',
       reporters: [
-        { type: 'html', subdir: 'karma-html' }
+        { type: 'lcov', subdir: '.' }
       ]
     };
   }

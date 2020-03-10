@@ -84,7 +84,7 @@ function viewCoverage(done) {
 
   connect.server({
     port: coveragePort,
-    root: 'build/coverage/karma-html',
+    root: 'build/coverage/lcov-report',
     livereload: false
   });
   opens('http://' + mylocalhost + ':' + coveragePort);
