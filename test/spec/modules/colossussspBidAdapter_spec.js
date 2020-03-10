@@ -117,8 +117,8 @@ describe('ColossussspAdapter', function () {
         expect(placement).to.have.key('eids')
         expect(placement.eids).to.be.an('array')
         expect(placement.eids.length).to.be.equal(3)
-        for(let v of placement.eids){
-          expect(v.source).to.be.oneOf(['britepool.com','identityLink','adserver.org'])
+        for (let v of placement.eids) {
+          expect(v.source).to.be.oneOf(['britepool.com', 'identityLink', 'adserver.org'])
         }
       }
     });
