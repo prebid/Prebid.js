@@ -102,6 +102,27 @@ describe('ColossussspAdapter', function () {
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
+
+  describe('buildRequests with user ids', function () {
+    bid.userId.britepoolid = 'britepoolid123';
+    bid.userId.idl_env = 'idl_env123';
+    bid.userId.tdid = 'tdid123';
+    let serverRequest = spec.buildRequests([bid], bidderRequest);
+    it('Returns valid data if array of bids is valid', function () {
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      for (let i = 0; i < placements.length; i++) {
+        let placement = placements[i];
+        expect(placement).to.have.key('eids')
+        expect(placement.eids).to.be.an('array')
+        expect(placement.eids.length).to.be.equal(3)
+        for(let v of placement.eids){
+          expect(v.source).to.be.oneOf(['britepool.com','identityLink','adserver.org'])
+        }
+      }
+    });
+  });
+
   describe('interpretResponse', function () {
     let resObject = {
       body: [ {
