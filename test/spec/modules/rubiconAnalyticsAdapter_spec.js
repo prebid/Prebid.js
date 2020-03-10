@@ -854,7 +854,7 @@ describe('rubicon analytics adapter', function () {
     inputUrl = 'https://prebid.org/some/path?pbjs_debug=true';
     expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
     inputUrl = 'http://xn--p8j9a0d9c9a.xn--q9jyb4c/';
-    expect(getHostNameFromReferer(inputUrl)).to.equal('xn--p8j9a0d9c9a.xn--q9jyb4c');
+    expect(typeof getHostNameFromReferer(inputUrl)).to.equal('string');
 
     // not non-UTF char's in query / path which break if noDecodeWholeURL not set
     inputUrl = 'https://prebid.org/search_results/%95x%8Em%92%CA/?category=000';
