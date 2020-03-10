@@ -1,6 +1,6 @@
 'use strict';
 
-const { registerBidder } = require('../src/adapters/bidderFactory');
+const { registerBidder } = require('../src/adapters/bidderFactory.js');
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';

@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/smilewantedBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import * as utils from 'src/utils';
-import { requestBidsHook } from 'modules/consentManagement';
+import { spec } from 'modules/smilewantedBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
+import { requestBidsHook } from 'modules/consentManagement.js';
 
 const DISPLAY_REQUEST = [{
   adUnitCode: 'sw_300x250',

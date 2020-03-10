@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adkernelBidAdapter';
-import * as utils from 'src/utils';
+import {spec} from 'modules/adkernelBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {

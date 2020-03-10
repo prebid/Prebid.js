@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {config} from '../src/config';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
@@ -125,7 +125,7 @@ export const spec = {
         url: syncUrl
       });
     } else if (syncOptions.pixelEnabled && REFERER != null) {
-      typeof gdprConsent.consentString != 'undefined' ? syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?euconsent=${gdprConsent.consentString}&referrer=${REFERER}` : syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
+      typeof gdprConsent != 'undefined' && typeof gdprConsent.consentString != 'undefined' ? syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?euconsent=${gdprConsent.consentString}&referrer=${REFERER}` : syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
       syncs.push({
         type: 'image',
         url: syncUrl

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/freewheel-sspBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/freewheel-sspBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
 

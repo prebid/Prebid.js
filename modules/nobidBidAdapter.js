@@ -1,8 +1,9 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.1';
+window.nobidVersion = '1.2.3';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -57,6 +58,21 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return uspConsent;
     }
+    var schain = function(bids) {
+      if (bids && bids.length > 0) {
+        return bids[0].schain
+      }
+      return null;
+    }
+    var coppa = function() {
+      if (config.getConfig('coppa') === true) {
+        return {'coppa': true};
+      }
+      if (bids && bids.length > 0) {
+        return bids[0].coppa
+      }
+      return null;
+    }
     var topLocation = function(bidderRequest) {
       var ret = '';
       if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -83,7 +99,7 @@ function nobidBuildRequests(bids, bidderRequest) {
         var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
-        console.error(e);
+        utils.logWarn('Could not parse screen dimensions, error details:', e);
       }
     }
     var state = {};
@@ -99,6 +115,10 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['ref'] = document.referrer;
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
+    const sch = schain(bids);
+    if (sch) state['schain'] = sch;
+    const cop = coppa();
+    if (cop) state['coppa'] = cop;
     return state;
   }
   function newAdunit(adunitObject, adunits) {
@@ -269,7 +289,7 @@ export const spec = {
     var buildEndpoint = function() {
       return resolveEndpoint() + 'adreq?cb=' + Math.floor(Math.random() * 11000);
     }
-    log('buildRequests', validBidRequests);
+    log('validBidRequests', validBidRequests);
     if (!validBidRequests || validBidRequests.length <= 0) {
       log('Empty validBidRequests');
       return;

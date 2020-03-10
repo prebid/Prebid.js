@@ -1,14 +1,18 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
-const BIDDER_CODE = 'playgroundxyz';
+const BIDDER_CODE = 'pxyz';
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
 const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['playgroundxyz', 'pxyz'],
+
+  // This adapter was previously named playgroundxyz - this alias ensures
+  // backwards compatibility for publishers
+  aliases: ['playgroundxyz'],
+
   supportedMediaTypes: [BANNER],
 
   /**

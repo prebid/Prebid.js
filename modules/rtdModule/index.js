@@ -54,11 +54,11 @@
  * @type {number}
  */
 
-import {getGlobal} from '../../src/prebidGlobal';
+import {getGlobal} from '../../src/prebidGlobal.js';
 import {config} from '../../src/config.js';
-import {targeting} from '../../src/targeting';
-import {getHook, module} from '../../src/hook';
-import * as utils from '../../src/utils';
+import {targeting} from '../../src/targeting.js';
+import {getHook, module} from '../../src/hook.js';
+import * as utils from '../../src/utils.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
