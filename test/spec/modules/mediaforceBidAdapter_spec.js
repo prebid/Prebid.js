@@ -128,7 +128,7 @@ describe('mediaforce bid adapter', function () {
           ua: navigator.userAgent,
           dnt: dnt,
           js: 1,
-          language: getLanguage(),
+          language: language,
         },
         imp: [{
           tagid: bid.params.placement_id,
@@ -141,7 +141,7 @@ describe('mediaforce bid adapter', function () {
       assert.deepEqual(request, {
         method: 'POST',
         url: requestUrl,
-        data: '{"id":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b","site":{"page":"https%3A%2F%2Fwww.prebid.org","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + getLanguage() + '"},"imp":[{"tagid":"202","secure":1,"bidfloor":0.5,"banner":{"w":300,"h":250}}]}',
+        data: '{"id":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b","site":{"page":"https%3A%2F%2Fwww.prebid.org","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + language + '"},"imp":[{"tagid":"202","secure":1,"bidfloor":0.5,"banner":{"w":300,"h":250}}]}',
       });
     });
 
