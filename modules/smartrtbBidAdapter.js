@@ -1,7 +1,7 @@
 
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'smartrtb';
 
 function getDomain () {
@@ -68,7 +68,7 @@ export const spec = {
     }
 
     let params = validBidRequests[0].params
-    let url = params.endpoint ? params.endpoint : '//market-global.smrtb.com/json/publisher/prebid'
+    let url = params.endpoint ? params.endpoint : 'https://market-global.smrtb.com/json/publisher/prebid'
     return {
       method: 'POST',
       url: url,

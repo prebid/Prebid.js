@@ -1,11 +1,11 @@
 /* Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
 Updated : 2018-03-28 */
-import includes from 'core-js/library/fn/array/includes';
-import adapter from '../src/AnalyticsAdapter';
+import includes from 'core-js/library/fn/array/includes.js';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
+import adapterManager from '../src/adapterManager.js';
 
-const utils = require('../src/utils');
+const utils = require('../src/utils.js');
 
 const url = 'https://kinesis.us-east-1.amazonaws.com/';
 const analyticsType = 'endpoint';
@@ -232,11 +232,14 @@ sigmoidAdapter.buildUtmTagData = function () {
 };
 
 function send(eventType, data, sendDataType) {
+  // eslint-disable-next-line no-undef
   AWS.config.credentials = new AWS.Credentials({
     accessKeyId: 'accesskey', secretAccessKey: 'secretkey'
   });
 
+  // eslint-disable-next-line no-undef
   AWS.config.region = 'us-east-1';
+  // eslint-disable-next-line no-undef
   AWS.config.credentials.get(function(err) {
     // attach event listener
     if (err) {
@@ -244,6 +247,7 @@ function send(eventType, data, sendDataType) {
       return;
     }
     // create kinesis service object
+    // eslint-disable-next-line no-undef
     var kinesis = new AWS.Kinesis({
       apiVersion: '2013-12-02'
     });

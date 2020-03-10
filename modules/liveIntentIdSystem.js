@@ -4,14 +4,14 @@
  * @module modules/liveIntentIdSystem
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils'
-import {ajax} from '../src/ajax';
-import {submodule} from '../src/hook';
+import * as utils from '../src/utils.js'
+import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook.js';
 
 const MODULE_NAME = 'liveIntentId';
 const LIVE_CONNECT_DUID_KEY = '_li_duid';
 const DOMAIN_USER_ID_QUERY_PARAM_KEY = 'duid';
-const DEFAULT_LIVEINTENT_IDENTITY_URL = '//idx.liadm.com';
+const DEFAULT_LIVEINTENT_IDENTITY_URL = 'https://idx.liadm.com';
 const DEFAULT_PREBID_SOURCE = 'prebid';
 
 /** @type {Submodule} */

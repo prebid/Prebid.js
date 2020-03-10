@@ -1,12 +1,12 @@
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax'
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js'
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adspend';
-const BID_URL = '//rtb.com.ru/headerbidding-bid';
-const SYNC_URL = '//rtb.com.ru/headerbidding-sync?uid={UUID}';
+const BID_URL = 'https://rtb.com.ru/headerbidding-bid';
+const SYNC_URL = 'https://rtb.com.ru/headerbidding-sync?uid={UUID}';
 const COOKIE_NAME = 'hb-adspend-id';
 const UUID_LEN = 36;
 const TTL = 10000;

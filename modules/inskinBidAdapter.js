@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'inskin';
 
@@ -51,7 +51,7 @@ export const spec = {
       placements: [],
       time: Date.now(),
       user: {},
-      url: utils.getTopWindowUrl(),
+      url: bidderRequest.refererInfo.referer,
       enableBotFiltering: true,
       includePricingData: true,
       parallel: true
@@ -134,7 +134,6 @@ export const spec = {
           bid.creativeId = decision.adId;
           bid.ttl = 360;
           bid.netRevenue = true;
-          bid.referrer = utils.getTopWindowUrl();
 
           bidResponses.push(bid);
         }

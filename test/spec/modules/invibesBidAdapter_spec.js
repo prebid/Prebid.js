@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { spec, resetInvibes, stubDomainOptions } from 'modules/invibesBidAdapter';
+import { spec, resetInvibes, stubDomainOptions } from 'modules/invibesBidAdapter.js';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
   const PLACEMENT_ID = '12345';
-  const ENDPOINT = '//bid.videostep.com/Bid/VideoAdContent';
-  const SYNC_ENDPOINT = '//k.r66net.com/GetUserSync';
+  const ENDPOINT = 'https://bid.videostep.com/Bid/VideoAdContent';
+  const SYNC_ENDPOINT = 'https://k.r66net.com/GetUserSync';
 
   let bidRequests = [
     {

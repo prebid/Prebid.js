@@ -1,9 +1,9 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
-import * as url from 'src/url';
-import {spec} from 'modules/adformOpenRTBBidAdapter';
-import { NATIVE } from 'src/mediaTypes';
-import { config } from 'src/config';
+import * as url from 'src/url.js';
+import {spec} from 'modules/adformOpenRTBBidAdapter.js';
+import { NATIVE } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 
 describe('AdformOpenRTB adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -39,7 +39,7 @@ describe('AdformOpenRTB adapter', function () {
       let request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
 
       assert.equal(request.method, 'POST');
-      assert.equal(request.url, '//10.8.57.207/adx/openrtb');
+      assert.equal(request.url, 'https://10.8.57.207/adx/openrtb');
       assert.deepEqual(request.options, {contentType: 'application/json'});
       assert.ok(request.data);
     });

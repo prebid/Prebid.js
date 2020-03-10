@@ -1,6 +1,5 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
@@ -12,7 +11,7 @@ const VIDEO_CONTEXT = {
 
 export const spec = {
   code: BIDDER_CODE,
-  ENDPOINT: '//hb.aralego.com/header',
+  ENDPOINT: 'https://hb.aralego.com/header',
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Check if the bid is a valid zone ID in either number or string form
@@ -20,15 +19,14 @@ export const spec = {
    * @return boolean for whether or not a bid is valid
    */
   isBidRequestValid: function(bid) {
-    const isVideoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-    const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
+    const isVideoMediaType = (bid.mediaTypes && bid.mediaTypes.video != null);
+    const videoContext = (bid.mediaTypes && bid.mediaTypes.video != null) ? bid.mediaTypes.video.videoContext : '';
 
     if (typeof bid.params !== 'object' || typeof bid.params.adid != 'string') {
       return false;
     }
 
     if (isVideoMediaType && videoContext === 'outstream') {
-      utils.logWarn('Warning: outstream video is not supported yet');
       return false;
     }
 
@@ -44,7 +42,7 @@ export const spec = {
     return bids.map(bid => {
       return {
         method: 'GET',
-        url: location.protocol + spec.ENDPOINT,
+        url: spec.ENDPOINT,
         data: getRequestData(bid, bidderRequest),
         bidRequest: bid
       }
@@ -71,6 +69,9 @@ export const spec = {
       ttl: 1800
     };
 
+    if (bidRequest.params && bidRequest.params.bidfloor && ad.cpm && ad.cpm < bidRequest.params.bidfloor) {
+      bid.cpm = 0;
+    }
     if (ad.creative_type) {
       bid.mediaType = ad.creative_type;
     }
@@ -89,6 +90,7 @@ export const spec = {
             image: nativeAd.image || nativeAd.image.url,
             icon: nativeAd.icon || nativeAd.icon.url,
             clickUrl: nativeAd.clickUrl,
+            clickTrackers: (nativeAd.clicktrackers) ? nativeAd.clicktrackers : [],
             impressionTrackers: nativeAd.impressionTrackers,
           }
         });
@@ -123,12 +125,12 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//cdn.aralego.com/ucfad/cookie/sync.html'
+        url: 'https://cdn.aralego.net/ucfad/cookie/sync.html'
       }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: '//sync.aralego.com/idSync'
+        url: 'https://sync.aralego.com/idSync'
       }];
     }
   }
@@ -136,9 +138,7 @@ export const spec = {
 registerBidder(spec);
 
 function transformSizes(requestSizes) {
-  if (utils.isArray(requestSizes) && requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
-    return [parseInt(requestSizes[0], 10), parseInt(requestSizes[1], 10)];
-  } else if (typeof requestSizes === 'object' && requestSizes.length) {
+  if (typeof requestSizes === 'object' && requestSizes.length) {
     return requestSizes[0];
   }
 }
@@ -183,14 +183,11 @@ function getSupplyChain(schain) {
 
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
-  const loc = utils.getTopWindowLocation();
+  const loc = window.location;
   const host = loc.host;
   const page = loc.href;
-  const ref = utils.getTopWindowReferrer();
   const language = navigator.language;
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
-  const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
-  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   const supplyChain = getSupplyChain(bid.schain);
   // general bid data
@@ -202,15 +199,24 @@ function getRequestData(bid, bidderRequest) {
     dnt: dnt,
     host: host,
     u: page,
-    ru: ref,
-    adid: utils.getBidIdParameter('adid', bid.params),
-    w: size[0],
-    h: size[1],
+    adid: bid.params.adid,
     tdid: userIdTdid,
-    schain: supplyChain
+    schain: supplyChain,
+    fp: bid.params.bidfloor
   };
 
-  if (bid.mediaType === 'video' || videoMediaType) {
+  if (size != undefined && size.length == 2) {
+    bidData.w = size[0];
+    bidData.h = size[1];
+  }
+
+  if (bidderRequest && bidderRequest.uspConsent) {
+    Object.assign(bidData, {
+      usprivacy: bidderRequest.uspConsent
+    });
+  }
+  if (bid.mediaTypes && bid.mediaTypes.video != null) {
+    const videoContext = bid.mediaTypes.video.context;
     switch (videoContext) {
       case 'outstream':
         bidData.atype = VIDEO_CONTEXT.OUSTREAM;

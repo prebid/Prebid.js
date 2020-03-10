@@ -1,14 +1,15 @@
 import { expect } from 'chai';
 
 import parse from 'url-parse';
-import { buildDfpVideoUrl, buildAdpodVideoUrl } from 'modules/dfpAdServerVideo';
-import { parseQS } from 'src/url';
-import adUnit from 'test/fixtures/video/adUnit';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { targeting } from 'src/targeting';
-import { auctionManager } from 'src/auctionManager';
-import * as adpod from 'modules/adpod';
+import { buildDfpVideoUrl, buildAdpodVideoUrl } from 'modules/dfpAdServerVideo.js';
+import { parseQS } from 'src/url.js';
+import adUnit from 'test/fixtures/video/adUnit.json';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { targeting } from 'src/targeting.js';
+import { auctionManager } from 'src/auctionManager.js';
+import * as adpod from 'modules/adpod.js';
+import { server } from 'test/mocks/xhr.js';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -302,8 +303,6 @@ describe('The DFP video support module', function () {
   describe('adpod unit tests', function () {
     let amStub;
     let amGetAdUnitsStub;
-    let xhr;
-    let requests;
 
     before(function () {
       let adUnits = [{
@@ -333,10 +332,6 @@ describe('The DFP video support module', function () {
     });
 
     beforeEach(function () {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
-
       config.setConfig({
         adpod: {
           brandCategoryExclusion: true,
@@ -347,7 +342,6 @@ describe('The DFP video support module', function () {
 
     afterEach(function() {
       config.resetConfig();
-      xhr.restore();
     });
 
     after(function () {
@@ -466,7 +460,7 @@ describe('The DFP video support module', function () {
         }
       }));
 
-      requests[0].respond(503, {
+      server.requests[0].respond(503, {
         'Content-Type': 'plain/text',
       }, 'The server could not save anything at the moment.');
 

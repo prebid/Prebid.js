@@ -1,8 +1,8 @@
 'use strict';
 
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 function RhythmOneBidAdapter() {
   this.code = 'rhythmone';
@@ -205,7 +205,7 @@ function RhythmOneBidAdapter() {
       return [];
     }
 
-    var rmpUrl = getFirstParam('endpoint', BRs) || '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
+    var rmpUrl = getFirstParam('endpoint', BRs) || 'https://tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
     var defaultZone = getFirstParam('zone', BRs) || '1r';
     var defaultPath = getFirstParam('path', BRs) || 'mvo';
 

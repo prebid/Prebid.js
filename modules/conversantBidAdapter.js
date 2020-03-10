@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'conversant';
 const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
@@ -122,16 +122,18 @@ export const spec = {
 
     let userExt = {};
 
-    // Add GDPR flag and consent string
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      userExt.consent = bidderRequest.gdprConsent.consentString;
+    if (bidderRequest) {
+      // Add GDPR flag and consent string
+      if (bidderRequest.gdprConsent) {
+        userExt.consent = bidderRequest.gdprConsent.consentString;
 
-      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-        payload.regs = {
-          ext: {
-            gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-          }
-        };
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          utils.deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+        }
+      }
+
+      if (bidderRequest.uspConsent) {
+        utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
     }
 

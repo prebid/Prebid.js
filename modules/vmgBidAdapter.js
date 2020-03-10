@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'vmg';
 const ENDPOINT = 'https://predict.vmg.nyc';
 
