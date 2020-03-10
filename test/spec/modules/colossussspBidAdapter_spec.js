@@ -115,7 +115,7 @@ describe('ColossussspAdapter', function () {
       expect(data).to.be.an('object');
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.key('eids')
+        expect(placement).to.have.property('eids')
         expect(placement.eids).to.be.an('array')
         expect(placement.eids.length).to.be.equal(3)
         for (let v of placement.eids) {
