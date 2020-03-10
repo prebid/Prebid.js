@@ -111,6 +111,7 @@ describe('ColossussspAdapter', function () {
     let serverRequest = spec.buildRequests([bid], bidderRequest);
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
+      let placements = data['placements'];
       expect(data).to.be.an('object');
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
