@@ -1,8 +1,9 @@
 const expect = require('chai').expect;
 const { host, protocol } = require('../../../helpers/testing-utils');
 
-const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/native.html`;
-const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/prebid_native_example_1_0"]';
+const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/multiple_bidders.html?pbjs_debug=true`;
+const CREATIVE_BANNER_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/prebid_multiformat_test_0"]';
+const CREATIVE_NATIVE_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/prebid_multiformat_test_1"]';
 
 const EXPECTED_TARGETING_KEYS = {
   hb_source: 'client',
@@ -21,13 +22,15 @@ const EXPECTED_TARGETING_KEYS = {
   hb_bidder: 'appnexus',
   hb_format_appnexus: 'native',
   hb_size_appnexus: '0x0'
-}
+};
 
-describe('Prebid.js Native Ad Unit Test', function () {
+describe('Prebid.js Multiple Bidder Ad Unit Test', function () {
   before(function loadTestPage() {
     browser.url(TEST_PAGE_URL).pause(3000);
     try {
-      browser.waitForExist(CREATIVE_IFRAME_CSS_SELECTOR, 2000);
+      browser.waitForExist(CREATIVE_BANNER_CSS_SELECTOR, 3000);
+      const creativeIframe = $(CREATIVE_BANNER_CSS_SELECTOR).value;
+      browser.frame(creativeIframe);
     } catch (e) {
       // If creative Iframe didn't load, repeat the steps again!
       // Due to some reason if the Ad server doesn't respond, the test case will time out after 60000 ms as defined in file wdio.conf.js
@@ -51,8 +54,14 @@ describe('Prebid.js Native Ad Unit Test', function () {
     expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
   });
 
-  it('should render the native ad on the page', function () {
-    const creativeIframe = $(CREATIVE_IFRAME_CSS_SELECTOR).value;
+  it('should render the Banner Ad on the page', function () {
+    expect(browser.isVisible('body > div[class="GoogleActiveViewElement"] > a > img')).to.be.true;
+  });
+
+  it('should render the native ad on the  page', function () {
+    browser.frameParent();
+    browser.waitForExist(CREATIVE_NATIVE_CSS_SELECTOR, 3000);
+    const creativeIframe = $(CREATIVE_NATIVE_CSS_SELECTOR).value;
     browser.frame(creativeIframe);
     expect(browser.isVisible('body > div[class="GoogleActiveViewElement"] > div[class="card"]')).to.be.true;
   });
