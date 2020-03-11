@@ -40,7 +40,7 @@ export const spec = {
     let bidResponses = [];
 
     if (serverResponse && serverResponse.body) {
-      serverResponse.body.forEach(function (bid) {
+      _each(serverResponse.body, function (bid) {
         if (bid.errors) {
           logError(bid.errors);
           return;
