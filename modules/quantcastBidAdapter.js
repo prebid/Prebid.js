@@ -80,6 +80,7 @@ function getDomain(url) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner', 'video'],
+  hasUserSynced: false,
 
   /**
    * Verify the `AdUnits.bids` response with `true` for valid request and `false`
@@ -225,7 +226,7 @@ export const spec = {
   },
   getUserSyncs(syncOptions, serverResponses) {
     const syncs = []
-    if (syncOptions.pixelEnabled) {
+    if (!this.hasUserSynced && syncOptions.pixelEnabled) {
       const responseWithUrl = find(serverResponses, serverResponse =>
         utils.deepAccess(serverResponse.body, 'userSync.url')
       );
@@ -237,8 +238,12 @@ export const spec = {
           url: url
         });
       }
+      this.hasUserSynced = true;
     }
     return syncs;
+  },
+  resetUserSync() {
+    this.hasUserSynced = false;
   }
 };
 

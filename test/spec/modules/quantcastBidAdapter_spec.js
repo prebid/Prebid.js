@@ -519,6 +519,40 @@ describe('Quantcast adapter', function () {
       };
       expect(actualSyncs.length).to.equal(1);
       expect(actualSyncs[0]).to.deep.equal(expectedSync);
+      qcSpec.resetUserSync();
+    });
+
+    it('should not return user syncs if done already', function () {
+      const syncOptions = {
+        pixelEnabled: true
+      };
+      const serverResponses = [
+        {
+          body: {
+            userSync: {
+              url: 'http://quantcast.com/pixelUrl'
+            }
+          }
+        },
+        {
+          body: {
+
+          }
+        }
+      ];
+
+      let actualSyncs = qcSpec.getUserSyncs(syncOptions, serverResponses);
+      const expectedSync = {
+        type: 'image',
+        url: 'http://quantcast.com/pixelUrl'
+      };
+      expect(actualSyncs.length).to.equal(1);
+      expect(actualSyncs[0]).to.deep.equal(expectedSync);
+
+      actualSyncs = qcSpec.getUserSyncs(syncOptions, serverResponses);
+      expect(actualSyncs.length).to.equal(0);
+
+      qcSpec.resetUserSync();
     });
   });
 });
