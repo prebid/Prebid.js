@@ -591,7 +591,6 @@ const OPEN_RTB_PROTOCOL = {
     const bidUserIdAsEids = utils.deepAccess(bidRequests, '0.bids.0.userIdAsEids');
     if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
       utils.deepSetValue(request, 'user.ext.eids', bidUserIdAsEids);
-      console.log('bidUserIdAsEids', bidUserIdAsEids);
     }
 
     // const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
