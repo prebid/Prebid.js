@@ -55,10 +55,14 @@ describe('ProxistoreBidAdapter', function () {
       expect(data.gdpr.applies).to.be.true;
       expect(data.gdpr.consentGiven).to.be.true;
     });
-    it('should have a property bidId if there is only one bid', function () {
+    it('should have a property a length of bids equal to one if there is only one bid', function () {
       const data = JSON.parse(request.data);
-      expect(data.hasOwnProperty('bidId')).to.be.true;
-    })
+      expect(data.hasOwnProperty('bids')).to.be.true;
+      expect(data.bids).to.be.an('array');
+      expect(data.bids.length).equal(1);
+      expect(data.bids[0].hasOwnProperty('id')).to.be.true;
+      expect(data.bids[0].sizes).to.be.an('array');
+    });
   });
 
   describe('interpretResponse', function () {
