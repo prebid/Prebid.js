@@ -38,7 +38,7 @@
           {
             bidder: 'appnexus',
             params: {
-              placementId: '9333431',
+              placementId: '13232361',
               video: {
                 skipppable: false,
                 playback_methods: ['auto_play_sound_off']
@@ -50,6 +50,12 @@
 
       pbjs.que.push(function(){
         pbjs.addAdUnits(videoAdUnit);
+        pbjs.setConfig({
+                    debug: true,
+                    cache: {
+                        url: 'https://prebid.adnxs.com/pbc/v1/cache'
+                    }
+                });
         pbjs.requestBids({
           timeout : 700,
           bidsBackHandler : function(bids) {

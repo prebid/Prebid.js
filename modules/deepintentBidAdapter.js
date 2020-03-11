@@ -37,8 +37,12 @@ export const spec = {
       imp: validBidRequests.map(bid => buildImpression(bid)),
       site: buildSite(bidderRequest),
       device: buildDevice(),
-      user: user && user.length == 1 ? user[0] : {}
+      user: user && user.length === 1 ? user[0] : {}
     };
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
 
     return {
       method: 'POST',
@@ -127,13 +131,15 @@ function buildBanner(bid) {
       if (utils.isArray(sizes) && sizes.length > 0) {
         return {
           h: sizes[0][1],
-          w: sizes[0][0]
+          w: sizes[0][0],
+          pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
         }
       }
     } else {
       return {
         h: bid.params.height,
-        w: bid.params.width
+        w: bid.params.width,
+        pos: bid && bid.params && bid.params.pos ? bid.params.pos : 0
       }
     }
   }
