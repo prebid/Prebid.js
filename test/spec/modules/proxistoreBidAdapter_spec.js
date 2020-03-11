@@ -50,10 +50,15 @@ describe('ProxistoreBidAdapter', function () {
     });
     it('should have the value consentGiven to true bc we have 418 in the vendor list', function () {
       const data = JSON.parse(request.data);
+
       expect(data.gdpr.consentString).equal(bidderRequest.gdprConsent.consentString);
       expect(data.gdpr.applies).to.be.true;
       expect(data.gdpr.consentGiven).to.be.true;
     });
+    it('should have a property bidId if there is only one bid', function () {
+      const data = JSON.parse(request.data);
+      expect(data.hasOwnProperty('bidId')).to.be.true;
+    })
   });
 
   describe('interpretResponse', function () {
