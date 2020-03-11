@@ -154,6 +154,7 @@ describe('Sortable Analytics Adapter', function() {
 
   afterEach(function() {
     sandbox.restore();
+    clock.restore();
     sortableAnalyticsAdapter.disableAnalytics();
   });
 
