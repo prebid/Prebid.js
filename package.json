@@ -25,7 +25,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
+    "@babel/plugin-transform-runtime": "7.8.3",
     "@babel/preset-env": "^7.8.4",
+    "@babel/runtime-corejs3": "7.8.7",
     "ajv": "5.5.2",
     "babel-loader": "^8.0.5",
     "chai": "^4.2.0",
@@ -96,7 +98,6 @@
   },
   "dependencies": {
     "babel-plugin-transform-object-assign": "^6.22.0",
-    "core-js": "^2.4.1",
     "criteo-direct-rsa-validate": "^1.1.0",
     "crypto-js": "^3.3.0",
     "deep-equal": "^1.0.1",

@@ -29,6 +29,7 @@ module.exports = {
   ],
   "plugins": [
     path.resolve(__dirname, './plugins/pbjsGlobals.js'),
-    useLocal('babel-plugin-transform-object-assign')
+    useLocal('babel-plugin-transform-object-assign'),
+    [useLocal('@babel/plugin-transform-runtime'), { corejs: 3, useESModules: true }]
   ]
 };
