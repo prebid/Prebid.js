@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import find from 'core-js/library/fn/array/find.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
 import { Renderer } from '../src/Renderer.js'
 
@@ -72,7 +71,7 @@ export const spec = {
         return
       }
 
-      let matchedBid = find(serverResponse.body, function (bidResponse) {
+      let matchedBid = serverResponse.body.find(function (bidResponse) {
         return bidRequest.params.adslotId == bidResponse.id
       })
 

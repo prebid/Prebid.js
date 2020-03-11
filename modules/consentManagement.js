@@ -7,7 +7,6 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
-import includes from 'core-js/library/fn/array/includes.js';
 import strIncludes from 'core-js/library/fn/string/includes.js';
 
 const DEFAULT_CMP = 'iab';
@@ -207,7 +206,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     return exitModule(null, hookConfig);
   }
 
-  if (!includes(Object.keys(cmpCallMap), userCMP)) {
+  if (!Object.keys(cmpCallMap).includes(userCMP)) {
     utils.logWarn(`CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
     return hookConfig.nextFn.apply(hookConfig.context, hookConfig.args);
   }

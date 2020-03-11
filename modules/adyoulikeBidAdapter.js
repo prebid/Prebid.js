@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { format } from '../src/url.js';
 // import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import find from 'core-js/library/fn/array/find.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
@@ -99,7 +98,7 @@ export const spec = {
 
 /* Get hostname from bids */
 function getHostname(bidderRequest) {
-  let dcHostname = find(bidderRequest, bid => bid.params.DC);
+  let dcHostname = bidderRequest.find(bid => bid.params.DC);
   if (dcHostname) {
     return ('-' + dcHostname.params.DC);
   }

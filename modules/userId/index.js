@@ -96,8 +96,7 @@
  * @property {(function|undefined)} callback - function that will return an id
  */
 
-import find from 'core-js/library/fn/array/find.js';
-import {config} from '../../src/config.js';
+import { config } from '../../src/config.js';
 import events from '../../src/events.js';
 import * as utils from '../../src/utils.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
@@ -474,11 +473,11 @@ function updateSubmodules() {
     return;
   }
   // do this to avoid reprocessing submodules
-  const addedSubmodules = submoduleRegistry.filter(i => !find(submodules, j => j.name === i.name));
+  const addedSubmodules = submoduleRegistry.filter(i => !submodules.find(j => j.name === i.name));
 
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   submodules = addedSubmodules.map(i => {
-    const submoduleConfig = find(configs, j => j.name === i.name);
+    const submoduleConfig = configs.find(j => j.name === i.name);
     return submoduleConfig ? {
       submodule: i,
       config: submoduleConfig,
@@ -500,7 +499,7 @@ function updateSubmodules() {
  * @param {Submodule} submodule
  */
 export function attachIdSystem(submodule) {
-  if (!find(submoduleRegistry, i => i.name === submodule.name)) {
+  if (!submoduleRegistry.find(i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
     updateSubmodules();
   }

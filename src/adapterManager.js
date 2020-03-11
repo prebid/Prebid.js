@@ -7,8 +7,6 @@ import { newBidder } from './adapters/bidderFactory.js';
 import { ajaxBuilder } from './ajax.js';
 import { config, RANDOM } from './config.js';
 import { hook } from './hook.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import find from 'core-js/library/fn/array/find.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
 
@@ -123,7 +121,7 @@ function getAdUnitCopyForPrebidServer(adUnits) {
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
-      return includes(adaptersServerSide, bid.bidder) &&
+      return adaptersServerSide.includes(bid.bidder) &&
         (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
     }).map((bid) => {
       bid.bid_id = utils.getUniqueIdentifierStr();
@@ -206,11 +204,11 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
     // don't call these client side (unless client request is needed for testing)
     clientBidderCodes = bidderCodes.filter(elm =>
-      !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm)
+      !adaptersServerSide.includes(elm) || clientTestAdapters.includes(elm)
     );
 
     const adUnitsContainServerRequests = adUnits => Boolean(
-      find(adUnits, adUnit => find(adUnit.bids, bid => (
+      adUnits.find(adUnit => adUnit.bids.find(bid => (
         bid.bidSource ||
         (_s2sConfig.bidderControl && _s2sConfig.bidderControl[bid.bidder])
       ) && bid.finalSource === s2sTestingModule.SERVER))
@@ -244,8 +242,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
     adUnitsS2SCopy.forEach((adUnitCopy) => {
       let validBids = adUnitCopy.bids.filter((adUnitBid) => {
-        return find(bidRequests, request => {
-          return find(request.bids, (reqBid) => reqBid.bidId === adUnitBid.bid_id);
+        return bidRequests.find(request => {
+          return request.bids.find((reqBid) => reqBid.bidId === adUnitBid.bid_id);
         });
       });
       adUnitCopy.bids = validBids;
@@ -328,7 +326,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => { return adapters.concat(bid.bidder) }, []));
         }, []);
         utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => {
-          return includes(allBidders, adapter);
+          return allBidders.includes(adapter);
         }).join(',')}`);
 
         // fire BID_REQUESTED event for each s2s bidRequest
@@ -388,12 +386,12 @@ function doingS2STesting() {
 
 function isTestingServerOnly() {
   return Boolean(doingS2STesting() && _s2sConfig.testServerOnly);
-};
+}
 
 function getSupportedMediaTypes(bidderCode) {
   let result = [];
-  if (includes(adapterManager.videoAdapters, bidderCode)) result.push('video');
-  if (includes(nativeAdapters, bidderCode)) result.push('native');
+  if (adapterManager.videoAdapters.includes(bidderCode)) result.push('video');
+  if (nativeAdapters.includes(bidderCode)) result.push('native');
   return result;
 }
 
@@ -404,10 +402,10 @@ adapterManager.registerBidAdapter = function (bidAdaptor, bidderCode, {supported
     if (typeof bidAdaptor.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdaptor;
 
-      if (includes(supportedMediaTypes, 'video')) {
+      if (supportedMediaTypes.includes('video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
-      if (includes(supportedMediaTypes, 'native')) {
+      if (supportedMediaTypes.includes('native')) {
         nativeAdapters.push(bidderCode);
       }
     } else {
@@ -428,7 +426,7 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias) {
       const s2sConfig = config.getConfig('s2sConfig');
       const s2sBidders = s2sConfig && s2sConfig.bidders;
 
-      if (!(s2sBidders && includes(s2sBidders, alias))) {
+      if (!(s2sBidders && s2sBidders.includes(alias))) {
         utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adapterManager.aliasBidAdapter');
       } else {
         _aliasRegistry[alias] = bidderCode;

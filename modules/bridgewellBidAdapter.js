@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import find from 'core-js/library/fn/array/find.js';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
@@ -87,7 +86,7 @@ export const spec = {
         return;
       }
 
-      let matchedResponse = find(serverResponse.body, function (res) {
+      let matchedResponse = serverResponse.body.find(function (res) {
         let valid = false;
 
         if (res && !res.consumed) {
@@ -107,7 +106,7 @@ export const spec = {
                 if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
                   valid = width === sizes[0] && height === sizes[1];
                 } else { // for format Array[Array[Number]] check
-                  valid = !!find(sizes, function (size) {
+                  valid = !!sizes.find(function (size) {
                     return (width === size[0] && height === size[1]);
                   });
                 }

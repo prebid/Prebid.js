@@ -2,8 +2,6 @@ import { Renderer } from '../src/Renderer.js';
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 const BIDDER_CODE = 'xhb';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -50,16 +48,16 @@ export const spec = {
    */
   buildRequests: function(bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
-    const userObjBid = find(bidRequests, hasUserInfo);
+    const userObjBid = bidRequests.find(hasUserInfo);
     let userObj;
     if (userObjBid) {
       userObj = {};
       Object.keys(userObjBid.params.user)
-        .filter(param => includes(USER_PARAMS, param))
+        .filter(param => USER_PARAMS.includes(param))
         .forEach(param => userObj[param] = userObjBid.params.user[param]);
     }
 
-    const memberIdBid = find(bidRequests, hasMemberId);
+    const memberIdBid = bidRequests.find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
 
     const payload = {
@@ -111,7 +109,7 @@ export const spec = {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
-          if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+          if (rtbBid.cpm !== 0 && this.supportedMediaTypes.includes(rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
@@ -338,7 +336,7 @@ function bidToTag(bid) {
     tag.video = {};
     // place any valid video params on the tag
     Object.keys(bid.params.video)
-      .filter(param => includes(VIDEO_TARGETING, param))
+      .filter(param => VIDEO_TARGETING.includes(param))
       .forEach(param => tag.video[param] = bid.params.video[param]);
   }
 
@@ -384,7 +382,7 @@ function hasMemberId(bid) {
 }
 
 function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && find(tag.ads, ad => ad.rtb);
+  return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
 }
 
 function buildNativeRequest(params) {
@@ -413,7 +411,7 @@ function buildNativeRequest(params) {
       // subtract required keys from adunit keys
       const adunitKeys = Object.keys(params[key]);
       const requiredKeys = Object.keys(requiredParams);
-      const remaining = adunitKeys.filter(key => !includes(requiredKeys, key));
+      const remaining = adunitKeys.filter(key => !requiredKeys.includes(key));
 
       // if none are left over, the minimum params needs to be sent
       if (remaining.length === 0) {

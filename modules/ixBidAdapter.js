@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import find from 'core-js/library/fn/array/find.js';
 import isInteger from 'core-js/library/fn/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -190,7 +189,7 @@ function getBidRequest(id, impressions) {
   if (!id) {
     return;
   }
-  return find(impressions, imp => imp.id === id);
+  return impressions.find(imp => imp.id === id);
 }
 
 /**

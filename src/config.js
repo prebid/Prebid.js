@@ -13,8 +13,6 @@
  */
 
 import { isValidPriceConfig } from './cpmBucketManager.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
 import Set from 'core-js/library/fn/set.js';
 import { parseQS } from './url.js';
 
@@ -205,7 +203,7 @@ export function newConfig() {
     bidderConfig = {};
 
     function hasGranularity(val) {
-      return find(Object.keys(GRANULARITY_OPTIONS), option => val === GRANULARITY_OPTIONS[option]);
+      return Object.keys(GRANULARITY_OPTIONS).find(option => val === GRANULARITY_OPTIONS[option]);
     }
 
     function validatePriceGranularity(val) {
@@ -372,7 +370,7 @@ export function newConfig() {
 
     // call subscribers of a specific topic, passing only that configuration
     listeners
-      .filter(listener => includes(TOPICS, listener.topic))
+      .filter(listener => TOPICS.includes(listener.topic))
       .forEach(listener => {
         listener.callback({ [listener.topic]: options[listener.topic] });
       });

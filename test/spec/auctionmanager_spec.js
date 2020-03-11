@@ -7,7 +7,6 @@ import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
 import * as store from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
-import find from 'core-js/library/fn/array/find.js';
 import { server } from 'test/mocks/xhr.js';
 
 var assert = require('assert');
@@ -760,7 +759,7 @@ describe('auctionmanager.js', function () {
 
         auction.callBids();
 
-        const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode == ADUNIT_CODE);
+        const addedBid = auction.getBidsReceived().find(bid => bid.adUnitCode == ADUNIT_CODE);
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
     });
@@ -1072,7 +1071,7 @@ describe('auctionmanager.js', function () {
       assert.equal(auctionBidRequests.length > 0, true);
       assert.equal(Array.isArray(auctionBidRequests[0].bids), true);
 
-      const bid = find(auctionBidRequests[0].bids, bid => bid.adUnitCode === ADUNIT_CODE);
+      const bid = auctionBidRequests[0].bids.find(bid => bid.adUnitCode === ADUNIT_CODE);
       assert.equal(typeof bid !== 'undefined', true);
       assert.equal(bid.hasOwnProperty('storedAuctionResponse'), true);
       assert.equal(bid.storedAuctionResponse, '11111');

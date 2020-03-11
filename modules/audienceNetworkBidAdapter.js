@@ -4,8 +4,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { formatQS } from '../src/url.js';
 import { generateUUID, deepAccess, convertTypes } from '../src/utils.js';
-import findIndex from 'core-js/library/fn/array/find-index.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 const code = 'audienceNetwork';
 const currency = 'USD';
@@ -54,14 +52,14 @@ const expandSize = size => size.split('x').map(Number);
  * @param {String} size
  * @returns {Boolean}
  */
-const isValidSize = size => includes(['300x250', '320x50'], size);
+const isValidSize = size => ['300x250', '320x50'].includes(size);
 
 /**
  * Is this a valid, non-sized format?
  * @param {String} size
  * @returns {Boolean}
  */
-const isValidNonSizedFormat = format => includes(['video', 'native'], format);
+const isValidNonSizedFormat = format => ['video', 'native'].includes(format);
 
 /**
  * Is this a valid size and format?
@@ -220,7 +218,7 @@ const buildRequests = (bids, bidderRequest) => {
     platver,
     cb
   };
-  const video = findIndex(adformats, isVideo);
+  const video = adformats.findIndex(isVideo);
   if (video !== -1) {
     [search.playerwidth, search.playerheight] = expandSize(sizes[video]);
   }

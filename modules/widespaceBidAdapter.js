@@ -5,8 +5,6 @@ import {
   parseQueryStringParameters,
   parseSizesInput
 } from '../src/utils.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import find from 'core-js/library/fn/array/find.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
@@ -95,9 +93,7 @@ export const spec = {
 
       // Include debug data when available
       if (!isInHostileIframe) {
-        const DEBUG_AD = (find(window.top.location.hash.split('&'),
-          val => includes(val, 'WS_DEBUG_FORCEADID')
-        ) || '').split('=')[1];
+        const DEBUG_AD = (window.top.location.hash.split('&').find(val => val.includes('WS_DEBUG_FORCEADID')) || '').split('=')[1];
         data.forceAdId = DEBUG_AD;
       }
 

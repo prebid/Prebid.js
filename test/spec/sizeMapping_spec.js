@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { resolveStatus, setSizeConfig, sizeSupported } from 'src/sizeMapping.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 let utils = require('src/utils');
 let deepClone = utils.deepClone;
@@ -120,10 +119,10 @@ describe('sizeMapping', function () {
     });
 
     it('when multiple mediaQuery block matches, it should filter a union of the matched sizesSupported', function () {
-      matchMediaOverride = (str) => includes([
+      matchMediaOverride = (str) => [
         '(min-width: 1200px)',
         '(min-width: 768px) and (max-width: 1199px)'
-      ], str) ? {matches: true} : {matches: false};
+      ].includes(str) ? {matches: true} : {matches: false};
 
       let status = resolveStatus(undefined, testSizes, undefined, sizeConfig);
       expect(status.active).to.equal(true);

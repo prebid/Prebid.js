@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import includes from 'core-js/library/fn/array/includes.js';
 import {parse as parseUrl} from '../src/url.js';
 
 const BIDDER_CODE = 'emx_digital';
@@ -68,7 +67,7 @@ export const emxAdapter = {
     };
   },
   cleanProtocols: (video) => {
-    if (video.protocols && includes(video.protocols, 7)) {
+    if (video.protocols && video.protocols.includes(7)) {
       // not supporting VAST protocol 7 (VAST 4.0);
       utils.logWarn(BIDDER_CODE + ': VAST 4.0 is currently not supported. This protocol has been filtered out of the request.');
       video.protocols = video.protocols.filter(protocol => protocol !== 7);

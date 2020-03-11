@@ -3,8 +3,6 @@ import { parse as parseUrl } from '../src/url.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'advangelists';
@@ -164,7 +162,7 @@ function getOsVersion() {
     { s: 'UNIX', r: /UNIX/ },
     { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
   ];
-  let cs = find(clientStrings, cs => cs.r.test(navigator.userAgent));
+  let cs = clientStrings.find(cs => cs.r.test(navigator.userAgent));
   return cs ? cs.s : 'unknown';
 }
 
@@ -200,7 +198,7 @@ function getTopWindowReferrer() {
 
 function getVideoTargetingParams(bid) {
   return Object.keys(Object(bid.params.video))
-    .filter(param => includes(VIDEO_TARGETING, param))
+    .filter(param => VIDEO_TARGETING.includes(param))
     .reduce((obj, param) => {
       obj[ param ] = bid.params.video[ param ];
       return obj;

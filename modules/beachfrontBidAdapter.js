@@ -4,8 +4,6 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 const ADAPTER_VERSION = '1.9';
 const ADAPTER_NAME = 'BFIO_PREBID';
@@ -87,7 +85,7 @@ export const spec = {
       return response
         .filter(bid => bid.adm)
         .map((bid) => {
-          let request = find(bidRequest, req => req.adUnitCode === bid.slot);
+          let request = bidRequest.find(req => req.adUnitCode === bid.slot);
           return {
             requestId: request.bidId,
             bidderCode: spec.code,
@@ -108,7 +106,7 @@ export const spec = {
   getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '') {
     let syncs = [];
     let { gdprApplies, consentString = '' } = gdprConsent;
-    let bannerResponse = find(serverResponses, (res) => utils.isArray(res.body));
+    let bannerResponse = serverResponses.find((res) => utils.isArray(res.body));
 
     if (bannerResponse) {
       if (syncOptions.iframeEnabled) {
@@ -200,7 +198,7 @@ function getOsVersion() {
     { s: 'UNIX', r: /UNIX/ },
     { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
   ];
-  let cs = find(clientStrings, cs => cs.r.test(navigator.userAgent));
+  let cs = clientStrings.find(cs => cs.r.test(navigator.userAgent));
   return cs ? cs.s : 'unknown';
 }
 
@@ -260,7 +258,7 @@ function getTopWindowReferrer() {
 
 function getVideoTargetingParams(bid) {
   return Object.keys(Object(bid.params.video))
-    .filter(param => includes(VIDEO_TARGETING, param))
+    .filter(param => VIDEO_TARGETING.includes(param))
     .reduce((obj, param) => {
       obj[ param ] = bid.params.video[ param ];
       return obj;

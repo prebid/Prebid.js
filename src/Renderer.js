@@ -1,6 +1,5 @@
 import { loadExternalScript } from './adloader.js';
 import * as utils from './utils.js';
-import find from 'core-js/library/fn/array/find.js';
 const moduleCode = 'outstream';
 
 /**
@@ -103,7 +102,7 @@ export function executeRenderer(renderer, bid) {
 
 function isRendererDefinedOnAdUnit(adUnitCode) {
   const adUnits = $$PREBID_GLOBAL$$.adUnits;
-  const adUnit = find(adUnits, adUnit => {
+  const adUnit = adUnits.find(adUnit => {
     return adUnit.code === adUnitCode;
   });
   return !!(adUnit && adUnit.renderer && adUnit.renderer.url && adUnit.renderer.render);

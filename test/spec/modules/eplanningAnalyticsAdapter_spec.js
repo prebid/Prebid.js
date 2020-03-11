@@ -1,5 +1,4 @@
 import eplAnalyticsAdapter from 'modules/eplanningAnalyticsAdapter.js';
-import includes from 'core-js/library/fn/array/includes.js';
 import { expect } from 'chai';
 import {parse as parseURL} from 'src/url.js';
 import { server } from 'test/mocks/xhr.js';
@@ -114,8 +113,8 @@ describe('eplanning analytics adapter', function () {
       });
       expect(requests.length).to.equal(1);
 
-      expect(includes([initOptions.host + initOptions.ci], requests[0].url));
-      expect(includes(['https://ads.ar.e-planning.net/hba/1/12345?d='], requests[0].url));
+      expect([initOptions.host + initOptions.ci].includes(requests[0].url));
+      expect(['https://ads.ar.e-planning.net/hba/1/12345?d='].includes(requests[0].url));
 
       let info = requests[0].url;
       let purl = parseURL(info);

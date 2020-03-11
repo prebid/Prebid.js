@@ -4,8 +4,6 @@ import CONSTANTS from '../src/constants.json'
 import {ajaxBuilder} from '../src/ajax.js'
 import * as utils from '../src/utils.js'
 import {config} from '../src/config.js'
-import find from 'core-js/library/fn/array/find.js'
-import includes from 'core-js/library/fn/array/includes.js'
 
 const ajax = ajaxBuilder(0)
 
@@ -208,11 +206,11 @@ class AuctionData {
    * @return {*} - the bid
    */
   findBid(event) {
-    const bidder = find(this.auction.requests, r => (r.bidderCode === event.bidderCode))
+    const bidder = this.auction.requests.find(r => (r.bidderCode === event.bidderCode))
     if (!bidder) {
       this.auction.unsynced.push(JSON.parse(JSON.stringify(event)))
     }
-    let bid = find(bidder.bids, b => (b.bidId === event.requestId))
+    let bid = bidder.bids.find(b => (b.bidId === event.requestId))
 
     if (!bid) {
       event.unmatched = true
@@ -244,7 +242,7 @@ class AuctionData {
     let bid = this.findBid(event)
     if (bid) {
       bid.originalValues = Object.keys(event).reduce((o, k) => {
-        if (JSON.stringify(bid[k]) !== JSON.stringify(event[k]) && !includes(this.dropBidFields, k)) {
+        if (JSON.stringify(bid[k]) !== JSON.stringify(event[k]) && !this.dropBidFields.includes(k)) {
           o[k] = bid[k]
           bid[k] = event[k]
         }

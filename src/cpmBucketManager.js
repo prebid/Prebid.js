@@ -1,4 +1,3 @@
-import find from 'core-js/library/fn/array/find.js';
 const utils = require('./utils.js');
 
 const _defaultPrecision = 2;
@@ -80,7 +79,7 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
   });
 
   let bucketFloor = 0;
-  let bucket = find(config.buckets, bucket => {
+  let bucket = config.buckets.find(bucket => {
     if (cpm > cap.max * granularityMultiplier) {
       // cpm exceeds cap, just return the cap.
       let precision = bucket.precision;

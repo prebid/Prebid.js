@@ -6,7 +6,6 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {userSync} from 'src/userSync.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import find from 'core-js/library/fn/array/find.js';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -32,7 +31,7 @@ describe('the rubicon adapter', function () {
    * @return {sizeMapConverted}
    */
   function getSizeIdForBid(sizesMapConverted, bid) {
-    return find(sizesMapConverted, item => (item.width === bid.width && item.height === bid.height));
+    return sizesMapConverted.find(item => (item.width === bid.width && item.height === bid.height));
   }
 
   /**
@@ -41,7 +40,7 @@ describe('the rubicon adapter', function () {
    * @return {Object}
    */
   function getResponseAdBySize(ads, size) {
-    return find(ads, item => item.size_id === size.sizeId);
+    return ads.find(item => item.size_id === size.sizeId);
   }
 
   /**
@@ -50,7 +49,9 @@ describe('the rubicon adapter', function () {
    * @return {BidRequest}
    */
   function getBidRequestBySize(bidRequests, size) {
-    return find(bidRequests, item => item.sizes[0][0] === size.width && item.sizes[0][1] === size.height);
+    return bidRequests.find(
+      item => item.sizes[0][0] === size.width && item.sizes[0][1] === size.height
+    );
   }
 
   /**

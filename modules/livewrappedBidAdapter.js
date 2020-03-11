@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import find from 'core-js/library/fn/array/find.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'livewrapped';
@@ -42,17 +41,17 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    const userId = find(bidRequests, hasUserId);
-    const pubcid = find(bidRequests, hasPubcid);
-    const publisherId = find(bidRequests, hasPublisherId);
-    const auctionId = find(bidRequests, hasAuctionId);
-    let bidUrl = find(bidRequests, hasBidUrl);
-    let url = find(bidRequests, hasUrl);
-    let test = find(bidRequests, hasTestParam);
-    const seats = find(bidRequests, hasSeatsParam);
-    const deviceId = find(bidRequests, hasDeviceIdParam);
-    const ifa = find(bidRequests, hasIfaParam);
-    const tid = find(bidRequests, hasTidParam);
+    const userId = bidRequests.find(hasUserId);
+    const pubcid = bidRequests.find(hasPubcid);
+    const publisherId = bidRequests.find(hasPublisherId);
+    const auctionId = bidRequests.find(hasAuctionId);
+    let bidUrl = bidRequests.find(hasBidUrl);
+    let url = bidRequests.find(hasUrl);
+    let test = bidRequests.find(hasTestParam);
+    const seats = bidRequests.find(hasSeatsParam);
+    const deviceId = bidRequests.find(hasDeviceIdParam);
+    const ifa = bidRequests.find(hasIfaParam);
+    const tid = bidRequests.find(hasTidParam);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : getTopWindowLocation(bidderRequest);
     test = test ? test.params.test : undefined;

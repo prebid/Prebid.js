@@ -1,4 +1,3 @@
-import find from 'core-js/library/fn/array/find.js';
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { loadExternalScript } from '../src/adloader.js'
@@ -202,7 +201,7 @@ function _pushInAdagioQueue(ob) {
   if (!canAccessTopWindow()) return;
   const w = utils.getWindowTop();
   w.ADAGIO.queue.push(ob);
-};
+}
 
 function _getOrAddAdagioAdUnit(adUnitCode) {
   const w = utils.getWindowTop();
@@ -236,7 +235,7 @@ function _getDevice() {
     geo: {},
     js: 1
   };
-};
+}
 
 function _getSite() {
   const w = utils.getWindowTop();
@@ -245,14 +244,14 @@ function _getSite() {
     page: w.location.href,
     referrer: w.document.referrer || ''
   };
-};
+}
 
 function _getPageviewId() {
   if (!canAccessTopWindow()) return false;
   const w = utils.getWindowTop();
   w.ADAGIO.pageviewId = w.ADAGIO.pageviewId || utils.generateUUID();
   return w.ADAGIO.pageviewId;
-};
+}
 
 function _getElementFromTopWindow(element, currentWindow) {
   if (utils.getWindowTop() === currentWindow) {
@@ -320,7 +319,7 @@ function _getFeatures(bidRequest) {
   });
 
   return features;
-};
+}
 
 function _getGdprConsent(bidderRequest) {
   const consent = {};
@@ -442,7 +441,7 @@ export const spec = {
         }
         if (response.bids) {
           response.bids.forEach(bidObj => {
-            const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
+            const bidReq = (bidRequest.data.adUnits.find(bid => bid.bidId === bidObj.requestId));
             if (bidReq) {
               bidObj.site = bidReq.params.site;
               bidObj.placement = bidReq.params.placement;

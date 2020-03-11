@@ -18,7 +18,6 @@
 
 import { uniques, flatten, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
-import find from 'core-js/library/fn/array/find.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -33,7 +32,7 @@ export function newAuctionManager() {
   const auctionManager = {};
 
   auctionManager.addWinningBid = function(bid) {
-    const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
+    const auction = _auctions.find(auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
       bid.status = CONSTANTS.BID_STATUS.RENDERED;
       auction.addWinningBid(bid);
@@ -84,7 +83,7 @@ export function newAuctionManager() {
   };
 
   auctionManager.findBidByAdId = function(adId) {
-    return find(_auctions.map(auction => auction.getBidsReceived()).reduce(flatten, []), bid => bid.adId === adId);
+    return _auctions.map(auction => auction.getBidsReceived()).reduce(flatten, []).find(bid => bid.adId === adId);
   };
 
   auctionManager.getStandardBidderAdServerTargeting = function() {
@@ -96,7 +95,7 @@ export function newAuctionManager() {
     if (bid) bid.status = status;
 
     if (bid && status === CONSTANTS.BID_STATUS.BID_TARGETING_SET) {
-      const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
+      const auction = _auctions.find(auction => auction.getAuctionId() === bid.auctionId);
       if (auction) auction.setBidTargeting(bid);
     }
   }

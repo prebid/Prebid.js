@@ -8,10 +8,8 @@ import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
 import { processNativeAdUnitParams } from '../../src/native.js';
 import { isValid } from '../../src/adapters/bidderFactory.js';
 import events from '../../src/events.js';
-import includes from 'core-js/library/fn/array/includes.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
-import find from 'core-js/library/fn/array/find.js';
 
 const getConfig = config.getConfig;
 
@@ -85,7 +83,7 @@ function setS2sConfig(options) {
       // vendor keys will be set if either: the key was not specified by user
       // or if the user did not set their own distinct value (ie using the system default) to override the vendor
       Object.keys(S2S_VENDORS[vendor]).forEach((vendorKey) => {
-        if (s2sDefaultConfig[vendorKey] === options[vendorKey] || !includes(optionKeys, vendorKey)) {
+        if (s2sDefaultConfig[vendorKey] === options[vendorKey] || !optionKeys.includes(vendorKey)) {
           options[vendorKey] = S2S_VENDORS[vendor][vendorKey];
         }
       });
@@ -98,7 +96,7 @@ function setS2sConfig(options) {
   let keys = Object.keys(options);
 
   if (['accountId', 'bidders', 'endpoint'].filter(key => {
-    if (!includes(keys, key)) {
+    if (!keys.includes(key)) {
       utils.logError(key + ' missing in server to server config');
       return true;
     }
@@ -520,7 +518,7 @@ const OPEN_RTB_PROTOCOL = {
       Object.assign(imp, mediaTypes);
 
       // if storedAuctionResponse has been set, pass SRID
-      const storedAuctionResponseBid = find(bidRequests[0].bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
+      const storedAuctionResponseBid = bidRequests[0].bids.find(bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
       if (storedAuctionResponseBid) {
         utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
       }
@@ -937,7 +935,7 @@ export function PrebidServer() {
       utils.logError(error);
     }
 
-    if (!result || (result.status && includes(result.status, 'Error'))) {
+    if (!result || (result.status && result.status.includes('Error'))) {
       utils.logError('error parsing response: ', result.status);
     }
 

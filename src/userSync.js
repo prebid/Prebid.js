@@ -1,6 +1,5 @@
 import * as utils from './utils.js';
 import { config } from './config.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 export const USERSYNC_DEFAULT_CONFIG = {
   syncEnabled: true,
@@ -217,8 +216,8 @@ export function newUserSync(userSyncDependencies) {
 
       // return true if the bidder is either: not part of the include (ie outside the whitelist) or part of the exclude (ie inside the blacklist)
       const checkForFiltering = {
-        'include': (bidders, bidder) => !includes(bidders, bidder),
-        'exclude': (bidders, bidder) => includes(bidders, bidder)
+        'include': (bidders, bidder) => !bidders.includes(bidder),
+        'exclude': (bidders, bidder) => bidders.includes(bidder)
       }
       return checkForFiltering[filterType](biddersToFilter, bidder);
     }

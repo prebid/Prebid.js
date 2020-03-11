@@ -3,7 +3,6 @@ import * as utils from '../src/utils.js'
 import * as url from '../src/url.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
-import includes from 'core-js/library/fn/array/includes.js'
 
 /**
  * Adapter for requesting bids from adxcg.net
@@ -113,7 +112,7 @@ export const spec = {
     let biddercustom = config.getConfig(BIDDER_CODE)
     if (biddercustom) {
       Object.keys(biddercustom)
-        .filter(param => includes(USER_PARAMS_AUCTION, param))
+        .filter(param => USER_PARAMS_AUCTION.includes(param))
         .forEach(param => beaconParams[param] = encodeURIComponent(biddercustom[param]))
     }
 
@@ -141,7 +140,7 @@ export const spec = {
       if (isVideoRequest(bid)) {
         if (bid.params.video) {
           Object.keys(bid.params.video)
-            .filter(param => includes(VIDEO_TARGETING, param))
+            .filter(param => VIDEO_TARGETING.includes(param))
             .forEach(param => beaconParams['video.' + param + '.' + index] = encodeURIComponent(bid.params.video[param]))
         }
         // copy video context params
@@ -153,7 +152,7 @@ export const spec = {
       let customBidParams = utils.getBidIdParameter('custom', bid.params) || {}
       if (customBidParams) {
         Object.keys(customBidParams)
-          .filter(param => includes(USER_PARAMS_BID, param))
+          .filter(param => USER_PARAMS_BID.includes(param))
           .forEach(param => beaconParams[param + '.' + index] = encodeURIComponent(customBidParams[param]))
       }
     })

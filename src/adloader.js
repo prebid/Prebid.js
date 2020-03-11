@@ -1,4 +1,3 @@
-import includes from 'core-js/library/fn/array/includes.js';
 import * as utils from './utils.js';
 
 const _requestCache = {};
@@ -22,7 +21,7 @@ export function loadExternalScript(url, moduleCode, callback) {
     utils.logError('cannot load external script without url and moduleCode');
     return;
   }
-  if (!includes(_approvedLoadExternalJSList, moduleCode)) {
+  if (!_approvedLoadExternalJSList.includes(moduleCode)) {
     utils.logError(`${moduleCode} not whitelisted for loading external JavaScript`);
     return;
   }
@@ -87,4 +86,4 @@ export function loadExternalScript(url, moduleCode, callback) {
 
     return jptScript;
   }
-};
+}

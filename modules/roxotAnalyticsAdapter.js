@@ -1,7 +1,6 @@
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
-import includes from 'core-js/library/fn/array/includes.js';
 import {ajaxBuilder} from '../src/ajax.js';
 
 const utils = require('../src/utils.js');
@@ -91,7 +90,7 @@ function isSupportedAdUnit(adUnit) {
     return true;
   }
 
-  return includes(initOptions.adUnits, adUnit);
+  return initOptions.adUnits.includes(adUnit);
 }
 
 function deleteOldAuctions() {

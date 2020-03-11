@@ -21,7 +21,6 @@ import { store } from '../src/videoCache.js';
 import { config } from '../src/config.js';
 import { ADPOD } from '../src/mediaTypes.js';
 import Set from 'core-js/library/fn/set.js';
-import find from 'core-js/library/fn/array/find.js';
 import { auctionManager } from '../src/auctionManager.js';
 import CONSTANTS from '../src/constants.json';
 
@@ -313,14 +312,14 @@ function checkBidDuration(bidderRequest, bidResponse) {
   if (!videoConfig.requireExactDuration) {
     let max = Math.max(...adUnitRanges);
     if (bidDuration <= (max + buffer)) {
-      let nextHighestRange = find(adUnitRanges, range => (range + buffer) >= bidDuration);
+      let nextHighestRange = adUnitRanges.find(range => (range + buffer) >= bidDuration);
       bidResponse.video.durationBucket = nextHighestRange;
     } else {
       utils.logWarn(`Detected a bid with a duration value outside the accepted ranges specified in adUnit.mediaTypes.video.durationRangeSec.  Rejecting bid: `, bidResponse);
       return false;
     }
   } else {
-    if (find(adUnitRanges, range => range === bidDuration)) {
+    if (adUnitRanges.find(range => range === bidDuration)) {
       bidResponse.video.durationBucket = bidDuration;
     } else {
       utils.logWarn(`Detected a bid with a duration value not part of the list of accepted ranges specified in adUnit.mediaTypes.video.durationRangeSec.  Exact match durations must be used for this adUnit. Rejecting bid: `, bidResponse);

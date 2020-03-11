@@ -1,8 +1,6 @@
 import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
 import {parse as parseUrl} from '../src/url.js';
 
 /*
@@ -62,7 +60,7 @@ export const spec = {
       .reduce((a, b) => a.concat(b), []);
 
     return rtbBids.map(rtbBid => {
-      let imp = find(rtbRequest.imp, imp => imp.id === rtbBid.impid);
+      let imp = rtbRequest.imp.find(imp => imp.id === rtbBid.impid);
       let prBid = {
         requestId: rtbBid.impid,
         cpm: rtbBid.price,
@@ -135,7 +133,7 @@ function buildImp(bidRequest, secure) {
     imp.video = utils.parseGPTSingleSizeArrayToRtbSize(sizes[0]) || {};
     if (bidRequest.params.video) {
       Object.keys(bidRequest.params.video)
-        .filter(key => includes(VIDEO_TARGETING, key))
+        .filter(key => VIDEO_TARGETING.includes(key))
         .forEach(key => imp.video[key] = bidRequest.params.video[key]);
     }
   }

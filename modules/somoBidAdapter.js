@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import includes from 'core-js/library/fn/array/includes.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
@@ -151,7 +150,7 @@ function openRtbImpression(bidRequest) {
     }
     if (bidRequest.params.video) {
       Object.keys(bidRequest.params.video)
-        .filter(param => includes(VIDEO_TARGETING, param))
+        .filter(param => VIDEO_TARGETING.includes(param))
         .forEach(param => imp.video[param] = bidRequest.params.video[param]);
     }
   } else {
@@ -167,7 +166,7 @@ function openRtbImpression(bidRequest) {
     }
     if (bidRequest.params.banner) {
       Object.keys(bidRequest.params.banner)
-        .filter(param => includes(BANNER_TARGETING, param))
+        .filter(param => BANNER_TARGETING.includes(param))
         .forEach(param => imp.banner[param] = bidRequest.params.banner[param]);
     }
   }
@@ -193,7 +192,7 @@ function openRtbSite(bidRequest, bidderRequest) {
 
     if (bidRequest.params.site) {
       Object.keys(bidRequest.params.site)
-        .filter(param => includes(SITE_TARGETING, param))
+        .filter(param => SITE_TARGETING.includes(param))
         .forEach(param => site[param] = bidRequest.params.site[param]);
     }
     if (typeof site.domain === 'undefined' &&
@@ -232,7 +231,7 @@ function openRtbApp(bidRequest) {
 
     }
     Object.keys(bidRequest.params.app)
-      .filter(param => includes(APP_TARGETING, param))
+      .filter(param => APP_TARGETING.includes(param))
       .forEach(param => app[param] = bidRequest.params.app[param]);
 
     return app;

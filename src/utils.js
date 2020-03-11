@@ -1,8 +1,6 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -504,7 +502,7 @@ export function hasOwn(objectToCheck, propertyToCheckFor) {
   } else {
     return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
   }
-};
+}
 
 /*
 * Inserts an element(elm) as targets child, by default as first child
@@ -600,7 +598,7 @@ export function insertUserSyncIframe(url, done) {
     iframe.addEventListener('error', done);
   }
   internal.insertElement(iframe, document, 'html', true);
-};
+}
 
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
@@ -616,7 +614,7 @@ export function createTrackPixelHtml(url) {
   let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
   img += '<img src="' + escapedUrl + '"></div>';
   return img;
-};
+}
 
 /**
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
@@ -700,7 +698,7 @@ export function getBidRequest(id, bidderRequests) {
   }
   let bidRequest;
   bidderRequests.some(bidderRequest => {
-    let result = find(bidderRequest.bids, bid => ['bidId', 'adId', 'bid_id'].some(type => bid[type] === id));
+    let result = bidderRequest.bids.find(bid => ['bidId', 'adId', 'bid_id'].some(type => bid[type] === id));
     if (result) {
       bidRequest = result;
     }
@@ -789,7 +787,7 @@ export function shuffle(array) {
 }
 
 export function adUnitsFilter(filter, bid) {
-  return includes(filter, bid && bid.adUnitCode);
+  return filter.includes(bid && bid.adUnitCode);
 }
 
 /**
@@ -944,19 +942,19 @@ export function isValidMediaTypes(mediaTypes) {
 
   const types = Object.keys(mediaTypes);
 
-  if (!types.every(type => includes(SUPPORTED_MEDIA_TYPES, type))) {
+  if (!types.every(type => SUPPORTED_MEDIA_TYPES.includes(type))) {
     return false;
   }
 
   if (mediaTypes.video && mediaTypes.video.context) {
-    return includes(SUPPORTED_STREAM_TYPES, mediaTypes.video.context);
+    return SUPPORTED_STREAM_TYPES.includes(mediaTypes.video.context);
   }
 
   return true;
 }
 
 export function getBidderRequest(bidRequests, bidder, adUnitCode) {
-  return find(bidRequests, request => {
+  return bidRequests.find(request => {
     return request.bids
       .filter(bid => bid.bidder === bidder && bid.adUnitCode === adUnitCode).length > 0;
   }) || { start: null, auctionId: null };

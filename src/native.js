@@ -1,5 +1,4 @@
 import { deepAccess, getBidRequest, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -39,7 +38,7 @@ export function processNativeAdUnitParams(params) {
  * Check if the native type specified in the adUnit is supported by Prebid.
  */
 function typeIsSupported(type) {
-  if (!(type && includes(Object.keys(SUPPORTED_TYPES), type))) {
+  if (!(type && Object.keys(SUPPORTED_TYPES).includes(type))) {
     logError(`${type} nativeParam is not supported`);
     return false;
   }
@@ -57,7 +56,7 @@ export const nativeAdUnit = adUnit => {
   const mediaTypes = deepAccess(adUnit, 'mediaTypes.native');
   return mediaType || mediaTypes;
 }
-export const nativeBidder = bid => includes(nativeAdapters, bid.bidder);
+export const nativeBidder = bid => nativeAdapters.includes(bid.bidder);
 export const hasNonNativeBidder = adUnit =>
   adUnit.bids.filter(bid => !nativeBidder(bid)).length;
 
@@ -101,7 +100,7 @@ export function nativeBidIsValid(bid, bidRequests) {
     key => bid['native'][key]
   );
 
-  return requiredAssets.every(asset => includes(returnedAssets, asset));
+  return requiredAssets.every(asset => returnedAssets.includes(asset));
 }
 
 /*

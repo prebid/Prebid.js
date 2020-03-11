@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js'
 
 import { config } from '../src/config.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import includes from 'core-js/library/fn/array/includes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 
 const BIDDER_CODE = 'gumgum'
@@ -305,7 +304,7 @@ function interpretResponse (serverResponse, bidRequest) {
   let [width, height] = sizes[0].split('x')
 
   // return 1x1 when breakout expected
-  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
+  if ((product === 2 || product === 5) && sizes.includes('1x1')) {
     width = '1'
     height = '1'
   }

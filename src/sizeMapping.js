@@ -1,6 +1,5 @@
 import { config } from './config.js';
 import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 let sizeConfig = [];
 
@@ -94,11 +93,11 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
         labels.length === 0 || (
           (!labelAll && (
             labels.some(label => maps.labels[label]) ||
-            labels.some(label => includes(activeLabels, label))
+            labels.some(label => activeLabels.includes(label))
           )) ||
           (labelAll && (
             labels.reduce((result, label) => !result ? result : (
-              maps.labels[label] || includes(activeLabels, label)
+              maps.labels[label] || activeLabels.includes(label)
             ), true)
           ))
         )

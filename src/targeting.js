@@ -4,7 +4,6 @@ import { NATIVE_TARGETING_KEYS } from './native.js';
 import { auctionManager } from './auctionManager.js';
 import { sizeSupported } from './sizeMapping.js';
 import { ADPOD } from './mediaTypes.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -22,7 +21,7 @@ export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
 const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
 
 // return bids whose status is not set. Winning bids can only have a status of `rendered`.
-const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
+const isUnusedBid = (bid) => bid && ((bid.status && ![CONSTANTS.BID_STATUS.RENDERED].includes(bid.status)) || !bid.status);
 
 export let filters = {
   isBidNotExpired,
@@ -113,7 +112,7 @@ export function newTargeting(auctionManager) {
   targeting.resetPresetTargeting = function(adUnitCode) {
     if (isGptPubadsDefined()) {
       const adUnitCodes = getAdUnitCodes(adUnitCode);
-      const adUnits = auctionManager.getAdUnits().filter(adUnit => includes(adUnitCodes, adUnit.code));
+      const adUnits = auctionManager.getAdUnits().filter(adUnit => adUnitCodes.includes(adUnit.code));
       window.googletag.pubads().getSlots().forEach(slot => {
         pbTargetingKeys.forEach(function(key) {
           // reset only registered adunits
@@ -136,7 +135,7 @@ export function newTargeting(auctionManager) {
         const currentKeywords = Object.keys(astTag.keywords);
         const newKeywords = {};
         currentKeywords.forEach((key) => {
-          if (!includes(pbTargetingKeys, key.toLowerCase())) {
+          if (!pbTargetingKeys.includes(key.toLowerCase())) {
             newKeywords[key] = astTag.keywords[key];
           }
         })
@@ -151,7 +150,7 @@ export function newTargeting(auctionManager) {
    */
   function bidShouldBeAddedToTargeting(bid, adUnitCodes) {
     return bid.adserverTargeting && adUnitCodes &&
-      ((utils.isArray(adUnitCodes) && includes(adUnitCodes, bid.adUnitCode)) ||
+      ((utils.isArray(adUnitCodes) && adUnitCodes.includes(bid.adUnitCode)) ||
       (typeof adUnitCodes === 'string' && bid.adUnitCode === adUnitCodes));
   };
 
@@ -375,7 +374,7 @@ export function newTargeting(auctionManager) {
   targeting.getWinningBids = function(adUnitCode, bidsReceived = getBidsReceived()) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
     return bidsReceived
-      .filter(bid => includes(adUnitCodes, bid.adUnitCode))
+      .filter(bid => adUnitCodes.includes(bid.adUnitCode))
       .filter(bid => bid.cpm > 0)
       .map(bid => bid.adUnitCode)
       .filter(uniques)
@@ -520,7 +519,7 @@ export function newTargeting(auctionManager) {
    */
   function getCustomBidTargeting(adUnitCodes, bidsReceived) {
     return bidsReceived
-      .filter(bid => includes(adUnitCodes, bid.adUnitCode))
+      .filter(bid => adUnitCodes.includes(bid.adUnitCode))
       .map(bid => Object.assign({}, bid))
       .reduce(mergeAdServerTargeting, [])
       .map(truncateCustomKeys)

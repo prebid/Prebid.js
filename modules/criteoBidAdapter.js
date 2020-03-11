@@ -4,7 +4,6 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { parse } from '../src/url.js';
 import * as utils from '../src/utils.js';
-import find from 'core-js/library/fn/array/find.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 
 export const ADAPTER_VERSION = 26;
@@ -109,7 +108,9 @@ export const spec = {
 
     if (body && body.slots && utils.isArray(body.slots)) {
       body.slots.forEach(slot => {
-        const bidRequest = find(request.bidRequests, b => b.adUnitCode === slot.impid && (!b.params.zoneId || parseInt(b.params.zoneId) === slot.zoneid));
+        const bidRequest = request.bidRequests.find(
+          b => b.adUnitCode === slot.impid && (!b.params.zoneId || parseInt(b.params.zoneId) === slot.zoneid)
+        );
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,

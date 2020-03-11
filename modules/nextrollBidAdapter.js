@@ -3,8 +3,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { parse as parseUrl } from '../src/url.js';
 
-import find from 'core-js/library/fn/array/find.js';
-
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const ADAPTER_VERSION = 4;
@@ -163,7 +161,7 @@ function _getOs(userAgent) {
     'windows': /windows/i
   };
 
-  return find(Object.keys(osTable), os => {
+  return Object.keys(osTable).find(os => {
     if (userAgent.match(osTable[os])) {
       return os;
     }
@@ -187,7 +185,7 @@ function _getOsVersion(userAgent) {
     { s: 'UNIX', r: /UNIX/ },
     { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
   ];
-  let cs = find(clientStrings, cs => cs.r.test(userAgent));
+  let cs = clientStrings.find(cs => cs.r.test(userAgent));
   return cs ? cs.s : 'unknown';
 }
 

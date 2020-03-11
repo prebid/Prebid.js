@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO, BANNER} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import findIndex from 'core-js/library/fn/array/find-index.js';
 
 const URL = 'https://ghb.sync.viewdeos.com/auction/';
 const OUTSTREAM_SRC = 'https://player.sync.viewdeos.com/outstream-unit/2.01/outstream.min.js';
@@ -107,7 +106,7 @@ function parseRTBResponse(serverResponse, bidderRequest) {
   }
 
   serverResponse.bids.forEach(serverBid => {
-    const requestId = findIndex(bidderRequest.bids, (bidRequest) => {
+    const requestId = bidderRequest.bids.findIndex((bidRequest) => {
       return bidRequest.bidId === serverBid.requestId;
     });
 

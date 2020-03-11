@@ -8,9 +8,7 @@ import { fireNativeTrackers, getAssetMessage } from './native.js';
 import { EVENTS } from './constants.json';
 import { logWarn, replaceAuctionPrice } from './utils.js';
 import { auctionManager } from './auctionManager.js';
-import find from 'core-js/library/fn/array/find.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
-import includes from 'core-js/library/fn/array/includes.js';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -28,7 +26,7 @@ function receiveMessage(ev) {
   }
 
   if (data && data.adId) {
-    const adObject = find(auctionManager.getBidsReceived(), function (bid) {
+    const adObject = auctionManager.getBidsReceived().find(function (bid) {
       return bid.adId === data.adId;
     });
 
@@ -111,9 +109,9 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   }
 
   function getDfpElementId(adId) {
-    return find(window.googletag.pubads().getSlots(), slot => {
-      return find(slot.getTargetingKeys(), key => {
-        return includes(slot.getTargeting(key), adId);
+    return window.googletag.pubads().getSlots().find(slot => {
+      return slot.getTargetingKeys().find(key => {
+        return slot.getTargeting(key).includes(adId);
       });
     }).getSlotElementId();
   }
