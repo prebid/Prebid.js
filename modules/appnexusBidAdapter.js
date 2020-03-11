@@ -174,12 +174,15 @@ export const spec = {
 
     const hasAdPodBid = find(bidRequests, hasAdPod);
     if (hasAdPodBid) {
+      payload.hb_source = 7;
       bidRequests.filter(hasAdPod).forEach(adPodBid => {
         const adPodTags = createAdPodRequest(tags, adPodBid);
         // don't need the original adpod placement because it's in adPodTags
         const nonPodTags = payload.tags.filter(tag => tag.uuid !== adPodBid.bidId);
         payload.tags = [...nonPodTags, ...adPodTags];
       });
+    } else {
+      payload.hb_source = 1;
     }
 
     const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
