@@ -13,10 +13,8 @@
  */
 
 import { isValidPriceConfig } from './cpmBucketManager.js';
-import Set from 'core-js/library/fn/set.js';
 import { parseQS } from './url.js';
 
-const from = require('core-js/library/fn/array/from.js');
 const utils = require('./utils.js');
 const CONSTANTS = require('./constants.json');
 
@@ -234,7 +232,7 @@ export function newConfig() {
       let currBidderConfig = bidderConfig[currBidder];
       const configTopicSet = new Set(Object.keys(config).concat(Object.keys(currBidderConfig)));
 
-      return from(configTopicSet).reduce((memo, topic) => {
+      return Array.from(configTopicSet).reduce((memo, topic) => {
         if (typeof currBidderConfig[topic] === 'undefined') {
           memo[topic] = config[topic];
         } else if (typeof config[topic] === 'undefined') {

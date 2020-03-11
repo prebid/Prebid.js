@@ -7,7 +7,6 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
-import strIncludes from 'core-js/library/fn/string/includes.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -159,7 +158,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     window.__cmp(commandName, null, cmpIframeCallback);
 
     function readPostMessageResponse(event) {
-      let json = (typeof event.data === 'string' && strIncludes(event.data, 'cmpReturn')) ? JSON.parse(event.data) : event.data;
+      let json = (typeof event.data === 'string' && event.data.includes('cmpReturn')) ? JSON.parse(event.data) : event.data;
       if (json.__cmpReturn && json.__cmpReturn.callId) {
         let i = json.__cmpReturn;
         // TODO - clean up this logic (move listeners?); we have duplicate messages responses because 2 eventlisteners are active from the 2 cmp requests running in parallel
