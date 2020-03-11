@@ -326,6 +326,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].bidid).to.equal('2ecff0db240757');
       expect(data.s[0].ps[0].db).to.equal(0);
       expect(data.s[0].ps[0].kgpv).to.equal('/19968336/header-bid-tag-0');
+      expect(data.s[0].ps[0].kgpsv).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].ps[0].psz).to.equal('640x480');
       expect(data.s[0].ps[0].eg).to.equal(1.23);
       expect(data.s[0].ps[0].en).to.equal(1.23);
@@ -348,6 +349,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
       expect(data.s[1].ps[0].db).to.equal(0);
       expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
+      expect(data.s[1].ps[0].kgpsv).to.equal('this-is-a-kgpv');
       expect(data.s[1].ps[0].psz).to.equal('728x90');
       expect(data.s[1].ps[0].eg).to.equal(1.52);
       expect(data.s[1].ps[0].en).to.equal(1.52);
@@ -403,6 +405,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
       expect(data.s[1].ps[0].db).to.equal(1);
       expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
+      expect(data.s[1].ps[0].kgpsv).to.equal('this-is-a-kgpv');
       expect(data.s[1].ps[0].psz).to.equal('0x0');
       expect(data.s[1].ps[0].eg).to.equal(0);
       expect(data.s[1].ps[0].en).to.equal(0);
@@ -438,6 +441,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
       expect(data.s[1].ps[0].db).to.equal(1);
       expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
+      expect(data.s[1].ps[0].kgpsv).to.equal('this-is-a-kgpv');
       expect(data.s[1].ps[0].psz).to.equal('0x0');
       expect(data.s[1].ps[0].eg).to.equal(0);
       expect(data.s[1].ps[0].en).to.equal(0);
@@ -474,6 +478,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
       expect(data.s[1].ps[0].db).to.equal(0);
       expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
+      expect(data.s[1].ps[0].kgpsv).to.equal('this-is-a-kgpv');
       expect(data.s[1].ps[0].psz).to.equal('728x90');
       expect(data.s[1].ps[0].eg).to.equal(1.52);
       expect(data.s[1].ps[0].en).to.equal(1.52);
@@ -526,6 +531,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
       expect(data.s[1].ps[0].db).to.equal(0);
       expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
+      expect(data.s[1].ps[0].kgpsv).to.equal('this-is-a-kgpv');
       expect(data.s[1].ps[0].psz).to.equal('728x90');
       expect(data.s[1].ps[0].eg).to.equal(undefined); // bidPriceUSD is not getting set as currency module is not added
       expect(data.s[1].ps[0].en).to.equal(undefined); // bidPriceUSD is not getting set as currency module is not added

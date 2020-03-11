@@ -170,6 +170,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
       'bidid': bid.bidId,
       'db': bid.bidResponse ? 0 : 1,
       'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
+      'kgpsv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
       'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
       'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM, precision
       'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM, precision
