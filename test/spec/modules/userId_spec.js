@@ -850,7 +850,8 @@ describe('User ID', function() {
             expect(bid.userId.lipb.segments).to.include('123');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'liveintent.com',
-              uids: [{id: 'random-ls-identifier', atype: 1, ext: {segments: ['123']}}]
+              uids: [{id: 'random-ls-identifier', atype: 1}],
+              ext: {segments: ['123']}
             });
           });
         });
@@ -875,7 +876,8 @@ describe('User ID', function() {
             expect(bid.userId.lipb.segments).to.include('123');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'liveintent.com',
-              uids: [{id: 'random-cookie-identifier', atype: 1, ext: {segments: ['123']}}]
+              uids: [{id: 'random-cookie-identifier', atype: 1}],
+              ext: {segments: ['123']}
             });
           });
         });

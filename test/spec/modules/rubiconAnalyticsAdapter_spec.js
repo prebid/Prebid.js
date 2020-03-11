@@ -1,4 +1,8 @@
-import rubiconAnalyticsAdapter, { SEND_TIMEOUT, parseBidResponse } from 'modules/rubiconAnalyticsAdapter.js';
+import rubiconAnalyticsAdapter, {
+  SEND_TIMEOUT,
+  parseBidResponse,
+  getHostNameFromReferer,
+} from 'modules/rubiconAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
@@ -22,9 +26,8 @@ function validate(message) {
 }
 
 // using es6 "import * as events from 'src/events.js'" causes the events.getEvents stub not to work...
-let events = require('src/events');
-let ajax = require('src/ajax');
-let utils = require('src/utils');
+let events = require('src/events.js');
+let utils = require('src/utils.js');
 
 const {
   EVENTS: {
@@ -477,7 +480,6 @@ function performStandardAuction() {
 
 describe('rubicon analytics adapter', function () {
   let sandbox;
-  let oldScreen;
   let clock;
 
   beforeEach(function () {
@@ -486,6 +488,8 @@ describe('rubicon analytics adapter', function () {
     sandbox.stub(events, 'getEvents').returns([]);
 
     clock = sandbox.useFakeTimers(1519767013781);
+
+    rubiconAnalyticsAdapter.referrerHostname = '';
 
     config.setConfig({
       s2sConfig: {
@@ -840,5 +844,20 @@ describe('rubicon analytics adapter', function () {
 
       rubiconAnalyticsAdapter.disableAnalytics();
     });
+  });
+
+  it('getHostNameFromReferer correctly grabs hostname from an input URL', function () {
+    let inputUrl = 'https://www.prebid.org/some/path?pbjs_debug=true';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('www.prebid.org');
+    inputUrl = 'https://www.prebid.com/some/path?pbjs_debug=true';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('www.prebid.com');
+    inputUrl = 'https://prebid.org/some/path?pbjs_debug=true';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
+    inputUrl = 'http://xn--p8j9a0d9c9a.xn--q9jyb4c/';
+    expect(typeof getHostNameFromReferer(inputUrl)).to.equal('string');
+
+    // not non-UTF char's in query / path which break if noDecodeWholeURL not set
+    inputUrl = 'https://prebid.org/search_results/%95x%8Em%92%CA/?category=000';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
   });
 });
