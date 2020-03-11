@@ -164,6 +164,7 @@ describe('AppNexusAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].ad_types).to.deep.equal(['video']);
+      expect(payload.hb_source).to.equal(1);
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -417,6 +418,44 @@ describe('AppNexusAdapter', function () {
       expect(payload3.tags.length).to.equal(15);
     });
 
+    it('should contain hb_source value for adpod', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: { placementId: '14542875' }
+        },
+        {
+          mediaTypes: {
+            video: {
+              context: 'adpod',
+              playerSize: [640, 480],
+              adPodDurationSec: 300,
+              durationRangeSec: [15, 30],
+            }
+          }
+        }
+      );
+      const request = spec.buildRequests([bidRequest])[0];
+      const payload = JSON.parse(request.data);
+      expect(payload.hb_source).to.equal(7);
+    });
+
+    it('should contain hb_source value for other media', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          mediaType: 'banner',
+          params: {
+            sizes: [[300, 250], [300, 600]],
+            placementId: 13144370
+          }
+        }
+      );
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.hb_source).to.equal(1);
+    });
+
     it('adds brand_category_exclusion to request when set', function() {
       let bidRequest = Object.assign({}, bidRequests[0]);
       sinon
@@ -480,6 +519,7 @@ describe('AppNexusAdapter', function () {
         saleprice: {required: true},
         privacy_supported: true
       });
+      expect(payload.hb_source).to.equal(1);
     });
 
     it('should always populated tags[].sizes with 1,1 for native if otherwise not defined', function () {
