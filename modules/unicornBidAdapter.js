@@ -6,17 +6,6 @@ const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
 const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
 
-export const spec = {
-  code: BIDDER_CODE,
-  aliases: ['uncn'],
-  supportedMediaTypes: [BANNER],
-  isBidRequestValid: bid => isBidRequestValid(bid),
-  buildRequests: (validBidRequests, bidderRequest) =>
-    buildRequests(validBidRequests, bidderRequest),
-  interpretResponse: (serverResponse, request) =>
-    interpretResponse(serverResponse, request)
-};
-
 /**
  * Placement ID and Account ID are required.
  * @param {BidRequest} bidRequest
@@ -105,21 +94,23 @@ const interpretResponse = (serverResponse, request) => {
   utils.logInfo('[UNICORN] interpretResponse.request:', request);
   const res = serverResponse.body;
   var bids = []
-  res.seatbid.forEach(sb => {
-    sb.bid.forEach(b => {
-      bids.push({
-        requestId: b.impid,
-        cpm: b.price || 0,
-        width: b.w,
-        height: b.h,
-        ad: b.adm,
-        ttl: 1000,
-        creativeId: b.crid,
-        netRevenue: false,
-        currency: res.cur
+  if (res) {
+    res.seatbid.forEach(sb => {
+      sb.bid.forEach(b => {
+        bids.push({
+          requestId: b.impid,
+          cpm: b.price || 0,
+          width: b.w,
+          height: b.h,
+          ad: b.adm,
+          ttl: 1000,
+          creativeId: b.crid,
+          netRevenue: false,
+          currency: res.cur
+        })
       })
-    })
-  });
+    });
+  }
   utils.logInfo('[UNICORN] interpretResponse bids:', bids);
   return bids;
 };
@@ -139,6 +130,15 @@ const getUid = () => {
     utils.setCookie(UNICORN_PB_COOKIE_KEY, JSON.stringify(newCk), expireIn);
     return newCk.uid;
   }
+};
+
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: ['uncn'],
+  supportedMediaTypes: [BANNER],
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse,
 };
 
 registerBidder(spec);
