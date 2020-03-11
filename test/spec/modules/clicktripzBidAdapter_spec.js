@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/clicktripzBidAdapter';
+import {spec} from 'modules/clicktripzBidAdapter.js';
 
 const ENDPOINT_URL = 'https://www.clicktripz.com/x/prebid/v1';
 

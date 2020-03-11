@@ -7,7 +7,7 @@ Maintainer: integration-support@clicktripz.com
 ```
 
 # Description
-Our module makes it easy to integrate Cicktripz demand sources into your website.
+Our module makes it easy to integrate Clicktripz demand sources into your website.
 
 Supported Ad Fortmats:
 * Banner
@@ -19,7 +19,7 @@ Supported Ad Fortmats:
             code: 'test-div',
             mediaTypes: {
                 banner: {
-                sizes: [[300, 250], [300,600]],
+                    sizes: [[300, 250], [300,600]],
                 }
             },
             bids: [

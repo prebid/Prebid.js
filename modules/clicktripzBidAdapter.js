@@ -1,4 +1,4 @@
-import {logError} from '../src/utils.js';
+import {logError, _each} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'clicktripz';
@@ -19,7 +19,7 @@ export const spec = {
   buildRequests: function (validBidRequests) {
     let bidRequests = [];
 
-    validBidRequests.forEach(function (bid) {
+    _each(validBidRequests, function (bid) {
       bidRequests.push({
         bidId: bid.bidId,
         placementId: bid.params.placementId,
@@ -29,7 +29,6 @@ export const spec = {
         })
       });
     });
-
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -43,17 +42,16 @@ export const spec = {
     if (serverResponse && serverResponse.body) {
       serverResponse.body.forEach(function (bid) {
         if (bid.errors) {
-          Object.keys(bid.errors).forEach(function (key) {
-            logError(bid.errors[key]);
-          });
+          logError(bid.errors);
           return;
         }
 
+        const size = bid.size.split('x');
         bidResponses.push({
           requestId: bid.bidId,
           cpm: bid.cpm,
-          width: bid.size.split('x')[0],
-          height: bid.size.split('x')[1],
+          width: size[0],
+          height: size[1],
           creativeId: bid.creativeId,
           currency: bid.currency,
           netRevenue: bid.netRevenue,
