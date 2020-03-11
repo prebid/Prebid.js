@@ -141,13 +141,12 @@ describe('clicktripzBidAdapter', function () {
         'width': '300',
         'height': '200',
         'creativeId': '25ef9876abc5681f153',
-        'size': '320x320',
         'currency': 'USD',
         'adUrl': 'https://www.clicktripz.com/n3/crane/v0/render?t=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwYXlsb2FkIjoiaHR0cHM6XC9cL3d3dy5jbGlja3RyaXB6LmNvbVwvY2xpY2sucGhwP2NhbXBhaWduSUQ9MTkxNTYmcHJlQ2hlY2tlZD0xJnB1Ymxpc2hlcklEPTM2MCZzZWFyY2hLZXk9N2M5MzQ0NzhlM2M1NTc3Y2EyN2ZmN2Y1NTg5N2NkMzkmc2VhcmNoRGlzcGxheVR5cGU9MSZkaXNwbGF5VHlwZT00JmNyZWF0aXZlVHlwZT1zaW5nbGUmaXNQb3BVbmRlcj0wJnBvc2l0aW9uPTEmdHlwZT0xJmNpdHk9TWFkcmlkJTJDK1NwYWluJmNoZWNrSW5EYXRlPTAzJTJGMDElMkYyMDIwJmNoZWNrT3V0RGF0ZT0wMyUyRjA1JTJGMjAyMCZndWVzdHM9MiZyb29tcz0xIn0.WBDGYr1qfkSvOuK02VpMW3iAua1E02jjDGDViFc2kaE',
         'ttl': 120
       }];
       let result = spec.interpretResponse(serverResponse);
-      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+      expect(result).to.deep.equal(expectedResponse);
     });
   });
 });
