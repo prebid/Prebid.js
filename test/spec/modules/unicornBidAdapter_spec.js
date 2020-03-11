@@ -1,5 +1,5 @@
 import { assert, expect } from 'chai';
-import { spec } from 'modules/unicornBidAdapter';
+import { spec } from 'modules/unicornBidAdapter.js';
 import * as _ from 'lodash';
 
 const bidRequests = [
@@ -450,6 +450,14 @@ describe('unicornBidAdapterTest', () => {
     it('interpretResponse', () => {
       const bids = spec.interpretResponse(serverResponse, request);
       assert.deepStrictEqual(bids, interpretedBids);
+    });
+    it('interpretResponseEmptyString', () => {
+      const bids = spec.interpretResponse('', request);
+      assert.deepStrictEqual(bids, []);
+    });
+    it('interpretResponseEmptyArray', () => {
+      const bids = spec.interpretResponse([], request);
+      assert.deepStrictEqual(bids, []);
     });
   });
 });
