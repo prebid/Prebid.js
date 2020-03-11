@@ -20,6 +20,7 @@ var _startAuction = 0;
 var _bidRequestTimeout = 0;
 let flushInterval;
 var pmAnalyticsEnabled = false;
+let utmKeys = {utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: ''};
 
 var w = window;
 var d = document;
@@ -68,6 +69,37 @@ prebidmanagerAnalytics.disableAnalytics = function() {
   prebidmanagerAnalytics.originDisableAnalytics();
 };
 
+function addUtmData() {
+  let newUtm = false;
+  let pbUtmTags = {};
+  try {
+    for (let prop in utmKeys) {
+      utmKeys[prop] = utils.getParameterByName(prop);
+      if (utmKeys[prop] != '') {
+        newUtm = true;
+        pbUtmTags[prop] = utmKeys[prop];
+      }
+    }
+
+    if (newUtm === false) {
+      for (let prop in utmKeys) {
+        let itemValue = localStorage.getItem(`pm_${prop}`);
+        if (itemValue.length !== 0) {
+          pbUtmTags[prop] = itemValue;
+        }
+      }
+    } else {
+      for (let prop in utmKeys) {
+        localStorage.setItem(`pm_${prop}`, utmKeys[prop]);
+      }
+    }
+  } catch (e) {
+    utils.logInfo(`${analyticsName}Error`, e);
+    pbUtmTags['error_utm'] = 1;
+  }
+  return pbUtmTags;
+}
+
 function flush() {
   if (!pmAnalyticsEnabled) {
     return;
@@ -78,7 +110,8 @@ function flush() {
       pageViewId: _pageViewId,
       ver: _VERSION,
       bundleId: initOptions.bundleId,
-      events: _eventQueue
+      events: _eventQueue,
+      utmTags: addUtmData(),
     };
 
     ajax(
