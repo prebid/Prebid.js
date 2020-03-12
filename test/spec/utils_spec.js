@@ -935,7 +935,7 @@ describe('Utils', function () {
           subPropB: 'def'
         }
       };
-      
+
       const resultWithoutMergeDeep = Object.assign({}, object1, object2);
       expect(resultWithoutMergeDeep).to.deep.equal({
         propA: {
@@ -948,6 +948,73 @@ describe('Utils', function () {
         propA: {
           subPropA: 'abc',
           subPropB: 'def'
+        }
+      });
+    });
+
+    it('properly merge objects that have different depths', function() {
+      const object1 = {
+        depth0_A: {
+          depth1_A: {
+            depth2_A: 123
+          }
+        }
+      };
+      const object2 = {
+        depth0_A: {
+          depth1_A: {
+            depth2_B: {
+              depth3_A: {
+                depth4_A: 'def'
+              }
+            }
+          },
+          depth1_B: 'abc'
+        }
+      };
+      const object3 = {
+        depth0_B: 456
+      };
+
+      const result = utils.mergeDeep({}, object1, object2, object3);
+      expect(result).to.deep.equal({
+        depth0_A: {
+          depth1_A: {
+            depth2_A: 123,
+            depth2_B: {
+              depth3_A: {
+                depth4_A: 'def'
+              }
+            }
+          },
+          depth1_B: 'abc'
+        },
+        depth0_B: 456
+      });
+    });
+
+    it('properly merge objects with various property types', function() {
+      const object1 = {
+        depth0_A: {
+          depth1_A: ['a', 'b', 'c'],
+          depth1_B: 'abc',
+          depth1_C: 123
+        }
+      };
+      const object2 = {
+        depth0_A: {
+          depth1_A: ['d', 'e', 'f'],
+          depth1_D: true,
+        }
+      };
+
+      const result = utils.mergeDeep({}, object1, object2);
+      expect(result).to.deep.equal({
+        depth0_A: {
+          depth1_A: ['a', 'b', 'c', 'd', 'e', 'f'],
+          depth1_B: 'abc',
+          depth1_C: 123,
+          depth1_D: true,
         }
       });
     });
