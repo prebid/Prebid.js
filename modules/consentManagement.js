@@ -17,6 +17,7 @@ const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 export let userCMP;
 export let consentTimeout;
 export let allowAuction;
+export let gdprScope;
 export let staticConsentData;
 
 let consentData;
@@ -232,6 +233,11 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
 function processCmpData(consentObject, hookConfig) {
+  // force the page into GDPR mode if gdprScope has been set to true
+  if (gdprScope === true) {
+    utils.deepSetValue(consentObject, 'getConsentData.consentData.gdprApplies', true);
+  }
+  
   let gdprApplies = consentObject && consentObject.getConsentData && consentObject.getConsentData.gdprApplies;
   if (
     (typeof gdprApplies !== 'boolean') ||
@@ -341,7 +347,7 @@ export function resetConsentData() {
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
+ * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
   // if `config.gdpr` or `config.usp` exist, assume new config format.
@@ -371,7 +377,12 @@ export function setConsentConfig(config) {
     allowAuction = DEFAULT_ALLOW_AUCTION_WO_CONSENT;
     utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
   }
-
+  
+  if (config.defaultGdprScope === true) {
+    // always send gdprApplies: true to adapters
+    gdprScope = true;
+  }
+  
   utils.logInfo('consentManagement module has been activated...');
 
   if (userCMP === 'static') {
