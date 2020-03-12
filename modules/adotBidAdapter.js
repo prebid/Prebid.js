@@ -1,6 +1,8 @@
 import {Renderer} from '../src/Renderer.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {isStr, isArray, isNumber, isPlainObject, isBoolean, logError} from '../src/utils.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const ADAPTER_VERSION = 'v1.0.0';
 const BID_METHOD = 'POST';
@@ -24,27 +26,7 @@ const TTL = 10;
 const NET_REVENUE = true;
 // eslint-disable-next-line no-template-curly-in-string
 const AUCTION_PRICE = '${AUCTION_PRICE}';
-const OUTSTREAM_VIDEO_PLAYER_URL = 'http://adserver.adotmob.com/video/player.min.js';
-
-function isObject(value) {
-  return (value !== null) && (typeof (value) === 'object') && !isArray(value);
-}
-
-function isArray(value) {
-  return Array.isArray(value);
-}
-
-function isString(value) {
-  return (typeof (value) === 'string');
-}
-
-function isNumber(value) {
-  return (typeof (value) === 'number');
-}
-
-function isBoolean(value) {
-  return (typeof (value) === 'boolean');
-}
+const OUTSTREAM_VIDEO_PLAYER_URL = 'https://adserver.adotmob.com/video/player.min.js';
 
 function isNone(value) {
   return (value === null) || (value === undefined);
@@ -61,12 +43,12 @@ function groupBy(values, key) {
   }, {});
 
   return Object
-    .entries(groups)
-    .map(([id, values]) => ({id, key, values}));
+    .keys(groups)
+    .map(id => ({id, key, values: groups[id]}));
 }
 
 function validateMediaTypes(mediaTypes, allowedMediaTypes) {
-  if (!isObject(mediaTypes)) return false;
+  if (!isPlainObject(mediaTypes)) return false;
   if (!allowedMediaTypes.some(mediaType => mediaType in mediaTypes)) return false;
 
   if (isBanner(mediaTypes)) {
@@ -81,24 +63,24 @@ function validateMediaTypes(mediaTypes, allowedMediaTypes) {
 }
 
 function isBanner(mediaTypes) {
-  return isObject(mediaTypes) && isObject(mediaTypes.banner);
+  return isPlainObject(mediaTypes) && isPlainObject(mediaTypes.banner);
 }
 
 function isVideo(mediaTypes) {
-  return isObject(mediaTypes) && isObject(mediaTypes.video);
+  return isPlainObject(mediaTypes) && isPlainObject(mediaTypes.video);
 }
 
 function validateBanner(banner) {
-  return isObject(banner) &&
+  return isPlainObject(banner) &&
     isArray(banner.sizes) &&
     (banner.sizes.length > 0) &&
     banner.sizes.every(validateMediaSizes);
 }
 
 function validateVideo(video) {
-  if (!isObject(video)) return false;
-  if (!isString(video.context)) return false;
-  if (!SUPPORTED_VIDEO_CONTEXTS.includes(video.context)) return false;
+  if (!isPlainObject(video)) return false;
+  if (!isStr(video.context)) return false;
+  if (SUPPORTED_VIDEO_CONTEXTS.indexOf(video.context) === -1) return false;
 
   if (!video.playerSize) return true;
   if (!isArray(video.playerSize)) return false;
@@ -114,7 +96,7 @@ function validateMediaSizes(mediaSize) {
 
 function validateParameters(parameters, adUnit) {
   if (isVideo(adUnit.mediaTypes)) {
-    if (!isObject(parameters)) return false;
+    if (!isPlainObject(parameters)) return false;
     if (!validateVideoParameters(parameters.video, adUnit)) return false;
   }
 
@@ -126,7 +108,7 @@ function validateVideoParameters(video, adUnit) {
 
   if (!isArray(video.mimes)) return false;
   if (video.mimes.length === 0) return false;
-  if (!video.mimes.every(isString)) return false;
+  if (!video.mimes.every(isStr)) return false;
 
   if (video.minDuration && !isNumber(video.minDuration)) return false;
   if (video.maxDuration && !isNumber(video.maxDuration)) return false;
@@ -137,17 +119,17 @@ function validateVideoParameters(video, adUnit) {
 
   if (isInstream(adUnit.mediaTypes.video)) {
     if (!video.instreamContext) return false;
-    if (!SUPPORTED_INSTREAM_CONTEXTS.includes(video.instreamContext)) return false;
+    if (SUPPORTED_INSTREAM_CONTEXTS.indexOf(video.instreamContext) === -1) return false;
   }
 
   return true;
 }
 
 function validateServerRequest(serverRequest) {
-  return isObject(serverRequest) &&
-    isObject(serverRequest.data) &&
+  return isPlainObject(serverRequest) &&
+    isPlainObject(serverRequest.data) &&
     isArray(serverRequest.data.imp) &&
-    isObject(serverRequest._adot_internal) &&
+    isPlainObject(serverRequest._adot_internal) &&
     isArray(serverRequest._adot_internal.impressions)
 }
 
@@ -166,8 +148,9 @@ function generateAdotInternal(adUnits) {
     const base = {bidId, adUnitCode, container: params.video && params.video.container};
 
     const imps = Object
-      .entries(mediaTypes)
-      .reduce((acc, [mediaType, data], index) => {
+      .keys(mediaTypes)
+      .reduce((acc, mediaType, index) => {
+        const data = mediaTypes[mediaType];
         const impressionId = `${bidId}_${index}`;
 
         if (mediaType !== 'banner') return acc.concat({...base, impressionId});
@@ -204,9 +187,11 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
   if (placementId) pmp.deals = [{id: placementId}]
 
   const imps = Object
-    .entries(mediaTypes)
-    .reduce((acc, [mediaType, data], index) => {
+    .keys(mediaTypes)
+    .reduce((acc, mediaType, index) => {
+      const data = mediaTypes[mediaType];
       const impId = `${bidId}_${index}`;
+
       if (mediaType === 'banner') return acc.concat(generateBannerFromAdUnit(impId, data, params));
       if (mediaType === 'video') return acc.concat({id: impId, video: generateVideoFromAdUnit(data, params), pmp});
       if (mediaType === 'native') return acc.concat({id: impId, native: generateNativeFromAdUnit(data, params), pmp});
@@ -216,7 +201,7 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
 }
 
 function isImpressionAVideo(impression) {
-  return isObject(impression) && isObject(impression.video);
+  return isPlainObject(impression) && isPlainObject(impression.video);
 }
 
 function generateBannerFromAdUnit(impId, data, params) {
@@ -251,11 +236,11 @@ function generateVideoFromAdUnit(data, params) {
 }
 
 function isInstream(video) {
-  return isObject(video) && (video.context === 'instream');
+  return isPlainObject(video) && (video.context === 'instream');
 }
 
 function isOutstream(video) {
-  return isObject(video) && (video.startdelay === null)
+  return isPlainObject(video) && (video.startdelay === null)
 }
 
 function computeStartDelay(data, params) {
@@ -271,14 +256,15 @@ function computeStartDelay(data, params) {
 function generateNativeFromAdUnit(data, params) {
   const placements = NATIVE_PLACEMENTS;
   const assets = Object
-    .entries(data)
-    .reduce((acc, [placement, params]) => {
+    .keys(data)
+    .reduce((acc, placement) => {
+      const placementData = data[placement];
       const assetInfo = placements[placement];
 
       if (!assetInfo) return acc;
 
       const {id, name, type} = assetInfo;
-      const {required, len, sizes} = params;
+      const {required, len, sizes} = placementData;
       const wmin = sizes && sizes[0];
       const hmin = sizes && sizes[1];
       const content = {};
@@ -313,7 +299,7 @@ function generateSiteFromAdUnitContext(adUnitContext) {
 }
 
 function extractSiteDomainFromURL(url) {
-  if (!url || !isString(url)) return null;
+  if (!url || !isStr(url)) return null;
 
   const domain = url.match(DOMAIN_REGEX);
 
@@ -328,7 +314,7 @@ function getDeviceInfo() {
 
 function getUserInfoFromAdUnitContext(adUnitContext) {
   if (!adUnitContext || !adUnitContext.gdprConsent) return null;
-  if (!isString(adUnitContext.gdprConsent.consentString)) return null;
+  if (!isStr(adUnitContext.gdprConsent.consentString)) return null;
 
   return {
     ext: {
@@ -356,9 +342,9 @@ function generateBidRequestExtension() {
 }
 
 function validateServerResponse(serverResponse) {
-  return isObject(serverResponse) &&
-    isObject(serverResponse.body) &&
-    isString(serverResponse.body.cur) &&
+  return isPlainObject(serverResponse) &&
+    isPlainObject(serverResponse.body) &&
+    isStr(serverResponse.body.cur) &&
     isArray(serverResponse.body.seatbid);
 }
 
@@ -369,24 +355,24 @@ function seatBidsToAds(seatBid, bidResponse, serverRequest) {
 }
 
 function validateBids(bid, serverRequest) {
-  if (!isObject(bid)) return false;
-  if (!isString(bid.impid)) return false;
-  if (!isString(bid.crid)) return false;
+  if (!isPlainObject(bid)) return false;
+  if (!isStr(bid.impid)) return false;
+  if (!isStr(bid.crid)) return false;
   if (!isNumber(bid.price)) return false;
 
-  if (!isObject(bid.ext)) return false;
-  if (!isObject(bid.ext.adot)) return false;
-  if (!isString(bid.ext.adot.media_type)) return false;
-  if (!BID_SUPPORTED_MEDIA_TYPES.includes(bid.ext.adot.media_type)) return false;
+  if (!isPlainObject(bid.ext)) return false;
+  if (!isPlainObject(bid.ext.adot)) return false;
+  if (!isStr(bid.ext.adot.media_type)) return false;
+  if (BID_SUPPORTED_MEDIA_TYPES.indexOf(bid.ext.adot.media_type) === -1) return false;
 
   if (!bid.adm && !bid.nurl) return false;
   if (bid.adm) {
-    if (!isString(bid.adm)) return false;
-    if (!bid.adm.includes(AUCTION_PRICE)) return false;
+    if (!isStr(bid.adm)) return false;
+    if (bid.adm.indexOf(AUCTION_PRICE) === -1) return false;
   }
   if (bid.nurl) {
-    if (!isString(bid.nurl)) return false;
-    if (!bid.nurl.includes(AUCTION_PRICE)) return false;
+    if (!isStr(bid.nurl)) return false;
+    if (bid.nurl.indexOf(AUCTION_PRICE) === -1) return false;
   }
 
   if (isBidABanner(bid)) {
@@ -400,47 +386,47 @@ function validateBids(bid, serverRequest) {
 
   const impression = getImpressionData(serverRequest, bid.impid);
 
-  if (!isObject(impression.openRTB)) return false;
-  if (!isObject(impression.internal)) return false;
-  if (!isString(impression.internal.adUnitCode)) return false;
+  if (!isPlainObject(impression.openRTB)) return false;
+  if (!isPlainObject(impression.internal)) return false;
+  if (!isStr(impression.internal.adUnitCode)) return false;
 
   if (isBidABanner(bid)) {
-    if (!isObject(impression.openRTB.banner)) return false;
+    if (!isPlainObject(impression.openRTB.banner)) return false;
   }
   if (isBidAVideo(bid)) {
-    if (!isObject(impression.openRTB.video)) return false;
+    if (!isPlainObject(impression.openRTB.video)) return false;
   }
   if (isBidANative(bid)) {
-    if (!isObject(impression.openRTB.native) || !tryParse(bid.adm)) return false;
+    if (!isPlainObject(impression.openRTB.native) || !tryParse(bid.adm)) return false;
   }
 
   return true;
 }
 
 function isBidABanner(bid) {
-  return isObject(bid) &&
-    isObject(bid.ext) &&
-    isObject(bid.ext.adot) &&
+  return isPlainObject(bid) &&
+    isPlainObject(bid.ext) &&
+    isPlainObject(bid.ext.adot) &&
     bid.ext.adot.media_type === 'banner';
 }
 
 function isBidAVideo(bid) {
-  return isObject(bid) &&
-    isObject(bid.ext) &&
-    isObject(bid.ext.adot) &&
+  return isPlainObject(bid) &&
+    isPlainObject(bid.ext) &&
+    isPlainObject(bid.ext.adot) &&
     bid.ext.adot.media_type === 'video';
 }
 
 function isBidANative(bid) {
-  return isObject(bid) &&
-    isObject(bid.ext) &&
-    isObject(bid.ext.adot) &&
+  return isPlainObject(bid) &&
+    isPlainObject(bid.ext) &&
+    isPlainObject(bid.ext.adot) &&
     bid.ext.adot.media_type === 'native';
 }
 
 function getImpressionData(serverRequest, impressionId) {
-  const openRTBImpression = serverRequest.data.imp.find(imp => imp.id === impressionId);
-  const internalImpression = serverRequest._adot_internal.impressions.find(imp => imp.impressionId === impressionId);
+  const openRTBImpression = find(serverRequest.data.imp, imp => imp.id === impressionId);
+  const internalImpression = find(serverRequest._adot_internal.impressions, imp => imp.impressionId === impressionId);
 
   return {
     id: impressionId,
@@ -451,6 +437,7 @@ function getImpressionData(serverRequest, impressionId) {
 
 function generateAdFromBid(bid, bidResponse, serverRequest) {
   const impressionData = getImpressionData(serverRequest, bid.impid);
+  const isVideo = isBidAVideo(bid);
   const base = {
     requestId: impressionData.internal.bidId,
     cpm: bid.price,
@@ -472,23 +459,10 @@ function generateAdFromBid(bid, bidResponse, serverRequest) {
     width: size.width,
     ad: creative.markup,
     adUrl: creative.markupUrl,
-    vastXml: null,
-    vastUrl: null,
+    vastXml: isVideo && !isStr(creative.markupUrl) ? creative.markup : null,
+    vastUrl: isVideo && isStr(creative.markupUrl) ? creative.markupUrl : null,
     renderer: creative.renderer
   };
-}
-
-function getVastXml(ad, done) {
-  if (isString(ad.adUrl)) {
-    window.fetch(ad.adUrl)
-      .then(response => response.text())
-      .then(vastXml => done(null, vastXml))
-      .catch(err => done(err, null));
-
-    return;
-  }
-
-  return done(null, ad.ad);
 }
 
 function formatNativeData(adm) {
@@ -555,24 +529,25 @@ function buildOutstreamRenderer(impressionData) {
   });
 
   renderer.setRender((ad) => {
-    getVastXml(ad, (err, vastXml) => {
-      if (err) return;
+    ad.renderer.push(() => {
+      const container = impressionData.internal.container
+        ? document.querySelector(impressionData.internal.container)
+        : document.getElementById(impressionData.internal.adUnitCode);
 
-      ad.renderer.push(() => {
-        const container = impressionData.internal.container
-          ? document.querySelector(impressionData.internal.container)
-          : document.getElementById(impressionData.internal.adUnitCode);
+      const player = new window.VASTPlayer(container);
 
-        const player = new window.VASTPlayer(container);
-
-        return player
-          .loadXml(vastXml)
-          .then(() => {
-            player.adVolume = 0;
-          })
-          .then(() => player.startAd())
-          .catch(err => console.error(err));
+      player.on('ready', () => {
+        player.adVolume = 0;
+        player.startAd();
       });
+
+      try {
+        isStr(ad.adUrl)
+          ? player.load(ad.adUrl)
+          : player.loadXml(ad.ad)
+      } catch (err) {
+        logError(err);
+      }
     });
   });
 
@@ -583,7 +558,7 @@ function tryParse(data) {
   try {
     return JSON.parse(data);
   } catch (err) {
-    console.error(err);
+    logError(err);
     return null;
   }
 }
@@ -594,11 +569,11 @@ const adotBidderSpec = {
   isBidRequestValid(adUnit) {
     const allowedBidderCodes = [this.code];
 
-    return isObject(adUnit) &&
-      allowedBidderCodes.includes(adUnit.bidder) &&
-      isString(adUnit.adUnitCode) &&
-      isString(adUnit.bidderRequestId) &&
-      isString(adUnit.bidId) &&
+    return isPlainObject(adUnit) &&
+      allowedBidderCodes.indexOf(adUnit.bidder) !== -1 &&
+      isStr(adUnit.adUnitCode) &&
+      isStr(adUnit.bidderRequestId) &&
+      isStr(adUnit.bidId) &&
       validateMediaTypes(adUnit.mediaTypes, this.supportedMediaTypes) &&
       validateParameters(adUnit.params, adUnit);
   },
@@ -622,13 +597,9 @@ const adotBidderSpec = {
     const bidResponse = serverResponse.body;
 
     return bidResponse.seatbid
-      .filter(seatBid => isObject(seatBid) && isArray(seatBid.bid))
-      .flatMap(seatBid => seatBidsToAds(seatBid, bidResponse, serverRequest));
-  },
-  getUserSyncs(syncOptions, serverResponses) {},
-  onTimeout(timeoutData) {},
-  onBidWon(ad) {},
-  onSetTargeting(ad) {}
+      .filter(seatBid => isPlainObject(seatBid) && isArray(seatBid.bid))
+      .reduce((acc, seatBid) => acc.concat(seatBidsToAds(seatBid, bidResponse, serverRequest)), []);
+  }
 };
 
 registerBidder(adotBidderSpec);

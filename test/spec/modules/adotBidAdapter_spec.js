@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { executeRenderer } from 'src/Renderer';
-import * as utils from 'src/utils';
-import { spec } from 'modules/adotBidAdapter';
+import { executeRenderer } from 'src/Renderer.js';
+import * as utils from 'src/utils.js';
+import { spec } from 'modules/adotBidAdapter.js';
 
 const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding/bidrequest';
 
@@ -2726,7 +2726,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
+        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2750,7 +2750,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
+        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2774,7 +2774,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
+        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2788,7 +2788,7 @@ describe('Adot Adapter', function () {
         expect(ads[1].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[1].bidId);
         expect(ads[1].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[1].adm);
         expect(ads[1].adUrl).to.equal(null);
-        expect(ads[1].vastXml).to.equal(null);
+        expect(ads[1].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[1].vastUrl).to.equal(null);
         expect(ads[1].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[1].crid);
         expect(ads[1].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[1].price);
@@ -2813,7 +2813,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
+        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2839,7 +2839,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].ad).to.equal(null);
         expect(ads[0].adUrl).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].nurl);
         expect(ads[0].vastXml).to.equal(null);
-        expect(ads[0].vastUrl).to.equal(null);
+        expect(ads[0].vastUrl).to.equal(serverResponse.body.seatbid[0].bid[0].nurl);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
         expect(ads[0].currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.cur);
@@ -2863,7 +2863,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
+        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2888,7 +2888,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
+        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2914,7 +2914,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
+        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2939,7 +2939,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
+        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2964,7 +2964,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(null);
+        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -3011,28 +3011,8 @@ describe('Adot Adapter', function () {
       });
 
       describe('Outstream renderer', function () {
-        function mockFetchMethodSuccess() {
-          const stub = sinon.stub(window, 'fetch').resolves({
-            text: sinon.stub().resolves('<VAST version="2.0">VAST XML</VAST>')
-          });
-
-          this.sinonSpies.push(stub);
-        }
-
-        function mockFetchMethodFailure() {
-          const stub = sinon.stub(window, 'fetch').rejects('Failed to fetch VAST XML');
-
-          this.sinonSpies.push(stub);
-        }
-
         function spyAdRenderingQueue(ad) {
           const spy = sinon.spy(ad.renderer, 'push');
-
-          this.sinonSpies.push(spy);
-        }
-
-        function spyVideoPlayer() {
-          const spy = sinon.spy(window.VASTPlayer, 'loadXml');
 
           this.sinonSpies.push(spy);
         }
@@ -3052,17 +3032,16 @@ describe('Adot Adapter', function () {
         }
 
         before('Bind helper functions to the Mocha context', function () {
-          this.mockFetchMethodSuccess = mockFetchMethodSuccess.bind(this);
-          this.mockFetchMethodFailure = mockFetchMethodFailure.bind(this);
           this.spyAdRenderingQueue = spyAdRenderingQueue.bind(this);
-          this.spyVideoPlayer = spyVideoPlayer.bind(this);
-        });
 
-        beforeEach('Mock the video player', function () {
           window.VASTPlayer = function VASTPlayer() {};
           window.VASTPlayer.prototype.loadXml = function loadXml() {
             return new Promise((resolve, reject) => resolve())
           };
+          window.VASTPlayer.prototype.load = function load() {
+            return new Promise((resolve, reject) => resolve())
+          };
+          window.VASTPlayer.prototype.on = function on(event, callback) {};
           window.VASTPlayer.prototype.startAd = function startAd() {};
         });
 
@@ -3074,6 +3053,10 @@ describe('Adot Adapter', function () {
           this.sinonSpies.forEach(spy => spy.restore());
         });
 
+        after('clear data', () => {
+          window.VASTPlayer = null;
+        });
+
         it('should return an ad with valid renderer', function () {
           const serverRequest = examples.serverRequest_video_outstream;
           const serverResponse = examples.serverResponse_video_outstream;
@@ -3082,35 +3065,6 @@ describe('Adot Adapter', function () {
 
           expect(ads).to.be.an('array').and.to.have.length(1);
           expect(ads[0].renderer).to.be.an('object');
-        });
-
-        it('should fetch the VAST XML to render when executing the renderer for an ad using an ad serving URL', function (done) {
-          const serverRequest = examples.serverRequest_video_outstream;
-          const serverResponse = utils.deepClone(examples.serverResponse_video_outstream);
-          serverResponse.body.seatbid[0].bid[0].adm = undefined;
-
-          const [ad] = spec.interpretResponse(serverResponse, serverRequest);
-
-          this.mockFetchMethodSuccess();
-
-          executeAdRenderer(ad, () => {
-            expect(window.fetch.calledOnce).to.equal(true);
-            expect(window.fetch.firstCall.args[0]).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].nurl);
-          }, done);
-        });
-
-        it('should not fetch the VAST XML to render when executing the renderer for an ad using a VAST XML', function (done) {
-          const serverRequest = examples.serverRequest_video_outstream;
-          const serverResponse = utils.deepClone(examples.serverResponse_video_outstream);
-          serverResponse.body.seatbid[0].bid[0].nurl = undefined;
-
-          const [ad] = spec.interpretResponse(serverResponse, serverRequest);
-
-          this.mockFetchMethodSuccess();
-
-          executeAdRenderer(ad, () => {
-            expect(window.fetch.called).to.equal(false);
-          }, done);
         });
 
         it('should append a command to the ad rendering queue when executing the renderer', function (done) {
@@ -3124,21 +3078,6 @@ describe('Adot Adapter', function () {
           executeAdRenderer(ad, () => {
             expect(ad.renderer.push.calledOnce).to.equal(true);
             expect(ad.renderer.push.firstCall.args[0]).to.exist.and.to.be.a('function');
-          }, done);
-        });
-
-        it('should not append a command to the ad rendering queue when executing the renderer and failing to fetch the VAST XML', function (done) {
-          const serverRequest = examples.serverRequest_video_outstream;
-          const serverResponse = utils.deepClone(examples.serverResponse_video_outstream);
-          serverResponse.body.seatbid[0].bid[0].adm = undefined;
-
-          const [ad] = spec.interpretResponse(serverResponse, serverRequest);
-
-          this.mockFetchMethodFailure();
-          this.spyAdRenderingQueue(ad);
-
-          executeAdRenderer(ad, () => {
-            expect(ad.renderer.push.called).to.equal(false);
           }, done);
         });
       });
