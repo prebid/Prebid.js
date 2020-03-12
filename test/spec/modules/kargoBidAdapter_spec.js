@@ -1,6 +1,6 @@
 import {expect, assert} from 'chai';
-import {spec} from 'modules/kargoBidAdapter';
-import {config} from 'src/config';
+import {spec} from 'modules/kargoBidAdapter.js';
+import {config} from 'src/config.js';
 
 describe('kargo adapter tests', function () {
   var sandbox, clock, frozenNow = new Date();
@@ -254,7 +254,8 @@ describe('kargo adapter tests', function () {
             '2_80': 'd2a855a5-1b1c-4300-940e-a708fa1f1bde',
             '2_93': '5ee24138-5e03-4b9d-a953-38e833f2849f'
           },
-          optOut: false
+          optOut: false,
+          usp: '1---'
         },
         krux: {
           userID: 'rsgr9pnij',
@@ -299,7 +300,8 @@ describe('kargo adapter tests', function () {
 
       if (excludeUserIds === true) {
         base.userIDs = {
-          crbIDs: {}
+          crbIDs: {},
+          usp: '1---'
         };
         delete base.prebidRawBidRequests[0].userId.tdid;
       }
@@ -319,7 +321,7 @@ describe('kargo adapter tests', function () {
       if (excludeTdid) {
         delete clonedBids[0].userId.tdid;
       }
-      var request = spec.buildRequests(clonedBids, {timeout: 200, foo: 'bar'});
+      var request = spec.buildRequests(clonedBids, {timeout: 200, uspConsent: '1---', foo: 'bar'});
       expected.sessionId = getSessionId();
       sessionIds.push(expected.sessionId);
       var krakenParams = JSON.parse(decodeURIComponent(request.data.slice(5)));
@@ -438,7 +440,8 @@ describe('kargo adapter tests', function () {
           cpm: 3,
           adm: '<div id="1"></div>',
           width: 320,
-          height: 50
+          height: 50,
+          metadata: {}
         },
         2: {
           id: 'bar',
@@ -446,7 +449,10 @@ describe('kargo adapter tests', function () {
           adm: '<div id="2"></div>',
           width: 300,
           height: 250,
-          targetingCustom: 'dmpmptest1234'
+          targetingCustom: 'dmpmptest1234',
+          metadata: {
+            landingPageDomain: 'https://foobar.com'
+          }
         },
         3: {
           id: 'bar',
@@ -484,7 +490,8 @@ describe('kargo adapter tests', function () {
         creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: undefined
       }, {
         requestId: '2',
         cpm: 2.5,
@@ -495,7 +502,10 @@ describe('kargo adapter tests', function () {
         creativeId: 'bar',
         dealId: 'dmpmptest1234',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: {
+          clickUrl: 'https://foobar.com'
+        }
       }, {
         requestId: '3',
         cpm: 2.5,
@@ -506,7 +516,8 @@ describe('kargo adapter tests', function () {
         creativeId: 'bar',
         dealId: undefined,
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: undefined
       }];
       expect(resp).to.deep.equal(expectation);
     });

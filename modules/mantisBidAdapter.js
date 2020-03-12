@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 function inIframe() {
   try {

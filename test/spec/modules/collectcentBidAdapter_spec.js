@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/collectcentBidAdapter';
+import {spec} from '../../../modules/collectcentBidAdapter.js';
 
 describe('Collectcent', function () {
   let bid = {

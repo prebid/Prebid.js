@@ -1,19 +1,20 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils';
-import { getLabels, resolveStatus } from './sizeMapping';
-import { processNativeAdUnitParams, nativeAdapters } from './native';
-import { newBidder } from './adapters/bidderFactory';
-import { ajaxBuilder } from './ajax';
-import { config, RANDOM } from './config';
-import includes from 'core-js/library/fn/array/includes';
-import find from 'core-js/library/fn/array/find';
-import { adunitCounter } from './adUnits';
-import { getRefererInfo } from './refererDetection';
+import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils.js';
+import { getLabels, resolveStatus } from './sizeMapping.js';
+import { processNativeAdUnitParams, nativeAdapters } from './native.js';
+import { newBidder } from './adapters/bidderFactory.js';
+import { ajaxBuilder } from './ajax.js';
+import { config, RANDOM } from './config.js';
+import { hook } from './hook.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js/library/fn/array/find.js';
+import { adunitCounter } from './adUnits.js';
+import { getRefererInfo } from './refererDetection.js';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
-var events = require('./events');
+var events = require('./events.js');
 let s2sTestingModule; // store s2sTesting module if it's loaded
 
 let adapterManager = {};
@@ -65,8 +66,10 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
           }
 
           bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+            'fpd',
             'mediaType',
-            'renderer'
+            'renderer',
+            'storedAuctionResponse'
           ]));
 
           let {
@@ -112,6 +115,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
     return result;
   }, []).reduce(flatten, []).filter(val => val !== '');
 }
+
+const hookedGetBids = hook('sync', getBids, 'getBids');
 
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
@@ -172,7 +177,13 @@ export let uspDataHandler = {
   }
 };
 
-adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
+adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels) {
+  /**
+   * emit and pass adunits for external modification
+   * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
+   */
+  events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
+
   let bidRequests = [];
 
   let bidderCodes = getBidderCodes(adUnits);
@@ -220,7 +231,7 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
         auctionId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
+        bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC,
@@ -255,7 +266,7 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
+      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo
@@ -282,7 +293,7 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
     });
   }
   return bidRequests;
-};
+}, 'makeBidRequests');
 
 adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout, onTimelyResponse) => {
   if (!bidRequests.length) {

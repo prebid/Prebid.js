@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/fidelityBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/fidelityBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('FidelityAdapter', function () {
   const adapter = newBidder(spec);
