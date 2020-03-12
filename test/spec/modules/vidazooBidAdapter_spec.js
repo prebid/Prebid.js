@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec as adapter, URL} from 'modules/vidazooBidAdapter';
-import * as utils from 'src/utils';
+import {spec as adapter, URL} from 'modules/vidazooBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 const BID = {
   'bidId': '2d52001cabd527',

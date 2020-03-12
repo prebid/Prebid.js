@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adponeBidAdapter';
-import {newBidder} from '../../../src/adapters/bidderFactory';
+import { spec } from 'modules/adponeBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 const EMPTY_ARRAY = [];
 describe('adponeBidAdapter', function () {
@@ -213,11 +214,18 @@ describe('getUserSyncs', function () {
 });
 
 describe('test onBidWon function', function () {
+  beforeEach(function() {
+    sinon.stub(utils, 'triggerPixel');
+  });
+  afterEach(function() {
+    utils.triggerPixel.restore();
+  });
   it('exists and is a function', () => {
     expect(spec.onBidWon).to.exist.and.to.be.a('function');
   });
   it('should return nothing', function () {
     var response = spec.onBidWon({});
     expect(response).to.be.an('undefined')
+    expect(utils.triggerPixel.called).to.equal(true);
   });
 });

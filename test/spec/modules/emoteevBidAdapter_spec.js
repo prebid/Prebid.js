@@ -47,10 +47,10 @@ import {
   validateExternalId,
   VENDOR_ID,
   WALLPAPER,
-} from 'modules/emoteevBidAdapter';
-import * as url from '../../../src/url';
-import * as utils from '../../../src/utils';
-import {config} from '../../../src/config';
+} from 'modules/emoteevBidAdapter.js';
+import * as url from '../../../src/url.js';
+import * as utils from '../../../src/utils.js';
+import {config} from '../../../src/config.js';
 
 const cannedValidBidRequests = [{
   adUnitCode: '/19968336/header-bid-tag-1',
@@ -736,7 +736,7 @@ describe('emoteevBidAdapter', function () {
   });
 
   describe('side effects', function () {
-    let triggerPixelSpy;
+    let triggerPixelStub;
     let getCookieSpy;
     let getConfigSpy;
     let getParameterByNameSpy;
@@ -748,13 +748,13 @@ describe('emoteevBidAdapter', function () {
       config.resetConfig();
     });
     beforeEach(function () {
-      triggerPixelSpy = sinon.spy(utils, 'triggerPixel');
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
       getCookieSpy = sinon.spy(utils, 'getCookie');
       getConfigSpy = sinon.spy(config, 'getConfig');
       getParameterByNameSpy = sinon.spy(utils, 'getParameterByName');
     });
     afterEach(function () {
-      triggerPixelSpy.restore();
+      triggerPixelStub.restore();
       getCookieSpy.restore();
       getConfigSpy.restore();
       getParameterByNameSpy.restore();
