@@ -880,7 +880,6 @@ describe('Unit: Prebid Module', function () {
 
       var invokedTargeting = [];
 
-      console.log(invokedTargetingMap);
       Object.getOwnPropertyNames(invokedTargetingMap).map(function (key) {
         const value = Array.isArray(invokedTargetingMap[key]) ? invokedTargetingMap[key] : [invokedTargetingMap[key]]; // values are always returned as array in googletag
         invokedTargeting.push([key, value]);
@@ -1457,7 +1456,7 @@ describe('Unit: Prebid Module', function () {
         try {
           $$PREBID_GLOBAL$$.requestBids({});
         } catch (e) {
-          console.log(e);
+          console.log(e); // eslint-disable-line
         }
         assert.ok(logMessageSpy.calledWith('No adUnits configured. No bids requested.'), 'expected message was logged');
       });
