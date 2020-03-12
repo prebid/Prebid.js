@@ -12,7 +12,7 @@ function isBidResponseValid(bid) {
     !bid.ttl || !bid.currency) {
     return false;
   }
-  switch (bid['mediaType']) {
+  switch (bid.mediaType) {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
@@ -30,7 +30,7 @@ export const spec = {
   noSync: NO_SYNC,
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.placementId));
+    return Boolean(bid.bidId && bid.params && !isNaN(parseInt(bid.params.placementId)));
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
@@ -47,13 +47,12 @@ export const spec = {
     let request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
-      'language': (navigator && navigator.language) ? navigator.language : '',
+      'language': navigator.language.split('-')[0],
       'secure': 1,
       'host': location.host,
       'page': location.pathname,
       'placements': placements
     };
-    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
@@ -87,9 +86,8 @@ export const spec = {
 
   interpretResponse: (serverResponse) => {
     let response = [];
-    serverResponse = serverResponse.body;
-    for (let i = 0; i < serverResponse.length; i++) {
-      let resItem = serverResponse[i];
+    for (let i = 0; i < serverResponse.body.length; i++) {
+      let resItem = serverResponse.body[i];
       if (isBidResponseValid(resItem)) {
         response.push(resItem);
       }
