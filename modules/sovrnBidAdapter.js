@@ -107,8 +107,7 @@ export const spec = {
         options: {contentType: 'text/plain'}
       }
     } catch (e) {
-      console.log('error in build:')
-      console.log(e)
+      utils.logError('Could not build bidrequest, error deatils:', e);
     }
   },
 
@@ -143,8 +142,7 @@ export const spec = {
       }
       return sovrnBidResponses
     } catch (e) {
-      console.log('error in interpret:')
-      console.log(e)
+      utils.logError('Could not intrepret bidresponse, error deatils:', e);
     }
   },
 

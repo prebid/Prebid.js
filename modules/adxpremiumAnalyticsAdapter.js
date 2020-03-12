@@ -62,7 +62,7 @@ let googletag = window.googletag || {};
 googletag.cmd = googletag.cmd || [];
 googletag.cmd.push(function() {
   googletag.pubads().addEventListener('slotRenderEnded', args => {
-    console.log(Date.now() + ' GOOGLE SLOT: ' + JSON.stringify(args));
+    utils.logInfo(Date.now() + ' GOOGLE SLOT: ' + JSON.stringify(args));
   });
 });
 
@@ -72,7 +72,7 @@ let bidResponsesMapper = {};
 function auctionInit(args) {
   completeObject.auction_id = args.auctionId;
   completeObject.publisher_id = adxpremiumAnalyticsAdapter.initOptions.pubId;
-  try { completeObject.referer = args.bidderRequests[0].refererInfo.referer.split('?')[0]; } catch (e) { console.log(e.message); }
+  try { completeObject.referer = args.bidderRequests[0].refererInfo.referer.split('?')[0]; } catch (e) { utils.logWarn('Could not parse referer, error details:', e.message); }
   completeObject.device_type = deviceType();
 }
 function bidRequested(args) {
@@ -130,11 +130,11 @@ function sendEvent(completeObject) {
     let responseEvents = btoa(JSON.stringify(completeObject));
     let mutation = `mutation {createEvent(input: {event: {eventData: "${responseEvents}"}}) {event {createTime } } }`;
     let dataToSend = JSON.stringify({ query: mutation });
-    ajax(url, function () { console.log(Date.now() + ' Sending event to adxpremium server.') }, dataToSend, {
+    ajax(url, function () { utils.logInfo(Date.now() + ' Sending event to adxpremium server.') }, dataToSend, {
       contentType: 'application/json',
       method: 'POST'
     });
-  } catch (err) { console.log(err) }
+  } catch (err) { utils.logError('Could not send event, error details:', err) }
 }
 
 // save the base class function
