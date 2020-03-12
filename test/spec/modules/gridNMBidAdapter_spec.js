@@ -16,6 +16,8 @@ describe('TheMediaGridNM Adapter', function () {
       'bidder': 'gridNM',
       'params': {
         'source': 'jwp',
+        'secid': '11',
+        'pubid': '22',
         'video': {
           'mimes': ['video/mp4', 'video/x-ms-wmv'],
           'protocols': [1, 2, 3, 4, 5, 6]
@@ -33,28 +35,102 @@ describe('TheMediaGridNM Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
-        'source': 'jwp',
-        'video': {
-          'protocols': [1, 2, 3, 4, 5, 6]
+      const paramsList = [
+        {
+          'source': 'jwp',
+          'secid': '11',
+          'pubid': '22',
+          'video': {
+            'protocols': [1, 2, 3, 4, 5, 6]
+          }
+        },
+        {
+          'source': 'jwp',
+          'secid': '11',
+          'pubid': '22',
+          'video': {
+            'mimes': ['video/mp4', 'video/x-ms-wmv'],
+          }
+        },
+        {
+          'secid': '11',
+          'pubid': '22',
+          'video': {
+            'mimes': ['video/mp4', 'video/x-ms-wmv'],
+            'protocols': [1, 2, 3, 4, 5, 6]
+          }
+        },
+        {
+          'source': 'jwp',
+          'pubid': '22',
+          'video': {
+            'mimes': ['video/mp4', 'video/x-ms-wmv'],
+            'protocols': [1, 2, 3, 4, 5, 6]
+          }
+        },
+        {
+          'source': 'jwp',
+          'secid': '11',
+          'video': {
+            'mimes': ['video/mp4', 'video/x-ms-wmv'],
+            'protocols': [1, 2, 3, 4, 5, 6]
+          }
         }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      ];
+      paramsList.forEach((params) => {
+        const invalidBid = Object.assign({}, bid);
+        delete invalidBid.params;
+        invalidBid.params = params;
+        expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      });
     });
 
     it('should return false when required params has invalid values', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
-        'source': 'jwp',
-        'video': {
-          'mimes': ['video/mp4', 'video/x-ms-wmv'],
-          'protocols': '1,2,3,4,5'
+      const paramsList = [
+        {
+          'source': 'jwp',
+          'secid': '11',
+          'pubid': '22',
+          'video': {
+            'mimes': ['video/mp4', 'video/x-ms-wmv'],
+            'protocols': '1,2,3,4,5'
+          }
+        },
+        {
+          'source': 'jwp',
+          'secid': '11',
+          'pubid': '22',
+          'video': {
+            'mimes': [1, 2],
+            'protocols': [1, 2, 3, 4, 5]
+          }
+        },
+        {
+          'source': 'jwp',
+          'secid': 11,
+          'pubid': '22',
+          'video': {
+            'mimes': ['video/mp4', 'video/x-ms-wmv'],
+            'protocols': [1, 2, 3, 4, 5]
+          }
+        },
+        {
+          'source': 111,
+          'secid': '11',
+          'pubid': '22',
+          'video': {
+            'mimes': ['video/mp4', 'video/x-ms-wmv'],
+            'protocols': [1, 2, 3, 4, 5]
+          }
         }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      ];
+
+      paramsList.forEach((params) => {
+        const invalidBid = Object.assign({}, bid);
+        delete invalidBid.params;
+        invalidBid.params = params;
+        expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+      });
     });
   });
 
@@ -74,6 +150,8 @@ describe('TheMediaGridNM Adapter', function () {
         'bidder': 'gridNM',
         'params': {
           'source': 'jwp',
+          'secid': '11',
+          'pubid': '22',
           'video': {
             'mimes': ['video/mp4', 'video/x-ms-wmv'],
             'protocols': [1, 2, 3, 4, 5, 6]
@@ -89,7 +167,8 @@ describe('TheMediaGridNM Adapter', function () {
         'bidder': 'gridNM',
         'params': {
           'source': 'jwp',
-          'pubid': 22,
+          'secid': '11',
+          'pubid': '22',
           'video': {
             'mimes': ['video/mp4'],
             'protocols': [1, 2, 3],
@@ -170,6 +249,8 @@ describe('TheMediaGridNM Adapter', function () {
           'bidder': 'gridNM',
           'params': {
             'source': 'jwp',
+            'secid': '11',
+            'pubid': '22',
             'video': {
               'mimes': ['video/mp4', 'video/x-ms-wmv'],
               'protocols': [1, 2, 3, 4, 5, 6]
@@ -190,6 +271,8 @@ describe('TheMediaGridNM Adapter', function () {
           'bidder': 'gridNM',
           'params': {
             'source': 'jwp',
+            'secid': '11',
+            'pubid': '22',
             'video': {
               'mimes': ['video/mp4'],
               'protocols': [1, 2, 3, 4, 5],
@@ -258,6 +341,8 @@ describe('TheMediaGridNM Adapter', function () {
           'bidder': 'gridNM',
           'params': {
             'source': 'jwp',
+            'secid': '11',
+            'pubid': '22',
             'video': {
               'mimes': ['video/mp4'],
               'protocols': [1, 2, 3, 4, 5],

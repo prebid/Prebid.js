@@ -39,14 +39,20 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    let invalid = !bid.params.source || !utils.isStr(bid.params.source);
+    let invalid =
+      !bid.params.source || !utils.isStr(bid.params.source) ||
+      !bid.params.secid || !utils.isStr(bid.params.secid) ||
+      !bid.params.pubid || !utils.isStr(bid.params.pubid);
+
     if (!invalid) {
       invalid = !bid.params.video || !bid.params.video.protocols || !bid.params.video.mimes;
     }
     if (!invalid) {
       const {protocols, mimes} = bid.params.video;
-      invalid = !utils.isArray(mimes) || mimes.filter((it) => !(it && utils.isStr(it))).length;
-      invalid = invalid || !utils.isArray(protocols) || protocols.filter((it) => !(utils.isNumber(it) && it > 0 && !(it % 1))).length;
+      invalid = !utils.isArray(mimes) || !mimes.length || mimes.filter((it) => !(it && utils.isStr(it))).length;
+      if (!invalid) {
+        invalid = !utils.isArray(protocols) || !protocols.length || protocols.filter((it) => !(utils.isNumber(it) && it > 0 && !(it % 1))).length;
+      }
     }
     return !invalid;
   },
