@@ -1,6 +1,6 @@
 import {assert, expect} from 'chai';
-import {spec} from 'modules/vdoaiBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/vdoaiBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT_URL = 'https://prebid.vdo.ai/auction';
 
