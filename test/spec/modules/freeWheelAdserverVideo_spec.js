@@ -2,12 +2,11 @@ import { expect } from 'chai';
 import { adpodUtils } from 'modules/freeWheelAdserverVideo';
 import { auctionManager } from 'src/auctionManager';
 import { config } from 'src/config';
+import { server } from 'test/mocks/xhr';
 
 describe('freeWheel adserver module', function() {
   let amStub;
   let amGetAdUnitsStub;
-  let xhr;
-  let requests;
 
   before(function () {
     let adUnits = [{
@@ -56,10 +55,6 @@ describe('freeWheel adserver module', function() {
   });
 
   beforeEach(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
-
     config.setConfig({
       adpod: {
         brandCategoryExclusion: false,
@@ -70,7 +65,6 @@ describe('freeWheel adserver module', function() {
 
   afterEach(function() {
     config.resetConfig();
-    xhr.restore();
   });
 
   after(function () {
@@ -188,7 +182,7 @@ describe('freeWheel adserver module', function() {
       }
     });
 
-    requests[0].respond(
+    server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
       JSON.stringify({'responses': getBidsReceived().slice(0, 4)})
@@ -225,7 +219,7 @@ describe('freeWheel adserver module', function() {
       }
     });
 
-    requests[0].respond(
+    server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
       JSON.stringify({'responses': bidsReceived.slice(1)})
@@ -275,7 +269,7 @@ describe('freeWheel adserver module', function() {
       }
     });
 
-    requests[0].respond(
+    server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
       JSON.stringify({'responses': [tier7Bid, bid]})

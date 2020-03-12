@@ -125,12 +125,16 @@ function evaluateSizeConfig(configs) {
     ) {
       let ruleMatch = false;
 
-      try {
-        ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
-      } catch (e) {
-        logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated');
+      if (config.mediaQuery === '') {
+        ruleMatch = true;
+      } else {
+        try {
+          ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
+        } catch (e) {
+          logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated');
 
-        ruleMatch = matchMedia(config.mediaQuery).matches;
+          ruleMatch = matchMedia(config.mediaQuery).matches;
+        }
       }
 
       if (ruleMatch) {

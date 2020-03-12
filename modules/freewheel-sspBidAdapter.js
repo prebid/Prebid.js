@@ -1,6 +1,5 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
-// import { config } from '../src/config';
 
 const BIDDER_CODE = 'freewheel-ssp';
 
@@ -11,11 +10,7 @@ const PRIMETIME_URL = PROTOCOL + '://cdn.stickyadstv.com/prime-time/';
 const USER_SYNC_URL = PROTOCOL + '://ads.stickyadstv.com/auto-user-sync';
 
 function getProtocol() {
-  if (location.protocol && location.protocol.indexOf('https') === 0) {
-    return 'https';
-  } else {
-    return 'http';
-  }
+  return 'https';
 }
 
 function isValidUrl(str) {
@@ -36,6 +31,20 @@ function getBiggerSize(array) {
     }
   }
   return result;
+}
+
+function getBiggerSizeWithLimit(array, minSizeLimit, maxSizeLimit) {
+  var minSize = minSizeLimit || [0, 0];
+  var maxSize = maxSizeLimit || [Number.MAX_VALUE, Number.MAX_VALUE];
+  var candidates = [];
+
+  for (var i = 0; i < array.length; i++) {
+    if (array[i][0] * array[i][1] >= minSize[0] * minSize[1] && array[i][0] * array[i][1] <= maxSize[0] * maxSize[1]) {
+      candidates.push(array[i]);
+    }
+  }
+
+  return getBiggerSize(candidates);
 }
 
 /*
@@ -233,7 +242,6 @@ export const spec = {
     var zone = currentBidRequest.params.zoneId;
     var timeInMillis = new Date().getTime();
     var keyCode = hashcode(zone + '' + timeInMillis);
-
     var requestParams = {
       reqType: 'AdsSetup',
       protocolVersion: '2.0',
@@ -244,7 +252,7 @@ export const spec = {
     };
 
     // Add GDPR flag and consent string
-    if (bidderRequest.gdprConsent) {
+    if (bidderRequest && bidderRequest.gdprConsent) {
       requestParams._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
 
       if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
@@ -256,6 +264,11 @@ export const spec = {
       requestParams._fw_gdpr_consented_providers = currentBidRequest.params.gdpr_consented_providers;
     }
 
+    // Add CCPA consent string
+    if (bidderRequest && bidderRequest.uspConsent) {
+      requestParams._fw_us_privacy = bidderRequest.uspConsent;
+    }
+
     var vastParams = currentBidRequest.params.vastUrlParams;
     if (typeof vastParams === 'object') {
       for (var key in vastParams) {
@@ -265,12 +278,23 @@ export const spec = {
       }
     }
 
-    var location = utils.getTopWindowUrl();
+    var location = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : getTopMostWindow().location.href;
     if (isValidUrl(location)) {
       requestParams.loc = location;
     }
 
-    var playerSize = getBiggerSize(currentBidRequest.sizes);
+    var playerSize = [];
+    if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
+      // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
+      playerSize = currentBidRequest.mediaTypes.video.playerSize;
+    } else if (currentBidRequest.mediaTypes.banner.sizes) {
+      // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
+      playerSize = getBiggerSizeWithLimit(currentBidRequest.mediaTypes.banner.sizes, currentBidRequest.mediaTypes.banner.minSizeLimit, currentBidRequest.mediaTypes.banner.maxSizeLimit);
+    } else {
+      // Backward compatible code, in case size still pass by sizes in bid request
+      playerSize = getBiggerSize(currentBidRequest.sizes);
+    }
+
     if (playerSize[0] > 0 || playerSize[1] > 0) {
       requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
     }
@@ -292,7 +316,17 @@ export const spec = {
   */
   interpretResponse: function(serverResponse, request) {
     var bidrequest = request.bidRequest;
-    var playerSize = getBiggerSize(bidrequest.sizes);
+    var playerSize = [];
+    if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
+      // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
+      playerSize = bidrequest.mediaTypes.video.playerSize;
+    } else if (bidrequest.mediaTypes.banner.sizes) {
+      // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
+      playerSize = getBiggerSizeWithLimit(bidrequest.mediaTypes.banner.sizes, bidrequest.mediaTypes.banner.minSizeLimit, bidrequest.mediaTypes.banner.maxSizeLimit);
+    } else {
+      // Backward compatible code, in case size still pass by sizes in bid request
+      playerSize = getBiggerSize(bidrequest.sizes);
+    }
 
     if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
       serverResponse = serverResponse.body;
@@ -329,18 +363,7 @@ export const spec = {
         netRevenue: true,
         ttl: 360
       };
-
-      var mediaTypes = bidrequest.mediaTypes || {};
-      if (mediaTypes.video) {
-        // bidResponse.vastXml = serverResponse;
-        bidResponse.mediaType = 'video';
-
-        var blob = new Blob([serverResponse], {type: 'application/xml'});
-        bidResponse.vastUrl = window.URL.createObjectURL(blob);
-      } else {
-        bidResponse.ad = formatAdHTML(bidrequest, playerSize);
-      }
-
+      bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);
     }
 
@@ -348,11 +371,13 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions) {
-    if (syncOptions.pixelEnabled) {
+    if (syncOptions && syncOptions.pixelEnabled) {
       return [{
         type: 'image',
         url: USER_SYNC_URL
       }];
+    } else {
+      return [];
     }
   },
 

@@ -49,6 +49,7 @@ describe('kargo adapter tests', function () {
           }
           return {adServerCurrency: 'USD'};
         }
+        if (key === 'debug') return true;
         throw new Error(`Config stub incomplete! Missing key "${key}"`)
       });
 
@@ -253,7 +254,8 @@ describe('kargo adapter tests', function () {
             '2_80': 'd2a855a5-1b1c-4300-940e-a708fa1f1bde',
             '2_93': '5ee24138-5e03-4b9d-a953-38e833f2849f'
           },
-          optOut: false
+          optOut: false,
+          usp: '1---'
         },
         krux: {
           userID: 'rsgr9pnij',
@@ -298,7 +300,8 @@ describe('kargo adapter tests', function () {
 
       if (excludeUserIds === true) {
         base.userIDs = {
-          crbIDs: {}
+          crbIDs: {},
+          usp: '1---'
         };
         delete base.prebidRawBidRequests[0].userId.tdid;
       }
@@ -318,7 +321,7 @@ describe('kargo adapter tests', function () {
       if (excludeTdid) {
         delete clonedBids[0].userId.tdid;
       }
-      var request = spec.buildRequests(clonedBids, {timeout: 200, foo: 'bar'});
+      var request = spec.buildRequests(clonedBids, {timeout: 200, uspConsent: '1---', foo: 'bar'});
       expected.sessionId = getSessionId();
       sessionIds.push(expected.sessionId);
       var krakenParams = JSON.parse(decodeURIComponent(request.data.slice(5)));

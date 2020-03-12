@@ -256,7 +256,7 @@ describe('Mgid bid adapter', function () {
     it('should return overwrite default bidurl', function () {
       let bid = Object.assign({}, bid);
       bid.params = {
-        bidUrl: '//newbidurl.com/',
+        bidUrl: 'https://newbidurl.com/',
         accountId: '1',
         placementId: '2',
       };
@@ -267,7 +267,7 @@ describe('Mgid bid adapter', function () {
       };
       let bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.include('//newbidurl.com/1');
+      expect(request.url).to.include('https://newbidurl.com/1');
     });
     it('should return overwrite default bidFloor', function () {
       let bid = Object.assign({}, bid);
@@ -546,7 +546,7 @@ describe('Mgid bid adapter', function () {
     });
     it('should push proper banner bid response', function () {
       let resp = {
-        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': '', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'http: nurl', 'burl': 'http: burl', 'adm': 'html: adm', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2']}], 'seat': '44082'}]}
+        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': '', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': 'html: adm', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2']}], 'seat': '44082'}]}
       };
       let bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([
@@ -560,8 +560,8 @@ describe('Mgid bid adapter', function () {
           'isBurl': true,
           'mediaType': 'banner',
           'netRevenue': true,
-          'nurl': 'http: nurl',
-          'burl': 'http: burl',
+          'nurl': 'https nurl',
+          'burl': 'https burl',
           'requestId': '61e40632c53fc2',
           'ttl': 300,
           'width': 300,
@@ -572,26 +572,26 @@ describe('Mgid bid adapter', function () {
   describe('interpretResponse native', function () {
     it('should not push proper native bid response if adm is missing', function () {
       let resp = {
-        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'http: nurl', 'burl': 'http: burl', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}]}
+        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}]}
       };
       let bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([])
     });
     it('should not push proper native bid response if assets is empty', function () {
       let resp = {
-        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'http: nurl', 'burl': 'http: burl', 'adm': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[],\"imptrackers\":[\"imptrackers1\"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}]}
+        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[],\"imptrackers\":[\"imptrackers1\"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}]}
       };
       let bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([])
     });
     it('should push proper native bid response', function () {
       let resp = {
-        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'http: nurl', 'burl': 'http: burl', 'adm': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"title1\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"image_src\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"icon_src\"}},{\"id\":4,\"required\":0,\"data\":{\"type\":4,\"value\":\"sponsored\"}},{\"id\":5,\"required\":0,\"data\":{\"type\":6,\"value\":\"price1\"}},{\"id\":6,\"required\":0,\"data\":{\"type\":7,\"value\":\"price2\"}}],\"imptrackers\":[\"imptrackers1\"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}], ext: {'muidn': 'userid'}}
+        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"title1\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"image_src\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"icon_src\"}},{\"id\":4,\"required\":0,\"data\":{\"type\":4,\"value\":\"sponsored\"}},{\"id\":5,\"required\":0,\"data\":{\"type\":6,\"value\":\"price1\"}},{\"id\":6,\"required\":0,\"data\":{\"type\":7,\"value\":\"price2\"}}],\"imptrackers\":[\"imptrackers1\"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}], ext: {'muidn': 'userid'}}
       };
       let bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([{
         'ad': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"title1\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"image_src\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"icon_src\"}},{\"id\":4,\"required\":0,\"data\":{\"type\":4,\"value\":\"sponsored\"}},{\"id\":5,\"required\":0,\"data\":{\"type\":6,\"value\":\"price1\"}},{\"id\":6,\"required\":0,\"data\":{\"type\":7,\"value\":\"price2\"}}],\"imptrackers\":[\"imptrackers1\"]}}',
-        'burl': 'http: burl',
+        'burl': 'https burl',
         'cpm': 1.5,
         'creativeId': '2898532/2419121/2592854/2499195',
         'currency': 'GBP',
@@ -621,7 +621,7 @@ describe('Mgid bid adapter', function () {
           'title': 'title1'
         },
         'netRevenue': true,
-        'nurl': 'http: nurl',
+        'nurl': 'https nurl',
         'requestId': '61e40632c53fc2',
         'ttl': 300,
         'width': 0
@@ -629,7 +629,7 @@ describe('Mgid bid adapter', function () {
     });
     it('should push proper native bid response', function () {
       let resp = {
-        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'http: nurl', 'burl': 'http: burl', 'adm': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"title1\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"image_src\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"icon_src\"}}],\"imptrackers\":[\"imptrackers1\"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}]}
+        body: {'id': '57c0c2b1b732ca', 'bidid': '57c0c2b1b732ca', 'cur': 'GBP', 'seatbid': [{'bid': [{'price': 1.5, 'h': 600, 'w': 300, 'id': '1', 'impid': '61e40632c53fc2', 'adid': '2898532/2419121/2592854/2499195', 'nurl': 'https nurl', 'burl': 'https burl', 'adm': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"link_url\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"title1\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"image_src\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"icon_src\"}}],\"imptrackers\":[\"imptrackers1\"]}}', 'cid': '44082', 'crid': '2898532/2419121/2592854/2499195', 'cat': ['IAB7', 'IAB14', 'IAB18-3', 'IAB1-2'], 'ext': {'place': 0, 'crtype': 'native'}}], 'seat': '44082'}]}
       };
       let bids = spec.interpretResponse(resp);
       expect(bids).to.deep.equal([
@@ -643,8 +643,8 @@ describe('Mgid bid adapter', function () {
           'isBurl': true,
           'mediaType': 'native',
           'netRevenue': true,
-          'nurl': 'http: nurl',
-          'burl': 'http: burl',
+          'nurl': 'https nurl',
+          'burl': 'https burl',
           'requestId': '61e40632c53fc2',
           'ttl': 300,
           'width': 0,
@@ -676,6 +676,12 @@ describe('Mgid bid adapter', function () {
     });
   });
   describe('on bidWon', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
     it('should replace nurl and burl for native', function () {
       const burl = 'burl&s=${' + 'AUCTION_PRICE}';
       const nurl = 'nurl&s=${' + 'AUCTION_PRICE}';

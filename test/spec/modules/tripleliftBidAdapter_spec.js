@@ -105,7 +105,7 @@ describe('triplelift adapter', function () {
           }
         ],
         refererInfo: {
-          referer: 'http://examplereferer.com'
+          referer: 'https://examplereferer.com'
         },
         gdprConsent: {
           consentString: GDPR_CONSENT_STR,
@@ -285,7 +285,7 @@ describe('triplelift adapter', function () {
         }
       ],
       refererInfo: {
-        referer: 'http://examplereferer.com'
+        referer: 'https://examplereferer.com'
       },
       gdprConsent: {
         consentString: GDPR_CONSENT_STR,
@@ -359,7 +359,7 @@ describe('triplelift adapter', function () {
           }
         ],
         refererInfo: {
-          referer: 'http://examplereferer.com'
+          referer: 'https://examplereferer.com'
         },
         gdprConsent: {
           consentString: GDPR_CONSENT_STR,

@@ -7,7 +7,9 @@
 
 import * as utils from '../src/utils'
 import {ajax} from '../src/ajax';
-import {submodule} from '../src/hook';
+import {submodule} from '../src/hook'
+
+const MODULE_NAME = 'unifiedId';
 
 /** @type {Submodule} */
 export const unifiedIdSubmodule = {
@@ -15,7 +17,7 @@ export const unifiedIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'unifiedId',
+  name: MODULE_NAME,
   /**
    * decode the stored id value for passing to bid requests
    * @function
