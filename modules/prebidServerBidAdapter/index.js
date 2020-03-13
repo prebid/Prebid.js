@@ -271,6 +271,10 @@ function _appendSiteAppDevice(request, pageUrl) {
     request.site = {
       publisher: { id: _s2sConfig.accountId },
       page: pageUrl
+    };
+    // If config contains a site object: merge with the existing request.site value
+    if (typeof config.getConfig('site') === 'object') {
+      request.site = { ...request.site, ...config.getConfig('site') };
     }
   }
   if (typeof config.getConfig('device') === 'object') {
