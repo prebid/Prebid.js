@@ -159,7 +159,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     callCmpWhileInSafeFrame('getConsentData', v1CallbackHandler.consentDataCallback);
     callCmpWhileInSafeFrame('getVendorConsents', v1CallbackHandler.vendorConsentsCallback);
   } else {
-    utils.logInfo('Detected CMP is outside the current iframe when Prebid.js is located, calling it now...');
+    utils.logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
     if (cmpVersion === 1) {
       callCmpWhileInIframe('getConsentData', cmpFrame, v1CallbackHandler.consentDataCallback);
       callCmpWhileInIframe('getVendorConsents', cmpFrame, v1CallbackHandler.vendorConsentsCallback);
