@@ -3,14 +3,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'adnuntius';
 const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=-60&format=json';
 
-const getTopWindowReferrer = () => {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return '';
-  }
-}
-
 export const spec = {
   code: BIDDER_CODE,
 
