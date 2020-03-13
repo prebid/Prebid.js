@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/valueimpressionBidAdapter.js'
+import { spec } from 'modules/valueimpressionBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { userSync } from '../../../src/userSync.js';
 
@@ -583,31 +583,20 @@ describe('ValueimpressionBidAdapter', function () {
         type: 'image',
         url: 'https://pixel-test'
       }]);
-    })
+    });
     it('should return an empty array when sync is enabled but there are no bidResponses', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
-    })
+    });
 
     it('should return an empty array when sync is enabled but no sync pixel returned', function () {
       const pixel = Object.assign({}, bidResponse);
       delete pixel[0].body.pixel;
       expect(spec.getUserSyncs({ pixelEnabled: true }, bidResponse)).to.have.length(0);
-    })
+    });
 
     it('should return an empty array', function () {
       expect(spec.getUserSyncs({ pixelEnabled: false }, bidResponse)).to.have.length(0);
       expect(spec.getUserSyncs({ pixelEnabled: true }, [])).to.have.length(0);
     });
-  })
-  describe('_getPlatform', function () {
-    it('should return mobile', function () {
-      expect(_getPlatform({ innerWidth: 767 })).to.equal('mobile')
-    })
-    it('should return tablet', function () {
-      expect(_getPlatform({ innerWidth: 800 })).to.equal('tablet')
-    })
-    it('should return desktop', function () {
-      expect(_getPlatform({ innerWidth: 1000 })).to.equal('desktop')
-    })
-  })
-})
+  });
+});
