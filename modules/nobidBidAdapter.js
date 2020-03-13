@@ -195,9 +195,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
     var placementId = bid.params['placementId'];
     if (siteId && bid.params && bid.params.tags) {
-      newAdunit({div: divid, sizes: sizes, rtb: bid.params.tags, siteId: siteId, placementId:placementId}, adunits);
+      newAdunit({div: divid, sizes: sizes, rtb: bid.params.tags, siteId: siteId, placementId: placementId}, adunits);
     } else if (siteId) {
-      newAdunit({div: divid, sizes: sizes, siteId: siteId, placementId:placementId}, adunits);
+      newAdunit({div: divid, sizes: sizes, siteId: siteId, placementId: placementId}, adunits);
     }
   }
   if (siteId) {
