@@ -4,7 +4,6 @@
 
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf');
-var path = require('path')
 var karmaConstants = require('karma').constants;
 
 function newWebpackConfig(codeCoverage) {
@@ -33,7 +32,7 @@ function newWebpackConfig(codeCoverage) {
 function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
-    'karma-coverage-istanbul-reporter',
+    'karma-coverage',
     'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
@@ -66,18 +65,15 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
       suppressPassed: true
     };
   }
+
   if (codeCoverage) {
-    karmaConf.reporters.push('coverage-istanbul');
-    karmaConf.coverageIstanbulReporter = {
-      reports: ['html', 'lcovonly', 'text-summary'],
-      dir: path.join(__dirname, 'build', 'coverage'),
-      'report-config': {
-        html: {
-          subdir: 'karma_html',
-          urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
-        }
-      }
-    }
+    karmaConf.reporters.push('coverage');
+    karmaConf.coverageReporter = {
+      dir: 'build/coverage',
+      reporters: [
+        { type: 'lcov', subdir: '.' }
+      ]
+    };
   }
 }
 
@@ -157,6 +153,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     autoWatch: true,
 
     reporters: ['mocha'],
+
     mochaReporter: {
       showDiff: true,
       output: 'minimal'
