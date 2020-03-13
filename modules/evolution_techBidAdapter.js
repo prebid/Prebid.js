@@ -47,7 +47,7 @@ export const spec = {
     let request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
-      'language': navigator.language.split('-')[0],
+      'language': (typeof navigator === 'object') ? navigator.language.split('-')[0] : '',
       'secure': 1,
       'host': location.host,
       'page': location.pathname,
