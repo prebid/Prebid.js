@@ -233,11 +233,10 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
 function processCmpData(consentObject, hookConfig) {
-  // force the page into GDPR mode if gdprScope has been set to true
-  if (gdprScope === true) {
-    utils.deepSetValue(consentObject, 'getConsentData.consentData.gdprApplies', true);
+  // always send gdprApplies: true to adapters when gdprScope is true
+  if (gdprScope === true && consentObject && consentObject.getConsentData) {
+    consentObject.getConsentData.gdprApplies = true;
   }
-  
   let gdprApplies = consentObject && consentObject.getConsentData && consentObject.getConsentData.gdprApplies;
   if (
     (typeof gdprApplies !== 'boolean') ||
@@ -377,12 +376,10 @@ export function setConsentConfig(config) {
     allowAuction = DEFAULT_ALLOW_AUCTION_WO_CONSENT;
     utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
   }
-  
-  if (config.defaultGdprScope === true) {
-    // always send gdprApplies: true to adapters
-    gdprScope = true;
-  }
-  
+
+  // if true, then gdprApplies should be set to true
+  gdprScope = config.defaultGdprScope === true;
+
   utils.logInfo('consentManagement module has been activated...');
 
   if (userCMP === 'static') {
