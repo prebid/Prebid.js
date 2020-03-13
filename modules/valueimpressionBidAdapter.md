@@ -46,7 +46,7 @@ var videoAdUnit = {
   },
   bids: [
     {
-      bidder: 'sonobi',
+      bidder: 'valueimpression',
       params: {
         siteId: 'vi-site-id', // siteId provided by Valueimpression
       }
