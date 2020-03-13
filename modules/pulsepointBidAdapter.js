@@ -161,12 +161,34 @@ function impression(slot) {
  * Produces an OpenRTB Banner object for the slot given.
  */
 function banner(slot) {
-  const size = adSize(slot);
+  const sizes = parseSizes(slot);
+  const size = adSize(slot, sizes);
   return (slot.nativeParams || slot.params.video) ? null : {
     w: size[0],
     h: size[1],
     battr: slot.params.battr,
+    format: sizes
   };
+}
+
+/**
+ * Produce openrtb format objects based on the sizes configured for the slot.
+ */
+function parseSizes(slot) {
+  const sizes = utils.deepAccess(slot, 'mediaTypes.banner.sizes');
+  if (sizes) {
+    const formats = [];
+    sizes.forEach(function (sz) {
+      if (sz.length === 2) {
+        formats.push({
+          w: sz[0],
+          h: sz[1]
+        });
+      }
+    });
+    return formats;
+  }
+  return null;
 }
 
 /**
@@ -372,12 +394,14 @@ function parse(rawResponse) {
 /**
  * Determines the AdSize for the slot.
  */
-function adSize(slot) {
+function adSize(slot, sizes) {
   if (slot.params.cf) {
     const size = slot.params.cf.toUpperCase().split('X');
     const width = parseInt(slot.params.cw || size[0], 10);
     const height = parseInt(slot.params.ch || size[1], 10);
     return [width, height];
+  } else if (sizes && sizes.length > 0) {
+    return [sizes[0].w, sizes[0].h];
   }
   return [1, 1];
 }
