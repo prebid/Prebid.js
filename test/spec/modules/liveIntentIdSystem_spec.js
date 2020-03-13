@@ -66,7 +66,7 @@ describe('LiveIntentId', function () {
 
   it('should fire an event when getId', function () {
     liveIntentIdSubmodule.getId(defaultConfigParams);
-    expect(pixel.src).to.match(/https:\/\/rp.liadm.com\/p\?wrpn=prebid.*/)
+    expect(pixel.src).to.match(/https:\/\/rp.liadm.com\/p\?wpn=prebid.*/)
   });
 
   it('should initialize LiveConnect with the config params when decode and emit an event', function () {
@@ -81,7 +81,7 @@ describe('LiveIntentId', function () {
       }
     });
 
-    expect(pixel.src).to.match(/https:\/\/collector.liveintent.com\/p\?aid=a-0001&wrpn=prebid.*/)
+    expect(pixel.src).to.match(/https:\/\/collector.liveintent.com\/p\?aid=a-0001&wpn=prebid.*/)
   });
 
   it('should initialize LiveConnect and emit an event with a us privacy string when decode', function () {
