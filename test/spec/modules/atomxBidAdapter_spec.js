@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/atomxBidAdapter';
+import { spec } from 'modules/atomxBidAdapter.js';
 
 describe('atomxAdapterTest', function () {
   describe('bidRequestValidity', function () {

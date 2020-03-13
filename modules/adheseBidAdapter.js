@@ -1,7 +1,7 @@
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adhese';
 const USER_SYNC_BASE_URL = 'https://user-sync.adhese.com/iframe/user_sync.html';

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/slimcutBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/slimcutBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://sb.freeskreen.com/pbr';
 const AD_SCRIPT = '<script type="text/javascript" class="slimcut" async="true" src="https://static.freeskreen.com/publisher/83/freeskreen.min.js"></script>"';

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adheseBidAdapter';
+import {spec} from 'modules/adheseBidAdapter.js';
 
 const BID_ID = 456;
 const TTL = 360;

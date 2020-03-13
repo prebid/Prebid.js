@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/sekindoUMBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/sekindoUMBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('sekindoUMAdapter', function () {
   const adapter = newBidder(spec);

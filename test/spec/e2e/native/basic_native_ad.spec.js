@@ -37,7 +37,7 @@ describe('Prebid.js Native Ad Unit Test', function () {
 
   it('should load the targeting keys with correct values', function () {
     const result = browser.execute(function () {
-      return window.pbjs.getAdserverTargeting('/19968336/prebid_native_example_2');
+      return window.top.pbjs.getAdserverTargeting('/19968336/prebid_native_example_2');
     });
 
     const targetingKeys = result.value['/19968336/prebid_native_example_2'];
