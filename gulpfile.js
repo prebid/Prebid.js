@@ -84,7 +84,7 @@ function viewCoverage(done) {
 
   connect.server({
     port: coveragePort,
-    root: 'build/coverage/karma_html',
+    root: 'build/coverage/lcov-report',
     livereload: false
   });
   opens('http://' + mylocalhost + ':' + coveragePort);
@@ -328,7 +328,7 @@ function setupE2e(done) {
 
 gulp.task('updatepath', function(){
   return gulp.src(['build/dist/*.js'])
-  .pipe(replace('ib.adnxs.com/ut/v3/prebid', host + ':' + mockServerPort + '/'))
+  .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', 'http://' + host + ':' + mockServerPort + '/'))
   .pipe(gulp.dest('build/dist'));
 });
 
