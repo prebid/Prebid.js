@@ -4,18 +4,6 @@ const BIDDER_CODE = 'valueimpression';
 const ENDPOINT = 'https://adapter.valueimpression.com/bid';
 const USER_SYNC_URL = 'https://adapter.valueimpression.com/usersync';
 
-function _getDoNotTrack() {
-  if (window.doNotTrack || navigator.doNotTrack || navigator.msDoNotTrack) {
-    if (window.doNotTrack == '1' || navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') {
-      return 1;
-    } else {
-      return 0;
-    }
-  } else {
-    return 0;
-  }
-}
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner', 'video'],
@@ -148,4 +136,17 @@ export const spec = {
   onSetTargeting: function (bid) {
   }
 };
+
+function _getDoNotTrack() {
+  if (window.doNotTrack || navigator.doNotTrack || navigator.msDoNotTrack) {
+    if (window.doNotTrack == '1' || navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') {
+      return 1;
+    } else {
+      return 0;
+    }
+  } else {
+    return 0;
+  }
+}
+
 registerBidder(spec);
