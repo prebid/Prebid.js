@@ -131,6 +131,9 @@ let configRegistry = [];
 let submoduleRegistry = [];
 
 /** @type {(number|undefined)} */
+let timeoutID;
+
+/** @type {(number|undefined)} */
 export let syncDelay;
 
 /** @type {(number|undefined)} */
@@ -238,6 +241,8 @@ function processSubmoduleCallbacks(submodules, cb) {
 
     // clear callback, this prop is used to test if all submodule callbacks are complete below
     submodule.callback = undefined;
+
+    clearTimeout(timeoutID);
   });
 }
 
@@ -307,7 +312,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
           utils.logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay} at most to fetch ids`);
           processSubmoduleCallbacks(submodulesWithCallbacks, continueCallback);
 
-          setTimeout(continueCallback, auctionDelay);
+          timeoutID = setTimeout(continueCallback, auctionDelay);
         } else {
           // wait for auction complete before processing submodule callbacks
           events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
