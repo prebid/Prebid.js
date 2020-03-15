@@ -6,50 +6,24 @@ const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
 const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE];
 
-const PROD_PREBID_ENDPOINT_URL = 'https://money.dailyhunt.in/openrtb2/auction';
+const PROD_PREBID_ENDPOINT_URL = 'http://dh2-van-qa-n1.dailyhunt.in:8000/openrtb2/auction';
 
-const PROD_ENDPOINT_URL = 'https://money.dailyhunt.in/openx/ads/index.php';
-
-function buildParams(bid) {
-  let params = { ...bid.params };
-  params.pagetype = 'sources';
-  params.placementId = 12345;
-  params.env = 'prod';
-  if (params.testmode && params.testmode === true) {
-    params.customEvent = 'pb-testmode';
-  }
-  let hasWeb5Size = false;
-  let hasWeb3Size = false;
-  bid && bid.sizes && bid.sizes.forEach((size, i) => {
-    if (!hasWeb3Size && size[0] == 300 && size[1] == 250) {
-      hasWeb3Size = true;
-    }
-    if (!hasWeb5Size && (size[0] == 300 || size[0] == 320) && size[1] == 50) {
-      hasWeb5Size = true;
-    }
-  })
-  params.zone = 'web';
-  if (!hasWeb3Size && hasWeb5Size) {
-    params.subSlots = 'web-5';
-  } else {
-    params.subSlots = 'web-3';
-  }
-  if (bid.nativeParams) {
-    params.subSlots = 'web-3';
-    params.ad_type = '2,3';
-  }
-  if (!params.partnerId) {
-    params.partnerId = 'unknown-pb-partner';
-  }
-  params.pbRequestId = bid.bidId;
-  params.format = 'json';
-  return params;
-}
-
+// Encode URI.
 const _encodeURIComponent = function (a) {
   let b = window.encodeURIComponent(a);
   b = b.replace(/'/g, '%27');
   return b;
+}
+
+// Extract key from collections.
+const extractKeyInfo = (collection, key) => {
+  for (let i = 0, result; i < collection.length; i++) {
+    result = utils.deepAccess(collection[i].param, key);
+    if (result) {
+      return result;
+    }
+  }
+  return undefined
 }
 
 export const spec = {
@@ -59,66 +33,82 @@ export const spec = {
 
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
-  isBidRequestValid: bid => !!bid.params.partnerId,
+  isBidRequestValid: bid => !!bid.params.placement_id && !!bid.params.publisher_id,
 
   buildRequests: function (validBidRequests, bidderRequest) {
     let serverRequests = [];
+
     const userAgent = navigator.userAgent;
     const page = bidderRequest.refererInfo.referer;
 
-    validBidRequests.forEach((bid, i) => {
-      let params = buildParams(bid);
-      let request = '';
-      if (bid.nativeParams) {
-        request = {
-          method: 'GET',
-          url: PROD_ENDPOINT_URL,
-          data: utils.parseQueryStringParameters(params)
-        };
-      } else {
-        let ortbReq = {
-          id: bidderRequest.auctionId,
-          imp: [{
-            id: i.toString(),
-            banner: {
-              id: 'banner-' + bidderRequest.auctionId,
-              format: [
-                {
-                  'h': 250,
-                  'w': 300
-                },
-                {
-                  'h': 50,
-                  'w': 320
-                }
-              ]
-            },
-            bidfloor: 0,
-            ext: {
-              dailyhunt: {
-                ...params
-              }
-            }
-          }],
-          site: { id: i.toString(), page },
-          device: { userAgent },
-          user: {
-            id: params.clientId || '',
+    // Device Info.
+    let device = {...extractKeyInfo(validBidRequests, `device`)};
+    device.ua = userAgent
+
+    // User Info.
+    let user = {...extractKeyInfo(validBidRequests, `user`)};
+
+    // Site Info.
+    let site = {...extractKeyInfo(validBidRequests, `site`)};
+    site.page = page;
+
+    // Publisher Info.
+    let publisher = {...extractKeyInfo(validBidRequests, `publisher`)}
+    if (!utils.isEmpty(publisher)) {
+      site.publisher = publisher
+    }
+
+    // ORTB Request.
+    let ortbReq = {
+      id: bidderRequest.auctionId,
+      imp: [],
+      site,
+      device,
+      user,
+    };
+
+    let request = '';
+
+    validBidRequests.forEach((bid) => {
+      let params = bid.params
+      let imp = {
+        id: bid.bidId,
+        bidfloor: 0,
+        ext: {
+          dailyhunt: {
+            placement_id: params.placement_id,
+            publisher_id: params.publisher_id
           }
-        };
-        request = {
-          method: 'POST',
-          url: PROD_PREBID_ENDPOINT_URL,
-          data: JSON.stringify(ortbReq),
-          options: {
-            contentType: 'application/json',
-            withCredentials: true
-          },
-          bids: validBidRequests
-        };
+        }
+      };
+
+      // Validate Banner Request.
+      let bannerObj = utils.deepAccess(bid.mediaTypes, `banner`);
+      if (bannerObj) {
+        let format = [];
+        bannerObj.sizes.forEach(size => format.push({ w: size[0], h: size[1] }))
+        imp.banner = {
+          id: 'banner-' + bid.bidId,
+          format
+        }
       }
-      serverRequests.push(request);
+
+      ortbReq.imp.push(imp);
     });
+
+    request = {
+      method: 'POST',
+      url: PROD_PREBID_ENDPOINT_URL,
+      data: JSON.stringify(ortbReq),
+      options: {
+        contentType: 'application/json',
+        withCredentials: true
+      },
+      bids: validBidRequests
+    };
+
+    serverRequests.push(request);
+
     return serverRequests;
   },
 
@@ -174,7 +164,7 @@ export const spec = {
         if (bidResponse) {
           accumulator.push({
             requestId: bid.bidId,
-            cpm: bidResponse.price,
+            cpm: 1.40,
             creativeId: bidResponse.crid,
             width: bidResponse.w,
             height: bidResponse.h,

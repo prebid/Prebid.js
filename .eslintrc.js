@@ -39,7 +39,7 @@ module.exports = {
     "no-throw-literal": "off",
     "no-undef": 2,
     "no-useless-escape": "off",
-    "no-console": "error"
+    "no-console": "off"
   },
   "overrides": Object.keys(allowedModules).map((key) => ({
     "files": key + "/**/*.js",
