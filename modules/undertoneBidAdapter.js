@@ -51,6 +51,22 @@ function getGdprQueryParams(gdprConsent) {
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
+function getBannerCoords(id) {
+  var element = document.getElementById(id);
+  var left = 0;
+  var top = 0;
+  if (element) {
+    left = element.offsetLeft;
+    top = element.offsetTop;
+
+    var parent = element.offsetParent;
+    if (parent) {
+      left += parent.offsetLeft;
+      top += parent.offsetTop;
+    }
+  }
+  return [left, top];
+}
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
@@ -60,11 +76,14 @@ export const spec = {
     }
   },
   buildRequests: function(validBidRequests, bidderRequest) {
+    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
     const payload = {
       'x-ut-hb-params': [],
       'commons': {
         'adapterVersion': '$prebid.version$',
-        'uids': validBidRequests[0].userId
+        'uids': validBidRequests[0].userId,
+        'viewport': [vw, vh]
       }
     };
     const referer = bidderRequest.refererInfo.referer;
@@ -87,6 +106,7 @@ export const spec = {
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
+        coordinates: getBannerCoords(bidReq.adUnitCode),
         hbadaptor: 'prebid',
         url: pageUrl,
         domain: domain,
