@@ -133,8 +133,8 @@ function bidResponseAvailable(request, response) {
         bid.height = idToBidMap[id].h;
       } else {
         bid.ad = idToBidMap[id].adm;
-        bid.width = idToImpMap[id].banner.w;
-        bid.height = idToImpMap[id].banner.h;
+        bid.width = idToBidMap[id].w || idToImpMap[id].banner.w;
+        bid.height = idToBidMap[id].h || idToImpMap[id].banner.h;
       }
       bids.push(bid);
     }

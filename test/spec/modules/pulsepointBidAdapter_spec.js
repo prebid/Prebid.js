@@ -682,5 +682,23 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[1].banner.w).to.equal(728);
     expect(ortbRequest.imp[1].banner.h).to.equal(90);
     expect(ortbRequest.imp[1].banner.format).to.be.null;
+    // adsize on response
+    const ortbResponse = {
+      seatbid: [{
+        bid: [{
+          impid: ortbRequest.imp[0].id,
+          price: 1.25,
+          adm: 'This is an Ad',
+          crid: 'Creative#123',
+          w: 728,
+          h: 90
+        }]
+      }]
+    };
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.width).to.equal(728);
+    expect(bid.height).to.equal(90);
   });
 });
