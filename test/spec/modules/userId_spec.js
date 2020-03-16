@@ -418,7 +418,7 @@ describe('User ID', function() {
 
     beforeEach(function() {
       sandbox = sinon.createSandbox();
-      sandbox.stub(global, 'setTimeout');
+      sandbox.stub(global, 'setTimeout').returns(2);
       sandbox.stub(events, 'on');
 
       // remove cookie

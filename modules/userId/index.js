@@ -309,9 +309,9 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
             }
           }
           utils.logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay} at most to fetch ids`);
-          processSubmoduleCallbacks(submodulesWithCallbacks, continueCallback);
 
           timeoutID = setTimeout(continueCallback, auctionDelay);
+          processSubmoduleCallbacks(submodulesWithCallbacks, continueCallback);
         } else {
           // wait for auction complete before processing submodule callbacks
           events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
