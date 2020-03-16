@@ -597,7 +597,7 @@ describe('User ID', function() {
 
       config.setConfig({
         usersync: {
-          auctionDelay: 33,
+          auctionDelay: 200,
           syncDelay: 77,
           userIds: [{
             name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
