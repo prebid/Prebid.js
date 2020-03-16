@@ -241,9 +241,8 @@ function processSubmoduleCallbacks(submodules, cb) {
 
     // clear callback, this prop is used to test if all submodule callbacks are complete below
     submodule.callback = undefined;
-
-    clearTimeout(timeoutID);
   });
+  clearTimeout(timeoutID);
 }
 
 /**
