@@ -1,6 +1,6 @@
 'use strict';
 
-const { registerBidder } = require('../src/adapters/bidderFactory');
+const { registerBidder } = require('../src/adapters/bidderFactory.js');
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -191,28 +191,28 @@ function getPageInfo() {
 function requestsToBids(bidRequests) {
   const videoBidRequests = bidRequests.filter(bidRequest => hasTypeVideo(bidRequest) && isValid(VIDEO, bidRequest)).map(bidRequest => {
     const videoObj = {};
-  setGeneralInfo.call(videoObj, bidRequest);
-  // Pass parameters
-  // Context: instream - outstream - adpod
-  videoObj['context'] = bidRequest.mediaTypes.video.context;
-  // MIME Video Types
-  videoObj['mimes'] = bidRequest.mediaTypes.video.mimes;
-  // Sizes
-  videoObj['playerSize'] = parseVideoSize(bidRequest);
-  // Other params
-  videoObj['protocols'] = bidRequest.mediaTypes.video.protocols;
-  videoObj['maxDuration'] = bidRequest.mediaTypes.video.maxduration;
-  videoObj['api'] = bidRequest.mediaTypes.video.api;
-  videoObj['type'] = VIDEO;
-  return videoObj;
-});
+    setGeneralInfo.call(videoObj, bidRequest);
+    // Pass parameters
+    // Context: instream - outstream - adpod
+    videoObj['context'] = bidRequest.mediaTypes.video.context;
+    // MIME Video Types
+    videoObj['mimes'] = bidRequest.mediaTypes.video.mimes;
+    // Sizes
+    videoObj['playerSize'] = parseVideoSize(bidRequest);
+    // Other params
+    videoObj['protocols'] = bidRequest.mediaTypes.video.protocols;
+    videoObj['maxDuration'] = bidRequest.mediaTypes.video.maxduration;
+    videoObj['api'] = bidRequest.mediaTypes.video.api;
+    videoObj['type'] = VIDEO;
+    return videoObj;
+  });
   const bannerBidRequests = bidRequests.filter(bidRequest => isValid(BANNER, bidRequest)).map(bidRequest => {
     const bannerObj = {};
-  setGeneralInfo.call(bannerObj, bidRequest);
-  bannerObj['sizes'] = parseSizes(bidRequest)
-  bannerObj['type'] = BANNER;
-  return bannerObj;
-});
+    setGeneralInfo.call(bannerObj, bidRequest);
+    bannerObj['sizes'] = parseSizes(bidRequest)
+    bannerObj['type'] = BANNER;
+    return bannerObj;
+  });
   return videoBidRequests.concat(bannerBidRequests);
 }
 
