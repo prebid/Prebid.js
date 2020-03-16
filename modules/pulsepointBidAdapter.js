@@ -176,17 +176,11 @@ function banner(slot) {
  */
 function parseSizes(slot) {
   const sizes = utils.deepAccess(slot, 'mediaTypes.banner.sizes');
-  if (sizes) {
-    const formats = [];
-    sizes.forEach(function (sz) {
-      if (sz.length === 2) {
-        formats.push({
-          w: sz[0],
-          h: sz[1]
-        });
-      }
-    });
-    return formats;
+  if (sizes && utils.isArray(sizes)) {
+    return sizes.filter(sz => utils.isArray(sz) && sz.length === 2).map(sz => ({
+      w: sz[0],
+      h: sz[1]
+    }));
   }
   return null;
 }
