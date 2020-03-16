@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import {spec} from 'modules/teadsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//a.teads.tv/hb/bid-request';
-const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="http://a.teads.tv/hb/getAdSettings"></script>"';
+const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
+const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
 
 describe('teadsBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -152,7 +152,7 @@ describe('teadsBidAdapter', () => {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
-          referer: 'http://example.com/page.html',
+          referer: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2
         }
@@ -161,7 +161,7 @@ describe('teadsBidAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.referrer).to.exist;
-      expect(payload.referrer).to.deep.equal('http://example.com/page.html')
+      expect(payload.referrer).to.deep.equal('https://example.com/page.html')
     });
 
     it('should send GDPR to endpoint with 11 status', function() {
@@ -396,7 +396,7 @@ describe('teadsBidAdapter', () => {
       }
     };
     let hb_version = '$prebid.version$'
-    let finalUrl = `//sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&placementId=34&`;
+    let finalUrl = `https://sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&placementId=34&`;
     const userSync = spec.getUserSyncs(syncOptions, bids, gdprConsent);
 
     expect(userSync[0].type).to.equal('iframe');
@@ -429,7 +429,7 @@ describe('teadsBidAdapter', () => {
       }
     };
     let hb_version = '$prebid.version$'
-    let finalUrl = `//sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&`;
+    let finalUrl = `https://sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&`;
     const userSync = spec.getUserSyncs(syncOptions, bids, gdprConsent);
 
     expect(userSync[0].type).to.equal('iframe');

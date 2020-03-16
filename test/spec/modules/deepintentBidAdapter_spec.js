@@ -153,7 +153,7 @@ describe('Deepintent adapter', function () {
       let userSync = spec.getUserSyncs(syncOptions);
       expect(userSync).to.be.an('array').with.length.above(0);
       expect(userSync[0].type).to.equal('iframe');
-      expect(userSync[0].url).to.equal('https://beacon.deepintent.com/usersync.html');
+      expect(userSync[0].url).to.equal('https://cdn.deepintent.com/syncpixel.html');
     });
   });
   describe('response check', function () {

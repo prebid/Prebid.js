@@ -28,7 +28,7 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: '//publisher-east.mobileadtrading.com/rtb/bid?s=' + bidRequest.params.placementId.toString(),
+        url: 'https://publisher-east.mobileadtrading.com/rtb/bid?s=' + bidRequest.params.placementId.toString(),
         data: da,
         bidRequest: bidRequest
       };
@@ -41,7 +41,7 @@ export const spec = {
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
     const syncs = [];
-    var url = '//publisher-east.mobileadtrading.com/usersync';
+    var url = 'https://publisher-east.mobileadtrading.com/usersync';
 
     if (syncOptions.pixelEnabled) {
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -95,7 +95,7 @@ function openRtbRequest(bidRequest, bidderRequest) {
     imp: [openRtbImpression(bidRequest)],
     at: 1,
     tmax: 400,
-    site: openRtbSite(bidRequest),
+    site: openRtbSite(bidRequest, bidderRequest),
     app: openRtbApp(bidRequest),
     device: openRtbDevice(),
     bcat: openRtbBCat(bidRequest),
@@ -104,7 +104,7 @@ function openRtbRequest(bidRequest, bidderRequest) {
       prebid: '$prebid.version$',
     },
   };
-  if (bidderRequest != undefined) {
+  if (typeof bidderRequest !== 'undefined') {
     openRtbRequest = populateOpenRtbGdpr(bidderRequest.gdprConsent, openRtbRequest);
   }
 
@@ -142,8 +142,10 @@ function openRtbImpression(bidRequest) {
   };
   if (isVideo(bidRequest)) {
     imp.video = {};
-    if (bidRequest.sizes) {
-      const sizes = getSizes(bidRequest.sizes);
+    if (bidRequest.mediaTypes &&
+            bidRequest.mediaTypes.video &&
+            bidRequest.mediaTypes.video.sizes) {
+      const sizes = getSizes(bidRequest.mediaTypes.video.sizes);
       imp.video.w = sizes[0];
       imp.video.h = sizes[1];
     }
@@ -156,8 +158,10 @@ function openRtbImpression(bidRequest) {
     imp.banner = {
       topframe: 0
     };
-    if (bidRequest.sizes) {
-      const sizes = getSizes(bidRequest.sizes);
+    if (bidRequest.mediaTypes &&
+            bidRequest.mediaTypes.banner &&
+            bidRequest.mediaTypes.banner.sizes) {
+      const sizes = getSizes(bidRequest.mediaTypes.banner.sizes);
       imp.banner.w = sizes[0];
       imp.banner.h = sizes[1];
     }
@@ -178,25 +182,48 @@ function isApp(bidRequest) {
   }
 }
 
-function openRtbSite(bidRequest) {
+function openRtbSite(bidRequest, bidderRequest) {
   if (!isApp(bidRequest)) {
-    const site = {
-      ref: utils.getTopWindowReferrer(),
-      page: utils.getTopWindowLocation().href
-    };
+    const site = {};
+
+    if (bidderRequest && bidderRequest.refererInfo) {
+      site.ref = bidderRequest.refererInfo.referer;
+      site.page = bidderRequest.refererInfo.canonicalUrl;
+    }
+
     if (bidRequest.params.site) {
       Object.keys(bidRequest.params.site)
         .filter(param => includes(SITE_TARGETING, param))
         .forEach(param => site[param] = bidRequest.params.site[param]);
     }
-    if (site.domain == undefined) {
-      site.domain = utils.getTopWindowLocation().hostname;
+    if (typeof site.domain === 'undefined' &&
+            typeof site.page !== 'undefined') {
+      if (typeof window.URL === 'function') {
+        site.domain = (new window.URL(site.page)).hostname;
+      } else {
+        site.domain = getDomainFromUrl(site.page);
+      }
     }
 
     return site;
   } else {
     return null;
   }
+}
+
+function getDomainFromUrl(url) {
+  var domain = url;
+
+  if (url.indexOf('//') > -1) {
+    domain = url.split('/')[2];
+  } else {
+    domain = url.split('/')[0];
+  }
+
+  domain = domain.split(':')[0];
+  domain = domain.split('?')[0];
+
+  return domain;
 }
 
 function openRtbApp(bidRequest) {
@@ -236,7 +263,7 @@ function openRtbBAdv(bidRequest) {
   return [];
 }
 
-function isVideo (format) {
+function isVideo(format) {
   return utils.deepAccess(format, 'mediaTypes.video') || format.mediaType == 'video';
 }
 

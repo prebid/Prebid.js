@@ -4,7 +4,7 @@ import { config } from '../src/config';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'mytarget';
-const BIDDER_URL = '//ad.mail.ru/hbid_prebid/';
+const BIDDER_URL = 'https://ad.mail.ru/hbid_prebid/';
 const DEFAULT_CURRENCY = 'RUB';
 const DEFAULT_TTL = 180;
 

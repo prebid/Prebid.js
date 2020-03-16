@@ -6,11 +6,11 @@ import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
 
 const BIDDER_CODE = 'adagio';
-const VERSION = '2.0.0';
+const VERSION = '2.1.0';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
-const ADAGIO_TAG_URL = '//script.4dex.io/localstore.js';
+const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 
 export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
@@ -93,6 +93,9 @@ const _features = {
     const viewportDims = _features.getViewPortDimensions().split('x');
     const w = utils.getWindowTop();
     const body = w.document.body;
+    if (!body) {
+      return ''
+    }
     const html = w.document.documentElement;
     const pageHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
@@ -129,6 +132,8 @@ const _features = {
   },
 
   getSlotPosition: function(element) {
+    if (!element) return '';
+
     const w = utils.getWindowTop();
     const d = w.document;
     const el = element;
@@ -288,22 +293,19 @@ function _getFeatures(bidRequest) {
     element = w.document.getElementById(adUnitElementId);
   }
 
-  let features = {};
-  if (element) {
-    features = Object.assign({}, {
-      print_number: _features.getPrintNumber(bidRequest.adUnitCode).toString(),
-      page_dimensions: _features.getPageDimensions().toString(),
-      viewport_dimensions: _features.getViewPortDimensions().toString(),
-      dom_loading: _features.isDomLoading().toString(),
-      // layout: features.getLayout().toString(),
-      adunit_position: _features.getSlotPosition(element).toString(),
-      user_timestamp: _features.getTimestamp().toString(),
-      device: _features.getDevice().toString(),
-      url: w.location.origin + w.location.pathname,
-      browser: _features.getBrowser(),
-      os: _features.getOS()
-    })
-  }
+  const features = {
+    print_number: _features.getPrintNumber(bidRequest.adUnitCode).toString(),
+    page_dimensions: _features.getPageDimensions().toString(),
+    viewport_dimensions: _features.getViewPortDimensions().toString(),
+    dom_loading: _features.isDomLoading().toString(),
+    // layout: features.getLayout().toString(),
+    adunit_position: _features.getSlotPosition(element).toString(),
+    user_timestamp: _features.getTimestamp().toString(),
+    device: _features.getDevice().toString(),
+    url: w.location.origin + w.location.pathname,
+    browser: _features.getBrowser(),
+    os: _features.getOS()
+  };
 
   const adUnitFeature = {};
   adUnitFeature[adUnitElementId] = {
@@ -351,7 +353,7 @@ export const spec = {
       w.ADAGIO = w.ADAGIO || {};
       w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
       w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
-      isValid = !!(organizationId && site && placement && adUnitElementId && document.getElementById(adUnitElementId) !== null);
+      isValid = !!(organizationId && site && placement && adUnitElementId);
       const tempAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
       tempAdUnits.push({
         code: adUnitCode,
@@ -392,6 +394,9 @@ export const spec = {
 
     // Regroug ad units by siteId
     const groupedAdUnits = adUnits.reduce((groupedAdUnits, adUnit) => {
+      if (adUnit.params && adUnit.params.organizationId) {
+        adUnit.params.organizationId = adUnit.params.organizationId.toString();
+      }
       (groupedAdUnits[adUnit.params.organizationId] = groupedAdUnits[adUnit.params.organizationId] || []).push(adUnit);
       return groupedAdUnits;
     }, {});
@@ -415,7 +420,7 @@ export const spec = {
           featuresVersion: FEATURES_VERSION
         },
         options: {
-          contentType: 'application/json'
+          contentType: 'text/plain'
         }
       }
     });

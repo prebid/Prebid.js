@@ -3,6 +3,7 @@ import { config } from '../src/config';
 import { Renderer } from '../src/Renderer';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { VIDEO, BANNER } from '../src/mediaTypes';
+import { loadExternalScript } from '../src/adloader';
 
 const PROD_ENDPOINT = 'https://bs1.showheroes.com/api/v1/bid';
 const STAGE_ENDPOINT = 'https://bid-service.stage.showheroes.com/api/v1/bid';
@@ -230,12 +231,9 @@ function createOutstreamEmbedCode(bid) {
 
   const fragment = window.document.createDocumentFragment();
 
-  const script = window.document.createElement('script');
-  script.type = 'text/javascript';
-  script.src = urls.pubTag;
-  script.onload = function () {
+  let script = loadExternalScript(urls.pubTag, 'outstream', function () {
     window.ShowheroesTag = this;
-  };
+  });
   script.setAttribute('data-player-host', urls.vlHost);
 
   const spot = window.document.createElement('div');
