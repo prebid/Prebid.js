@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/optimeraBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/optimeraBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('OptimeraAdapter', function () {
   const adapter = newBidder(spec);

@@ -1,9 +1,9 @@
-import * as utils from '../src/utils';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { config } from '../src/config';
-import find from 'core-js/library/fn/array/find';
-import isInteger from 'core-js/library/fn/number/is-integer';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import find from 'core-js/library/fn/array/find.js';
+import isInteger from 'core-js/library/fn/number/is-integer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
 const SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
@@ -11,7 +11,7 @@ const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BANNER_ENDPOINT_VERSION = 7.2;
 const VIDEO_ENDPOINT_VERSION = 8.1;
 const CENT_TO_DOLLAR_FACTOR = 100;
-const BANNER_TIME_TO_LIVE = 35;
+const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600; // 1hr
 const NET_REVENUE = true;
 const PRICE_TO_DOLLAR_FACTOR = {

@@ -1,6 +1,6 @@
 'use strict';
 
-const { registerBidder } = require('../src/adapters/bidderFactory');
+const { registerBidder } = require('../src/adapters/bidderFactory.js');
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -53,6 +53,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     };
   }
 
+  if (bidderRequest && bidderRequest.uspConsent) {
+    payload.usPrivacy = bidderRequest.uspConsent;
+  }
+
   const payloadString = JSON.stringify(payload);
 
   return {
@@ -63,7 +67,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function interpretResponse(serverResponse, request) {
-  var body = serverResponse.body;
+  let body = serverResponse.body;
   const bids = [];
 
   if (typeof serverResponse === 'string') {
@@ -104,7 +108,7 @@ function interpretResponse(serverResponse, request) {
  * @returns {{location: *, referrer: (*|string), masked: *, wWidth: (*|Number), wHeight: (*|Number), sWidth, sHeight, date: string, timeOffset: number}}
  */
 function getPageInfo() {
-  var w, d, l, r, m, p, e, t, s;
+  let w, d, l, r, m, p, e, t, s;
   for (w = window, d = w.document, l = d.location.href, r = d.referrer, m = 0, e = encodeURIComponent, t = new Date(), s = screen; w !== w.parent;) {
     try {
       p = w.parent; l = p.location.href; r = p.document.referrer; w = p;

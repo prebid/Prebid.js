@@ -1,12 +1,12 @@
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {
   cookiesAreEnabled,
   parseQueryStringParameters,
   parseSizesInput
-} from '../src/utils';
-import includes from 'core-js/library/fn/array/includes';
-import find from 'core-js/library/fn/array/find';
+} from '../src/utils.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';

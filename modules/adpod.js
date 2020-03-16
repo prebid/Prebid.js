@@ -12,20 +12,20 @@
  * module that designed to support adpod video type ads.  This import process allows this module to effectively act as a sub-module.
  */
 
-import * as utils from '../src/utils';
-import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache, getPriceByGranularity, getPriceGranularity } from '../src/auction';
-import { checkAdUnitSetup } from '../src/prebid';
-import { checkVideoBidSetup } from '../src/video';
-import { setupBeforeHookFnOnce, module } from '../src/hook';
-import { store } from '../src/videoCache';
-import { config } from '../src/config';
-import { ADPOD } from '../src/mediaTypes';
-import Set from 'core-js/library/fn/set';
-import find from 'core-js/library/fn/array/find';
-import { auctionManager } from '../src/auctionManager';
+import * as utils from '../src/utils.js';
+import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache, getPriceByGranularity, getPriceGranularity } from '../src/auction.js';
+import { checkAdUnitSetup } from '../src/prebid.js';
+import { checkVideoBidSetup } from '../src/video.js';
+import { setupBeforeHookFnOnce, module } from '../src/hook.js';
+import { store } from '../src/videoCache.js';
+import { config } from '../src/config.js';
+import { ADPOD } from '../src/mediaTypes.js';
+import Set from 'core-js/library/fn/set.js';
+import find from 'core-js/library/fn/array/find.js';
+import { auctionManager } from '../src/auctionManager.js';
 import CONSTANTS from '../src/constants.json';
 
-const from = require('core-js/library/fn/array/from');
+const from = require('core-js/library/fn/array/from.js');
 
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
@@ -62,16 +62,16 @@ function createBidCacheRegistry() {
     getBids: function (bid) {
       return registry[bid.auctionId] && registry[bid.auctionId].bidStorage.values();
     },
-    getQueueDispatcher: function(bid) {
+    getQueueDispatcher: function (bid) {
       return registry[bid.auctionId] && registry[bid.auctionId].queueDispatcher;
     },
-    setupInitialCacheKey: function(bid) {
+    setupInitialCacheKey: function (bid) {
       if (!registry[bid.auctionId]) {
         registry[bid.auctionId] = {};
         registry[bid.auctionId].initialCacheKey = utils.generateUUID();
       }
     },
-    getInitialCacheKey: function(bid) {
+    getInitialCacheKey: function (bid) {
       return registry[bid.auctionId] && registry[bid.auctionId].initialCacheKey;
     }
   }
@@ -88,10 +88,10 @@ function createDispatcher(timeoutDuration) {
   let timeout;
   let counter = 1;
 
-  return function(auctionInstance, bidListArr, afterBidAdded, killQueue) {
+  return function (auctionInstance, bidListArr, afterBidAdded, killQueue) {
     const context = this;
 
-    var callbackFn = function() {
+    var callbackFn = function () {
       firePrebidCacheCall.call(context, auctionInstance, bidListArr, afterBidAdded);
     };
 
@@ -271,7 +271,15 @@ export function checkAdUnitSetupHook(fn, adUnits) {
 
       let errMsg = `Detected missing or incorrectly setup fields for an adpod adUnit.  Please review the following fields of adUnitCode: ${adUnit.code}.  This adUnit will be removed from the auction.`;
 
-      let playerSize = !!(videoConfig.playerSize && utils.isArrayOfNums(videoConfig.playerSize));
+      let playerSize = !!(
+        (
+          videoConfig.playerSize && (
+            utils.isArrayOfNums(videoConfig.playerSize, 2) || (
+              utils.isArray(videoConfig.playerSize) && videoConfig.playerSize.every(sz => utils.isArrayOfNums(sz, 2))
+            )
+          )
+        ) || (videoConfig.sizeConfig)
+      );
       let adPodDurationSec = !!(videoConfig.adPodDurationSec && utils.isNumber(videoConfig.adPodDurationSec) && videoConfig.adPodDurationSec > 0);
       let durationRangeSec = !!(videoConfig.durationRangeSec && utils.isArrayOfNums(videoConfig.durationRangeSec) && videoConfig.durationRangeSec.every(range => range > 0));
 
@@ -417,7 +425,7 @@ initAdpodHooks()
  */
 export function callPrebidCacheAfterAuction(bids, callback) {
   // will call PBC here and execute cb param to initialize player code
-  store(bids, function(error, cacheIds) {
+  store(bids, function (error, cacheIds) {
     if (error) {
       callback(error, null);
     } else {
@@ -454,7 +462,7 @@ export function sortByPricePerSecond(a, b) {
  * @param {function} callback
  * @returns targeting kvs for adUnitCodes
  */
-export function getTargeting({codes, callback} = {}) {
+export function getTargeting({ codes, callback } = {}) {
   if (!callback) {
     utils.logError('No callback function was defined in the getTargeting call.  Aborting getTargeting().');
     return;
@@ -534,7 +542,7 @@ export function getTargeting({codes, callback} = {}) {
         });
     });
 
-    callPrebidCacheAfterAuction(bidsToCache, function(error, bidsSuccessfullyCached) {
+    callPrebidCacheAfterAuction(bidsToCache, function (error, bidsSuccessfullyCached) {
       if (error) {
         callback(error, null);
       } else {
@@ -581,7 +589,7 @@ function getAdPodAdUnits(codes) {
  */
 function getExclusiveBids(bidsReceived) {
   let bids = bidsReceived
-    .map((bid) => Object.assign({}, bid, {[TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]}));
+    .map((bid) => Object.assign({}, bid, { [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR] }));
   bids = utils.groupBy(bids, TARGETING_KEY_PB_CAT_DUR);
   let filteredBids = [];
   Object.keys(bids).forEach((targetingKey) => {

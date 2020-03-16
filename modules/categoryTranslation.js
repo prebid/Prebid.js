@@ -11,11 +11,11 @@
  * If publisher has not defined translation file than prebid will use default prebid translation file provided here //cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json
  */
 
-import { config } from '../src/config';
-import { setupBeforeHookFnOnce, hook } from '../src/hook';
-import { ajax } from '../src/ajax';
-import { timestamp, logError, setDataInLocalStorage, getDataFromLocalStorage } from '../src/utils';
-import { addBidResponse } from '../src/auction';
+import { config } from '../src/config.js';
+import { setupBeforeHookFnOnce, hook } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { timestamp, logError, setDataInLocalStorage, getDataFromLocalStorage } from '../src/utils.js';
+import { addBidResponse } from '../src/auction.js';
 
 const DEFAULT_TRANSLATION_FILE_URL = 'https://cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY = 'iabToFwMappingkey';
