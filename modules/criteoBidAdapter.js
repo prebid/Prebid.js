@@ -4,7 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { parse } from '../src/url.js';
 import * as utils from '../src/utils.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 
 export const ADAPTER_VERSION = 26;

@@ -3,7 +3,7 @@ import * as utils from '../src/utils.js'
 import * as url from '../src/url.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
-import includes from 'core-js/library/fn/array/includes.js'
+import includes from 'core-js-pure/features/array/includes'
 
 /**
  * Adapter for requesting bids from adxcg.net

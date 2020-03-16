@@ -1,6 +1,6 @@
 import * as utils from './utils.js';
 import { config } from './config.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes';
 
 export const USERSYNC_DEFAULT_CONFIG = {
   syncEnabled: true,

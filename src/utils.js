@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js-pure/features/array/find';
+import includes from 'core-js-pure/features/array/includes';
 
 const CONSTANTS = require('./constants.json');
 

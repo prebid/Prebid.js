@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { parse as parseUrl } from '../src/url.js';
 
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find';
 
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';

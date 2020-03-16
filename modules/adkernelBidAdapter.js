@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js-pure/features/array/find';
+import includes from 'core-js-pure/features/array/includes';
 import {parse as parseUrl} from '../src/url.js';
 
 /*
