@@ -197,6 +197,26 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
+  describe('getUserSync tests', function() {
+    it('UserSync test : check type = iframe, check usermatch URL', function () {
+      const syncOptions = {
+        'iframeEnabled': true
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync[0].type).to.equal('iframe');
+      const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html?prebid=1';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL);
+    });
+
+    it('When iframeEnabled is false, no userSync should be returned', function () {
+      const syncOptions = {
+        'iframeEnabled': false
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync).to.be.an('array').that.is.empty;
+    });
+  });
+
   describe('isBidRequestValid', function () {
     it('should return true when required params found for a banner or video ad', function () {
       expect(spec.isBidRequestValid(DEFAULT_BANNER_VALID_BID[0])).to.equal(true);
