@@ -12,10 +12,8 @@ const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js
 let hasSynced = false;
 
 const LOG_ERROR_MESS = {
-  noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
   noPrice: 'Bid from response has no price parameter - ',
-  noSizes: 'Bid from response has no w or h parameter - ',
   wrongContentType: 'Bid from response has wrong content_type parameter - ',
   noBid: 'Array of bid objects is empty',
   noPlacementCode: 'Can\'t find in requested bids the bid with auid - ',
@@ -145,20 +143,23 @@ export const spec = {
     if (!errorMessage && serverResponse.seatbid) {
       const serverBid = _getBidFromResponse(serverResponse.seatbid[0]);
       if (serverBid) {
-        if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
-        else if (!serverBid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
+        if (!serverBid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
         else if (!serverBid.price) errorMessage = LOG_ERROR_MESS.noPrice + JSON.stringify(serverBid);
-        else if (!serverBid.w || !serverBid.h) errorMessage = LOG_ERROR_MESS.noSizes + JSON.stringify(serverBid);
         else if (serverBid.content_type !== 'video') errorMessage = LOG_ERROR_MESS.wrongContentType + serverBid.content_type;
         if (!errorMessage) {
           const bid = bidRequest.bid;
+          if (!serverBid.w || !serverBid.h) {
+            const size = utils.parseSizesInput(bid.sizes)[0].split('x');
+            serverBid.w = size[0];
+            serverBid.h = size[1];
+          }
           const bidResponse = {
-            requestId: bid.bidderRequestId,
+            requestId: bid.bidId,
             bidderCode: spec.code,
             cpm: serverBid.price,
             width: serverBid.w,
             height: serverBid.h,
-            creativeId: serverBid.auid, // bid.bidId,
+            creativeId: serverBid.auid || bid.bidderRequestId,
             currency: 'USD',
             netRevenue: false,
             ttl: TIME_TO_LIVE,
