@@ -54,31 +54,31 @@ function buildSessionIdTimeoutLocalStorageKey() {
 function updateSessionId() {
   if (isSessionIdTimeoutExpired()) {
     let newSessionId = utils.generateUUID();
-    localStorage.setItem(buildSessionIdLocalStorageKey(), newSessionId);
+    utils.setDataInLocalStorage(buildSessionIdLocalStorageKey(), newSessionId);
   }
   initOptions.sessionId = getSessionId();
   updateSessionIdTimeout();
 }
 
 function updateSessionIdTimeout() {
-  localStorage.setItem(buildSessionIdTimeoutLocalStorageKey(), Date.now());
+  utils.setDataInLocalStorage(buildSessionIdTimeoutLocalStorageKey(), Date.now());
 }
 
 function isSessionIdTimeoutExpired() {
-  let cpmSessionTimestamp = localStorage.getItem(buildSessionIdTimeoutLocalStorageKey());
+  let cpmSessionTimestamp = utils.getDataFromLocalStorage(buildSessionIdTimeoutLocalStorageKey());
   return Date.now() - cpmSessionTimestamp > sessionTimeout;
 }
 
 function getSessionId() {
-  return localStorage.getItem(buildSessionIdLocalStorageKey()) ? localStorage.getItem(buildSessionIdLocalStorageKey()) : '';
+  return utils.getDataFromLocalStorage(buildSessionIdLocalStorageKey()) ? utils.getDataFromLocalStorage(buildSessionIdLocalStorageKey()) : '';
 }
 
 function updateUtmTimeout() {
-  localStorage.setItem(buildUtmLocalStorageTimeoutKey(), Date.now());
+  utils.setDataInLocalStorage(buildUtmLocalStorageTimeoutKey(), Date.now());
 }
 
 function isUtmTimeoutExpired() {
-  let utmTimestamp = localStorage.getItem(buildUtmLocalStorageTimeoutKey());
+  let utmTimestamp = utils.getDataFromLocalStorage(buildUtmLocalStorageTimeoutKey());
   return (Date.now() - utmTimestamp) > utmTimeout;
 }
 
@@ -219,11 +219,11 @@ sigmoidAdapter.buildUtmTagData = function () {
   });
   utmTags.forEach(function(utmTagKey) {
     if (utmTagsDetected) {
-      localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      utils.setDataInLocalStorage(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
       updateUtmTimeout();
     } else {
       if (!isUtmTimeoutExpired()) {
-        utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+        utmTagData[utmTagKey] = utils.getDataFromLocalStorage(buildUtmLocalStorageKey(utmTagKey)) ? utils.getDataFromLocalStorage(buildUtmLocalStorageKey(utmTagKey)) : '';
         updateUtmTimeout();
       }
     }

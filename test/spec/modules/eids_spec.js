@@ -76,7 +76,8 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
-      uids: [{id: 'some-random-id-value', atype: 1, ext: {segments: ['s1', 's2']}}]
+      uids: [{id: 'some-random-id-value', atype: 1}],
+      ext: {segments: ['s1', 's2']}
     });
   });
 
