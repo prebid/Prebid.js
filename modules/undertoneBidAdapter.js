@@ -11,7 +11,6 @@ const FRAME_USER_SYNC = 'https://cdn.undertone.com/js/usersync.html';
 const PIXEL_USER_SYNC_1 = 'https://usr.undertone.com/userPixel/syncOne?id=1&of=2';
 const PIXEL_USER_SYNC_2 = 'https://usr.undertone.com/userPixel/syncOne?id=2&of=2';
 
-
 function getCanonicalUrl() {
   try {
     let doc = window.top.document;
@@ -52,7 +51,6 @@ function getGdprQueryParams(gdprConsent) {
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
-
 function getBannerCoords(id) {
   let element = document.getElementById(id);
   let left = -1;
@@ -66,8 +64,11 @@ function getBannerCoords(id) {
       left += parent.offsetLeft;
       top += parent.offsetTop;
     }
+
+    return [left, top];
+  } else {
+    return null;
   }
-  return [left, top];
 }
 
 export const spec = {
@@ -81,12 +82,13 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
     const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
     const payload = {
       'x-ut-hb-params': [],
       'commons': {
         'adapterVersion': '$prebid.version$',
         'uids': validBidRequests[0].userId,
-        'viewport': [vw, vh]
+        'pageSize': pageSizeArray
       }
     };
     const referer = bidderRequest.refererInfo.referer;
