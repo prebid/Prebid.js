@@ -234,9 +234,9 @@ describe('TheMediaGridNM Adapter', function () {
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'auid': 11, 'h': 250, 'w': 300, dealid: 11}], 'seat': '2'},
-      {'bid': [{'price': 0.5, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'auid': 12, 'h': 600, 'w': 300}], 'seat': '2'},
-      {'bid': [{'price': 0, 'auid': 3, 'h': 250, 'w': 300}], 'seat': '2'},
+      {'bid': [{'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 250, 'w': 300, 'dealid': 11}], 'seat': '2'},
+      {'bid': [{'price': 0.5, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 600, 'w': 300}], 'seat': '2'},
+      {'bid': [{'price': 0, 'h': 250, 'w': 300}], 'seat': '2'},
       {'bid': [{'price': 0, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341237\"><\/Ad>\n<\/VAST>', 'h': 250, 'w': 300}], 'seat': '2'},
       undefined,
       {'bid': [], 'seat': '2'},
@@ -282,7 +282,7 @@ describe('TheMediaGridNM Adapter', function () {
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
           'bidId': '2bc598e42b6a',
-          'bidderRequestId': '5f2009617a7c0a',
+          'bidderRequestId': '1e8b5a465f404',
           'auctionId': '1cbd2feafe5e8b',
           'mediaTypes': {
             'video': {
@@ -294,9 +294,9 @@ describe('TheMediaGridNM Adapter', function () {
       const requests = spec.buildRequests(bidRequests);
       const expectedResponse = [
         {
-          'requestId': '5f2009617a7c0a',
+          'requestId': '659423fff799cb',
           'cpm': 1.15,
-          'creativeId': 11,
+          'creativeId': '5f2009617a7c0a',
           'dealId': 11,
           'width': 300,
           'height': 250,
@@ -311,9 +311,9 @@ describe('TheMediaGridNM Adapter', function () {
           }
         },
         {
-          'requestId': '5f2009617a7c0a',
+          'requestId': '2bc598e42b6a',
           'cpm': 0.5,
-          'creativeId': 12,
+          'creativeId': '1e8b5a465f404',
           'dealId': undefined,
           'width': 300,
           'height': 600,
@@ -352,7 +352,7 @@ describe('TheMediaGridNM Adapter', function () {
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
           'bidId': '2bc598e42b6a',
-          'bidderRequestId': '5f2009617a7c0a',
+          'bidderRequestId': '39d74f5b71464',
           'auctionId': '1cbd2feafe5e8b',
           'mediaTypes': {
             'video': {
