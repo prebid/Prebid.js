@@ -390,14 +390,14 @@ function ReloadClientTool(args) {
 
     var stgFileStr = JSON.stringify(stgFileObj);
 
-    localStorage.setItem(name, stgFileStr);
+    utils.setDataInLocalStorage(name, stgFileStr);
 
     return true;
   }
 
   function _getItem (name) {
     try {
-      var obStgFileStr = localStorage.getItem(name);
+      var obStgFileStr = utils.getDataFromLocalStorage(name);
       if (obStgFileStr === null) return null;
 
       var stgFileObj = JSON.parse(obStgFileStr);

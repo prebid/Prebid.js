@@ -827,38 +827,76 @@ export function timestamp() {
   return new Date().getTime();
 }
 
+/**
+ * When the deviceAccess flag config option is false, no cookies should be read or set
+ * @returns {boolean}
+ */
+export function hasDeviceAccess() {
+  return config.getConfig('deviceAccess') !== false;
+}
+
+/**
+ * @returns {(boolean|undefined)}
+ */
 export function checkCookieSupport() {
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
     return true;
   }
 }
+
+/**
+ * @returns {boolean}
+ */
 export function cookiesAreEnabled() {
-  if (internal.checkCookieSupport()) {
-    return true;
+  if (hasDeviceAccess()) {
+    if (internal.checkCookieSupport()) {
+      return true;
+    }
+    window.document.cookie = 'prebid.cookieTest';
+    return window.document.cookie.indexOf('prebid.cookieTest') !== -1;
   }
-  window.document.cookie = 'prebid.cookieTest';
-  return window.document.cookie.indexOf('prebid.cookieTest') != -1;
+  return false;
 }
 
+/**
+ * @param {string} name
+ * @returns {(string|null)}
+ */
 export function getCookie(name) {
-  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
-  return m ? decodeURIComponent(m[2]) : null;
+  if (hasDeviceAccess()) {
+    let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+    return m ? decodeURIComponent(m[2]) : null;
+  }
+  return null;
 }
 
-export function setCookie(key, value, expires, sameSite) {
-  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
+/**
+ * @param {string} key
+ * @param {string} value
+ * @param {string} [expires='']
+ * @param {string} [sameSite='/']
+ * @param {string} [domain] domain (e.g., 'example.com' or 'subdomain.example.com').
+ * If not specified, defaults to the host portion of the current document location.
+ * If a domain is specified, subdomains are always included.
+ * Domain must match the domain of the JavaScript origin. Setting cookies to foreign domains will be silently ignored.
+ */
+export function setCookie(key, value, expires, sameSite, domain) {
+  if (hasDeviceAccess()) {
+    document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}${domain ? `; domain=${domain}` : ''}`;
+  }
 }
 
 /**
  * @returns {boolean}
  */
 export function localStorageIsEnabled () {
-  try {
-    localStorage.setItem('prebid.cookieTest', '1');
-    return localStorage.getItem('prebid.cookieTest') === '1';
-  } catch (error) {
-    return false;
+  if (hasDeviceAccess()) {
+    try {
+      localStorage.setItem('prebid.cookieTest', '1');
+      return localStorage.getItem('prebid.cookieTest') === '1';
+    } catch (error) {}
   }
+  return false;
 }
 
 /**
@@ -1179,30 +1217,48 @@ export function convertTypes(types, params) {
   return params;
 }
 
+/**
+ * @param {string} key
+ * @param {string} value
+ */
 export function setDataInLocalStorage(key, value) {
   if (hasLocalStorage()) {
     window.localStorage.setItem(key, value);
   }
 }
 
+/**
+ * @param {string} key
+ * @returns {(string|null)}
+ */
 export function getDataFromLocalStorage(key) {
   if (hasLocalStorage()) {
     return window.localStorage.getItem(key);
   }
+  return null;
 }
 
+/**
+ * @param {string} key
+ */
 export function removeDataFromLocalStorage(key) {
   if (hasLocalStorage()) {
     window.localStorage.removeItem(key);
   }
 }
 
+/**
+ * @returns {boolean}
+ */
 export function hasLocalStorage() {
-  try {
-    return !!window.localStorage;
-  } catch (e) {
-    logError('Local storage api disabled');
+  if (hasDeviceAccess()) {
+    try {
+      return !!window.localStorage;
+    } catch (e) {
+      logError('Local storage api disabled');
+    }
   }
+  return false;
 }
 
 export function isArrayOfNums(val, size) {

@@ -22,8 +22,7 @@ pV6EP3MTLosuUEpLaQIDAQAB
 
 export function getAdagioScript() {
   try {
-    const w = utils.getWindowTop();
-    const ls = w.localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY);
+    const ls = utils.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
 
     if (!ls) {
       utils.logWarn('Adagio Script not found');
@@ -34,7 +33,7 @@ export function getAdagioScript() {
 
     if (!hashRgx.test(ls)) {
       utils.logWarn('No hash found in Adagio script');
-      w.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
+      utils.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
     } else {
       const r = ls.match(hashRgx);
       const hash = r[2];
@@ -48,7 +47,7 @@ export function getAdagioScript() {
         Function(ls)(); // eslint-disable-line no-new-func
       } else {
         utils.logWarn('Invalid Adagio script found');
-        w.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
+        utils.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
       }
     }
   } catch (err) {
