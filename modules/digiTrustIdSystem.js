@@ -69,7 +69,7 @@ function encId(id) {
     if (typeof (id) !== 'string') {
       id = JSON.stringify(id);
     }
-    return encodeURIComponent(btoa(id));
+    return btoa(id);
   } catch (ex) {
     return id;
   }
