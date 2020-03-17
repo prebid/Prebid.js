@@ -153,9 +153,10 @@ let sandbox;
 
 let elementParent = {
   offsetLeft: 100,
-  offsetTop: 100
+  offsetTop: 100,
+  offsetHeight: 100,
+  getAttribute: function() {}
 };
-
 
 describe('Undertone Adapter', () => {
   describe('request', () => {
@@ -167,14 +168,13 @@ describe('Undertone Adapter', () => {
     });
   });
   describe('build request', function () {
-    beforeEach(function(){
+    beforeEach(function() {
       element = {
         id: 'div-gpt-ad-1460505748561-0',
         offsetLeft: 100,
         offsetTop: 100,
-
-        width: 300,
-        height: 250,
+        offsetWidth: 300,
+        offsetHeight: 250
       };
 
       sandbox = sinon.sandbox.create();
@@ -250,22 +250,22 @@ describe('Undertone Adapter', () => {
       expect(bidCommons.uids.idl_env).to.equal('1111');
       expect(bidCommons.uids.digitrustid.data.id).to.equal('DTID');
     });
-    it('should send viewport sizes correctly', function () {
+    it('should send page sizes sizes correctly', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);
       const bidCommons = JSON.parse(request.data)['commons'];
       expect(bidCommons).to.be.an('object');
-      expect(bidCommons.viewport).to.be.an('array');
-      expect(bidCommons.viewport[0]).to.equal(window.innerWidth);
-      expect(bidCommons.viewport[1]).to.equal(window.innerHeight);
+      expect(bidCommons.pageSize).to.be.an('array');
+      expect(bidCommons.pageSize[0]).to.equal(window.innerWidth);
+      expect(bidCommons.pageSize[1]).to.equal(window.innerHeight);
     });
-    it('should send banner coordinates', function(){
+    it('should send banner coordinates', function() {
       const request = spec.buildRequests(bidReq, bidderReq);
       const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
       expect(bid1.coordinates).to.be.an('array');
       expect(bid1.coordinates[0]).to.equal(100);
       expect(bid1.coordinates[1]).to.equal(100);
     });
-    it('should send banner coordinates plus parent', function(){
+    it('should send banner coordinates plus parent', function() {
       element.offsetParent = elementParent;
       const request = spec.buildRequests(bidReq, bidderReq);
       const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
