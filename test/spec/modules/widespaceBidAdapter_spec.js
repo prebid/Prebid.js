@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/widespaceBidAdapter';
-import includes from 'core-js/library/fn/array/includes';
+import {spec} from 'modules/widespaceBidAdapter.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 describe('+widespaceAdatperTest', function () {
   // Dummy bid request

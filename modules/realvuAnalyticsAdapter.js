@@ -1,6 +1,6 @@
 // RealVu Analytics Adapter
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 
 const utils = require('../src/utils.js');

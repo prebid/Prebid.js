@@ -1,7 +1,7 @@
-import * as utils from '../src/utils'
-import {parse} from '../src/url'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { BANNER } from '../src/mediaTypes'
+import * as utils from '../src/utils.js'
+import {parse} from '../src/url.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
 
 export const spec = {
   code: 'sovrn',
@@ -107,8 +107,7 @@ export const spec = {
         options: {contentType: 'text/plain'}
       }
     } catch (e) {
-      console.log('error in build:')
-      console.log(e)
+      utils.logError('Could not build bidrequest, error deatils:', e);
     }
   },
 
@@ -143,8 +142,7 @@ export const spec = {
       }
       return sovrnBidResponses
     } catch (e) {
-      console.log('error in interpret:')
-      console.log(e)
+      utils.logError('Could not intrepret bidresponse, error deatils:', e);
     }
   },
 

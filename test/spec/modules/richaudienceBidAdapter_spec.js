@@ -2,9 +2,10 @@
 import {expect} from 'chai'; // may prefer 'assert' in place of 'expect'
 import {
   spec
-} from 'modules/richaudienceBidAdapter';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
+} from 'modules/richaudienceBidAdapter.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import { getGlobal } from 'src/prebidGlobal.js';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS = [{
@@ -279,7 +280,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   describe('UID test', function () {
-    pbjs.setConfig({
+    getGlobal().setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
@@ -639,7 +640,7 @@ describe('Richaudience adapter tests', function () {
     }, [], {consentString: '', gdprApplies: true});
     expect(syncs).to.have.lengthOf(0);
 
-    pbjs.setConfig({
+    getGlobal().setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,

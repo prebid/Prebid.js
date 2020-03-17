@@ -43,5 +43,7 @@
     "unrulyBidAdapter",
     "yieldmoBidAdapter",
     "yieldoneBidAdapter",
-    "synacormediaBidAdapter"
+    "synacormediaBidAdapter",
+    "identityLinkIdSystem",
+    "unifiedIdSystem"
 ]

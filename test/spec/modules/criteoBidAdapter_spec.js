@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { tryGetCriteoFastBid, spec, PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, PUBLISHER_TAG_URL } from 'modules/criteoBidAdapter';
-import { createBid } from 'src/bidfactory';
+import { tryGetCriteoFastBid, spec, PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, PUBLISHER_TAG_URL } from 'modules/criteoBidAdapter.js';
+import { createBid } from 'src/bidfactory.js';
 import CONSTANTS from 'src/constants.json';
-import * as utils from 'src/utils';
-import { config } from '../../../src/config';
-import { NATIVE, VIDEO } from '../../../src/mediaTypes';
+import * as utils from 'src/utils.js';
+import { config } from '../../../src/config.js';
+import { NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('The Criteo bidding adapter', function () {
   let utilsMock;

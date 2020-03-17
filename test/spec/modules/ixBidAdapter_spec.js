@@ -1,8 +1,8 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { spec } from 'modules/ixBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec } from 'modules/ixBidAdapter.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://as-sec.casalemedia.com/cygnus';
@@ -807,7 +807,7 @@ describe('IndexexchangeAdapter', function () {
           mediaType: 'banner',
           ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
@@ -834,7 +834,7 @@ describe('IndexexchangeAdapter', function () {
           mediaType: 'banner',
           ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
@@ -860,7 +860,7 @@ describe('IndexexchangeAdapter', function () {
           mediaType: 'banner',
           ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'JPY',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
@@ -887,7 +887,7 @@ describe('IndexexchangeAdapter', function () {
           mediaType: 'banner',
           ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: 'deal',
           meta: {

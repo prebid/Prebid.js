@@ -1,8 +1,8 @@
-import * as utils from '../src/utils'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import find from 'core-js/library/fn/array/find'
-import { VIDEO, BANNER } from '../src/mediaTypes'
-import { Renderer } from '../src/Renderer'
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import find from 'core-js/library/fn/array/find.js'
+import { VIDEO, BANNER } from '../src/mediaTypes.js'
+import { Renderer } from '../src/Renderer.js'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -80,6 +80,8 @@ export const spec = {
         const primarysize = bidRequest.sizes.length === 2 && !utils.isArray(bidRequest.sizes[0]) ? bidRequest.sizes : bidRequest.sizes[0]
         const customsize = bidRequest.params.adSize !== undefined ? parseSize(bidRequest.params.adSize) : primarysize
         const extId = bidRequest.params.extId !== undefined ? '&id=' + bidRequest.params.extId : ''
+        const adType = matchedBid.adtype !== undefined ? matchedBid.adtype : ''
+
         const bidResponse = {
           requestId: bidRequest.bidId,
           cpm: matchedBid.price / 100,
@@ -94,7 +96,7 @@ export const spec = {
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}"></script>`
         }
 
-        if (isVideo(bidRequest)) {
+        if (isVideo(bidRequest, adType)) {
           const playersize = getPlayerSize(bidRequest)
           if (playersize) {
             bidResponse.width = playersize[0]
@@ -124,10 +126,11 @@ export const spec = {
 /**
  * Is this a video format?
  * @param {Object} format
+ * @param {String} adtype
  * @returns {Boolean}
  */
-function isVideo (format) {
-  return utils.deepAccess(format, 'mediaTypes.video')
+function isVideo (format, adtype) {
+  return utils.deepAccess(format, 'mediaTypes.video') && adtype.toLowerCase() === 'video'
 }
 
 /**

@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 
-import * as utils from 'src/utils';
-import { config } from 'src/config';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 
-import { spec } from 'modules/33acrossBidAdapter';
+import { spec } from 'modules/33acrossBidAdapter.js';
 
 describe('33acrossBidAdapter:', function () {
   const BIDDER_CODE = '33across';
