@@ -14,20 +14,32 @@ const USPAPI_VERSION = 1;
 
 export let consentAPI;
 export let consentTimeout;
+export let staticConsentData;
 
 let consentData;
 let addedConsentHook = false;
 
 // consent APIs
 const uspCallMap = {
-  'iab': lookupUspConsent
+  'iab': lookupUspConsent,
+  'static': lookupStaticConsentData
 };
+
+/**
+ * This function reads the consent string from the config to obtain the consent information of the user.
+ * @param {function(string)} cmpSuccess acts as a success callback when the value is read from config; pass along consentObject (string) from CMP
+ * @param {function(string)} cmpError acts as an error callback while interacting with the config string; pass along an error message (string)
+ * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
+ */
+function lookupStaticConsentData(cmpSuccess, cmpError, hookConfig) {
+  cmpSuccess(staticConsentData, hookConfig);
+}
 
 /**
  * This function handles interacting with an USP compliant consent manager to obtain the consent information of the user.
  * Given the async nature of the USP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
- * @param {function(string)} uspSuccess acts as a success callback when USPAPI returns a value; pass along consentObject (string) from UPSAPI
+ * @param {function(string)} uspSuccess acts as a success callback when USPAPI returns a value; pass along consentObject (string) from USPAPI
  * @param {function(string)} uspError acts as an error callback while interacting with USPAPI; pass along an error message (string)
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
@@ -178,7 +190,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
 function processUspData(consentObject, hookConfig) {
   const valid = !!(consentObject && consentObject.usPrivacy);
   if (!valid) {
-    uspapiFailed(`UPSAPI returned unexpected value during lookup process.`, hookConfig, consentObject);
+    uspapiFailed(`USPAPI returned unexpected value during lookup process.`, hookConfig, consentObject);
     return;
   }
 
@@ -283,6 +295,14 @@ export function setConsentConfig(config) {
 
   utils.logInfo('USPAPI consentManagement module has been activated...');
 
+  if (consentAPI === 'static') {
+    if (utils.isPlainObject(config.consentData) && utils.isPlainObject(config.consentData.getUSPData)) {
+      if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };
+      consentTimeout = 0;
+    } else {
+      utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
+    }
+  }
   if (!addedConsentHook) {
     $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
   }

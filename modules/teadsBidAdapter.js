@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory';
 const utils = require('../src/utils');
 const BIDDER_CODE = 'teads';
-const ENDPOINT_URL = '//a.teads.tv/hb/bid-request';
+const ENDPOINT_URL = 'https://a.teads.tv/hb/bid-request';
 const gdprStatus = {
   GDPR_APPLIES_PUBLISHER: 12,
   GDPR_APPLIES_GLOBAL: 11,
@@ -124,7 +124,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//sync.teads.tv/iframe?' + utils.parseQueryStringParameters(queryParams)
+        url: 'https://sync.teads.tv/iframe?' + utils.parseQueryStringParameters(queryParams)
       }];
     }
   }

@@ -40,7 +40,7 @@ const bidRequests = [
 const prebidRequests = [
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -52,7 +52,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -64,7 +64,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -77,7 +77,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -89,7 +89,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -120,9 +120,9 @@ const bidderResponse = {
   header: { get: (header) => header }
 };
 
-const setUserAgent = (str) => {
+const setUserAgent = (uaString) => {
   window.navigator['__defineGetter__']('userAgent', function () {
-    return str;
+    return uaString;
   });
 };
 
@@ -217,10 +217,8 @@ describe('sharethrough adapter spec', function () {
     it('should return an array of requests', function () {
       const builtBidRequests = spec.buildRequests(bidRequests);
 
-      expect(builtBidRequests[0].url).to.eq(
-        'http://btlr.sharethrough.com/WYu2BXv1/v1');
-      expect(builtBidRequests[1].url).to.eq(
-        'http://btlr.sharethrough.com/WYu2BXv1/v1');
+      expect(builtBidRequests[0].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
+      expect(builtBidRequests[1].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
       expect(builtBidRequests[0].method).to.eq('GET');
     });
 
@@ -248,6 +246,34 @@ describe('sharethrough adapter spec', function () {
       setUserAgent(undefined);
       builtBidRequests = spec.buildRequests(bidRequests);
       expect(builtBidRequests[0].data.instant_play_capable).to.be.false;
+    });
+
+    it('should set the secure parameter to false when the protocol is http', function() {
+      const stub = sinon.stub(sharethroughInternal, 'getProtocol').returns('http:');
+      const bidRequest = spec.buildRequests(bidRequests, null)[0];
+      expect(bidRequest.data.secure).to.be.false;
+      stub.restore()
+    });
+
+    it('should set the secure parameter to true when the protocol is https', function() {
+      const stub = sinon.stub(sharethroughInternal, 'getProtocol').returns('https:');
+      const bidRequest = spec.buildRequests(bidRequests, null)[0];
+      expect(bidRequest.data.secure).to.be.true;
+      stub.restore()
+    });
+
+    it('should set the secure parameter to true when the protocol is neither http or https', function() {
+      const stub = sinon.stub(sharethroughInternal, 'getProtocol').returns('about:');
+      const bidRequest = spec.buildRequests(bidRequests, null)[0];
+      expect(bidRequest.data.secure).to.be.true;
+      stub.restore()
+    });
+
+    it('should add ccpa parameter if uspConsent is present', function () {
+      const uspConsent = '1YNN';
+      const bidderRequest = { uspConsent: uspConsent };
+      const bidRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(bidRequest.data.us_privacy).to.eq(uspConsent);
     });
 
     it('should add consent parameters if gdprConsent is present', function () {
@@ -413,7 +439,7 @@ describe('sharethrough adapter spec', function () {
       expect(() => btoa(JSON.stringify(bidderResponse))).to.throw();
       expect(() => resp = sharethroughInternal.b64EncodeUnicode(JSON.stringify(bidderResponse))).not.to.throw();
       expect(adMarkup).to.match(
-        /data-str-native-key="pKey" data-stx-response-name=\"str_response_bidId\"/);
+        /data-str-native-key="pKey" data-stx-response-name="str_response_bidId"/);
       expect(!!adMarkup.indexOf(resp)).to.eql(true);
 
       // insert functionality to autodetect whether or not in safeframe, and handle JS insertion
@@ -428,7 +454,7 @@ describe('sharethrough adapter spec', function () {
       expect(() => btoa(JSON.stringify(bidderResponse))).to.throw();
       expect(() => resp = sharethroughInternal.b64EncodeUnicode(JSON.stringify(bidderResponse))).not.to.throw();
       expect(adMarkup).to.match(
-        /data-str-native-key="pKey" data-stx-response-name=\"str_response_bidId\"/);
+        /data-str-native-key="pKey" data-stx-response-name="str_response_bidId"/);
       expect(!!adMarkup.indexOf(resp)).to.eql(true);
       expect(adMarkup).to.match(
         /<script src="\/\/native.sharethrough.com\/assets\/sfp.js"><\/script>/);
@@ -440,11 +466,11 @@ describe('sharethrough adapter spec', function () {
     const serverResponses = [{ body: { cookieSyncUrls: cookieSyncs } }];
 
     it('returns an array of correctly formatted user syncs', function () {
-      const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses);
+      const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, null, 'fake-privacy-signal');
       expect(syncArray).to.deep.equal([
-        { type: 'image', url: 'cookieUrl1' },
-        { type: 'image', url: 'cookieUrl2' },
-        { type: 'image', url: 'cookieUrl3' }]
+        { type: 'image', url: 'cookieUrl1&us_privacy=fake-privacy-signal' },
+        { type: 'image', url: 'cookieUrl2&us_privacy=fake-privacy-signal' },
+        { type: 'image', url: 'cookieUrl3&us_privacy=fake-privacy-signal' }]
       );
     });
 

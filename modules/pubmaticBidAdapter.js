@@ -486,12 +486,21 @@ function _createVideoRequest(bid) {
       }
     }
     // read playersize and assign to h and w.
-    if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
-      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0][0], 10);
-      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[0][1], 10);
-    } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
-      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
-      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
+    if (bid.mediaTypes.video.playerSize) {
+      if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+        videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0][0], 10);
+        videoObj.h = parseInt(bid.mediaTypes.video.playerSize[0][1], 10);
+      } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
+        videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
+        videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
+      }
+    } else if (bid.mediaTypes.video.w && bid.mediaTypes.video.h) {
+      videoObj.w = parseInt(bid.mediaTypes.video.w, 10);
+      videoObj.h = parseInt(bid.mediaTypes.video.h, 10);
+    } else {
+      videoObj = UNDEFINED;
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: Video size params(playersize or w&h) missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
+      return videoObj;
     }
     if (bid.params.video.hasOwnProperty('skippable')) {
       videoObj.ext = {
@@ -896,6 +905,7 @@ export const spec = {
     payload.ext.wrapper.profile = parseInt(conf.profId) || UNDEFINED;
     payload.ext.wrapper.version = parseInt(conf.verId) || UNDEFINED;
     payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
+    // eslint-disable-next-line no-undef
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
@@ -908,6 +918,9 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
+    // passing transactionId in source.tid
+    utils.deepSetValue(payload, 'source.tid', conf.transactionId);
+
     // test bids
     if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
       payload.test = 1;
@@ -915,24 +928,13 @@ export const spec = {
 
     // adding schain object
     if (validBidRequests[0].schain) {
-      payload.source = {
-        ext: {
-          schain: validBidRequests[0].schain
-        }
-      };
+      utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
 
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.user.ext = {
-        consent: bidderRequest.gdprConsent.consentString
-      };
-
-      payload.regs = {
-        ext: {
-          gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-        }
-      };
+      utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     // CCPA

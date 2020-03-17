@@ -9,9 +9,9 @@ import includes from 'core-js/library/fn/array/includes';
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'advangelists';
 
-export const VIDEO_ENDPOINT = '//nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
-export const BANNER_ENDPOINT = '//nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
-export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
+export const VIDEO_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
+export const BANNER_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
+export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
