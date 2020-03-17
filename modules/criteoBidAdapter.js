@@ -13,6 +13,7 @@ const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
+const LOG_PREFIX = 'Criteo: ';
 
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 const PUBLISHER_TAG_URL = 'https://static.criteo.net/js/ld/publishertag.prebid.js';
@@ -249,6 +250,7 @@ function buildCdbUrl(context) {
  */
 function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
+  let hasNativeSendId = true;
   const request = {
     publisher: {
       url: context.url,
@@ -276,6 +278,16 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       }
       if (bidRequest.params.nativeCallback || utils.deepAccess(bidRequest, `mediaTypes.${NATIVE}`)) {
         slot.native = true;
+        if (bidRequest.nativeParams &&
+          ((bidRequest.nativeParams.image && bidRequest.nativeParams.image.sendId !== true) ||
+            (bidRequest.nativeParams.icon && bidRequest.nativeParams.icon.sendId !== true) ||
+            (bidRequest.nativeParams.clickUrl && bidRequest.nativeParams.clickUrl.sendId !== true) ||
+            (bidRequest.nativeParams.displayUrl && bidRequest.nativeParams.displayUrl.sendId !== true) ||
+            (bidRequest.nativeParams.privacyLink && bidRequest.nativeParams.privacyLink.sendId !== true) ||
+            (bidRequest.nativeParams.privacyIcon && bidRequest.nativeParams.privacyIcon.sendId !== true))
+        ) {
+          hasNativeSendId = false;
+        }
       }
       if (hasVideoMediaType(bidRequest)) {
         const video = {
@@ -284,7 +296,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           protocols: bidRequest.mediaTypes.video.protocols,
           maxduration: bidRequest.mediaTypes.video.maxduration,
           api: bidRequest.mediaTypes.video.api
-        }
+        };
 
         video.skip = bidRequest.params.video.skip;
         video.placement = bidRequest.params.video.placement;
@@ -297,6 +309,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       return slot;
     }),
   };
+  if (!hasNativeSendId) {
+    utils.logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, privacyLink, privacyIcon)');
+  }
   if (networkId) {
     request.publisher.networkid = networkId;
   }
