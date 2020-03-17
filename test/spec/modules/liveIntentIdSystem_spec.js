@@ -80,7 +80,6 @@ describe('LiveIntentId', function () {
         }
       }
     });
-
     expect(pixel.src).to.match(/https:\/\/collector.liveintent.com\/p\?aid=a-0001&wpn=prebid.*/)
   });
 
