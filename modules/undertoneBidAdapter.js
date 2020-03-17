@@ -11,6 +11,7 @@ const FRAME_USER_SYNC = 'https://cdn.undertone.com/js/usersync.html';
 const PIXEL_USER_SYNC_1 = 'https://usr.undertone.com/userPixel/syncOne?id=1&of=2';
 const PIXEL_USER_SYNC_2 = 'https://usr.undertone.com/userPixel/syncOne?id=2&of=2';
 
+
 function getCanonicalUrl() {
   try {
     let doc = window.top.document;
@@ -51,15 +52,16 @@ function getGdprQueryParams(gdprConsent) {
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
+
 function getBannerCoords(id) {
-  var element = document.getElementById(id);
-  var left = 0;
-  var top = 0;
+  let element = document.getElementById(id);
+  let left = -1;
+  let top = -1;
   if (element) {
     left = element.offsetLeft;
     top = element.offsetTop;
 
-    var parent = element.offsetParent;
+    let parent = element.offsetParent;
     if (parent) {
       left += parent.offsetLeft;
       top += parent.offsetTop;
@@ -67,6 +69,7 @@ function getBannerCoords(id) {
   }
   return [left, top];
 }
+
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
