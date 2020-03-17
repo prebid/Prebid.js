@@ -17,6 +17,7 @@ const NET_REVENUE = true;
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
+const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
@@ -459,6 +460,19 @@ export const spec = {
     return utils.convertTypes({
       'siteID': 'number'
     }, params);
+  },
+
+  /**
+   * Determine which user syncs should occur
+   * @param {object} syncOptions
+   * @param {array} serverResponses
+   * @returns {array} User sync pixels
+   */
+  getUserSyncs: function (syncOptions, serverResponses) {
+    return (syncOptions.iframeEnabled) ? [{
+      type: 'iframe',
+      url: USER_SYNC_URL
+    }] : [];
   }
 };
 
