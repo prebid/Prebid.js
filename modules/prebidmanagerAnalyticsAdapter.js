@@ -69,7 +69,7 @@ prebidmanagerAnalytics.disableAnalytics = function() {
   prebidmanagerAnalytics.originDisableAnalytics();
 };
 
-function addUtmData() {
+export function addUtmData() {
   let newUtm = false;
   let pbUtmTags = {};
   try {
@@ -77,8 +77,8 @@ function addUtmData() {
       utmKeys[prop] = utils.getParameterByName(prop);
       if (utmKeys[prop] != '') {
         newUtm = true;
-        pbUtmTags[prop] = utmKeys[prop];
       }
+      pbUtmTags[prop] = utmKeys[prop];
     }
 
     if (newUtm === false) {
