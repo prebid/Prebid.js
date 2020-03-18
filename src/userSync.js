@@ -17,23 +17,7 @@ export const USERSYNC_DEFAULT_CONFIG = {
 
 // Set userSync default values
 config.setDefaults({
-<<<<<<< HEAD
   'userSync': utils.deepClone(USERSYNC_DEFAULT_CONFIG)
-=======
-  'userSync': {
-    syncEnabled: true,
-    filterSettings: {
-      image: {
-        bidders: '*',
-        filter: 'include'
-      }
-    },
-    aliasSyncEnabled: false,
-    syncsPerBidder: 5,
-    syncDelay: 3000,
-    auctionDelay: 0
-  }
->>>>>>> added config option to enabled alias syncs
 });
 
 /**
