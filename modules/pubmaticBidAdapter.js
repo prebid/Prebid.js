@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes';
-import {config} from '../src/config';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -496,6 +496,26 @@ function _createVideoRequest(bid) {
   return videoObj;
 }
 
+// support for PMP deals
+function _addPMPDealsInImpression(impObj, bid) {
+  if (bid.params.deals) {
+    if (utils.isArray(bid.params.deals)) {
+      bid.params.deals.forEach(function(dealId) {
+        if (utils.isStr(dealId) && dealId.length > 3) {
+          if (!impObj.pmp) {
+            impObj.pmp = { private_auction: 0, deals: [] };
+          }
+          impObj.pmp.deals.push({ id: dealId });
+        } else {
+          utils.logWarn(LOG_WARN_PREFIX + 'Error: deal-id present in array bid.params.deals should be a strings with more than 3 charaters length, deal-id ignored: ' + dealId);
+        }
+      });
+    } else {
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: bid.params.deals should be an array of strings.');
+    }
+  }
+}
+
 function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj;
@@ -515,6 +535,8 @@ function _createImpressionObject(bid, conf) {
     },
     bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
   };
+
+  _addPMPDealsInImpression(impObj, bid);
 
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
@@ -641,7 +663,7 @@ function _handleEids(payload, validBidRequests) {
   _handleTTDId(eids, validBidRequests);
   const bidRequest = validBidRequests[0];
   if (bidRequest && bidRequest.userId) {
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid.org', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteoId`), 'criteo.com', 1);// replacing criteoRtus
@@ -747,7 +769,7 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
       }
     })
     .map(category => category.trim()) // trim all
-    .filter(function(category, index, arr) { // minimum 3 charaters length
+    .filter(function(category, index, arr) { // more than 3 charaters length
       if (category.length > 3) {
         return arr.indexOf(category) === index; // unique value only
       } else {
@@ -883,6 +905,7 @@ export const spec = {
     payload.ext.wrapper.profile = parseInt(conf.profId) || UNDEFINED;
     payload.ext.wrapper.version = parseInt(conf.verId) || UNDEFINED;
     payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
+    // eslint-disable-next-line no-undef
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
@@ -895,26 +918,23 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
+    // passing transactionId in source.tid
+    utils.deepSetValue(payload, 'source.tid', conf.transactionId);
+
+    // test bids
+    if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
+      payload.test = 1;
+    }
+
     // adding schain object
     if (validBidRequests[0].schain) {
-      payload.source = {
-        ext: {
-          schain: validBidRequests[0].schain
-        }
-      };
+      utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
 
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.user.ext = {
-        consent: bidderRequest.gdprConsent.consentString
-      };
-
-      payload.regs = {
-        ext: {
-          gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-        }
-      };
+      utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     // CCPA

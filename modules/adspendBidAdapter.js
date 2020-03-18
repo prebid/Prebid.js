@@ -1,14 +1,13 @@
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax'
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js'
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adspend';
-const BID_URL = '//rtb.com.ru/headerbidding-bid';
-const SYNC_URL = '//rtb.com.ru/headerbidding-sync?uid={UUID}';
+const BID_URL = 'https://rtb.com.ru/headerbidding-bid';
+const SYNC_URL = 'https://rtb.com.ru/headerbidding-sync?uid={UUID}';
 const COOKIE_NAME = 'hb-adspend-id';
-const UUID_LEN = 36;
 const TTL = 10000;
 const RUB = 'RUB';
 const FIRST_PRICE = 1;
@@ -146,16 +145,14 @@ export const spec = {
 }
 
 const getUserID = () => {
-  const i = document.cookie.indexOf(COOKIE_NAME);
+  const i = utils.getCookie(COOKIE_NAME);
 
-  if (i === -1) {
+  if (i === null) {
     const uuid = utils.generateUUID();
-    document.cookie = `${COOKIE_NAME}=${uuid}; path=/`;
+    utils.setCookie(COOKIE_NAME, uuid);
     return uuid;
   }
-
-  const j = i + COOKIE_NAME.length + 1;
-  return document.cookie.substring(j, j + UUID_LEN);
+  return i;
 };
 
 const getFormats = arr => arr.map((s) => {

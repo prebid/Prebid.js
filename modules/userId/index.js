@@ -96,16 +96,15 @@
  * @property {(function|undefined)} callback - function that will return an id
  */
 
-import find from 'core-js/library/fn/array/find';
-import {config} from '../../src/config';
-import events from '../../src/events';
-import * as utils from '../../src/utils';
-import {getGlobal} from '../../src/prebidGlobal';
-import {gdprDataHandler} from '../../src/adapterManager';
+import find from 'core-js/library/fn/array/find.js';
+import {config} from '../../src/config.js';
+import events from '../../src/events.js';
+import * as utils from '../../src/utils.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
+import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
-import {module} from '../../src/hook';
-import {unifiedIdSubmodule} from './unifiedIdSystem.js';
-import {pubCommonIdSubmodule} from './pubCommonIdSystem.js';
+import {module} from '../../src/hook.js';
+import {createEidsArray} from './eids.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -156,10 +155,10 @@ function setStoredValue(storage, value) {
         utils.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr);
       }
     } else if (storage.type === LOCAL_STORAGE) {
-      localStorage.setItem(`${storage.name}_exp`, expiresStr);
-      localStorage.setItem(storage.name, encodeURIComponent(valueStr));
+      utils.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
+      utils.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
       if (typeof storage.refreshInSeconds === 'number') {
-        localStorage.setItem(`${storage.name}_last`, new Date().toUTCString());
+        utils.setDataInLocalStorage(`${storage.name}_last`, new Date().toUTCString());
       }
     }
   } catch (error) {
@@ -179,13 +178,13 @@ function getStoredValue(storage, key = undefined) {
     if (storage.type === COOKIE) {
       storedValue = utils.getCookie(storedKey);
     } else if (storage.type === LOCAL_STORAGE) {
-      const storedValueExp = localStorage.getItem(`${storage.name}_exp`);
+      const storedValueExp = utils.getDataFromLocalStorage(`${storage.name}_exp`);
       // empty string means no expiration set
       if (storedValueExp === '') {
-        storedValue = localStorage.getItem(storedKey);
+        storedValue = utils.getDataFromLocalStorage(storedKey);
       } else if (storedValueExp) {
         if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
-          storedValue = decodeURIComponent(localStorage.getItem(storedKey));
+          storedValue = decodeURIComponent(utils.getDataFromLocalStorage(storedKey));
         }
       }
     }
@@ -209,7 +208,10 @@ function hasGDPRConsent(consentData) {
     if (!consentData.consentString) {
       return false;
     }
-    if (consentData.vendorData && consentData.vendorData.purposeConsents && consentData.vendorData.purposeConsents['1'] === false) {
+    if (consentData.apiVersion === 1 && utils.deepAccess(consentData, 'vendorData.purposeConsents.1') === false) {
+      return false;
+    }
+    if (consentData.apiVersion === 2 && utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === false) {
       return false;
     }
   }
@@ -269,11 +271,13 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
     return;
   }
   const combinedSubmoduleIds = getCombinedSubmoduleIds(submodules);
+  const combinedSubmoduleIdsAsEids = createEidsArray(combinedSubmoduleIds);
   if (Object.keys(combinedSubmoduleIds).length) {
     adUnits.forEach(adUnit => {
       adUnit.bids.forEach(bid => {
         // create a User ID object on the bid,
         bid.userId = combinedSubmoduleIds;
+        bid.userIdAsEids = combinedSubmoduleIdsAsEids;
       });
     });
   }
@@ -528,7 +532,7 @@ export function init(config) {
     return;
   }
   // _pubcid_optout is checked for compatiblility with pubCommonId
-  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (localStorage.getItem('_pbjs_id_optout') || localStorage.getItem('_pubcid_optout'))) {
+  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (utils.getDataFromLocalStorage('_pbjs_id_optout') || utils.getDataFromLocalStorage('_pubcid_optout'))) {
     utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
     return;
   }
@@ -550,9 +554,5 @@ export function init(config) {
 
 // init config update listener to start the application
 init(config);
-
-// add submodules after init has been called
-attachIdSystem(pubCommonIdSubmodule);
-attachIdSystem(unifiedIdSubmodule);
 
 module('userId', attachIdSystem);

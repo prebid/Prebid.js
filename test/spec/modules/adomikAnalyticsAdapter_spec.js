@@ -1,4 +1,4 @@
-import adomikAnalytics from 'modules/adomikAnalyticsAdapter';
+import adomikAnalytics from 'modules/adomikAnalyticsAdapter.js';
 import {expect} from 'chai';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;

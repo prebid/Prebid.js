@@ -1,9 +1,9 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import * as url from '../src/url';
-import { BANNER, NATIVE } from '../src/mediaTypes';
-import { getRefererInfo } from '../src/refererDetection';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import * as url from '../src/url.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
@@ -132,20 +132,20 @@ function getCoordinates(id) {
   return null;
 }
 
-function extParams(params, gdpr) {
-  let ext = {
-    customer_id: params.cid,
-    prebid_version: $$PREBID_GLOBAL$$.version
-  };
-  ext.gdpr_applies = !!(gdpr && gdpr.gdprApplies);
-  if (ext.gdpr_applies) {
-    ext.gdpr_consent_string = gdpr.consentString || '';
-  }
+function extParams(params, gdpr, uspConsent, userId) {
   let windowSize = spec.getWindowSize();
-  if (windowSize.w !== -1 && windowSize.h !== -1) {
-    ext.screen = windowSize;
-  }
-  return ext;
+  let gdprApplies = !!(gdpr && gdpr.gdprApplies);
+  let uspApplies = !!(uspConsent);
+  return Object.assign({},
+    { customer_id: params.cid },
+    { prebid_version: $$PREBID_GLOBAL$$.version },
+    { gdpr_applies: gdprApplies },
+    (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
+    { usp_applies: uspApplies },
+    uspApplies && { usp_consent_string: uspConsent || '' },
+    windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
+    userId && { user_id: userId }
+  );
 }
 
 function slotParams(bidRequest) {
@@ -240,7 +240,7 @@ function normalizeCoordinates(coordinates) {
 function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site),
-    ext: extParams(bidRequests[0].params, bidderRequests.gdprConsent),
+    ext: extParams(bidRequests[0].params, bidderRequests.gdprConsent, bidderRequests.uspConsent, bidRequests[0].userId),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
     tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')

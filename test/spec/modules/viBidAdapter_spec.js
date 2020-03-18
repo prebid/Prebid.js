@@ -25,7 +25,7 @@ import {
   getViewabilityDescription,
   mergeArrays,
   documentFocus
-} from 'modules/viBidAdapter';
+} from 'modules/viBidAdapter.js';
 
 describe('ratioToPercentageCeil', () => {
   it('1 converts to percentage', () =>

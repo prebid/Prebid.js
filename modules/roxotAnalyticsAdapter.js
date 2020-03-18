@@ -1,10 +1,10 @@
-import adapter from '../src/AnalyticsAdapter';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import includes from 'core-js/library/fn/array/includes';
-import {ajaxBuilder} from '../src/ajax';
+import adapterManager from '../src/adapterManager.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import {ajaxBuilder} from '../src/ajax.js';
 
-const utils = require('../src/utils');
+const utils = require('../src/utils.js');
 let ajax = ajaxBuilder(0);
 
 const DEFAULT_EVENT_URL = 'pa.rxthdr.com/v3';
@@ -68,17 +68,17 @@ function detectDevice() {
 
 function checkIsNewFlag() {
   let key = buildLocalStorageKey(isNewKey);
-  let lastUpdate = Number(localStorage.getItem(key));
-  localStorage.setItem(key, Date.now());
+  let lastUpdate = Number(utils.getDataFromLocalStorage(key));
+  utils.setDataInLocalStorage(key, Date.now());
   return Date.now() - lastUpdate > isNewTtl;
 }
 
 function updateUtmTimeout() {
-  localStorage.setItem(buildLocalStorageKey(utmTtlKey), Date.now());
+  utils.setDataInLocalStorage(buildLocalStorageKey(utmTtlKey), Date.now());
 }
 
 function isUtmTimeoutExpired() {
-  let utmTimestamp = localStorage.getItem(buildLocalStorageKey(utmTtlKey));
+  let utmTimestamp = utils.getDataFromLocalStorage(buildLocalStorageKey(utmTtlKey));
   return (Date.now() - utmTimestamp) > utmTtl;
 }
 
@@ -356,11 +356,11 @@ roxotAdapter.buildUtmTagData = function () {
   });
   utmTags.forEach(function (utmTagKey) {
     if (utmTagsDetected) {
-      localStorage.setItem(buildLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      utils.setDataInLocalStorage(buildLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
       updateUtmTimeout();
     } else {
       if (!isUtmTimeoutExpired()) {
-        utmTagData[utmTagKey] = localStorage.getItem(buildLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildLocalStorageKey(utmTagKey)) : '';
+        utmTagData[utmTagKey] = utils.getDataFromLocalStorage(buildLocalStorageKey(utmTagKey)) ? utils.getDataFromLocalStorage(buildLocalStorageKey(utmTagKey)) : '';
         updateUtmTimeout();
       }
     }
@@ -440,7 +440,7 @@ function checkEventAfterTimeout() {
 }
 
 function sendEvent(eventType, eventName, data) {
-  let url = '//' + initOptions.server + '/' + eventType + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
+  let url = 'https://' + initOptions.server + '/' + eventType + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
   let eventData = {
     'event': eventType,
     'eventName': eventName,
@@ -463,7 +463,7 @@ function sendEvent(eventType, eventName, data) {
 }
 
 function loadServerConfig() {
-  let url = '//' + initOptions.configServer + '/c' + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
+  let url = 'https://' + initOptions.configServer + '/c' + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
   ajax(
     url,
     {

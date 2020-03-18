@@ -1,10 +1,10 @@
-import adapter from '../src/AnalyticsAdapter';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import { getRefererInfo } from '../src/refererDetection';
-import { parse } from '../src/url';
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax';
+import adapterManager from '../src/adapterManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { parse } from '../src/url.js';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 
 const ANALYTICS_VERSION = '1.0.0';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
@@ -132,7 +132,7 @@ function sendAll() {
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   utils.logInfo('SENDING DATA: ' + data);
-  ajax(`//${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {}, data, { contentType: 'text/plain' });
+  ajax(`https://${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {}, data, { contentType: 'text/plain' });
 };
 
 function trackAuctionInit(args) {
@@ -212,10 +212,10 @@ const ORGANIC = '(organic)';
 
 export let storage = {
   getItem: (name) => {
-    return localStorage.getItem(name);
+    return utils.getDataFromLocalStorage(name);
   },
   setItem: (name, value) => {
-    localStorage.setItem(name, value);
+    utils.setDataInLocalStorage(name, value);
   }
 };
 
