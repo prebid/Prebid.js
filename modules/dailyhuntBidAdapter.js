@@ -7,7 +7,6 @@ const BIDDER_ALIAS = 'dh';
 const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE, mediaTypes.VIDEO];
 
 const PROD_PREBID_ENDPOINT_URL = 'http://dh2-van-qa-n1.dailyhunt.in:8000/openrtb2/auction';
-const PROD_NATIVE_ENDPOINT_URL = 'http://dh2-van-qa-n2.dailyhunt.in:8080/getBids';
 
 const ORTB_NATIVE_PARAMS = {
   title: {
@@ -160,7 +159,7 @@ const createOrtbImpNativeObj = (bid, nativeObj) => {
       }
 
       asset[props.name] = {
-        len: bidParams.len,
+        len: bidParams.len ? bidParams.len : 20,
         type: props.type,
         w,
         h
@@ -170,10 +169,8 @@ const createOrtbImpNativeObj = (bid, nativeObj) => {
     }
   }).filter(Boolean);
   let request = {
-    native: {
-      assets,
-      ver: '1,0'
-    }
+    assets,
+    ver: '1,0'
   }
   return { request: JSON.stringify(request) };
 }
@@ -185,9 +182,9 @@ const createOrtbImpVideoObj = (bid, videoObj) => ({
   ]
 })
 
-const createServerRequest = (ortbRequest, validBidRequests, isNativeRequest = false) => ({
+const createServerRequest = (ortbRequest, validBidRequests) => ({
   method: 'POST',
-  url: isNativeRequest ? PROD_NATIVE_ENDPOINT_URL : PROD_PREBID_ENDPOINT_URL,
+  url: PROD_PREBID_ENDPOINT_URL,
   data: JSON.stringify(ortbRequest),
   options: {
     contentType: 'application/json',
@@ -211,41 +208,12 @@ export const spec = {
     // ORTB Request.
     let ortbReq = createOrtbRequest(validBidRequests, bidderRequest);
 
-    // Native ORTB Request.
-    let nativeOrtbReq = {
-      ...ortbReq
-    };
-
-    let isNativeRequest = false;
-    let isBannerReuqest = false;
-    let isVideoReuqest = false;
-
     validBidRequests.forEach((bid) => {
-      let bannerObj = utils.deepAccess(bid.mediaTypes, `banner`);
-      let nativeObj = utils.deepAccess(bid.mediaTypes, `native`);
-      let videoObj = utils.deepAccess(bid.mediaTypes, `video`);
-
       let imp = createOrtbImpObj(bid)
-
-      if (bannerObj) {
-        isBannerReuqest = true;
-        ortbReq.imp.push(imp)
-      } else if (nativeObj) {
-        isNativeRequest = true;
-        nativeOrtbReq.imp.push(imp)
-      } else if (videoObj) {
-        isVideoReuqest = true;
-        ortbReq.imp.push(imp)
-      }
+      ortbReq.imp.push(imp);
     });
 
-    if (isNativeRequest) {
-      serverRequests.push({ ...createServerRequest(nativeOrtbReq, validBidRequests, isNativeRequest) });
-    }
-
-    if (isBannerReuqest || isVideoReuqest) {
-      serverRequests.push({ ...createServerRequest(ortbReq, validBidRequests) });
-    }
+    serverRequests.push({ ...createServerRequest(ortbReq, validBidRequests) });
 
     return serverRequests;
   },
