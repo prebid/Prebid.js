@@ -4,6 +4,7 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
+import * as urlLib from '../src/url.js'
 
 const {
   EVENTS: {
@@ -34,6 +35,16 @@ const cache = {
   auctions: {},
   targeting: {},
   timeouts: {},
+};
+
+export function getHostNameFromReferer(referer) {
+  try {
+    rubiconAdapter.referrerHostname = urlLib.parse(referer, {noDecodeWholeURL: true}).hostname;
+  } catch (e) {
+    utils.logError('Rubicon Analytics: Unable to parse hostname from supplied url: ', referer, e);
+    rubiconAdapter.referrerHostname = '';
+  }
+  return rubiconAdapter.referrerHostname
 };
 
 function stringProperties(obj) {
@@ -115,7 +126,8 @@ function sendMessage(auctionId, bidWonId) {
     eventTimeMillis: Date.now(),
     integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
     version: '$prebid.version$',
-    referrerUri: referrer
+    referrerUri: referrer,
+    referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer)
   };
   const wrapperName = config.getConfig('rubicon.wrapperName');
   if (wrapperName) {
@@ -260,6 +272,7 @@ function setRubiconAliases(aliasRegistry) {
 
 let baseAdapter = adapter({analyticsType: 'endpoint'});
 let rubiconAdapter = Object.assign({}, baseAdapter, {
+  referrerHostname: '',
   enableAnalytics(config = {}) {
     let error = false;
     samplingFactor = 1;

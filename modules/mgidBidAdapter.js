@@ -342,7 +342,7 @@ function getLanguage() {
 
 function getLocalStorageSafely(key) {
   try {
-    return localStorage.getItem(key);
+    return utils.getDataFromLocalStorage(key);
   } catch (e) {
     return null;
   }
@@ -350,7 +350,7 @@ function getLocalStorageSafely(key) {
 
 function setLocalStorageSafely(key, val) {
   try {
-    return localStorage.setItem(key, val);
+    return utils.setDataInLocalStorage(key, val);
   } catch (e) {
     return null;
   }

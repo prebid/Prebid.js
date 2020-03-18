@@ -7,6 +7,7 @@ import { config } from 'src/config.js';
 import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import { server } from 'test/mocks/xhr.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 let CONFIG = {
   accountId: '1',
@@ -1082,8 +1083,10 @@ describe('S2S Adapter', function () {
         lipb: {
           lipbid: 'li-xyz',
           segments: ['segA', 'segB']
-        }
+        },
+        idl_env: '0000-1111-2222-3333'
       };
+      userIdBidRequest[0].bids[0].userIdAsEids = createEidsArray(userIdBidRequest[0].bids[0].userId);
 
       adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
       let requestBid = JSON.parse(server.requests[0].requestBody);
@@ -1102,6 +1105,8 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments.length).is.equal(2);
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[0]).is.equal('segA');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[1]).is.equal('segB');
+      // LiveRamp should exist
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveramp.com')[0].uids[0].id).is.equal('0000-1111-2222-3333');
     });
 
     it('when config \'currency.adServerCurrency\' value is an array: ORTB has property \'cur\' value set to a single item array', function () {
