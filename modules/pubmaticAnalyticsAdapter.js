@@ -217,7 +217,7 @@ function executeBidsLoggerCall(auctionId) {
   // GDPR support
   if (auctionCache.gdprConsent) {
     outputObj['cns'] = auctionCache.gdprConsent.consentString || '';
-    outputObj['gdpr'] = auctionCache.gdprConsent.gdprApplies || 0;
+    outputObj['gdpr'] = auctionCache.gdprConsent.gdprApplies === true ? 1 : 0;
     pixelURL += '&gdEn=1';
   }
 
