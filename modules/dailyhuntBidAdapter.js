@@ -41,11 +41,11 @@ const ORTB_NATIVE_PARAMS = {
 };
 
 // Encode URI.
-// const _encodeURIComponent = function (a) {
-//   let b = window.encodeURIComponent(a);
-//   b = b.replace(/'/g, '%27');
-//   return b;
-// }
+const _encodeURIComponent = function (a) {
+  let b = window.encodeURIComponent(a);
+  b = b.replace(/'/g, '%27');
+  return b;
+}
 
 // Extract key from collections.
 const extractKeyInfo = (collection, key) => {
@@ -193,6 +193,32 @@ const createServerRequest = (ortbRequest, validBidRequests) => ({
   bids: validBidRequests
 })
 
+const createPrebidBannerBid = (bid, bidResponse) => ({
+  requestId: bid.bidId,
+  cpm: 1.4,
+  creativeId: bidResponse.crid,
+  width: 300,
+  height: 250,
+  ttl: 360,
+  netRevenue: bid.netRevenue === 'net',
+  currency: 'USD',
+  ad: bidResponse.adm,
+  mediaType: 'banner'
+})
+
+const createPrebidVideoBid = (bid, bidResponse) => ({
+  requestId: bid.bidId,
+  cpm: 1.4,
+  creativeId: bidResponse.crid,
+  width: 300,
+  height: 250,
+  ttl: 360,
+  netRevenue: bid.netRevenue === 'net',
+  currency: 'USD',
+  vastXml: bidResponse.adm.replace('4.0', '2.0'),
+  mediaType: 'video'
+})
+
 export const spec = {
   code: BIDDER_CODE,
 
@@ -225,18 +251,45 @@ export const spec = {
       const _cbid = seatbid && seatbid[0] && seatbid[0].bid;
       let bidResponse = _cbid && _cbid[index];
 
+      let bannerObj = utils.deepAccess(bid.mediaTypes, `banner`);
+      let nativeObj = utils.deepAccess(bid.mediaTypes, `native`);
+      let videoObj = utils.deepAccess(bid.mediaTypes, `video`);
+
       if (bidResponse) {
-        accumulator.push({
-          requestId: bid.bidId,
-          cpm: 1.4,
-          creativeId: bidResponse.crid,
-          width: 300,
-          height: 250,
-          ttl: 360,
-          netRevenue: bid.netRevenue === 'net',
-          currency: 'USD',
-          ad: bidResponse.adm
-        });
+        if (bannerObj) {
+          accumulator.push(createPrebidBannerBid(bid, bidResponse));
+        } else if (nativeObj) {
+          console.log(bidResponse)
+          let nativeBidResponse = {
+            requestId: bid.bidId,
+            cpm: 1.4,
+            creativeId: bidResponse.crid,
+            currency: 'USD',
+            ttl: 360,
+            netRevenue: bid.netRevenue === 'net',
+          };
+          nativeBidResponse.mediaType = 'native'
+          nativeBidResponse.native = {
+            title: 'MONTU THAKORE',
+            body: 'LOREM IPSUM',
+            body2: 'LOREM IPSUM 1',
+            cta: 'CLICK ME',
+            clickUrl: _encodeURIComponent('https://montu1996.github.io/'),
+            image: {
+              url: 'http://acdn.newshuntads.com/daedalus-banners/143597/1584464976_47321_990x505.jpg',
+              height: 250,
+              width: 300
+            },
+            icon: {
+              url: 'http://acdn.newshuntads.com/daedalus-banners/143597/1584464976_47321_990x505.jpg',
+              height: 250,
+              width: 300
+            }
+          }
+          accumulator.push(nativeBidResponse);
+        } else if (videoObj) {
+          accumulator.push(createPrebidVideoBid(bid, bidResponse));
+        }
       }
       return accumulator;
     }, []);
