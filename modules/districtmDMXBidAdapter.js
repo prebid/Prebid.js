@@ -103,6 +103,10 @@ export const spec = {
       dmxRequest.source.ext.schain = schain || {}
     } catch (e) {}
     let tosendtags = bidRequest.map(dmx => {
+      if (dmx.params.coppa) {
+        dmxRequest.regs = dmxRequest.regs || {};
+        dmxRequest.regs.coppa = dmx.params.coppa;
+      }
       var obj = {};
       obj.id = dmx.bidId;
       obj.tagid = String(dmx.params.dmxid);
