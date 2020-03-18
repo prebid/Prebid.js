@@ -882,8 +882,33 @@ export function getCookie(name) {
  */
 export function setCookie(key, value, expires, sameSite, domain) {
   if (hasDeviceAccess()) {
-    document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}${domain ? `; domain=${domain}` : ''}`;
+    const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
+    const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
+    document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}`;
   }
+}
+
+/**
+ * Returns all cookie values from the jar whose names contain the `keyLike`
+ * Needs to exist in `utils.js` as it follows the StorageHandler interface defined in live-connect-js. If that module were to be removed, this function can go as well.
+ * @param {string} keyLike
+ * @return {[]}
+ */
+export function findSimilarCookies(keyLike) {
+  const all = [];
+  if (hasDeviceAccess()) {
+    const cookies = document.cookie.split(';');
+    while (cookies.length) {
+      const cookie = cookies.pop();
+      let separatorIndex = cookie.indexOf('=');
+      separatorIndex = separatorIndex < 0 ? cookie.length : separatorIndex;
+      const cookieName = decodeURIComponent(cookie.slice(0, separatorIndex).replace(/^\s+/, ''));
+      if (cookieName.indexOf(keyLike) >= 0) {
+        all.push(decodeURIComponent(cookie.slice(separatorIndex + 1)));
+      }
+    }
+  }
+  return all;
 }
 
 /**

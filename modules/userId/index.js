@@ -37,6 +37,7 @@
  * @summary decode a stored value for passing to bid requests
  * @name Submodule#decode
  * @param {Object|string} value
+ * @param {SubmoduleParams|undefined} configParams
  * @return {(Object|undefined)}
  */
 
@@ -64,6 +65,14 @@
  */
 
 /**
+ * @typedef {Object} LiveIntentCollectConfig
+ * @property {(string|undefined)} fpiStorageStrategy - defines whether the first party identifiers that LiveConnect creates and updates are stored in a cookie jar, local storage, or not created at all
+ * @property {(number|undefined)} fpiExpirationDays - the expiration time of an identifier created and updated by LiveConnect
+ * @property {(string|undefined)} collectorUrl - defines where the LiveIntentId signal pixels are pointing to
+ * @property {(string|undefined)} appId - the  unique identifier of the application in question
+ */
+
+/**
  * @typedef {Object} SubmoduleParams
  * @property {(string|undefined)} partner - partner url param value
  * @property {(string|undefined)} url - webservice request url used to load Id data
@@ -72,7 +81,10 @@
  * @property {(boolean|undefined)} extend - extend expiration time on each access.  default is false.
  * @property {(string|undefined)} pid - placement id url param value
  * @property {(string|undefined)} publisherId - the unique identifier of the publisher in question
+ * @property {(string|undefined)} ajaxTimeout - the number of milliseconds a resolution request can take before automatically being terminated
  * @property {(array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
+ * @property {(string|undefined)} providedIdentifierName - defines the name of an identifier that can be found in local storage or in the cookie jar that can be sent along with the getId request. This parameter should be used whenever a customer is able to provide the most stable identifier possible
+ * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
  */
 
 /**
@@ -417,7 +429,7 @@ function initSubmodules(submodules, consentData) {
 
       if (storedId) {
         // cache decoded value (this is copied to every adUnit bid)
-        submodule.idObj = submodule.submodule.decode(storedId);
+        submodule.idObj = submodule.submodule.decode(storedId, submodule.config);
       }
     } else if (submodule.config.value) {
       // cache decoded value (this is copied to every adUnit bid)
@@ -426,7 +438,7 @@ function initSubmodules(submodules, consentData) {
       const response = submodule.submodule.getId(submodule.config.params, consentData, undefined);
       if (utils.isPlainObject(response)) {
         if (typeof response.callback === 'function') { submodule.callback = response.callback; }
-        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id); }
+        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
       }
     }
     carry.push(submodule);
