@@ -1,7 +1,7 @@
 import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
-import {addUtmData} from '../../../modules/prebidmanagerAnalyticsAdapter.js';
+import {collectUtmTagData} from '../../../modules/prebidmanagerAnalyticsAdapter.js';
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -119,7 +119,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       localStorage.removeItem('pm_utm_content');
     });
     it('should build utm data from local storage', function () {
-      let utmTagData = addUtmData();
+      let utmTagData = collectUtmTagData();
       expect(utmTagData.utm_source).to.equal('utm_source');
       expect(utmTagData.utm_medium).to.equal('utm_medium');
       expect(utmTagData.utm_campaign).to.equal('utm_camp');

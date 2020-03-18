@@ -69,7 +69,7 @@ prebidmanagerAnalytics.disableAnalytics = function() {
   prebidmanagerAnalytics.originDisableAnalytics();
 };
 
-export function addUtmData() {
+export function collectUtmTagData() {
   let newUtm = false;
   let pbUtmTags = {};
   try {
@@ -111,7 +111,7 @@ function flush() {
       ver: _VERSION,
       bundleId: initOptions.bundleId,
       events: _eventQueue,
-      utmTags: addUtmData(),
+      utmTags: collectUtmTagData(),
     };
 
     ajax(
