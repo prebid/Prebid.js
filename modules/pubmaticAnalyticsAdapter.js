@@ -128,6 +128,8 @@ function parseBidResponse(bid) {
     'dealId',
     'currency',
     'cpm', () => window.parseFloat(Number(bid.cpm).toFixed(BID_PRECISION)),
+    'originalCpm', () => window.parseFloat(Number(bid.originalCpm).toFixed(BID_PRECISION)),
+    'originalCurrency',
     'dealChannel',
     'meta',
     'status',
@@ -183,8 +185,8 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
       'wb': highestsBid.bidId === bid.bidId ? 1 : 0,
       'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
       'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
-      'ocpm': bid.bidResponse ? bid.bidResponse.cpm : 0,
-      'ocry': bid.bidResponse ? bid.bidResponse.currency : CURRENCY_USD
+      'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
+      'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD
     });
     return partnerBids;
   }, [])
