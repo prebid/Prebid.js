@@ -380,6 +380,7 @@ describe('adagioAdapter', () => {
       let request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
       expect(request.data.adUnits[0].params.outerAdUnitElementId).to.exist;
+      top.ADAGIO.pbjsAdUnits = undefined;
     });
 
     it('generates a pageviewId if missing', () => {

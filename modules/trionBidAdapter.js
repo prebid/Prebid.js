@@ -176,8 +176,8 @@ function handlePostMessage() {
 export function getStorageData(key) {
   var item = null;
   try {
-    if (window.localStorage) {
-      item = window.localStorage.getItem(key);
+    if (utils.hasLocalStorage()) {
+      item = utils.getDataFromLocalStorage(key);
     }
   } catch (e) {
   }
@@ -186,8 +186,8 @@ export function getStorageData(key) {
 
 export function setStorageData(key, item) {
   try {
-    if (window.localStorage) {
-      window.localStorage.setItem(key, item);
+    if (utils.hasLocalStorage()) {
+      utils.setDataInLocalStorage(key, item);
     }
   } catch (e) {
   }
