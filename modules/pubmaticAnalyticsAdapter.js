@@ -121,7 +121,7 @@ function parseBidResponse(bid) {
       }
       // use currency conversion function if present
       if (typeof bid.getCpmInNewCurrency === 'function') {
-        return window.parseFloat(Number(bid.getCpmInNewCurrency(CURRENCY_USD).toFixed(BID_PRECISION)));
+        return window.parseFloat(Number(bid.getCpmInNewCurrency(CURRENCY_USD)).toFixed(BID_PRECISION));
       }
       utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
     },

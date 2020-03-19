@@ -37,6 +37,8 @@ const BID = {
   'currency': 'USD',
   'creativeId': '3571560',
   'cpm': 1.22752,
+  'originalCpm': 1.22752,
+  'originalCurrency': 'USD',
   'ttl': 300,
   'netRevenue': false,
   'ad': '<html></html>',
@@ -73,6 +75,7 @@ const BID2 = Object.assign({}, BID, {
   height: 90,
   mediaType: 'banner',
   cpm: 1.52,
+  originalCpm: 1.52,
   dealId: 'the-deal-id',
   dealChannel: 'PMP',
   mi: 'matched-impression',
@@ -194,7 +197,7 @@ const MOCK = {
     },
     'gdprConsent': {
       'consentString': 'here-goes-gdpr-consent-string',
-      'gdprApplies': 1
+      'gdprApplies': true
     }
   },
   BID_RESPONSE: [
@@ -507,6 +510,8 @@ describe('pubmatic analytics adapter', function () {
       const bidCopy = utils.deepClone(BID2);
       bidCopy.currency = 'JPY';
       bidCopy.cpm = 100;
+      bidCopy.originalCpm = 100;
+      bidCopy.originalCurrency = 'JPY';
 
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
