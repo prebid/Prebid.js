@@ -97,7 +97,7 @@ function createSingleBidRequest(bid, bidderRequest) {
 
 function createSingleBidResponse(serverBid) {
   if (serverBid.userId) {
-    localStorage.setItem('lsUserId', serverBid.userId);
+    utils.setDataInLocalStorage('lsUserId', serverBid.userId);
   }
   return {
     requestId: serverBid.id,
@@ -147,8 +147,8 @@ function getEndpointUrl() {
 }
 
 function getLsUserId() {
-  if (localStorage.getItem('lsUserId') != null) {
-    return localStorage.getItem('lsUserId');
+  if (utils.getDataFromLocalStorage('lsUserId') != null) {
+    return utils.getDataFromLocalStorage('lsUserId');
   }
   return null;
 }
