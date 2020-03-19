@@ -272,6 +272,23 @@ pbjs.setConfig({
 });
 ```
 
+#### User Sync
+Add the following code to enable user sync. IX strongly recommends enabling user syncing through iframes. This functionality improves DSP user match rates and increases the IX bid rate and bid price. Be sure to call `pbjs.setConfig()` only once.
+
+```
+pbjs.setConfig({
+    userSync: {
+        iframeEnabled: true,
+        filterSettings: {
+            iframe: {
+                bidders: ['ix'],
+                filter: 'include'
+            }
+        }
+    }
+});
+```
+
 ### 2. Include `ixBidAdapter` in your build process
 
 When running the build command, include `ixBidAdapter` as a module, as well as `dfpAdServerVideo` if you require video support.
