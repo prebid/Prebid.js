@@ -33,6 +33,7 @@ aliases:
   - &run_unit_test
       name: BrowserStack testing
       command: echo "127.0.0.1 test.localhost" | sudo tee -a /etc/hosts && gulp e2e-test --host=test.localhost
+      no_output_timeout: 60m
 
   - &run_endtoend_test
       name: BrowserStack End to end testing
