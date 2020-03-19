@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const express = require('express');
 const argv = require('yargs').argv;
 const app = module.exports = express();

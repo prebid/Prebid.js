@@ -80,18 +80,14 @@ describe('onetag', function () {
           expect(bid.pubId).to.be.a('string');
         }
       });
-    } catch (e) {
-      console.log('Error while parsing');
-    }
+    } catch (e) {}
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
       let dataString = serverRequest.data;
       try {
         let dataObj = JSON.parse(dataString);
         expect(dataObj.bids).to.be.an('array').that.is.empty;
-      } catch (e) {
-        console.log('Error while parsing');
-      }
+      } catch (e) {}
     });
     it('should send GDPR consent data', function () {
       let consentString = 'consentString';
