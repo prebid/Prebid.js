@@ -65,7 +65,7 @@ Please use ```windtalker``` as the bidder code.
           }]
       },
       {
-          code: 'dfp-video-div',
+          code: 'dfp-video-div-container',
           sizes: [640, 480],
           mediaTypes: {
               video: {
