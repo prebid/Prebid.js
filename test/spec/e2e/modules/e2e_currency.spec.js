@@ -7,7 +7,6 @@ const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/hea
 const EXPECTED_TARGETING_KEYS = {
   hb_source: 'client',
   hb_source_appnexus: 'client',
-  hb_pb_appnexus: '7.50',
   hb_native_title_appn: 'This is a Prebid Native Creative',
   hb_native_linkurl: 'http://prebid.org/dev-docs/show-native-ads.html',
   hb_format: 'native',
@@ -16,7 +15,6 @@ const EXPECTED_TARGETING_KEYS = {
   hb_bidder_appnexus: 'appnexus',
   hb_native_linkurl_ap: 'http://prebid.org/dev-docs/show-native-ads.html',
   hb_native_title: 'This is a Prebid Native Creative',
-  hb_pb: '7.50',
   hb_native_brand_appn: 'Prebid.org',
   hb_bidder: 'appnexus',
   hb_format_appnexus: 'native',
@@ -44,6 +42,8 @@ describe('Prebid.js Currency Ad Unit Test', function () {
 
     const targetingKeys = result.value['/19968336/prebid_native_example_2'];
     expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
+    expect(targetingKeys.hb_pb_appnexus).to.be.a('string');
+    expect(targetingKeys.hb_pb).to.be.a('string');
     expect(targetingKeys.hb_adid).to.be.a('string');
     expect(targetingKeys.hb_native_body).to.be.a('string');
     expect(targetingKeys.hb_native_body_appne).to.be.a('string');

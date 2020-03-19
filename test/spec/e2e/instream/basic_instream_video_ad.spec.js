@@ -34,17 +34,15 @@ describe('Prebid.js Instream Video Ad Test', function () {
     }
   });
 
-  // it('should load the targeting keys with correct values', function () {
-  //   const result = browser.execute(function () {
-  //     console.log('pbjs::', window.top.pbjs);
-  //     return window.top.pbjs.getAdserverTargeting('video1');
-  //   });
-  //   console.log('result:::', result);
-  //   const targetingKeys = result.value['vid1'];
-  //   expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
-  //   expect(targetingKeys.hb_adid).to.be.a('string');
-  //   expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
-  // });
+  it('should load the targeting keys with correct values', function () {
+    const result = browser.execute(function () {
+      return window.top.pbjs.getAdserverTargeting('video1');
+    });
+    const targetingKeys = result.value['vid1'];
+    expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
+    expect(targetingKeys.hb_adid).to.be.a('string');
+    expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
+  });
 
   it('should render the instream ad on the page', function() {
     expect(browser.isVisible(CREATIVE_IFRAME_CSS_SELECTOR));
