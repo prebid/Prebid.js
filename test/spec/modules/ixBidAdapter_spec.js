@@ -391,12 +391,14 @@ describe('IndexexchangeAdapter', function () {
     describe('buildRequestMultipleIds', function () {
       before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
-        testCopy.IdentityIp.data.uids.push({
-          id: '1234567'
-        },
+        testCopy.IdentityIp.data.uids.push(
+          {
+            id: '1234567'
+          },
           {
             id: '2019-04-01TF2:34:41'
-          });
+          }
+        );
       });
       it('payload should have correct format and value (single identity w/ multi ids)', function () {
         const payload = JSON.parse(query.r);
