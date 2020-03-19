@@ -8,6 +8,27 @@ const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE, mediaTypes.
 
 const PROD_PREBID_ENDPOINT_URL = 'http://dh2-van-qa-n1.dailyhunt.in:8000/openrtb2/auction';
 
+const ORTB_NATIVE_TYPE_MAPPING = {
+  img: {
+    '3': 'image',
+    '1': 'icon'
+  },
+  data: {
+    '1': 'sponsoredBy',
+    '2': 'body',
+    '3': 'rating',
+    '4': 'likes',
+    '5': 'downloads',
+    '6': 'price',
+    '7': 'salePrice',
+    '8': 'phone',
+    '9': 'address',
+    '10': 'body2',
+    '11': 'displayUrl',
+    '12': 'cta'
+  }
+}
+
 const ORTB_NATIVE_PARAMS = {
   title: {
     id: 0,
@@ -206,6 +227,43 @@ const createPrebidBannerBid = (bid, bidResponse) => ({
   mediaType: 'banner'
 })
 
+const createPrebidNativeBid = (bid, bidResponse) => ({
+  requestId: bid.bidId,
+  cpm: 1.4,
+  creativeId: bidResponse.crid,
+  currency: 'USD',
+  ttl: 360,
+  netRevenue: bid.netRevenue === 'net',
+  native: parseNative(bidResponse),
+  mediaType: 'native'
+})
+
+const parseNative = (bid) => {
+  let adm = JSON.parse(bid.adm)
+  const { assets, link, imptrackers, jstracker } = adm.native;
+  const result = {
+    clickUrl: _encodeURIComponent(link.url),
+    clickTrackers: link.clicktrackers || [],
+    impressionTrackers: imptrackers || [],
+    javascriptTrackers: jstracker ? [ jstracker ] : []
+  };
+  assets.forEach(asset => {
+    if (!utils.isEmpty(asset.title)) {
+      result.title = asset.title.text
+    } else if (!utils.isEmpty(asset.img)) {
+      result[ORTB_NATIVE_TYPE_MAPPING.img[asset.img.type]] = {
+        url: asset.img.url,
+        height: asset.img.h,
+        width: asset.img.w
+      }
+    } else if (!utils.isEmpty(asset.data)) {
+      result[ORTB_NATIVE_TYPE_MAPPING.data[asset.data.type]] = asset.data.value
+    }
+  });
+
+  return result;
+}
+
 const createPrebidVideoBid = (bid, bidResponse) => ({
   requestId: bid.bidId,
   cpm: 1.4,
@@ -251,44 +309,19 @@ export const spec = {
       const _cbid = seatbid && seatbid[0] && seatbid[0].bid;
       let bidResponse = _cbid && _cbid[index];
 
-      let bannerObj = utils.deepAccess(bid.mediaTypes, `banner`);
-      let nativeObj = utils.deepAccess(bid.mediaTypes, `native`);
-      let videoObj = utils.deepAccess(bid.mediaTypes, `video`);
+      let bidMediaType = bidResponse.ext.prebid.type
 
       if (bidResponse) {
-        if (bannerObj) {
-          accumulator.push(createPrebidBannerBid(bid, bidResponse));
-        } else if (nativeObj) {
-          console.log(bidResponse)
-          let nativeBidResponse = {
-            requestId: bid.bidId,
-            cpm: 1.4,
-            creativeId: bidResponse.crid,
-            currency: 'USD',
-            ttl: 360,
-            netRevenue: bid.netRevenue === 'net',
-          };
-          nativeBidResponse.mediaType = 'native'
-          nativeBidResponse.native = {
-            title: 'MONTU THAKORE',
-            body: 'LOREM IPSUM',
-            body2: 'LOREM IPSUM 1',
-            cta: 'CLICK ME',
-            clickUrl: _encodeURIComponent('https://montu1996.github.io/'),
-            image: {
-              url: 'http://acdn.newshuntads.com/daedalus-banners/143597/1584464976_47321_990x505.jpg',
-              height: 250,
-              width: 300
-            },
-            icon: {
-              url: 'http://acdn.newshuntads.com/daedalus-banners/143597/1584464976_47321_990x505.jpg',
-              height: 250,
-              width: 300
-            }
-          }
-          accumulator.push(nativeBidResponse);
-        } else if (videoObj) {
-          accumulator.push(createPrebidVideoBid(bid, bidResponse));
+        switch (bidMediaType) {
+          case mediaTypes.BANNER:
+            accumulator.push(createPrebidBannerBid(bid, bidResponse));
+            break;
+          case mediaTypes.NATIVE:
+            accumulator.push(createPrebidNativeBid(bid, bidResponse));
+            break;
+          case mediaTypes.VIDEO:
+            accumulator.push(createPrebidVideoBid(bid, bidResponse));
+            break;
         }
       }
       return accumulator;
