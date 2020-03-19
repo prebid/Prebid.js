@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
@@ -224,7 +225,8 @@ const createPrebidBannerBid = (bid, bidResponse) => ({
   netRevenue: bid.netRevenue === 'net',
   currency: 'USD',
   ad: bidResponse.adm,
-  mediaType: 'banner'
+  mediaType: 'banner',
+  winUrl: bidResponse.nurl
 })
 
 const createPrebidNativeBid = (bid, bidResponse) => ({
@@ -235,7 +237,8 @@ const createPrebidNativeBid = (bid, bidResponse) => ({
   ttl: 360,
   netRevenue: bid.netRevenue === 'net',
   native: parseNative(bidResponse),
-  mediaType: 'native'
+  mediaType: 'native',
+  winUrl: bidResponse.nurl
 })
 
 const parseNative = (bid) => {
@@ -274,7 +277,8 @@ const createPrebidVideoBid = (bid, bidResponse) => ({
   netRevenue: bid.netRevenue === 'net',
   currency: 'USD',
   vastXml: bidResponse.adm.replace('4.0', '2.0'),
-  mediaType: 'video'
+  mediaType: 'video',
+  winUrl: bidResponse.nurl
 })
 
 export const spec = {
@@ -328,5 +332,12 @@ export const spec = {
     }, []);
   },
 
+  onBidWon: function(bid) {
+    ajax(bid.winUrl, null, null, {
+      withCredentials: true,
+      method: 'GET',
+      contentType: 'application/json'
+    })
+  }
 }
 registerBidder(spec);
