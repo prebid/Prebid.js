@@ -313,9 +313,8 @@ export const spec = {
       const _cbid = seatbid && seatbid[0] && seatbid[0].bid;
       let bidResponse = _cbid && _cbid[index];
 
-      let bidMediaType = bidResponse.ext.prebid.type
-
       if (bidResponse) {
+        let bidMediaType = bidResponse.ext.prebid.type
         switch (bidMediaType) {
           case mediaTypes.BANNER:
             accumulator.push(createPrebidBannerBid(bid, bidResponse));
