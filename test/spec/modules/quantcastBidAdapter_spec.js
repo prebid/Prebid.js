@@ -357,6 +357,27 @@ describe('Quantcast adapter', function () {
     expect(parsed.uspConsent).to.equal('consentString');
   });
 
+  it('propagates COPPA as 1 if coppa param is true in the bid request', function () {
+    bidRequest.params = {
+      publisherId: 'test_publisher_id',
+      coppa: true
+    };
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    expect(JSON.parse(requests[0].data).coppa).to.equal(1);
+  });
+
+  it('propagates COPPA as 0 if there is no coppa param or false in the bid request', function () {
+    const requestsWithoutCoppa = qcSpec.buildRequests([bidRequest], bidderRequest);
+    expect(JSON.parse(requestsWithoutCoppa[0].data).coppa).to.equal(0);
+
+    bidRequest.params = {
+      publisherId: 'test_publisher_id',
+      coppa: false
+    };
+    const requestsWithFalseCoppa = qcSpec.buildRequests([bidRequest], bidderRequest);
+    expect(JSON.parse(requestsWithFalseCoppa[0].data).coppa).to.equal(0);
+  });
+
   describe('`interpretResponse`', function () {
     // The sample response is from https://wiki.corp.qc/display/adinf/QCX
     const body = {
