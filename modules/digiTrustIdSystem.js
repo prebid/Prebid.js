@@ -46,7 +46,14 @@ var isFunc = function (fn) {
   return typeof (fn) === 'function';
 }
 
+var _savedId = null; // closure variable for storing Id to avoid additional requests
+
 function callApi(options) {
+  var ajaxOptions = {
+    method: 'GET',
+    withCredentials: true
+  };
+
   ajax(
     DT_ID_SVC,
     {
@@ -54,9 +61,7 @@ function callApi(options) {
       error: options.fail
     },
     null,
-    {
-      method: 'GET'
-    }
+    ajaxOptions
   );
 }
 
@@ -91,8 +96,6 @@ function writeDigiId(id) {
  *
  */
 function initDigitrustFacade(config) {
-  var _savedId = null; // closure variable for storing Id to avoid additional requests
-
   clearTimeout(fallbackTimer);
   fallbackTimer = 0;
 
@@ -116,7 +119,7 @@ function initDigitrustFacade(config) {
           try {
             inter.initCallback(idResponse);
           } catch (ex) {
-            utils.logError('Exception in passed DigiTrust init callback');
+            utils.logError('Exception in passed DigiTrust init callback', ex);
           }
         }
       }
@@ -146,9 +149,9 @@ function initDigitrustFacade(config) {
             success: true
           }
           try {
-            writeDigiId(respText);
             idResult.identity = JSON.parse(respText);
-            _savedId = idResult;
+            _savedId = idResult; // Save result to the cache variable
+            writeDigiId(respText);
           } catch (ex) {
             idResult.success = false;
             delete idResult.identity;
@@ -253,6 +256,10 @@ var ResultWrapper = function (opts) {
    */
   this.userIdCallback = function (callback) {
     idSystemFn = callback;
+    if (me.idObj == null) {
+      me.idObj = _savedId;
+    }
+
     if (me.idObj != null && isFunc(callback)) {
       callback(wrapIdResult());
     }
@@ -262,6 +269,10 @@ var ResultWrapper = function (opts) {
    * Return a wrapped result formatted for userId system
    */
   function wrapIdResult() {
+    if (me.idObj == null) {
+      me.idObj = _savedId;
+    }
+
     if (me.idObj == null) {
       return null;
     }
