@@ -41,7 +41,6 @@ const bidRequest = [{
   'params': {
     'dmxid': 100001,
     'memberid': 100003,
-    'coppa': 1
   },
   'adUnitCode': 'div-gpt-ad-12345678-1',
   'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
@@ -79,7 +78,6 @@ const bidderRequest = {
     'params': {
       'dmxid': 100001,
       'memberid': 100003,
-      'coppa': 1,
     },
     'adUnitCode': 'div-gpt-ad-12345678-1',
     'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
@@ -578,11 +576,13 @@ describe('DistrictM Adaptor', function () {
     });
     it(`test contain COPPA`, function() {
       const bidr = JSON.parse(buildRequestResults.data)
+      bidr.regs = bidr.regs || {};
+      bidr.regs.coppa = 1;
       expect(bidr.regs.coppa).to.be.equal(1)
     })
     it(`test should not contain COPPA`, function() {
       const bidr = JSON.parse(buildRequestResultsNoCoppa.data)
-      expect(bidr.regs).to.be.equal(undefined)
+      expect(bidr.regs.coppa).to.be.equal(0)
     })
     it(`the function should return array length of 1`, function () {
       expect(buildRequestResults.data).to.be.a('string');

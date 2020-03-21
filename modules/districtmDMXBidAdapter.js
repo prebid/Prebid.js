@@ -91,6 +91,8 @@ export const spec = {
       dmxRequest.user.ext = {};
       dmxRequest.user.ext.consent = bidderRequest.gdprConsent.consentString;
     }
+    dmxRequest.regs = dmxRequest.regs || {};
+    dmxRequest.regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
     if (bidderRequest && bidderRequest.uspConsent) {
       dmxRequest.regs = dmxRequest.regs || {};
       dmxRequest.regs.ext = dmxRequest.regs.ext || {};
@@ -103,10 +105,6 @@ export const spec = {
       dmxRequest.source.ext.schain = schain || {}
     } catch (e) {}
     let tosendtags = bidRequest.map(dmx => {
-      if (dmx.params.coppa) {
-        dmxRequest.regs = dmxRequest.regs || {};
-        dmxRequest.regs.coppa = dmx.params.coppa;
-      }
       var obj = {};
       obj.id = dmx.bidId;
       obj.tagid = String(dmx.params.dmxid);
