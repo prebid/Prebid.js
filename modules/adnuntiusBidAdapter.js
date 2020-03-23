@@ -16,7 +16,7 @@ export const spec = {
     const requests = [];
 
     for (const bid of validBidRequests) {
-      const network = bid.params.network;
+      const network = bid.params.network || 'network';
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
 
@@ -24,9 +24,9 @@ export const spec = {
       networks[network].adUnits = networks[network].adUnits || [];
       networks[network].adUnits.push({ ...bid.params.targeting, auId: bid.params.auId });
     }
-
-    for (var i = 0; i < networks.length; i++) {
-      const network = networks[i];
+    const networkKeys = Object.keys(networks)
+    for (var i = 0; i < networkKeys.length; i++) {
+      const network = networkKeys[i];
       requests.push({
         method: 'POST',
         url: ENDPOINT_URL,
