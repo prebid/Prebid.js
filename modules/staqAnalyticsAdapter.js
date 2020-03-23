@@ -212,10 +212,10 @@ const ORGANIC = '(organic)';
 
 export let storage = {
   getItem: (name) => {
-    return localStorage.getItem(name);
+    return utils.getDataFromLocalStorage(name);
   },
   setItem: (name, value) => {
-    localStorage.setItem(name, value);
+    utils.setDataInLocalStorage(name, value);
   }
 };
 
