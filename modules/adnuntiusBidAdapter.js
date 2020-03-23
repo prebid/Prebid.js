@@ -15,7 +15,8 @@ export const spec = {
     const bidRequests = {};
     const requests = [];
 
-    for (const bid of validBidRequests) {
+    for (var i = 0; i < validBidRequests.length; i++) {
+      const bid = validBidRequests[i]
       const network = bid.params.network || 'network';
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
@@ -24,9 +25,10 @@ export const spec = {
       networks[network].adUnits = networks[network].adUnits || [];
       networks[network].adUnits.push({ ...bid.params.targeting, auId: bid.params.auId });
     }
+
     const networkKeys = Object.keys(networks)
-    for (var i = 0; i < networkKeys.length; i++) {
-      const network = networkKeys[i];
+    for (var j = 0; j < networkKeys.length; j++) {
+      const network = networkKeys[j];
       requests.push({
         method: 'POST',
         url: ENDPOINT_URL,
@@ -42,11 +44,12 @@ export const spec = {
     const bidResponses = [];
     const serverBody = serverResponse.body;
 
-    for (const [i, adUnit] of serverBody.adUnits.entries()) {
+    for (var k = 0; k < serverBody.adUnits.length; k++) {
+      const adUnit = serverBody.adUnits[k]
       if (adUnit.matchedAdCount > 0) {
         const bid = adUnit.ads[0];
         bidResponses.push({
-          requestId: bidRequest.bid[i].bidId,
+          requestId: bidRequest.bid[k].bidId,
           cpm: (bid.cpm) ? bid.cpm.amount : 0,
           width: Number(bid.creativeWidth),
           height: Number(bid.creativeHeight),
