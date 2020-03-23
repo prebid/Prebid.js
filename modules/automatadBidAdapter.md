@@ -3,7 +3,7 @@
 ```
 Module Name:  Automatad Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer:   ''
+Maintainer:   tech@automatad.com
 ```
 
 # Description
