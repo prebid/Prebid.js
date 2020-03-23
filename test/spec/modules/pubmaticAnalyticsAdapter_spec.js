@@ -32,7 +32,7 @@ const BID = {
   'statusMessage': 'Bid available',
   'bidId': '2ecff0db240757',
   'adId': 'fake_ad_id',
-  'source': 'client',
+  'source': 's2s',
   'requestId': '2ecff0db240757',
   'currency': 'USD',
   'creativeId': '3571560',
@@ -59,7 +59,7 @@ const BID = {
     'hb_adid': '2ecff0db240757',
     'hb_pb': 1.20,
     'hb_size': '640x480',
-    'hb_source': 'client'
+    'hb_source': 'server'
   },
   getStatusCode() {
     return 1;
@@ -69,7 +69,7 @@ const BID = {
 const BID2 = Object.assign({}, BID, {
   adUnitCode: '/19968336/header-bid-tag-1',
   bidId: '3bd4ebb1c900e2',
-  adId: 'fake_ad_id',
+  adId: 'fake_ad_id_2',
   requestId: '3bd4ebb1c900e2',
   width: 728,
   height: 90,
@@ -79,7 +79,6 @@ const BID2 = Object.assign({}, BID, {
   dealId: 'the-deal-id',
   dealChannel: 'PMP',
   mi: 'matched-impression',
-  source: 'server',
   seatBidId: 'aaaa-bbbb-cccc-dddd',
   adserverTargeting: {
     'hb_bidder': 'pubmatic',
@@ -260,6 +259,7 @@ describe('pubmatic analytics adapter', function () {
       s2sConfig: {
         timeout: 1000,
         accountId: 10000,
+        bidders: ['pubmatic']
       }
     })
   });
@@ -337,7 +337,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].dc).to.equal('');
       expect(data.s[0].ps[0].l1).to.equal(3214);
       expect(data.s[0].ps[0].l2).to.equal(0);
-      expect(data.s[0].ps[0].ss).to.equal(0);
+      expect(data.s[0].ps[0].ss).to.equal(1);
       expect(data.s[0].ps[0].t).to.equal(0);
       expect(data.s[0].ps[0].wb).to.equal(1);
       expect(data.s[0].ps[0].af).to.equal('video');
@@ -387,7 +387,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.en).to.equal('1.23');
     });
 
-    it('Logger: when bid is not submitted, default bid status 1 check', function() {
+    it('Logger: when bid is not submitted, default bid status 1 check: pubmatic set as s2s', function() {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
@@ -417,7 +417,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].mi).to.equal(undefined);
       expect(data.s[1].ps[0].l1).to.equal(0);
       expect(data.s[1].ps[0].l2).to.equal(0);
-      expect(data.s[1].ps[0].ss).to.equal(0);
+      expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(0);
       expect(data.s[1].ps[0].wb).to.equal(0);
       expect(data.s[1].ps[0].af).to.equal(undefined);
@@ -453,7 +453,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].mi).to.equal(undefined);
       expect(data.s[1].ps[0].l1).to.equal(0);
       expect(data.s[1].ps[0].l2).to.equal(0);
-      expect(data.s[1].ps[0].ss).to.equal(0);
+      expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(1);
       expect(data.s[1].ps[0].wb).to.equal(0);
       expect(data.s[1].ps[0].af).to.equal(undefined);

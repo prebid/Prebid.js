@@ -34,6 +34,7 @@ const enc = window.encodeURIComponent;
 let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
 let profileId = DEFAULT_PROFILE_ID; // int: optional
 let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
+let s2sBidders = [];
 
 /// /////////// HELPER FUNCTIONS //////////////
 
@@ -180,7 +181,8 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
       'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
       'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
       'l2': 0,
-      'ss': (bid.source === 'server' ? 1 : 0), // todo: is there any special handling required as per OW?
+      // 'ss': (bid.source === 'server' ? 1 : 0), // todo: is there any special handling required as per OW?
+      'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
       't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
       'wb': highestsBid.bidId === bid.bidId ? 1 : 0,
       'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
@@ -366,14 +368,20 @@ function bidTimeoutHandler(args) {
 let baseAdapter = adapter({analyticsType: 'endpoint'});
 let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
-  enableAnalytics(config = {}) {
+  enableAnalytics(conf = {}) {
     let error = false;
-    if (typeof config.options === 'object') {
-      if (config.options.publisherId) {
-        publisherId = Number(config.options.publisherId);
+
+    s2sBidders = (function() {
+      let s2sConf = config.getConfig('s2sConfig');
+      return (s2sConf && utils.isArray(s2sConf.bidders)) ? s2sConf.bidders : [];
+    }());
+
+    if (typeof conf.options === 'object') {
+      if (conf.options.publisherId) {
+        publisherId = Number(conf.options.publisherId);
       }
-      profileId = Number(config.options.profileId) || DEFAULT_PROFILE_ID;
-      profileVersionId = Number(config.options.profileVersionId) || DEFAULT_PROFILE_VERSION_ID;
+      profileId = Number(conf.options.profileId) || DEFAULT_PROFILE_ID;
+      profileVersionId = Number(conf.options.profileVersionId) || DEFAULT_PROFILE_VERSION_ID;
     } else {
       utils.logError(LOG_PRE_FIX + 'Config not found.');
       error = true;
@@ -387,7 +395,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
     if (error) {
       utils.logError(LOG_PRE_FIX + 'Not collecting data due to error(s).');
     } else {
-      baseAdapter.enableAnalytics.call(this, config);
+      baseAdapter.enableAnalytics.call(this, conf);
     }
   },
 
@@ -395,6 +403,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
     publisherId = DEFAULT_PUBLISHER_ID;
     profileId = DEFAULT_PROFILE_ID;
     profileVersionId = DEFAULT_PROFILE_VERSION_ID;
+    s2sBidders = [];
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
