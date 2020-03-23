@@ -233,10 +233,6 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
 function processCmpData(consentObject, hookConfig) {
-  // always send gdprApplies: true to adapters when gdprScope is true
-  if (gdprScope === true && consentObject && consentObject.getConsentData) {
-    consentObject.getConsentData.gdprApplies = true;
-  }
   let gdprApplies = consentObject && consentObject.getConsentData && consentObject.getConsentData.gdprApplies;
   if (
     (typeof gdprApplies !== 'boolean') ||
@@ -287,7 +283,8 @@ function storeConsentData(cmpConsentObject) {
   consentData = {
     consentString: (cmpConsentObject) ? cmpConsentObject.getConsentData.consentData : undefined,
     vendorData: (cmpConsentObject) ? cmpConsentObject.getVendorConsents : undefined,
-    gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : undefined
+    // gdprApplies should be true if gdprScope is true
+    gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : ((gdprScope === true) || undefined)
   };
   gdprDataHandler.setConsentData(consentData);
 }

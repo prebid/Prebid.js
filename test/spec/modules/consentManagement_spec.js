@@ -638,7 +638,7 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(cmpStub);
       });
 
-      it('should set consent.gdprApplies to true when defaultGdprScope whas set to true', function () {
+      it('should not set consent.gdprApplies to true if defaultGdprScope is true', function () {
         let testConsentData = {
           gdprApplies: false,
           consentData: 'xyz'
@@ -660,7 +660,7 @@ describe('consentManagement', function () {
 
         let consent = gdprDataHandler.getConsentData();
 
-        expect(consent.gdprApplies).to.be.true;
+        expect(consent.gdprApplies).to.be.false;
       });
     });
 
