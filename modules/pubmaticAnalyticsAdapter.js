@@ -281,6 +281,10 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
 function auctionInitHandler(args) {
+  s2sBidders = (function() {
+    let s2sConf = config.getConfig('s2sConfig');
+    return (s2sConf && utils.isArray(s2sConf.bidders)) ? s2sConf.bidders : [];
+  }());
   let cacheEntry = utils.pick(args, [
     'timestamp',
     'timeout',
@@ -370,11 +374,6 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(conf = {}) {
     let error = false;
-
-    s2sBidders = (function() {
-      let s2sConf = config.getConfig('s2sConfig');
-      return (s2sConf && utils.isArray(s2sConf.bidders)) ? s2sConf.bidders : [];
-    }());
 
     if (typeof conf.options === 'object') {
       if (conf.options.publisherId) {
