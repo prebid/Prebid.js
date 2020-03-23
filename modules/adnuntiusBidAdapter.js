@@ -25,7 +25,7 @@ export const spec = {
       networks[network].adUnits.push({ ...bid.params.targeting, auId: bid.params.auId });
     }
 
-    for ( var i=0; i < networks.length; i++ ) {
+    for (var i = 0; i < networks.length; i++) {
       const network = networks[i];
       requests.push({
         method: 'POST',
