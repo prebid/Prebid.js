@@ -8,6 +8,7 @@ const BIDDER_ALIAS = 'dh';
 const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE, mediaTypes.VIDEO];
 
 const PROD_PREBID_ENDPOINT_URL = 'http://dh2-van-qa-n1.dailyhunt.in:8000/openrtb2/auction';
+const PROD_PREBID_TEST_ENDPOINT_URL = 'http://dh2-van-qa-test-n1.dailyhunt.in:8000/openrtb2/auction';
 
 const ORTB_NATIVE_TYPE_MAPPING = {
   img: {
@@ -204,9 +205,9 @@ const createOrtbImpVideoObj = (bid, videoObj) => ({
   ]
 })
 
-const createServerRequest = (ortbRequest, validBidRequests) => ({
+const createServerRequest = (ortbRequest, validBidRequests, isTestMode = 'false') => ({
   method: 'POST',
-  url: PROD_PREBID_ENDPOINT_URL,
+  url: isTestMode === 'true' ? PROD_PREBID_TEST_ENDPOINT_URL : PROD_PREBID_ENDPOINT_URL,
   data: JSON.stringify(ortbRequest),
   options: {
     contentType: 'application/json',
@@ -219,8 +220,8 @@ const createPrebidBannerBid = (bid, bidResponse) => ({
   requestId: bid.bidId,
   cpm: 1.4,
   creativeId: bidResponse.crid,
-  width: 300,
-  height: 250,
+  width: bidResponse.w,
+  height: bidResponse.h,
   ttl: 360,
   netRevenue: bid.netRevenue === 'net',
   currency: 'USD',
@@ -238,7 +239,9 @@ const createPrebidNativeBid = (bid, bidResponse) => ({
   netRevenue: bid.netRevenue === 'net',
   native: parseNative(bidResponse),
   mediaType: 'native',
-  winUrl: bidResponse.nurl
+  winUrl: bidResponse.nurl,
+  width: bidResponse.w,
+  height: bidResponse.h,
 })
 
 const parseNative = (bid) => {
@@ -281,6 +284,18 @@ const createPrebidVideoBid = (bid, bidResponse) => ({
   winUrl: bidResponse.nurl
 })
 
+const getQueryVariable = (variable) => {
+  let query = window.location.search.substring(1);
+  let vars = query.split('&');
+  for (var i = 0; i < vars.length; i++) {
+    let pair = vars[i].split('=');
+    if (decodeURIComponent(pair[0]) == variable) {
+      return decodeURIComponent(pair[1]);
+    }
+  }
+  return false;
+}
+
 export const spec = {
   code: BIDDER_CODE,
 
@@ -301,7 +316,7 @@ export const spec = {
       ortbReq.imp.push(imp);
     });
 
-    serverRequests.push({ ...createServerRequest(ortbReq, validBidRequests) });
+    serverRequests.push({ ...createServerRequest(ortbReq, validBidRequests, getQueryVariable('dh_test')) });
 
     return serverRequests;
   },
@@ -309,26 +324,27 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     const { seatbid } = serverResponse.body;
     let bids = request.bids;
-    return bids.reduce((accumulator, bid, index) => {
-      const _cbid = seatbid && seatbid[0] && seatbid[0].bid;
-      let bidResponse = _cbid && _cbid[index];
+    let prebidResponse = [];
 
-      if (bidResponse) {
-        let bidMediaType = bidResponse.ext.prebid.type
-        switch (bidMediaType) {
-          case mediaTypes.BANNER:
-            accumulator.push(createPrebidBannerBid(bid, bidResponse));
-            break;
-          case mediaTypes.NATIVE:
-            accumulator.push(createPrebidNativeBid(bid, bidResponse));
-            break;
-          case mediaTypes.VIDEO:
-            accumulator.push(createPrebidVideoBid(bid, bidResponse));
-            break;
-        }
+    let seatBids = seatbid[0].bid;
+
+    seatBids.forEach(ortbResponseBid => {
+      let bidId = ortbResponseBid.impid;
+      let actualBid = bids.find((bid) => bid.bidId === bidId);
+      let bidMediaType = ortbResponseBid.ext.prebid.type
+      switch (bidMediaType) {
+        case mediaTypes.BANNER:
+          prebidResponse.push(createPrebidBannerBid(actualBid, ortbResponseBid));
+          break;
+        case mediaTypes.NATIVE:
+          prebidResponse.push(createPrebidNativeBid(actualBid, ortbResponseBid));
+          break;
+        case mediaTypes.VIDEO:
+          prebidResponse.push(createPrebidVideoBid(actualBid, ortbResponseBid));
+          break;
       }
-      return accumulator;
-    }, []);
+    })
+    return prebidResponse;
   },
 
   onBidWon: function(bid) {
