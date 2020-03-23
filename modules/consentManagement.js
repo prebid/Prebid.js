@@ -283,8 +283,7 @@ function storeConsentData(cmpConsentObject) {
   consentData = {
     consentString: (cmpConsentObject) ? cmpConsentObject.getConsentData.consentData : undefined,
     vendorData: (cmpConsentObject) ? cmpConsentObject.getVendorConsents : undefined,
-    // gdprApplies should be true if gdprScope is true
-    gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : ((gdprScope === true) || undefined)
+    gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : gdprScope
   };
   gdprDataHandler.setConsentData(consentData);
 }

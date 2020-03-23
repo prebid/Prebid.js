@@ -875,7 +875,7 @@ describe('consentManagement', function () {
         sinon.assert.calledOnce(utils.logWarn);
         expect(didHookReturn).to.be.true;
         expect(consent.consentString).to.be.undefined;
-        expect(consent.gdprApplies).to.be.undefined;
+        expect(consent.gdprApplies).to.be.false;
       });
     });
   });
