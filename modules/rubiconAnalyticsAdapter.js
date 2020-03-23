@@ -103,7 +103,8 @@ function sendMessage(auctionId, bidWonId) {
         'dealId',
         'dimensions',
         'mediaType',
-        'floorValue'
+        'floorValue',
+        'floorRule'
       ]) : undefined
     ]);
   }
@@ -196,7 +197,8 @@ function sendMessage(auctionId, bidWonId) {
         'location',
         'modelName', () => auctionCache.floorData.modelVersion || '',
         'skipped',
-        'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS')
+        'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
+        'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals')
       ]);
     }
 
@@ -280,7 +282,8 @@ export function parseBidResponse(bid, previousBidResponse) {
       'height'
     ]),
     'seatBidId',
-    'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue')
+    'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
+    'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined
   ]);
 }
 

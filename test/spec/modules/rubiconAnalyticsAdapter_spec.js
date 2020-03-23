@@ -728,7 +728,8 @@ describe('rubicon analytics adapter', function () {
         location: 'setConfig',
         modelName: 'someModelName',
         skipped: false,
-        enforcement: true
+        enforcement: true,
+        dealsEnforced: false
       });
       // first adUnit's adSlot
       expect(message.auctions[0].adUnits[0].adSlot).to.equal('12345/sports');
