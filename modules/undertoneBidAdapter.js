@@ -2,8 +2,8 @@
  * Adapter to send bids to Undertone
  */
 
-import * as urlUtils from '../src/url';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as urlUtils from '../src/url.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';

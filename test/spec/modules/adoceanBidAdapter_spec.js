@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adoceanBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/adoceanBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('AdoceanAdapter', function () {
   const adapter = newBidder(spec);
@@ -95,7 +95,7 @@ describe('AdoceanAdapter', function () {
     it('sends bid request to url via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/ad.json`));
+      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/_[0-9]*/ad.json`));
     });
 
     it('should attach id to url', function () {

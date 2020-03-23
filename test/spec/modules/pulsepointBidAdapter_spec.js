@@ -1,7 +1,7 @@
 /* eslint dot-notation:0, quote-props:0 */
 import {expect} from 'chai';
-import {spec} from 'modules/pulsepointBidAdapter';
-import {deepClone} from 'src/utils';
+import {spec} from 'modules/pulsepointBidAdapter.js';
+import {deepClone} from 'src/utils.js';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
