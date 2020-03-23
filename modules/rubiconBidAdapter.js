@@ -10,6 +10,7 @@ export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fast
 export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
+const GVLID = 52;
 const DIGITRUST_PROP_NAMES = {
   FASTLANE: {
     id: 'dt.id',
@@ -106,6 +107,7 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
   code: 'rubicon',
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * @param {object} bid

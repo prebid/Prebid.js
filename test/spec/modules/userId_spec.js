@@ -4,7 +4,8 @@ import {
   init,
   requestBidsHook,
   setSubmoduleRegistry,
-  syncDelay
+  syncDelay,
+  coreStorage
 } from 'modules/userId/index.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -77,12 +78,14 @@ describe('User ID', function() {
       utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       utils.setCookie('pubcid_alt', 'altpubcid200000', (new Date(Date.now() + 5000).toUTCString()));
       sinon.spy(utils, 'setCookie');
+      sinon.spy(coreStorage, 'setCookie');
     });
 
     afterEach(function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       config.resetConfig();
       utils.setCookie.restore();
+      coreStorage.setCookie.restore();
     });
 
     after(function() {
@@ -211,7 +214,7 @@ describe('User ID', function() {
         });
       });
       // Because extend is true, the cookie will be updated even if it exists already
-      expect(utils.setCookie.callCount).to.equal(1);
+      expect(coreStorage.setCookie.callCount).to.equal(1);
     });
 
     it('Disable auto create', function () {

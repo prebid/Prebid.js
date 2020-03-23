@@ -11,7 +11,7 @@ import includes from 'core-js/library/fn/array/includes.js';
 import { ajax } from '../ajax.js';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess, isArray } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
-import { getHook } from '../hook.js';
+import { getHook, hook } from '../hook.js';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -331,21 +331,7 @@ export function newBidder(spec) {
   });
 
   function registerSyncs(responses, gdprConsent, uspConsent) {
-    if (spec.getUserSyncs && !adapterManager.aliasRegistry[spec.code]) {
-      let filterConfig = config.getConfig('userSync.filterSettings');
-      let syncs = spec.getUserSyncs({
-        iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
-        pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
-      }, responses, gdprConsent, uspConsent);
-      if (syncs) {
-        if (!Array.isArray(syncs)) {
-          syncs = [syncs];
-        }
-        syncs.forEach((sync) => {
-          userSync.registerSync(sync.type, spec.code, sync.url)
-        });
-      }
-    }
+    registerSyncInner(spec, responses, gdprConsent, uspConsent);
   }
 
   function filterAndWarn(bid) {
@@ -356,6 +342,24 @@ export function newBidder(spec) {
     return true;
   }
 }
+
+export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent) {
+  if (spec.getUserSyncs && !adapterManager.aliasRegistry[spec.code]) {
+    let filterConfig = config.getConfig('userSync.filterSettings');
+    let syncs = spec.getUserSyncs({
+      iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
+      pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
+    }, responses, gdprConsent, uspConsent);
+    if (syncs) {
+      if (!Array.isArray(syncs)) {
+        syncs = [syncs];
+      }
+      syncs.forEach((sync) => {
+        userSync.registerSync(sync.type, spec.code, sync.url)
+      });
+    }
+  }
+}, 'registerSyncs')
 
 export function preloadBidderMappingFile(fn, adUnits) {
   if (!config.getConfig('adpod.brandCategoryExclusion')) {

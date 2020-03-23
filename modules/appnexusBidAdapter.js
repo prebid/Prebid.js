@@ -7,6 +7,7 @@ import { auctionManager } from '../src/auctionManager.js';
 import find from 'core-js/library/fn/array/find.js';
 import includes from 'core-js/library/fn/array/includes.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
+import { newStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -38,9 +39,12 @@ const mappingFileUrl = 'https://acdn.adnxs.com/prebid/appnexus-mapping/mappings.
 const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
+const GVLID = 32;
+const storage = newStorageManager({gvlid: GVLID});
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'adasta'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -61,6 +65,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
+    storage.setCookie('hello', 'world');
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj = {};
@@ -93,7 +98,7 @@ export const spec = {
     let debugObj = {};
     let debugObjParams = {};
     const debugCookieName = 'apn_prebid_debug';
-    const debugCookie = utils.getCookie(debugCookieName) || null;
+    const debugCookie = storage.getCookie(debugCookieName) || null;
 
     if (debugCookie) {
       try {

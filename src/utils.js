@@ -889,7 +889,7 @@ export function setCookie(key, value, expires, sameSite, domain) {
 /**
  * @returns {boolean}
  */
-export function localStorageIsEnabled () {
+export function localStorageIsEnabled() {
   if (hasDeviceAccess()) {
     try {
       localStorage.setItem('prebid.cookieTest', '1');

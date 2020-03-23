@@ -103,14 +103,16 @@ import * as utils from '../../src/utils.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
-import {module} from '../../src/hook.js';
+import {module, hook} from '../../src/hook.js';
 import {createEidsArray} from './eids.js';
+import { newStorageManager } from '../../src/storageManager.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const DEFAULT_SYNC_DELAY = 500;
 const NO_AUCTION_DELAY = 0;
+export const coreStorage = newStorageManager({moduleName: 'userid', moduleType: 'prebid-module'});
 
 /** @type {string[]} */
 let validStorageTypes = [];
@@ -150,15 +152,15 @@ function setStoredValue(storage, value) {
     const valueStr = utils.isPlainObject(value) ? JSON.stringify(value) : value;
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     if (storage.type === COOKIE) {
-      utils.setCookie(storage.name, valueStr, expiresStr, 'Lax');
+      coreStorage.setCookie(storage.name, valueStr, expiresStr, 'Lax');
       if (typeof storage.refreshInSeconds === 'number') {
-        utils.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr);
+        coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr);
       }
     } else if (storage.type === LOCAL_STORAGE) {
-      utils.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
-      utils.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
+      localStorage.setItem(`${storage.name}_exp`, expiresStr);
+      localStorage.setItem(storage.name, encodeURIComponent(valueStr));
       if (typeof storage.refreshInSeconds === 'number') {
-        utils.setDataInLocalStorage(`${storage.name}_last`, new Date().toUTCString());
+        localStorage.setItem(`${storage.name}_last`, new Date().toUTCString());
       }
     }
   } catch (error) {
@@ -176,15 +178,15 @@ function getStoredValue(storage, key = undefined) {
   let storedValue;
   try {
     if (storage.type === COOKIE) {
-      storedValue = utils.getCookie(storedKey);
+      storedValue = coreStorage.getCookie(storedKey);
     } else if (storage.type === LOCAL_STORAGE) {
-      const storedValueExp = utils.getDataFromLocalStorage(`${storage.name}_exp`);
+      const storedValueExp = localStorage.getItem(`${storage.name}_exp`);
       // empty string means no expiration set
       if (storedValueExp === '') {
-        storedValue = utils.getDataFromLocalStorage(storedKey);
+        storedValue = localStorage.getItem(storedKey);
       } else if (storedValueExp) {
         if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
-          storedValue = decodeURIComponent(utils.getDataFromLocalStorage(storedKey));
+          storedValue = decodeURIComponent(localStorage.getItem(storedKey));
         }
       }
     }
@@ -365,18 +367,26 @@ function getUserIds() {
 }
 
 /**
+ * This hook returns updated list of submodules which are allowed to do get user id based on TCF 2 enforcement rules configured
+ */
+export const validateGdprEnforcement = hook('sync', function (submodules, consentData) {
+  return submodules;
+}, 'validateGdprEnforcement');
+
+/**
  * @param {SubmoduleContainer[]} submodules
  * @param {ConsentData} consentData
  * @returns {SubmoduleContainer[]} initialized submodules
  */
 function initSubmodules(submodules, consentData) {
   // gdpr consent with purpose one is required, otherwise exit immediately
+  let userIdModules = validateGdprEnforcement(submodules, consentData);
   if (!hasGDPRConsent(consentData)) {
     utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
     return [];
   }
 
-  return submodules.reduce((carry, submodule) => {
+  return userIdModules.reduce((carry, submodule) => {
     // There are two submodule configuration types to handle: storage or value
     // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
     // 2. value: pass directly to bids
@@ -522,17 +532,17 @@ export function init(config) {
 
   // list of browser enabled storage types
   validStorageTypes = [
-    utils.localStorageIsEnabled() ? LOCAL_STORAGE : null,
-    utils.cookiesAreEnabled() ? COOKIE : null
+    coreStorage.localStorageIsEnabled() ? LOCAL_STORAGE : null,
+    coreStorage.cookiesAreEnabled() ? COOKIE : null
   ].filter(i => i !== null);
 
   // exit immediately if opt out cookie or local storage keys exists.
-  if (validStorageTypes.indexOf(COOKIE) !== -1 && (utils.getCookie('_pbjs_id_optout') || utils.getCookie('_pubcid_optout'))) {
+  if (validStorageTypes.indexOf(COOKIE) !== -1 && (coreStorage.getCookie('_pbjs_id_optout') || coreStorage.getCookie('_pubcid_optout'))) {
     utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
     return;
   }
   // _pubcid_optout is checked for compatiblility with pubCommonId
-  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (utils.getDataFromLocalStorage('_pbjs_id_optout') || utils.getDataFromLocalStorage('_pubcid_optout'))) {
+  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (localStorage.getItem('_pbjs_id_optout') || localStorage.getItem('_pubcid_optout'))) {
     utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
     return;
   }
