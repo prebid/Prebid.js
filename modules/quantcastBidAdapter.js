@@ -141,6 +141,7 @@ export const spec = {
         gdprConsent: gdprConsent.consentString,
         uspSignal: uspConsent ? 1 : 0,
         uspConsent,
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
         prebidJsVersion: '$prebid.version$'
       };
 
