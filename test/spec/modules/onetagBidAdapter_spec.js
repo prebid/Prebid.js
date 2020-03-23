@@ -1,9 +1,8 @@
 import { spec, isValid, hasTypeVideo } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 describe('onetag', function () {
-  const BANNER = 'banner';
-  const VIDEO = 'video';
   function createBid() {
     return {
       'bidder': 'onetag',

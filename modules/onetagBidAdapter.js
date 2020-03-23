@@ -1,12 +1,11 @@
 'use strict';
 
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 const { registerBidder } = require('../src/adapters/bidderFactory.js');
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
-const BANNER = 'banner';
-const VIDEO = 'video';
 
 /**
  * Determines whether or not the given bid request is valid.
