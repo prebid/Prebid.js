@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import {BANNER} from '../src/mediaTypes';
-import {ajax} from '../src/ajax';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER = 'automatad'
 
