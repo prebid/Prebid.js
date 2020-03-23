@@ -1,4 +1,4 @@
-import { spec } from 'modules/onetagBidAdapter.js';
+import { spec, isValid, hasTypeVideo } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 
 describe('onetag', function () {
@@ -20,7 +20,10 @@ describe('onetag', function () {
 
   function createBannerBid(bidRequest) {
     const bid = bidRequest || createBid();
-    bid.sizes = bid.sizes || [[300, 250]];
+    bid.mediaTypes = bid.mediaTypes || {};
+    bid.mediaTypes.banner = {
+      sizes: [[300, 250]]
+    };
     return bid;
   }
 
@@ -31,7 +34,7 @@ describe('onetag', function () {
       context: 'instream',
       mimes: ['video/mp4', 'video/webm', 'application/javascript', 'video/ogg'],
       playerSize: [640, 480]
-    }
+    };
     return bid;
   }
 
@@ -42,54 +45,12 @@ describe('onetag', function () {
       context: 'outstream',
       mimes: ['video/mp4', 'video/webm', 'application/javascript', 'video/ogg'],
       playerSize: [640, 480]
-    }
+    };
     return bid;
   }
 
-  function hasTypeVideo(bid) {
-    return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.video !== 'undefined';
-  }
-
-  function isValid(type, bid) {
-    if (type === BANNER) {
-      return parseSizes(bid).length > 0;
-    } else if (type === VIDEO) {
-      const context = bid.mediaTypes.video.context;
-      if (context === 'outstream') {
-        return parseVideoSize(bid).length > 0 && typeof bid.renderer !== 'undefined' && typeof bid.renderer.render !== 'undefined' && typeof bid.renderer.url !== 'undefined';
-      } else if (context === 'instream') {
-        return parseVideoSize(bid).length > 0;
-      }
-    }
-    return false;
-  }
-
-  function parseVideoSize(bid) {
-    const playerSize = bid.mediaTypes.video.playerSize;
-    if (typeof playerSize !== 'undefined' && Array.isArray(playerSize) && playerSize.length > 0) {
-      return getSizes(playerSize)
-    }
-    return [];
-  }
-
-  function parseSizes(bid) {
-    let ret = [];
-    if (typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.banner !== 'undefined' && typeof bid.mediaTypes.banner.sizes !== 'undefined' && Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0) {
-      return getSizes(bid.mediaTypes.banner.sizes)
-    }
-    if (bid.sizes && Array.isArray(bid.sizes)) {
-      return getSizes(bid.sizes);
-    }
-    return ret;
-  }
-
-  function getSizes(sizes) {
-    const ret = [];
-    for (let i = 0, lenght = sizes.length; i < lenght; i++) {
-      const size = sizes[i];
-      ret.push({width: size[0], height: size[1]})
-    }
-    return ret;
+  function createMultiFormatBid() {
+    return createVideoBid(createBannerBid());
   }
 
   const bannerBid = createBannerBid();
@@ -142,6 +103,12 @@ describe('onetag', function () {
         expect(spec.isBidRequestValid(outstreamVideoBid)).to.be.false;
       });
     });
+    describe('multi format bidRequest', function () {
+      const multiFormatBid = createMultiFormatBid();
+      it('Should return true when correct multi format bid is passed', function () {
+        expect(spec.isBidRequestValid(multiFormatBid)).to.be.true;
+      });
+    });
   });
 
   describe('buildRequests', function () {
@@ -186,7 +153,7 @@ describe('onetag', function () {
         const bids = data['bids'];
         for (let i = 0; i < bids.length; i++) {
           const bid = bids[i];
-          if (hasTypeVideo(bid) && isValid(VIDEO, bid)) {
+          if (hasTypeVideo(bid)) {
             expect(bid).to.have.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'pubId', 'transactionId', 'context', 'mimes', 'playerSize', 'protocols', 'maxDuration', 'api', 'type');
           } else if (isValid(BANNER, bid)) {
             expect(bid).to.have.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'pubId', 'transactionId', 'sizes', 'type');

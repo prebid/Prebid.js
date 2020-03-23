@@ -8,12 +8,6 @@ const BIDDER_CODE = 'onetag';
 const BANNER = 'banner';
 const VIDEO = 'video';
 
-// =======
-// Object BidRequest
-//
-//          .params
-// required    .pubId:  string
-
 /**
  * Determines whether or not the given bid request is valid.
  *
@@ -24,21 +18,17 @@ function isBidRequestValid(bid) {
   if (typeof bid === 'undefined' || typeof bid.params === 'undefined' || typeof bid.params.pubId !== 'string') {
     return false;
   }
-  const bannerValidation = isValid(BANNER, bid);
-  if (hasTypeVideo(bid)) {
-    return isValid(VIDEO, bid) || bannerValidation;
-  }
-  return bannerValidation;
+  return isValid(BANNER, bid) || isValid(VIDEO, bid);
 }
 
-function hasTypeVideo(bid) {
+export function hasTypeVideo(bid) {
   return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.video !== 'undefined';
 }
 
-function isValid(type, bid) {
+export function isValid(type, bid) {
   if (type === BANNER) {
     return parseSizes(bid).length > 0;
-  } else if (type === VIDEO) {
+  } else if (type === VIDEO && hasTypeVideo(bid)) {
     const context = bid.mediaTypes.video.context;
     if (context === 'outstream') {
       return parseVideoSize(bid).length > 0 && typeof bid.renderer !== 'undefined' && typeof bid.renderer.render !== 'undefined' && typeof bid.renderer.url !== 'undefined';
@@ -72,6 +62,10 @@ function buildRequests(validBidRequests, bidderRequest) {
 
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
+  }
+
+  if (bidderRequest && bidderRequest.userId) {
+    payload.userId = bidderRequest.userId;
   }
 
   const payloadString = JSON.stringify(payload);
@@ -189,7 +183,7 @@ function getPageInfo() {
 }
 
 function requestsToBids(bidRequests) {
-  const videoBidRequests = bidRequests.filter(bidRequest => hasTypeVideo(bidRequest) && isValid(VIDEO, bidRequest)).map(bidRequest => {
+  const videoBidRequests = bidRequests.filter(bidRequest => hasTypeVideo(bidRequest)).map(bidRequest => {
     const videoObj = {};
     setGeneralInfo.call(videoObj, bidRequest);
     // Pass parameters
@@ -209,7 +203,7 @@ function requestsToBids(bidRequests) {
   const bannerBidRequests = bidRequests.filter(bidRequest => isValid(BANNER, bidRequest)).map(bidRequest => {
     const bannerObj = {};
     setGeneralInfo.call(bannerObj, bidRequest);
-    bannerObj['sizes'] = parseSizes(bidRequest)
+    bannerObj['sizes'] = parseSizes(bidRequest);
     bannerObj['type'] = BANNER;
     return bannerObj;
   });
@@ -245,7 +239,8 @@ function parseSizes(bid) {
   if (typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.banner !== 'undefined' && typeof bid.mediaTypes.banner.sizes !== 'undefined' && Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0) {
     return getSizes(bid.mediaTypes.banner.sizes)
   }
-  if (bid.sizes && Array.isArray(bid.sizes)) {
+  const isVideoBidRequest = hasTypeVideo(bid);
+  if (!isVideoBidRequest && bid.sizes && Array.isArray(bid.sizes)) {
     return getSizes(bid.sizes);
   }
   return ret;

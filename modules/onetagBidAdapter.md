@@ -23,7 +23,7 @@ OneTag Bid Adapter supports banner and video at present.
             bids: [{
                 bidder: "onetag",
                 params: {
-                    pubId: "your_publisher_id"         // required
+                    pubId: "your_publisher_id" // required, testing pubId: "386276e072"
                 }
             }]
         }, {
@@ -38,7 +38,7 @@ OneTag Bid Adapter supports banner and video at present.
             bids: [{
                 bidder: "onetag",
                 params: {
-                    pubId: "your_publisher_id"         // required
+                    pubId: "your_publisher_id" // required, testing pubId: "386276e072"
                 }
             }]
         }];
