@@ -16,8 +16,12 @@ export const spec = {
     const requests = [];
     let tzo = '0'
 
+<<<<<<< HEAD
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
+=======
+    for (const bid of validBidRequests) {
+>>>>>>> Fixed issue in test and bidder.
       const network = bid.params.network || 'network';
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
@@ -27,10 +31,16 @@ export const spec = {
       networks[network].adUnits.push({ ...bid.params.targeting, auId: bid.params.auId });
       tzo = bid.params.tzo || '0'
     }
+<<<<<<< HEAD
 
     const networkKeys = Object.keys(networks)
     for (var j = 0; j < networkKeys.length; j++) {
       const network = networkKeys[j];
+=======
+    const networkKeys = Object.keys(networks)
+    for (var i = 0; i < networkKeys.length; i++) {
+      const network = networkKeys[i];
+>>>>>>> Fixed issue in test and bidder.
       requests.push({
         method: 'POST',
         url: ENDPOINT_URL + 'i?tzo=' + tzo + '&format=json',
