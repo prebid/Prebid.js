@@ -31,8 +31,8 @@ function getGvlid() {
 
 /**
  * This function takes in rules and consentData as input and validates against the consentData provided. If it returns true Prebid will allow the next call else it will log a warning
- * @param {Object} rules
- * @param {Object} consentData
+ * @param {Object} rules enforcement rules set in config
+ * @param {Object} consentData gdpr consent data
  * @returns {boolean}
  */
 function validateRules(rule, consentData, currentModule, gvlid) {
@@ -57,6 +57,12 @@ function validateRules(rule, consentData, currentModule, gvlid) {
   return isAllowed;
 }
 
+/**
+ * This hook checks whether module has permission to access device or not. Device access include cookie and local storage
+ * @param {Function} fn reference to original function (used by hook logic)
+ * @param {Number=} gvlid gvlid of the module
+ * @param {string=} moduleName name of the module
+ */
 export function deviceAccessHook(fn, gvlid, moduleName) {
   let result = {
     hasEnforcementHook: true
@@ -81,12 +87,17 @@ export function deviceAccessHook(fn, gvlid, moduleName) {
       utils.logWarn(`User denied Permission for Device access for ${curModule}`);
     }
   } else {
-    utils.logInfo('TCF enforcement only applies to CMP version 2');
+    utils.logInfo('GDPR enforcement only applies to CMP version 2');
   }
   result.valid = false;
   return fn.call(this, result);
 }
 
+/**
+ * This hook checks if a bidder has consent for user sync or not
+ * @param {Function} fn reference to original function (used by hook logic)
+ * @param  {...any} args args
+ */
 export function userSyncHook(fn, ...args) {
   const consentData = gdprDataHandler.getConsentData();
   if (consentData && consentData.apiVersion === 2) {
@@ -98,19 +109,25 @@ export function userSyncHook(fn, ...args) {
       if (isAllowed) {
         fn.call(this, ...args);
       } else {
-        utils.logWarn(`User sync not allowed for ${curBidder}`);  
+        utils.logWarn(`User sync not allowed for ${curBidder}`);
       }
     } else {
       utils.logWarn(`User sync not allowed for ${curBidder}`);
     }
   } else {
-    utils.logInfo('TCF enforcement only applies to CMP version 2');
+    utils.logInfo('GDPR enforcement only applies to CMP version 2');
     fn.call(this, ...args);
   }
 }
 
+/**
+ * This hook checks if user id module is given consent or not
+ * @param {Function} fn reference to original function (used by hook logic)
+ * @param  {Submodule[]} submodules Array of user id submodules
+ * @param {Object} consentData GDPR consent data
+ */
 export function userIdHook(fn, submodules, consentData) {
-  if (consentData && consentData.gdprApplies) {
+  if (consentData && consentData.gdprApplies && consentData.apiVersion === 2) {
     let userIdModules = submodules.map((submodule) => {
       const gvlid = submodule.submodule.gvlid;
       const moduleName = submodule.submodule.name;
@@ -129,12 +146,17 @@ export function userIdHook(fn, submodules, consentData) {
     }).filter(module => module)
     fn.call(this, userIdModules, consentData);
   } else {
+    utils.logInfo('GDPR enforcement only applies to CMP version 2');
     fn.call(this, submodules, consentData);
   }
 }
 
 const hasPurpose1 = (rule) => { return rule.purpose === purpose1 }
 
+/**
+ * A configuration function that initializes some module variables, as well as add hooks
+ * @param {Object} config GDPR enforcement config object
+ */
 export function setEnforcementConfig(config) {
   const rules = utils.deepAccess(config, 'gdpr.rules');
   if (!rules) {

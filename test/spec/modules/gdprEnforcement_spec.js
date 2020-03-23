@@ -257,13 +257,86 @@ describe('gdpr enforcement', function() {
 
   describe('userIdHook', function() {
     beforeEach(function() {
-
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+      nextFnSpy = sinon.spy();
     });
-    afterEach(function(){
+    afterEach(function() {
+      config.resetConfig();
+      logWarnSpy.restore();
+    });
+    it('should allow user id module if consent is given', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: false,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      let consentData = {}
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.apiVersion = 2;
+      consentData.gdprApplies = true;
+      let submodules = [{
+        submodule: {
+          gvlid: 1,
+          name: 'sampleUserId'
+        }
+      }]
+      userIdHook(nextFnSpy, submodules, consentData);
+      expect(nextFnSpy.calledOnce).to.equal(true);
+    });
 
-    })
-    it('should', function() {
+    it('should allow userId module if gdpr not in scope', function() {
+      let submodules = [{
+        submodule: {
+          gvlid: 1,
+          name: 'sampleUserId'
+        }
+      }];
+      let consentData = null;
+      userIdHook(nextFnSpy, submodules, consentData);
+      expect(nextFnSpy.calledOnce).to.equal(true);
+      expect(nextFnSpy.calledWith(undefined, submodules, consentData));
+    });
 
+    it('should not allow user id module if user denied consent', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: false,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      let consentData = {}
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.apiVersion = 2;
+      consentData.gdprApplies = true;
+      let submodules = [{
+        submodule: {
+          gvlid: 1,
+          name: 'sampleUserId'
+        }
+      }, {
+        submodule: {
+          gvlid: 3,
+          name: 'sampleUserId1'
+        }
+      }]
+      userIdHook(nextFnSpy, submodules, consentData);
+      expect(logWarnSpy.callCount).to.equal(1);
+      let expectedSubmodules = [{
+        submodule: {
+          gvlid: 1,
+          name: 'sampleUserId'
+        }
+      }]
+      expect(nextFnSpy.calledWith(undefined, expectedSubmodules, consentData));
     });
   });
 });
