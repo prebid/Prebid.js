@@ -39,6 +39,9 @@ export const spec = {
       if (bid.params.targeting) {
         query.t = createQueryString(bid.params.targeting)
       }
+      if (bid.userIdAsEids) {
+        query.ids = createUserIdString(bid.userIdAsEids)
+      }
     })
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -160,6 +163,19 @@ function getPlayerSize (format) {
  */
 function parseSize (size) {
   return size.split('x').map(Number)
+}
+
+/**
+ * Creates a string out of an array of eids with source and uid
+ * @param {Array} eids
+ * @returns {String}
+ */
+function createUserIdString (eids) {
+  let str = []
+  for (var eid of eids) {
+    str.push(eid.source + ':' + eid.uids[0].id)
+  }
+  return str.join(',')
 }
 
 /**
