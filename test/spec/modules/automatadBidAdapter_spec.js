@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/automatadBidAdapter.js'
+import { spec } from 'modules/automatadBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 
 describe('automatadBidAdapter', function () {
