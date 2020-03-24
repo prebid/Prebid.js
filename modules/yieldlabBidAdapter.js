@@ -172,8 +172,8 @@ function parseSize (size) {
  */
 function createUserIdString (eids) {
   let str = []
-  for (var eid of eids) {
-    str.push(eid.source + ':' + eid.uids[0].id)
+  for (let i = 0; i < eids.length; i++) {
+    str.push(eids[i].source + ':' + eids[i].uids[0].id)
   }
   return str.join(',')
 }
