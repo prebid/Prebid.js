@@ -15,6 +15,7 @@ const IFRAME = 'iframe';
 const IMAGE = 'image';
 const REDIRECT = 'redirect';
 const DEFAULT_VERSION_ID = '0';
+const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
 
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
@@ -241,6 +242,95 @@ function _createDummyBids (impData, bidResponses, errorCode) {
   }
 }
 
+function _getDigiTrustObject(key) {
+  function getDigiTrustId() {
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
+    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+  }
+  let digiTrustId = getDigiTrustId();
+  // Verify there is an ID and this user has not opted out
+  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
+    return null;
+  }
+  return digiTrustId;
+}
+
+function _handleDigitrustId(eids) {
+  let digiTrustId = _getDigiTrustObject(PUBMATIC_DIGITRUST_KEY);
+  if (digiTrustId !== null) {
+    eids.push({
+      'source': 'digitru.st',
+      'uids': [{
+        'id': digiTrustId.id || '',
+        'atype': 1,
+        'ext': {
+          'keyv': parseInt(digiTrustId.keyv) || 0
+        }
+      }]
+    });
+  }
+}
+
+function _handleTTDId(eids, validBidRequests) {
+  let ttdId = null;
+  let adsrvrOrgId = config.getConfig('adsrvrOrgId');
+  if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+    ttdId = validBidRequests[0].userId.tdid;
+  } else if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
+    ttdId = adsrvrOrgId.TDID;
+  }
+
+  if (ttdId !== null) {
+    eids.push({
+      'source': 'adserver.org',
+      'uids': [{
+        'id': ttdId,
+        'atype': 1,
+        'ext': {
+          'rtiPartner': 'TDID'
+        }
+      }]
+    });
+  }
+}
+
+/**
+ * Produces external userid object in ortb 3.0 model.
+ */
+function _addExternalUserId(eids, value, source, atype) {
+  if (utils.isStr(value)) {
+    eids.push({
+      source,
+      uids: [{
+        id: value,
+        atype
+      }]
+    });
+  }
+}
+
+function _handleEids(payload, validBidRequests) {
+  let eids = [];
+  _handleDigitrustId(eids);
+  _handleTTDId(eids, validBidRequests);
+  const bidRequest = validBidRequests[0];
+  if (bidRequest && bidRequest.userId) {
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid.org', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteoId`), 'criteo.com', 1);// replacing criteoRtus
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.lipb.lipbid`), 'liveintent.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.parrableid`), 'parrable.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.britepoolid`), 'britepool.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.firstpartyid`), 'firstpartyid', 1);
+  }
+  if (eids.length > 0) {
+    payload.user.ext = {};
+    payload.user.ext.eids = eids;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
 
@@ -321,6 +411,11 @@ export const spec = {
       };
     }
 
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl || payload.site.page;
     payload.site.domain = utils.getTopWindowHostName();
@@ -332,6 +427,7 @@ export const spec = {
         startTime: startTime
       }
     }
+    _handleEids(payload, validBidRequests);
     return {
       method: 'POST',
       url: utils.getParameterByName('pwtvc') ? ENDPOINT + '?debug=1' : ENDPOINT,
@@ -459,7 +555,7 @@ export const spec = {
   /**
   * Register User Sync.
   */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     let urls = [];
     var bidders = config.getConfig('userSync.enabledBidders');
     var UUID = utils.getUniqueIdentifierStr();
@@ -471,6 +567,10 @@ export const spec = {
     if (gdprConsent) {
       data['gdpr'] = gdprConsent.gdprApplies ? 1 : 0;
       data['gdpr_consent'] = encodeURIComponent(gdprConsent.consentString || '');
+    }
+    // CCPA
+    if (uspConsent) {
+      data['us_privacy'] = encodeURIComponent(uspConsent);
     }
 
     ajax.ajax(COOKIE_SYNC, cookieSyncCallBack, JSON.stringify(data), {

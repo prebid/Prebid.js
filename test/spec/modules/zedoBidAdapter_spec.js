@@ -44,7 +44,7 @@ describe('The ZEDO bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^\/\/saxp.zedo.com\/asw\/fmh.json/);
+      expect(request.url).to.match(/^https:\/\/saxp.zedo.com\/asw\/fmh.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
       expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"publisher":1,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
@@ -69,7 +69,7 @@ describe('The ZEDO bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^\/\/saxp.zedo.com\/asw\/fmh.json/);
+      expect(request.url).to.match(/^https:\/\/saxp.zedo.com\/asw\/fmh.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
       expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"publisher":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Inarticle"}]}]}');

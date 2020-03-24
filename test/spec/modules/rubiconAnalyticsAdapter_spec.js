@@ -92,6 +92,7 @@ const BID2 = Object.assign({}, BID, {
   mediaType: 'banner',
   cpm: 1.52,
   source: 'server',
+  seatBidId: 'aaaa-bbbb-cccc-dddd',
   rubiconTargeting: {
     'rpfl_elemid': '/19968336/header-bid-tag1',
     'rpfl_14062': '2_tier0100'
@@ -222,6 +223,7 @@ const MOCK = {
         'transactionId': 'c116413c-9e3f-401a-bee1-d56aec29a1d4',
         'sizes': [[1000, 300], [970, 250], [728, 90]],
         'bidId': '3bd4ebb1c900e2',
+        'seatBidId': 'aaaa-bbbb-cccc-dddd',
         'bidderRequestId': '1be65d7958826a',
         'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
       }
@@ -354,7 +356,7 @@ const ANALYTICS_MESSAGE = {
           'bids': [
             {
               'bidder': 'rubicon',
-              'bidId': '3bd4ebb1c900e2',
+              'bidId': 'aaaa-bbbb-cccc-dddd',
               'status': 'success',
               'source': 'server',
               'clientLatencyMillis': 3214,
@@ -421,7 +423,7 @@ const ANALYTICS_MESSAGE = {
       'bidder': 'rubicon',
       'transactionId': 'c116413c-9e3f-401a-bee1-d56aec29a1d4',
       'adUnitCode': '/19968336/header-bid-tag1',
-      'bidId': '3bd4ebb1c900e2',
+      'bidId': 'aaaa-bbbb-cccc-dddd',
       'status': 'success',
       'source': 'server',
       'clientLatencyMillis': 3214,
@@ -655,6 +657,56 @@ describe('rubicon analytics adapter', function () {
       validate(message);
 
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
+    });
+
+    it('should pick the highest cpm bid if more than one bid per bidRequestId', function () {
+      // Only want one bid request in our mock auction
+      let bidRequested = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequested.bids.shift();
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.adUnits.shift();
+
+      // clone the mock bidResponse and duplicate
+      let duplicateResponse1 = utils.deepClone(BID2);
+      duplicateResponse1.cpm = 1.0;
+      duplicateResponse1.adserverTargeting.hb_pb = '1.0';
+      duplicateResponse1.adserverTargeting.hb_adid = '1111';
+      let duplicateResponse2 = utils.deepClone(BID2);
+      duplicateResponse2.cpm = 5.5;
+      duplicateResponse2.adserverTargeting.hb_pb = '5.5';
+      duplicateResponse2.adserverTargeting.hb_adid = '5555';
+      let duplicateResponse3 = utils.deepClone(BID2);
+      duplicateResponse3.cpm = 0.1;
+      duplicateResponse3.adserverTargeting.hb_pb = '0.1';
+      duplicateResponse3.adserverTargeting.hb_adid = '3333';
+
+      const setTargeting = {
+        [duplicateResponse2.adUnitCode]: duplicateResponse2.adserverTargeting
+      };
+
+      const bidWon = Object.assign({}, duplicateResponse2, {
+        'status': 'rendered'
+      });
+
+      // spoof the auction with just our duplicates
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, bidRequested);
+      events.emit(BID_RESPONSE, duplicateResponse1);
+      events.emit(BID_RESPONSE, duplicateResponse2);
+      events.emit(BID_RESPONSE, duplicateResponse3);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, setTargeting);
+      events.emit(BID_WON, bidWon);
+
+      let message = JSON.parse(requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD).to.equal(5.5);
+      expect(message.auctions[0].adUnits[0].adserverTargeting.hb_pb).to.equal('5.5');
+      expect(message.auctions[0].adUnits[0].adserverTargeting.hb_adid).to.equal('5555');
+      expect(message.bidsWon.length).to.equal(1);
+      expect(message.bidsWon[0].bidResponse.bidPriceUSD).to.equal(5.5);
+      expect(message.bidsWon[0].adserverTargeting.hb_pb).to.equal('5.5');
+      expect(message.bidsWon[0].adserverTargeting.hb_adid).to.equal('5555');
     });
 
     it('should send batched message without BID_WON if necessary and further BID_WON events individually', function () {

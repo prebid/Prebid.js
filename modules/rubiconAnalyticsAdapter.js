@@ -73,7 +73,7 @@ function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return utils.pick(bid, [
       'bidder',
-      'bidId',
+      'bidId', bidId => utils.deepAccess(bid, 'bidResponse.seatBidId') || bidId,
       'status',
       'error',
       'source', (source, bid) => {
@@ -209,25 +209,34 @@ function sendMessage(auctionId, bidWonId) {
   );
 }
 
-export function parseBidResponse(bid) {
+function getBidPrice(bid) {
+  if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
+    return Number(bid.cpm);
+  }
+  // use currency conversion function if present
+  if (typeof bid.getCpmInNewCurrency === 'function') {
+    return Number(bid.getCpmInNewCurrency('USD'));
+  }
+  utils.logWarn('Rubicon Analytics Adapter: Could not determine the bidPriceUSD of the bid ', bid);
+}
+
+export function parseBidResponse(bid, previousBidResponse) {
+  // The current bidResponse for this matching requestId/bidRequestId
+  let responsePrice = getBidPrice(bid)
+  // we need to compare it with the previous one (if there was one)
+  if (previousBidResponse && previousBidResponse.bidPriceUSD > responsePrice) {
+    return previousBidResponse;
+  }
   return utils.pick(bid, [
-    'bidPriceUSD', () => {
-      if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
-        return Number(bid.cpm);
-      }
-      // use currency conversion function if present
-      if (typeof bid.getCpmInNewCurrency === 'function') {
-        return Number(bid.getCpmInNewCurrency('USD'));
-      }
-      utils.logWarn('Rubicon Analytics Adapter: Could not determine the bidPriceUSD of the bid ', bid);
-    },
+    'bidPriceUSD', () => responsePrice,
     'dealId',
     'status',
     'mediaType',
     'dimensions', () => utils.pick(bid, [
       'width',
       'height'
-    ])
+    ]),
+    'seatBidId',
   ]);
 }
 
@@ -405,7 +414,11 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             };
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
-        bid.bidResponse = parseBidResponse(args);
+        bid.bidResponse = parseBidResponse(args, bid.bidResponse);
+        // RP server banner overwrites bidId with bid.seatBidId
+        if (utils.deepAccess(bid, 'bidResponse.seatBidId') && bid.bidder === 'rubicon' && bid.source === 'server' && ['video', 'banner'].some(i => utils.deepAccess(bid, 'bidResponse.mediaType') === i)) {
+          bid.seatBidId = bid.bidResponse.seatBidId;
+        }
         break;
       case BIDDER_DONE:
         args.bids.forEach(bid => {
