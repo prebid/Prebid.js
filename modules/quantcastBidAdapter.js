@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -101,8 +101,8 @@ export const spec = {
    */
   buildRequests(bidRequests, bidderRequest) {
     const bids = bidRequests || [];
-    const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
-
+    const gdprConsent = utils.deepAccess(bidderRequest, 'gdprConsent') || {};
+    const uspConsent = utils.deepAccess(bidderRequest, 'uspConsent');
     const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
     const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
     const domain = getDomain(page);
@@ -139,6 +139,9 @@ export const spec = {
         bidId: bid.bidId,
         gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
         gdprConsent: gdprConsent.consentString,
+        uspSignal: uspConsent ? 1 : 0,
+        uspConsent,
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -177,12 +180,13 @@ export const spec = {
 
     const response = serverResponse['body'];
 
-    if (
-      response === undefined ||
-      !response.hasOwnProperty('bids') ||
-      utils.isEmpty(response.bids)
-    ) {
+    if (response === undefined || !response.hasOwnProperty('bids')) {
       utils.logError('Sub-optimal JSON received from Quantcast server');
+      return [];
+    }
+
+    if (utils.isEmpty(response.bids)) {
+      // Shortcut response handling if no bids are present
       return [];
     }
 

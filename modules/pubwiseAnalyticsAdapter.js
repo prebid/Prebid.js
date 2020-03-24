@@ -1,8 +1,8 @@
-import {ajax} from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import {ajax} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-const utils = require('../src/utils');
+const utils = require('../src/utils.js');
 
 /****
  * PubWise.io Analytics
@@ -59,14 +59,14 @@ function enrichWithUTM(dataBag) {
 
     if (newUtm === false) {
       for (let prop in utmKeys) {
-        let itemValue = localStorage.getItem(`pw-${prop}`);
+        let itemValue = utils.getDataFromLocalStorage(`pw-${prop}`);
         if (itemValue.length !== 0) {
           dataBag[prop] = itemValue;
         }
       }
     } else {
       for (let prop in utmKeys) {
-        localStorage.setItem(`pw-${prop}`, utmKeys[prop]);
+        utils.setDataInLocalStorage(`pw-${prop}`, utmKeys[prop]);
       }
     }
   } catch (e) {

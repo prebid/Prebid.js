@@ -1,10 +1,10 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import * as videoCache from 'src/videoCache';
-import * as auction from 'src/auction';
-import { ADPOD } from 'src/mediaTypes';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import * as videoCache from 'src/videoCache.js';
+import * as auction from 'src/auction.js';
+import { ADPOD } from 'src/mediaTypes.js';
 
-import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond } from 'modules/adpod';
+import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond } from 'modules/adpod.js';
 
 let expect = require('chai').expect;
 
@@ -138,7 +138,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 300,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -220,7 +220,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -282,7 +282,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30],
             requireExactDuration: true
@@ -376,7 +376,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -465,7 +465,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -525,7 +525,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -602,7 +602,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -675,7 +675,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 120,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -697,19 +697,16 @@ describe('adpod.js', function () {
       const customConfigObject = {
         'buckets': [{
           'precision': 2, // default is 2 if omitted - means 2.1234 rounded to 2 decimal places = 2.12
-          'min': 0,
           'max': 5,
           'increment': 0.01 // from $0 to $5, 1-cent increments
         },
         {
           'precision': 2,
-          'min': 5,
           'max': 8,
           'increment': 0.05 // from $5 to $8, round down to the previous 5-cent increment
         },
         {
           'precision': 2,
-          'min': 8,
           'max': 40,
           'increment': 0.5 // from $8 to $40, round down to the previous 50-cent increment
         }]
@@ -751,7 +748,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 45,
             durationRangeSec: [15, 30],
             requireExactDuration: false
@@ -829,7 +826,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 300,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: false
@@ -925,7 +922,7 @@ describe('adpod.js', function () {
           },
           video: {
             context: 'adpod',
-            playerSize: [300, 250],
+            playerSize: [[300, 250]],
             durationRangeSec: [15, 30, 45],
             adPodDurationSec: 300
           }
@@ -944,7 +941,7 @@ describe('adpod.js', function () {
         mediaTypes: {
           video: {
             context: ADPOD,
-            playerSize: [300, 300],
+            playerSize: [[300, 300]],
             adPodDurationSec: 360,
             durationRangeSec: [15, 30, 45],
             requireExactDuration: true
@@ -992,7 +989,7 @@ describe('adpod.js', function () {
       mediaTypes: {
         video: {
           context: ADPOD,
-          playerSize: [300, 400],
+          playerSize: [[300, 400]],
           durationRangeSec: [15, 45],
           requireExactDuration: false,
           adPodDurationSec: 300
@@ -1003,7 +1000,7 @@ describe('adpod.js', function () {
       mediaTypes: {
         video: {
           context: ADPOD,
-          playerSize: [300, 400],
+          playerSize: [[300, 400]],
           durationRangeSec: [15, 30, 45, 60],
           requireExactDuration: true,
           adPodDurationSec: 300

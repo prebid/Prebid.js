@@ -1,6 +1,7 @@
-import {detectReferer} from '../src/refererDetection';
-import {ajax} from '../src/ajax';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {detectReferer} from '../src/refererDetection.js';
+import {ajax} from '../src/ajax.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 
 export const spec = {
   code: 'orbidder',
@@ -8,7 +9,7 @@ export const spec = {
   orbidderHost: (() => {
     let ret = 'https://orbidder.otto.de';
     try {
-      ret = localStorage.getItem('ov_orbidder_host') || ret;
+      ret = utils.getDataFromLocalStorage('ov_orbidder_host') || ret;
     } catch (e) {
     }
     return ret;
@@ -34,6 +35,7 @@ export const spec = {
         method: 'POST',
         options: { withCredentials: true },
         data: {
+          v: $$PREBID_GLOBAL$$.version,
           pageUrl: referer,
           bidId: bidRequest.bidId,
           auctionId: bidRequest.auctionId,
@@ -74,17 +76,14 @@ export const spec = {
   },
 
   onBidWon(bid) {
-    this.onHandler(bid, '/win');
-  },
-
-  onHandler (bid, route) {
     const getRefererInfo = detectReferer(window);
 
+    bid.v = $$PREBID_GLOBAL$$.version;
     bid.pageUrl = getRefererInfo().referer;
     if (spec.bidParams[bid.requestId] && (typeof bid.params === 'undefined')) {
       bid.params = [spec.bidParams[bid.requestId]];
     }
-    spec.ajaxCall(`${spec.orbidderHost}${route}`, JSON.stringify(bid));
+    spec.ajaxCall(`${spec.orbidderHost}/win`, JSON.stringify(bid));
   },
 
   ajaxCall(endpoint, data) {

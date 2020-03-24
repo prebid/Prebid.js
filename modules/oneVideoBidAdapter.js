@@ -1,13 +1,13 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
+  VERSION: '3.0.0',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
-  SYNC_ENDPOINT3: 'https://sync-tm.everesttech.net/upi/pid/m7y5t93k?redir=https%3A%2F%2Fsync.adap.tv%2Fsync%3Ftype%3Dgif%26key%3Dtubemogul%26uid%3D%24%7BUSER_ID%7D',
-  SYNC_ENDPOINT4: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
+  SYNC_ENDPOINT3: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
   supportedMediaTypes: ['video'],
   /**
    * Determines whether or not the given bid request is valid.
@@ -103,7 +103,9 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, responses, consentData = {}) {
+    let { gdprApplies, consentString = '' } = consentData;
+
     if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
@@ -115,11 +117,11 @@ export const spec = {
       },
       {
         type: 'image',
-        url: spec.SYNC_ENDPOINT3
+        url: `https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0` + encodeURI(`&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`)
       },
       {
         type: 'image',
-        url: spec.SYNC_ENDPOINT4
+        url: spec.SYNC_ENDPOINT3
       }];
     }
   }
@@ -152,6 +154,8 @@ function getRequestData(bid, consentData, bidRequest) {
       bidfloor: bid.params.bidfloor,
       ext: {
         hb: 1,
+        prebidver: '$prebid.version$',
+        adapterver: spec.VERSION,
       }
     }],
     site: {
@@ -198,6 +202,8 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.rewarded) {
       bidData.imp[0].ext.rewarded = bid.params.video.rewarded
     }
+    bidData.imp[0].video.linearity = 1;
+    bidData.imp[0].video.protocols = bid.params.video.protocols || [2, 5];
   } else if (bid.params.video.display == 1) {
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
@@ -228,19 +234,24 @@ function getRequestData(bid, consentData, bidRequest) {
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
   }
-  if (isConsentRequired(consentData)) {
+  if (isConsentRequired(consentData) || (bidRequest && bidRequest.uspConsent)) {
     bidData.regs = {
-      ext: {
-        gdpr: 1
-      }
+      ext: {}
     };
+    if (isConsentRequired(consentData)) {
+      bidData.regs.ext.gdpr = 1
+    }
 
-    if (consentData.consentString) {
+    if (consentData && consentData.consentString) {
       bidData.user = {
         ext: {
           consent: consentData.consentString
         }
       };
+    }
+    // ccpa support
+    if (bidRequest && bidRequest.uspConsent) {
+      bidData.regs.ext.us_privacy = bidRequest.uspConsent
     }
   }
 
@@ -260,6 +271,7 @@ function newRenderer(bidRequest, bid) {
     bidRequest.renderer.url = 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js';
     bidRequest.renderer.render = function(bid) {
       setTimeout(function () {
+        // eslint-disable-next-line no-undef
         o2PlayerRender(bid);
       }, 700)
     };

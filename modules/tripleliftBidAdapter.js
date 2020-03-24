@@ -1,6 +1,7 @@
-import { BANNER } from '../src/mediaTypes';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
@@ -42,6 +43,14 @@ export const tripleliftAdapterSpec = {
       }
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      tlCall = utils.tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
+    }
+
+    if (config.getConfig('coppa') === true) {
+      tlCall = utils.tryAppendQueryString(tlCall, 'coppa', true);
+    }
+
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
       tlCall = tlCall.substring(0, tlCall.length - 1);
     }
@@ -62,20 +71,37 @@ export const tripleliftAdapterSpec = {
     });
   },
 
-  getUserSyncs: function(syncOptions) {
-    let ibCall = '//ib.3lift.com/sync?';
-    if (consentString !== null) {
-      ibCall = utils.tryAppendQueryString(ibCall, 'gdpr', gdprApplies);
-      ibCall = utils.tryAppendQueryString(ibCall, 'cmp_cs', consentString);
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
+    let syncType = _getSyncType(syncOptions);
+    if (!syncType) return;
+
+    let syncEndpoint = 'https://eb2.3lift.com/sync?';
+
+    if (syncType === 'image') {
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'px', 1);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'src', 'prebid');
     }
 
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: ibCall
-      }];
+    if (consentString !== null) {
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
     }
+
+    if (usPrivacy) {
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
+    }
+
+    return [{
+      type: syncType,
+      url: syncEndpoint
+    }];
   }
+}
+
+function _getSyncType(syncOptions) {
+  if (!syncOptions) return;
+  if (syncOptions.iframeEnabled) return 'iframe';
+  if (syncOptions.pixelEnabled) return 'image';
 }
 
 function _buildPostBody(bidRequests) {
@@ -94,7 +120,8 @@ function _buildPostBody(bidRequests) {
 
   let eids = [
     ...getUnifiedIdEids(bidRequests),
-    ...getIdentityLinkEids(bidRequests)
+    ...getIdentityLinkEids(bidRequests),
+    ...getCriteoEids(bidRequests)
   ];
 
   if (eids.length > 0) {
@@ -117,6 +144,10 @@ function getUnifiedIdEids(bidRequests) {
 
 function getIdentityLinkEids(bidRequests) {
   return getEids(bidRequests, 'idl_env', 'liveramp.com', 'idl');
+}
+
+function getCriteoEids(bidRequests) {
+  return getEids(bidRequests, 'criteoId', 'criteo.com', 'criteoId');
 }
 
 function getEids(bidRequests, type, source, rtiPartner) {

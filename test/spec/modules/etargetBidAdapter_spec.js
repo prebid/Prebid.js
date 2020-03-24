@@ -1,7 +1,7 @@
 import {assert, expect} from 'chai';
-import * as url from 'src/url';
-import {spec} from 'modules/etargetBidAdapter';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import * as url from 'src/url.js';
+import {spec} from 'modules/etargetBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 describe('etarget adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -29,7 +29,7 @@ describe('etarget adapter', function () {
 
     it('should handle global request parameters', function () {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
-      assert.equal(parsedUrl.path, '//sk.search.etargetnet.com/hb');
+      assert.equal(parsedUrl.path, 'https://sk.search.etargetnet.com/hb');
     });
 
     it('should set correct request method', function () {

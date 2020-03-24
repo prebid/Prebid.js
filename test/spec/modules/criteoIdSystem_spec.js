@@ -1,7 +1,7 @@
-import { criteoIdSubmodule } from 'modules/criteoIdSystem';
-import * as utils from 'src/utils';
-import * as ajaxLib from 'src/ajax';
-import * as urlLib from 'src/url';
+import { criteoIdSubmodule } from 'modules/criteoIdSystem.js';
+import * as utils from 'src/utils.js';
+import * as ajaxLib from 'src/ajax.js';
+import * as urlLib from 'src/url.js';
 
 const pastDateString = new Date(0).toString()
 

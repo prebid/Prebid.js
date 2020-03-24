@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/bidfluenceBidAdapter';
+import { spec } from 'modules/bidfluenceBidAdapter.js';
 
 const BIDDER_CODE = 'bidfluence';
 const PLACEMENT_ID = '1000';

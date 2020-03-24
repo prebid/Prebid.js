@@ -1,15 +1,15 @@
-import { Renderer } from '../src/Renderer';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes';
-import { auctionManager } from '../src/auctionManager';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import { OUTSTREAM, INSTREAM } from '../src/video';
+import { Renderer } from '../src/Renderer.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
+import { auctionManager } from '../src/auctionManager.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'appnexus';
-const URL = '//ib.adnxs.com/ut/v3/prebid';
+const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
@@ -34,7 +34,7 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
+const mappingFileUrl = 'https://acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
 const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
@@ -158,6 +158,10 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
+    }
+
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
         rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
@@ -178,12 +182,12 @@ export const spec = {
       });
     }
 
-    const rtusId = utils.deepAccess(bidRequests[0], `userId.criteortus.${BIDDER_CODE}.userid`);
-    if (rtusId) {
+    const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
+    if (criteoId) {
       let tpuids = [];
       tpuids.push({
         'provider': 'criteo',
-        'user_id': rtusId
+        'user_id': criteoId
       });
       payload.tpuids = tpuids;
     }
@@ -261,7 +265,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+        url: 'https://acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
       }];
     }
   },
@@ -519,7 +523,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
         }
         break;
       case INSTREAM:
-        bid.vastUrl = rtbBid.rtb.video.asset_url;
+        bid.vastUrl = rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url);
         break;
     }
   } else if (rtbBid.rtb[NATIVE]) {
@@ -655,6 +659,11 @@ function bidToTag(bid) {
   const videoMediaType = utils.deepAccess(bid, `mediaTypes.${VIDEO}`);
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
 
+  if (videoMediaType && context === 'adpod') {
+    tag.hb_source = 7;
+  } else {
+    tag.hb_source = 1;
+  }
   if (bid.mediaType === VIDEO || videoMediaType) {
     tag.ad_types.push(VIDEO);
   }

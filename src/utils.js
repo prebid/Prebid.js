@@ -1,11 +1,12 @@
-import { config } from './config';
+/* eslint-disable no-console */
+import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import { parse } from './url';
-const CONSTANTS = require('./constants');
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
-export { default as deepAccess } from 'dlv/index';
+const CONSTANTS = require('./constants.json');
+
+export { default as deepAccess } from 'dlv/index.js';
 export { default as deepSetValue } from 'dset';
 
 var tArr = 'Array';
@@ -27,10 +28,7 @@ export const internal = {
   createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
-  getAncestorOrigins,
-  getTopFrameReferrer,
   getWindowLocation,
-  getTopWindowLocation,
   insertUserSyncIframe,
   insertElement,
   isFn,
@@ -169,6 +167,7 @@ export function getAdUnitSizes(adUnit) {
     } else {
       sizes.push(bannerSizes);
     }
+  // TODO - remove this else block when we're ready to deprecate adUnit.sizes for bidders
   } else if (Array.isArray(adUnit.sizes)) {
     if (Array.isArray(adUnit.sizes[0])) {
       sizes = adUnit.sizes;
@@ -243,54 +242,6 @@ function isValidGPTSingleSize(singleSize) {
   return isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]));
 }
 
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopWindowLocation() {
-  if (inIframe()) {
-    let loc;
-    try {
-      loc = internal.getAncestorOrigins() || internal.getTopFrameReferrer();
-    } catch (e) {
-      logInfo('could not obtain top window location', e);
-    }
-    if (loc) return parse(loc, {'decodeSearchAsString': true});
-  }
-  return internal.getWindowLocation();
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopFrameReferrer() {
-  try {
-    // force an exception in x-domain environments. #1509
-    window.top.location.toString();
-    let referrerLoc = '';
-    let currentWindow;
-    do {
-      currentWindow = currentWindow ? currentWindow.parent : window;
-      if (currentWindow.document && currentWindow.document.referrer) {
-        referrerLoc = currentWindow.document.referrer;
-      }
-    }
-    while (currentWindow !== window.top);
-    return referrerLoc;
-  } catch (e) {
-    return window.document.referrer;
-  }
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getAncestorOrigins() {
-  if (window.document.location && window.document.location.ancestorOrigins &&
-    window.document.location.ancestorOrigins.length >= 1) {
-    return window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length - 1];
-  }
-}
-
 export function getWindowTop() {
   return window.top;
 }
@@ -301,30 +252,6 @@ export function getWindowSelf() {
 
 export function getWindowLocation() {
   return window.location;
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopWindowUrl() {
-  let href;
-  try {
-    href = internal.getTopWindowLocation().href;
-  } catch (e) {
-    href = '';
-  }
-  return href;
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopWindowReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
-  }
 }
 
 /**
@@ -900,38 +827,101 @@ export function timestamp() {
   return new Date().getTime();
 }
 
+/**
+ * When the deviceAccess flag config option is false, no cookies should be read or set
+ * @returns {boolean}
+ */
+export function hasDeviceAccess() {
+  return config.getConfig('deviceAccess') !== false;
+}
+
+/**
+ * @returns {(boolean|undefined)}
+ */
 export function checkCookieSupport() {
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
     return true;
   }
 }
+
+/**
+ * @returns {boolean}
+ */
 export function cookiesAreEnabled() {
-  if (internal.checkCookieSupport()) {
-    return true;
+  if (hasDeviceAccess()) {
+    if (internal.checkCookieSupport()) {
+      return true;
+    }
+    window.document.cookie = 'prebid.cookieTest';
+    return window.document.cookie.indexOf('prebid.cookieTest') !== -1;
   }
-  window.document.cookie = 'prebid.cookieTest';
-  return window.document.cookie.indexOf('prebid.cookieTest') != -1;
+  return false;
 }
 
+/**
+ * @param {string} name
+ * @returns {(string|null)}
+ */
 export function getCookie(name) {
-  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
-  return m ? decodeURIComponent(m[2]) : null;
+  if (hasDeviceAccess()) {
+    let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+    return m ? decodeURIComponent(m[2]) : null;
+  }
+  return null;
 }
 
-export function setCookie(key, value, expires, sameSite) {
-  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
+/**
+ * @param {string} key
+ * @param {string} value
+ * @param {string} [expires='']
+ * @param {string} [sameSite='/']
+ * @param {string} [domain] domain (e.g., 'example.com' or 'subdomain.example.com').
+ * If not specified, defaults to the host portion of the current document location.
+ * If a domain is specified, subdomains are always included.
+ * Domain must match the domain of the JavaScript origin. Setting cookies to foreign domains will be silently ignored.
+ */
+export function setCookie(key, value, expires, sameSite, domain) {
+  if (hasDeviceAccess()) {
+    const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
+    const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
+    document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}`;
+  }
+}
+
+/**
+ * Returns all cookie values from the jar whose names contain the `keyLike`
+ * Needs to exist in `utils.js` as it follows the StorageHandler interface defined in live-connect-js. If that module were to be removed, this function can go as well.
+ * @param {string} keyLike
+ * @return {[]}
+ */
+export function findSimilarCookies(keyLike) {
+  const all = [];
+  if (hasDeviceAccess()) {
+    const cookies = document.cookie.split(';');
+    while (cookies.length) {
+      const cookie = cookies.pop();
+      let separatorIndex = cookie.indexOf('=');
+      separatorIndex = separatorIndex < 0 ? cookie.length : separatorIndex;
+      const cookieName = decodeURIComponent(cookie.slice(0, separatorIndex).replace(/^\s+/, ''));
+      if (cookieName.indexOf(keyLike) >= 0) {
+        all.push(decodeURIComponent(cookie.slice(separatorIndex + 1)));
+      }
+    }
+  }
+  return all;
 }
 
 /**
  * @returns {boolean}
  */
 export function localStorageIsEnabled () {
-  try {
-    localStorage.setItem('prebid.cookieTest', '1');
-    return localStorage.getItem('prebid.cookieTest') === '1';
-  } catch (error) {
-    return false;
+  if (hasDeviceAccess()) {
+    try {
+      localStorage.setItem('prebid.cookieTest', '1');
+      return localStorage.getItem('prebid.cookieTest') === '1';
+    } catch (error) {}
   }
+  return false;
 }
 
 /**
@@ -1252,30 +1242,48 @@ export function convertTypes(types, params) {
   return params;
 }
 
+/**
+ * @param {string} key
+ * @param {string} value
+ */
 export function setDataInLocalStorage(key, value) {
   if (hasLocalStorage()) {
     window.localStorage.setItem(key, value);
   }
 }
 
+/**
+ * @param {string} key
+ * @returns {(string|null)}
+ */
 export function getDataFromLocalStorage(key) {
   if (hasLocalStorage()) {
     return window.localStorage.getItem(key);
   }
+  return null;
 }
 
+/**
+ * @param {string} key
+ */
 export function removeDataFromLocalStorage(key) {
   if (hasLocalStorage()) {
     window.localStorage.removeItem(key);
   }
 }
 
+/**
+ * @returns {boolean}
+ */
 export function hasLocalStorage() {
-  try {
-    return !!window.localStorage;
-  } catch (e) {
-    logError('Local storage api disabled');
+  if (hasDeviceAccess()) {
+    try {
+      return !!window.localStorage;
+    } catch (e) {
+      logError('Local storage api disabled');
+    }
   }
+  return false;
 }
 
 export function isArrayOfNums(val, size) {

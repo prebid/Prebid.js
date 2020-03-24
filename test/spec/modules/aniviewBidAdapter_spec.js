@@ -1,5 +1,5 @@
-import { spec } from 'modules/aniviewBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/aniviewBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 const { expect } = require('chai');
 
 describe('ANIVIEW Bid Adapter Test', function () {

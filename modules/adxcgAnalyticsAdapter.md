@@ -16,7 +16,7 @@ https://www.adxcg.com/
 {
   provider: 'adxcg',
     options : {
-      publisherId: ["42"]
+      publisherId: "42"
     }
 }
 

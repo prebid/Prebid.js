@@ -1,13 +1,13 @@
 
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import {VIDEO, BANNER} from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {VIDEO, BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'cpmstar';
 
-const ENDPOINT_DEV = '//dev.server.cpmstar.com/view.aspx';
-const ENDPOINT_STAGING = '//staging.server.cpmstar.com/view.aspx';
-const ENDPOINT_PRODUCTION = '//server.cpmstar.com/view.aspx';
+const ENDPOINT_DEV = 'https://dev.server.cpmstar.com/view.aspx';
+const ENDPOINT_STAGING = 'https://staging.server.cpmstar.com/view.aspx';
+const ENDPOINT_PRODUCTION = 'https://server.cpmstar.com/view.aspx';
 
 const DEFAULT_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';

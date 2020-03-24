@@ -1,4 +1,4 @@
-import { detectReferer } from 'src/refererDetection';
+import { detectReferer } from 'src/refererDetection.js';
 import { expect } from 'chai';
 
 var mocks = {

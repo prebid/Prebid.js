@@ -1,8 +1,8 @@
 import {
   registerBidder
 }
-  from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
+  from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 const BIDDER_CODE = 'reload';
 const VERSION_ADAPTER = '1.10';
 export const spec = {
@@ -182,7 +182,7 @@ function ReloadClientTool(args) {
 
     if (typeof _memFile.srvUrl === 'string' && _memFile.srvUrl !== '') effSrvUrl = _memFile.srvUrl;
 
-    return _getProtocolString() + effSrvUrl + '/bid';
+    return 'https://' + effSrvUrl + '/bid';
 
     function getBidServerUrl (idx) {
       return 'bidsrv' + getTwoDigitString(idx) + '.reload.net';
@@ -390,14 +390,14 @@ function ReloadClientTool(args) {
 
     var stgFileStr = JSON.stringify(stgFileObj);
 
-    localStorage.setItem(name, stgFileStr);
+    utils.setDataInLocalStorage(name, stgFileStr);
 
     return true;
   }
 
   function _getItem (name) {
     try {
-      var obStgFileStr = localStorage.getItem(name);
+      var obStgFileStr = utils.getDataFromLocalStorage(name);
       if (obStgFileStr === null) return null;
 
       var stgFileObj = JSON.parse(obStgFileStr);
@@ -409,14 +409,6 @@ function ReloadClientTool(args) {
     } catch (err) {
       return null;
     }
-  }
-
-  function _getProtocolString () {
-    var wnd = null;
-    try { wnd = top; } catch (err) { wnd = window; }
-
-    if (wnd.location.protocol.toLowerCase().indexOf('http:') >= 0) return 'http://';
-    else return 'https://';
   }
 };
 

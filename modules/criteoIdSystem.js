@@ -5,11 +5,11 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils'
-import * as ajax from '../src/ajax'
-import * as urlLib from '../src/url'
-import { getRefererInfo } from '../src/refererDetection'
-import { submodule } from '../src/hook';
+import * as utils from '../src/utils.js'
+import * as ajax from '../src/ajax.js'
+import * as urlLib from '../src/url.js'
+import { getRefererInfo } from '../src/refererDetection.js'
+import { submodule } from '../src/hook.js';
 
 const bididStorageKey = 'cto_bidid';
 const bundleStorageKey = 'cto_bundle';

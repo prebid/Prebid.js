@@ -1,6 +1,7 @@
 import {expect} from 'chai';
-import {spec} from 'modules/conversantBidAdapter';
-import * as utils from 'src/utils';
+import {spec} from 'modules/conversantBidAdapter.js';
+import * as utils from 'src/utils.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -395,6 +396,7 @@ describe('Conversant adapter tests', function() {
     // add pubcid to every entry
     requests.forEach((unit) => {
       Object.assign(unit, {userId: {pubcid: 67890}});
+      Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
@@ -404,29 +406,61 @@ describe('Conversant adapter tests', function() {
 
   it('Verify GDPR bid request', function() {
     // add gdpr info
-    const bidRequest = {
+    const bidderRequest = {
       gdprConsent: {
         consentString: 'BOJObISOJObISAABAAENAA4AAAAAoAAA',
         gdprApplies: true
       }
     };
 
-    const payload = spec.buildRequests(bidRequests, bidRequest).data;
+    const payload = spec.buildRequests(bidRequests, bidderRequest).data;
     expect(payload).to.have.deep.nested.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
     expect(payload).to.have.deep.nested.property('regs.ext.gdpr', 1);
   });
 
   it('Verify GDPR bid request without gdprApplies', function() {
     // add gdpr info
-    const bidRequest = {
+    const bidderRequest = {
       gdprConsent: {
         consentString: ''
       }
     };
 
-    const payload = spec.buildRequests(bidRequests, bidRequest).data;
+    const payload = spec.buildRequests(bidRequests, bidderRequest).data;
     expect(payload).to.have.deep.nested.property('user.ext.consent', '');
     expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
+  });
+
+  describe('CCPA', function() {
+    it('should have us_privacy', function() {
+      const bidderRequest = {
+        uspConsent: '1NYN'
+      };
+
+      const payload = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(payload).to.have.deep.nested.property('regs.ext.us_privacy', '1NYN');
+      expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
+    });
+
+    it('should have no us_privacy', function() {
+      const payload = spec.buildRequests(bidRequests, {}).data;
+      expect(payload).to.not.have.deep.nested.property('regs.ext.us_privacy');
+    });
+
+    it('should have both gdpr and us_privacy', function() {
+      const bidderRequest = {
+        gdprConsent: {
+          consentString: 'BOJObISOJObISAABAAENAA4AAAAAoAAA',
+          gdprApplies: true
+        },
+        uspConsent: '1NYN'
+      };
+
+      const payload = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(payload).to.have.deep.nested.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
+      expect(payload).to.have.deep.nested.property('regs.ext.gdpr', 1);
+      expect(payload).to.have.deep.nested.property('regs.ext.us_privacy', '1NYN');
+    });
   });
 
   describe('Extended ID', function() {
@@ -437,11 +471,12 @@ describe('Conversant adapter tests', function() {
       // add pubcid to every entry
       requests.forEach((unit) => {
         Object.assign(unit, {userId: {pubcid: 112233, tdid: 223344, idl_env: 334455}});
+        Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
       });
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
-        {source: 'adserver.org', uids: [{id: 223344, atype: 1}]},
+        {source: 'adserver.org', uids: [{id: 223344, atype: 1, ext: {rtiPartner: 'TDID'}}]},
         {source: 'liveramp.com', uids: [{id: 334455, atype: 1}]}
       ]);
     });
