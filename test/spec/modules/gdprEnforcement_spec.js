@@ -148,12 +148,39 @@ describe('gdpr enforcement', function() {
       });
       let consentData = {}
       consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.gdprApplies = true;
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
       deviceAccessHook(nextFnSpy, 1, 'appnexus');
       deviceAccessHook(nextFnSpy, 3, 'rubicon');
       expect(logWarnSpy.callCount).to.equal(1);
+    });
+
+    it('should allow device access when gdprApplies is false and hasDeviceAccess flag is true', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      let consentData = {}
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.gdprApplies = false;
+      consentData.apiVersion = 2;
+      gdprDataHandlerStub.returns(consentData);
+
+      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      expect(nextFnSpy.calledOnce).to.equal(true);
+      let result = {
+        hasEnforcementHook: true,
+        valid: true
+      }
+      expect(nextFnSpy.calledWith(undefined, result));
     });
   });
 
@@ -229,6 +256,7 @@ describe('gdpr enforcement', function() {
       let consentData = {}
       consentData.vendorData = staticConfig.consentData.getTCData;
       consentData.apiVersion = 2;
+      consentData.gdprApplies = true;
       gdprDataHandlerStub.returns(consentData);
 
       curBidderStub.returns('sampleBidder1');

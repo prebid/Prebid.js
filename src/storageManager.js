@@ -4,6 +4,22 @@ import includes from 'core-js/library/fn/array/includes.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
 
+/**
+ * Storage options
+ * @typedef {Object} storageOptions
+ * @property {Number=} gvlid - Vendor id
+ * @property {string} moduleName - Module name
+ * @property {string=} moduleType - Module type, value can be anyone of core or prebid-module
+ */
+
+/**
+ * Returns list of storage related functions with gvlid, module name and module type in its scope.
+ * All three argument are optional here. Below shows the usage of of these
+ * - GVL Id: Pass GVL id if you are a vendor
+ * - Module name: All modules need to pass module name
+ * - Module type: Some modules may need these functions but are not vendor. e.g prebid core files in src and modules like currency.
+ * @param {storageOptions} options
+ */
 export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
   function isValid() {
     if (includes(moduleTypeWhiteList, moduleType)) {

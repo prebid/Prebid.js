@@ -39,17 +39,17 @@ function validateRules(rule, consentData, currentModule, gvlid) {
   let isAllowed = false;
   if (rule.enforcePurpose && rule.enforceVendor) {
     if (includes(rule.vendorExceptions, currentModule) ||
-        (consentData.vendorData.purpose.consents[1] === true && consentData.vendorData.vendor.consents[gvlid] === true)) {
+        (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true && utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)) {
       isAllowed = true;
     }
   } else if (rule.enforcePurpose === false && rule.enforceVendor === true) {
     if (includes(rule.vendorExceptions, currentModule) ||
-        (consentData.vendorData.vendor.consents[gvlid] === true)) {
+        (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)) {
       isAllowed = true;
     }
   } else if (rule.enforcePurpose === false && rule.enforceVendor === false) {
     if ((includes(rule.vendorExceptions, currentModule) &&
-        (consentData.vendorData.purpose.consents[1] === true && consentData.vendorData.vendor.consents[gvlid] === true)) ||
+        (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true && utils.deepAccess(consentData, `vendorData.vendor.consents${gvlid}`) === true)) ||
         !includes(rule.vendorExceptions, currentModule)) {
       isAllowed = true;
     }
@@ -63,6 +63,15 @@ function validateRules(rule, consentData, currentModule, gvlid) {
  * @param {Number=} gvlid gvlid of the module
  * @param {string=} moduleName name of the module
  */
+
+// consent data is null as gdprapplies is false, but gdpr module is included
+// this function will return false it should return true in this case
+
+// hasDeviceAccess has higher precedence so check for that first before everything
+// it it returns false then module does not have access
+// if it returns true then module may have access
+// if gdpr flag is true
+
 export function deviceAccessHook(fn, gvlid, moduleName) {
   let result = {
     hasEnforcementHook: true
@@ -71,26 +80,29 @@ export function deviceAccessHook(fn, gvlid, moduleName) {
     utils.logWarn('Device access is disabled by Publisher');
     result.valid = false;
     return fn.call(this, result);
-  }
-  const consentData = gdprDataHandler.getConsentData();
-  if (consentData && consentData.apiVersion === 2) {
-    if (!gvlid) {
-      gvlid = getGvlid();
-    }
-    const curModule = moduleName || config.getCurrentBidder();
-    const purpose1Rule = find(enforcementRules, hasPurpose1);
-    let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
-    if (isAllowed) {
+  } else {
+    const consentData = gdprDataHandler.getConsentData();
+    if (consentData && consentData.gdprApplies && consentData.apiVersion === 2) {
+      if (!gvlid) {
+        gvlid = getGvlid();
+      }
+      const curModule = moduleName || config.getCurrentBidder();
+      const purpose1Rule = find(enforcementRules, hasPurpose1);
+      let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
+      if (isAllowed) {
+        result.valid = true;
+        return fn.call(this, result);
+      } else {
+        utils.logWarn(`User denied Permission for Device access for ${curModule}`);
+        result.valid = false;
+        return fn.call(this, result);
+      }
+    } else {
+      utils.logInfo('GDPR enforcement only applies to CMP version 2');
       result.valid = true;
       return fn.call(this, result);
-    } else {
-      utils.logWarn(`User denied Permission for Device access for ${curModule}`);
     }
-  } else {
-    utils.logInfo('GDPR enforcement only applies to CMP version 2');
   }
-  result.valid = false;
-  return fn.call(this, result);
 }
 
 /**
@@ -100,7 +112,7 @@ export function deviceAccessHook(fn, gvlid, moduleName) {
  */
 export function userSyncHook(fn, ...args) {
   const consentData = gdprDataHandler.getConsentData();
-  if (consentData && consentData.apiVersion === 2) {
+  if (consentData && consentData.gdprApplies && consentData.apiVersion === 2) {
     const gvlid = getGvlid();
     const curBidder = config.getCurrentBidder();
     if (gvlid) {
