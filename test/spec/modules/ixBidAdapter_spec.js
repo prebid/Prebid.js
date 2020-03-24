@@ -1,13 +1,31 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { spec } from 'modules/ixBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec } from 'modules/ixBidAdapter.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://as-sec.casalemedia.com/cygnus';
   const VIDEO_ENDPOINT_VERSION = 8.1;
   const BANNER_ENDPOINT_VERSION = 7.2;
+
+  const SAMPLE_SCHAIN = {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'indirectseller.com',
+        'sid': '00001',
+        'hp': 1
+      },
+
+      {
+        'asi': 'indirectseller-2.com',
+        'sid': '00002',
+        'hp': 2
+      }
+    ]
+  };
 
   const DEFAULT_BANNER_VALID_BID = [
     {
@@ -26,7 +44,8 @@ describe('IndexexchangeAdapter', function () {
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
-      auctionId: '1aa2bb3cc4dd'
+      auctionId: '1aa2bb3cc4dd',
+      schain: SAMPLE_SCHAIN
     }
   ];
 
@@ -56,7 +75,8 @@ describe('IndexexchangeAdapter', function () {
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
-      auctionId: '1aa2bb3cc4de'
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
     }
   ];
 
@@ -82,7 +102,7 @@ describe('IndexexchangeAdapter', function () {
               advbrandid: 303325,
               advbrand: 'OECTA'
             },
-            adm: '<a target="_blank" href="http://www.indexexchange.com"></a>'
+            adm: '<a target="_blank" href="https://www.indexexchange.com"></a>'
           }
         ],
         seat: '3970'
@@ -126,8 +146,8 @@ describe('IndexexchangeAdapter', function () {
       vendorData: {}
     },
     refererInfo: {
-      referer: 'http://www.prebid.org',
-      canonicalUrl: 'http://www.prebid.org/the/link/to/the/page'
+      referer: 'https://www.prebid.org',
+      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
     }
   };
 
@@ -160,8 +180,8 @@ describe('IndexexchangeAdapter', function () {
         }
       ],
       site: {
-        ref: 'http://ref.com/ref.html',
-        page: 'http://page.com'
+        ref: 'https://ref.com/ref.html',
+        page: 'https://page.com'
       },
     }),
     s: '21',
@@ -174,6 +194,26 @@ describe('IndexexchangeAdapter', function () {
     it('should exists and is a function', function () {
       const adapter = newBidder(spec);
       expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
+
+  describe('getUserSync tests', function () {
+    it('UserSync test : check type = iframe, check usermatch URL', function () {
+      const syncOptions = {
+        'iframeEnabled': true
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync[0].type).to.equal('iframe');
+      const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL);
+    });
+
+    it('When iframeEnabled is false, no userSync should be returned', function () {
+      const syncOptions = {
+        'iframeEnabled': false
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync).to.be.an('array').that.is.empty;
     });
   });
 
@@ -317,19 +357,19 @@ describe('IndexexchangeAdapter', function () {
     let query;
     let testCopy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       window.headertag = {};
-      window.headertag.getIdentityInfo = function() {
+      window.headertag.getIdentityInfo = function () {
         return testCopy;
       };
       request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       query = request.data;
     });
-    afterEach(function() {
+    afterEach(function () {
       delete window.headertag;
     });
-    describe('buildRequestSingleRTI', function() {
-      before(function() {
+    describe('buildRequestSingleRTI', function () {
+      before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
       });
       it('payload should have correct format and value (single identity partner)', function () {
@@ -348,15 +388,17 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
-    describe('buildRequestMultipleIds', function() {
-      before(function() {
+    describe('buildRequestMultipleIds', function () {
+      before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
-        testCopy.IdentityIp.data.uids.push({
-          id: '1234567'
-        },
-        {
-          id: '2019-04-01TF2:34:41'
-        });
+        testCopy.IdentityIp.data.uids.push(
+          {
+            id: '1234567'
+          },
+          {
+            id: '2019-04-01TF2:34:41'
+          }
+        );
       });
       it('payload should have correct format and value (single identity w/ multi ids)', function () {
         const payload = JSON.parse(query.r);
@@ -375,8 +417,8 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
-    describe('buildRequestMultipleRTI', function() {
-      before(function() {
+    describe('buildRequestMultipleRTI', function () {
+      before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
         testCopy.JackIp = {
           responsePending: false,
@@ -424,13 +466,13 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
-    describe('buildRequestNoData', function() {
-      beforeEach(function() {
+    describe('buildRequestNoData', function () {
+      beforeEach(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
       });
 
       it('payload should not have any user eids with an undefined identity data response', function () {
-        window.headertag.getIdentityInfo = function() {
+        window.headertag.getIdentityInfo = function () {
           return undefined;
         };
         request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
@@ -483,6 +525,11 @@ describe('IndexexchangeAdapter', function () {
     const requestMethod = request.method;
     const query = request.data;
 
+    const bidWithoutSchain = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+    delete bidWithoutSchain[0].schain;
+    const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
+    const queryWithoutSchain = requestWithoutSchain.data;
+
     const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
     delete bidWithoutMediaType[0].mediaTypes;
     bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
@@ -505,16 +552,21 @@ describe('IndexexchangeAdapter', function () {
 
     it('payload should have correct format and value', function () {
       const payload = JSON.parse(query.r);
-
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
       expect(payload.site).to.exist;
       expect(payload.site.page).to.equal(DEFAULT_OPTION.refererInfo.referer);
       expect(payload.site.ref).to.equal(document.referrer);
       expect(payload.ext).to.exist;
       expect(payload.ext.source).to.equal('prebid');
+      expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.exist;
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
+    });
+
+    it('payload should not include schain when not provided', function () {
+      const payload = JSON.parse(queryWithoutSchain.r);
+      expect(payload.source).to.not.exist; // source object currently only written for schain
     });
 
     it('impression should have correct format and value', function () {
@@ -775,9 +827,9 @@ describe('IndexexchangeAdapter', function () {
           width: 300,
           height: 250,
           mediaType: 'banner',
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
@@ -802,9 +854,9 @@ describe('IndexexchangeAdapter', function () {
           width: 300,
           height: 250,
           mediaType: 'banner',
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
@@ -828,9 +880,9 @@ describe('IndexexchangeAdapter', function () {
           width: 300,
           height: 250,
           mediaType: 'banner',
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'JPY',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
@@ -855,9 +907,9 @@ describe('IndexexchangeAdapter', function () {
           width: 300,
           height: 250,
           mediaType: 'banner',
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: 'deal',
           meta: {
@@ -896,51 +948,6 @@ describe('IndexexchangeAdapter', function () {
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
-    it('bidrequest should have consent info if gdprApplies and consentString exist', function () {
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
-      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
-    });
-
-    it('bidrequest should not have consent field if consentString is undefined', function () {
-      const options = {
-        gdprConsent: {
-          gdprApplies: true,
-          vendorData: {}
-        }
-      };
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
-      expect(requestWithConsent.user).to.be.undefined;
-    });
-
-    it('bidrequest should not have gdpr field if gdprApplies is undefined', function () {
-      const options = {
-        gdprConsent: {
-          consentString: '3huaa11=qu3198ae',
-          vendorData: {}
-        }
-      };
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs).to.be.undefined;
-      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
-    });
-
-    it('bidrequest should not have consent info if options.gdprConsent is undefined', function () {
-      const options = {};
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs).to.be.undefined;
-      expect(requestWithConsent.user).to.be.undefined;
-    });
-
     it('bidrequest should not have page if options is undefined', function () {
       const options = {};
       const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
@@ -972,6 +979,85 @@ describe('IndexexchangeAdapter', function () {
 
       expect(requestWithoutreferInfo.site.page).to.equal(options.refererInfo.referer);
       expect(validBidWithoutreferInfo[0].url).to.equal(IX_SECURE_ENDPOINT);
+    });
+  });
+
+  describe('bidrequest consent', function () {
+    it('should have consent info if gdprApplies and consentString exist', function () {
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
+    });
+
+    it('should not have consent field if consentString is undefined', function () {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {}
+        }
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.user).to.be.undefined;
+    });
+
+    it('should not have gdpr field if gdprApplies is undefined', function () {
+      const options = {
+        gdprConsent: {
+          consentString: '3huaa11=qu3198ae',
+          vendorData: {}
+        }
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs).to.be.undefined;
+      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
+    });
+
+    it('should not have consent info if options.gdprConsent is undefined', function () {
+      const options = {};
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs).to.be.undefined;
+      expect(requestWithConsent.user).to.be.undefined;
+    });
+
+    it('should have us_privacy if uspConsent is defined', function () {
+      const options = {
+        uspConsent: '1YYN'
+      };
+      const validBidWithUspConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithUspConsent = JSON.parse(validBidWithUspConsent[0].data.r);
+
+      expect(requestWithUspConsent.regs.ext.us_privacy).to.equal('1YYN');
+    });
+
+    it('should not have us_privacy if uspConsent undefined', function () {
+      const options = {};
+      const validBidWithUspConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithUspConsent = JSON.parse(validBidWithUspConsent[0].data.r);
+
+      expect(requestWithUspConsent.regs).to.be.undefined;
+    });
+
+    it('should have both gdpr and us_privacy if both are defined', function () {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {}
+        },
+        uspConsent: '1YYN'
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.regs.ext.us_privacy).to.equal('1YYN');
     });
   });
 });

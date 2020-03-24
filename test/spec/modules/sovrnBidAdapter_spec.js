@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {LogError, spec} from 'modules/sovrnBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {LogError, spec} from 'modules/sovrnBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
 
@@ -150,6 +150,25 @@ describe('sovrnBidAdapter', function() {
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.exist.and.to.be.a('string');
       expect(data.user.ext.consent).to.equal(consentString);
+    });
+
+    it('should send us_privacy if bidderRequest has a value for uspConsent', function () {
+      let uspString = '1NYN';
+      let bidderRequest = {
+        'bidderCode': 'sovrn',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        uspConsent: uspString,
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+      expect(data.regs.ext['us_privacy']).to.equal(uspString);
     });
 
     it('converts tagid to string', function () {
@@ -399,10 +418,53 @@ describe('sovrnBidAdapter', function() {
       const expectedReturnStatement = [
         {
           'type': 'iframe',
-          'url': 'https://ap.lijit.com/beacon?informer=13487408&gdpr_consent=',
+          'url': 'https://ap.lijit.com/beacon?informer=13487408',
         }
       ];
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse);
+      expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
+    });
+
+    it('should include gdpr consent string if present', function() {
+      const gdprConsent = {
+        gdprApplies: 1,
+        consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
+      }
+      const expectedReturnStatement = [
+        {
+          'type': 'iframe',
+          'url': `https://ap.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&informer=13487408`,
+        }
+      ];
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, '');
+      expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
+    });
+
+    it('should include us privacy string if present', function() {
+      const uspString = '1NYN';
+      const expectedReturnStatement = [
+        {
+          'type': 'iframe',
+          'url': `https://ap.lijit.com/beacon?us_privacy=${uspString}&informer=13487408`,
+        }
+      ];
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, null, uspString);
+      expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
+    });
+
+    it('should include all privacy strings if present', function() {
+      const gdprConsent = {
+        gdprApplies: 1,
+        consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
+      }
+      const uspString = '1NYN';
+      const expectedReturnStatement = [
+        {
+          'type': 'iframe',
+          'url': `https://ap.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&us_privacy=${uspString}&informer=13487408`,
+        }
+      ];
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, uspString);
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
     });
 

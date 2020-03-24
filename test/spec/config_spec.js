@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { assert } from 'chai';
-import { newConfig } from 'src/config';
+import { newConfig } from 'src/config.js';
 
 const utils = require('src/utils');
 
@@ -33,7 +33,7 @@ describe('config API', function () {
     expect(getConfig()).to.be.a('object');
   });
 
-  it('sets and gets arbitrary configuarion properties', function () {
+  it('sets and gets arbitrary configuration properties', function () {
     setConfig({ baz: 'qux' });
     expect(getConfig('baz')).to.equal('qux');
   });
@@ -137,32 +137,37 @@ describe('config API', function () {
   });
 
   it('set mediaTypePriceGranularity', function () {
-    const customPriceGranularity = {
+    const customPriceGranularityVideo = {
       'buckets': [{
-        'min': 0,
         'max': 3,
         'increment': 0.01,
         'cap': true
       }]
     };
+    const customPriceGranularityInstream = utils.deepClone(customPriceGranularityVideo);
+    const customPriceGranularityOutstream = utils.deepClone(customPriceGranularityVideo);
+
     setConfig({
       'mediaTypePriceGranularity': {
         'banner': 'medium',
-        'video': customPriceGranularity,
-        'native': 'medium'
+        'video': customPriceGranularityVideo,
+        'video-instream': customPriceGranularityInstream,
+        'video-outstream': customPriceGranularityOutstream,
+        'native': 'high'
       }
     });
 
     const configResult = getConfig('mediaTypePriceGranularity');
     expect(configResult.banner).to.be.equal('medium');
-    expect(configResult.video).to.be.equal(customPriceGranularity);
-    expect(configResult.native).to.be.equal('medium');
+    expect(configResult.video).to.be.equal(customPriceGranularityVideo);
+    expect(configResult['video-instream']).to.be.equal(customPriceGranularityInstream);
+    expect(configResult['video-outstream']).to.be.equal(customPriceGranularityOutstream);
+    expect(configResult.native).to.be.equal('high');
   });
 
   it('sets priceGranularity and customPriceBucket', function () {
     const goodConfig = {
       'buckets': [{
-        'min': 0,
         'max': 3,
         'increment': 0.01,
         'cap': true
@@ -171,6 +176,23 @@ describe('config API', function () {
     setConfig({ priceGranularity: goodConfig });
     expect(getConfig('priceGranularity')).to.be.equal('custom');
     expect(getConfig('customPriceBucket')).to.equal(goodConfig);
+  });
+
+  it('sets deviceAccess', function () {
+    // When the deviceAccess flag config option is not set, cookies may be read and set
+    expect(getConfig('deviceAccess')).to.be.equal(true);
+
+    // When the deviceAccess flag config option is set to false, no cookies are read or set
+    setConfig({
+      'deviceAccess': false
+    });
+    expect(getConfig('deviceAccess')).to.be.equal(false);
+
+    // When the deviceAccess flag config option is set to true, cookies may be read and set
+    setConfig({
+      'deviceAccess': true
+    });
+    expect(getConfig('deviceAccess')).to.be.equal(true);
   });
 
   it('should log error for invalid priceGranularity', function () {

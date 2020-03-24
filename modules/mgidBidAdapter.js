@@ -1,8 +1,8 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import * as urlUtils from '../src/url';
-import {BANNER, NATIVE} from '../src/mediaTypes';
-import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import * as urlUtils from '../src/url.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
@@ -232,7 +232,7 @@ export const spec = {
         /\${AUCTION_PRICE}/,
         cpm
       );
-      pixel(bid.nurl);
+      utils.triggerPixel(bid.nurl);
     }
     if (bid.isBurl) {
       if (bid.mediaType === BANNER) {
@@ -245,7 +245,7 @@ export const spec = {
           /\${AUCTION_PRICE}/,
           cpm
         );
-        pixel(bid.burl);
+        utils.triggerPixel(bid.burl);
       }
     }
     utils.logInfo(LOG_INFO_PREFIX + `onBidWon`);
@@ -331,10 +331,6 @@ function extractDomainFromHost(pageHost) {
   return domain;
 }
 
-function pixel(url) {
-  (document.createElement('IMG')).src = url;
-}
-
 function getLanguage() {
   const language = navigator.language ? 'language' : 'userLanguage';
   const lang2 = navigator[language].split('-')[0];
@@ -346,7 +342,7 @@ function getLanguage() {
 
 function getLocalStorageSafely(key) {
   try {
-    return localStorage.getItem(key);
+    return utils.getDataFromLocalStorage(key);
   } catch (e) {
     return null;
   }
@@ -354,7 +350,7 @@ function getLocalStorageSafely(key) {
 
 function setLocalStorageSafely(key, val) {
   try {
-    return localStorage.setItem(key, val);
+    return utils.setDataInLocalStorage(key, val);
   } catch (e) {
     return null;
   }

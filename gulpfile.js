@@ -32,6 +32,9 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var port = 9999;
+const mockServerPort = 4444;
+const host = argv.host ? argv.host : 'localhost';
+const { spawn } = require('child_process');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -64,11 +67,11 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const isFixed = function(file) {
+  const isFixed = function (file) {
     return file.eslint != null && file.eslint.fixed;
   }
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], {base: './'})
-    .pipe(gulpif(argv.nolintfix, eslint(), eslint({fix: true})))
+  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], { base: './' })
+    .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
     .pipe(gulpif(isFixed, gulp.dest('./')));
@@ -81,7 +84,7 @@ function viewCoverage(done) {
 
   connect.server({
     port: coveragePort,
-    root: 'build/coverage/karma_html',
+    root: 'build/coverage/lcov-report',
     livereload: false
   });
   opens('http://' + mylocalhost + ':' + coveragePort);
@@ -157,7 +160,7 @@ function nodeBundle(modules) {
       .on('error', (err) => {
         reject(err);
       })
-      .pipe(through.obj(function(file, enc, done) {
+      .pipe(through.obj(function (file, enc, done) {
         resolve(file.contents.toString(enc));
         done();
       }));
@@ -196,7 +199,7 @@ function bundle(dev, moduleArr) {
   return gulp.src(
     entries
   )
-    .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
+    .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
       global: prebid.globalVarName
@@ -234,12 +237,26 @@ function test(done) {
         wdioConf
       ];
     }
+
+    //run mock-server
+    const mockServer = spawn('node', ['./test/mock-server/index.js', '--port=' + mockServerPort]);
+    mockServer.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`);
+    });
+    mockServer.stderr.on('data', (data) => {
+      console.log(`stderr: ${data}`);
+    });
+
     execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
       .then(stdout => {
+        //kill mock server
+        mockServer.kill('SIGINT');
         done();
         process.exit(0);
       })
       .catch(err => {
+        //kill mock server
+        mockServer.kill('SIGINT');
         done(new Error(`Tests failed with error: ${err}`));
         process.exit(1);
       });
@@ -256,7 +273,7 @@ function test(done) {
 }
 
 function newKarmaCallback(done) {
-  return function(exitCode) {
+  return function (exitCode) {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
       if (argv.browserstack) {
@@ -279,7 +296,7 @@ function testCoverage(done) {
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // first send results of istanbul's test coverage to coveralls.io.
   return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
-  // have to read it.
+    // have to read it.
     .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
 }
 
@@ -309,6 +326,12 @@ function setupE2e(done) {
   done();
 }
 
+gulp.task('updatepath', function () {
+  return gulp.src(['build/dist/*.js'])
+    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', 'http://' + host + ':' + mockServerPort + '/'))
+    .pipe(gulp.dest('build/dist'));
+});
+
 // support tasks
 gulp.task(lint);
 gulp.task(watch);
@@ -334,7 +357,7 @@ gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
-gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), test))
+gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), 'updatepath', test));
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step

@@ -1,10 +1,10 @@
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { Renderer } from '../src/Renderer';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import * as utils from '../src/utils.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js';
 
@@ -42,7 +42,7 @@ export const spec = {
       request.push(formRequestUrl(reqParams));
     }
 
-    request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
+    request.unshift('https://' + globalParams[0][1] + '/adx/?rp=4');
     netRevenue = netRevenue || 'gross';
     request.push('pt=' + netRevenue);
     request.push('stid=' + validBidRequests[0].auctionId);
@@ -98,7 +98,7 @@ export const spec = {
       response = responses[i];
       type = response.response === 'banner' ? BANNER : VIDEO;
       bid = bids[i];
-      if (VALID_RESPONSES[response.response] && (verifySize(response, bid.sizes) || type === VIDEO)) {
+      if (VALID_RESPONSES[response.response] && (verifySize(response, utils.getAdUnitSizes(bid)) || type === VIDEO)) {
         bidObject = {
           requestId: bid.bidId,
           cpm: response.win_bid,
@@ -117,7 +117,7 @@ export const spec = {
           mediaType: type
         };
 
-        if (!bid.renderer && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
+        if (!bid.renderer && type === VIDEO && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
           bidObject.renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL});
           bidObject.renderer.setRender(renderer);
         }

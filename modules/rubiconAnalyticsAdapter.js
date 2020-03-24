@@ -1,9 +1,10 @@
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import * as utils from '../src/utils';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
+import * as urlLib from '../src/url.js'
 
 const {
   EVENTS: {
@@ -34,6 +35,16 @@ const cache = {
   auctions: {},
   targeting: {},
   timeouts: {},
+};
+
+export function getHostNameFromReferer(referer) {
+  try {
+    rubiconAdapter.referrerHostname = urlLib.parse(referer, {noDecodeWholeURL: true}).hostname;
+  } catch (e) {
+    utils.logError('Rubicon Analytics: Unable to parse hostname from supplied url: ', referer, e);
+    rubiconAdapter.referrerHostname = '';
+  }
+  return rubiconAdapter.referrerHostname
 };
 
 function stringProperties(obj) {
@@ -109,18 +120,19 @@ function sendMessage(auctionId, bidWonId) {
       samplingFactor
     });
   }
-  let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
+  let auctionCache = cache.auctions[auctionId];
+  let referrer = config.getConfig('pageUrl') || auctionCache.referrer;
   let message = {
     eventTimeMillis: Date.now(),
     integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
     version: '$prebid.version$',
-    referrerUri: referrer
+    referrerUri: referrer,
+    referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer)
   };
   const wrapperName = config.getConfig('rubicon.wrapperName');
   if (wrapperName) {
     message.wrapperName = wrapperName;
   }
-  let auctionCache = cache.auctions[auctionId];
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
       let bid = auctionCache.bids[bidId];
@@ -260,6 +272,7 @@ function setRubiconAliases(aliasRegistry) {
 
 let baseAdapter = adapter({analyticsType: 'endpoint'});
 let rubiconAdapter = Object.assign({}, baseAdapter, {
+  referrerHostname: '',
   enableAnalytics(config = {}) {
     let error = false;
     samplingFactor = 1;
@@ -315,6 +328,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         ]);
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
+        cacheEntry.referrer = args.bidderRequests[0].refererInfo.referer;
         cache.auctions[args.auctionId] = cacheEntry;
         break;
       case BID_REQUESTED:
@@ -415,10 +429,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
         bid.bidResponse = parseBidResponse(args, bid.bidResponse);
-        // RP server banner overwrites bidId with bid.seatBidId
-        if (utils.deepAccess(bid, 'bidResponse.seatBidId') && bid.bidder === 'rubicon' && bid.source === 'server' && ['video', 'banner'].some(i => utils.deepAccess(bid, 'bidResponse.mediaType') === i)) {
-          bid.seatBidId = bid.bidResponse.seatBidId;
-        }
         break;
       case BIDDER_DONE:
         args.bids.forEach(bid => {

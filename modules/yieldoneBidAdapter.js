@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
@@ -17,13 +17,14 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return !!(bid.params.placementId);
   },
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
-      const referrer = encodeURIComponent(utils.getTopWindowUrl());
+      const referrer = bidderRequest.refererInfo.referer;
       const bidId = bidRequest.bidId;
+      const transactionId = bidRequest.transactionId;
       const unitCode = bidRequest.adUnitCode;
       const timeout = config.getConfig('bidderTimeout');
       const payload = {
@@ -32,6 +33,7 @@ export const spec = {
         cb: cb,
         r: referrer,
         uid: bidId,
+        tid: transactionId,
         uc: unitCode,
         tmax: timeout,
         t: 'i'
@@ -68,7 +70,7 @@ export const spec = {
       const renderId = response.renderid || '';
       const currency = response.currency || 'JPY';
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
-      const referrer = utils.getTopWindowUrl();
+      const referrer = bidRequest.data.r || '';
       const bidResponse = {
         requestId: response.uid,
         cpm: cpm,

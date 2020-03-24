@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-const utils = require('../src/utils');
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+const utils = require('../src/utils.js');
 const BIDDER_CODE = 'teads';
-const ENDPOINT_URL = '//a.teads.tv/hb/bid-request';
+const ENDPOINT_URL = 'https://a.teads.tv/hb/bid-request';
 const gdprStatus = {
   GDPR_APPLIES_PUBLISHER: 12,
   GDPR_APPLIES_GLOBAL: 11,
@@ -59,6 +59,10 @@ export const spec = {
         consent: isConsentString ? gdpr.consentString : '',
         status: status
       };
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
     }
 
     const payloadString = JSON.stringify(payload);
@@ -120,7 +124,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//sync.teads.tv/iframe?' + utils.parseQueryStringParameters(queryParams)
+        url: 'https://sync.teads.tv/iframe?' + utils.parseQueryStringParameters(queryParams)
       }];
     }
   }

@@ -8,9 +8,10 @@ import {
   QUANTCAST_PROTOCOL,
   QUANTCAST_PORT,
   spec as qcSpec
-} from '../../../modules/quantcastBidAdapter';
-import { newBidder } from '../../../src/adapters/bidderFactory';
-import { parse } from 'src/url';
+} from '../../../modules/quantcastBidAdapter.js';
+import { newBidder } from '../../../src/adapters/bidderFactory.js';
+import { parse } from 'src/url.js';
+import { config } from 'src/config.js';
 
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
@@ -28,7 +29,11 @@ describe('Quantcast adapter', function () {
         publisherId: QUANTCAST_TEST_PUBLISHER, // REQUIRED - Publisher ID provided by Quantcast
         battr: [1, 2] // OPTIONAL - Array of blocked creative attributes as per OpenRTB Spec List 5.3
       },
-      sizes: [[300, 250]]
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      }
     };
 
     bidderRequest = {
@@ -83,17 +88,10 @@ describe('Quantcast adapter', function () {
   });
 
   describe('`buildRequests`', function () {
-    it('selects protocol and port', function () {
-      switch (window.location.protocol) {
-        case 'https:':
-          expect(QUANTCAST_PROTOCOL).to.equal('https');
-          expect(QUANTCAST_PORT).to.equal('8443');
-          break;
-        default:
-          expect(QUANTCAST_PROTOCOL).to.equal('http');
-          expect(QUANTCAST_PORT).to.equal('8080');
-          break;
-      }
+    it('sends secure bid requests', function () {
+      const requests = qcSpec.buildRequests([bidRequest]);
+      const url = parse(requests[0]['url']);
+      expect(url.protocol).to.equal('https');
     });
 
     it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', function () {
@@ -120,30 +118,41 @@ describe('Quantcast adapter', function () {
       expect(requests[0].method).to.equal('POST');
     });
 
+    const expectedBannerBidRequest = {
+      publisherId: QUANTCAST_TEST_PUBLISHER,
+      requestId: '2f7b179d443f14',
+      imp: [
+        {
+          banner: {
+            battr: [1, 2],
+            sizes: [{ width: 300, height: 250 }]
+          },
+          placementCode: 'div-gpt-ad-1438287399331-0',
+          bidFloor: 1e-10
+        }
+      ],
+      site: {
+        page: 'http://example.com/hello.html',
+        referrer: 'http://example.com/hello.html',
+        domain: 'example.com'
+      },
+      bidId: '2f7b179d443f14',
+      gdprSignal: 0,
+      uspSignal: 0,
+      coppa: 0,
+      prebidJsVersion: '$prebid.version$'
+    };
+
     it('sends banner bid requests contains all the required parameters', function () {
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
-      const expectedBannerBidRequest = {
-        publisherId: QUANTCAST_TEST_PUBLISHER,
-        requestId: '2f7b179d443f14',
-        imp: [
-          {
-            banner: {
-              battr: [1, 2],
-              sizes: [{ width: 300, height: 250 }]
-            },
-            placementCode: 'div-gpt-ad-1438287399331-0',
-            bidFloor: 1e-10
-          }
-        ],
-        site: {
-          page: 'http://example.com/hello.html',
-          referrer: 'http://example.com/hello.html',
-          domain: 'example.com'
-        },
-        bidId: '2f7b179d443f14',
-        gdprSignal: 0,
-        prebidJsVersion: '$prebid.version$'
-      };
+
+      expect(requests[0].data).to.equal(JSON.stringify(expectedBannerBidRequest));
+    });
+
+    it('supports deprecated banner format', function () {
+      bidRequest.sizes = bidRequest.mediaTypes.banner.sizes;
+      delete bidRequest.mediaTypes;
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedBannerBidRequest));
     });
@@ -197,6 +206,8 @@ describe('Quantcast adapter', function () {
         },
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
+        uspSignal: 0,
+        coppa: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -231,6 +242,8 @@ describe('Quantcast adapter', function () {
         },
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
+        uspSignal: 0,
+        coppa: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -261,6 +274,8 @@ describe('Quantcast adapter', function () {
         },
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
+        uspSignal: 0,
+        coppa: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -297,7 +312,6 @@ describe('Quantcast adapter', function () {
           playerSize: [[550, 310]]
         }
       };
-      bidRequest.sizes = [[300, 250], [728, 90], [250, 250], [468, 60], [320, 50]];
 
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
       const expectedBidRequest = {
@@ -324,6 +338,8 @@ describe('Quantcast adapter', function () {
         },
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
+        uspSignal: 0,
+        coppa: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -332,11 +348,63 @@ describe('Quantcast adapter', function () {
   });
 
   it('propagates GDPR consent string and signal', function () {
-    const gdprConsent = { gdprApplies: true, consentString: 'consentString' }
-    const requests = qcSpec.buildRequests([bidRequest], { gdprConsent });
-    const parsed = JSON.parse(requests[0].data)
+    const bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentString' } }
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
     expect(parsed.gdprSignal).to.equal(1);
-    expect(parsed.gdprConsent).to.equal(gdprConsent.consentString);
+    expect(parsed.gdprConsent).to.equal('consentString');
+  });
+
+  it('propagates US Privacy/CCPA consent information', function () {
+    const bidderRequest = { uspConsent: 'consentString' }
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
+    expect(parsed.uspSignal).to.equal(1);
+    expect(parsed.uspConsent).to.equal('consentString');
+  });
+
+  describe('propagates coppa', function() {
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('propagates coppa as 1 if coppa param is set to true in the bid request', function () {
+      bidRequest.params = {
+        publisherId: 'test_publisher_id',
+        coppa: true
+      };
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        const config = {
+          'coppa': true
+        };
+        return config[key];
+      });
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(requests[0].data).coppa).to.equal(1);
+    });
+
+    it('propagates coppa as 0 if there is no coppa param or coppa is set to false in the bid request', function () {
+      const requestsWithoutCoppa = qcSpec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(requestsWithoutCoppa[0].data).coppa).to.equal(0);
+
+      bidRequest.params = {
+        publisherId: 'test_publisher_id',
+        coppa: false
+      };
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        const config = {
+          'coppa': false
+        };
+        return config[key];
+      });
+      const requestsWithFalseCoppa = qcSpec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(requestsWithFalseCoppa[0].data).coppa).to.equal(0);
+    });
   });
 
   describe('`interpretResponse`', function () {

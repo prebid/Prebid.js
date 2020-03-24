@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'conversant';
 const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
@@ -122,16 +122,18 @@ export const spec = {
 
     let userExt = {};
 
-    // Add GDPR flag and consent string
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      userExt.consent = bidderRequest.gdprConsent.consentString;
+    if (bidderRequest) {
+      // Add GDPR flag and consent string
+      if (bidderRequest.gdprConsent) {
+        userExt.consent = bidderRequest.gdprConsent.consentString;
 
-      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-        payload.regs = {
-          ext: {
-            gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-          }
-        };
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          utils.deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+        }
+      }
+
+      if (bidderRequest.uspConsent) {
+        utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
     }
 
@@ -312,36 +314,24 @@ function copyOptProperty(src, dst, dstName) {
 function collectEids(bidRequests) {
   const request = bidRequests[0]; // bidRequests have the same userId object
   const eids = [];
-
-  addEid(eids, request, 'userId.tdid', 'adserver.org');
-  addEid(eids, request, 'userId.idl_env', 'liveramp.com');
-  addEid(eids, request, 'userId.criteoId', 'criteo.com');
-  addEid(eids, request, 'userId.id5id', 'id5-sync.com');
-  addEid(eids, request, 'userId.parrableid', 'parrable.com');
-  addEid(eids, request, 'userId.digitrustid.data.id', 'digitru.st');
-  addEid(eids, request, 'userId.lipb.lipbid', 'liveintent.com');
-
-  return eids;
-}
-
-/**
- * Extract and push a single extended id into eids array
- * @param eids Array of extended IDs
- * @param idObj Object containing IDs
- * @param keyPath Nested properties expressed as a path
- * @param source Source for the ID
- */
-function addEid(eids, idObj, keyPath, source) {
-  const id = utils.deepAccess(idObj, keyPath);
-  if (id) {
-    eids.push({
-      source: source,
-      uids: [{
-        id: id,
-        atype: 1
-      }]
+  if (utils.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
+    // later following white-list can be converted to block-list if needed
+    const requiredSourceValues = {
+      'adserver.org': 1,
+      'liveramp.com': 1,
+      'criteo.com': 1,
+      'id5-sync.com': 1,
+      'parrable.com': 1,
+      'digitru.st': 1,
+      'liveintent.com': 1
+    };
+    request.userIdAsEids.forEach(function(eid) {
+      if (requiredSourceValues.hasOwnProperty(eid.source)) {
+        eids.push(eid);
+      }
     });
   }
+  return eids;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import { spec } from 'modules/yieldlabBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
+import { spec } from 'modules/yieldlabBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const REQUEST = {
   'bidder': 'yieldlab',
@@ -27,8 +27,13 @@ const RESPONSE = {
   format: 0,
   id: 1111,
   price: 1,
-  pid: 2222
+  pid: 2222,
+  adtype: 'BANNER'
 }
+
+const VIDEO_RESPONSE = Object.assign({}, RESPONSE, {
+  'adtype': 'VIDEO'
+})
 
 describe('yieldlabBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -140,7 +145,7 @@ describe('yieldlabBidAdapter', function () {
           }
         }
       })
-      const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [VIDEO_REQUEST]})
+      const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [VIDEO_REQUEST]})
 
       expect(result[0].requestId).to.equal('2d925f27f5079f')
       expect(result[0].cpm).to.equal(0.01)
@@ -158,7 +163,7 @@ describe('yieldlabBidAdapter', function () {
           }
         }
       })
-      const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [OUTSTREAM_REQUEST]})
+      const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [OUTSTREAM_REQUEST]})
 
       expect(result[0].renderer.id).to.equal('2d925f27f5079f')
       expect(result[0].renderer.url).to.equal('https://ad2.movad.net/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event')

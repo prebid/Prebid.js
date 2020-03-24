@@ -1,9 +1,9 @@
 import {expect} from 'chai';
-import {spec} from 'modules/teadsBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/teadsBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
-const ENDPOINT = '//a.teads.tv/hb/bid-request';
-const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="http://a.teads.tv/hb/getAdSettings"></script>"';
+const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
+const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
 
 describe('teadsBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -109,6 +109,22 @@ describe('teadsBidAdapter', () => {
       expect(request.method).to.equal('POST');
     });
 
+    it('should send US Privacy to endpoint', function() {
+      let usPrivacy = 'OHHHFCP1'
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'uspConsent': usPrivacy
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.us_privacy).to.exist;
+      expect(payload.us_privacy).to.equal(usPrivacy);
+    });
+
     it('should send GDPR to endpoint', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
@@ -136,7 +152,7 @@ describe('teadsBidAdapter', () => {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
-          referer: 'http://example.com/page.html',
+          referer: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2
         }
@@ -145,7 +161,7 @@ describe('teadsBidAdapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.referrer).to.exist;
-      expect(payload.referrer).to.deep.equal('http://example.com/page.html')
+      expect(payload.referrer).to.deep.equal('https://example.com/page.html')
     });
 
     it('should send GDPR to endpoint with 11 status', function() {
@@ -380,7 +396,7 @@ describe('teadsBidAdapter', () => {
       }
     };
     let hb_version = '$prebid.version$'
-    let finalUrl = `//sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&placementId=34&`;
+    let finalUrl = `https://sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&placementId=34&`;
     const userSync = spec.getUserSyncs(syncOptions, bids, gdprConsent);
 
     expect(userSync[0].type).to.equal('iframe');
@@ -413,7 +429,7 @@ describe('teadsBidAdapter', () => {
       }
     };
     let hb_version = '$prebid.version$'
-    let finalUrl = `//sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&`;
+    let finalUrl = `https://sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&`;
     const userSync = spec.getUserSyncs(syncOptions, bids, gdprConsent);
 
     expect(userSync[0].type).to.equal('iframe');

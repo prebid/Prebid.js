@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
@@ -45,7 +45,7 @@ export const spec = {
       bidIDs: bidIds,
       bidSizes: bidSizes,
       prebidRawBidRequests: validBidRequests
-    }, spec._getAllMetadata(tdid));
+    }, spec._getAllMetadata(tdid, bidderRequest.uspConsent));
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
       method: 'GET',
@@ -59,6 +59,12 @@ export const spec = {
     const bidResponses = [];
     for (let bidId in bids) {
       let adUnit = bids[bidId];
+      let meta;
+      if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
+        meta = {
+          clickUrl: adUnit.metadata.landingPageDomain
+        };
+      }
       bidResponses.push({
         requestId: bidId,
         cpm: Number(adUnit.cpm),
@@ -69,7 +75,8 @@ export const spec = {
         creativeId: adUnit.id,
         dealId: adUnit.targetingCustom,
         netRevenue: true,
-        currency: bidRequest.currency
+        currency: bidRequest.currency,
+        meta: meta
       });
     }
     return bidResponses;
@@ -91,6 +98,9 @@ export const spec = {
 
   // PRIVATE
   _readCookie(name) {
+    if (!utils.cookiesAreEnabled()) {
+      return null;
+    }
     let nameEquals = `${name}=`;
     let cookies = document.cookie.split(';');
 
@@ -163,19 +173,20 @@ export const spec = {
 
   _getLocalStorageSafely(key) {
     try {
-      return localStorage.getItem(key);
+      return utils.getDataFromLocalStorage(key);
     } catch (e) {
       return null;
     }
   },
 
-  _getUserIds(tdid) {
+  _getUserIds(tdid, usp) {
     const crb = spec._getCrb();
     const userIds = {
       kargoID: crb.userId,
       clientID: crb.clientId,
       crbIDs: crb.syncIds || {},
-      optOut: crb.optOut
+      optOut: crb.optOut,
+      usp: usp
     };
     if (tdid) {
       userIds.tdID = tdid;
@@ -188,9 +199,9 @@ export const spec = {
     return crb.clientId;
   },
 
-  _getAllMetadata(tdid) {
+  _getAllMetadata(tdid, usp) {
     return {
-      userIDs: spec._getUserIds(tdid),
+      userIDs: spec._getUserIds(tdid, usp),
       krux: spec._getKrux(),
       pageURL: window.location.href,
       rawCRB: spec._readCookie('krg_crb'),

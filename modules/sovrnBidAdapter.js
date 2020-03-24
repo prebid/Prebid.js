@@ -1,7 +1,7 @@
-import * as utils from '../src/utils'
-import {parse} from '../src/url'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { BANNER } from '../src/mediaTypes'
+import * as utils from '../src/utils.js'
+import {parse} from '../src/url.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
 
 export const spec = {
   code: 'sovrn',
@@ -81,15 +81,12 @@ export const spec = {
         };
       }
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        sovrnBidReq.regs = {
-          ext: {
-            gdpr: +bidderRequest.gdprConsent.gdprApplies
-          }};
-        sovrnBidReq.user = {
-          ext: {
-            consent: bidderRequest.gdprConsent.consentString
-          }};
+      if (bidderRequest.gdprConsent) {
+        utils.deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
+        utils.deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      }
+      if (bidderRequest.uspConsent) {
+        utils.deepSetValue(sovrnBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
       if (digitrust) {
@@ -110,8 +107,7 @@ export const spec = {
         options: {contentType: 'text/plain'}
       }
     } catch (e) {
-      console.log('error in build:')
-      console.log(e)
+      utils.logError('Could not build bidrequest, error deatils:', e);
     }
   },
 
@@ -146,26 +142,30 @@ export const spec = {
       }
       return sovrnBidResponses
     } catch (e) {
-      console.log('error in interpret:')
-      console.log(e)
+      utils.logError('Could not intrepret bidresponse, error deatils:', e);
     }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     try {
-      let tracks = []
+      const tracks = []
       if (serverResponses && serverResponses.length !== 0) {
         if (syncOptions.iframeEnabled) {
-          let iidArr = serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.iid'))
+          const iidArr = serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.iid'))
             .map(resp => resp.body.ext.iid);
-          let consentString = '';
+          const params = [];
           if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
-            consentString = gdprConsent.consentString
+            params.push(['gdpr_consent', gdprConsent.consentString]);
           }
+          if (uspConsent) {
+            params.push(['us_privacy', uspConsent]);
+          }
+
           if (iidArr[0]) {
+            params.push(['informer', iidArr[0]]);
             tracks.push({
               type: 'iframe',
-              url: 'https://ap.lijit.com/beacon?informer=' + iidArr[0] + '&gdpr_consent=' + consentString,
+              url: 'https://ap.lijit.com/beacon?' + params.map(p => p.join('=')).join('&')
             });
           }
         }
