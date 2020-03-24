@@ -259,6 +259,7 @@ function checkNativeSendId(bidRequest) {
 /**
  * @param {CriteoContext} context
  * @param {BidRequest[]} bidRequests
+ * @param bidderRequest
  * @return {*}
  */
 function buildCdbRequest(context, bidRequests, bidderRequest) {
@@ -328,9 +329,17 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
       request.gdprConsent.gdprApplies = !!(bidderRequest.gdprConsent.gdprApplies);
     }
-    if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
-      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ] !== 'undefined') {
-      request.gdprConsent.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ]);
+    request.gdprConsent.version = bidderRequest.gdprConsent.apiVersion;
+    if (request.gdprConsent.version === 2) {
+      if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendor && bidderRequest.gdprConsent.vendorData.vendor.consents &&
+        typeof bidderRequest.gdprConsent.vendorData.vendor.consents[CRITEO_VENDOR_ID.toString()] !== "undefined") {
+        request.gdprConsent.consentGiven = (bidderRequest.gdprConsent.vendorData.vendor.consents[CRITEO_VENDOR_ID.toString(10)]);
+      }
+    } else {
+      if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
+        typeof bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ] !== 'undefined') {
+        request.gdprConsent.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ]);
+      }
     }
     if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
       request.gdprConsent.consentData = bidderRequest.gdprConsent.consentString;

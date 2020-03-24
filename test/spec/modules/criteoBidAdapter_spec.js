@@ -385,6 +385,7 @@ describe('The Criteo bidding adapter', function () {
             '91': 1
           },
         },
+        apiVersion: 1,
       },
     };
 
@@ -437,6 +438,7 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.gdprConsent.consentData).to.equal('concentDataString');
       expect(ortbRequest.gdprConsent.gdprApplies).to.equal(true);
       expect(ortbRequest.gdprConsent.consentGiven).to.equal(true);
+      expect(ortbRequest.gdprConsent.version).to.equal(1);
     });
 
     it('should properly build a networkId request', function () {
