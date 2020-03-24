@@ -1,11 +1,11 @@
-import { loadExternalScript } from '../src/adloader';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import { parse } from '../src/url';
-import * as utils from '../src/utils';
-import find from 'core-js/library/fn/array/find';
-import { verify } from 'criteo-direct-rsa-validate/build/verify';
+import { loadExternalScript } from '../src/adloader.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { parse } from '../src/url.js';
+import * as utils from '../src/utils.js';
+import find from 'core-js/library/fn/array/find.js';
+import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 
 export const ADAPTER_VERSION = 26;
 const BIDDER_CODE = 'criteo';
@@ -423,7 +423,7 @@ export function tryGetCriteoFastBid() {
   try {
     const fastBidStorageKey = 'criteo_fast_bid';
     const hashPrefix = '// Hash: ';
-    const fastBidFromStorage = localStorage.getItem(fastBidStorageKey);
+    const fastBidFromStorage = utils.getDataFromLocalStorage(fastBidStorageKey);
 
     if (fastBidFromStorage !== null) {
       // The value stored must contain the file's encrypted hash as first line
@@ -432,7 +432,7 @@ export function tryGetCriteoFastBid() {
 
       if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
         utils.logWarn('No hash found in FastBid');
-        localStorage.removeItem(fastBidStorageKey);
+        utils.removeDataFromLocalStorage(fastBidStorageKey);
       } else {
         // Remove the hash part from the locally stored value
         const publisherTagHash = firstLine.substr(hashPrefix.length);
@@ -446,7 +446,7 @@ export function tryGetCriteoFastBid() {
           utils.insertElement(script);
         } else {
           utils.logWarn('Invalid Criteo FastBid found');
-          localStorage.removeItem(fastBidStorageKey);
+          utils.removeDataFromLocalStorage(fastBidStorageKey);
         }
       }
     }

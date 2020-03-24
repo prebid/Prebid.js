@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import find from 'core-js/library/fn/array/find';
-import { BANNER, NATIVE } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import find from 'core-js/library/fn/array/find.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'livewrapped';
 export const URL = 'https://lwadm.com/ad';
@@ -193,19 +193,17 @@ function bidToAdRequest(bid) {
     options: bid.params.options
   };
 
-  if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.native) {
-    adRequest.banner = true;
-  }
+  adRequest.native = utils.deepAccess(bid, 'mediaTypes.native');
 
-  if (bid.mediaTypes && bid.mediaTypes.native) {
-    adRequest.native = bid.mediaTypes.native;
+  if (adRequest.native && utils.deepAccess(bid, 'mediaTypes.banner')) {
+    adRequest.banner = true;
   }
 
   return adRequest;
 }
 
 function getSizes(bid) {
-  if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+  if (utils.deepAccess(bid, 'mediaTypes.banner.sizes')) {
     return bid.mediaTypes.banner.sizes;
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     return bid.sizes;

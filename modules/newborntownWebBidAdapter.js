@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, NATIVE} from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'newborntownWeb';
 
 const REQUEST_URL = 'https://us-west.solortb.com/adx/api/rtb?from=4'
@@ -53,10 +53,10 @@ export const spec = {
       return null;
     }
     var guid;
-    if (localStorage.getItem('sax_user_id') == null) {
-      localStorage.setItem('sax_user_id', generateGUID())
+    if (utils.getDataFromLocalStorage('sax_user_id') == null) {
+      utils.setDataInLocalStorage('sax_user_id', generateGUID())
     }
-    guid = localStorage.getItem('sax_user_id')
+    guid = utils.getDataFromLocalStorage('sax_user_id')
     utils._each(validBidRequests, function(bidRequest) {
       const bidRequestObj = bidRequest.params
       var req = {

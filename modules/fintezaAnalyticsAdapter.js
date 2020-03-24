@@ -1,8 +1,8 @@
-import { ajax } from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
-import * as utils from '../src/utils';
-import { parse as parseURL } from '../src/url';
+import { ajax } from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+import * as utils from '../src/utils.js';
+import { parse as parseURL } from '../src/url.js';
 
 const CONSTANTS = require('../src/constants.json');
 
@@ -46,8 +46,8 @@ function getUniqId() {
   let uniq = cookies[ UNIQ_ID_KEY ];
   if (!uniq) {
     try {
-      if (window.localStorage) {
-        uniq = window.localStorage.getItem(UNIQ_ID_KEY) || '';
+      if (utils.hasLocalStorage()) {
+        uniq = utils.getDataFromLocalStorage(UNIQ_ID_KEY) || '';
         isUniqFromLS = true;
       }
     } catch (b) {}
@@ -62,7 +62,7 @@ function getUniqId() {
     expires.setFullYear(expires.getFullYear() + 10);
 
     try {
-      document.cookie = UNIQ_ID_KEY + '=' + uniq + '; path=/; expires=' + expires.toUTCString();
+      utils.setCookie(UNIQ_ID_KEY, uniq, expires.toUTCString());
     } catch (e) {}
   }
 
@@ -90,7 +90,7 @@ function initFirstVisit() {
     now.setFullYear(now.getFullYear() + 20);
 
     try {
-      document.cookie = FIRST_VISIT_DATE + '=' + visitDate + '; path=/; expires=' + now.toUTCString();
+      utils.setCookie(FIRST_VISIT_DATE, visitDate, now.toUTCString());
     } catch (e) {}
   }
 
@@ -110,7 +110,7 @@ function parseCookies(cookie) {
   let param, value;
   let i, j;
 
-  if (!cookie) {
+  if (!cookie || !utils.cookiesAreEnabled()) {
     return {};
   }
 
@@ -203,7 +203,7 @@ function initSession() {
   }
 
   try {
-    document.cookie = SESSION_ID + '=' + sessionId + '; path=/; expires=' + expires.toUTCString();
+    utils.setCookie(SESSION_ID, sessionId, expires.toUTCString());
   } catch (e) {}
 
   return {
@@ -249,10 +249,10 @@ function saveTrackRequestTime() {
   const expires = new Date(now + SESSION_DURATION);
 
   try {
-    if (window.localStorage) {
-      window.localStorage.setItem(TRACK_TIME_KEY, now.toString());
+    if (utils.hasLocalStorage()) {
+      utils.setDataInLocalStorage(TRACK_TIME_KEY, now.toString());
     } else {
-      document.cookie = TRACK_TIME_KEY + '=' + now + '; path=/; expires=' + expires.toUTCString();
+      utils.setCookie(TRACK_TIME_KEY, now.toString(), expires.toUTCString());
     }
   } catch (a) {}
 }
@@ -261,9 +261,9 @@ function getTrackRequestLastTime() {
   let cookie;
 
   try {
-    if (window.localStorage) {
+    if (utils.hasLocalStorage()) {
       return parseInt(
-        window.localStorage.getItem(TRACK_TIME_KEY) || 0,
+        utils.getDataFromLocalStorage(TRACK_TIME_KEY) || 0,
         10,
       );
     }

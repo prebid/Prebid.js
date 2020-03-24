@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils'
-import {ajax} from '../src/ajax';
-import {submodule} from '../src/hook'
+import * as utils from '../src/utils.js'
+import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook.js'
 
 const MODULE_NAME = 'unifiedId';
 
@@ -39,7 +39,7 @@ export const unifiedIdSubmodule = {
       return;
     }
     // use protocol relative urls for http or https
-    const url = configParams.url || `//match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`;
+    const url = configParams.url || `https://match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`;
 
     const resp = function (callback) {
       ajax(url, response => {

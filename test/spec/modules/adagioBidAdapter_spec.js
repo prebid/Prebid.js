@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { getAdagioScript, spec } from 'modules/adagioBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { getAdagioScript, spec } from 'modules/adagioBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 describe('adagioAdapter', () => {
   let utilsMock;
@@ -380,6 +380,7 @@ describe('adagioAdapter', () => {
       let request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
       expect(request.data.adUnits[0].params.outerAdUnitElementId).to.exist;
+      top.ADAGIO.pbjsAdUnits = undefined;
     });
 
     it('generates a pageviewId if missing', () => {

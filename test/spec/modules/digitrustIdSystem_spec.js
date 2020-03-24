@@ -1,7 +1,7 @@
 import {
   digiTrustIdSubmodule,
   surfaceTestHook
-} from 'modules/digiTrustIdSystem';
+} from 'modules/digiTrustIdSystem.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -109,13 +109,23 @@ describe('DigiTrust Id System', function () {
 
     testHook.gdpr.hasConsent(null, handler);
   });
-  it('Should allow consent if timeout', function (done) {
+  it('Should deny consent if timeout', function (done) {
     window.__cmp = function () { };
+    var handler = function (result) {
+      expect(result).to.be.false;
+      done();
+    }
+
+    testHook.gdpr.hasConsent({ consentTimeout: 1 }, handler);
+  });
+  it('Should pass consent test if cmp not present', function (done) {
+    delete window.__cmp
+    testHook = surfaceTestHook();
     var handler = function (result) {
       expect(result).to.be.true;
       done();
     }
 
-    testHook.gdpr.hasConsent({ consentTimeout: 1 }, handler);
+    testHook.gdpr.hasConsent(null, handler);
   });
 });

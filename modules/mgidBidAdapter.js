@@ -1,8 +1,8 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import * as urlUtils from '../src/url';
-import {BANNER, NATIVE} from '../src/mediaTypes';
-import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import * as urlUtils from '../src/url.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
@@ -342,7 +342,7 @@ function getLanguage() {
 
 function getLocalStorageSafely(key) {
   try {
-    return localStorage.getItem(key);
+    return utils.getDataFromLocalStorage(key);
   } catch (e) {
     return null;
   }
@@ -350,7 +350,7 @@ function getLocalStorageSafely(key) {
 
 function setLocalStorageSafely(key, val) {
   try {
-    return localStorage.setItem(key, val);
+    return utils.setDataInLocalStorage(key, val);
   } catch (e) {
     return null;
   }

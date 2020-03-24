@@ -26,7 +26,7 @@ var adUnits = [
     },
     sizes: [[300, 250]],
     bids: [{
-      bidder: 'playgroundxyz',
+      bidder: 'pxyz',
       params: {
         placementId: '13473562'
       }

@@ -1,6 +1,7 @@
-import { BANNER } from '../src/mediaTypes';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
@@ -44,6 +45,10 @@ export const tripleliftAdapterSpec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       tlCall = utils.tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
+    }
+
+    if (config.getConfig('coppa') === true) {
+      tlCall = utils.tryAppendQueryString(tlCall, 'coppa', true);
     }
 
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
@@ -115,7 +120,8 @@ function _buildPostBody(bidRequests) {
 
   let eids = [
     ...getUnifiedIdEids(bidRequests),
-    ...getIdentityLinkEids(bidRequests)
+    ...getIdentityLinkEids(bidRequests),
+    ...getCriteoEids(bidRequests)
   ];
 
   if (eids.length > 0) {
@@ -138,6 +144,10 @@ function getUnifiedIdEids(bidRequests) {
 
 function getIdentityLinkEids(bidRequests) {
   return getEids(bidRequests, 'idl_env', 'liveramp.com', 'idl');
+}
+
+function getCriteoEids(bidRequests) {
+  return getEids(bidRequests, 'criteoId', 'criteo.com', 'criteoId');
 }
 
 function getEids(bidRequests, type, source, rtiPartner) {

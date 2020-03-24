@@ -3,10 +3,10 @@
  * stored in the page's domain.  When the module is included, an id is generated if needed,
  * persisted as a cookie, and automatically appended to all the bidRequest as bid.crumbs.pubcid.
  */
-import * as utils from '../src/utils'
-import { config } from '../src/config';
-import events from '../src/events';
-import * as url from '../src/url';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import events from '../src/events.js';
+import * as url from '../src/url.js';
 import CONSTANTS from '../src/constants.json';
 
 const ID_NAME = '_pubcid';
@@ -37,10 +37,10 @@ export function setStorageItem(key, val, expires) {
   try {
     if (expires !== undefined && expires != null) {
       const expStr = (new Date(Date.now() + (expires * 60 * 1000))).toUTCString();
-      localStorage.setItem(key + EXP_SUFFIX, expStr);
+      utils.setDataInLocalStorage(key + EXP_SUFFIX, expStr);
     }
 
-    localStorage.setItem(key, val);
+    utils.setDataInLocalStorage(key, val);
   } catch (e) {
     utils.logMessage(e);
   }
@@ -55,18 +55,18 @@ export function getStorageItem(key) {
   let val = null;
 
   try {
-    const expVal = localStorage.getItem(key + EXP_SUFFIX);
+    const expVal = utils.getDataFromLocalStorage(key + EXP_SUFFIX);
 
     if (!expVal) {
       // If there is no expiry time, then just return the item
-      val = localStorage.getItem(key);
+      val = utils.getDataFromLocalStorage(key);
     } else {
       // Only return the item if it hasn't expired yet.
       // Otherwise delete the item.
       const expDate = new Date(expVal);
       const isValid = (expDate.getTime() - Date.now()) > 0;
       if (isValid) {
-        val = localStorage.getItem(key);
+        val = utils.getDataFromLocalStorage(key);
       } else {
         removeStorageItem(key);
       }
@@ -84,8 +84,8 @@ export function getStorageItem(key) {
  */
 export function removeStorageItem(key) {
   try {
-    localStorage.removeItem(key + EXP_SUFFIX);
-    localStorage.removeItem(key);
+    utils.removeDataFromLocalStorage(key + EXP_SUFFIX);
+    utils.removeDataFromLocalStorage(key);
   } catch (e) {
     utils.logMessage(e);
   }
@@ -101,7 +101,7 @@ function readValue(name, type) {
   let value;
   if (!type) { type = pubcidConfig.typeEnabled; }
   if (type === COOKIE) {
-    value = getCookie(name);
+    value = utils.getCookie(name);
   } else if (type === LOCAL_STORAGE) {
     value = getStorageItem(name);
   }
@@ -223,18 +223,12 @@ export function requestBidHook(next, config) {
 export function setCookie(name, value, expires, sameSite) {
   let expTime = new Date();
   expTime.setTime(expTime.getTime() + expires * 1000 * 60);
-  window.document.cookie = name + '=' + encodeURIComponent(value) + ';path=/;expires=' +
-    expTime.toGMTString() +
-    (sameSite ? ';SameSite=' + sameSite : '');
+  utils.setCookie(name, value, expTime.toGMTString(), sameSite);
 }
 
 // Helper to read a cookie
 export function getCookie(name) {
-  if (name && window.document.cookie) {
-    let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
-    return m ? decodeURIComponent(m[2]) : null;
-  }
-  return null;
+  return utils.getCookie(name);
 }
 
 /**
