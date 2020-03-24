@@ -63,15 +63,6 @@ function validateRules(rule, consentData, currentModule, gvlid) {
  * @param {Number=} gvlid gvlid of the module
  * @param {string=} moduleName name of the module
  */
-
-// consent data is null as gdprapplies is false, but gdpr module is included
-// this function will return false it should return true in this case
-
-// hasDeviceAccess has higher precedence so check for that first before everything
-// it it returns false then module does not have access
-// if it returns true then module may have access
-// if gdpr flag is true
-
 export function deviceAccessHook(fn, gvlid, moduleName) {
   let result = {
     hasEnforcementHook: true
