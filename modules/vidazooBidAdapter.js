@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 export const URL = 'https://prebid.cootlogix.com';
 const BIDDER_CODE = 'vidazoo';
@@ -21,8 +21,8 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const { params, bidId } = bid;
-  const { bidFloor, cId, pId, ext } = params;
+  const {params, bidId} = bid;
+  const {bidFloor, cId, pId, ext} = params;
   let data = {
     url: encodeURIComponent(topWindowUrl),
     cb: Date.now(),
@@ -67,14 +67,14 @@ function interpretResponse(serverResponse, request) {
   if (!serverResponse || !serverResponse.body) {
     return [];
   }
-  const { bidId } = request.data;
-  const { results } = serverResponse.body;
+  const {bidId} = request.data;
+  const {results} = serverResponse.body;
 
   let output = [];
 
   try {
     results.forEach(result => {
-      const { creativeId, ad, price, exp, width, height, currency } = result;
+      const {creativeId, ad, price, exp, width, height, currency} = result;
       if (!ad || !price) {
         return;
       }
@@ -97,7 +97,7 @@ function interpretResponse(serverResponse, request) {
 }
 
 function getUserSyncs(syncOptions, responses) {
-  const { iframeEnabled, pixelEnabled } = syncOptions;
+  const {iframeEnabled, pixelEnabled} = syncOptions;
 
   if (iframeEnabled) {
     return [{
@@ -110,21 +110,19 @@ function getUserSyncs(syncOptions, responses) {
     const lookup = {};
     const syncs = [];
     responses.forEach(response => {
-      const { body } = response;
-      const cookies = body ? body.cookies || [] : [];
-      cookies.forEach(cookie => {
-        switch (cookie.type) {
-          case INTERNAL_SYNC_TYPE.IFRAME:
-            break;
-          case INTERNAL_SYNC_TYPE.IMAGE:
+      const {body} = response;
+      const results = body ? body.results || [] : [];
+      results.forEach(result => {
+        (result.cookies || []).forEach(cookie => {
+          if (cookie.type === INTERNAL_SYNC_TYPE.IMAGE) {
             if (pixelEnabled && !lookup[cookie.src]) {
               syncs.push({
                 type: EXTERNAL_SYNC_TYPE.IMAGE,
                 url: cookie.src
               });
             }
-            break;
-        }
+          }
+        });
       });
     });
     return syncs;

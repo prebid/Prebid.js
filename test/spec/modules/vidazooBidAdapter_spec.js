@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { spec as adapter, URL } from 'modules/vidazooBidAdapter.js';
+import {expect} from 'chai';
+import {spec as adapter, URL} from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const BID = {
@@ -22,7 +22,8 @@ const BID = {
 
 const BIDDER_REQUEST = {
   'gdprConsent': {
-    'consentString': 'consent_string'
+    'consentString': 'consent_string',
+    'gdprApplies': true
   },
   'refererInfo': {
     'referer': 'https://www.greatsite.com'
@@ -36,8 +37,8 @@ const SERVER_RESPONSE = {
       'price': 0.8,
       'creativeId': '12610997325162499419',
       'exp': 30,
-      width: 300,
-      height: 250,
+      'width': 300,
+      'height': 250,
       'cookies': [{
         'src': 'https://sync.com',
         'type': 'iframe'
@@ -129,6 +130,7 @@ describe('VidazooBidAdapter', function () {
         url: `${URL}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
         data: {
           gdprConsent: 'consent_string',
+          gdpr: 1,
           sizes: ['300x250', '300x600'],
           url: 'https%3A%2F%2Fwww.greatsite.com',
           cb: 1000,
@@ -145,6 +147,25 @@ describe('VidazooBidAdapter', function () {
       sandbox.restore();
     });
   });
+  describe('getUserSyncs', function () {
+    it('should have valid user sync with iframeEnabled', function () {
+      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+
+      expect(result).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://static.cootlogix.com/basev/sync/user_sync.html'
+      }]);
+    });
+
+    it('should have valid user sync with pixelEnabled', function () {
+      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
+
+      expect(result).to.deep.equal([{
+        'url': 'https://sync.com',
+        'type': 'image'
+      }]);
+    })
+  });
 
   describe('interpret response', function () {
     it('should return empty array when there is no response', function () {
@@ -153,12 +174,12 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({ price: 1, ad: '' });
+      const responses = adapter.interpretResponse({price: 1, ad: ''});
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
+      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
       expect(responses).to.be.empty;
     });
 
