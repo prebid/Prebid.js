@@ -354,7 +354,7 @@ gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
-gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
+gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch)));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
 gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), 'updatepath', test));

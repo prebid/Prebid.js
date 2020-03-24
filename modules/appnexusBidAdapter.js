@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Renderer } from '../src/Renderer.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
@@ -9,7 +10,8 @@ import includes from 'core-js/library/fn/array/includes.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'appnexus';
-const URL = 'https://ib.adnxs.com/ut/v3/prebid';
+// const URL = 'https://ib.adnxs.com/ut/v3/prebid';
+const URL = 'http://localhost:3000/naps';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
@@ -467,6 +469,7 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
  * @return Bid
  */
 function newBid(serverBid, rtbBid, bidderRequest) {
+  serverBid.uuid = bidderRequest.bids[0].bidId;
   const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     requestId: serverBid.uuid,
