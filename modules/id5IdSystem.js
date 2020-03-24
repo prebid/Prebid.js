@@ -34,10 +34,11 @@ export const id5IdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(configParams, consentData, cacheIdObj) {
-    if (!configParams || typeof configParams.partner !== 'number') {
+    if (!configParams || typeof parseInt(configParams.partner) !== 'number') {
       utils.logError(`User ID - ID5 submodule requires partner to be defined as a number`);
       return undefined;
     }
+    configParams.partner = parseInt(configParams.partner)
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
     const storedUserId = this.decode(cacheIdObj);
