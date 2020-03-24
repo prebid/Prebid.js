@@ -338,6 +338,9 @@ function _getGdprConsent(bidderRequest) {
     if (bidderRequest.gdprConsent.allowAuctionWithoutConsent !== undefined) {
       consent.allowAuctionWithoutConsent = bidderRequest.gdprConsent.allowAuctionWithoutConsent ? 1 : 0;
     }
+    if (bidderRequest.gdprConsent.apiVersion !== undefined) {
+      consent.apiVersion = bidderRequest.gdprConsent.apiVersion;
+    }
   }
   return consent;
 }
