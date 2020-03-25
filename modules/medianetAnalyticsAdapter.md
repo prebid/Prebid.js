@@ -14,7 +14,7 @@ https://media.net/
 
 ```
 {
-  provider: 'medianet',
+  provider: 'medianetAnalytics',
     options : {
       cid: '8CUX0H51C'
     }
