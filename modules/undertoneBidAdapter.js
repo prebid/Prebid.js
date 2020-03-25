@@ -91,7 +91,6 @@ export const spec = {
         'pageSize': pageSizeArray
       }
     };
-
     const referer = bidderRequest.refererInfo.referer;
     const hostname = urlUtils.parse(referer).hostname;
     let domain = extractDomainFromHost(hostname);
@@ -154,7 +153,6 @@ export const spec = {
     }
     return bids;
   },
-
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
 
@@ -184,13 +182,13 @@ export const spec = {
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
-          type: 'image',
-          url: PIXEL_USER_SYNC_1 + pixelPrivacyParams
-        },
-        {
-          type: 'image',
-          url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
-        });
+        type: 'image',
+        url: PIXEL_USER_SYNC_1 + pixelPrivacyParams
+      },
+      {
+        type: 'image',
+        url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
+      });
     }
     return syncs;
   }
