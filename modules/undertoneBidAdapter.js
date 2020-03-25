@@ -6,14 +6,14 @@ import * as urlUtils from '../src/url.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'undertone';
-const URL = '//hb.undertone.com/hb';
-const FRAME_USER_SYNC = '//cdn.undertone.com/js/usersync.html';
-const PIXEL_USER_SYNC1 = '//usr.undertone.com/userPixel/syncOne?id=1&of=2';
-const PIXEL_USER_SYNC2 = '//usr.undertone.com/userPixel/syncOne?id=2&of=2';
+const URL = 'https://hb.undertone.com/hb';
+const FRAME_USER_SYNC = 'https://cdn.undertone.com/js/usersync.html';
+const PIXEL_USER_SYNC_1 = 'https://usr.undertone.com/userPixel/syncOne?id=1&of=2';
+const PIXEL_USER_SYNC_2 = 'https://usr.undertone.com/userPixel/syncOne?id=2&of=2';
 
 function getCanonicalUrl() {
   try {
-    let doc = utils.getWindowTop().document;
+    let doc = window.top.document;
     let element = doc.querySelector("link[rel='canonical']");
     if (element !== null) {
       return element.href;
@@ -22,7 +22,6 @@ function getCanonicalUrl() {
   }
   return null;
 }
-
 
 function extractDomainFromHost(pageHost) {
   let domain = null;
@@ -185,13 +184,13 @@ export const spec = {
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
-        type: 'image',
-        url: PIXEL_USER_SYNC_1 + pixelPrivacyParams
-      },
-      {
-        type: 'image',
-        url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
-      });
+          type: 'image',
+          url: PIXEL_USER_SYNC_1 + pixelPrivacyParams
+        },
+        {
+          type: 'image',
+          url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
+        });
     }
     return syncs;
   }
