@@ -145,12 +145,12 @@ const bidResArray = [
   }
 ];
 
-describe('Undertone Adapter', function () {
-  describe('request', function () {
-    it('should validate bid request', function () {
+describe('Undertone Adapter', () => {
+  describe('request', () => {
+    it('should validate bid request', () => {
       expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
     });
-    it('should not validate incorrect bid request', function () {
+    it('should not validate incorrect bid request', () => {
       expect(spec.isBidRequestValid(invalidBidReq)).to.equal(undefined);
     });
   });
@@ -220,13 +220,13 @@ describe('Undertone Adapter', function () {
     });
   });
 
-  describe('interpretResponse', function () {
-    it('should build bid array', function () {
+  describe('interpretResponse', () => {
+    it('should build bid array', () => {
       let result = spec.interpretResponse({body: bidResponse});
       expect(result.length).to.equal(1);
     });
 
-    it('should have all relevant fields', function () {
+    it('should have all relevant fields', () => {
       const result = spec.interpretResponse({body: bidResponse});
       const bid = result[0];
 
@@ -240,12 +240,12 @@ describe('Undertone Adapter', function () {
       expect(bid.ttl).to.equal(360);
     });
 
-    it('should return empty array when response is incorrect', function () {
+    it('should return empty array when response is incorrect', () => {
       expect(spec.interpretResponse({body: {}}).length).to.equal(0);
       expect(spec.interpretResponse({body: []}).length).to.equal(0);
     });
 
-    it('should only use valid bid responses', function () {
+    it('should only use valid bid responses', () => {
       expect(spec.interpretResponse({ body: bidResArray }).length).to.equal(1);
     });
   });
