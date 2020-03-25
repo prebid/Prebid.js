@@ -664,7 +664,7 @@ function bidToTag(bid) {
   } else {
     tag.hb_source = 1;
   }
-  
+
   if (bid.mediaType === VIDEO || videoMediaType) {
     tag.ad_types.push(VIDEO);
   }

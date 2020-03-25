@@ -113,16 +113,31 @@ function createDispatcher(timeoutDuration) {
 }
 
 function getPricePartForAdpodKey(bid) {
-  let pricePart
-  let prioritizeDeals = config.getConfig('adpod.prioritizeDeals');
-  if (prioritizeDeals && utils.deepAccess(bid, 'video.dealTier')) {
-    const adpodDealPrefix = config.getConfig(`adpod.dealTier.${bid.bidderCode}.prefix`);
-    pricePart = (adpodDealPrefix) ? adpodDealPrefix + utils.deepAccess(bid, 'video.dealTier') : utils.deepAccess(bid, 'video.dealTier');
-  } else {
+  function getPriceGran(bid) {
     const granularity = getPriceGranularity(bid.mediaType);
-    pricePart = getPriceByGranularity(granularity)(bid);
+    return getPriceByGranularity(granularity)(bid);
   }
-  return pricePart
+
+  let pricePart;
+  const prioritizeDeals = config.getConfig('adpod.prioritizeDeals');
+  let bidDealTier = utils.deepAccess(bid, 'video.dealTier');
+
+  if (prioritizeDeals && bidDealTier) {
+    const adpodDealCfg = config.getConfig(`adpod.dealTier.${bid.bidderCode}`);
+    if (adpodDealCfg) {
+      if (bidDealTier >= adpodDealCfg.minDealTier) {
+        pricePart = (adpodDealCfg.prefix) ? adpodDealCfg.prefix + bidDealTier : bidDealTier;
+      } else {
+        pricePart = getPriceGran(bid);
+      }
+    } else {
+      // should still use deals or use CPM (priceGran)?
+      pricePart = bidDealTier;
+    }
+  } else {
+    pricePart = getPriceGran(bid);
+  }
+  return pricePart;
 }
 
 /**

@@ -839,6 +839,84 @@ describe('adpod.js', function () {
 
       expect(auctionBids[0].adserverTargeting.hb_pb_cat_dur).to.equal('tier7_test_15s');
       expect(auctionBids[1].adserverTargeting.hb_pb_cat_dur).to.equal('12.00_value_15s');
+    });
+
+    it('should fall back to cpm when prioritzeDeals is true if bid falls below minDealTier', function() {
+      config.setConfig({
+        adpod: {
+          deferCaching: true,
+          brandCategoryExclusion: true,
+          prioritizeDeals: true,
+          dealTier: {
+            'appnexus': {
+              'prefix': 'tier',
+              'minDealTier': 10
+            }
+          }
+        }
+      });
+
+      let bidResponse1 = {
+        adId: 'adId01277',
+        auctionId: 'no_defer_123',
+        mediaType: 'video',
+        bidderCode: 'appnexus',
+        cpm: 5,
+        pbMg: '5.00',
+        adserverTargeting: {
+          hb_pb: '5.00'
+        },
+        meta: {
+          adServerCatId: 'test'
+        },
+        video: {
+          context: ADPOD,
+          durationSeconds: 15,
+          durationBucket: 15,
+          dealTier: 7
+        }
+      };
+
+      let bidResponse2 = {
+        adId: 'adId46547',
+        auctionId: 'no_defer_123',
+        mediaType: 'video',
+        bidderCode: 'appnexus',
+        cpm: 12,
+        pbMg: '12.00',
+        adserverTargeting: {
+          hb_pb: '12.00'
+        },
+        meta: {
+          adServerCatId: 'value'
+        },
+        video: {
+          context: ADPOD,
+          durationSeconds: 15,
+          durationBucket: 15,
+          dealTier: 14
+        }
+      };
+
+      let bidderRequest = {
+        adUnitCode: 'adpod_1',
+        auctionId: 'no_defer_123',
+        mediaTypes: {
+          video: {
+            context: ADPOD,
+            playerSize: [[300, 300]],
+            adPodDurationSec: 300,
+            durationRangeSec: [15, 30, 45],
+            requireExactDuration: false
+          }
+        },
+      };
+
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
+
+      expect(auctionBids[0].adserverTargeting.hb_pb_cat_dur).to.equal('5.00_test_15s');
+      expect(auctionBids[1].adserverTargeting.hb_pb_cat_dur).to.equal('tier14_value_15s');
     })
   });
 
