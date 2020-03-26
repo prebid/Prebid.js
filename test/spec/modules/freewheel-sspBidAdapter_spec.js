@@ -454,6 +454,7 @@ describe('freewheelSSP BidAdapter Test', () => {
           currency: 'EUR',
           netRevenue: true,
           ttl: 360,
+          vastXml: response,
           ad: ad
         }
       ];
@@ -475,6 +476,7 @@ describe('freewheelSSP BidAdapter Test', () => {
           currency: 'EUR',
           netRevenue: true,
           ttl: 360,
+          vastXml: response,
           ad: formattedAd
         }
       ];

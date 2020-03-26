@@ -59,6 +59,12 @@ export const spec = {
     const bidResponses = [];
     for (let bidId in bids) {
       let adUnit = bids[bidId];
+      let meta;
+      if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
+        meta = {
+          clickUrl: adUnit.metadata.landingPageDomain
+        };
+      }
       bidResponses.push({
         requestId: bidId,
         cpm: Number(adUnit.cpm),
@@ -69,7 +75,8 @@ export const spec = {
         creativeId: adUnit.id,
         dealId: adUnit.targetingCustom,
         netRevenue: true,
-        currency: bidRequest.currency
+        currency: bidRequest.currency,
+        meta: meta
       });
     }
     return bidResponses;
@@ -91,6 +98,9 @@ export const spec = {
 
   // PRIVATE
   _readCookie(name) {
+    if (!utils.cookiesAreEnabled()) {
+      return null;
+    }
     let nameEquals = `${name}=`;
     let cookies = document.cookie.split(';');
 
@@ -163,7 +173,7 @@ export const spec = {
 
   _getLocalStorageSafely(key) {
     try {
-      return localStorage.getItem(key);
+      return utils.getDataFromLocalStorage(key);
     } catch (e) {
       return null;
     }

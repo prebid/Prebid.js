@@ -1856,6 +1856,42 @@ describe('PubMatic adapter', function () {
             expect(data.user.eids).to.equal(undefined);
           });
         });
+
+        describe('NetId', function() {
+          it('send the NetId if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.netId = 'netid-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'netid.de',
+              'uids': [{
+                'id': 'netid-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.netId = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.netId = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.netId = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.netId = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
       });
 
       it('Request params check for video ad', function () {

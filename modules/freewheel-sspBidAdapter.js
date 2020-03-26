@@ -363,6 +363,11 @@ export const spec = {
         netRevenue: true,
         ttl: 360
       };
+
+      if (bidrequest.mediaTypes.video) {
+        bidResponse.vastXml = serverResponse;
+      }
+
       bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);
     }
