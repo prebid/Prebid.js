@@ -8,27 +8,39 @@ Maintainer: devops@onetag.com
 
 # Description
 
-OneTag Bid Adapter supports only banner at present.
+OneTag Bid Adapter supports banner and video at present.
 
 # Test Parameters
 ```
     var adUnits = [
         {
-            code: "test-div",
+            code: "banner-space",
             mediaTypes: {
                 banner: {
                     sizes: [[300, 250]]
                 }
             },
-            bids: [
-                {
-                    bidder: "onetag",
-                    params: {
-                        pubId: "your_publisher_id",         // required
-                        type: "banner"                      // optional. Default "banner"
-                    },
+            bids: [{
+                bidder: "onetag",
+                params: {
+                    pubId: "your_publisher_id" // required, testing pubId: "386276e072"
                 }
-            ]
-    }];
+            }]
+        }, {
+            code: 'video-space',
+            mediaTypes: {
+                video: {
+                    context: "instream",
+                    mimes: ["video/mp4", "video/webm", "application/javascript", "video/ogg"],
+                    playerSize: [640,480]
+                }
+            },
+            bids: [{
+                bidder: "onetag",
+                params: {
+                    pubId: "your_publisher_id" // required, testing pubId: "386276e072"
+                }
+            }]
+        }];
     
 ```
