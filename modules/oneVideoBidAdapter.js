@@ -202,6 +202,9 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.rewarded) {
       bidData.imp[0].ext.rewarded = bid.params.video.rewarded
     }
+    if (bid.params.video.maxduration) {
+      bidData.imp[0].video.maxduration = bid.params.video.maxduration
+    }
     bidData.imp[0].video.linearity = 1;
     bidData.imp[0].video.protocols = bid.params.video.protocols || [2, 5];
   } else if (bid.params.video.display == 1) {

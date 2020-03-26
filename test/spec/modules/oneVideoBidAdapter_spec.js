@@ -384,7 +384,8 @@ describe('OneVideoBidAdapter', function () {
             delivery: [2],
             playbackmethod: [1, 5],
             placement: 123,
-            sid: 134
+            sid: 134,
+            maxduration: 30
           },
           site: {
             id: 1,
@@ -406,6 +407,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.mimes).to.equal(bidRequest.params.video.mimes);
       expect(data.imp[0].video.protocols).to.equal(bidRequest.params.video.protocols);
       expect(data.imp[0].video.linearity).to.equal(1);
+      expect(data.imp[0].video.maxduration).to.equal(bidRequest.params.video.maxduration);
     });
     describe('getUserSyncs', function () {
       const GDPR_CONSENT_STRING = 'GDPR_CONSENT_STRING';
