@@ -1,11 +1,11 @@
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax';
-import { getRefererInfo } from '../src/refererDetection';
-import * as url from '../src/url';
-import { getPriceGranularity, AUCTION_IN_PROGRESS, AUCTION_COMPLETED } from '../src/auction'
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import * as url from '../src/url.js';
+import { getPriceGranularity, AUCTION_IN_PROGRESS, AUCTION_COMPLETED } from '../src/auction.js'
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';
