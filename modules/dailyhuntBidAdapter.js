@@ -7,8 +7,8 @@ const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
 const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE, mediaTypes.VIDEO];
 
-const PROD_PREBID_ENDPOINT_URL = 'http://dh2-van-qa-n1.dailyhunt.in:8000/openrtb2/auction';
-const PROD_PREBID_TEST_ENDPOINT_URL = 'http://dh2-van-qa-test-n1.dailyhunt.in:8000/openrtb2/auction';
+const PROD_PREBID_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction';
+const PROD_PREBID_TEST_ENDPOINT_URL = 'http://dh2-van-qa-n1.dailyhunt.in:8000/openrtb2/auction';
 
 const ORTB_NATIVE_TYPE_MAPPING = {
   img: {
