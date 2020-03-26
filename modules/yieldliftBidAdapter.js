@@ -62,13 +62,13 @@ export const spec = {
     }
 
     // Attaching GDPR Consent Params
-    if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent) {
       utils.deepSetValue(openrtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       utils.deepSetValue(openrtbRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     // CCPA
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       utils.deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
@@ -80,7 +80,7 @@ export const spec = {
     };
   },
 
-  interpretResponse: function (serverResponse, request) {
+  interpretResponse: function (serverResponse) {
     const bidResponses = [];
     const response = (serverResponse || {}).body;
     // response is always one seat (exchange) with (optional) bids for each impression
