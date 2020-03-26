@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -395,6 +396,7 @@ describe('Conversant adapter tests', function() {
     // add pubcid to every entry
     requests.forEach((unit) => {
       Object.assign(unit, {userId: {pubcid: 67890}});
+      Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
@@ -469,11 +471,12 @@ describe('Conversant adapter tests', function() {
       // add pubcid to every entry
       requests.forEach((unit) => {
         Object.assign(unit, {userId: {pubcid: 112233, tdid: 223344, idl_env: 334455}});
+        Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
       });
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
-        {source: 'adserver.org', uids: [{id: 223344, atype: 1}]},
+        {source: 'adserver.org', uids: [{id: 223344, atype: 1, ext: {rtiPartner: 'TDID'}}]},
         {source: 'liveramp.com', uids: [{id: 334455, atype: 1}]}
       ]);
     });

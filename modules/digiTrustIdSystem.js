@@ -69,7 +69,7 @@ function encId(id) {
     if (typeof (id) !== 'string') {
       id = JSON.stringify(id);
     }
-    return encodeURIComponent(btoa(id));
+    return btoa(id);
   } catch (ex) {
     return id;
   }
@@ -83,8 +83,7 @@ function writeDigiId(id) {
   var key = 'DigiTrust.v1.identity';
   var date = new Date();
   date.setTime(date.getTime() + 604800000);
-  var exp = 'expires=' + date.toUTCString();
-  document.cookie = key + '=' + encId(id) + '; ' + exp + '; path=/;SameSite=none;';
+  utils.setCookie(key, encId(id), date.toUTCString(), 'none');
 }
 
 /**
