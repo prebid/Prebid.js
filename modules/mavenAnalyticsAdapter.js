@@ -119,7 +119,8 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                             bidder: bid.bidderCode,
                             cpm: bid.cpm,
                             timeToRespond: bid.timeToRespond,
-                            deal: !!bid.dealId
+                            deal: !!bid.dealId,
+                            dealId: bid.dealId
                         });
                     });
                     // Zone info for all zones in play.
