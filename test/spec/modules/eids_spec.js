@@ -158,12 +158,24 @@ describe('Negative case', function() {
     expect(newEids.length).to.equal(0);
   });
 
-  it('eids array generation for known sub-module with undefined value', function() {
+  it('eids array generation for known sub-module with non-string value', function() {
     // pubCommonId
-    const userId = {
+    let userId = {
       pubcid: undefined
     };
-    const newEids = createEidsArray(userId);
+    let newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(0);
+    userId.pubcid = 123;
+    newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(0);
+    userId.pubcid = [];
+    newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(0);
+    userId.pubcid = {};
+    newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(0);
+    userId.pubcid = null;
+    newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(0);
   });
 });
