@@ -3,7 +3,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.3';
+window.nobidVersion = '1.2.4';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -99,7 +99,7 @@ function nobidBuildRequests(bids, bidderRequest) {
         var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
-        console.error(e);
+        utils.logWarn('Could not parse screen dimensions, error details:', e);
       }
     }
     var state = {};
@@ -165,6 +165,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (adunitObject.siteId) {
       a.sid = adunitObject.siteId;
     }
+    if (adunitObject.placementId) {
+      a.pid = adunitObject.placementId;
+    }
     /* {"BIDDER_ID":{"WxH":"TAG_ID", "WxH":"TAG_ID"}} */
     if (adunitObject.rtb) {
       a.rtb = adunitObject.rtb;
@@ -190,10 +193,11 @@ function nobidBuildRequests(bids, bidderRequest) {
     divids.push(divid);
     var sizes = bid.sizes;
     siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
+    var placementId = bid.params['placementId'];
     if (siteId && bid.params && bid.params.tags) {
-      newAdunit({div: divid, sizes: sizes, rtb: bid.params.tags, siteId: siteId}, adunits);
+      newAdunit({div: divid, sizes: sizes, rtb: bid.params.tags, siteId: siteId, placementId: placementId}, adunits);
     } else if (siteId) {
-      newAdunit({div: divid, sizes: sizes, siteId: siteId}, adunits);
+      newAdunit({div: divid, sizes: sizes, siteId: siteId, placementId: placementId}, adunits);
     }
   }
   if (siteId) {
