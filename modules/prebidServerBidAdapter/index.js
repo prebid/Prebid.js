@@ -657,7 +657,7 @@ const OPEN_RTB_PROTOCOL = {
           if (bidRequest && serverResponseTimeMs) {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
           }
-          
+
           // Look for seatbid[].bid[].ext.prebid.bidid and place it in the bidResponse object for use in analytics adapters as 'pbsBidId'
           utils.deepSetValue(bidObject, 'pbsBidId', utils.deepAccess(bid, 'ext.prebid.bidid'));
           
@@ -665,9 +665,9 @@ const OPEN_RTB_PROTOCOL = {
           if (bid.wurl) {
             bidObject.wurl = bid.wurl;
           }
-          
+
           let extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
-          
+
           // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
           if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
             // If wurl exists, remove hb_winurl and hb_bidid targeting attributes
@@ -677,7 +677,7 @@ const OPEN_RTB_PROTOCOL = {
             }
             bidObject.adserverTargeting = extPrebidTargeting;
           }
-          
+
           bidObject.seatBidId = bid.id;
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
@@ -685,11 +685,6 @@ const OPEN_RTB_PROTOCOL = {
             let sizes = bidRequest.sizes && bidRequest.sizes[0];
             bidObject.playerHeight = sizes[0];
             bidObject.playerWidth = sizes[1];
-            
-            
-            if (bid.wurl) {
-              bidObject.wurl = bid.wurl;
-            }
 
             // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
@@ -701,9 +696,8 @@ const OPEN_RTB_PROTOCOL = {
               // build url using key and cache host
               bidObject.vastUrl = `https://${extPrebidTargeting.hb_cache_host}${extPrebidTargeting.hb_cache_path}?uuid=${extPrebidTargeting.hb_uuid}`;
             }
-            
+
             if (bid.adm) { bidObject.vastXml = bid.adm; }
-            
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
           } else if (utils.deepAccess(bid, 'ext.prebid.type') === NATIVE) {
             bidObject.mediaType = NATIVE;
