@@ -932,6 +932,7 @@ describe('S2S Adapter', function () {
           aliases: {
             brealtime: 'appnexus'
           },
+          auctiontimestamp: 1510852447530,
           targeting: {
             includebidderkeys: false,
             includewinners: true
@@ -966,6 +967,7 @@ describe('S2S Adapter', function () {
           aliases: {
             [alias]: 'appnexus'
           },
+          auctiontimestamp: 1510852447530,
           targeting: {
             includebidderkeys: false,
             includewinners: true
@@ -1217,6 +1219,7 @@ describe('S2S Adapter', function () {
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.equal({
+        auctiontimestamp: 1510852447530,
         foo: 'bar',
         targeting: {
           includewinners: true,
@@ -1248,6 +1251,7 @@ describe('S2S Adapter', function () {
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.equal({
+        auctiontimestamp: 1510852447530,
         targeting: {
           includewinners: false,
           includebidderkeys: true
@@ -1281,6 +1285,7 @@ describe('S2S Adapter', function () {
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.equal({
+        auctiontimestamp: 1510852447530,
         cache: {
           vastxml: 'vastxml-set-though-extPrebid.cache.vastXml'
         },
