@@ -543,7 +543,7 @@ const OPEN_RTB_PROTOCOL = {
       ext: {
         prebid: {
           // set ext.prebid.auctiontimestamp with the auction timestamp. Data type is long integer.
-          auctiontimestamp: s2sBidRequest.start,
+          auctiontimestamp: s2sBidRequest.auctionStart,
           targeting: {
             // includewinners is always true for openrtb
             includewinners: true,
