@@ -542,6 +542,8 @@ const OPEN_RTB_PROTOCOL = {
       test: getConfig('debug') ? 1 : 0,
       ext: {
         prebid: {
+          // set ext.prebid.auctiontimestamp with the auction timestamp. Data type is long integer.
+          auctiontimestamp: s2sBidRequest.start,
           targeting: {
             // includewinners is always true for openrtb
             includewinners: true,
@@ -655,14 +657,27 @@ const OPEN_RTB_PROTOCOL = {
           if (bidRequest && serverResponseTimeMs) {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
           }
-
-          const extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
-
+          
+          // Look for seatbid[].bid[].ext.prebid.bidid and place it in the bidResponse object for use in analytics adapters as 'pbsBidId'
+          utils.deepSetValue(bidObject, 'pbsBidId', utils.deepAccess(bid, 'ext.prebid.bidid'));
+          
+          // Cache events.win as wurl for use in analytics and renderAd
+          if (bid.wurl) {
+            bidObject.wurl = bid.wurl;
+          }
+          
+          let extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
+          
           // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
           if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
+            // If wurl exists, remove hb_winurl and hb_bidid targeting attributes
+            if (bid.wurl) {
+              extPrebidTargeting = utils.getDefinedParams(extPrebidTargeting, Object.keys(extPrebidTargeting)
+                  .filter(i => (i.indexOf('hb_winurl') === -1 && i.indexOf('hb_bidid') === -1)));
+            }
             bidObject.adserverTargeting = extPrebidTargeting;
           }
-
+          
           bidObject.seatBidId = bid.id;
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
@@ -670,6 +685,11 @@ const OPEN_RTB_PROTOCOL = {
             let sizes = bidRequest.sizes && bidRequest.sizes[0];
             bidObject.playerHeight = sizes[0];
             bidObject.playerWidth = sizes[1];
+            
+            
+            if (bid.wurl) {
+              bidObject.wurl = bid.wurl;
+            }
 
             // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
@@ -681,8 +701,9 @@ const OPEN_RTB_PROTOCOL = {
               // build url using key and cache host
               bidObject.vastUrl = `https://${extPrebidTargeting.hb_cache_host}${extPrebidTargeting.hb_cache_path}?uuid=${extPrebidTargeting.hb_uuid}`;
             }
-
+            
             if (bid.adm) { bidObject.vastXml = bid.adm; }
+            
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
           } else if (utils.deepAccess(bid, 'ext.prebid.type') === NATIVE) {
             bidObject.mediaType = NATIVE;

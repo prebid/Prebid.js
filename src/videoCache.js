@@ -70,6 +70,7 @@ function toStorageRequest(bid) {
   if (config.getConfig('cache.vasttrack')) {
     payload.bidder = bid.bidder;
     payload.bidid = bid.requestId;
+    payload.timestamp = utils.deepAccess(bid, 'ext.prebid.auctiontimestamp');
   }
 
   if (typeof bid.customCacheKey === 'string' && bid.customCacheKey !== '') {

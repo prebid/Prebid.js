@@ -201,7 +201,7 @@ const RESPONSE_NO_COOKIE = {
   }]
 };
 
-const RESPONSE_NO_PBS_COOKIE = {
+  const RESPONSE_NO_PBS_COOKIE = {
   'tid': '882fe33e-2981-4257-bd44-bd3b03945f48',
   'status': 'no_cookie',
   'bidder_status': [{

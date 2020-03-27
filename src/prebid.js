@@ -339,7 +339,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       if (bid) {
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
-        bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
+        bid.adUrl = (bid.wurl) ? bid.wurl : utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
         // save winning bids
         auctionManager.addWinningBid(bid);
 
