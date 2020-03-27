@@ -304,6 +304,7 @@ const RESPONSE_OPENRTB_VIDEO = {
           ext: {
             prebid: {
               type: 'video',
+              bidid: '654321'
             },
             bidder: {
               appnexus: {
@@ -1801,7 +1802,24 @@ describe('S2S Adapter', function () {
         hb_uuid: 'a5ad3993',
         hb_cache_host: 'prebid-cache.net',
         hb_cache_path: '/cache'
-      })
+      });
+    });
+
+    it('add request property pbsBidId with ext.prebid.bidid value', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({ s2sConfig });
+      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+
+      server.respondWith(JSON.stringify(cacheResponse));
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+
+      expect(response).to.have.property('pbsBidId', '654321');
     });
 
     it('handles OpenRTB native responses', function () {

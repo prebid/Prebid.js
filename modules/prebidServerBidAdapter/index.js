@@ -659,7 +659,9 @@ const OPEN_RTB_PROTOCOL = {
           }
 
           // Look for seatbid[].bid[].ext.prebid.bidid and place it in the bidResponse object for use in analytics adapters as 'pbsBidId'
-          utils.deepSetValue(bidObject, 'pbsBidId', utils.deepAccess(bid, 'ext.prebid.bidid'));
+          if (utils.deepAccess(bid, 'ext.prebid.bidid')) {
+            utils.deepSetValue(bidObject, 'pbsBidId', utils.deepAccess(bid, 'ext.prebid.bidid'));
+          }
 
           // Cache events.win as wurl for use in analytics and renderAd
           if (bid.wurl) {
