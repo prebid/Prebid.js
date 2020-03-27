@@ -347,12 +347,11 @@ describe('Quantcast adapter', function () {
     });
   });
 
-  it('propagates GDPR consent string, signal and version', function () {
+  it('propagates GDPR consent string and signal', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,
-        consentString: 'consentString',
-        apiVersion: 2
+        consentString: 'consentString'
       }
     };
 
@@ -361,7 +360,6 @@ describe('Quantcast adapter', function () {
 
     expect(parsed.gdprSignal).to.equal(1);
     expect(parsed.gdprConsent).to.equal('consentString');
-    expect(parsed.gdprVersion).to.equal(2);
   });
 
   it('blocks request without GDPR consent', function () {
@@ -373,8 +371,7 @@ describe('Quantcast adapter', function () {
           vendorConsents: {
             '11': 0
           }
-        },
-        apiVersion: 1
+        }
       }
     };
 
@@ -392,8 +389,7 @@ describe('Quantcast adapter', function () {
           vendorConsents: {
             '11': 1
           }
-        },
-        apiVersion: 1
+        }
       }
     };
 
@@ -402,7 +398,6 @@ describe('Quantcast adapter', function () {
 
     expect(parsed.gdprSignal).to.equal(1);
     expect(parsed.gdprConsent).to.equal('consentString');
-    expect(parsed.gdprVersion).to.equal(1);
   });
 
   it('propagates US Privacy/CCPA consent information', function () {
