@@ -4,6 +4,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'quantcast';
+const QUANTCAST_VENDOR_ID = 11;
 const DEFAULT_BID_FLOOR = 0.0000000001;
 
 export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
@@ -106,6 +107,16 @@ export const spec = {
     const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
     const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
     const domain = getDomain(page);
+
+    // Check for GDPR consent, and drop request if consent has not been given
+    if (gdprConsent.gdprApplies) {
+      if (gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents &&
+        typeof gdprConsent.vendorData.vendorConsents[QUANTCAST_VENDOR_ID.toString(10)] !== 'undefined') {
+        if (!(bidderRequest.gdprConsent.vendorData.vendorConsents[QUANTCAST_VENDOR_ID.toString(10)])) {
+          return;
+        }
+      }
+    }
 
     let bidRequestsList = [];
 
