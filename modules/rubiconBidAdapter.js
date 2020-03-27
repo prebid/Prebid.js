@@ -315,7 +315,7 @@ export const spec = {
       }
 
       // set ext.prebid.auctiontimestamp using auction time
-      utils.deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidRequest.auctionStart);
+      utils.deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
 
       return {
         method: 'POST',
