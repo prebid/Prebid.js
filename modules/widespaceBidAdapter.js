@@ -2,15 +2,17 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {
   cookiesAreEnabled,
+  hasLocalStorage,
   parseQueryStringParameters,
   parseSizesInput
 } from '../src/utils.js';
 import includes from 'core-js/library/fn/array/includes.js';
 import find from 'core-js/library/fn/array/find.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
-const LOCAL_STORAGE_AVAILABLE = window.localStorage;
+const LOCAL_STORAGE_AVAILABLE = hasLocalStorage();
 const COOKIE_ENABLED = cookiesAreEnabled();
 const LS_KEYS = {
   PERF_DATA: 'wsPerfData',
@@ -176,12 +178,12 @@ export const spec = {
 function storeData(data, name, stringify = true) {
   const value = stringify ? JSON.stringify(data) : data;
   if (LOCAL_STORAGE_AVAILABLE) {
-    localStorage.setItem(name, value);
+    utils.setDataInLocalStorage(name, value);
     return true;
   } else if (COOKIE_ENABLED) {
     const theDate = new Date();
     const expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString();
-    window.document.cookie = `${name}=${value};path=/;expires=${expDate}`;
+    utils.setCookie(name, value, expDate);
     return true;
   }
 }
@@ -191,9 +193,9 @@ function getData(name, remove = true) {
   if (LOCAL_STORAGE_AVAILABLE) {
     Object.keys(localStorage).filter((key) => {
       if (key.indexOf(name) > -1) {
-        data.push(localStorage.getItem(key));
+        data.push(utils.getDataFromLocalStorage(key));
         if (remove) {
-          localStorage.removeItem(key);
+          utils.removeDataFromLocalStorage(key);
         }
       }
     });
@@ -205,7 +207,7 @@ function getData(name, remove = true) {
       if (value[0].indexOf(name) > -1) {
         data.push(value[1]);
         if (remove) {
-          document.cookie = `${value[0]}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+          utils.setCookie(value[0], '', 'Thu, 01 Jan 1970 00:00:01 GMT');
         }
       }
     });

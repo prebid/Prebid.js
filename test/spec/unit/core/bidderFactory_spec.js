@@ -56,15 +56,66 @@ describe('bidders created by newBidder', function () {
 
   describe('when the ajax response is irrelevant', function () {
     let ajaxStub;
+    let getConfigSpy;
 
     beforeEach(function () {
       ajaxStub = sinon.stub(ajax, 'ajax');
       addBidResponseStub.reset();
+      getConfigSpy = sinon.spy(config, 'getConfig');
       doneStub.reset();
     });
 
     afterEach(function () {
       ajaxStub.restore();
+      getConfigSpy.restore();
+    });
+
+    it('should let registerSyncs run with invalid alias and aliasSync enabled', function () {
+      config.setConfig({
+        userSync: {
+          aliasSyncEnabled: true
+        }
+      });
+      spec.code = 'fakeBidder';
+      const bidder = newBidder(spec);
+      bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
+    });
+
+    it('should let registerSyncs run with valid alias and aliasSync enabled', function () {
+      config.setConfig({
+        userSync: {
+          aliasSyncEnabled: true
+        }
+      });
+      spec.code = 'aliasBidder';
+      const bidder = newBidder(spec);
+      bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
+    });
+
+    it('should let registerSyncs run with invalid alias and aliasSync disabled', function () {
+      config.setConfig({
+        userSync: {
+          aliasSyncEnabled: false
+        }
+      });
+      spec.code = 'fakeBidder';
+      const bidder = newBidder(spec);
+      bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
+    });
+
+    it('should not let registerSyncs run with valid alias and aliasSync disabled', function () {
+      config.setConfig({
+        userSync: {
+          aliasSyncEnabled: false
+        }
+      });
+      spec.code = 'aliasBidder';
+      const bidder = newBidder(spec);
+      bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(false);
     });
 
     it('should handle bad bid requests gracefully', function () {
