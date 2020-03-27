@@ -660,7 +660,7 @@ const OPEN_RTB_PROTOCOL = {
 
           // Look for seatbid[].bid[].ext.prebid.bidid and place it in the bidResponse object for use in analytics adapters as 'pbsBidId'
           utils.deepSetValue(bidObject, 'pbsBidId', utils.deepAccess(bid, 'ext.prebid.bidid'));
-          
+
           // Cache events.win as wurl for use in analytics and renderAd
           if (bid.wurl) {
             bidObject.wurl = bid.wurl;
@@ -673,7 +673,7 @@ const OPEN_RTB_PROTOCOL = {
             // If wurl exists, remove hb_winurl and hb_bidid targeting attributes
             if (bid.wurl) {
               extPrebidTargeting = utils.getDefinedParams(extPrebidTargeting, Object.keys(extPrebidTargeting)
-                  .filter(i => (i.indexOf('hb_winurl') === -1 && i.indexOf('hb_bidid') === -1)));
+                .filter(i => (i.indexOf('hb_winurl') === -1 && i.indexOf('hb_bidid') === -1)));
             }
             bidObject.adserverTargeting = extPrebidTargeting;
           }
