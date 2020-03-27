@@ -139,6 +139,7 @@ export const spec = {
         bidId: bid.bidId,
         gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
         gdprConsent: gdprConsent.consentString,
+        gdprVersion: gdprConsent.apiVersion,
         uspSignal: uspConsent ? 1 : 0,
         uspConsent,
         coppa: config.getConfig('coppa') === true ? 1 : 0,
