@@ -963,7 +963,7 @@ export const spec = {
       payload.app = config.getConfig('app');
       // not copying domain from site as it is a derived value from page
       payload.app.publisher = payload.site.publisher;
-      payload.app.ext = payload.site.ext || null;
+      payload.app.ext = payload.site.ext || UNDEFINED;
       delete payload.site;
     }
 
