@@ -20,9 +20,9 @@ describe('automatadBidAdapter', function () {
     bidderRequestId: '3213887463c059',
     auctionId: 'abc-123',
     src: 'client',
-    bidRequestsCount: 1,
+    bidRequestsCount: 1
   }
-  
+
   let expectedResponse = [{
     'body': {
       'id': 'abc-123',
