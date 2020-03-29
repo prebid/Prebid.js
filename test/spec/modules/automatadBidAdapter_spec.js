@@ -22,7 +22,7 @@ describe('automatadBidAdapter', function () {
     src: 'client',
     bidRequestsCount: 1,
   }
-  
+
   let expectedResponse = [{
     'body': {
       'id': 'abc-123',
