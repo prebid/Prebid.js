@@ -111,6 +111,16 @@ describe('automatadBidAdapter', function () {
       expect(result.length).to.equal(0);
     })
   })
+
+  describe('getUserSyncs', function () {
+    it('should return iframe sync', function () {
+      let sync = spec.getUserSyncs()
+      expect(sync.length).to.equal(1)
+      expect(sync[0].type === 'iframe')
+      expect(typeof sync[0].url === 'string')
+    })
+  })
+
   describe('onBidWon', function () {
     let serverResponses = spec.interpretResponse(expectedResponse[0]);
     let wonbid = serverResponses[0];
