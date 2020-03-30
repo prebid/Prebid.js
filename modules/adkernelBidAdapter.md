@@ -9,7 +9,7 @@ Maintainer: prebid-dev@adkernel.com
 # Description
 
 Connects to AdKernel whitelabel platform.
-Banner and video formats are supported.
+Banner, video and native formats are supported.
 
 
 # Test Parameters
