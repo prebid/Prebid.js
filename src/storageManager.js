@@ -62,7 +62,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
   const setCookie = function (key, value, expires, sameSite, domain, done) {
     let cb = function (result) {
       if (result && result.valid) {
-        document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}${domain ? `; domain=${domain}` : ''}`;
+        document.cookie = `${key}=${encodeURIComponent(value)}${(typeof expires !== 'undefined') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}${domain ? `; domain=${domain}` : ''}`;
       }
     }
     if (done && typeof done === 'function') {
