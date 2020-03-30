@@ -1,15 +1,15 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js'
+import * as utils from '../src/utils.js'
+import {BANNER} from '../src/mediaTypes.js'
+import {ajax} from '../src/ajax.js'
 
 const BIDDER = 'automatad'
 
-const ENDPOINT_URL = 'https://rtb2.automatad.com/ortb2';
+const ENDPOINT_URL = 'https://rtb2.automatad.com/ortb2'
 
-const DEFAULT_BID_TTL = 30;
-const DEFAULT_CURRENCY = 'USD';
-const DEFAULT_NET_REVENUE = true;
+const DEFAULT_BID_TTL = 30
+const DEFAULT_CURRENCY = 'USD'
+const DEFAULT_NET_REVENUE = true
 
 export const spec = {
   code: BIDDER,
@@ -18,16 +18,16 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     // will receive request bid. check if have necessary params for bidding
-    return (bid && bid.hasOwnProperty('params') && bid.params.hasOwnProperty('siteId') && bid.params.hasOwnProperty('placementId') && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner'));
+    return (bid && bid.hasOwnProperty('params') && bid.params.hasOwnProperty('siteId') && bid.params.hasOwnProperty('placementId') && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner'))
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests || !bidderRequest) {
-      return;
+      return
     }
 
-    const siteId = validBidRequests[0].params.siteId;
-    const placementId = validBidRequests[0].params.placementId;
+    const siteId = validBidRequests[0].params.siteId
+    const placementId = validBidRequests[0].params.placementId
 
     const impressions = validBidRequests.map(bidRequest => ({
       id: bidRequest.bidId,
@@ -37,7 +37,7 @@ export const spec = {
           h: sizeArr[1],
         }))
       },
-    }));
+    }))
 
     // params from bid request
     const openrtbRequest = {
@@ -50,9 +50,9 @@ export const spec = {
         page: window.location.href,
         ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null,
       },
-    };
+    }
 
-    const payloadString = JSON.stringify(openrtbRequest);
+    const payloadString = JSON.stringify(openrtbRequest)
     return {
       method: 'POST',
       url: ENDPOINT_URL + '/resp',
@@ -62,12 +62,12 @@ export const spec = {
         withCredentials: false,
         crossOrigin: true,
       },
-    };
+    }
   },
 
   interpretResponse: function (serverResponse, request) {
-    const bidResponses = [];
-    const response = (serverResponse || {}).body;
+    const bidResponses = []
+    const response = (serverResponse || {}).body
 
     if (response && response.seatbid && response.seatbid.length === 1 && response.seatbid[0].bid && response.seatbid[0].bid.length) {
       response.seatbid[0].bid.forEach(bid => {
@@ -86,10 +86,10 @@ export const spec = {
         })
       })
     } else {
-      utils.logInfo('automatad :: no valid responses to interpret');
+      utils.logInfo('automatad :: no valid responses to interpret')
     }
 
-    return bidResponses;
+    return bidResponses
   },
   getUserSyncs: function(syncOptions, serverResponse) {
     return [{
@@ -98,7 +98,7 @@ export const spec = {
     }]
   },
   onBidWon: function(bid) {
-    if (!bid.nurl) { return; }
+    if (!bid.nurl) { return }
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
       bid.cpm
@@ -111,9 +111,10 @@ export const spec = {
     ).replace(
       /\$\{AUCTION_ID\}/,
       bid.auctionId
-    );
+    )
     ajax(winUrl, null)
+    return true
   },
 
-};
-registerBidder(spec);
+}
+registerBidder(spec)

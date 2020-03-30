@@ -99,16 +99,16 @@ describe('automatadBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should get the correct bid response', function () {
-      let result = spec.interpretResponse(expectedResponse[0]);
-      expect(result).to.be.an('array').that.is.not.empty;
+      let result = spec.interpretResponse(expectedResponse[0])
+      expect(result).to.be.an('array').that.is.not.empty
     })
 
     it('handles empty bid response', function () {
       let response = {
         body: ''
       }
-      let result = spec.interpretResponse(response);
-      expect(result.length).to.equal(0);
+      let result = spec.interpretResponse(response)
+      expect(result.length).to.equal(0)
     })
   })
 
@@ -122,11 +122,12 @@ describe('automatadBidAdapter', function () {
   })
 
   describe('onBidWon', function () {
-    let serverResponses = spec.interpretResponse(expectedResponse[0]);
-    let wonbid = serverResponses[0];
+    let serverResponses = spec.interpretResponse(expectedResponse[0])
+    let wonbid = serverResponses[0]
 
     it('Returns true is nurl is good/not blank', function () {
-      expect(wonbid.nurl).to.not.equal('');
+      expect(wonbid.nurl).to.not.equal('')
+      expect(spec.onBidWon(wonbid)).to.be.true
     })
   })
 })
