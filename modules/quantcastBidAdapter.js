@@ -77,21 +77,10 @@ function getDomain(url) {
 }
 
 function checkTCFv1(vendorData) {
-  // Defer consent check to server if no consent fields in vendor data
-  let purposeConsent = true;
-  let vendorConsent = true;
+  let vendorConsent = vendorData.vendorConsents && vendorData.vendorConsents[QUANTCAST_VENDOR_ID];
+  let purposeConsent = vendorData.purposeConsents && vendorData.purposeConsents[PURPOSE_DATA_COLLECT];
 
-  if (typeof vendorData.purposeConsents !== 'undefined' &&
-    typeof vendorData.purposeConsents[PURPOSE_DATA_COLLECT] !== 'undefined') {
-    vendorConsent = !!(vendorData.purposeConsents[PURPOSE_DATA_COLLECT]);
-  }
-
-  if (typeof vendorData.vendorConsents !== 'undefined' &&
-    typeof vendorData.vendorConsents[QUANTCAST_VENDOR_ID] !== 'undefined') {
-    purposeConsent = !!(vendorData.vendorConsents[QUANTCAST_VENDOR_ID])
-  }
-
-  return vendorConsent && purposeConsent;
+  return !!(vendorConsent && purposeConsent);
 }
 
 function checkTCFv2(tcData) {
@@ -104,6 +93,11 @@ function checkTCFv2(tcData) {
   let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
     : null;
+
+  if (qcRestriction === 0) {
+    // Not allowed by publisher
+    return false;
+  }
 
   let vendorConsent = tcData.vendor && tcData.vendor.consents && tcData.vendor.consents[QUANTCAST_VENDOR_ID];
   let purposeConsent = tcData.purpose && tcData.purpose.consents && tcData.purpose.consents[PURPOSE_DATA_COLLECT];
