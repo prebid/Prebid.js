@@ -347,7 +347,8 @@ export function newBidder(spec) {
 }
 
 export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent) {
-  if (spec.getUserSyncs && !adapterManager.aliasRegistry[spec.code]) {
+  const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
+  if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
     let filterConfig = config.getConfig('userSync.filterSettings');
     let syncs = spec.getUserSyncs({
       iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
