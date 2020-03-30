@@ -149,9 +149,11 @@ export function getBiddersCpmAdjustment(bidderName, inputCpm) {
 
 /**
  * @summary This function takes the original floor and the adjusted floor in order to determine the bidders actual floor
+ * With js rounding errors with decimal division we utilize similar method as shown in cpmBucketManager.js
  */
 export function calculateAdjustedFloor(oldFloor, newFloor) {
-  return oldFloor / newFloor * oldFloor;
+  const pow = Math.pow(10, 10);
+  return ( oldFloor * pow / newFloor * oldFloor) / pow;
 }
 
 /**

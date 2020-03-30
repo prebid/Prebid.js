@@ -192,7 +192,7 @@ export const spec = {
           mediaType: 'video',
           size: parseSizes(bidRequest, 'video')
         });
-        bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(floorInfo.floor) ? parseFloat(floorInfo.floor) : undefined;
+        bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
       } else {
         bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
       }
@@ -504,7 +504,7 @@ export const spec = {
         mediaType: 'banner',
         size: '*'
       });
-      data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(floorInfo.floor) ? floorInfo.floor : undefined;
+      data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
 
     // add p_pos only if specified and valid
