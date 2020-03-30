@@ -94,7 +94,7 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponse) {
     return [{
       type: 'iframe',
-      url: 'https://rtb2.automatad.com/static/usersync/v1/async_usersync'
+      url: 'https://rtb2.automatad.com/ortb2/async_usersync'
     }]
   },
   onBidWon: function(bid) {
