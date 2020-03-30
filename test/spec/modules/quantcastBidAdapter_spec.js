@@ -362,7 +362,7 @@ describe('Quantcast adapter', function () {
     expect(parsed.gdprConsent).to.equal('consentString');
   });
 
-  it('blocks request without GDPR vendor consent', function () {
+  it('blocks request without TCF v1 vendor consent', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,
@@ -371,7 +371,8 @@ describe('Quantcast adapter', function () {
           vendorConsents: {
             '11': false
           }
-        }
+        },
+        apiVersion: 1
       }
     };
 
@@ -380,7 +381,7 @@ describe('Quantcast adapter', function () {
     expect(requests).to.equal(undefined);
   });
 
-  it('allows request with GDPR vendor consent', function () {
+  it('allows request with TCF v1 vendor consent', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,
@@ -389,7 +390,8 @@ describe('Quantcast adapter', function () {
           vendorConsents: {
             '11': true
           }
-        }
+        },
+        apiVersion: 1
       }
     };
 
@@ -400,7 +402,7 @@ describe('Quantcast adapter', function () {
     expect(parsed.gdprConsent).to.equal('consentString');
   });
 
-  it('blocks request without GDPR purpose consent', function () {
+  it('blocks request without TCF v1 purpose consent', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,
@@ -409,7 +411,8 @@ describe('Quantcast adapter', function () {
           purposeConsents: {
             '1': false
           }
-        }
+        },
+        apiVersion: 1
       }
     };
 
@@ -418,7 +421,7 @@ describe('Quantcast adapter', function () {
     expect(requests).to.equal(undefined);
   });
 
-  it('allows request with GDPR purpose consent', function () {
+  it('allows request with TCF v1 purpose consent', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,
@@ -427,7 +430,8 @@ describe('Quantcast adapter', function () {
           purposeConsents: {
             '1': true
           }
-        }
+        },
+        apiVersion: 1
       }
     };
 

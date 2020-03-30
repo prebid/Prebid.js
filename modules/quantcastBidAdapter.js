@@ -76,21 +76,25 @@ function getDomain(url) {
   return url.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#]/)[0];
 }
 
-function checkPurposeConsent(gdprConsent) {
-  if (gdprConsent.vendorData && typeof gdprConsent.vendorData.purposeConsents !== 'undefined' &&
-    typeof gdprConsent.vendorData.purposeConsents[PURPOSE_DATA_COLLECT] !== 'undefined') {
-    return !!(gdprConsent.vendorData.purposeConsents[PURPOSE_DATA_COLLECT]);
+function checkTCFv1(vendorData) {
+  // Defer consent check to server if no consent fields in vendor data
+  let purposeConsent = true;
+  let vendorConsent = true;
+
+  if (typeof vendorData.purposeConsents !== 'undefined' &&
+    typeof vendorData.purposeConsents[PURPOSE_DATA_COLLECT] !== 'undefined') {
+    vendorConsent = !!(vendorData.purposeConsents[PURPOSE_DATA_COLLECT]);
   }
-  // Defer purpose consent check to server
-  return true;
+
+  if (typeof vendorData.vendorConsents !== 'undefined' &&
+    typeof vendorData.vendorConsents[QUANTCAST_VENDOR_ID] !== 'undefined') {
+    purposeConsent = !!(vendorData.vendorConsents[QUANTCAST_VENDOR_ID])
+  }
+
+  return vendorConsent && purposeConsent;
 }
 
-function checkVendorConsent(gdprConsent) {
-  if (gdprConsent.vendorData && typeof gdprConsent.vendorData.vendorConsents !== 'undefined' &&
-    typeof gdprConsent.vendorData.vendorConsents[QUANTCAST_VENDOR_ID] !== 'undefined') {
-    return !!(gdprConsent.vendorData.vendorConsents[QUANTCAST_VENDOR_ID])
-  }
-  // Defer vendor consent check to server
+function checkTCFv2(vendorData) {
   return true;
 }
 
@@ -132,10 +136,12 @@ export const spec = {
     // Check for GDPR consent, and drop request if consent has not been given
     if (gdprConsent.gdprApplies) {
       if (gdprConsent.vendorData) {
-        if (!checkVendorConsent(gdprConsent)) {
+        if (gdprConsent.apiVersion === 1 && !checkTCFv1(gdprConsent.vendorData)) {
+          utils.logInfo(`${BIDDER_CODE}: No consent for TCF v1`);
           return;
         }
-        if (!checkPurposeConsent(gdprConsent)) {
+        if (gdprConsent.apiVersion === 2 && !checkTCFv2(gdprConsent.vendorData)) {
+          utils.logInfo(`${BIDDER_CODE}: No consent for TCF v2`);
           return;
         }
       }
