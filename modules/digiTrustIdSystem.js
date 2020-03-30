@@ -12,6 +12,10 @@
 import * as utils from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const DT_VENDOR_ID = 64; // cmp gvlVendorId
+const storage = getStorageManager(DT_VENDOR_ID);
 
 var fallbackTimeout = 1550; // timeout value that allows userId system to execute first
 var fallbackTimer = 0; // timer Id for fallback init so we don't double call
@@ -40,7 +44,6 @@ var noop = function () {
 
 const MAX_RETRIES = 2;
 const DT_ID_SVC = 'https://prebid.digitru.st/id/v1';
-const DT_VENDOR_ID = 64; // cmp gvlVendorId
 
 var isFunc = function (fn) {
   return typeof (fn) === 'function';
@@ -83,7 +86,7 @@ function writeDigiId(id) {
   var key = 'DigiTrust.v1.identity';
   var date = new Date();
   date.setTime(date.getTime() + 604800000);
-  utils.setCookie(key, encId(id), date.toUTCString(), 'none');
+  storage.setCookie(key, encId(id), date.toUTCString(), 'none');
 }
 
 /**

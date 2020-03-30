@@ -7,6 +7,9 @@
 import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 const MODULE_NAME = 'liveIntentId';
 const LIVE_CONNECT_DUID_KEY = '_li_duid';
@@ -63,7 +66,7 @@ export const liveIntentIdSubmodule = {
     const additionalIdentifierNames = configParams.identifiersToResolve || [];
 
     const additionalIdentifiers = additionalIdentifierNames.concat([LIVE_CONNECT_DUID_KEY]).reduce((obj, identifier) => {
-      const value = utils.getCookie(identifier) || utils.getDataFromLocalStorage(identifier);
+      const value = storage.getCookie(identifier) || storage.getDataFromLocalStorage(identifier);
       const key = identifier.replace(LIVE_CONNECT_DUID_KEY, DOMAIN_USER_ID_QUERY_PARAM_KEY);
       if (value) {
         if (typeof value === 'object') {

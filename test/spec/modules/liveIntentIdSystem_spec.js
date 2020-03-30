@@ -1,4 +1,4 @@
-import { liveIntentIdSubmodule } from 'modules/liveIntentIdSystem.js';
+import { liveIntentIdSubmodule, storage } from 'modules/liveIntentIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -11,8 +11,8 @@ describe('LiveIntentId', function() {
   const responseHeader = { 'Content-Type': 'application/json' }
 
   beforeEach(function () {
-    getCookieStub = sinon.stub(utils, 'getCookie');
-    getDataFromLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
+    getCookieStub = sinon.stub(storage, 'getCookie');
+    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     logErrorStub = sinon.stub(utils, 'logError');
   });
 

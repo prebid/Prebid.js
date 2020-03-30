@@ -4,6 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { loadExternalScript } from '../src/adloader.js'
 import JSEncrypt from 'jsencrypt/bin/jsencrypt.js';
 import sha256 from 'crypto-js/sha256.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adagio';
 const VERSION = '2.1.0';
@@ -12,6 +13,8 @@ const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
 const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
+const GVLID = 617;
+const storage = getStorageManager(GVLID);
 
 export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9el0+OEn6fvEh1RdVHQu4cnT0
@@ -22,7 +25,7 @@ pV6EP3MTLosuUEpLaQIDAQAB
 
 export function getAdagioScript() {
   try {
-    const ls = utils.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
+    const ls = storage.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
 
     if (!ls) {
       utils.logWarn('Adagio Script not found');
@@ -33,7 +36,7 @@ export function getAdagioScript() {
 
     if (!hashRgx.test(ls)) {
       utils.logWarn('No hash found in Adagio script');
-      utils.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
+      storage.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
     } else {
       const r = ls.match(hashRgx);
       const hash = r[2];
@@ -47,7 +50,7 @@ export function getAdagioScript() {
         Function(ls)(); // eslint-disable-line no-new-func
       } else {
         utils.logWarn('Invalid Adagio script found');
-        utils.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
+        storage.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
       }
     }
   } catch (err) {
@@ -341,7 +344,7 @@ function _getGdprConsent(bidderRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
-
+  gvlid: GVLID,
   supportedMediaType: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function (bid) {

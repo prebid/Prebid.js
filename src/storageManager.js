@@ -1,8 +1,10 @@
 import { hook } from './hook.js';
-import { hasDeviceAccess, logError, checkCookieSupport } from './utils.js';
+import * as utils from './utils.js';
 import includes from 'core-js/library/fn/array/includes.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
+
+export let storageCallbacks = [];
 
 /**
  * Storage options
@@ -21,12 +23,30 @@ const moduleTypeWhiteList = ['core', 'prebid-module'];
  * @param {storageOptions} options
  */
 export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
-  function isValid() {
+  function isValid(cb) {
     if (includes(moduleTypeWhiteList, moduleType)) {
-      return {valid: hasDeviceAccess()}
+      let result = {
+        valid: true
+      }
+      return cb(result);
+    } else {
+      let value;
+      let hookDetails = {
+        hasEnforcementHook: false
+      }
+      validateStorageEnforcement(gvlid, moduleName, hookDetails, function(result) {
+        if (result && result.hasEnforcementHook) {
+          value = cb(result);
+        } else {
+          let result = {
+            hasEnforcementHook: false,
+            valid: utils.hasDeviceAccess()
+          }
+          value = cb(result);
+        }
+      });
+      return value;
     }
-    let result = validateStorageEnforcement(gvlid, moduleName);
-    return result;
   }
 
   /**
@@ -39,10 +59,19 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    * If a domain is specified, subdomains are always included.
    * Domain must match the domain of the JavaScript origin. Setting cookies to foreign domains will be silently ignored.
    */
-  const setCookie = function (key, value, expires, sameSite, domain) {
-    let result = isValid();
-    if (result.valid) {
-      document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}${domain ? `; domain=${domain}` : ''}`;
+  const setCookie = function (key, value, expires, sameSite, domain, done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}${domain ? `; domain=${domain}` : ''}`;
+      }
+    }
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(cb);
+        done(result);
+      });
+    } else {
+      return isValid(cb);
     }
   };
 
@@ -50,52 +79,88 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    * @param {string} name
    * @returns {(string|null)}
    */
-  const getCookie = function(name) {
-    let result = isValid();
-    if (result.valid) {
-      let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
-      return m ? decodeURIComponent(m[2]) : null;
+  const getCookie = function(name, done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+        return m ? decodeURIComponent(m[2]) : null;
+      }
+      return null;
     }
-    return null;
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(cb);
+        done(result);
+      });
+    } else {
+      return isValid(cb);
+    }
   };
 
   /**
    * @returns {boolean}
    */
-  const localStorageIsEnabled = function () {
-    let result = isValid();
-    if (result.valid) {
-      try {
-        localStorage.setItem('prebid.cookieTest', '1');
-        return localStorage.getItem('prebid.cookieTest') === '1';
-      } catch (error) {}
+  const localStorageIsEnabled = function (done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        try {
+          localStorage.setItem('prebid.cookieTest', '1');
+          return localStorage.getItem('prebid.cookieTest') === '1';
+        } catch (error) {}
+      }
+      return false;
     }
-    return false;
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(cb);
+        done(result);
+      });
+    } else {
+      return isValid(cb);
+    }
   }
 
   /**
    * @returns {boolean}
    */
-  const cookiesAreEnabled = function () {
-    let result = isValid();
-    if (result.valid) {
-      if (checkCookieSupport()) {
-        return true;
+  const cookiesAreEnabled = function (done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        if (utils.checkCookieSupport()) {
+          return true;
+        }
+        window.document.cookie = 'prebid.cookieTest';
+        return window.document.cookie.indexOf('prebid.cookieTest') !== -1;
       }
-      window.document.cookie = 'prebid.cookieTest';
-      return window.document.cookie.indexOf('prebid.cookieTest') !== -1;
+      return false;
     }
-    return false;
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(cb);
+        done(result);
+      });
+    } else {
+      return isValid(cb);
+    }
   }
 
   /**
    * @param {string} key
    * @param {string} value
    */
-  const setDataInLocalStorage = function (key, value) {
-    let result = isValid();
-    if (result.valid) {
-      window.localStorage.setItem(key, value);
+  const setDataInLocalStorage = function (key, value, done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        window.localStorage.setItem(key, value);
+      }
+    }
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(cb);
+        done(result);
+      });
+    } else {
+      return isValid(cb);
     }
   }
 
@@ -103,37 +168,64 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    * @param {string} key
    * @returns {(string|null)}
    */
-  const getDataFromLocalStorage = function (key) {
-    let result = isValid();
-    if (result.valid) {
-      return window.localStorage.getItem(key);
+  const getDataFromLocalStorage = function (key, done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        return window.localStorage.getItem(key);
+      }
+      return null;
     }
-    return null;
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(cb);
+        done(result);
+      });
+    } else {
+      return isValid(cb);
+    }
   }
 
   /**
    * @param {string} key
    */
-  const removeDataFromLocalStorage = function (key) {
-    let result = isValid();
-    if (result.valid) {
-      window.localStorage.removeItem(key);
+  const removeDataFromLocalStorage = function (key, done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        window.localStorage.removeItem(key);
+      }
+    }
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(cb);
+        done(result);
+      });
+    } else {
+      return isValid(cb);
     }
   }
 
   /**
    * @returns {boolean}
    */
-  const hasLocalStorage = function () {
-    let result = isValid();
-    if (result.valid) {
-      try {
-        return !!window.localStorage;
-      } catch (e) {
-        logError('Local storage api disabled');
+  const hasLocalStorage = function (done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        try {
+          return !!window.localStorage;
+        } catch (e) {
+          utils.logError('Local storage api disabled');
+        }
       }
+      return false;
     }
-    return false;
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(cb);
+        done(result);
+      });
+    } else {
+      return isValid(cb);
+    }
   }
 
   return {
@@ -151,13 +243,28 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
 /**
  * This hook validates the storage enforcement if gdprEnforcement module is included
  */
-export const validateStorageEnforcement = hook('sync', function(result) {
-  if (result.hasEnforcementHook) {
-    return result
-  } else {
-    return {
-      hasEnforcementHook: false,
-      valid: hasDeviceAccess()
-    }
-  }
+export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, hookDetails, callback) {
+  callback(hookDetails);
 }, 'validateStorageEnforcement');
+
+/**
+ * This function returns storage functions to access cookies and localstorage. This function will bypass the gdpr enforcement requirement. Prebid as a software needs to use storage in some scenarios and is not a vendor so GDPR enforcement rules does not apply on Prebid.
+ * @param {string} moduleName Module name
+ */
+export function getCoreStorageManager(moduleName) {
+  return newStorageManager({moduleName: moduleName, moduleType: 'core'});
+}
+
+/**
+ * Note: Core modules or Prebid modules like Currency, SizeMapping should use getCoreStorageManager
+ * This function returns storage functions to access cookies and localstorage. Bidders and User id modules should import this and use it in their module if needed. GVL ID and Module name are optional param but gvl id is needed for when gdpr enforcement module is used.
+ * @param {Number=} gvlid Vendor id
+ * @param {string=} moduleName BidderCode or module name
+ */
+export function getStorageManager(gvlid, moduleName) {
+  return newStorageManager({gvlid: gvlid, moduleName: moduleName});
+}
+
+export function resetData() {
+  storageCallbacks = [];
+}

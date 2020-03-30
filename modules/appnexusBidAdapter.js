@@ -7,7 +7,7 @@ import { auctionManager } from '../src/auctionManager.js';
 import find from 'core-js/library/fn/array/find.js';
 import includes from 'core-js/library/fn/array/includes.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
-import { newStorageManager } from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -40,7 +40,7 @@ const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
-const storage = newStorageManager({gvlid: GVLID});
+const storage = getStorageManager(GVLID, BIDDER_CODE);
 
 export const spec = {
   code: BIDDER_CODE,
@@ -65,7 +65,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    storage.setCookie('hello', 'world');
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj = {};

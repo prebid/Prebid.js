@@ -24,7 +24,7 @@ function getGvlid() {
     const bidder = adapterManager.getBidAdapter(bidderCode);
     gvlid = bidder.getSpec().gvlid;
   } else {
-    utils.logWarn('Current bidder not found');
+    utils.logWarn('Current module not found');
   }
   return gvlid;
 }
@@ -38,19 +38,47 @@ function getGvlid() {
 function validateRules(rule, consentData, currentModule, gvlid) {
   let isAllowed = false;
   if (rule.enforcePurpose && rule.enforceVendor) {
-    if (includes(rule.vendorExceptions, currentModule) ||
-        (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true && utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)) {
+    if (
+      includes(rule.vendorExceptions, currentModule) ||
+      (
+        utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true &&
+        utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true
+      )
+    ) {
       isAllowed = true;
     }
   } else if (rule.enforcePurpose === false && rule.enforceVendor === true) {
-    if (includes(rule.vendorExceptions, currentModule) ||
-        (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)) {
+    if (
+      includes(rule.vendorExceptions, currentModule) ||
+      (
+        utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true
+      )
+    ) {
       isAllowed = true;
     }
   } else if (rule.enforcePurpose === false && rule.enforceVendor === false) {
-    if ((includes(rule.vendorExceptions, currentModule) &&
-        (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true && utils.deepAccess(consentData, `vendorData.vendor.consents${gvlid}`) === true)) ||
-        !includes(rule.vendorExceptions, currentModule)) {
+    if (
+      (
+        includes(rule.vendorExceptions, currentModule) &&
+        (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true) &&
+        (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
+      ) ||
+      !includes(rule.vendorExceptions, currentModule)
+    ) {
+      isAllowed = true;
+    }
+  } else if (rule.enforcePurpose === true && rule.enforceVendor === false) {
+    if (
+      (
+        !includes(rule.vendorExceptions, currentModule) &&
+        (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true)
+      ) ||
+      (
+        includes(rule.vendorExceptions, currentModule) &&
+        (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true) &&
+        (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
+      )
+    ) {
       isAllowed = true;
     }
   }
@@ -63,35 +91,40 @@ function validateRules(rule, consentData, currentModule, gvlid) {
  * @param {Number=} gvlid gvlid of the module
  * @param {string=} moduleName name of the module
  */
-export function deviceAccessHook(fn, gvlid, moduleName) {
-  let result = {
+export function deviceAccessHook(fn, gvlid, moduleName, result) {
+  result = Object.assign({}, {
     hasEnforcementHook: true
-  }
+  });
   if (!hasDeviceAccess()) {
     utils.logWarn('Device access is disabled by Publisher');
     result.valid = false;
-    return fn.call(this, result);
+    fn.call(this, gvlid, moduleName, result);
   } else {
     const consentData = gdprDataHandler.getConsentData();
-    if (consentData && consentData.gdprApplies && consentData.apiVersion === 2) {
-      if (!gvlid) {
-        gvlid = getGvlid();
-      }
-      const curModule = moduleName || config.getCurrentBidder();
-      const purpose1Rule = find(enforcementRules, hasPurpose1);
-      let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
-      if (isAllowed) {
-        result.valid = true;
-        return fn.call(this, result);
+    if (consentData && consentData.gdprApplies) {
+      if (consentData.apiVersion === 2) {
+        if (!gvlid) {
+          gvlid = getGvlid();
+        }
+        const curModule = moduleName || config.getCurrentBidder();
+        const purpose1Rule = find(enforcementRules, hasPurpose1);
+        let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
+        if (isAllowed) {
+          result.valid = true;
+          fn.call(this, gvlid, moduleName, result);
+        } else {
+          utils.logWarn(`User denied Permission for Device access for ${curModule}`);
+          result.valid = false;
+          fn.call(this, gvlid, moduleName, result);
+        }
       } else {
-        utils.logWarn(`User denied Permission for Device access for ${curModule}`);
-        result.valid = false;
-        return fn.call(this, result);
+        utils.logInfo('Enforcing TCF2 only');
+        result.valid = true;
+        fn.call(this, gvlid, moduleName, result);
       }
     } else {
-      utils.logInfo('GDPR enforcement only applies to CMP version 2');
       result.valid = true;
-      return fn.call(this, result);
+      fn.call(this, gvlid, moduleName, result);
     }
   }
 }
@@ -103,22 +136,26 @@ export function deviceAccessHook(fn, gvlid, moduleName) {
  */
 export function userSyncHook(fn, ...args) {
   const consentData = gdprDataHandler.getConsentData();
-  if (consentData && consentData.gdprApplies && consentData.apiVersion === 2) {
-    const gvlid = getGvlid();
-    const curBidder = config.getCurrentBidder();
-    if (gvlid) {
-      const purpose1Rule = find(enforcementRules, hasPurpose1);
-      let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
-      if (isAllowed) {
-        fn.call(this, ...args);
+  if (consentData && consentData.gdprApplies) {
+    if (consentData.apiVersion === 2) {
+      const gvlid = getGvlid();
+      const curBidder = config.getCurrentBidder();
+      if (gvlid) {
+        const purpose1Rule = find(enforcementRules, hasPurpose1);
+        let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
+        if (isAllowed) {
+          fn.call(this, ...args);
+        } else {
+          utils.logWarn(`User sync not allowed for ${curBidder}`);
+        }
       } else {
         utils.logWarn(`User sync not allowed for ${curBidder}`);
       }
     } else {
-      utils.logWarn(`User sync not allowed for ${curBidder}`);
+      utils.logInfo('Enforcing TCF2 only');
+      fn.call(this, ...args);
     }
   } else {
-    utils.logInfo('GDPR enforcement only applies to CMP version 2');
     fn.call(this, ...args);
   }
 }
@@ -130,26 +167,30 @@ export function userSyncHook(fn, ...args) {
  * @param {Object} consentData GDPR consent data
  */
 export function userIdHook(fn, submodules, consentData) {
-  if (consentData && consentData.gdprApplies && consentData.apiVersion === 2) {
-    let userIdModules = submodules.map((submodule) => {
-      const gvlid = submodule.submodule.gvlid;
-      const moduleName = submodule.submodule.name;
-      if (gvlid) {
-        const purpose1Rule = find(enforcementRules, hasPurpose1);
-        let isAllowed = validateRules(purpose1Rule, consentData, moduleName, gvlid);
-        if (isAllowed) {
-          return submodule;
+  if (consentData && consentData.gdprApplies) {
+    if (consentData.apiVersion === 2) {
+      let userIdModules = submodules.map((submodule) => {
+        const gvlid = submodule.submodule.gvlid;
+        const moduleName = submodule.submodule.name;
+        if (gvlid) {
+          const purpose1Rule = find(enforcementRules, hasPurpose1);
+          let isAllowed = validateRules(purpose1Rule, consentData, moduleName, gvlid);
+          if (isAllowed) {
+            return submodule;
+          } else {
+            utils.logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
+          }
         } else {
           utils.logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
         }
-      } else {
-        utils.logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
-      }
-      return undefined;
-    }).filter(module => module)
-    fn.call(this, userIdModules, consentData);
+        return undefined;
+      }).filter(module => module)
+      fn.call(this, userIdModules, consentData);
+    } else {
+      utils.logInfo('Enforcing TCF2 only');
+      fn.call(this, submodules, consentData);
+    }
   } else {
-    utils.logInfo('GDPR enforcement only applies to CMP version 2');
     fn.call(this, submodules, consentData);
   }
 }
@@ -171,10 +212,10 @@ export function setEnforcementConfig(config) {
   const hasDefinedPurpose1 = find(enforcementRules, hasPurpose1);
   if (hasDefinedPurpose1 && !addedDeviceAccessHook) {
     addedDeviceAccessHook = true;
-    validateStorageEnforcement.before(deviceAccessHook);
-    registerSyncInner.before(userSyncHook);
+    validateStorageEnforcement.before(deviceAccessHook, 49);
+    registerSyncInner.before(userSyncHook, 48);
     // Using getHook as user id and gdprEnforcement are both optional modules. Using import will auto include the file in build
-    getHook('validateGdprEnforcement').before(userIdHook);
+    getHook('validateGdprEnforcement').before(userIdHook, 47);
   }
 }
 

@@ -9,9 +9,12 @@ import CONSTANTS from '../constants.json';
 import events from '../events.js';
 import includes from 'core-js/library/fn/array/includes.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess, isArray } from '../utils.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
+import { getCoreStorageManager } from '../storageManager.js';
+
+export const storage = getCoreStorageManager('bidderFactory');
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -377,7 +380,7 @@ export function preloadBidderMappingFile(fn, adUnits) {
       let info = bidderSpec.getSpec().getMappingFileInfo();
       let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
       let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
-      let mappingData = getDataFromLocalStorage(key);
+      let mappingData = storage.getDataFromLocalStorage(key);
       if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
         ajax(info.url,
           {
@@ -388,7 +391,7 @@ export function preloadBidderMappingFile(fn, adUnits) {
                   lastUpdated: timestamp(),
                   mapping: response.mapping
                 }
-                setDataInLocalStorage(key, JSON.stringify(mapping));
+                storage.setDataInLocalStorage(key, JSON.stringify(mapping));
               } catch (error) {
                 logError(`Failed to parse ${bidder} bidder translation mapping file`);
               }
@@ -416,7 +419,7 @@ export function getIabSubCategory(bidderCode, category) {
   if (bidderSpec.getSpec().getMappingFileInfo) {
     let info = bidderSpec.getSpec().getMappingFileInfo();
     let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getBidderCode();
-    let data = getDataFromLocalStorage(key);
+    let data = storage.getDataFromLocalStorage(key);
     if (data) {
       try {
         data = JSON.parse(data);

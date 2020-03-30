@@ -1,7 +1,7 @@
 import * as utils from './utils.js';
 import { config } from './config.js';
 import includes from 'core-js/library/fn/array/includes.js';
-import { newStorageManager } from './storageManager.js';
+import { getCoreStorageManager } from './storageManager.js';
 
 export const USERSYNC_DEFAULT_CONFIG = {
   syncEnabled: true,
@@ -21,7 +21,7 @@ config.setDefaults({
   'userSync': utils.deepClone(USERSYNC_DEFAULT_CONFIG)
 });
 
-const storage = newStorageManager({moduleName: 'usersync', moduleType: 'core'});
+const storage = getCoreStorageManager('usersync');
 
 /**
  * Factory function which creates a new UserSyncPool.

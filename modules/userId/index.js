@@ -105,14 +105,14 @@ import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import {module, hook} from '../../src/hook.js';
 import {createEidsArray} from './eids.js';
-import { newStorageManager } from '../../src/storageManager.js';
+import { getCoreStorageManager } from '../../src/storageManager.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const DEFAULT_SYNC_DELAY = 500;
 const NO_AUCTION_DELAY = 0;
-export const coreStorage = newStorageManager({moduleName: 'userid', moduleType: 'prebid-module'});
+export const coreStorage = getCoreStorageManager('userid');
 
 /** @type {string[]} */
 let validStorageTypes = [];
@@ -157,10 +157,10 @@ function setStoredValue(storage, value) {
         coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr);
       }
     } else if (storage.type === LOCAL_STORAGE) {
-      localStorage.setItem(`${storage.name}_exp`, expiresStr);
-      localStorage.setItem(storage.name, encodeURIComponent(valueStr));
+      coreStorage.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
+      coreStorage.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
       if (typeof storage.refreshInSeconds === 'number') {
-        localStorage.setItem(`${storage.name}_last`, new Date().toUTCString());
+        coreStorage.setDataInLocalStorage(`${storage.name}_last`, new Date().toUTCString());
       }
     }
   } catch (error) {
@@ -180,13 +180,13 @@ function getStoredValue(storage, key = undefined) {
     if (storage.type === COOKIE) {
       storedValue = coreStorage.getCookie(storedKey);
     } else if (storage.type === LOCAL_STORAGE) {
-      const storedValueExp = localStorage.getItem(`${storage.name}_exp`);
+      const storedValueExp = coreStorage.getDataFromLocalStorage(`${storage.name}_exp`);
       // empty string means no expiration set
       if (storedValueExp === '') {
-        storedValue = localStorage.getItem(storedKey);
+        storedValue = coreStorage.getDataFromLocalStorage(storedKey);
       } else if (storedValueExp) {
         if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
-          storedValue = decodeURIComponent(localStorage.getItem(storedKey));
+          storedValue = decodeURIComponent(coreStorage.getDataFromLocalStorage(storedKey));
         }
       }
     }
@@ -542,7 +542,7 @@ export function init(config) {
     return;
   }
   // _pubcid_optout is checked for compatiblility with pubCommonId
-  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (localStorage.getItem('_pbjs_id_optout') || localStorage.getItem('_pubcid_optout'))) {
+  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (coreStorage.getDataFromLocalStorage('_pbjs_id_optout') || coreStorage.getDataFromLocalStorage('_pubcid_optout'))) {
     utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
     return;
   }

@@ -2,6 +2,8 @@ import { deviceAccessHook, setEnforcementConfig, userSyncHook, userIdHook } from
 import { config } from 'src/config.js';
 import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
+import { validateStorageEnforcement } from 'src/storageManager.js';
+import { executeStorageCallbacks } from 'src/prebid.js';
 
 describe('gdpr enforcement', function() {
   let nextFnSpy;
@@ -79,6 +81,11 @@ describe('gdpr enforcement', function() {
     }
   };
 
+  after(function() {
+    validateStorageEnforcement.getHooks({hook: deviceAccessHook}).remove();
+    $$PREBID_GLOBAL$$.requestBids.getHooks({hook: executeStorageCallbacks}).remove();
+  })
+
   describe('deviceAccessHook', function() {
     beforeEach(function() {
       nextFnSpy = sinon.spy();
@@ -127,6 +134,7 @@ describe('gdpr enforcement', function() {
       });
       let consentData = {}
       consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.gdprApplies = true;
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
@@ -217,6 +225,7 @@ describe('gdpr enforcement', function() {
       });
       let consentData = {}
       consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.gdprApplies = true;
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
@@ -280,6 +289,46 @@ describe('gdpr enforcement', function() {
       userSyncHook(nextFnSpy);
       expect(nextFnSpy.calledOnce).to.equal(true);
       expect(logWarnSpy.callCount).to.equal(1);
+    });
+
+    it('should not check vendor consent when enforceVendor is false', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: true,
+            enforceVendor: false,
+            vendorExceptions: ['sampleBidder1']
+          }]
+        }
+      });
+      let consentData = {}
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.apiVersion = 2;
+      consentData.gdprApplies = true;
+      gdprDataHandlerStub.returns(consentData);
+
+      curBidderStub.returns('sampleBidder1');
+      adapterManagerStub.withArgs('sampleBidder1').returns({
+        getSpec: function() {
+          return {
+            'gvlid': 1
+          }
+        }
+      });
+      userSyncHook(nextFnSpy);
+
+      curBidderStub.returns('sampleBidder2');
+      adapterManagerStub.withArgs('sampleBidder2').returns({
+        getSpec: function() {
+          return {
+            'gvlid': 3
+          }
+        }
+      });
+      userSyncHook(nextFnSpy);
+      expect(nextFnSpy.calledTwice).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
     });
   });
 

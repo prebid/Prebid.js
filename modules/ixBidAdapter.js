@@ -328,6 +328,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 export const spec = {
 
   code: BIDDER_CODE,
+  gvlid: 10,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
