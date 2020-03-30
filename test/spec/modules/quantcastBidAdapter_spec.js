@@ -362,14 +362,14 @@ describe('Quantcast adapter', function () {
     expect(parsed.gdprConsent).to.equal('consentString');
   });
 
-  it('blocks request without GDPR consent', function () {
+  it('blocks request without GDPR vendor consent', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,
         consentString: 'consentString',
         vendorData: {
           vendorConsents: {
-            '11': 0
+            '11': false
           }
         }
       }
@@ -380,14 +380,52 @@ describe('Quantcast adapter', function () {
     expect(requests).to.equal(undefined);
   });
 
-  it('allows request with GDPR consent', function () {
+  it('allows request with GDPR vendor consent', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,
         consentString: 'consentString',
         vendorData: {
           vendorConsents: {
-            '11': 1
+            '11': true
+          }
+        }
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
+
+    expect(parsed.gdprSignal).to.equal(1);
+    expect(parsed.gdprConsent).to.equal('consentString');
+  });
+
+  it('blocks request without GDPR purpose consent', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          purposeConsents: {
+            '1': false
+          }
+        }
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+
+    expect(requests).to.equal(undefined);
+  });
+
+  it('allows request with GDPR purpose consent', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          purposeConsents: {
+            '1': true
           }
         }
       }

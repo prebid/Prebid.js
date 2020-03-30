@@ -4,8 +4,11 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'quantcast';
-const QUANTCAST_VENDOR_ID = 11;
 const DEFAULT_BID_FLOOR = 0.0000000001;
+
+const QUANTCAST_VENDOR_ID = '11';
+// Check other required purposes on server
+const PURPOSE_DATA_COLLECT = '1';
 
 export const QUANTCAST_DOMAIN = 'qcx.quantserve.com';
 export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
@@ -73,6 +76,24 @@ function getDomain(url) {
   return url.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#]/)[0];
 }
 
+function checkPurposeConsent(gdprConsent) {
+  if (gdprConsent.vendorData && typeof gdprConsent.vendorData.purposeConsents !== 'undefined' &&
+    typeof gdprConsent.vendorData.purposeConsents[PURPOSE_DATA_COLLECT] !== 'undefined') {
+    return !!(gdprConsent.vendorData.purposeConsents[PURPOSE_DATA_COLLECT]);
+  }
+  // Defer purpose consent check to server
+  return true;
+}
+
+function checkVendorConsent(gdprConsent) {
+  if (gdprConsent.vendorData && typeof gdprConsent.vendorData.vendorConsents !== 'undefined' &&
+    typeof gdprConsent.vendorData.vendorConsents[QUANTCAST_VENDOR_ID] !== 'undefined') {
+    return !!(gdprConsent.vendorData.vendorConsents[QUANTCAST_VENDOR_ID])
+  }
+  // Defer vendor consent check to server
+  return true;
+}
+
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
  * http://prebid.org/dev-docs/bidder-adapter-1.html
@@ -110,9 +131,11 @@ export const spec = {
 
     // Check for GDPR consent, and drop request if consent has not been given
     if (gdprConsent.gdprApplies) {
-      if (gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents &&
-        typeof gdprConsent.vendorData.vendorConsents[QUANTCAST_VENDOR_ID.toString(10)] !== 'undefined') {
-        if (!(bidderRequest.gdprConsent.vendorData.vendorConsents[QUANTCAST_VENDOR_ID.toString(10)])) {
+      if (gdprConsent.vendorData) {
+        if (!checkVendorConsent(gdprConsent)) {
+          return;
+        }
+        if (!checkPurposeConsent(gdprConsent)) {
           return;
         }
       }
