@@ -91,11 +91,11 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions,serverResponse) {
-      return [{
-        type: 'iframe',
-        url: 'https://rtb2.automatad.com/static/usersync/v1/async_usersync'
-      }]
+  getUserSyncs: function(syncOptions, serverResponse) {
+    return [{
+      type: 'iframe',
+      url: 'https://rtb2.automatad.com/static/usersync/v1/async_usersync'
+    }]
   },
   onBidWon: function(bid) {
     if (!bid.nurl) { return; }
