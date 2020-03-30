@@ -94,20 +94,15 @@ function checkTCFv2(tcData) {
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
     : null;
 
-  if (qcRestriction === 0) {
-    // Not allowed by publisher
+  if (qcRestriction === 0 || qcRestriction === 2) {
+    // Not allowed by publisher, or requires legitimate interest
     return false;
   }
 
   let vendorConsent = tcData.vendor && tcData.vendor.consents && tcData.vendor.consents[QUANTCAST_VENDOR_ID];
   let purposeConsent = tcData.purpose && tcData.purpose.consents && tcData.purpose.consents[PURPOSE_DATA_COLLECT];
-  if (vendorConsent && purposeConsent && qcRestriction !== 2) {
-    // Consent established
-    return true;
-  }
 
-  // No consent established
-  return false;
+  return !!(vendorConsent && purposeConsent);
 }
 
 /**
@@ -145,15 +140,16 @@ export const spec = {
     const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
     const domain = getDomain(page);
 
-    // Check for GDPR consent, and drop request if consent has not been given
+    // Check for GDPR consent for purpose 1, and drop request if consent has not been given
+    // Remaining consent checks are performed server-side.
     if (gdprConsent.gdprApplies) {
       if (gdprConsent.vendorData) {
         if (gdprConsent.apiVersion === 1 && !checkTCFv1(gdprConsent.vendorData)) {
-          utils.logInfo(`${BIDDER_CODE}: No consent for TCF v1`);
+          utils.logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v1`);
           return;
         }
         if (gdprConsent.apiVersion === 2 && !checkTCFv2(gdprConsent.vendorData)) {
-          utils.logInfo(`${BIDDER_CODE}: No consent for TCF v2`);
+          utils.logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v2`);
           return;
         }
       }
