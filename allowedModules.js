@@ -13,7 +13,8 @@ module.exports = {
     ...sharedWhiteList,
     'criteo-direct-rsa-validate',
     'jsencrypt',
-    'crypto-js'
+    'crypto-js',
+    'live-connect' // Maintained by LiveIntent : https://github.com/liveintent-berlin/live-connect/
   ],
   'src': [
     ...sharedWhiteList,

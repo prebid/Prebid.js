@@ -39,7 +39,7 @@ module.exports = function (req, res, next) {
   // values within these request props are dynamically generated and aren't
   // vital to check in these tests, so they are deleted rather than updating
   // the request-response pairs continuously
-  ['sdk', 'referrer_detection'].forEach(prop => {
+  ['sdk', 'referrer_detection', 'brand_category_uniqueness', 'gdpr_consent'].forEach(prop => {
     if (reqBody && reqBody[prop]) {
       delete reqBody[prop];
     }
