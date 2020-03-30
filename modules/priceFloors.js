@@ -153,7 +153,7 @@ export function getBiddersCpmAdjustment(bidderName, inputCpm) {
  */
 export function calculateAdjustedFloor(oldFloor, newFloor) {
   const pow = Math.pow(10, 10);
-  return (oldFloor * pow / newFloor * oldFloor) / pow;
+  return ((oldFloor * pow) / (newFloor * pow) * (oldFloor * pow)) / pow;
 }
 
 /**
