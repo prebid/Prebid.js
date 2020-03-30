@@ -442,6 +442,110 @@ describe('Quantcast adapter', function () {
     expect(parsed.gdprConsent).to.equal('consentString');
   });
 
+  it('allows TCF v2 request from Germany', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          publisherCC: 'DE',
+          purposeOneTreatment: true
+        },
+        apiVersion: 2
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
+
+    expect(parsed.gdprSignal).to.equal(1);
+    expect(parsed.gdprConsent).to.equal('consentString');
+  });
+
+  it('allows TCF v2 request when Quantcast has consent', function() {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          vendor: {
+            consents: {
+              '11': true
+            }
+          },
+          purpose: {
+            consents: {
+              '1': true
+            }
+          }
+        },
+        apiVersion: 2
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
+
+    expect(parsed.gdprSignal).to.equal(1);
+    expect(parsed.gdprConsent).to.equal('consentString');
+  });
+
+  it('blocks TCF v2 request when Quantcast not allowed by publisher', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          publisher: {
+            restrictions: {
+              '1': {
+                '11': 0
+              }
+            }
+          }
+        },
+        apiVersion: 2
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+
+    expect(requests).to.equal(undefined);
+  });
+
+  it('blocks TCF v2 request when legitimate interest required', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          vendor: {
+            consents: {
+              '11': true
+            }
+          },
+          purpose: {
+            consents: {
+              '1': true
+            }
+          },
+          publisher: {
+            restrictions: {
+              '1': {
+                '11': 2
+              }
+            }
+          }
+        },
+        apiVersion: 2
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+
+    expect(requests).to.equal(undefined);
+  });
+
   it('propagates US Privacy/CCPA consent information', function () {
     const bidderRequest = { uspConsent: 'consentString' }
     const requests = qcSpec.buildRequests([bidRequest], bidderRequest);

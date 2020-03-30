@@ -94,8 +94,26 @@ function checkTCFv1(vendorData) {
   return vendorConsent && purposeConsent;
 }
 
-function checkTCFv2(vendorData) {
-  return true;
+function checkTCFv2(tcData) {
+  if (tcData.purposeOneTreatment && tcData.publisherCC === 'DE') {
+    // special purpose 1 treatment for Germany
+    return true;
+  }
+
+  let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
+  let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
+    ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
+    : null;
+
+  let vendorConsent = tcData.vendor && tcData.vendor.consents && tcData.vendor.consents[QUANTCAST_VENDOR_ID];
+  let purposeConsent = tcData.purpose && tcData.purpose.consents && tcData.purpose.consents[PURPOSE_DATA_COLLECT];
+  if (vendorConsent && purposeConsent && qcRestriction !== 2) {
+    // Consent established
+    return true;
+  }
+
+  // No consent established
+  return false;
 }
 
 /**
