@@ -62,7 +62,9 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
   const setCookie = function (key, value, expires, sameSite, domain, done) {
     let cb = function (result) {
       if (result && result.valid) {
-        document.cookie = `${key}=${encodeURIComponent(value)}${(typeof expires !== 'undefined') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}${domain ? `; domain=${domain}` : ''}`;
+        const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
+        const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
+        document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}`;
       }
     }
     if (done && typeof done === 'function') {
@@ -228,6 +230,42 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
     }
   }
 
+  /**
+   * Returns all cookie values from the jar whose names contain the `keyLike`
+   * Needs to exist in `utils.js` as it follows the StorageHandler interface defined in live-connect-js. If that module were to be removed, this function can go as well.
+   * @param {string} keyLike
+   * @return {[]}
+   */
+  const findSimilarCookies = function(keyLike, done) {
+    let cb = function (result) {
+      if (result && result.valid) {
+        const all = [];
+        if (utils.hasDeviceAccess()) {
+          const cookies = document.cookie.split(';');
+          while (cookies.length) {
+            const cookie = cookies.pop();
+            let separatorIndex = cookie.indexOf('=');
+            separatorIndex = separatorIndex < 0 ? cookie.length : separatorIndex;
+            const cookieName = decodeURIComponent(cookie.slice(0, separatorIndex).replace(/^\s+/, ''));
+            if (cookieName.indexOf(keyLike) >= 0) {
+              all.push(decodeURIComponent(cookie.slice(separatorIndex + 1)));
+            }
+          }
+        }
+        return all;
+      }
+    }
+
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(cb);
+        done(result);
+      });
+    } else {
+      return isValid(cb);
+    }
+  }
+
   return {
     setCookie,
     getCookie,
@@ -236,7 +274,8 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
     setDataInLocalStorage,
     getDataFromLocalStorage,
     removeDataFromLocalStorage,
-    hasLocalStorage
+    hasLocalStorage,
+    findSimilarCookies
   }
 }
 

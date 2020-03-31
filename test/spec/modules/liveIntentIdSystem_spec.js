@@ -1,16 +1,13 @@
-import {liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule} from 'modules/liveIntentIdSystem.js';
+import {liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage} from 'modules/liveIntentIdSystem.js';
 import * as utils from 'src/utils.js';
 import {uspDataHandler} from '../../../src/adapterManager.js';
 import {server} from 'test/mocks/xhr.js';
-import { getStorageManager } from 'src/storageManager.js';
-
-const storage = getStorageManager();
 
 const PUBLISHER_ID = '89899';
 const defaultConfigParams = {publisherId: PUBLISHER_ID};
 const responseHeader = {'Content-Type': 'application/json'}
 
-describe.skip('LiveIntentId', function () {
+describe('LiveIntentId', function () {
   let pixel = {};
   let logErrorStub;
   let consentDataStub;
