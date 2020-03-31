@@ -28,7 +28,7 @@ export const spec = {
     const impressions = validBidRequests.map(bidRequest => ({
       id: bidRequest.bidId,
       banner: {
-        format: bidRequest.sizes.map(sizeArr => ({
+        format: bidRequest.mediaTypes.banner.sizes.map(sizeArr => ({
           w: sizeArr[0],
           h: sizeArr[1]
         }))

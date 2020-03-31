@@ -11,9 +11,7 @@ const REQUEST = {
       'unitId': 123456,
     },
     'placementCode': 'div-gpt-dummy-placement-code',
-    'sizes': [
-      [300, 250]
-    ],
+    'mediaTypes': {'banner': {'sizes': [[300, 250]]}},
     'bidId': 'bidId1',
     'bidderRequestId': 'bidderRequestId',
     'auctionId': 'auctionId-56a2-4f71-9098-720a68f2f708'
@@ -24,9 +22,7 @@ const REQUEST = {
       'unitId': 123456,
     },
     'placementCode': 'div-gpt-dummy-placement-code',
-    'sizes': [
-      [300, 250]
-    ],
+    'mediaTypes': {'banner': {'sizes': [[300, 250]]}},
     'bidId': 'bidId2',
     'bidderRequestId': 'bidderRequestId',
     'auctionId': 'auctionId-56a2-4f71-9098-720a68f2f708'
