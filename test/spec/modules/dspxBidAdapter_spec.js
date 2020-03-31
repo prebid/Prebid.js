@@ -108,7 +108,6 @@ describe('dspxAdapter', function () {
         'crid': 100500,
         'width': '300',
         'height': '250',
-        'type': 'sspHTML',
         'tag': '<!-- test creative -->',
         'requestId': '220ed41385952a',
         'currency': 'EUR',
@@ -128,7 +127,6 @@ describe('dspxAdapter', function () {
       currency: 'EUR',
       netRevenue: true,
       ttl: 300,
-      type: 'sspHTML',
       ad: '<!-- test creative -->'
     }];
 
