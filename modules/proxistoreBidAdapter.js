@@ -80,12 +80,6 @@ function isBidRequestValid(bid) {
  * @return ServerRequest Info describing the request to the server.
  */
 function buildRequests(bidRequests, bidderRequest) {
-  // console.group('bids');
-  // console.log(bidRequests);
-  // console.groupEnd();
-  // console.group('bidder');
-  // console.log(bidderRequest);
-  // console.groupEnd();
   var request = _createServerRequest(bidRequests, bidderRequest);
   return request;
 }
