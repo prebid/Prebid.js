@@ -788,9 +788,9 @@ describe('AppNexusAdapter', function () {
           gdprApplies: true,
           apiVersion: 2,
           vendorData: {
-            vendor: {
+            purpose: {
               consents: {
-                32: false
+                1: false
               }
             }
           }
