@@ -83,6 +83,10 @@ export const spec = {
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
       }
 
+      if (bidderRequest && bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
+      }
+
       var payloadString = JSON.stringify(payload);
       return {
         method: 'POST',
