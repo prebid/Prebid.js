@@ -16,7 +16,8 @@ Grid bid adapter supports Banner and Video (instream and outstream).
                code: 'test-div',
                mediaTypes: { 
                    video: {
-                       playerSize: [728, 90]
+                       playerSize: [728, 90],
+                       context: 'outstream'
                    }
                },
                bids: [

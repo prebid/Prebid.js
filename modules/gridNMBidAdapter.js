@@ -24,9 +24,6 @@ const LOG_ERROR_MESS = {
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
 
-// const KEYS_FOR_PARAMS = ['secid','pubid','pubdata','floorcpm','source','video'];
-// const KEYS_FOR_VIDEO = ['mimes','mind','maxd','protocols','size','linearity','skip','skipmin','skipafter','api','startdelay','placement','playbackmethod'];
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ VIDEO ],
@@ -93,24 +90,6 @@ export const spec = {
           payload.us_privacy = bidderRequest.uspConsent;
         }
       }
-
-      /* const content = {};
-      KEYS_FOR_PARAMS.forEach((key) => {
-        if (params.hasOwnProperty(key) && params[key]) {
-          if (key === 'video') {
-            const paramsVideo = params.video;
-            const video = {};
-            KEYS_FOR_VIDEO.forEach((vKey) => {
-              if (paramsVideo.hasOwnProperty(vKey)) {
-                video[vKey] = paramsVideo[vKey];
-              }
-            });
-            content.video = video;
-          } else {
-            content[key] = params[key];
-          }
-        }
-      }); */
 
       requests.push({
         method: 'POST',
