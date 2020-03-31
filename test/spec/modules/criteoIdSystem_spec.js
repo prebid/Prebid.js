@@ -132,4 +132,26 @@ describe('CriteoId module', function () {
       }
     });
   }));
+
+  const gdprConsentTestCases = [
+    { consentData: { gdprApplies: true, consentString: 'expectedConsentString' }, expected: 'expectedConsentString' },
+    { consentData: { gdprApplies: false, consentString: 'expectedConsentString' }, expected: undefined },
+    { consentData: { gdprApplies: true, consentString: undefined }, expected: undefined },
+    { consentData: { gdprApplies: 'oui', consentString: 'expectedConsentString' }, expected: undefined },
+    { consentData: undefined, expected: undefined }
+  ];
+
+  gdprConsentTestCases.forEach(testCase => it('should call user sync url with the gdprConsent', function () {
+    const emptyObj = '{}';
+    let ajaxStub = sinon.stub().callsFake((url, callback) => callback(emptyObj));
+    ajaxBuilderStub.callsFake(mockResponse(undefined, ajaxStub))
+
+    criteoIdSubmodule.getId(undefined, testCase.consentData);
+
+    if (testCase.expected) {
+      expect(ajaxStub.calledWithMatch(`gdprString=${testCase.expected}`)).to.be.true;
+    } else {
+      expect(ajaxStub.calledWithMatch('gdprString')).not.to.be.true;
+    }
+  }));
 });
