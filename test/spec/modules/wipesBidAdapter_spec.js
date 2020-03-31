@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/wipesBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 
-const ENDPOINT_URL = 'https://adn-srv.stg-reckoner-api.com/v1/prebid';
+const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid';
 
 describe('wipesBidAdapter', function () {
   const adapter = newBidder(spec);
@@ -11,7 +11,7 @@ describe('wipesBidAdapter', function () {
     let bid = {
       'bidder': 'wipes',
       'params': {
-        asid: 'bX9mYMAi3ckOrv04tmHjPHUemnwrvZlCvDygJgHMHWhmUuMEPZI'
+        asid: 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ'
       },
       'adUnitCode': 'adunit-code',
       'bidId': '51ef8751f9aead',
@@ -40,7 +40,7 @@ describe('wipesBidAdapter', function () {
       {
         'bidder': 'wipes',
         'params': {
-          asid: 'bX9mYMAi3ckOrv04tmHjPHUemnwrvZlCvDygJgHMHWhmUuMEPZI'
+          asid: 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ'
         },
         'adUnitCode': 'adunit-code',
         'bidId': '51ef8751f9aead',
@@ -50,7 +50,7 @@ describe('wipesBidAdapter', function () {
       {
         'bidder': 'wipes',
         'params': {
-          asid: 'bX9mYMAi3ckOrv04tmHjPHUemnwrvZlCvDygJgHMHWhmUuMEPZI'
+          asid: 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ'
         },
         'adUnitCode': 'adunit-code2',
         'bidId': '51ef8751f9aead',
@@ -81,8 +81,8 @@ describe('wipesBidAdapter', function () {
     });
 
     it('adUnitCode should be sent as uc parameters on any requests', function () {
-      expect(request[0].data.asid).to.equal('bX9mYMAi3ckOrv04tmHjPHUemnwrvZlCvDygJgHMHWhmUuMEPZI');
-      expect(request[1].data.asid).to.equal('bX9mYMAi3ckOrv04tmHjPHUemnwrvZlCvDygJgHMHWhmUuMEPZI');
+      expect(request[0].data.asid).to.equal('dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ');
+      expect(request[1].data.asid).to.equal('dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ');
     });
   });
 
@@ -92,7 +92,7 @@ describe('wipesBidAdapter', function () {
         'method': 'GET',
         'url': ENDPOINT_URL,
         'data': {
-          'asid': 'bX9mYMAi3ckOrv04tmHjPHUemnwrvZlCvDygJgHMHWhmUuMEPZI',
+          'asid': 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ',
         }
       }
     ];

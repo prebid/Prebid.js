@@ -6,7 +6,7 @@ import {VIDEO} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'wipes';
 const ALIAS_BIDDER_CODE = ['wi'];
 const SUPPORTED_MEDIA_TYPES = [VIDEO]
-const ENDPOINT_URL = 'https://adn-srv.stg-reckoner-api.com/v1/prebid';
+const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid';
 
 function isBidRequestValid(bid) {
   switch (true) {
