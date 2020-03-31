@@ -423,7 +423,7 @@ export function tryGetCriteoFastBid() {
   try {
     const fastBidStorageKey = 'criteo_fast_bid';
     const hashPrefix = '// Hash: ';
-    const fastBidFromStorage = localStorage.getItem(fastBidStorageKey);
+    const fastBidFromStorage = utils.getDataFromLocalStorage(fastBidStorageKey);
 
     if (fastBidFromStorage !== null) {
       // The value stored must contain the file's encrypted hash as first line
@@ -432,7 +432,7 @@ export function tryGetCriteoFastBid() {
 
       if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
         utils.logWarn('No hash found in FastBid');
-        localStorage.removeItem(fastBidStorageKey);
+        utils.removeDataFromLocalStorage(fastBidStorageKey);
       } else {
         // Remove the hash part from the locally stored value
         const publisherTagHash = firstLine.substr(hashPrefix.length);
@@ -446,7 +446,7 @@ export function tryGetCriteoFastBid() {
           utils.insertElement(script);
         } else {
           utils.logWarn('Invalid Criteo FastBid found');
-          localStorage.removeItem(fastBidStorageKey);
+          utils.removeDataFromLocalStorage(fastBidStorageKey);
         }
       }
     }

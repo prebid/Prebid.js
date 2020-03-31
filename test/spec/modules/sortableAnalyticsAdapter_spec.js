@@ -154,6 +154,7 @@ describe('Sortable Analytics Adapter', function() {
 
   afterEach(function() {
     sandbox.restore();
+    clock.restore();
     sortableAnalyticsAdapter.disableAnalytics();
   });
 
@@ -175,6 +176,9 @@ describe('Sortable Analytics Adapter', function() {
   });
 
   describe('events tracking', function() {
+    beforeEach(function() {
+      server.requests = [];
+    });
     it('should send the PBID event', function() {
       events.emit(CONSTANTS.EVENTS.AUCTION_INIT, TEST_DATA.AUCTION_INIT);
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, TEST_DATA.BID_REQUESTED);

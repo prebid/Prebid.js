@@ -98,6 +98,9 @@ export const spec = {
 
   // PRIVATE
   _readCookie(name) {
+    if (!utils.cookiesAreEnabled()) {
+      return null;
+    }
     let nameEquals = `${name}=`;
     let cookies = document.cookie.split(';');
 
@@ -170,7 +173,7 @@ export const spec = {
 
   _getLocalStorageSafely(key) {
     try {
-      return localStorage.getItem(key);
+      return utils.getDataFromLocalStorage(key);
     } catch (e) {
       return null;
     }

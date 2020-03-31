@@ -17,6 +17,7 @@ const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 export let userCMP;
 export let consentTimeout;
 export let allowAuction;
+export let gdprScope;
 export let staticConsentData;
 
 let cmpVersion = 0;
@@ -365,17 +366,16 @@ function storeConsentData(cmpConsentObject) {
     consentData = {
       consentString: (cmpConsentObject) ? cmpConsentObject.getConsentData.consentData : undefined,
       vendorData: (cmpConsentObject) ? cmpConsentObject.getVendorConsents : undefined,
-      gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : undefined
+      gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : gdprScope
     };
   } else {
     consentData = {
       consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
       vendorData: (cmpConsentObject) || undefined,
-      gdprApplies: (cmpConsentObject) ? cmpConsentObject.gdprApplies : undefined
+      gdprApplies: (cmpConsentObject) ? cmpConsentObject.gdprApplies : gdprScope
     };
   }
   consentData.apiVersion = cmpVersion;
-
   gdprDataHandler.setConsentData(consentData);
 }
 
@@ -434,7 +434,7 @@ export function resetConsentData() {
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
+ * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
   // if `config.gdpr` or `config.usp` exist, assume new config format.
@@ -464,6 +464,9 @@ export function setConsentConfig(config) {
     allowAuction = DEFAULT_ALLOW_AUCTION_WO_CONSENT;
     utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
   }
+
+  // if true, then gdprApplies should be set to true
+  gdprScope = config.defaultGdprScope === true;
 
   utils.logInfo('consentManagement module has been activated...');
 

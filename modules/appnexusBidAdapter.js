@@ -502,7 +502,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       case ADPOD:
         const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
         bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
-        const dealTier = rtbBid.rtb.dealPriority;
+        const dealTier = rtbBid.deal_priority;
         bid.video = {
           context: ADPOD,
           durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
@@ -659,6 +659,11 @@ function bidToTag(bid) {
   const videoMediaType = utils.deepAccess(bid, `mediaTypes.${VIDEO}`);
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
 
+  if (videoMediaType && context === 'adpod') {
+    tag.hb_source = 7;
+  } else {
+    tag.hb_source = 1;
+  }
   if (bid.mediaType === VIDEO || videoMediaType) {
     tag.ad_types.push(VIDEO);
   }
