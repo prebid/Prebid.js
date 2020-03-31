@@ -27,8 +27,6 @@ The `districtmDmxAdapter` module allows publishers to include DMX Exchange deman
 | --- | --- | --- | ---
 | `dmxid` | Mandatory | Integer | Unique identifier of the placement, dmxid can be obtained in the district m Boost platform.
 | `memberid` | Mandatory | Integer | Unique identifier for your account, memberid can be obtained in the district m Boost platform.
-| `coppa` | optional | Boolean | Enables Child's Online Privacy Protection Act (COPPA) regulations. | true
-
 
 # Ad Unit Configuration Example
 
@@ -53,24 +51,6 @@ The `districtmDmxAdapter` module allows publishers to include DMX Exchange deman
 
 # Ad Unit Configuration when COPPA is needed
 
-```javascript
-    var adUnits = [{
-        code: 'div-gpt-ad-1460505748561-0',
-        mediaTypes: {
-            banner: {
-                sizes: [[300, 250], [300,600]],
-            }
-        },
-        bids: [{
-            bidder: 'districtmDMX',
-            params: {
-                dmxid: 100001,
-                memberid:  100003,
-                coppa: 1
-            }
-        }]
-    }];
-```
 
 # Quick Start Guide
 
