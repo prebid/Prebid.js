@@ -437,7 +437,6 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.slots[0].zoneid).to.equal(123);
       expect(ortbRequest.gdprConsent.consentData).to.equal('concentDataString');
       expect(ortbRequest.gdprConsent.gdprApplies).to.equal(true);
-      expect(ortbRequest.gdprConsent.consentGiven).to.equal(true);
       expect(ortbRequest.gdprConsent.version).to.equal(1);
     });
 
@@ -486,7 +485,6 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.slots[0].sizes[1]).to.equal('728x90');
       expect(ortbRequest.gdprConsent.consentData).to.equal(undefined);
       expect(ortbRequest.gdprConsent.gdprApplies).to.equal(false);
-      expect(ortbRequest.gdprConsent.consentGiven).to.equal(undefined);
     });
 
     it('should properly build a mixed request', function () {
@@ -555,7 +553,6 @@ describe('The Criteo bidding adapter', function () {
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequest).data;
       expect(ortbRequest.gdprConsent.consentData).to.equal(undefined);
       expect(ortbRequest.gdprConsent.gdprApplies).to.equal(undefined);
-      expect(ortbRequest.gdprConsent.consentGiven).to.equal(undefined);
     });
 
     it('should properly build a request with ccpa consent field', function () {
