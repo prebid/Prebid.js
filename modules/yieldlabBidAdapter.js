@@ -39,7 +39,7 @@ export const spec = {
       if (bid.params.targeting) {
         query.t = createQueryString(bid.params.targeting)
       }
-      if (bid.userIdAsEids) {
+      if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
         query.ids = createUserIdString(bid.userIdAsEids)
       }
     })
