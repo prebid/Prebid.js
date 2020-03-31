@@ -59,12 +59,11 @@ function validateRules(rule, consentData, currentModule, gvlid) {
     }
   } else if (rule.enforcePurpose === false && rule.enforceVendor === false) {
     if (
+      !includes(rule.vendorExceptions, currentModule) ||
       (
-        includes(rule.vendorExceptions, currentModule) &&
         (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true) &&
         (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
-      ) ||
-      !includes(rule.vendorExceptions, currentModule)
+      )
     ) {
       isAllowed = true;
     }
@@ -73,10 +72,7 @@ function validateRules(rule, consentData, currentModule, gvlid) {
       (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true) &&
       (
         !includes(rule.vendorExceptions, currentModule) ||
-        (
-          includes(rule.vendorExceptions, currentModule) &&
-          (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
-        )
+        (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
       )
     ) {
       isAllowed = true;
