@@ -1,3 +1,4 @@
+// DO NOT EDIT: generated from ../rakuten/index.ts
 import { registerBidder } from '../../src/adapters/bidderFactory.js';
 import { BANNER } from '../../src/mediaTypes.js';
 import { config } from '../../src/config.js';
