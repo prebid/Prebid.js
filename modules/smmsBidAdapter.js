@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'smms';
 const ENDPOINT_BANNER = 'https://bidder.mediams.mb.softbank.jp/api/v1/prebid/banner';
@@ -54,6 +54,7 @@ export const spec = {
       refererInfo = bidderRequest.refererInfo;
     }
 
+    // eslint-disable-next-line no-undef
     const g = (typeof (geparams) !== 'undefined' && typeof (geparams) == 'object' && geparams) ? geparams : {};
     validBidRequests.forEach((bid, i) => {
       let endpoint = ENDPOINT_BANNER;

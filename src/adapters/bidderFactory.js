@@ -1,17 +1,17 @@
-import Adapter from '../adapter';
-import adapterManager from '../adapterManager';
-import { config } from '../config';
-import { createBid } from '../bidfactory';
-import { userSync } from '../userSync';
-import { nativeBidIsValid } from '../native';
-import { isValidVideoBid } from '../video';
+import Adapter from '../adapter.js';
+import adapterManager from '../adapterManager.js';
+import { config } from '../config.js';
+import { createBid } from '../bidfactory.js';
+import { userSync } from '../userSync.js';
+import { nativeBidIsValid } from '../native.js';
+import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
-import events from '../events';
-import includes from 'core-js/library/fn/array/includes';
-import { ajax } from '../ajax';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess, isArray } from '../utils';
-import { ADPOD } from '../mediaTypes';
-import { getHook } from '../hook';
+import events from '../events.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import { ajax } from '../ajax.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess, isArray } from '../utils.js';
+import { ADPOD } from '../mediaTypes.js';
+import { getHook } from '../hook.js';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -331,7 +331,8 @@ export function newBidder(spec) {
   });
 
   function registerSyncs(responses, gdprConsent, uspConsent) {
-    if (spec.getUserSyncs && !adapterManager.aliasRegistry[spec.code]) {
+    const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
+    if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
       let filterConfig = config.getConfig('userSync.filterSettings');
       let syncs = spec.getUserSyncs({
         iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),

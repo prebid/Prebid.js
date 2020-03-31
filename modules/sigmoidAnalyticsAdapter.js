@@ -1,11 +1,11 @@
 /* Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
 Updated : 2018-03-28 */
-import includes from 'core-js/library/fn/array/includes';
-import adapter from '../src/AnalyticsAdapter';
+import includes from 'core-js/library/fn/array/includes.js';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
+import adapterManager from '../src/adapterManager.js';
 
-const utils = require('../src/utils');
+const utils = require('../src/utils.js');
 
 const url = 'https://kinesis.us-east-1.amazonaws.com/';
 const analyticsType = 'endpoint';
@@ -54,31 +54,31 @@ function buildSessionIdTimeoutLocalStorageKey() {
 function updateSessionId() {
   if (isSessionIdTimeoutExpired()) {
     let newSessionId = utils.generateUUID();
-    localStorage.setItem(buildSessionIdLocalStorageKey(), newSessionId);
+    utils.setDataInLocalStorage(buildSessionIdLocalStorageKey(), newSessionId);
   }
   initOptions.sessionId = getSessionId();
   updateSessionIdTimeout();
 }
 
 function updateSessionIdTimeout() {
-  localStorage.setItem(buildSessionIdTimeoutLocalStorageKey(), Date.now());
+  utils.setDataInLocalStorage(buildSessionIdTimeoutLocalStorageKey(), Date.now());
 }
 
 function isSessionIdTimeoutExpired() {
-  let cpmSessionTimestamp = localStorage.getItem(buildSessionIdTimeoutLocalStorageKey());
+  let cpmSessionTimestamp = utils.getDataFromLocalStorage(buildSessionIdTimeoutLocalStorageKey());
   return Date.now() - cpmSessionTimestamp > sessionTimeout;
 }
 
 function getSessionId() {
-  return localStorage.getItem(buildSessionIdLocalStorageKey()) ? localStorage.getItem(buildSessionIdLocalStorageKey()) : '';
+  return utils.getDataFromLocalStorage(buildSessionIdLocalStorageKey()) ? utils.getDataFromLocalStorage(buildSessionIdLocalStorageKey()) : '';
 }
 
 function updateUtmTimeout() {
-  localStorage.setItem(buildUtmLocalStorageTimeoutKey(), Date.now());
+  utils.setDataInLocalStorage(buildUtmLocalStorageTimeoutKey(), Date.now());
 }
 
 function isUtmTimeoutExpired() {
-  let utmTimestamp = localStorage.getItem(buildUtmLocalStorageTimeoutKey());
+  let utmTimestamp = utils.getDataFromLocalStorage(buildUtmLocalStorageTimeoutKey());
   return (Date.now() - utmTimestamp) > utmTimeout;
 }
 
@@ -219,11 +219,11 @@ sigmoidAdapter.buildUtmTagData = function () {
   });
   utmTags.forEach(function(utmTagKey) {
     if (utmTagsDetected) {
-      localStorage.setItem(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      utils.setDataInLocalStorage(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
       updateUtmTimeout();
     } else {
       if (!isUtmTimeoutExpired()) {
-        utmTagData[utmTagKey] = localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) ? localStorage.getItem(buildUtmLocalStorageKey(utmTagKey)) : '';
+        utmTagData[utmTagKey] = utils.getDataFromLocalStorage(buildUtmLocalStorageKey(utmTagKey)) ? utils.getDataFromLocalStorage(buildUtmLocalStorageKey(utmTagKey)) : '';
         updateUtmTimeout();
       }
     }
@@ -232,11 +232,14 @@ sigmoidAdapter.buildUtmTagData = function () {
 };
 
 function send(eventType, data, sendDataType) {
+  // eslint-disable-next-line no-undef
   AWS.config.credentials = new AWS.Credentials({
     accessKeyId: 'accesskey', secretAccessKey: 'secretkey'
   });
 
+  // eslint-disable-next-line no-undef
   AWS.config.region = 'us-east-1';
+  // eslint-disable-next-line no-undef
   AWS.config.credentials.get(function(err) {
     // attach event listener
     if (err) {
@@ -244,6 +247,7 @@ function send(eventType, data, sendDataType) {
       return;
     }
     // create kinesis service object
+    // eslint-disable-next-line no-undef
     var kinesis = new AWS.Kinesis({
       apiVersion: '2013-12-02'
     });

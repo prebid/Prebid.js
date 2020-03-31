@@ -1,7 +1,7 @@
-import { getAdServerTargeting } from 'test/fixtures/fixtures';
+import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
 import CONSTANTS from 'src/constants.json';
-import * as utils from 'src/utils';
+import * as utils from 'src/utils.js';
 
 var assert = require('assert');
 
@@ -353,6 +353,14 @@ describe('Utils', function () {
     it('should return false with input object', function () {
       var output = utils.isFn(obj_object);
       assert.deepEqual(output, false);
+    });
+  });
+
+  describe('cookie functions', function() {
+    it('returns an array of cookies in a jar that have a similar name', function() {
+      utils.setCookie('cookie-a', 'cookie-value-a');
+      utils.setCookie('cookie-b', 'cookie-value-b');
+      expect(utils.findSimilarCookies('cookie')).to.include.members(['cookie-value-a', 'cookie-value-b']);
     });
   });
 
