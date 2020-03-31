@@ -74,7 +74,6 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        type: response.type,
         ttl: config.getConfig('_bidderTimeout'),
         ad: response.adTag
       };
