@@ -408,8 +408,24 @@ function getViewabilityScriptUrlFromPayload(viewJsPayload) {
   return jsTrackerSrc;
 }
 
+function hasPurpose1Consent(bidderRequest) {
+  let result = true;
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
+      result = !!(utils.deepAccess(bidderRequest.gdprConsent, `vendorData.vendor.consents.${GVLID}`));
+    }
+  }
+  return result;
+}
+
 function formatRequest(payload, bidderRequest) {
   let request = [];
+  let options = {};
+  if (!hasPurpose1Consent(bidderRequest)) {
+    options = {
+      withCredentials: false
+    }
+  }
 
   if (payload.tags.length > MAX_IMPS_PER_REQUEST) {
     const clonedPayload = utils.deepClone(payload);
@@ -421,7 +437,8 @@ function formatRequest(payload, bidderRequest) {
         method: 'POST',
         url: URL,
         data: payloadString,
-        bidderRequest
+        bidderRequest,
+        options
       });
     });
   } else {
@@ -430,7 +447,8 @@ function formatRequest(payload, bidderRequest) {
       method: 'POST',
       url: URL,
       data: payloadString,
-      bidderRequest
+      bidderRequest,
+      options
     };
   }
 
