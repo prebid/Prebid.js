@@ -1,5 +1,8 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
@@ -176,8 +179,8 @@ function handlePostMessage() {
 export function getStorageData(key) {
   var item = null;
   try {
-    if (utils.hasLocalStorage()) {
-      item = utils.getDataFromLocalStorage(key);
+    if (storage.hasLocalStorage()) {
+      item = storage.getDataFromLocalStorage(key);
     }
   } catch (e) {
   }
@@ -186,8 +189,8 @@ export function getStorageData(key) {
 
 export function setStorageData(key, item) {
   try {
-    if (utils.hasLocalStorage()) {
-      utils.setDataInLocalStorage(key, item);
+    if (storage.hasLocalStorage()) {
+      storage.setDataInLocalStorage(key, item);
     }
   } catch (e) {
   }
