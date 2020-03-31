@@ -59,14 +59,14 @@ function enrichWithUTM(dataBag) {
 
     if (newUtm === false) {
       for (let prop in utmKeys) {
-        let itemValue = localStorage.getItem(`pw-${prop}`);
+        let itemValue = utils.getDataFromLocalStorage(`pw-${prop}`);
         if (itemValue.length !== 0) {
           dataBag[prop] = itemValue;
         }
       }
     } else {
       for (let prop in utmKeys) {
-        localStorage.setItem(`pw-${prop}`, utmKeys[prop]);
+        utils.setDataInLocalStorage(`pw-${prop}`, utmKeys[prop]);
       }
     }
   } catch (e) {
