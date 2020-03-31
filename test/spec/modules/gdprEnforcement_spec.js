@@ -150,7 +150,6 @@ describe('gdpr enforcement', function() {
             purpose: 'storage',
             enforcePurpose: true,
             enforceVendor: true,
-            vendorExceptions: []
           }]
         }
       });

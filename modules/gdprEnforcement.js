@@ -37,6 +37,7 @@ function getGvlid() {
  */
 function validateRules(rule, consentData, currentModule, gvlid) {
   let isAllowed = false;
+  if (!rule.vendorExceptions) rule.vendorExceptions = [];
   if (rule.enforcePurpose && rule.enforceVendor) {
     if (
       includes(rule.vendorExceptions, currentModule) ||
@@ -69,14 +70,13 @@ function validateRules(rule, consentData, currentModule, gvlid) {
     }
   } else if (rule.enforcePurpose === true && rule.enforceVendor === false) {
     if (
+      (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true) &&
       (
-        !includes(rule.vendorExceptions, currentModule) &&
-        (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true)
-      ) ||
-      (
-        includes(rule.vendorExceptions, currentModule) &&
-        (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true) &&
-        (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
+        !includes(rule.vendorExceptions, currentModule) ||
+        (
+          includes(rule.vendorExceptions, currentModule) &&
+          (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
+        )
       )
     ) {
       isAllowed = true;
