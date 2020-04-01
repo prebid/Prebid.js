@@ -9,7 +9,6 @@ const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=prebid-client
 const USYNCURL = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
-// const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
