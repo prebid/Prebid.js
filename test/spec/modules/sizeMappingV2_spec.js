@@ -1157,7 +1157,7 @@ describe('sizeMappingV2', function () {
       const [, adUnit] = utils.deepClone(AD_UNITS);
       getAdUnitDetail('a1b2c3', adUnit);
       sinon.assert.callCount(utils.logInfo, 1);
-      sinon.assert.calledWith(utils.logInfo, `Size Mapping V2:: AdUnit: div-gpt-ad-1460505748561-1 => Active size buckets after filtration: `, adUnitDetailFixture_2.sizeBucketToSizeMap);
+      sinon.assert.calledWith(utils.logInfo, `Size Mapping V2:: Ad Unit: div-gpt-ad-1460505748561-1 => Active size buckets after filtration: `, adUnitDetailFixture_2.sizeBucketToSizeMap);
     });
 
     it('should log info message if any of the mediaTypes defined in adUnit.mediaTypes got filtered out', function () {
@@ -1189,7 +1189,7 @@ describe('sizeMappingV2', function () {
       getAdUnitDetail('a1b2c3', adUnit);
 
       sinon.assert.callCount(utils.logInfo, 2);
-      sinon.assert.calledWith(utils.logInfo.getCall(1), `Size Mapping V2:: AdUnit: div-gpt-ad-1460505748561-1 => Media types that got filtered out: video`);
+      sinon.assert.calledWith(utils.logInfo.getCall(1), `Size Mapping V2:: Ad Unit: div-gpt-ad-1460505748561-1 => Media types that got filtered out: video`);
     });
   });
 
@@ -1502,7 +1502,7 @@ describe('sizeMappingV2', function () {
 
       expect(bidRequests[0]).to.not.be.undefined;
       sinon.assert.callCount(utils.logError, 1);
-      sinon.assert.calledWith(utils.logError, `Size Mapping V2:: AdUnit: adUnit1, Bidder: rubicon => 'sizeConfig' is not configured properly. This bidder won't be eligible for sizeConfig checks and will remail active.`);
+      sinon.assert.calledWith(utils.logError, `Size Mapping V2:: Ad Unit: adUnit1, Bidder: rubicon => 'sizeConfig' is not configured properly. This bidder won't be eligible for sizeConfig checks and will remail active.`);
     });
 
     it('should ensure bidder relevantMediaTypes is a subset of active media types at the ad unit level', function () {
@@ -1603,7 +1603,7 @@ describe('sizeMappingV2', function () {
       });
       expect(bidRequests[0]).to.be.undefined;
       sinon.assert.callCount(utils.logInfo, 1);
-      sinon.assert.calledWith(utils.logInfo, `Size Mapping V2:: AdUnit: adUnit1, Bidder: rubicon => 'relevantMediaTypes' does not match with any of the active mediaTypes at the Ad Unit level. This bidder is disabled.`);
+      sinon.assert.calledWith(utils.logInfo, `Size Mapping V2:: Ad Unit: adUnit1, Bidder: rubicon => 'relevantMediaTypes' does not match with any of the active mediaTypes at the Ad Unit level. This bidder is disabled.`);
     });
 
     it('should throw a warning if mediaTypes object is not correctly formatted', function () {
@@ -1661,7 +1661,7 @@ describe('sizeMappingV2', function () {
       });
 
       sinon.assert.callCount(utils.logInfo, 1);
-      sinon.assert.calledWith(utils.logInfo, `Size Mapping V2:: AdUnit: adUnit1, Bidder: appnexus => Label check for this bidder has failed. This bidder is disabled.`);
+      sinon.assert.calledWith(utils.logInfo, `Size Mapping V2:: Ad Unit: adUnit1, Bidder: appnexus => Label check for this bidder has failed. This bidder is disabled.`);
 
       internal.isLabelActivated.restore();
     })
