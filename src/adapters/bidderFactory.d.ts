@@ -10,7 +10,7 @@ export function isValid(adUnitCode: string, bid: Partial<BidRequest<any>>, bidde
 
 import { MediaType } from "../mediaTypes";
 
-export type BidderSpec<BidParams = {[key: string] : any}, RequestData = any, ResponseBody = any> = {
+export type BidderSpec<BidParams = any, RequestData = any, ResponseBody = any> = {
     code: string;
     aliases?: string[];
     supportedMediaTypes?: MediaType[];
@@ -61,7 +61,7 @@ export type BidderRequest = {
         consentString?: string;
         vendorData?: any;
         gdprApplies: boolean;
-    },
+    };
     uspConsent?: string
 };
 
