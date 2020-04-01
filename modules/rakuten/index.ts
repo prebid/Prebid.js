@@ -94,7 +94,7 @@ export const spec : BidderSpec<BidParams, RequestData, ServerResponse> = {
                 height: sb.height || 0,
                 creativeId: sb.creative_id || 0,
                 dealId: sb.deal_id || '',
-                currency: sb.currency || 'JPY',
+                currency: sb.currency || 'USD',
                 netRevenue: (typeof sb.net_revenue === 'undefined') ? true : !!sb.net_revenue,
                 mediaType: BANNER,
                 ttl: sb.ttl,

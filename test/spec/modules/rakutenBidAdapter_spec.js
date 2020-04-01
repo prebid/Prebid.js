@@ -121,7 +121,7 @@ describe('rakutenBidAdapter', function() {
         height: 250,
         creativeId: 140281,
         dealId: 'phoh3pad-ai4ah-xoh7x-ahk7cheasae3oh',
-        currency: 'JPY',
+        currency: 'USD',
         netRevenue: 300,
         ttl: 3000,
         ad: '<!-- adtag -->'
