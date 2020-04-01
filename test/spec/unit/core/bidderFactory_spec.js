@@ -1,4 +1,4 @@
-import { newBidder, registerBidder, preloadBidderMappingFile } from 'src/adapters/bidderFactory.js';
+import { newBidder, registerBidder, preloadBidderMappingFile, storage } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
@@ -844,7 +844,7 @@ describe('preload mapping url hook', function() {
 
   beforeEach(function () {
     fakeTranslationServer = server;
-    getLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
+    getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     adapterManagerStub = sinon.stub(adapterManager, 'getBidAdapter');
   });
 

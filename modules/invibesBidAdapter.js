@@ -1,5 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+const storage = getStorageManager();
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -276,14 +278,14 @@ function getCappedCampaignsAsString() {
 
   let loadData = function () {
     try {
-      return JSON.parse(utils.getDataFromLocalStorage(key)) || {};
+      return JSON.parse(storage.getDataFromLocalStorage(key)) || {};
     } catch (e) {
       return {};
     }
   };
 
   let saveData = function (data) {
-    utils.setDataInLocalStorage(key, JSON.stringify(data));
+    storage.setDataInLocalStorage(key, JSON.stringify(data));
   };
 
   let clearExpired = function () {
@@ -319,7 +321,7 @@ function getCappedCampaignsAsString() {
 const noop = function () { };
 
 function initLogger() {
-  if (utils.hasLocalStorage() && localStorage.InvibesDEBUG) {
+  if (storage.hasLocalStorage() && localStorage.InvibesDEBUG) {
     return window.console;
   }
 
@@ -384,7 +386,7 @@ invibes.Uid = {
 
 let cookieDomain;
 invibes.getCookie = function (name) {
-  if (!utils.cookiesAreEnabled()) { return; }
+  if (!storage.cookiesAreEnabled()) { return; }
   let i, x, y;
   let cookies = document.cookie.split(';');
   for (i = 0; i < cookies.length; i++) {
@@ -398,7 +400,7 @@ invibes.getCookie = function (name) {
 };
 
 invibes.setCookie = function (name, value, exdays, domain) {
-  if (!utils.cookiesAreEnabled()) { return; }
+  if (!storage.cookiesAreEnabled()) { return; }
   let whiteListed = name == 'ivNoCookie' || name == 'IvbsCampIdsLocal';
   if (invibes.noCookies && !whiteListed && (exdays || 0) >= 0) { return; }
   if (exdays > 365) { exdays = 365; }
@@ -406,7 +408,7 @@ invibes.setCookie = function (name, value, exdays, domain) {
   let exdate = new Date();
   let exms = exdays * 24 * 60 * 60 * 1000;
   exdate.setTime(exdate.getTime() + exms);
-  utils.setCookie(name, value, exdate.toUTCString(), undefined, domain);
+  storage.setCookie(name, value, exdate.toUTCString(), undefined, domain);
 };
 
 let detectTopmostCookieDomain = function () {
