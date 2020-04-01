@@ -280,6 +280,7 @@ export const spec = {
         requestParams.loc = location;
       }
 
+<<<<<<< HEAD
       var playerSize = [];
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
@@ -295,6 +296,23 @@ export const spec = {
         // Backward compatible code, in case size still pass by sizes in bid request
         playerSize = getBiggerSize(currentBidRequest.sizes);
       }
+=======
+    var playerSize = [];
+    if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
+      // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
+      if (utils.isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
+        playerSize = currentBidRequest.mediaTypes.video.playerSize[0];
+      } else {
+        playerSize = currentBidRequest.mediaTypes.video.playerSize;
+      }
+    } else if (currentBidRequest.mediaTypes.banner.sizes) {
+      // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
+      playerSize = getBiggerSizeWithLimit(currentBidRequest.mediaTypes.banner.sizes, currentBidRequest.mediaTypes.banner.minSizeLimit, currentBidRequest.mediaTypes.banner.maxSizeLimit);
+    } else {
+      // Backward compatible code, in case size still pass by sizes in bid request
+      playerSize = getBiggerSize(currentBidRequest.sizes);
+    }
+>>>>>>> freewheel-ssp fix issue on playerSize of bidRequest
 
       if (playerSize[0] > 0 || playerSize[1] > 0) {
         requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
