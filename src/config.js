@@ -448,9 +448,14 @@ export function newConfig() {
     }
   }
 
+  function getCurrentBidder() {
+    return currBidder;
+  }
+
   resetConfig();
 
   return {
+    getCurrentBidder,
     getConfig,
     setConfig,
     setDefaults,

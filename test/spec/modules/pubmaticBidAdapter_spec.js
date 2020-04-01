@@ -737,7 +737,9 @@ describe('PubMatic adapter', function () {
         expect(data.test).to.equal(undefined);
       });
 
-      it('test flag set to 1 when pubmaticTest=true is present in page url', function() {
+      // disabled this test case as  it refreshes the whole suite when in karma watch mode
+      // todo: needs a fix
+      xit('test flag set to 1 when pubmaticTest=true is present in page url', function() {
         window.location.href += '#pubmaticTest=true';
         // now all the test cases below will have window.location.href with #pubmaticTest=true
         let request = spec.buildRequests(bidRequests);
@@ -1871,6 +1873,42 @@ describe('PubMatic adapter', function () {
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.britepoolid = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('NetId', function() {
+          it('send the NetId if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.netId = 'netid-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'netid.de',
+              'uids': [{
+                'id': 'netid-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.netId = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.netId = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.netId = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.netId = {};
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
