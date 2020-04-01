@@ -1,6 +1,9 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
@@ -98,6 +101,9 @@ export const spec = {
 
   // PRIVATE
   _readCookie(name) {
+    if (!storage.cookiesAreEnabled()) {
+      return null;
+    }
     let nameEquals = `${name}=`;
     let cookies = document.cookie.split(';');
 
@@ -170,7 +176,7 @@ export const spec = {
 
   _getLocalStorageSafely(key) {
     try {
-      return localStorage.getItem(key);
+      return storage.getDataFromLocalStorage(key);
     } catch (e) {
       return null;
     }

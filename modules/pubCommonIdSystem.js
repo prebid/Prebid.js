@@ -64,7 +64,7 @@ export const pubCommonIdSubmodule = {
     } catch (e) {
     }
 
-    const newId = (create) ? utils.generateUUID() : undefined;
+    const newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
     return {
       id: newId,
       callback: this.makeCallback(pixelUrl, newId)
