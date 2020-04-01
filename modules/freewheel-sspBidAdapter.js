@@ -286,7 +286,11 @@ export const spec = {
     var playerSize = [];
     if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-      playerSize = currentBidRequest.mediaTypes.video.playerSize;
+      if (utils.isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
+        playerSize = currentBidRequest.mediaTypes.video.playerSize[0];
+      } else {
+        playerSize = currentBidRequest.mediaTypes.video.playerSize;
+      }
     } else if (currentBidRequest.mediaTypes.banner.sizes) {
       // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
       playerSize = getBiggerSizeWithLimit(currentBidRequest.mediaTypes.banner.sizes, currentBidRequest.mediaTypes.banner.minSizeLimit, currentBidRequest.mediaTypes.banner.maxSizeLimit);
