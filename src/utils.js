@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
+import deepequal from 'deep-equal';
 import find from 'core-js/library/fn/array/find.js';
 import includes from 'core-js/library/fn/array/includes.js';
 
@@ -36,7 +37,8 @@ export const internal = {
   logError,
   logWarn,
   logMessage,
-  logInfo
+  logInfo,
+  deepEqual
 };
 
 var uniqueRef = {};
@@ -1347,4 +1349,13 @@ export function compareOn(property) {
     }
     return 0;
   }
+}
+
+/**
+ * This function compares two objects for checking their equivalence.
+ * @param {Object} obj1
+ * @param {Object} obj2
+ */
+export function deepEqual(obj1, obj2) {
+  return deepequal(obj1, obj2);
 }
