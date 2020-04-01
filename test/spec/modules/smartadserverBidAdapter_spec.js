@@ -271,6 +271,35 @@ describe('Smart bid adapter tests', function () {
     });
   });
 
+  describe('ccpa/us privacy tests', function () {
+    afterEach(function () {
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+    });
+
+    it('Verify build request with us privacy', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        },
+        consentManagement: {
+          cmp: 'iab',
+          consentRequired: true,
+          timeout: 1000,
+          allowAuctionWithoutConsent: true
+        }
+      });
+
+      const uspConsentValue = '1YNN'
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        uspConsent: uspConsentValue
+      });
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('us_privacy').and.to.equal(uspConsentValue);
+    });
+  });
+
   describe('Instream video tests', function () {
     afterEach(function () {
       config.resetConfig();
