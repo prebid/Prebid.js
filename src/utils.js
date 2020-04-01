@@ -1355,6 +1355,7 @@ export function compareOn(property) {
  * This function compares two objects for checking their equivalence.
  * @param {Object} obj1
  * @param {Object} obj2
+ * @returns {boolean}
  */
 export function deepEqual(obj1, obj2) {
   return deepequal(obj1, obj2);
