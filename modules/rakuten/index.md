@@ -10,7 +10,7 @@ Maintainer: @snapwich
 
 Bid adapter for Rakuten RSSP
 
-RDN bid adapter supports Banner currently.
+Rakuten bid adapter supports Banner currently.
 
 # Test Parameters
 

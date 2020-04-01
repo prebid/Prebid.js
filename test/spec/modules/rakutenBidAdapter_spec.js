@@ -62,14 +62,23 @@ describe('rakutenBidAdapter', function() {
       refererInfo: {
         referer: 'http://test.com',
         stack: ['http://test.com']
-      }
+      },
+      gdprConsent: {
+        consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        vendorData: {},
+        gdprApplies: true
+      },
+      uspConsent: '1YN-'
     };
 
     it('sends bid request to ENDPOINT via GET', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('GET')
-    })
+      expect(request.data.gdpr).to.equal(1);
+      expect(request.data.cd).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+      expect(request.data.ccpa).to.equal('1YN-');
+    });
 
     it('allows url override', () => {
       config.setConfig({

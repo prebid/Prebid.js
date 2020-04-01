@@ -1,4 +1,11 @@
-import { registerBidder, BidderSpec, ServerRequest, BidRequest, BidResponse } from '../../src/adapters/bidderFactory.js'
+import {
+    registerBidder,
+    BidderSpec,
+    ServerRequest,
+    BidRequest,
+    BidResponse,
+    UserSync
+} from '../../src/adapters/bidderFactory.js'
 import { BANNER } from '../../src/mediaTypes.js'
 import { config } from '../../src/config.js'
 
@@ -23,6 +30,9 @@ type RequestData = {
     d: string;                  // domain
     tp: string;                 // window location
     pp: string;                 // referer
+    gdpr: number;               // gdpr applies
+    cd?: string;                 // gdpr consent string
+    ccpa?: string;               // ccpa consent string
 }
 
 type ServerResponse = {
@@ -59,7 +69,14 @@ export const spec : BidderSpec<BidParams, RequestData, ServerResponse> = {
                         navigator.language,
                     d: document.domain,
                     tp: bidderRequest.refererInfo.stack[0] || window.location.href,
-                    pp: bidderRequest.refererInfo.referer
+                    pp: bidderRequest.refererInfo.referer,
+                    gdpr: bidderRequest.gdprConsent?.gdprApplies ? 1 : 0,
+                    ...bidderRequest.gdprConsent?.consentString && {
+                        cd: bidderRequest.gdprConsent.consentString
+                    },
+                    ...bidderRequest.uspConsent && {
+                        ccpa: bidderRequest.uspConsent
+                    }
                 }
             })
         });
@@ -89,7 +106,7 @@ export const spec : BidderSpec<BidParams, RequestData, ServerResponse> = {
     },
 
     getUserSyncs: function(syncOptions, serverResponses) {
-        const syncs = [];
+        const syncs : UserSync[] = [];
         if (syncOptions.pixelEnabled && serverResponses[0].body !== undefined) {const bidResponseObj = serverResponses[0].body;
             if (!bidResponseObj) {
                 return [];

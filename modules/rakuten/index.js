@@ -2,15 +2,16 @@
 import { registerBidder } from '../../src/adapters/bidderFactory.js';
 import { BANNER } from '../../src/mediaTypes.js';
 import { config } from '../../src/config.js';
-var BIDDER_CODE = 'rakuten';
-var ENDPOINT = 'https://s-bid.rmp.rakuten.com/h';
-export var spec = {
+const BIDDER_CODE = 'rakuten';
+const ENDPOINT = 'https://s-bid.rmp.rakuten.com/h';
+export const spec = {
   code: BIDDER_CODE,
-  isBidRequestValid: function (bid) { return !!bid.params.adSpotId; },
-  buildRequests: function (validBidRequests, bidderRequest) {
-    var bidRequests = [];
-    validBidRequests.forEach(function (bid) {
-      var params = bid.params;
+  isBidRequestValid: bid => !!bid.params.adSpotId,
+  buildRequests: (validBidRequests, bidderRequest) => {
+    const bidRequests = [];
+    validBidRequests.forEach(bid => {
+      var _a, _b;
+      const params = bid.params;
       bidRequests.push({
         method: 'GET',
         url: config.getConfig('rakuten.endpoint') || ENDPOINT,
@@ -23,15 +24,22 @@ export var spec = {
                         navigator.language,
           d: document.domain,
           tp: bidderRequest.refererInfo.stack[0] || window.location.href,
-          pp: bidderRequest.refererInfo.referer
+          pp: bidderRequest.refererInfo.referer,
+          gdpr: ((_a = bidderRequest.gdprConsent) === null || _a === void 0 ? void 0 : _a.gdprApplies) ? 1 : 0,
+          ...((_b = bidderRequest.gdprConsent) === null || _b === void 0 ? void 0 : _b.consentString) && {
+            cd: bidderRequest.gdprConsent.consentString
+          },
+          ...bidderRequest.uspConsent && {
+            ccpa: bidderRequest.uspConsent
+          }
         }
       });
     });
     return bidRequests;
   },
-  interpretResponse: function (response, request) {
-    var sb = response.body;
-    var bidResponses = [];
+  interpretResponse: (response, request) => {
+    const sb = response.body;
+    const bidResponses = [];
     if (sb.cpm && sb.ad) {
       bidResponses.push({
         requestId: sb.bid_id,
@@ -50,14 +58,14 @@ export var spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
-    var syncs = [];
+    const syncs = [];
     if (syncOptions.pixelEnabled && serverResponses[0].body !== undefined) {
-      var bidResponseObj = serverResponses[0].body;
+      const bidResponseObj = serverResponses[0].body;
       if (!bidResponseObj) {
         return [];
       }
       if (bidResponseObj.sync_urls && bidResponseObj.sync_urls.length > 0) {
-        bidResponseObj.sync_urls.forEach(function (syncUrl) {
+        bidResponseObj.sync_urls.forEach(syncUrl => {
           if (syncUrl && syncUrl !== 'null' && syncUrl.length > 0) {
             syncs.push({
               type: 'image',
