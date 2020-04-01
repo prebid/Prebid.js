@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/evolution_techBidAdapter.js';
+import {spec} from '../../../modules/e_volutionBidAdapter.js';
 
 describe('EvolutionTechBidAdapter', function () {
   let bid = {
