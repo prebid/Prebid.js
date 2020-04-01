@@ -1,7 +1,6 @@
 import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
-import {collectUtmTagData} from '../../../modules/prebidmanagerAnalyticsAdapter.js';
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -117,14 +116,23 @@ describe('Prebid Manager Analytics Adapter', function () {
       localStorage.removeItem('pm_utm_campaign');
       localStorage.removeItem('pm_utm_term');
       localStorage.removeItem('pm_utm_content');
+      prebidmanagerAnalytics.disableAnalytics()
     });
     it('should build utm data from local storage', function () {
-      let utmTagData = collectUtmTagData();
-      expect(utmTagData.utm_source).to.equal('utm_source');
-      expect(utmTagData.utm_medium).to.equal('utm_medium');
-      expect(utmTagData.utm_campaign).to.equal('utm_camp');
-      expect(utmTagData.utm_term).to.equal('');
-      expect(utmTagData.utm_content).to.equal('');
+      prebidmanagerAnalytics.enableAnalytics({
+        provider: 'prebidmanager',
+        options: {
+          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        }
+      });
+
+      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
+
+      expect(pmEvents.utmTags.utm_source).to.equal('utm_source');
+      expect(pmEvents.utmTags.utm_medium).to.equal('utm_medium');
+      expect(pmEvents.utmTags.utm_campaign).to.equal('utm_camp');
+      expect(pmEvents.utmTags.utm_term).to.equal('');
+      expect(pmEvents.utmTags.utm_content).to.equal('');
     });
   });
 });

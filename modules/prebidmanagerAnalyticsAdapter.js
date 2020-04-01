@@ -20,7 +20,7 @@ var _startAuction = 0;
 var _bidRequestTimeout = 0;
 let flushInterval;
 var pmAnalyticsEnabled = false;
-let utmKeys = {utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: ''};
+const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 
 var w = window;
 var d = document;
@@ -69,35 +69,34 @@ prebidmanagerAnalytics.disableAnalytics = function() {
   prebidmanagerAnalytics.originDisableAnalytics();
 };
 
-export function collectUtmTagData() {
+function collectUtmTagData() {
   let newUtm = false;
-  let pbUtmTags = {};
+  let pmUtmTags = {};
   try {
-    for (let prop in utmKeys) {
-      utmKeys[prop] = utils.getParameterByName(prop);
-      if (utmKeys[prop] != '') {
+    utmTags.forEach(function (utmKey) {
+      let utmValue = utils.getParameterByName(utmKey);
+      if (utmValue !== '') {
         newUtm = true;
       }
-      pbUtmTags[prop] = utmKeys[prop];
-    }
-
+      pmUtmTags[utmKey] = utmValue;
+    });
     if (newUtm === false) {
-      for (let prop in utmKeys) {
-        let itemValue = localStorage.getItem(`pm_${prop}`);
+      utmTags.forEach(function (utmKey) {
+        let itemValue = localStorage.getItem(`pm_${utmKey}`);
         if (itemValue.length !== 0) {
-          pbUtmTags[prop] = itemValue;
+          pmUtmTags[utmKey] = itemValue;
         }
-      }
+      });
     } else {
-      for (let prop in utmKeys) {
-        localStorage.setItem(`pm_${prop}`, utmKeys[prop]);
-      }
+      utmTags.forEach(function (utmKey) {
+        localStorage.setItem(`pm_${utmKey}`, pmUtmTags[utmKey]);
+      });
     }
   } catch (e) {
-    utils.logInfo(`${analyticsName}Error`, e);
-    pbUtmTags['error_utm'] = 1;
+    utils.logError(`${analyticsName}Error`, e);
+    pmUtmTags['error_utm'] = 1;
   }
-  return pbUtmTags;
+  return pmUtmTags;
 }
 
 function flush() {
