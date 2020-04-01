@@ -2,6 +2,9 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 const BIDDER_CODE = 'nobid';
 window.nobidVersion = '1.2.4';
 window.nobid = window.nobid || {};
@@ -16,10 +19,10 @@ function nobidSetCookie(cname, cvalue, hours) {
   var d = new Date();
   d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
   var expires = 'expires=' + d.toUTCString();
-  utils.setCookie(cname, cvalue, expires);
+  storage.setCookie(cname, cvalue, expires);
 }
 function nobidGetCookie(cname) {
-  return utils.getCookie(cname);
+  return storage.getCookie(cname);
 }
 function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/conversantBidAdapter.js';
+import {spec, storage} from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
@@ -508,7 +508,7 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid cookie
-      utils.setCookie(ID_NAME, '12345', expStr(TIMEOUT));
+      storage.setCookie(ID_NAME, '12345', expStr(TIMEOUT));
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -521,7 +521,7 @@ describe('Conversant adapter tests', function() {
       requests[0].params.pubcid_name = CUSTOM_ID_NAME;
 
       // add a pubcid cookie
-      utils.setCookie(CUSTOM_ID_NAME, '12345', expStr(TIMEOUT));
+      storage.setCookie(CUSTOM_ID_NAME, '12345', expStr(TIMEOUT));
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -533,8 +533,8 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(ID_NAME + EXP, '');
-      utils.setDataInLocalStorage(ID_NAME, 'abcde');
+      storage.setDataInLocalStorage(ID_NAME + EXP, '');
+      storage.setDataInLocalStorage(ID_NAME, 'abcde');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -546,8 +546,8 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(ID_NAME + EXP, expStr(TIMEOUT));
-      utils.setDataInLocalStorage(ID_NAME, 'fghijk');
+      storage.setDataInLocalStorage(ID_NAME + EXP, expStr(TIMEOUT));
+      storage.setDataInLocalStorage(ID_NAME, 'fghijk');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -559,8 +559,8 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(ID_NAME + EXP, expStr(-TIMEOUT));
-      utils.setDataInLocalStorage(ID_NAME, 'lmnopq');
+      storage.setDataInLocalStorage(ID_NAME + EXP, expStr(-TIMEOUT));
+      storage.setDataInLocalStorage(ID_NAME, 'lmnopq');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -573,8 +573,8 @@ describe('Conversant adapter tests', function() {
       requests[0].params.pubcid_name = CUSTOM_ID_NAME;
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(CUSTOM_ID_NAME + EXP, expStr(TIMEOUT));
-      utils.setDataInLocalStorage(CUSTOM_ID_NAME, 'fghijk');
+      storage.setDataInLocalStorage(CUSTOM_ID_NAME + EXP, expStr(TIMEOUT));
+      storage.setDataInLocalStorage(CUSTOM_ID_NAME, 'fghijk');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;

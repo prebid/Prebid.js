@@ -455,6 +455,7 @@ describe('freewheelSSP BidAdapter Test', () => {
           netRevenue: true,
           ttl: 360,
           vastXml: response,
+          mediaType: 'video',
           ad: ad
         }
       ];
@@ -477,6 +478,7 @@ describe('freewheelSSP BidAdapter Test', () => {
           netRevenue: true,
           ttl: 360,
           vastXml: response,
+          mediaType: 'video',
           ad: formattedAd
         }
       ];

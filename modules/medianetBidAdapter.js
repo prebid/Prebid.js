@@ -297,6 +297,7 @@ function clearMnData() {
 export const spec = {
 
   code: BIDDER_CODE,
+  gvlid: 142,
 
   supportedMediaTypes: [BANNER, NATIVE],
 
