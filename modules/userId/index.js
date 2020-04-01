@@ -327,8 +327,8 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
           setTimeout(continueCallback, auctionDelay);
         } else {
           // wait for auction complete before processing submodule callbacks
-          events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
-            events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+          events.on(CONSTANTS.EVENTS.REQUEST_BIDS, function auctionEndHandler() {
+            events.off(CONSTANTS.EVENTS.REQUEST_BIDS, auctionEndHandler);
 
             // when syncDelay is zero, process callbacks now, otherwise delay process with a setTimeout
             if (syncDelay > 0) {

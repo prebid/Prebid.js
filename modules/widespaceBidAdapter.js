@@ -2,12 +2,15 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {
   parseQueryStringParameters,
-  parseSizesInput
+  parseSizesInput,
+  setDataInLocalStorage,
+  setCookie,
+  getDataFromLocalStorage,
+  removeDataFromLocalStorage
 } from '../src/utils.js';
 import includes from 'core-js/library/fn/array/includes.js';
 import find from 'core-js/library/fn/array/find.js';
 import { getStorageManager } from '../src/storageManager.js';
-
 export const storage = getStorageManager();
 
 const BIDDER_CODE = 'widespace';
