@@ -22,6 +22,6 @@ module.exports = {
     'just-clone',
     'dlv',
     'dset',
-    'deep-equa'
+    'deep-equal'
   ]
 };
