@@ -15,7 +15,8 @@ const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be s
 describe('the rubicon adapter', function () {
   let sandbox,
     bidderRequest,
-    sizeMap;
+    sizeMap,
+    getFloorResponse;
 
   /**
    * @typedef {Object} sizeMapConverted
@@ -274,7 +275,7 @@ describe('the rubicon adapter', function () {
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
-
+    getFloorResponse = {};
     bidderRequest = {
       bidderCode: 'rubicon',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
@@ -411,6 +412,43 @@ describe('the rubicon adapter', function () {
           });
         });
 
+        it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
+          // default getFloor response is empty object so should not break and not send hard_floor
+          bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // not an object should work and not send
+          getFloorResponse = undefined;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR', floor: 1.0};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // make it respond with USD floor and string floor
+          getFloorResponse = {currency: 'USD', floor: '1.23'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.equal('1.23');
+
+          // make it respond with USD floor and num floor
+          getFloorResponse = {currency: 'USD', floor: 1.23};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.equal('1.23');
+        });
         it('should not send p_pos to AE if not params.position specified', function() {
 	      var noposRequest = utils.deepClone(bidderRequest);
 	      delete noposRequest.bids[0].params.position;
@@ -1450,6 +1488,39 @@ describe('the rubicon adapter', function () {
           expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
         });
 
+        it('should correctly set bidfloor on imp when getfloor in scope', function () {
+          createVideoBidderRequest();
+          // default getFloor response is empty object so should not break and not send hard_floor
+          bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // not an object should work and not send
+          expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR', floor: 1.0};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+          // make it respond with USD floor and string floor
+          getFloorResponse = {currency: 'USD', floor: '1.23'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(1.23);
+
+          // make it respond with USD floor and num floor
+          getFloorResponse = {currency: 'USD', floor: 1.23};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(1.23);
+        });
         it('should add alias name to PBS Request', function() {
           createVideoBidderRequest();
 

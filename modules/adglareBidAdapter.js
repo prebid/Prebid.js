@@ -1,6 +1,6 @@
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'adglare';
 

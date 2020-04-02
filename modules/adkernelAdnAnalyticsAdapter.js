@@ -4,10 +4,12 @@ import adapterManager from '../src/adapterManager.js';
 import {parse} from '../src/url.js';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const ANALYTICS_VERSION = '1.0.1';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 const DEFAULT_HOST = 'tag.adkernel.com';
+const storageObj = getStorageManager();
 
 const ADK_HB_EVENTS = {
   AUCTION_INIT: 'auctionInit',
@@ -175,10 +177,10 @@ const ORGANIC = '(organic)';
 
 export let storage = {
   getItem: (name) => {
-    return localStorage.getItem(name);
+    return storageObj.getDataFromLocalStorage(name);
   },
   setItem: (name, value) => {
-    localStorage.setItem(name, value);
+    storageObj.setDataInLocalStorage(name, value);
   }
 };
 

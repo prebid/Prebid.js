@@ -28,6 +28,7 @@ const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
+const DEFAULT_DEVICE_ACCESS = true;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -158,6 +159,18 @@ export function newConfig() {
         this._useBidCache = val;
       },
 
+      /**
+       * deviceAccess set to false will disable setCookie, getCookie, hasLocalStorage
+       * @type {boolean}
+       */
+      _deviceAccess: DEFAULT_DEVICE_ACCESS,
+      get deviceAccess() {
+        return this._deviceAccess;
+      },
+      set deviceAccess(val) {
+        this._deviceAccess = val;
+      },
+
       _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
       get bidderSequence() {
         return this._bidderSequence;
@@ -186,7 +199,6 @@ export function newConfig() {
       set disableAjaxTimeout(val) {
         this._disableAjaxTimeout = val;
       },
-
     };
 
     if (config) {
@@ -429,14 +441,23 @@ export function newConfig() {
   function callbackWithBidder(bidder) {
     return function(cb) {
       return function(...args) {
-        return runWithBidder(bidder, utils.bind.call(cb, this, ...args))
+        if (typeof cb === 'function') {
+          return runWithBidder(bidder, utils.bind.call(cb, this, ...args))
+        } else {
+          utils.logWarn('config.callbackWithBidder callback is not a function');
+        }
       }
     }
+  }
+
+  function getCurrentBidder() {
+    return currBidder;
   }
 
   resetConfig();
 
   return {
+    getCurrentBidder,
     getConfig,
     setConfig,
     setDefaults,
