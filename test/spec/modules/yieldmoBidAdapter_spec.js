@@ -8,6 +8,7 @@ describe('YieldmoAdapter', function () {
   const ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 
   let tdid = '8d146286-91d4-4958-aff4-7e489dd1abd6';
+  let criteoId = 'aff4';
 
   let bid = {
     bidder: 'yieldmo',
@@ -178,6 +179,27 @@ describe('YieldmoAdapter', function () {
       };
       const data = spec.buildRequests([unifiedIdBid], bidderRequest).data;
       expect(data.tdid).to.deep.equal(tdid);
+    });
+
+    it('should add CRITEO RTUS id as parameter of request', function () {
+      const criteoIdBid = {
+        bidder: 'yieldmo',
+        params: {},
+        adUnitCode: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        userId: {
+          criteoId
+        }
+      };
+      const data = spec.buildRequests([criteoIdBid], bidderRequest).data;
+      expect(data.cri_prebid).to.deep.equal(criteoId);
     });
 
     it('should add gdpr information to request if available', () => {

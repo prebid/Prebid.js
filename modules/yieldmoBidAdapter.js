@@ -60,6 +60,10 @@ export const spec = {
       if (tdid) {
         serverRequest.tdid = tdid;
       }
+      const criteoId = getId(request, 'criteoId');
+      if (criteoId) {
+        serverRequest.cri_prebid = criteoId;
+      }
       if (request.schain) {
         serverRequest.schain = JSON.stringify(request.schain);
       }
