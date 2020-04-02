@@ -242,13 +242,22 @@ function interpretResponse(serverResponse, bidRequest) {
       pbav: SUBLIME_VERSION
     };
 
-    sendEvent('bid', true);
+    sendEvent('bida', true);
     bidResponses.push(bidResponse);
   } else {
     sendEvent('dnobid');
   }
 
   return bidResponses;
+}
+
+/**
+ * Send pixel when bidWon event is triggered
+ * @param {Object} timeoutData
+ */
+function onBidWon(bid) {
+  log('Bid won', bid);
+  sendEvent('bidwon', true);
 }
 
 /**
@@ -266,6 +275,7 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
+  onBidWon: onBidWon,
   onTimeout: onTimeout,
 };
 
