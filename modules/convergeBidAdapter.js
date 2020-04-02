@@ -15,7 +15,7 @@ const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
   noBid: 'Array of bid objects is empty',
-  noPlacementCode: 'Can\'t find in requested bids the bid with auid - ',
+  noPlacementCode: "Can't find in requested bids the bid with auid - ",
   emptyUids: 'Uids should be not empty',
   emptySeatbid: 'Seatbid array from response has empty item',
   emptyResponse: 'Response is empty',
@@ -38,7 +38,7 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests - an array of bids
-   * @param {bidderRequest} - bidder request object
+   * @param {bidderRequest} bidderRequest - bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -140,6 +140,7 @@ export const spec = {
    *
    * @param {*} serverResponse A successful response from the server.
    * @param {*} bidRequest
+   * @param {Renderer} RendererConst
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest, RendererConst = Renderer) {
