@@ -991,7 +991,7 @@ export const spec = {
                 referrer: parsedReferrer,
                 ad: bid.adm,
                 pm_seat: seatbidder.seat || null,
-                pm_dspid: bid.ext ? bid.ext.dspid : null
+                pm_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null
               };
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
                 parsedRequest.imp.forEach(req => {
