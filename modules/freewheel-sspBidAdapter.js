@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'freewheel-ssp';
@@ -213,7 +214,7 @@ var getOutstreamScript = function(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['banner', 'video'],
+  supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['stickyadstv'], //  former name for freewheel-ssp
   /**
   * Determines whether or not the given bid request is valid.
