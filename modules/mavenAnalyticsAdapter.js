@@ -49,8 +49,13 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                     // this information over the wire, but should be able to
                     // cut down on bandwidth by sending all this identical
                     // information only once per batch.)
+                    let connType;
+                    if (navigator.connection) {
+                        connType = navigator.connection.effectiveType;
+                    }
                     auctionObj = {
                         auctionId: id,
+                        connectionEffectiveType: connType,
                         contentItemId: options.contentItemId,
                         correlator: window.hummingbirdCorrelator,
                         countryCode: options.countryCode,
