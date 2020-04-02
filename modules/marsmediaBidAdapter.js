@@ -16,7 +16,7 @@ function MarsmediaAdapter() {
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
   let that = this;
-  let version = '2.1';
+  let version = '2.2';
 
   this.isBidRequestValid = function (bid) {
     return !!(bid.params && bid.params.zoneId);
@@ -172,7 +172,7 @@ function MarsmediaAdapter() {
         }
       },
       at: 1,
-      tmax: 1000,
+      tmax: 650,
       regs: {
         ext: {
           gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false
@@ -240,7 +240,7 @@ function MarsmediaAdapter() {
       let bid = responses[i];
       let bidRequest = slotsToBids[bid.impid];
       let bidResponse = {
-        requestId: bidRequest.id,
+        requestId: bidRequest.bidId,
         bidderCode: that.code,
         cpm: parseFloat(bid.price),
         width: bid.w,
@@ -252,12 +252,26 @@ function MarsmediaAdapter() {
       };
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
-        bidResponse.vastUrl = bid.adm;
+        if (bid.adm.charAt(0) === '<') {
+          bidResponse.vastXml = bid.adm;
+        } else {
+          bidResponse.vastUrl = bid.adm;
+        }
         bidResponse.mediaType = 'video';
         bidResponse.ttl = 600;
       } else {
         bidResponse.ad = bid.adm;
       }
+
+      if (!bidResponse.width || !bidResponse.height) {
+        bidResponse.width = 1;
+        bidResponse.height = 1;
+        if (bidRequest.sizes) {
+          bidResponse.width = bidRequest.sizes[0][0];
+          bidResponse.height = bidRequest.sizes[0][1];
+        }
+      }
+
       bids.push(bidResponse);
     }
 
