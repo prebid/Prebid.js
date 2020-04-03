@@ -13,7 +13,8 @@ const syncsCache = {};
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['onefiftytwomedia'],
+  gvlid: 410,
+  aliases: ['onefiftytwomedia', 'selectmedia'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
     return !!utils.deepAccess(bid, 'params.aid');
