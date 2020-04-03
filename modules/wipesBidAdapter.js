@@ -27,7 +27,12 @@ function buildRequests(validBidRequests, bidderRequest) {
       method: 'GET',
       url: ENDPOINT_URL,
       data: {
-        asid: asid
+        asid: asid,
+        mediaTypes: {
+          video: {
+            context: 'outstream'
+          }
+        },
       }
     }
   });

@@ -21,7 +21,12 @@ var adUnits = [
       bids: [{
          bidder: 'wipes',
          params: {
-           asid: 'XXXXXXXXXX'
+           asid: 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ',
+           mediaTypes: {
+              video: {
+                 context: 'outstream'
+              }
+           },
          }
        }]
    }]
