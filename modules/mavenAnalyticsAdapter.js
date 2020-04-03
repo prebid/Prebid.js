@@ -55,6 +55,7 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                     }
                     auctionObj = {
                         auctionId: id,
+                        browserType: options.browserType,
                         connectionEffectiveType: connType,
                         contentItemId: options.contentItemId,
                         correlator: window.hummingbirdCorrelator,
@@ -199,11 +200,46 @@ mavenAnalytics.enableAnalytics = function (config) {
         return;
     }
     options = config.options;
+    options.browserType = this.generateBrowserType();
     mavenAnalytics.originEnableAnalytics(config); // call the base class function
     initialized = true;
     hummingbirdUrl = options.url; 
     verbose = !!options.verbose;
 };
+
+mavenAnalytics.generateBrowserType = function() {
+    // Browser sniffing -- this gets us all browser families with >1% of
+    // traffic, according to the 2019 Wikimedia report. This set of tests
+    // is largely based on
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Browser_detection_using_the_user_agent
+    // and should be relatively resilient to changes in user-agent behavior.
+    //
+    // We can't use String.prototype.includes to allow support of IE.
+    let ua = navigator.userAgent;
+    if (ua.indexOf('Chrome/') >= 0) {
+        if (ua.indexOf('OPR/') >= 0) {
+            return 'opera';
+        } else if (ua.indexOf('Edg/') >= 0 || ua.indexOf('Edge') >= 0) {
+            return 'edge';
+        } else if (ua.indexOf('SamsungBrowser') >= 0) {
+            return 'samsung';
+        } else if (ua.indexOf('Chromium/') == -1) {
+            // Chromium could be Chromium, Brave, etc.
+            return 'chrome';
+        }
+    } else if (ua.indexOf('Safari/') >= 0) {
+        return 'safari';
+    } else if (ua.indexOf('Firefox/') >= 0) {
+        if (ua.indexOf('Seamonkey/') == -1) {
+            return 'firefox';
+        }
+    } else if (ua.indexOf('Trident/') >= 0 || ua.indexOf('MSIE') >= 0) {
+        return 'ie';
+    } else if (ua.indexOf('OPR/') >= 0 || ua.indexOf('Opera/') >= 0) {
+        return 'opera';
+    }
+    return 'other';
+}
 
 adaptermanager.registerAnalyticsAdapter({
     adapter: mavenAnalytics,
