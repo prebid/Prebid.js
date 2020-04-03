@@ -14,7 +14,6 @@ Please use ```windtalker``` as the bidder code.
 ```
   var adUnits = [{
           code: 'dfp-native-div',
-          mediaType: 'native',
           mediaTypes: {
               native: {
                   title: {
@@ -35,8 +34,8 @@ Please use ```windtalker``` as the bidder code.
           bids: [{
               bidder: 'windtalker',
               params: {
-                  pubId: '29521',
-                  siteId: '26048',
+                  pubId: '584971',
+                  siteId: '584971',
                   placementId: '123',
                   bidFloor: '0.001', // optional
                   ifa: 'XXX-XXX', // optional
@@ -50,34 +49,32 @@ Please use ```windtalker``` as the bidder code.
           mediaTypes: {
               banner: {
                   sizes: [
-                      [300, 250]
+                      [300, 250],[300,600]
                   ],
               }
           },
           bids: [{
               bidder: 'windtalker',
               params: {
-                  pubId: '29521',
-                  siteId: '26049',
-                  size: '300X250',
+                  pubId: '584971',
+                  siteId: '584971',
                   placementId: '123',
               }
           }]
       },
       {
-          code: 'dfp-video-div-container',
-          sizes: [640, 480],
+          code: 'dfp-video-div',
           mediaTypes: {
               video: {
+                  playerSize: [[640, 480]],
                   context: "instream"
               }
           },
           bids: [{
               bidder: 'windtalker',
               params: {
-                  pubId: '29521',
-                  siteId: '26049',
-                  size: '640X480',
+                  pubId: '584971',
+                  siteId: '584971',
                   placementId: '123',
                   video: {
                       skipppable: true,
