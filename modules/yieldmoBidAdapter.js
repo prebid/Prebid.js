@@ -1,17 +1,17 @@
-import * as utils from "../src/utils";
-import { registerBidder } from "../src/adapters/bidderFactory";
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
-const BIDDER_CODE = "yieldmo";
-const CURRENCY = "USD";
+const BIDDER_CODE = 'yieldmo';
+const CURRENCY = 'USD';
 const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
-const SYNC_ENDPOINT = "https://static.yieldmo.com/blank.min.html?orig=";
-const SERVER_ENDPOINT = "https://ads.yieldmo.com/exchange/prebid";
+const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
+const SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 const localWindow = utils.getWindowTop();
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ["banner"],
+  supportedMediaTypes: ['banner'],
   /**
    * Determines whether or not the given bid request is valid.
    * @param {object} bid, bid to validate
@@ -36,7 +36,7 @@ export const spec = {
       dnt: getDNT(),
       e: getEnvironment(),
       description: getPageDescription(),
-      title: localWindow.document.title || "",
+      title: localWindow.document.title || '',
       w: localWindow.innerWidth,
       h: localWindow.innerHeight,
       userConsent: JSON.stringify({
@@ -55,7 +55,7 @@ export const spec = {
 
     bidRequests.forEach(request => {
       serverRequest.p.push(addPlacement(request));
-      const pubcid = getId(request, "pubcid");
+      const pubcid = getId(request, 'pubcid');
       if (pubcid) {
         serverRequest.pubcid = pubcid;
       } else if (request.crumbs) {
@@ -63,11 +63,11 @@ export const spec = {
           serverRequest.pubcid = request.crumbs.pubcid;
         }
       }
-      const tdid = getId(request, "tdid");
+      const tdid = getId(request, 'tdid');
       if (tdid) {
         serverRequest.tdid = tdid;
       }
-      const criteoId = getId(request, "criteoId");
+      const criteoId = getId(request, 'criteoId');
       if (criteoId) {
         serverRequest.cri_prebid = criteoId;
       }
@@ -75,9 +75,9 @@ export const spec = {
         serverRequest.schain = JSON.stringify(request.schain);
       }
     });
-    serverRequest.p = "[" + serverRequest.p.toString() + "]";
+    serverRequest.p = '[' + serverRequest.p.toString() + ']';
     return {
-      method: "GET",
+      method: 'GET',
       url: SERVER_ENDPOINT,
       data: serverRequest
     };
@@ -103,7 +103,7 @@ export const spec = {
     if (trackingEnabled(syncOptions)) {
       return [
         {
-          type: "iframe",
+          type: 'iframe',
           url: SYNC_ENDPOINT + utils.getOrigin()
         }
       ];
@@ -145,7 +145,7 @@ function addPlacement(request) {
  */
 function createNewBid(response) {
   return {
-    requestId: response["callback_id"],
+    requestId: response['callback_id'],
     cpm: response.cpm,
     width: response.width,
     height: response.height,
@@ -179,7 +179,7 @@ function isIOS() {
  */
 function getDNT() {
   return (
-    window.doNotTrack === "1" || window.navigator.doNotTrack === "1" || false
+    window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false
   );
 }
 
@@ -190,9 +190,9 @@ function getPageDescription() {
   if (document.querySelector('meta[name="description"]')) {
     return document
       .querySelector('meta[name="description"]')
-      .getAttribute("content"); // Value of the description metadata from the publisher's page.
+      .getAttribute('content'); // Value of the description metadata from the publisher's page.
   } else {
-    return "";
+    return '';
   }
 }
 
@@ -266,8 +266,8 @@ function isDfp() {
     const parentElement = window.frameElement.parentNode;
     if (frameElement && parentElement) {
       return (
-        frameElement.id.indexOf("google_ads_iframe") > -1 &&
-        parentElement.id.indexOf("google_ads_iframe") > -1
+        frameElement.id.indexOf('google_ads_iframe') > -1 &&
+        parentElement.id.indexOf('google_ads_iframe') > -1
       );
     }
     return false;
@@ -306,8 +306,8 @@ function isDFPSafeFrame() {
     const href = window.location.href;
     return (
       isSafeFrame() &&
-      href.indexOf("google") !== -1 &&
-      href.indexOf("safeframe") !== -1
+      href.indexOf('google') !== -1 &&
+      href.indexOf('safeframe') !== -1
     );
   }
   return false;
@@ -324,9 +324,9 @@ function isSandboxedIframe() {
  * Return true if we cannot document.write to a child iframe (this implies no allow-same-origin)
  */
 function isSuperSandboxedIframe() {
-  const sacrificialIframe = window.document.createElement("iframe");
+  const sacrificialIframe = window.document.createElement('iframe');
   try {
-    sacrificialIframe.setAttribute("style", "display:none");
+    sacrificialIframe.setAttribute('style', 'display:none');
     window.document.body.appendChild(sacrificialIframe);
     sacrificialIframe.contentWindow._testVar = true;
     window.document.body.removeChild(sacrificialIframe);
@@ -356,7 +356,7 @@ function getId(request, idType) {
     request &&
     request.userId &&
     request.userId[idType] &&
-    typeof request.userId === "object"
+    typeof request.userId === 'object'
   ) {
     id = request.userId[idType];
   }
