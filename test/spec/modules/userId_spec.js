@@ -419,7 +419,7 @@ describe('User ID', function() {
 
     beforeEach(function() {
       sandbox = sinon.createSandbox();
-      sandbox.stub(global, 'setTimeout');
+      sandbox.stub(global, 'setTimeout').returns(2);
       sandbox.stub(events, 'on');
 
       // remove cookie
@@ -597,8 +597,8 @@ describe('User ID', function() {
       coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
 
       config.setConfig({
-        userSync: {
-          auctionDelay: 33,
+        usersync: {
+          auctionDelay: 200,
           syncDelay: 77,
           userIds: [{
             name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
