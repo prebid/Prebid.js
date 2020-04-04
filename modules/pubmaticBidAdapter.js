@@ -817,6 +817,7 @@ function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid

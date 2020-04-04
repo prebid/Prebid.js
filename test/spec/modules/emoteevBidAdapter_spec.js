@@ -47,6 +47,7 @@ import {
   validateExternalId,
   VENDOR_ID,
   WALLPAPER,
+  storage
 } from 'modules/emoteevBidAdapter.js';
 import * as url from '../../../src/url.js';
 import * as utils from '../../../src/utils.js';
@@ -749,7 +750,7 @@ describe('emoteevBidAdapter', function () {
     });
     beforeEach(function () {
       triggerPixelStub = sinon.stub(utils, 'triggerPixel');
-      getCookieSpy = sinon.spy(utils, 'getCookie');
+      getCookieSpy = sinon.spy(storage, 'getCookie');
       getConfigSpy = sinon.spy(config, 'getConfig');
       getParameterByNameSpy = sinon.spy(utils, 'getParameterByName');
     });
@@ -776,7 +777,7 @@ describe('emoteevBidAdapter', function () {
         };
         spec.isBidRequestValid(validBidRequest);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
       });
@@ -786,7 +787,7 @@ describe('emoteevBidAdapter', function () {
         const invalidBidRequest = {};
         spec.isBidRequestValid(invalidBidRequest);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // disabling these getConfig tests as they have been flaky in browserstack testing
         // sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
@@ -796,7 +797,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.buildRequests(cannedValidBidRequests, cannedBidderRequest);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // sinon.assert.callCount(config.getConfig, 3);
         sinon.assert.callCount(utils.getParameterByName, 2);
       });
@@ -805,7 +806,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.interpretResponse(serverResponse);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
       });
@@ -815,7 +816,7 @@ describe('emoteevBidAdapter', function () {
         const bidObject = serverResponse.body[0];
         spec.onBidWon(bidObject);
         sinon.assert.calledOnce(utils.triggerPixel);
-        sinon.assert.calledOnce(utils.getCookie);
+        sinon.assert.calledOnce(storage.getCookie);
         // sinon.assert.calledOnce(config.getConfig);
         sinon.assert.calledOnce(utils.getParameterByName);
       });
@@ -824,7 +825,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.onTimeout(cannedValidBidRequests[0]);
         sinon.assert.calledOnce(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // sinon.assert.calledOnce(config.getConfig);
         sinon.assert.calledOnce(utils.getParameterByName);
       });
@@ -833,7 +834,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.getUserSyncs({});
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(utils.getCookie);
+        sinon.assert.notCalled(storage.getCookie);
         // sinon.assert.calledOnce(config.getConfig);
         sinon.assert.calledOnce(utils.getParameterByName);
       });

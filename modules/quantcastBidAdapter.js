@@ -78,6 +78,7 @@ function getDomain(url) {
  */
 export const spec = {
   code: BIDDER_CODE,
+  GVLID: 11,
   supportedMediaTypes: ['banner', 'video'],
 
   /**

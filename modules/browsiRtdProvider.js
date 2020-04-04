@@ -22,6 +22,9 @@ import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -62,7 +65,7 @@ function collectData() {
   const doc = win.document;
   let browsiData = null;
   try {
-    browsiData = utils.getDataFromLocalStorage('__brtd');
+    browsiData = storage.getDataFromLocalStorage('__brtd');
   } catch (e) {
     utils.logError('unable to parse __brtd');
   }
