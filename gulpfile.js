@@ -249,13 +249,13 @@ function test(done) {
 
     execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
       .then(stdout => {
-        //kill mock server
+        // kill mock server
         mockServer.kill('SIGINT');
         done();
         process.exit(0);
       })
       .catch(err => {
-        //kill mock server
+        // kill mock server
         mockServer.kill('SIGINT');
         done(new Error(`Tests failed with error: ${err}`));
         process.exit(1);
