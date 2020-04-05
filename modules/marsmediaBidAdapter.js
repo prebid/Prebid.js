@@ -263,15 +263,6 @@ function MarsmediaAdapter() {
         bidResponse.ad = bid.adm;
       }
 
-      if (!bidResponse.width || !bidResponse.height) {
-        bidResponse.width = 1;
-        bidResponse.height = 1;
-        if (bidRequest.sizes) {
-          bidResponse.width = bidRequest.sizes[0][0];
-          bidResponse.height = bidRequest.sizes[0][1];
-        }
-      }
-
       bids.push(bidResponse);
     }
 
