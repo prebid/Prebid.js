@@ -15,18 +15,18 @@ Please contact support@wipestream.com for further information.
 # Test Parameters
 ```javascript
 var adUnits = [
-   // Video adUnit
+   // adUnit
    {
       code: 'video-div',
+      mediaTypes: {
+        banner: {
+            sizes: [[160, 300]],
+        }
+      },
       bids: [{
          bidder: 'wipes',
          params: {
-           asid: 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ',
-           mediaTypes: {
-              video: {
-                 context: 'outstream'
-              }
-           },
+           asid: 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ'
          }
        }]
    }]

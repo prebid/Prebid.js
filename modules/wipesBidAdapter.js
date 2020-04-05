@@ -1,11 +1,11 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {VIDEO} from '../src/mediaTypes.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'wipes';
 const ALIAS_BIDDER_CODE = ['wi'];
-const SUPPORTED_MEDIA_TYPES = [VIDEO]
+const SUPPORTED_MEDIA_TYPES = [BANNER]
 const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid';
 
 function isBidRequestValid(bid) {
@@ -55,7 +55,7 @@ function interpretResponse(serverResponse, bidRequest) {
       netRevenue: netRevenue,
       ttl: config.getConfig('_bidderTimeout'),
       referrer: bidRequest.data.r || '',
-      mediaType: VIDEO,
+      mediaType: BANNER,
       ad: response.adTag,
     };
     bidResponses.push(bidResponse);
