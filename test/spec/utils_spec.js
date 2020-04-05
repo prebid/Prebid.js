@@ -922,4 +922,42 @@ describe('Utils', function () {
       });
     });
   });
+
+  describe('isSafariBrowser', function () {
+    const orig_navigator = navigator;
+    it('properly detects safari', function () {
+      forceUa('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
+      expect(utils.isSafariBrowser()).to.equal(true);
+    });
+    it('does not flag Chrome on MacOS', function () {
+      forceUa('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36');
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
+    it('does not flag Chrome iOS', function () {
+      forceUa('Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1');
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
+    it('does not flag Firefox iOS', function () {
+      forceUa('Mozilla/5.0 (iPhone; CPU OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/23.0  Mobile/15E148 Safari/605.1.15');
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
+    it('does not flag Windows Edge', function () {
+      forceUa('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43');
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
+  });
 });
+
+function forceUa(testua) {
+  if (navigator.__defineGetter__) {
+    navigator.__defineGetter__('userAgent', function () {
+      return testua;
+    });
+  } else if (Object.defineProperty) {
+    Object.defineProperty(navigator, 'userAgent', {
+      get: function () {
+        return testua;
+      }
+    });
+  }
+}
