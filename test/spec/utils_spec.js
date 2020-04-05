@@ -924,7 +924,6 @@ describe('Utils', function () {
   });
 
   describe('isSafariBrowser', function () {
-    const orig_navigator = navigator;
     it('properly detects safari', function () {
       forceUa('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       expect(utils.isSafariBrowser()).to.equal(true);
