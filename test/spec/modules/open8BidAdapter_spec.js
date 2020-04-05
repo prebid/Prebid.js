@@ -1,5 +1,5 @@
-import { spec } from 'modules/open8BidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/open8BidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://as.vt.open8.com/v1/control/prebid';
 

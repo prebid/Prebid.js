@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import { userSync } from '../src/userSync';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { userSync } from '../src/userSync.js';
 
 const BIDDER_CODE = 'c1x';
 const URL = 'https://ht.c1exchange.com/ht';

@@ -1,12 +1,13 @@
 import { expect } from 'chai';
 import { PrebidServer as Adapter, resetSyncedStatus } from 'modules/prebidServerBidAdapter/index.js';
-import adapterManager from 'src/adapterManager';
-import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import { config } from 'src/config';
-import events from 'src/events';
-import CONSTANTS from 'src/constants';
-import { server } from 'test/mocks/xhr';
+import adapterManager from 'src/adapterManager.js';
+import * as utils from 'src/utils.js';
+import { ajax } from 'src/ajax.js';
+import { config } from 'src/config.js';
+import events from 'src/events.js';
+import CONSTANTS from 'src/constants.json';
+import { server } from 'test/mocks/xhr.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 let CONFIG = {
   accountId: '1',
@@ -460,7 +461,8 @@ describe('S2S Adapter', function () {
             'sizes': [300, 250],
             'bidId': '123',
             'bidderRequestId': '3d1063078dfcc8',
-            'auctionId': '173afb6d132ba3'
+            'auctionId': '173afb6d132ba3',
+            'storedAuctionResponse': 11111
           }
         ],
         'auctionStart': 1510852447530,
@@ -787,6 +789,27 @@ describe('S2S Adapter', function () {
       });
     });
 
+    it('adds debugging value from storedAuctionResponse to OpenRTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' }
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.imp).to.exist.and.to.be.a('array');
+      expect(requestBid.imp).to.have.lengthOf(1);
+      expect(requestBid.imp[0].ext).to.exist.and.to.be.a('object');
+      expect(requestBid.imp[0].ext.prebid).to.exist.and.to.be.a('object');
+      expect(requestBid.imp[0].ext.prebid.storedauctionresponse).to.exist.and.to.be.a('object');
+      expect(requestBid.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
+    });
+
     it('adds device.w and device.h even if the config lacks a device object', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
@@ -1060,8 +1083,10 @@ describe('S2S Adapter', function () {
         lipb: {
           lipbid: 'li-xyz',
           segments: ['segA', 'segB']
-        }
+        },
+        idl_env: '0000-1111-2222-3333'
       };
+      userIdBidRequest[0].bids[0].userIdAsEids = createEidsArray(userIdBidRequest[0].bids[0].userId);
 
       adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
       let requestBid = JSON.parse(server.requests[0].requestBody);
@@ -1080,6 +1105,8 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments.length).is.equal(2);
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[0]).is.equal('segA');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[1]).is.equal('segB');
+      // LiveRamp should exist
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveramp.com')[0].uids[0].id).is.equal('0000-1111-2222-3333');
     });
 
     it('when config \'currency.adServerCurrency\' value is an array: ORTB has property \'cur\' value set to a single item array', function () {
@@ -1287,7 +1314,51 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.source.ext.schain).to.deep.equal(schainObject);
-    })
+    });
+
+    it('passes first party data in request', () => {
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+
+      const commonContext = {
+        keywords: ['power tools'],
+        search: 'drill'
+      };
+      const commonUser = {
+        keywords: ['a', 'b'],
+        gender: 'M'
+      };
+
+      const context = {
+        content: { userrating: 4 },
+        data: {
+          pageType: 'article',
+          category: 'tools'
+        }
+      };
+      const user = {
+        yob: '1984',
+        geo: { country: 'ca' },
+        data: {
+          registered: true,
+          interests: ['cars']
+        }
+      };
+      const allowedBidders = [ 'rubicon', 'appnexus' ];
+
+      const expected = allowedBidders.map(bidder => ({
+        bidders: [ bidder ],
+        config: { fpd: { site: context, user } }
+      }));
+
+      config.setConfig({ fpd: { context: commonContext, user: commonUser } });
+      config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
+      adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+      expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
+      expect(parsedRequestBody.site.ext.data).to.deep.equal(commonContext);
+      expect(parsedRequestBody.user.ext.data).to.deep.equal(commonUser);
+    });
 
     describe('pbAdSlot config', function () {
       it('should not send \"imp.ext.context.data.adslot\" if \"fpd.context\" is undefined', function () {

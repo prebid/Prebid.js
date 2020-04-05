@@ -71,7 +71,7 @@
                 }());
                 var t = document.createElement('script');
                 t.async = false;
-                t.src = 'http://acdn.adnxs.com/cmp/cmp.bundle.js';
+                t.src = 'https://acdn.adnxs.com/cmp/cmp.bundle.js';
                 var tag = document.getElementsByTagName('head')[0];
                 tag.appendChild(t);
             }
@@ -86,6 +86,7 @@
             {
                 code: 'test-div',
                 sizes: [[300, 250], [300, 600], [728, 90]],
+                mediaTypes: { banner: { sizes: [400, 600], name: 'testAdUnit'}},
                 bids: [
                     {
                         bidder: 'rubicon',

@@ -1,8 +1,10 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
+  gvlid: 25,
+  VERSION: '3.0.0',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
@@ -102,8 +104,9 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, responses, consentData) {
+  getUserSyncs: function(syncOptions, responses, consentData = {}) {
     let { gdprApplies, consentString = '' } = consentData;
+
     if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
@@ -115,7 +118,7 @@ export const spec = {
       },
       {
         type: 'image',
-        url: `https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr_qparam=${gdprApplies ? 1 : 0}&gdpr_consent_qparam=${consentString}&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0%26gdpr%3D{gdpr}%26gdpr_consent%3D{gdpr_consent}`
+        url: `https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0` + encodeURI(`&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`)
       },
       {
         type: 'image',
@@ -152,6 +155,8 @@ function getRequestData(bid, consentData, bidRequest) {
       bidfloor: bid.params.bidfloor,
       ext: {
         hb: 1,
+        prebidver: '$prebid.version$',
+        adapterver: spec.VERSION,
       }
     }],
     site: {
@@ -198,6 +203,8 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.rewarded) {
       bidData.imp[0].ext.rewarded = bid.params.video.rewarded
     }
+    bidData.imp[0].video.linearity = 1;
+    bidData.imp[0].video.protocols = bid.params.video.protocols || [2, 5];
   } else if (bid.params.video.display == 1) {
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
@@ -236,13 +243,14 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.regs.ext.gdpr = 1
     }
 
-    if (consentData.consentString) {
+    if (consentData && consentData.consentString) {
       bidData.user = {
         ext: {
           consent: consentData.consentString
         }
       };
     }
+    // ccpa support
     if (bidRequest && bidRequest.uspConsent) {
       bidData.regs.ext.us_privacy = bidRequest.uspConsent
     }

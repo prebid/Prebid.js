@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/turktelekomBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/turktelekomBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('TurkTelekomAdapter', function () {
   const adapter = newBidder(spec);

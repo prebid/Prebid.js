@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/betweenBidAdapter';
+import { spec } from 'modules/betweenBidAdapter.js';
 
 describe('betweenBidAdapterTests', function () {
   it('validate_pub_params', function () {
@@ -200,5 +200,25 @@ describe('betweenBidAdapterTests', function () {
     const syncs = spec.getUserSyncs({}, {});
     expect(syncs).to.be.an('array').that.to.have.lengthOf(1);
     expect(syncs[0]).to.deep.equal({type: 'iframe', url: 'https://ads.betweendigital.com/sspmatch-iframe'});
+  });
+
+  it('check sizes', function() {
+    let bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'between',
+      mediaTypes: {
+        banner: {
+          sizes: [[970, 250], [240, 400], [728, 90]]
+        }
+      },
+      params: {
+        s: 1112,
+      },
+    }];
+
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = request[0].data;
+
+    expect(req_data.sizes).to.deep.equal(['970x250', '240x400', '728x90']);
   });
 });
