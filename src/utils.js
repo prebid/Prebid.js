@@ -1242,3 +1242,20 @@ export function compareOn(property) {
     return 0;
   }
 }
+
+export function parseQS(query) {
+  return !query ? {} : query
+    .replace(/^\?/, '')
+    .split('&')
+    .reduce((acc, criteria) => {
+      let [k, v] = criteria.split('=');
+      if (/\[\]$/.test(k)) {
+        k = k.replace('[]', '');
+        acc[k] = acc[k] || [];
+        acc[k].push(v);
+      } else {
+        acc[k] = v || '';
+      }
+      return acc;
+    }, {});
+}
