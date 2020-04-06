@@ -5,13 +5,15 @@ const app = module.exports = express();
 const port = (argv.port) ? argv.port : 3000;
 const bodyParser = require('body-parser');
 const renderCreative = require('./request-middlewares/prebid-request.js');
+const morgan = require('morgan');
 
 app.use(express.static(__dirname + '/content'));
 app.use(bodyParser.text({type: 'text/plain'}));
+app.use(morgan('dev'));
 
 app.locals = {
   'port': port,
-  'host': 'localhost'
+  'host': argv.host ? argv.host : 'localhost'
 };
 
 // get type will be used to test prebid jsonp requests
