@@ -538,7 +538,7 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
 function setupBidTargeting(bidObject, bidderRequest) {
   let keyValues;
   if (bidObject.bidderCode && (bidObject.cpm > 0 || bidObject.dealId)) {
-    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode);
+    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode && bid.bidId === bidObject.requestId);
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
