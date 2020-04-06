@@ -292,7 +292,9 @@ describe('OneVideoBidAdapter', function () {
             placement: 1,
             inventoryid: 123,
             sid: 134,
-            display: 1
+            display: 1,
+            minduration: 10,
+            maxduration: 30
           },
           site: {
             id: 1,
@@ -314,6 +316,8 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].ext.inventoryid).to.equal(bidRequest.params.video.inventoryid);
       expect(data.imp[0].banner.mimes).to.equal(bidRequest.params.video.mimes);
       expect(data.imp[0].banner.placement).to.equal(bidRequest.params.video.placement);
+      expect(data.imp[0].banner.ext.minduration).to.equal(bidRequest.params.video.minduration);
+      expect(data.imp[0].banner.ext.maxduration).to.equal(bidRequest.params.video.maxduration);
       expect(data.site.id).to.equal(bidRequest.params.site.id);
     });
     it('should send video object when display is other than 1', function () {
@@ -385,6 +389,7 @@ describe('OneVideoBidAdapter', function () {
             playbackmethod: [1, 5],
             placement: 123,
             sid: 134,
+            minduration: 10,
             maxduration: 30
           },
           site: {
@@ -408,6 +413,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.protocols).to.equal(bidRequest.params.video.protocols);
       expect(data.imp[0].video.linearity).to.equal(1);
       expect(data.imp[0].video.maxduration).to.equal(bidRequest.params.video.maxduration);
+      expect(data.imp[0].video.minduration).to.equal(bidRequest.params.video.minduration);
     });
     describe('getUserSyncs', function () {
       const GDPR_CONSENT_STRING = 'GDPR_CONSENT_STRING';
