@@ -100,13 +100,13 @@ describe('wipesBidAdapter', function () {
     let serverResponseVideo = {
       body: {
         'uuid': 'a42947f8-f8fd-4cf7-bb72-31a87ab1f6ff',
-        'adTag': '<!-- adtag -->',
+        'ad_tag': '<!-- adtag -->',
         'height': 160,
         'width': 300,
         'cpm': 850,
-        'statusMessage': '',
+        'status_message': '',
         'currency': 'JPY',
-        'videoCreativeId': 600004
+        'video_creative_id': 600004
       }
     };
 
