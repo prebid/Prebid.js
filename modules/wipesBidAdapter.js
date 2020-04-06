@@ -49,14 +49,14 @@ function interpretResponse(serverResponse, bidRequest) {
       cpm: cpm,
       width: response.width,
       height: response.height,
-      creativeId: response.videoCreativeId || 0,
-      dealId: response.dealId,
+      creativeId: response.video_creative_id || 0,
+      dealId: response.deal_id,
       currency: 'JPY',
       netRevenue: netRevenue,
       ttl: config.getConfig('_bidderTimeout'),
       referrer: bidRequest.data.r || '',
       mediaType: BANNER,
-      ad: response.adTag,
+      ad: response.ad_tag,
     };
     bidResponses.push(bidResponse);
   }
