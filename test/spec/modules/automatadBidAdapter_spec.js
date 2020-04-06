@@ -38,7 +38,7 @@ describe('automatadBidAdapter', function () {
               'h': 600,
               'id': 'bid1',
               'impid': '1',
-              'nurl': '<!-- nurl -->',
+              'nurl': 'https://example/win',
               'price': 0.5,
               'w': 300
             }
@@ -124,10 +124,21 @@ describe('automatadBidAdapter', function () {
   describe('onBidWon', function () {
     let serverResponses = spec.interpretResponse(expectedResponse[0])
     let wonbid = serverResponses[0]
+    let ajaxStub
+
+    beforeEach(() => {
+      ajaxStub = sinon.stub(spec, 'ajaxCall')
+    })
+
+    afterEach(() => {
+      ajaxStub.restore()
+    })
 
     it('Returns true is nurl is good/not blank', function () {
       expect(wonbid.nurl).to.not.equal('')
       expect(spec.onBidWon(wonbid)).to.be.true
+      expect(ajaxStub.calledOnce).to.equal(true)
+      expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0)
     })
   })
 })

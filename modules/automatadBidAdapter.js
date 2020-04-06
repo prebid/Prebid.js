@@ -112,8 +112,11 @@ export const spec = {
       /\$\{AUCTION_ID\}/,
       bid.auctionId
     )
-    ajax(winUrl, null)
+    spec.ajaxCall(winUrl, null)
     return true
+  },
+  ajaxCall: function(endpoint, data) {
+    ajax(endpoint, data)
   },
 
 }
