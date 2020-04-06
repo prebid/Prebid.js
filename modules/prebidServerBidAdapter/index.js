@@ -268,10 +268,9 @@ function _appendSiteAppDevice(request, pageUrl) {
     request.app = config.getConfig('app');
     request.app.publisher = {id: _s2sConfig.accountId}
   } else {
-    request.site = {
-      publisher: { id: _s2sConfig.accountId },
-      page: pageUrl
-    }
+    request.site = (typeof config.getConfig('site') === 'object') ? config.getConfig('site') : {};
+    request.site.publisher = { id: _s2sConfig.accountId },
+    request.site.page = pageUrl;
   }
   if (typeof config.getConfig('device') === 'object') {
     request.device = config.getConfig('device');
