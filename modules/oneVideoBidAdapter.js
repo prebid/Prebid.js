@@ -217,6 +217,9 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.maxduration) {
       bidData.imp[0].banner.ext.maxduration = bid.params.video.maxduration
     }
+    if (bid.params.video.minduration) {
+      bidData.imp[0].banner.ext.minduration = bid.params.video.minduration
+    }
   }
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
