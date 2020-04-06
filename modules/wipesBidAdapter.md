@@ -9,8 +9,7 @@ Maintainer: contact@3-shake.com
 # Description
 
 Connect to WIPES for bids.
-Publishers needs to be set up and approved by WIPES team to enable this adapter.
-Please contact support@wipestream.com for further information.
+Publishers needs to be set up and approved by WIPES team to enable this adapter. Please contact support@wipestream.com for further information.
 
 # Test Parameters
 ```javascript
