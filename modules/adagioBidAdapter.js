@@ -14,7 +14,7 @@ const SUPPORTED_MEDIA_TYPES = ['banner'];
 const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 const GVLID = 617;
-const storage = getStorageManager(GVLID);
+const storage = getStorageManager(GVLID, 'adagio');
 
 export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9el0+OEn6fvEh1RdVHQu4cnT0
@@ -23,10 +23,8 @@ t0b0lsHN+W4n9kitS/DZ/xnxWK/9vxhv0ZtL1LL/rwR5Mup7rmJbNtDoNBw4TIGj
 pV6EP3MTLosuUEpLaQIDAQAB
 -----END PUBLIC KEY-----`;
 
-export function getAdagioScript() {
+export function adagioScriptFromLocalStorageCb(ls) {
   try {
-    const ls = storage.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
-
     if (!ls) {
       utils.logWarn('Adagio Script not found');
       return;
@@ -56,6 +54,12 @@ export function getAdagioScript() {
   } catch (err) {
     //
   }
+}
+
+export function getAdagioScript() {
+  storage.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY, (ls) => {
+    adagioScriptFromLocalStorageCb(ls)
+  });
 }
 
 function canAccessTopWindow() {
