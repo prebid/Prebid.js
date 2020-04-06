@@ -1,13 +1,4 @@
-import { parseQS } from './utils.js';
-
-export function formatQS(query) {
-  return Object
-    .keys(query)
-    .map(k => Array.isArray(query[k])
-      ? query[k].map(v => `${k}[]=${v}`).join('&')
-      : `${k}=${query[k]}`)
-    .join('&');
-}
+import { parseQS, formatQS } from './utils.js';
 
 export function parse(url, options) {
   let parsed = document.createElement('a');

@@ -1259,3 +1259,12 @@ export function parseQS(query) {
       return acc;
     }, {});
 }
+
+export function formatQS(query) {
+  return Object
+    .keys(query)
+    .map(k => Array.isArray(query[k])
+      ? query[k].map(v => `${k}[]=${v}`).join('&')
+      : `${k}=${query[k]}`)
+    .join('&');
+}

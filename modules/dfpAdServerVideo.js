@@ -4,8 +4,8 @@
 
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { targeting } from '../src/targeting.js';
-import { formatQS, format as buildUrl, parse } from '../src/url.js';
-import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils.js';
+import { format as buildUrl, parse } from '../src/url.js';
+import { deepAccess, isEmpty, logError, parseSizesInput, formatQS } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getHook, submodule } from '../src/hook.js';
 import { auctionManager } from '../src/auctionManager.js';
