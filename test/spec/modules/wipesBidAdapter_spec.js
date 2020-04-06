@@ -122,7 +122,7 @@ describe('wipesBidAdapter', function () {
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
-        'mediaType': 'video',
+        'mediaType': 'banner',
         'ad': '<!-- adtag -->'
       }];
       let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
