@@ -22,8 +22,14 @@ let currentBatch = [],
     initialized = false,
     options,
     sampling,
-    verbose = false;
+    verbose = false,
+    connectionEffectiveType;
 
+if (navigator.connection) {
+    navigator.connection.addEventListener('change', function() {
+        connectionEffectiveType = navigator.connection.effectiveType;
+    });
+}
 
 let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
     
@@ -49,14 +55,10 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                     // this information over the wire, but should be able to
                     // cut down on bandwidth by sending all this identical
                     // information only once per batch.)
-                    let connType;
-                    if (navigator.connection) {
-                        connType = navigator.connection.effectiveType;
-                    }
                     auctionObj = {
                         auctionId: id,
                         browserType: options.browserType,
-                        connectionEffectiveType: connType,
+                        connectionEffectiveType,
                         contentItemId: options.contentItemId,
                         correlator: window.hummingbirdCorrelator,
                         countryCode: options.countryCode,
@@ -73,7 +75,7 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                         auctionObj.pod = 0;
                     };
                     currentAuctions[id] = auctionObj;
-                    break
+                    break;
                 case AUCTION_END:
                     if (currentAuctions[id] && currentAuctions[id].status === 'inProgress') {
                         currentAuctions[id].status = 'complete';
@@ -82,6 +84,12 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                     }
                     auctionObj = currentAuctions[id];
                     auctionObj.timeoutPeriod = args.timeout;
+                    // Update this property just in case connectionEffectiveType was determined
+                    // after the auction began. Assign a value of 'other' if we have no
+                    // connectionEffectiveType to report (likely due to browser limitation).
+                    if (!auctionObj.connectionEffectiveType) {
+                        auctionObj.connectionEffectiveType = connectionEffectiveType || 'other';
+                    }
                     // Strip down to a set of information we're interested in.
                     // bidUnit is used for easy generation of our timed-out bid
                     // list, but does not need to go over the wire.
@@ -158,7 +166,7 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                     // Clear it out of the currentAucutions object, since we're
                     // done with it.
                     delete currentAuctions[id];
-                    break
+                    break;
             }
         } catch (e) {
             // Log error
