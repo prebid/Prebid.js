@@ -920,6 +920,11 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
+    // merge the device from config.getConfig('device')
+    if (typeof config.getConfig('device') === 'object') {
+      payload.device = Object.assign(payload.device, config.getConfig('device'));
+    }
+
     // passing transactionId in source.tid
     utils.deepSetValue(payload, 'source.tid', conf.transactionId);
 
@@ -952,6 +957,16 @@ export const spec = {
     _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+
+    // Note: Do not move this block up
+    // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
+    if (typeof config.getConfig('app') === 'object') {
+      payload.app = config.getConfig('app');
+      // not copying domain from site as it is a derived value from page
+      payload.app.publisher = payload.site.publisher;
+      payload.app.ext = payload.site.ext || UNDEFINED;
+      delete payload.site;
+    }
 
     return {
       method: 'POST',
