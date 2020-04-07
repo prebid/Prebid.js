@@ -624,6 +624,7 @@ describe('AppNexusAdapter', function () {
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.options).to.be.empty;
       const payload = JSON.parse(request.data);
 
       expect(payload.gdpr_consent).to.exist;
@@ -773,6 +774,32 @@ describe('AppNexusAdapter', function () {
       expect(payload.user.coppa).to.equal(true);
 
       config.getConfig.restore();
+    });
+
+    it('should set withCredentials to false if purpose 1 consent is not given', function () {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true,
+          apiVersion: 2,
+          vendorData: {
+            purpose: {
+              consents: {
+                1: false
+              }
+            }
+          }
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.options).to.deep.equal({withCredentials: false});
     });
   })
 

@@ -817,6 +817,7 @@ function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
@@ -989,7 +990,9 @@ export const spec = {
                 netRevenue: NET_REVENUE,
                 ttl: 300,
                 referrer: parsedReferrer,
-                ad: bid.adm
+                ad: bid.adm,
+                pm_seat: seatbidder.seat || null,
+                pm_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null
               };
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
                 parsedRequest.imp.forEach(req => {

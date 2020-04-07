@@ -1,4 +1,4 @@
-import { getAdserverCategoryHook, initTranslation } from 'modules/categoryTranslation.js';
+import { getAdserverCategoryHook, initTranslation, storage } from 'modules/categoryTranslation.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { expect } from 'chai';
@@ -9,7 +9,7 @@ describe('category translation', function () {
 
   beforeEach(function () {
     fakeTranslationServer = sinon.fakeServer.create();
-    getLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
+    getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
   });
 
   afterEach(function() {

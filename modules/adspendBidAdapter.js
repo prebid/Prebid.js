@@ -3,7 +3,9 @@ import { ajax } from '../src/ajax.js'
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 
+const storage = getStorageManager();
 const BIDDER_CODE = 'adspend';
 const BID_URL = 'https://rtb.com.ru/headerbidding-bid';
 const SYNC_URL = 'https://rtb.com.ru/headerbidding-sync?uid={UUID}';
@@ -40,7 +42,7 @@ export const spec = {
       bid.params.bidfloor &&
       bid.crumbs.pubcid &&
       utils.checkCookieSupport() &&
-      utils.cookiesAreEnabled()
+      storage.cookiesAreEnabled()
     );
   },
 
@@ -145,11 +147,11 @@ export const spec = {
 }
 
 const getUserID = () => {
-  const i = utils.getCookie(COOKIE_NAME);
+  const i = storage.getCookie(COOKIE_NAME);
 
   if (i === null) {
     const uuid = utils.generateUUID();
-    utils.setCookie(COOKIE_NAME, uuid);
+    storage.setCookie(COOKIE_NAME, uuid);
     return uuid;
   }
   return i;

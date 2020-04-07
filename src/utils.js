@@ -845,86 +845,6 @@ export function checkCookieSupport() {
 }
 
 /**
- * @returns {boolean}
- */
-export function cookiesAreEnabled() {
-  if (hasDeviceAccess()) {
-    if (internal.checkCookieSupport()) {
-      return true;
-    }
-    window.document.cookie = 'prebid.cookieTest';
-    return window.document.cookie.indexOf('prebid.cookieTest') !== -1;
-  }
-  return false;
-}
-
-/**
- * @param {string} name
- * @returns {(string|null)}
- */
-export function getCookie(name) {
-  if (hasDeviceAccess()) {
-    let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
-    return m ? decodeURIComponent(m[2]) : null;
-  }
-  return null;
-}
-
-/**
- * @param {string} key
- * @param {string} value
- * @param {string} [expires='']
- * @param {string} [sameSite='/']
- * @param {string} [domain] domain (e.g., 'example.com' or 'subdomain.example.com').
- * If not specified, defaults to the host portion of the current document location.
- * If a domain is specified, subdomains are always included.
- * Domain must match the domain of the JavaScript origin. Setting cookies to foreign domains will be silently ignored.
- */
-export function setCookie(key, value, expires, sameSite, domain) {
-  if (hasDeviceAccess()) {
-    const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
-    const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
-    document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}`;
-  }
-}
-
-/**
- * Returns all cookie values from the jar whose names contain the `keyLike`
- * Needs to exist in `utils.js` as it follows the StorageHandler interface defined in live-connect-js. If that module were to be removed, this function can go as well.
- * @param {string} keyLike
- * @return {[]}
- */
-export function findSimilarCookies(keyLike) {
-  const all = [];
-  if (hasDeviceAccess()) {
-    const cookies = document.cookie.split(';');
-    while (cookies.length) {
-      const cookie = cookies.pop();
-      let separatorIndex = cookie.indexOf('=');
-      separatorIndex = separatorIndex < 0 ? cookie.length : separatorIndex;
-      const cookieName = decodeURIComponent(cookie.slice(0, separatorIndex).replace(/^\s+/, ''));
-      if (cookieName.indexOf(keyLike) >= 0) {
-        all.push(decodeURIComponent(cookie.slice(separatorIndex + 1)));
-      }
-    }
-  }
-  return all;
-}
-
-/**
- * @returns {boolean}
- */
-export function localStorageIsEnabled () {
-  if (hasDeviceAccess()) {
-    try {
-      localStorage.setItem('prebid.cookieTest', '1');
-      return localStorage.getItem('prebid.cookieTest') === '1';
-    } catch (error) {}
-  }
-  return false;
-}
-
-/**
  * Given a function, return a function which only executes the original after
  * it's been called numRequiredCalls times.
  *
@@ -1077,6 +997,24 @@ export function isAdUnitCodeMatchingSlot(slot) {
 export function isSlotMatchingAdUnitCode(adUnitCode) {
   return (slot) => compareCodeAndSlot(slot, adUnitCode);
 }
+
+/**
+ * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ */
+export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+  let matchingSlot;
+  if (isGptPubadsDefined()) {
+    // find the first matching gpt slot on the page
+    matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
+  }
+  if (matchingSlot) {
+    return {
+      gptSlot: matchingSlot.getAdUnitPath(),
+      divId: matchingSlot.getSlotElementId()
+    }
+  }
+  return {};
+};
 
 /**
  * Constructs warning message for when unsupported bidders are dropped from an adunit
@@ -1240,50 +1178,6 @@ export function convertTypes(types, params) {
     }
   });
   return params;
-}
-
-/**
- * @param {string} key
- * @param {string} value
- */
-export function setDataInLocalStorage(key, value) {
-  if (hasLocalStorage()) {
-    window.localStorage.setItem(key, value);
-  }
-}
-
-/**
- * @param {string} key
- * @returns {(string|null)}
- */
-export function getDataFromLocalStorage(key) {
-  if (hasLocalStorage()) {
-    return window.localStorage.getItem(key);
-  }
-  return null;
-}
-
-/**
- * @param {string} key
- */
-export function removeDataFromLocalStorage(key) {
-  if (hasLocalStorage()) {
-    window.localStorage.removeItem(key);
-  }
-}
-
-/**
- * @returns {boolean}
- */
-export function hasLocalStorage() {
-  if (hasDeviceAccess()) {
-    try {
-      return !!window.localStorage;
-    } catch (e) {
-      logError('Local storage api disabled');
-    }
-  }
-  return false;
 }
 
 export function isArrayOfNums(val, size) {
