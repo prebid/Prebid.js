@@ -294,7 +294,7 @@ function getDeviceIfa() {
 function getDeviceWidth() {
   let device = config.getConfig('device');
   if (typeof device === 'object' && device.width) {
-    return device.ifa;
+    return device.width;
   }
 
   return window.innerWidth;
