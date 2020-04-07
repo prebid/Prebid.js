@@ -38,7 +38,7 @@ Connects to One Video demand source to fetch bids.
                 rewarded: 1,
                 placement: 1,
                 inventoryid: 123,
-                minduration: 10
+                minduration: 10,
                 maxduration: 30,
                },
                site: {
