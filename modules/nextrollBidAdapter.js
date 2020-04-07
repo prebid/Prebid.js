@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { parse as parseUrl } from '../src/url.js';
 
 import find from 'core-js/library/fn/array/find.js';
 
@@ -30,7 +29,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let topLocation = parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
+    let topLocation = utils.parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
     let consent = hasCCPAConsent(bidderRequest);
     return validBidRequests.map((bidRequest, index) => {
       return {

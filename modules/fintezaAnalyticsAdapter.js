@@ -2,7 +2,6 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
-import { parse as parseURL } from '../src/url.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
@@ -29,7 +28,7 @@ function getPageInfo() {
   }
 
   if (document.referrer) {
-    pageInfo.referrerDomain = parseURL(document.referrer).hostname;
+    pageInfo.referrerDomain = utils.parseUrl(document.referrer).hostname;
   }
 
   return pageInfo;

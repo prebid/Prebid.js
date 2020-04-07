@@ -36,7 +36,9 @@ export const internal = {
   logError,
   logWarn,
   logMessage,
-  logInfo
+  logInfo,
+  parseQS,
+  formatQS
 };
 
 var uniqueRef = {};
@@ -1267,4 +1269,34 @@ export function formatQS(query) {
       ? query[k].map(v => `${k}[]=${v}`).join('&')
       : `${k}=${query[k]}`)
     .join('&');
+}
+
+export function parseUrl(url, options) {
+  let parsed = document.createElement('a');
+  if (options && 'noDecodeWholeURL' in options && options.noDecodeWholeURL) {
+    parsed.href = url;
+  } else {
+    parsed.href = decodeURIComponent(url);
+  }
+  // in window.location 'search' is string, not object
+  let qsAsString = (options && 'decodeSearchAsString' in options && options.decodeSearchAsString);
+  return {
+    href: parsed.href,
+    protocol: (parsed.protocol || '').replace(/:$/, ''),
+    hostname: parsed.hostname,
+    port: +parsed.port,
+    pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
+    search: (qsAsString) ? parsed.search : internal.parseQS(parsed.search || ''),
+    hash: (parsed.hash || '').replace(/^#/, ''),
+    host: parsed.host || window.location.host
+  };
+}
+
+export function buildUrl(obj) {
+  return (obj.protocol || 'http') + '://' +
+    (obj.host ||
+      obj.hostname + (obj.port ? `:${obj.port}` : '')) +
+    (obj.pathname || '') +
+    (obj.search ? `?${internal.formatQS(obj.search || '')}` : '') +
+    (obj.hash ? `#${obj.hash}` : '');
 }
