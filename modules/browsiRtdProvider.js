@@ -75,7 +75,7 @@ function collectData() {
       sk: _moduleParams.siteKey,
       sw: (win.screen && win.screen.width) || -1,
       sh: (win.screen && win.screen.height) || -1,
-      url: encodeURIComponent(`${doc.location.protocol}//${doc.location.host}${doc.location.pathname}`),
+      url: `${doc.location.protocol}//${doc.location.host}${doc.location.pathname}`,
     },
     ...(browsiData ? {us: browsiData} : {us: '{}'}),
     ...(document.referrer ? {r: document.referrer} : {}),
@@ -127,14 +127,14 @@ function sendDataToModule(adUnits, onDone) {
       let dataToReturn = adUnits.reduce((rp, cau) => {
         const adUnitCode = cau && cau.code;
         if (!adUnitCode) { return rp }
-        const adSlot = getSlotById(adUnitCode);
+        const adSlot = getSlotByCode(adUnitCode);
         if (!adSlot) { return rp }
-        const macroId = getMacroId(_predictionsData.pmd, adUnitCode, adSlot);
+        const macroId = getMacroId(_predictionsData.pmd, adSlot);
         const predictionData = _predictions[macroId];
         if (!predictionData) { return rp }
 
         if (predictionData.p) {
-          if (!isIdMatchingAdUnit(adUnitCode, adSlot, predictionData.w)) {
+          if (!isIdMatchingAdUnit(adSlot, predictionData.w)) {
             return rp;
           }
           rp[adUnitCode] = getKVObject(predictionData.p, _predictionsData.kn);
@@ -169,12 +169,11 @@ function getKVObject(p, keyName) {
 }
 /**
  * check if placement id matches one of given ad units
- * @param {number} id placement id
  * @param {Object} slot google slot
  * @param {string[]} whitelist ad units
  * @return {boolean}
  */
-export function isIdMatchingAdUnit(id, slot, whitelist) {
+export function isIdMatchingAdUnit(slot, whitelist) {
   if (!whitelist || !whitelist.length) {
     return true;
   }
@@ -184,25 +183,24 @@ export function isIdMatchingAdUnit(id, slot, whitelist) {
 
 /**
  * get GPT slot by placement id
- * @param {string} id placement id
+ * @param {string} code placement id
  * @return {?Object}
  */
-function getSlotById(id) {
+function getSlotByCode(code) {
   const slots = getAllSlots();
   if (!slots || !slots.length) {
     return null;
   }
-  return slots.filter(s => s.getSlotElementId() === id)[0] || null;
+  return slots.find(s => s.getSlotElementId() === code || s.getAdUnitPath() === code) || null;
 }
 
 /**
  * generate id according to macro script
  * @param {string} macro replacement macro
- * @param {string} id placement id
  * @param {Object} slot google slot
  * @return {?Object}
  */
-function getMacroId(macro, id, slot) {
+function getMacroId(macro, slot) {
   if (macro) {
     try {
       const macroResult = evaluate(macro, slot.getSlotElementId(), slot.getAdUnitPath(), (match, p1) => {
@@ -213,7 +211,7 @@ function getMacroId(macro, id, slot) {
       utils.logError(`failed to evaluate: ${macro}`);
     }
   }
-  return id;
+  return slot.getSlotElementId();
 }
 
 function evaluate(macro, divId, adUnit, replacer) {

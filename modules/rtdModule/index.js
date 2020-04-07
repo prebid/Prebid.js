@@ -129,6 +129,31 @@ function getProviderData(adUnits, callback) {
 }
 
 /**
+ * delete invalid data received from provider
+ * this is to ensure working flow for GPT
+ * @param {Object} data received from provider
+ * @return {Object} valid data for GPT targeting
+ */
+function validateProviderDataForGPT(data) {
+  // data must be an object, contains object with string as value
+  if (typeof data !== 'object') {
+    return {};
+  }
+  for (let key in data) {
+    if (data.hasOwnProperty(key)) {
+      for (let innerKey in data[key]) {
+        if (data[key].hasOwnProperty(innerKey)) {
+          if (typeof data[key][innerKey] !== 'string') {
+            delete data[key][innerKey];
+          }
+        }
+      }
+    }
+  }
+  return data;
+}
+
+/**
  * run hook after bids request and before callback
  * get data from provider and set key values to primary ad server
  * @param {function} next - next hook function
@@ -200,6 +225,7 @@ function setDataForPrimaryAdServer(data) {
     utils.logError('window.googletag is not defined on the page');
     return;
   }
+  data = validateProviderDataForGPT(data);
   targeting.setTargetingForGPT(data, null);
 }
 
