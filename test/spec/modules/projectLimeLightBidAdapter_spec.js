@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/projectLimeLightBidAdapter';
+import {spec} from '../../../modules/projectLimeLightBidAdapter.js';
 
 describe('ProjectLimeLightAdapter', function () {
   let bid = {

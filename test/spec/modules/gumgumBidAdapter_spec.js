@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { spec } from 'modules/gumgumBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec } from 'modules/gumgumBidAdapter.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 
@@ -106,7 +106,7 @@ describe('gumgumAdapter', function () {
       expect(request.method).to.equal('GET');
       expect(request.id).to.equal('30b31c1838de1e');
     });
-    it('should correctly set the request paramters depending on params field', function () {
+    it('should set t and fp parameters in bid request if inScreen request param is found', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
       request.params = {
@@ -129,7 +129,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.pubId).to.equal(request.params.inScreenPubID);
       expect(bidRequest.data).to.not.include.any.keys('t');
     });
-    it('should correctly set the request paramters depending on params field', function () {
+    it('should set a ni parameter in bid request if ICV request param is found', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
       request.params = {
@@ -138,6 +138,36 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.pi).to.equal(5);
       expect(bidRequest.data).to.include.any.keys('ni');
+    });
+    it('should add parameters associated with video if video request param is found', function () {
+      const videoVals = {
+        playerSize: [640, 480],
+        context: 'instream',
+        minduration: 1,
+        maxduration: 2,
+        linearity: 1,
+        startdelay: 1,
+        placement: 123456,
+        protocols: [1, 2]
+      };
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.mediaTypes = {
+        video: videoVals
+      };
+      request.params = {
+        'video': '10433395'
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.pi).to.eq(7);
+      expect(bidRequest.data.mind).to.eq(videoVals.minduration);
+      expect(bidRequest.data.maxd).to.eq(videoVals.maxduration);
+      expect(bidRequest.data.li).to.eq(videoVals.linearity);
+      expect(bidRequest.data.sd).to.eq(videoVals.startdelay);
+      expect(bidRequest.data.pt).to.eq(videoVals.placement);
+      expect(bidRequest.data.pr).to.eq(videoVals.protocols.join(','));
+      expect(bidRequest.data.viw).to.eq(videoVals.playerSize[0].toString());
+      expect(bidRequest.data.vih).to.eq(videoVals.playerSize[1].toString());
     });
     it('should not add additional parameters depending on params field', function () {
       const request = spec.buildRequests(bidRequests)[0];

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {LogError, spec} from 'modules/sovrnBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {LogError, spec} from 'modules/sovrnBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
 

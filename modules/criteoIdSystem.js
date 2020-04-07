@@ -5,11 +5,14 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils'
-import * as ajax from '../src/ajax'
-import * as urlLib from '../src/url'
-import { getRefererInfo } from '../src/refererDetection'
-import { submodule } from '../src/hook';
+import * as utils from '../src/utils.js'
+import * as ajax from '../src/ajax.js'
+import * as urlLib from '../src/url.js'
+import { getRefererInfo } from '../src/refererDetection.js'
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 const bididStorageKey = 'cto_bidid';
 const bundleStorageKey = 'cto_bundle';
@@ -20,9 +23,9 @@ const pastDateString = new Date(0).toString();
 const expirationString = new Date(utils.timestamp() + cookiesMaxAge).toString();
 
 function areCookiesWriteable() {
-  utils.setCookie(cookieWriteableKey, '1');
-  const canWrite = utils.getCookie(cookieWriteableKey) === '1';
-  utils.setCookie(cookieWriteableKey, '', pastDateString);
+  storage.setCookie(cookieWriteableKey, '1');
+  const canWrite = storage.getCookie(cookieWriteableKey) === '1';
+  storage.setCookie(cookieWriteableKey, '', pastDateString);
   return canWrite;
 }
 
@@ -34,19 +37,19 @@ function extractProtocolHost (url, returnOnlyHost = false) {
 }
 
 function getFromAllStorages(key) {
-  return utils.getCookie(key) || utils.getDataFromLocalStorage(key);
+  return storage.getCookie(key) || storage.getDataFromLocalStorage(key);
 }
 
 function saveOnAllStorages(key, value) {
   if (key && value) {
-    utils.setCookie(key, value, expirationString);
-    utils.setDataInLocalStorage(key, value);
+    storage.setCookie(key, value, expirationString);
+    storage.setDataInLocalStorage(key, value);
   }
 }
 
 function deleteFromAllStorages(key) {
-  utils.setCookie(key, '', pastDateString);
-  utils.removeDataFromLocalStorage(key);
+  storage.setCookie(key, '', pastDateString);
+  storage.removeDataFromLocalStorage(key);
 }
 
 function getCriteoDataFromAllStorages() {

@@ -1,6 +1,9 @@
-import * as utils from '../src/utils'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { config } from '../src/config'
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { config } from '../src/config.js'
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 const BIDDER_CODE = 'ccx'
 const BID_URL = 'https://delivery.clickonometrics.pl/ortb/prebid/bid'
 const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6]
@@ -170,7 +173,7 @@ export const spec = {
       requestBody.site = _getSiteObj(bidderRequest)
       requestBody.device = _getDeviceObj()
       requestBody.id = bidderRequest.bids[0].auctionId
-      requestBody.ext = {'ce': (utils.cookiesAreEnabled() ? 1 : 0)}
+      requestBody.ext = {'ce': (storage.cookiesAreEnabled() ? 1 : 0)}
 
       // Attaching GDPR Consent Params
       if (bidderRequest && bidderRequest.gdprConsent) {

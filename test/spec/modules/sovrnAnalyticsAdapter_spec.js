@@ -1,8 +1,8 @@
-import sovrnAnalyticsAdapter from '../../../modules/sovrnAnalyticsAdapter';
+import sovrnAnalyticsAdapter from '../../../modules/sovrnAnalyticsAdapter.js';
 import { expect } from 'chai';
-import {config} from 'src/config';
-import adaptermanager from 'src/adapterManager';
-import { server } from 'test/mocks/xhr';
+import {config} from 'src/config.js';
+import adaptermanager from 'src/adapterManager.js';
+import { server } from 'test/mocks/xhr.js';
 var assert = require('assert');
 
 let events = require('src/events');

@@ -1,13 +1,13 @@
 import { expect } from 'chai';
-import { getAdagioScript, spec } from 'modules/adagioBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { getAdagioScript, spec } from 'modules/adagioBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 describe('adagioAdapter', () => {
   let utilsMock;
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
-  const VERSION = '2.1.0';
+  const VERSION = '2.2.0';
 
   beforeEach(function() {
     localStorage.removeItem('adagioScript');
@@ -301,7 +301,29 @@ describe('adagioAdapter', () => {
       'gdprConsent': {
         consentString: consentString,
         gdprApplies: true,
-        allowAuctionWithoutConsent: true
+        allowAuctionWithoutConsent: true,
+        apiVersion: 1,
+      },
+      'refererInfo': {
+        'numIframes': 0,
+        'reachedTop': true,
+        'referer': 'http://test.io/index.html?pbjs_debug=true'
+      }
+    };
+
+    let bidderRequestTCF2 = {
+      'bidderCode': 'adagio',
+      'auctionId': '12jejebn',
+      'bidderRequestId': 'hehehehbeheh',
+      'timeout': 3000,
+      'gdprConsent': {
+        consentString: consentString,
+        vendorData: {
+          tcString: consentString,
+          gdprApplies: true
+        },
+        gdprApplies: true,
+        apiVersion: 2
       },
       'refererInfo': {
         'numIframes': 0,
@@ -380,6 +402,7 @@ describe('adagioAdapter', () => {
       let request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
       expect(request.data.adUnits[0].params.outerAdUnitElementId).to.exist;
+      top.ADAGIO.pbjsAdUnits = undefined;
     });
 
     it('generates a pageviewId if missing', () => {
@@ -432,6 +455,17 @@ describe('adagioAdapter', () => {
       expect(request.data.gdpr).to.exist;
       expect(request.data.gdpr.consentString).to.exist.and.to.equal(consentString);
       expect(request.data.gdpr.consentRequired).to.exist.and.to.equal(1);
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(1);
+    });
+
+    it('GDPR consent is applied w/ TCF2', () => {
+      const requests = spec.buildRequests(bidRequests, bidderRequestTCF2);
+      expect(requests).to.have.lengthOf(2);
+      const request = requests[0];
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr.consentString).to.exist.and.to.equal(consentString);
+      expect(request.data.gdpr.consentRequired).to.exist.and.to.equal(1);
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(2);
     });
 
     it('GDPR consent is not applied', () => {
@@ -442,6 +476,18 @@ describe('adagioAdapter', () => {
       expect(request.data.gdpr).to.exist;
       expect(request.data.gdpr.consentString).to.exist.and.to.equal(consentString);
       expect(request.data.gdpr.consentRequired).to.exist.and.to.equal(0);
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(1);
+    });
+
+    it('GDPR consent is not applied w/ TCF2', () => {
+      bidderRequestTCF2.gdprConsent.gdprApplies = false;
+      const requests = spec.buildRequests(bidRequests, bidderRequestTCF2);
+      expect(requests).to.have.lengthOf(2);
+      const request = requests[0];
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr.consentString).to.exist.and.to.equal(consentString);
+      expect(request.data.gdpr.consentRequired).to.exist.and.to.equal(0);
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(2);
     });
 
     it('GDPR consent is undefined', () => {
@@ -455,6 +501,20 @@ describe('adagioAdapter', () => {
       expect(request.data.gdpr).to.not.have.property('consentString');
       expect(request.data.gdpr).to.not.have.property('gdprApplies');
       expect(request.data.gdpr).to.not.have.property('allowAuctionWithoutConsent');
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(1);
+    });
+
+    it('GDPR consent is undefined w/ TCF2', () => {
+      delete bidderRequestTCF2.gdprConsent.consentString;
+      delete bidderRequestTCF2.gdprConsent.gdprApplies;
+      delete bidderRequestTCF2.gdprConsent.vendorData;
+      const requests = spec.buildRequests(bidRequests, bidderRequestTCF2);
+      expect(requests).to.have.lengthOf(2);
+      const request = requests[0];
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr).to.not.have.property('consentString');
+      expect(request.data.gdpr).to.not.have.property('gdprApplies');
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(2);
     });
 
     it('GDPR consent bidderRequest does not have gdprConsent', () => {
@@ -478,6 +538,40 @@ describe('adagioAdapter', () => {
         refererInfo: { reachedTop: false }
       });
       expect(requests).to.be.empty;
+    });
+
+    it('Should add the schain if available at bidder level', () => {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{
+            asi: 'ssp.test',
+            sid: '00001',
+            hp: 1
+          }]
+        }
+      });
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const request = requests[0];
+
+      expect(request.data.schain).to.exist;
+      expect(request.data.schain).to.deep.equal({
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'ssp.test',
+          sid: '00001',
+          hp: 1
+        }]
+      });
+    });
+
+    it('Schain should not be added to the request', () => {
+      const requests = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const request = requests[0];
+      expect(request.data.schain).to.not.exist;
     });
   });
 

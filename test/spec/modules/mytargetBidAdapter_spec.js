@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { config } from 'src/config';
-import { spec } from 'modules/mytargetBidAdapter';
+import { config } from 'src/config.js';
+import { spec } from 'modules/mytargetBidAdapter.js';
 
 describe('MyTarget Adapter', function() {
   describe('isBidRequestValid', function () {

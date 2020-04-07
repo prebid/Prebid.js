@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter';
+import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter.js';
 
 describe('the spotx adapter', function () {
   function getValidBidObject() {

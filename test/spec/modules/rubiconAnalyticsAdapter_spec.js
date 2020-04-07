@@ -1,12 +1,16 @@
-import rubiconAnalyticsAdapter, { SEND_TIMEOUT, parseBidResponse } from 'modules/rubiconAnalyticsAdapter';
+import rubiconAnalyticsAdapter, {
+  SEND_TIMEOUT,
+  parseBidResponse,
+  getHostNameFromReferer,
+} from 'modules/rubiconAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
-import { config } from 'src/config';
-import { server } from 'test/mocks/xhr';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 
 import {
   setConfig,
   addBidResponseHook,
-} from 'modules/currency';
+} from 'modules/currency.js';
 
 let Ajv = require('ajv');
 let schema = require('./rubiconAnalyticsSchema.json');
@@ -21,10 +25,9 @@ function validate(message) {
   expect(validator.errors).to.deep.equal(null);
 }
 
-// using es6 "import * as events from 'src/events'" causes the events.getEvents stub not to work...
-let events = require('src/events');
-let ajax = require('src/ajax');
-let utils = require('src/utils');
+// using es6 "import * as events from 'src/events.js'" causes the events.getEvents stub not to work...
+let events = require('src/events.js');
+let utils = require('src/utils.js');
 
 const {
   EVENTS: {
@@ -274,6 +277,7 @@ const ANALYTICS_MESSAGE = {
   'integration': 'pbjs',
   'version': '$prebid.version$',
   'referrerUri': 'http://www.test.com/page.html',
+  'referrerHostname': 'www.test.com',
   'auctions': [
     {
       'clientTimeoutMillis': 3000,
@@ -476,7 +480,6 @@ function performStandardAuction() {
 
 describe('rubicon analytics adapter', function () {
   let sandbox;
-  let oldScreen;
   let clock;
 
   beforeEach(function () {
@@ -485,6 +488,8 @@ describe('rubicon analytics adapter', function () {
     sandbox.stub(events, 'getEvents').returns([]);
 
     clock = sandbox.useFakeTimers(1519767013781);
+
+    rubiconAnalyticsAdapter.referrerHostname = '';
 
     config.setConfig({
       s2sConfig: {
@@ -652,6 +657,102 @@ describe('rubicon analytics adapter', function () {
       validate(message);
 
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
+    });
+
+    it('should capture price floor information correctly', function () {
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.bidderRequests[0].bids[0].floorData = {
+        skipped: false,
+        modelVersion: 'someModelName',
+        location: 'setConfig'
+      };
+      let flooredResponse = {
+        ...BID,
+        floorData: {
+          floorValue: 4,
+          floorRule: '12345/sports|video',
+          floorCurrency: 'USD',
+          cpmAfterAdjustments: 2.1,
+          enforcements: {
+            enforceJS: true,
+            enforcePBS: false,
+            floorDeals: false,
+            bidAdjustment: true
+          },
+          matchedFields: {
+            gptSlot: '12345/sports',
+            mediaType: 'video'
+          }
+        },
+        status: 'bidRejected',
+        cpm: 0,
+        getStatusCode() {
+          return 2;
+        }
+      };
+
+      let notFlooredResponse = {
+        ...BID2,
+        floorData: {
+          floorValue: 1,
+          floorRule: '12345/news|banner',
+          floorCurrency: 'USD',
+          cpmAfterAdjustments: 1.55,
+          enforcements: {
+            enforceJS: true,
+            enforcePBS: false,
+            floorDeals: false,
+            bidAdjustment: true
+          },
+          matchedFields: {
+            gptSlot: '12345/news',
+            mediaType: 'banner'
+          }
+        }
+      };
+
+      // spoof the auction with just our duplicates
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, flooredResponse);
+      events.emit(BID_RESPONSE, notFlooredResponse);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+
+      // verify our floor stuff is passed
+      // top level floor info
+      expect(message.auctions[0].floors).to.deep.equal({
+        location: 'setConfig',
+        modelName: 'someModelName',
+        skipped: false,
+        enforcement: true,
+        dealsEnforced: false
+      });
+      // first adUnit's adSlot
+      expect(message.auctions[0].adUnits[0].adSlot).to.equal('12345/sports');
+      // since no other bids, we set adUnit status to no-bid
+      expect(message.auctions[0].adUnits[0].status).to.equal('no-bid');
+      // first adUnits bid is rejected
+      expect(message.auctions[0].adUnits[0].bids[0].status).to.equal('rejected');
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.floorValue).to.equal(4);
+      // if bid rejected should take cpmAfterAdjustments val
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD).to.equal(2.1);
+
+      // second adUnit's adSlot
+      expect(message.auctions[0].adUnits[1].adSlot).to.equal('12345/news');
+      // top level adUnit status is success
+      expect(message.auctions[0].adUnits[1].status).to.equal('success');
+      // second adUnits bid is success
+      expect(message.auctions[0].adUnits[1].bids[0].status).to.equal('success');
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.floorValue).to.equal(1);
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.bidPriceUSD).to.equal(1.52);
     });
 
     it('should correctly overwrite bidId if seatBidId is on the bidResponse', function () {
@@ -839,5 +940,20 @@ describe('rubicon analytics adapter', function () {
 
       rubiconAnalyticsAdapter.disableAnalytics();
     });
+  });
+
+  it('getHostNameFromReferer correctly grabs hostname from an input URL', function () {
+    let inputUrl = 'https://www.prebid.org/some/path?pbjs_debug=true';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('www.prebid.org');
+    inputUrl = 'https://www.prebid.com/some/path?pbjs_debug=true';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('www.prebid.com');
+    inputUrl = 'https://prebid.org/some/path?pbjs_debug=true';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
+    inputUrl = 'http://xn--p8j9a0d9c9a.xn--q9jyb4c/';
+    expect(typeof getHostNameFromReferer(inputUrl)).to.equal('string');
+
+    // not non-UTF char's in query / path which break if noDecodeWholeURL not set
+    inputUrl = 'https://prebid.org/search_results/%95x%8Em%92%CA/?category=000';
+    expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
   });
 });

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/advenueBidAdapter';
+import {spec} from '../../../modules/advenueBidAdapter.js';
 
 describe('AdvenueAdapter', function () {
   let bid = {

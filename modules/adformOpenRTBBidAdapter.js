@@ -3,12 +3,12 @@
 
 import {
   registerBidder
-} from '../src/adapters/bidderFactory';
+} from '../src/adapters/bidderFactory.js';
 import {
   NATIVE
-} from '../src/mediaTypes';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
+} from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'adformOpenRTB';
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
