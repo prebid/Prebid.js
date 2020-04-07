@@ -18,24 +18,6 @@ describe('Utils', function () {
     type_array = 'Array',
     type_function = 'Function';
 
-  describe('replaceTokenInString', function () {
-    it('should replace all given tokens in a String', function () {
-      var tokensToReplace = {
-        foo: 'bar',
-        zap: 'quux'
-      };
-
-      var output = utils.replaceTokenInString('hello %FOO%, I am %ZAP%', tokensToReplace, '%');
-      assert.equal(output, 'hello bar, I am quux');
-    });
-
-    it('should ignore tokens it does not see', function () {
-      var output = utils.replaceTokenInString('hello %FOO%', {}, '%');
-
-      assert.equal(output, 'hello %FOO%');
-    });
-  });
-
   describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
       var obj = {
@@ -86,7 +68,7 @@ describe('Utils', function () {
       };
 
       var output = utils.parseQueryStringParameters(obj);
-      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2') + '&';
+      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2');
       assert.equal(output, expectedResult);
     });
 
@@ -696,20 +678,6 @@ describe('Utils', function () {
       assert.notEqual(testObj.level1, undefined);
       assert.notEqual(testObj.level1.level2, undefined);
       assert.equal(testObj.level1.level2, 'value');
-    });
-  });
-
-  describe('createContentToExecuteExtScriptInFriendlyFrame', function () {
-    it('should return empty string if url is not passed', function () {
-      var output = utils.createContentToExecuteExtScriptInFriendlyFrame();
-      assert.equal(output, '');
-    });
-
-    it('should have URL in returned value if url is passed', function () {
-      var url = 'https://abcd.com/service?a=1&b=2&c=3';
-      var output = utils.createContentToExecuteExtScriptInFriendlyFrame(url);
-      var expected = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><script>inDapIF=true;</script></head><body><!--PRE_SCRIPT_TAG_MACRO--><script src="${url}"></script><!--POST_SCRIPT_TAG_MACRO--></body></html>`;
-      assert.equal(output, expected);
     });
   });
 
