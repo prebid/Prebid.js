@@ -164,6 +164,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     singleRun: !watchMode,
     browserDisconnectTimeout: 3e5, // default 2000
     browserNoActivityTimeout: 3e5, // default 10000
+    browserSocketTimeout: 1.2e5,
     captureTimeout: 3e5, // default 60000,
     browserDisconnectTolerance: 3,
     concurrency: 5,
