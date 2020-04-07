@@ -26,9 +26,11 @@ let currentBatch = [],
     connectionEffectiveType;
 
 if (navigator.connection) {
-    navigator.connection.addEventListener('change', function() {
+    const setConnectionEffectiveType = function() {
         connectionEffectiveType = navigator.connection.effectiveType;
-    });
+    };
+    navigator.connection.addEventListener('change', setConnectionEffectiveType);
+    setConnectionEffectiveType();
 }
 
 let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
