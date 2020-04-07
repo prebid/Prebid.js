@@ -238,25 +238,25 @@ function test(done) {
       ];
     }
 
-    // // run mock-server
-    // const mockServer = spawn('node', ['./test/mock-server/index.js', '--port=' + mockServerPort]);
-    // mockServer.stdout.on('data', (data) => {
-    //   console.log(`stdout: ${data}`);
-    // });
-    // mockServer.stderr.on('data', (data) => {
-    //   console.log(`stderr: ${data}`);
-    // });
+    //run mock-server
+    const mockServer = spawn('node', ['./test/mock-server/index.js', '--port=' + mockServerPort]);
+    mockServer.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`);
+    });
+    mockServer.stderr.on('data', (data) => {
+      console.log(`stderr: ${data}`);
+    });
 
     execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
       .then(stdout => {
         // kill mock server
-        // mockServer.kill('SIGINT');
+        mockServer.kill('SIGINT');
         done();
         process.exit(0);
       })
       .catch(err => {
         // kill mock server
-        // mockServer.kill('SIGINT');
+        mockServer.kill('SIGINT');
         done(new Error(`Tests failed with error: ${err}`));
         process.exit(1);
       });
