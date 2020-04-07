@@ -290,7 +290,7 @@ export function createInvisibleIframe() {
  *   and if it does return the value
  */
 export function getParameterByName(name) {
-  return internal.parseQS(window.location.search)[name] || '';
+  return internal.parseQS(getWindowLocation().search)[name] || '';
 }
 
 /**
