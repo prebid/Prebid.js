@@ -215,9 +215,15 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.imp[0].banner.placement = bid.params.video.placement
     }
     if (bid.params.video.maxduration) {
+      if (!bidData.imp[0].banner.ext) {
+        bidData.imp[0].banner.ext = {}
+      }
       bidData.imp[0].banner.ext.maxduration = bid.params.video.maxduration
     }
     if (bid.params.video.minduration) {
+      if (!bidData.imp[0].banner.ext) {
+        bidData.imp[0].banner.ext = {}
+      }
       bidData.imp[0].banner.ext.minduration = bid.params.video.minduration
     }
   }
