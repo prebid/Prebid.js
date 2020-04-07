@@ -58,18 +58,19 @@ function getCriteoDataFromAllStorages() {
   }
 }
 
-function buildCriteoUsersyncUrl(topUrl, domain, bundle, areCookiesWriteable, isPublishertagPresent) {
+function buildCriteoUsersyncUrl(topUrl, domain, bundle, areCookiesWriteable, isPublishertagPresent, gdprString) {
   const url = 'https://gum.criteo.com/sid/json?origin=prebid' +
     `${topUrl ? '&topUrl=' + encodeURIComponent(topUrl) : ''}` +
     `${domain ? '&domain=' + encodeURIComponent(domain) : ''}` +
     `${bundle ? '&bundle=' + encodeURIComponent(bundle) : ''}` +
+    `${gdprString ? '&gdprString=' + encodeURIComponent(gdprString) : ''}` +
     `${areCookiesWriteable ? '&cw=1' : ''}` +
     `${isPublishertagPresent ? '&pbt=1' : ''}`
 
   return url;
 }
 
-function callCriteoUserSync(parsedCriteoData) {
+function callCriteoUserSync(parsedCriteoData, gdprString) {
   const cw = areCookiesWriteable();
   const topUrl = extractProtocolHost(getRefererInfo().referer);
   const domain = extractProtocolHost(document.location.href, true);
@@ -80,7 +81,8 @@ function callCriteoUserSync(parsedCriteoData) {
     domain,
     parsedCriteoData.bundle,
     cw,
-    isPublishertagPresent
+    isPublishertagPresent,
+    gdprString
   );
 
   ajax.ajaxBuilder()(
@@ -121,11 +123,16 @@ export const criteoIdSubmodule = {
   /**
    * get the Criteo Id from local storages and initiate a new user sync
    * @function
+   * @param {SubmoduleParams} [configParams]
+   * @param {ConsentData} [consentData]
    * @returns {{id: {criteoId: string} | undefined}}}
    */
-  getId() {
+  getId(configParams, consentData) {
+    const hasGdprData = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
+    const gdprConsentString = hasGdprData ? consentData.consentString : undefined;
+
     let localData = getCriteoDataFromAllStorages();
-    callCriteoUserSync(localData);
+    callCriteoUserSync(localData, gdprConsentString);
 
     return { id: localData.bidId ? { criteoId: localData.bidId } : undefined }
   }

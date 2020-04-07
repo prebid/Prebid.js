@@ -769,6 +769,70 @@ describe('PubMatic adapter', function () {
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
 
+      it('Merge the device info from config', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            device: {
+              'newkey': 'new-device-data'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.device.js).to.equal(1);
+        expect(data.device.dnt).to.equal((navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0);
+        expect(data.device.h).to.equal(screen.height);
+        expect(data.device.w).to.equal(screen.width);
+        expect(data.device.language).to.equal(navigator.language);
+        expect(data.device.newkey).to.equal('new-device-data');// additional data from config
+        sandbox.restore();
+      });
+
+      it('Merge the device info from config; data from config overrides the info we have gathered', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            device: {
+              newkey: 'new-device-data',
+              language: 'MARATHI'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.device.js).to.equal(1);
+        expect(data.device.dnt).to.equal((navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0);
+        expect(data.device.h).to.equal(screen.height);
+        expect(data.device.w).to.equal(screen.width);
+        expect(data.device.language).to.equal('MARATHI');// // data overriding from config
+        expect(data.device.newkey).to.equal('new-device-data');// additional data from config
+        sandbox.restore();
+      });
+
+      it('Set app from config, copy publisher and ext from site, unset site', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            app: {
+              bundle: 'org.prebid.mobile.demoapp',
+              domain: 'prebid.org'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.app.bundle).to.equal('org.prebid.mobile.demoapp');
+        expect(data.app.domain).to.equal('prebid.org');
+        expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
+        expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+        expect(data.site).to.not.exist;
+        sandbox.restore();
+      });
+
       it('Request params check: without adSlot', function () {
         delete bidRequests[0].params.adSlot;
         let request = spec.buildRequests(bidRequests);

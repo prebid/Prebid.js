@@ -74,7 +74,10 @@ export const spec = {
     if (userObjBid) {
       Object.keys(userObjBid.params.user)
         .filter(param => includes(USER_PARAMS, param))
-        .forEach(param => userObj[param] = userObjBid.params.user[param]);
+        .forEach((param) => {
+          let uparam = utils.convertCamelToUnderscore(param);
+          userObj[uparam] = userObjBid.params.user[param]
+        });
     }
 
     const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);

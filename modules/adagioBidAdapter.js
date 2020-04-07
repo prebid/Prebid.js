@@ -7,7 +7,7 @@ import sha256 from 'crypto-js/sha256.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adagio';
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
@@ -338,8 +338,17 @@ function _getGdprConsent(bidderRequest) {
     if (bidderRequest.gdprConsent.allowAuctionWithoutConsent !== undefined) {
       consent.allowAuctionWithoutConsent = bidderRequest.gdprConsent.allowAuctionWithoutConsent ? 1 : 0;
     }
+    if (bidderRequest.gdprConsent.apiVersion !== undefined) {
+      consent.apiVersion = bidderRequest.gdprConsent.apiVersion;
+    }
   }
   return consent;
+}
+
+function _getSchain(bidRequest) {
+  if (utils.deepAccess(bidRequest, 'schain')) {
+    return bidRequest.schain;
+  }
 }
 
 export const spec = {
@@ -394,6 +403,7 @@ export const spec = {
     const site = _getSite();
     const pageviewId = _getPageviewId();
     const gdprConsent = _getGdprConsent(bidderRequest);
+    const schain = _getSchain(validBidRequests[0]);
     const adUnits = utils._map(validBidRequests, (bidRequest) => {
       bidRequest.features = _getFeatures(bidRequest);
       return bidRequest;
@@ -422,6 +432,7 @@ export const spec = {
           pageviewId: pageviewId,
           adUnits: groupedAdUnits[organizationId],
           gdpr: gdprConsent,
+          schain: schain,
           prebidVersion: '$prebid.version$',
           adapterVersion: VERSION,
           featuresVersion: FEATURES_VERSION

@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
+import deepequal from 'deep-equal';
 import find from 'core-js/library/fn/array/find.js';
 import includes from 'core-js/library/fn/array/includes.js';
 
@@ -38,7 +39,8 @@ export const internal = {
   logMessage,
   logInfo,
   parseQS,
-  formatQS
+  formatQS,
+  deepEqual
 };
 
 var uniqueRef = {};
@@ -1153,4 +1155,14 @@ export function buildUrl(obj) {
     (obj.pathname || '') +
     (obj.search ? `?${internal.formatQS(obj.search || '')}` : '') +
     (obj.hash ? `#${obj.hash}` : '');
+}
+
+/**
+ * This function compares two objects for checking their equivalence.
+ * @param {Object} obj1
+ * @param {Object} obj2
+ * @returns {boolean}
+ */
+export function deepEqual(obj1, obj2) {
+  return deepequal(obj1, obj2);
 }

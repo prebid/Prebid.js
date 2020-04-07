@@ -345,11 +345,15 @@ function auctionInitHandler({auctionId, timestamp}) {
   }
 }
 
-function bidRequestedHandler({ auctionId, auctionStart, bids, start, timeout, uspConsent, gdprConsent }) {
+function bidRequestedHandler({ auctionId, auctionStart, bids, start, timeout, uspConsent, gdpr }) {
   if (!(auctions[auctionId] instanceof Auction)) {
     return;
   }
-  config.gdprConsent = config.gdprConsent || gdprConsent;
+
+  if (gdpr && gdpr.gdprApplies) {
+    config.gdprConsent = gdpr.consentString || '';
+  }
+
   config.uspConsent = config.uspConsent || uspConsent;
 
   bids.forEach(bid => {
@@ -541,7 +545,15 @@ function fireAuctionLog(acid, adtag, isBidWonEvent) {
 }
 
 function formatQS(data) {
-  return utils._map(data, (value, key) => value === undefined ? key + '=' : key + '=' + encodeURIComponent(value)).join('&');
+  return utils._map(data, (value, key) => {
+    if (value === undefined) {
+      return key + '=';
+    }
+    if (utils.isPlainObject(value)) {
+      value = JSON.stringify(value);
+    }
+    return key + '=' + encodeURIComponent(value);
+  }).join('&');
 }
 
 function firePixel(qs) {
