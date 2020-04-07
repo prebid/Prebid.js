@@ -28,6 +28,8 @@ export const spec = {
 
   code: 'pulsepoint',
 
+  gvlid: 81,
+
   aliases: ['pulseLite', 'pulsepointLite'],
 
   supportedMediaTypes: ['banner', 'native', 'video'],

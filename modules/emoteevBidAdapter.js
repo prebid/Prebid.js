@@ -23,11 +23,13 @@ import {
   deepAccess,
   isArray,
   isInteger,
-  getParameterByName,
-  getCookie
+  getParameterByName
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import * as url from '../src/url.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 export const BIDDER_CODE = 'emoteev';
 
@@ -508,7 +510,7 @@ export const spec = {
   onBidWon: (bidObject) =>
     triggerPixel(url.format(onBidWon(
       resolveEnv(config.getConfig(), getParameterByName('emoteevEnv')),
-      getCookie('_pubcid'),
+      storage.getCookie('_pubcid'),
       bidObject))),
   onTimeout: (bidRequest) =>
     triggerPixel(url.format(onTimeout(
