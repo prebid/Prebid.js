@@ -56,8 +56,12 @@ module.exports = function (req, res, next) {
       'Access-Control-Allow-Origin': req.headers.origin
     });
 
+    console.log('reqBody', reqBody);
+    console.log('expectedReqBody', expectedReqBody);
+
     // As of now only body is compared. We can also add other request properties like headers, cookies if required
     if (deepEqual(reqBody, expectedReqBody)) {
+      console.log('entering the "if" condition');
       let response = file.getResponse().httpResponse.body;
       if (Object.keys(uuidObj).length > 0) {
         response.tags.forEach((tag, index) => {

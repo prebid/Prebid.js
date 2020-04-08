@@ -19,13 +19,14 @@ describe('Prebid.js Banner Ad Unit Test', function () {
   before(function loadTestPage() {
     browser.url(TEST_PAGE_URL).pause(3000);
     try {
-      browser.waitForExist(CREATIVE_IFRAME_CSS_SELECTOR, 2000);
+      browser.waitForExist(CREATIVE_IFRAME_CSS_SELECTOR, 5000);
       const creativeIframe = $(CREATIVE_IFRAME_CSS_SELECTOR).value;
       browser.frame(creativeIframe);
     } catch (e) {
       // If creative Iframe didn't load, repeat the steps again!
       // Due to some reason if the Ad server doesn't respond, the test case will time out after 60000 ms as defined in file wdio.conf.js
-      loadTestPage();
+      console.log("error occurred: ", e);
+      // loadTestPage();
     }
   });
 
