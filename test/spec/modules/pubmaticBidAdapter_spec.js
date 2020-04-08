@@ -89,6 +89,7 @@ describe('PubMatic adapter', function () {
     bidRequests = [firstBid, secoundBid];
 
     firstResponse = {
+      'seat': 'seat-id',
       'bid': [{
         'id': '74858439-49D7-4169-BA5D-44A046315B2F',
         'impid': '23acc48ad47af5',
@@ -2589,6 +2590,8 @@ describe('PubMatic adapter', function () {
       expect(response[0].meta.clickUrl).to.equal('blackrock.com');
       expect(response[0].referrer).to.include(data.site.ref);
       expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
+      expect(response[0].pm_seat).to.equal(bidResponses.body.seatbid[0].seat);
+      expect(response[0].pm_dspid).to.equal(bidResponses.body.seatbid[0].bid[0].ext.dspid);
 
       expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
       expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
@@ -2608,6 +2611,8 @@ describe('PubMatic adapter', function () {
       expect(response[1].meta.clickUrl).to.equal('hivehome.com');
       expect(response[1].referrer).to.include(data.site.ref);
       expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
+      expect(response[1].pm_seat).to.equal(bidResponses.body.seatbid[1].seat || null);
+      expect(response[1].pm_dspid).to.equal(bidResponses.body.seatbid[1].bid[0].ext.dspid);
     });
 
     it('should check for dealChannel value selection', function () {
