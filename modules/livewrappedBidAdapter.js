@@ -9,7 +9,7 @@ export const storage = getStorageManager();
 
 const BIDDER_CODE = 'livewrapped';
 export const URL = 'https://lwadm.com/ad';
-const VERSION = '1.2';
+const VERSION = '1.3';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -29,6 +29,7 @@ export const spec = {
    * seats:       List of bidders and seats           Optional. {"bidder name": ["seat 1", "seat 2"], ...}
    * deviceId:    Device id if available              Optional.
    * ifa:         Advertising ID                      Optional.
+   * bundle:      App bundle                          Optional. Read from config if exists.
    * options      Dynamic data                        Optional. Optional data to send into adapter.
    *
    * @param {BidRequest} bid The bid params to validate.
@@ -55,9 +56,10 @@ export const spec = {
     const seats = find(bidRequests, hasSeatsParam);
     const deviceId = find(bidRequests, hasDeviceIdParam);
     const ifa = find(bidRequests, hasIfaParam);
+    const bundle = find(bidRequests, hasBundleParam);
     const tid = find(bidRequests, hasTidParam);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
-    url = url ? url.params.url : getTopWindowLocation(bidderRequest);
+    url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
     var adRequests = bidRequests.map(bidToAdRequest);
 
@@ -69,7 +71,10 @@ export const spec = {
       test: test,
       seats: seats ? seats.params.seats : undefined,
       deviceId: deviceId ? deviceId.params.deviceId : undefined,
-      ifa: ifa ? ifa.params.ifa : undefined,
+      ifa: ifa ? ifa.params.ifa : getDeviceIfa(),
+      bundle: bundle ? bundle.params.bundle : getAppBundle(),
+      width: getDeviceWidth(),
+      height: getDeviceHeight(),
       tid: tid ? tid.params.tid : undefined,
       version: VERSION,
       gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
@@ -178,6 +183,10 @@ function hasIfaParam(bid) {
   return !!bid.params.ifa;
 }
 
+function hasBundleParam(bid) {
+  return !!bid.params.bundle;
+}
+
 function hasTidParam(bid) {
   return !!bid.params.tid;
 }
@@ -262,6 +271,42 @@ function handleEids(bidRequests) {
 function getTopWindowLocation(bidderRequest) {
   let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
   return config.getConfig('pageUrl') || url;
+}
+
+function getAppBundle() {
+  if (typeof config.getConfig('app') === 'object') {
+    return config.getConfig('app').bundle;
+  }
+}
+
+function getAppDomain() {
+  if (typeof config.getConfig('app') === 'object') {
+    return config.getConfig('app').domain;
+  }
+}
+
+function getDeviceIfa() {
+  if (typeof config.getConfig('device') === 'object') {
+    return config.getConfig('device').ifa;
+  }
+}
+
+function getDeviceWidth() {
+  let device = config.getConfig('device');
+  if (typeof device === 'object' && device.width) {
+    return device.width;
+  }
+
+  return window.innerWidth;
+}
+
+function getDeviceHeight() {
+  let device = config.getConfig('device');
+  if (typeof device === 'object' && device.height) {
+    return device.height;
+  }
+
+  return window.innerHeight;
 }
 
 registerBidder(spec);
