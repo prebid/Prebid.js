@@ -817,7 +817,7 @@ export function inIframe() {
 }
 
 export function isSafariBrowser() {
-  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
 
 export function replaceAuctionPrice(str, cpm) {
