@@ -149,7 +149,7 @@ describe('Sublime Adapter', function() {
           currency: 'USD',
           netRevenue: true,
           ttl: 600,
-          pbav: '0.5.1',
+          pbav: '0.5.2',
           ad: '',
         },
       ];
@@ -191,7 +191,7 @@ describe('Sublime Adapter', function() {
         netRevenue: true,
         ttl: 600,
         ad: '<!-- Creative -->',
-        pbav: '0.5.1',
+        pbav: '0.5.2',
       };
 
       expect(result[0]).to.deep.equal(expectedResponse);
@@ -241,7 +241,7 @@ describe('Sublime Adapter', function() {
         netRevenue: true,
         ttl: 600,
         ad: '<!-- ad -->',
-        pbav: '0.5.1',
+        pbav: '0.5.2',
       };
 
       expect(result[0]).to.deep.equal(expectedResponse);
