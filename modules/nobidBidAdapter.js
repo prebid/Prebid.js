@@ -2,8 +2,11 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.3';
+window.nobidVersion = '1.2.4';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -16,10 +19,10 @@ function nobidSetCookie(cname, cvalue, hours) {
   var d = new Date();
   d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
   var expires = 'expires=' + d.toUTCString();
-  utils.setCookie(cname, cvalue, expires);
+  storage.setCookie(cname, cvalue, expires);
 }
 function nobidGetCookie(cname) {
-  return utils.getCookie(cname);
+  return storage.getCookie(cname);
 }
 function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
@@ -165,6 +168,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (adunitObject.siteId) {
       a.sid = adunitObject.siteId;
     }
+    if (adunitObject.placementId) {
+      a.pid = adunitObject.placementId;
+    }
     /* {"BIDDER_ID":{"WxH":"TAG_ID", "WxH":"TAG_ID"}} */
     if (adunitObject.rtb) {
       a.rtb = adunitObject.rtb;
@@ -190,10 +196,11 @@ function nobidBuildRequests(bids, bidderRequest) {
     divids.push(divid);
     var sizes = bid.sizes;
     siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
+    var placementId = bid.params['placementId'];
     if (siteId && bid.params && bid.params.tags) {
-      newAdunit({div: divid, sizes: sizes, rtb: bid.params.tags, siteId: siteId}, adunits);
+      newAdunit({div: divid, sizes: sizes, rtb: bid.params.tags, siteId: siteId, placementId: placementId}, adunits);
     } else if (siteId) {
-      newAdunit({div: divid, sizes: sizes, siteId: siteId}, adunits);
+      newAdunit({div: divid, sizes: sizes, siteId: siteId, placementId: placementId}, adunits);
     }
   }
   if (siteId) {

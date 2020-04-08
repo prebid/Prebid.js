@@ -78,6 +78,7 @@ function getDomain(url) {
  */
 export const spec = {
   code: BIDDER_CODE,
+  GVLID: 11,
   supportedMediaTypes: ['banner', 'video'],
 
   /**
@@ -141,6 +142,7 @@ export const spec = {
         gdprConsent: gdprConsent.consentString,
         uspSignal: uspConsent ? 1 : 0,
         uspConsent,
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
         prebidJsVersion: '$prebid.version$'
       };
 

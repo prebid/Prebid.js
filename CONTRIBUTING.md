@@ -51,6 +51,7 @@ When you are adding code to Prebid.js, or modifying code that isn't covered by a
 - If you need to check `adloader.loadExternalScript` in a test, use a `stub` rather than a `spy`. `spy`s trigger a network call which can result in a `script error` and cause unrelated unit tests to fail. `stub`s will let you gather information about the `adloader.loadExternalScript` call without affecting external resources
 - If your test makes ajax requests, use the global xhr stub in `test/mocks/xhr`. Do not use your own `sinon.useFakeXMLHttpRequest()` or `sinon.createFakeServer()`.
 - When writing tests you may use ES2015 syntax if desired
+- If your test relies on `Window` or `global` object, do not mutate that object directly. Instead, create a separate copy of that object and perform operations on that new copy.
 
 ### Test Examples
 Prebid.js already has many tests. Read them to see how Prebid.js is tested, and for inspiration:
