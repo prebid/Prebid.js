@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec } from 'modules/rakuten/index.js'
+import { spec } from 'modules/rakutenBidAdapter/index.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import {config} from '../../../src/config.js';
 
