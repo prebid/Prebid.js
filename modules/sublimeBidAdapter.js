@@ -4,12 +4,13 @@ import * as utils from '../src/utils.js';
 import * as url from '../src/url.js';
 
 const BIDDER_CODE = 'sublime';
+const BIDDER_GVLID = 114;
 const DEFAULT_BID_HOST = 'pbjs.sskzlabs.com';
 const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.5.1';
+const SUBLIME_VERSION = '0.5.2';
 
 /**
  * Debug log message
@@ -38,10 +39,8 @@ export function setState(value) {
 /**
  * Send pixel to our debug endpoint
  * @param {string} eventName - Event name that will be send in the e= query string
- * @param {Boolean=} isMandatoryPixel - If set to true, will always send the pixel
  */
-export function sendEvent(eventName, isMandatoryPixel = false) {
-  const shoudSendPixel = (isMandatoryPixel || state.debug);
+export function sendEvent(eventName) {
   const ts = Date.now();
   const eventObject = {
     t: ts,
@@ -54,14 +53,10 @@ export function sendEvent(eventName, isMandatoryPixel = false) {
     ver: SUBLIME_VERSION,
   };
 
-  if (shoudSendPixel) {
-    log('Sending pixel for event: ' + eventName, eventObject);
+  log('Sending pixel for event: ' + eventName, eventObject);
 
-    const queryString = url.formatQS(eventObject);
-    utils.triggerPixel('https://' + SUBLIME_ANTENNA + '/?' + queryString);
-  } else {
-    log('Not sending pixel for event (use debug: true to send it): ' + eventName, eventObject);
-  }
+  const queryString = url.formatQS(eventObject);
+  utils.triggerPixel('https://' + SUBLIME_ANTENNA + '/?' + queryString);
 }
 
 /**
@@ -150,9 +145,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = [];
   const response = serverResponse.body;
-
-  sendEvent('dintres');
-
+  
   if (response) {
     if (response.timeout || !response.ad || /<!--\s+No\s+ad\s+-->/gmi.test(response.ad)) {
       return bidResponses;
@@ -187,13 +180,19 @@ function interpretResponse(serverResponse, bidRequest) {
       pbav: SUBLIME_VERSION
     };
 
-    sendEvent('bida', true);
     bidResponses.push(bidResponse);
-  } else {
-    sendEvent('dnobid');
   }
 
   return bidResponses;
+}
+
+/**
+ * Send pixel when bidWon event is triggered
+ * @param {Object} timeoutData
+ */
+function onBidWon(bid) {
+  log('Bid won', bid);
+  sendEvent('bidwon');
 }
 
 /**
@@ -202,15 +201,17 @@ function interpretResponse(serverResponse, bidRequest) {
  */
 function onTimeout(timeoutData) {
   log('Timeout from adapter', timeoutData);
-  sendEvent('dbidtimeout', true);
+  sendEvent('bidtimeout');
 }
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: BIDDER_GVLID,
   aliases: [],
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
+  onBidWon: onBidWon,
   onTimeout: onTimeout,
 };
 
