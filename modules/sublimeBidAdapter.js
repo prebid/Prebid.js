@@ -145,7 +145,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = [];
   const response = serverResponse.body;
-  
+
   if (response) {
     if (response.timeout || !response.ad || /<!--\s+No\s+ad\s+-->/gmi.test(response.ad)) {
       return bidResponses;
