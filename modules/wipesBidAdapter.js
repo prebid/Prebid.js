@@ -28,11 +28,6 @@ function buildRequests(validBidRequests, bidderRequest) {
       url: ENDPOINT_URL,
       data: {
         asid: asid,
-        mediaTypes: {
-          video: {
-            context: 'outstream'
-          }
-        },
       }
     }
   });
