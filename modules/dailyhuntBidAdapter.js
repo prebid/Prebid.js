@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
+import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
@@ -270,19 +271,32 @@ const parseNative = (bid) => {
   return result;
 }
 
-const createPrebidVideoBid = (bid, bidResponse) => ({
-  requestId: bid.bidId,
-  cpm: 1.4,
-  creativeId: bidResponse.crid,
-  width: 300,
-  height: 250,
-  ttl: 360,
-  netRevenue: bid.netRevenue === 'net',
-  currency: 'USD',
-  vastXml: bidResponse.adm.replace('4.0', '2.0'),
-  mediaType: 'video',
-  winUrl: bidResponse.nurl
-})
+const createPrebidVideoBid = (bid, bidResponse) => {
+  let videoBid = {
+    requestId: bid.bidId,
+    cpm: 1.4,
+    creativeId: bidResponse.crid,
+    width: 300,
+    height: 250,
+    ttl: 360,
+    netRevenue: bid.netRevenue === 'net',
+    currency: 'USD',
+    mediaType: 'video',
+    winUrl: bidResponse.nurl,
+  };
+
+  let videoContext = bid.mediaTypes.video.context;
+  switch (videoContext) {
+    case OUTSTREAM:
+      videoBid.vastXml = bidResponse.adm.replace('4.0', '2.0');
+      break;
+    case INSTREAM:
+      videoBid.videoCacheKey = bidResponse.ext.bidder.cacheKey;
+      videoBid.vastUrl = bidResponse.ext.bidder.vastUrl;
+      break;
+  }
+  return videoBid;
+}
 
 const getQueryVariable = (variable) => {
   let query = window.location.search.substring(1);
