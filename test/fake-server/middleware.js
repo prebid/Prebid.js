@@ -1,3 +1,5 @@
+/* eslint no-console: 0 */
+
 const bannerFixtures = require('./fixtures/banner');
 
 /**
@@ -10,11 +12,11 @@ const fakeResponder = function (req, res, next) {
   const response = bannerFixtures.getResponse().httpResponse.body;
 
   // replace response uuid with request uuid
-  const requestUUID = JSON.parse(request).tags[0].uuid
+  const incomingRequestAdUnit_1_uuid = JSON.parse(request).tags[0].uuid;
+  const incomingRequestAdUnit_2_uuid = JSON.parse(request).tags[1].uuid;
 
-  // console.log('requestUUID', requestUUID);
-
-  response.tags[0].uuid = requestUUID;
+  response.tags[0].uuid = incomingRequestAdUnit_1_uuid;
+  response.tags[1].uuid = incomingRequestAdUnit_2_uuid;
 
   res.type('json');
   res.write(JSON.stringify(response));

@@ -8,11 +8,11 @@ const EXPECTED_TARGETING_KEYS = {
   'hb_format': 'banner',
   'hb_source': 'client',
   'hb_pb': '0.60',
-  'hb_bidder': 'rubicon',
-  'hb_format_rubicon': 'banner',
-  'hb_source_rubicon': 'client',
-  'hb_pb_rubicon': '0.60',
-  'hb_bidder_rubicon': 'rubicon'
+  'hb_bidder': 'appnexus',
+  'hb_format_appnexus': 'banner',
+  'hb_source_appnexus': 'client',
+  'hb_pb_appnexus': '0.60',
+  'hb_bidder_appnexus': 'appnexus'
 };
 
 describe('Prebid.js Banner Ad Unit Test', function () {
@@ -31,17 +31,17 @@ describe('Prebid.js Banner Ad Unit Test', function () {
 
   // TODO: Add below test again. Removed the test since we are testing only for appnexus endpoint now and appnexus adapter does not set AdserverTargetting.
 
-  // it('should load the targeting keys with correct values', function () {
-  //   const result = browser.execute(function () {
-  //     return window.top.pbjs.getAdserverTargeting('div-gpt-ad-1460505748561-1');
-  //   });
-  //   const targetingKeys = result.value['div-gpt-ad-1460505748561-1'];
+  it('should load the targeting keys with correct values', function () {
+    const result = browser.execute(function () {
+      return window.top.pbjs.getAdserverTargeting('div-gpt-ad-1460505748561-1');
+    });
+    const targetingKeys = result.value['div-gpt-ad-1460505748561-1'];
 
-  //   expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
-  //   expect(targetingKeys.hb_adid).to.be.a('string');
-  //   expect(targetingKeys.hb_adid_rubicon).to.be.a('string');
-  //   expect(targetingKeys.hb_size).to.satisfy((size) => size === '300x250' || '300x600');
-  // });
+    expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
+    expect(targetingKeys.hb_adid).to.be.a('string');
+    expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
+    expect(targetingKeys.hb_size).to.satisfy((size) => size === '300x250' || '300x600');
+  });
 
   it('should render the Banner Ad on the page', function () {
     expect(browser.isVisible('body > div[class="GoogleActiveViewElement"] > a > img')).to.be.true;
