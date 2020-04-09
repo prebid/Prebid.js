@@ -880,7 +880,6 @@ describe('Unit: Prebid Module', function () {
 
       var invokedTargeting = [];
 
-      console.log(invokedTargetingMap);
       Object.getOwnPropertyNames(invokedTargetingMap).map(function (key) {
         const value = Array.isArray(invokedTargetingMap[key]) ? invokedTargetingMap[key] : [invokedTargetingMap[key]]; // values are always returned as array in googletag
         invokedTargeting.push([key, value]);
@@ -1224,6 +1223,12 @@ describe('Unit: Prebid Module', function () {
     let makeRequestsStub;
     let adUnits;
     let clock;
+    before(function () {
+      clock = sinon.useFakeTimers();
+    });
+    after(function () {
+      clock.restore();
+    });
     let bidsBackHandlerStub = sinon.stub();
 
     const BIDDER_CODE = 'sampleBidder';
@@ -1310,7 +1315,6 @@ describe('Unit: Prebid Module', function () {
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
 
-      clock = sinon.useFakeTimers();
       let requestObj = {
         bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
         timeout: 2000,
@@ -1364,7 +1368,6 @@ describe('Unit: Prebid Module', function () {
       auction.getBidsReceived = function() { return [adResponse]; }
       auction.getAuctionId = () => auctionId;
 
-      clock = sinon.useFakeTimers();
       let requestObj = {
         bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
         timeout: 2000,
@@ -1457,7 +1460,7 @@ describe('Unit: Prebid Module', function () {
         try {
           $$PREBID_GLOBAL$$.requestBids({});
         } catch (e) {
-          console.log(e);
+          console.log(e); // eslint-disable-line
         }
         assert.ok(logMessageSpy.calledWith('No adUnits configured. No bids requested.'), 'expected message was logged');
       });
