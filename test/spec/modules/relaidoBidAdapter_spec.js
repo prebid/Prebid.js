@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/relaidoBidAdapter.js';
+import * as url from 'src/url.js';
 import * as utils from 'src/utils.js';
 
 const UUID_KEY = 'relaido_uuid';
@@ -88,7 +89,8 @@ describe('RelaidoAdapter', function () {
 
     it('should return false when the uuid are missing', function () {
       localStorage.removeItem(UUID_KEY);
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      const result = !!(utils.isSafariBrowser());
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(result);
     });
 
     it('should return false when the placementId params are missing', function () {
@@ -241,10 +243,10 @@ describe('RelaidoAdapter', function () {
   describe('spec.onBidWon', function () {
     let stub;
     beforeEach(() => {
-      stub = sinon.stub(utils, 'triggerPixel')
+      stub = sinon.stub(utils, 'triggerPixel');
     });
     afterEach(() => {
-      stub.restore()
+      stub.restore();
     });
 
     it('Should create nurl pixel if bid nurl', function () {
@@ -260,27 +262,28 @@ describe('RelaidoAdapter', function () {
         ref: window.location.href,
       }
       spec.onBidWon(bid);
-      const parser = new URL(stub.getCall(0).args[0]);
-      expect(parser.origin).to.equal('https://api.relaido.jp');
+      const parser = url.parse(stub.getCall(0).args[0]);
+      const query = parser.search;
+      expect(parser.hostname).to.equal('api.relaido.jp');
       expect(parser.pathname).to.equal('/tr/v1/prebid/win.gif');
-      expect(parser.searchParams.get('placement_id')).to.equal('100000');
-      expect(parser.searchParams.get('creative_id')).to.equal('1000');
-      expect(parser.searchParams.get('price')).to.equal('500');
-      expect(parser.searchParams.get('auction_id')).to.equal('413ed000-8c7a-4ba1-a1fa-9732e006f8c3');
-      expect(parser.searchParams.get('bid_id')).to.equal('2ed93003f7bb99');
-      expect(parser.searchParams.get('ad_id')).to.equal('3b286a4db7031f');
-      expect(parser.searchParams.get('ad_unit_code')).to.equal('test');
-      expect(parser.searchParams.get('ref')).to.include(window.location.href);
+      expect(query.placement_id).to.equal('100000');
+      expect(query.creative_id).to.equal('1000');
+      expect(query.price).to.equal('500');
+      expect(query.auction_id).to.equal('413ed000-8c7a-4ba1-a1fa-9732e006f8c3');
+      expect(query.bid_id).to.equal('2ed93003f7bb99');
+      expect(query.ad_id).to.equal('3b286a4db7031f');
+      expect(query.ad_unit_code).to.equal('test');
+      expect(query.ref).to.include(window.location.href);
     });
   });
 
   describe('spec.onTimeout', function () {
     let stub;
     beforeEach(() => {
-      stub = sinon.stub(utils, 'triggerPixel')
+      stub = sinon.stub(utils, 'triggerPixel');
     });
     afterEach(() => {
-      stub.restore()
+      stub.restore();
     });
 
     it('Should create nurl pixel if bid nurl', function () {
@@ -293,15 +296,16 @@ describe('RelaidoAdapter', function () {
         timeout: bidderRequest.timeout,
       }];
       spec.onTimeout(data);
-      const parser = new URL(stub.getCall(0).args[0]);
-      expect(parser.origin).to.equal('https://api.relaido.jp');
+      const parser = url.parse(stub.getCall(0).args[0]);
+      const query = parser.search;
+      expect(parser.hostname).to.equal('api.relaido.jp');
       expect(parser.pathname).to.equal('/tr/v1/prebid/timeout.gif');
-      expect(parser.searchParams.get('placement_id')).to.equal('100000');
-      expect(parser.searchParams.get('timeout')).to.equal('1000');
-      expect(parser.searchParams.get('auction_id')).to.equal('413ed000-8c7a-4ba1-a1fa-9732e006f8c3');
-      expect(parser.searchParams.get('bid_id')).to.equal('2ed93003f7bb99');
-      expect(parser.searchParams.get('ad_unit_code')).to.equal('test');
-      expect(parser.searchParams.get('ref')).to.include(window.location.href);
+      expect(query.placement_id).to.equal('100000');
+      expect(query.timeout).to.equal('1000');
+      expect(query.auction_id).to.equal('413ed000-8c7a-4ba1-a1fa-9732e006f8c3');
+      expect(query.bid_id).to.equal('2ed93003f7bb99');
+      expect(query.ad_unit_code).to.equal('test');
+      expect(query.ref).to.include(window.location.href);
     });
   });
 });
