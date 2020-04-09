@@ -9,16 +9,12 @@ const fakeResponder = function (req, res, next) {
   const request = req.body;
   const response = bannerFixtures.getResponse().httpResponse.body;
 
-  console.log('request', JSON.parse(request).tags[0]);
-
   // replace response uuid with request uuid
   const requestUUID = JSON.parse(request).tags[0].uuid
 
   // console.log('requestUUID', requestUUID);
 
   response.tags[0].uuid = requestUUID;
-
-  console.log('response', response);
 
   res.type('json');
   res.write(JSON.stringify(response));

@@ -330,7 +330,7 @@ gulp.task('updatepath', function () {
   return gulp.src(['build/dist/*.js'])
     .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', `http://${MOCK_SERVER_HOST}:${MOCK_SERVER_PORT}/`))
     .pipe(gulp.dest('build/dist'));
-});
+}
 
 // support tasks
 gulp.task(lint);
@@ -357,7 +357,7 @@ gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
-gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), 'updatepath', test));
+gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), injectMockServerEndpoint, test));
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
