@@ -2,7 +2,6 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as url from '../src/url.js';
 import * as utils from '../src/utils.js';
 
 /**
@@ -113,7 +112,7 @@ function mapBidWon (bidResponse) {
 }
 
 function send (data) {
-  let adxcgAnalyticsRequestUrl = url.format({
+  let adxcgAnalyticsRequestUrl = utils.buildUrl({
     protocol: 'https',
     hostname: adxcgAnalyticsAdapter.context.host,
     pathname: '/pbrx/v2',

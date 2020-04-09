@@ -16,8 +16,7 @@ let initOptions;
 export const BID_WON_TIMEOUT = 500;
 
 const cache = {
-  auctions: {},
-  bidAdUnits: {}
+  auctions: {}
 };
 
 let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE}), {
@@ -28,7 +27,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
         utils.logInfo('LIVEWRAPPED_AUCTION_INIT:', args);
-        cache.auctions[args.auctionId] = {bids: {}};
+        cache.auctions[args.auctionId] = {bids: {}, bidAdUnits: {}};
         break;
       case CONSTANTS.EVENTS.BID_REQUESTED:
         utils.logInfo('LIVEWRAPPED_BID_REQUESTED:', args);
@@ -64,8 +63,12 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         if (!bidResponse.ttr) {
           bidResponse.ttr = time - bidResponse.start;
         }
-        if (!cache.bidAdUnits[bidResponse.adUnit]) {
-          cache.bidAdUnits[bidResponse.adUnit] = {sent: 0, timeStamp: cache.auctions[args.auctionId].timeStamp};
+        if (!cache.auctions[args.auctionId].bidAdUnits[bidResponse.adUnit]) {
+          cache.auctions[args.auctionId].bidAdUnits[bidResponse.adUnit] =
+            {
+              sent: 0,
+              timeStamp: cache.auctions[args.auctionId].timeStamp
+            };
         }
         break;
       case CONSTANTS.EVENTS.BIDDER_DONE:
@@ -240,16 +243,19 @@ function getTimeouts() {
 function getbidAdUnits() {
   var bidAdUnits = [];
 
-  Object.keys(cache.bidAdUnits).forEach(adUnit => {
-    let bidAdUnit = cache.bidAdUnits[adUnit];
-    if (!bidAdUnit.sent) {
-      bidAdUnit.sent = 1;
+  Object.keys(cache.auctions).forEach(auctionId => {
+    let auction = cache.auctions[auctionId];
+    Object.keys(auction.bidAdUnits).forEach(adUnit => {
+      let bidAdUnit = auction.bidAdUnits[adUnit];
+      if (!bidAdUnit.sent) {
+        bidAdUnit.sent = 1;
 
-      bidAdUnits.push({
-        adUnit: adUnit,
-        timeStamp: bidAdUnit.timeStamp
-      });
-    }
+        bidAdUnits.push({
+          adUnit: adUnit,
+          timeStamp: bidAdUnit.timeStamp
+        });
+      }
+    });
   });
 
   return bidAdUnits;

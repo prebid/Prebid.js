@@ -273,21 +273,21 @@ export function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode) {
   let labelOperator;
   const labelsFound = Object.keys(bidOrAdUnit).filter(prop => prop === 'labelAny' || prop === 'labelAll');
   if (labelsFound && labelsFound.length > 1) {
-    utils.logWarn(`SizeMappingV2:: ${(bidOrAdUnit.code)
-      ? (`Ad Unit: ${bidOrAdUnit.code} has multiple label operators. Using the first declared operator: ${labelsFound[0]}`)
-      : (`Bidder: ${bidOrAdUnit.bidder} in Ad Unit: ${adUnitCode} has multiple label operators. Using the first declared operator: ${labelsFound[0]}`)}`);
+    utils.logWarn(`Size Mapping V2:: ${(bidOrAdUnit.code)
+      ? (`Ad Unit: ${bidOrAdUnit.code} => Ad unit has multiple label operators. Using the first declared operator: ${labelsFound[0]}`)
+      : (`Ad Unit: ${adUnitCode}, Bidder: ${bidOrAdUnit.bidder} => Bidder has multiple label operators. Using the first declared operator: ${labelsFound[0]}`)}`);
   }
   labelOperator = labelsFound[0];
 
   if (labelOperator === 'labelAll' && Array.isArray(bidOrAdUnit[labelOperator])) {
     if (bidOrAdUnit.labelAll.length === 0) {
-      utils.logWarn(`SizeMappingV2:: Ad Unit: ${bidOrAdUnit.code} has declared property labelAll with an empty array. Ad Unit is still enabled!`);
+      utils.logWarn(`Size Mapping V2:: Ad Unit: ${bidOrAdUnit.code} => Ad unit has declared property 'labelAll' with an empty array. Ad Unit is still enabled!`);
       return true;
     }
     return bidOrAdUnit.labelAll.every(label => includes(activeLabels, label));
   } else if (labelOperator === 'labelAny' && Array.isArray(bidOrAdUnit[labelOperator])) {
     if (bidOrAdUnit.labelAny.length === 0) {
-      utils.logWarn(`SizeMappingV2:: Ad Unit: ${bidOrAdUnit.code} has declared property labelAny with an empty array. Ad Unit is still enabled!`);
+      utils.logWarn(`Size Mapping V2:: Ad Unit: ${bidOrAdUnit.code} => Ad unit has declared property 'labelAny' with an empty array. Ad Unit is still enabled!`);
       return true;
     }
     return bidOrAdUnit.labelAny.some(label => includes(activeLabels, label));
@@ -430,7 +430,11 @@ export function getRelevantMediaTypesForBidder(sizeConfig, activeViewport) {
 // sets sizeMappingInternalStore for a given auctionId with relevant adUnit information returned from the call to 'getFilteredMediaTypes' function
 // returns adUnit details object.
 export function getAdUnitDetail(auctionId, adUnit) {
-  const adUnitDetail = sizeMappingInternalStore.getAuctionDetail(auctionId).adUnits.filter(adUnitDetail => adUnitDetail.adUnitCode === adUnit.code);
+  // fetch all adUnits for an auction from the sizeMappingInternalStore
+  const adUnitsForAuction = sizeMappingInternalStore.getAuctionDetail(auctionId).adUnits;
+
+  // check if the adUnit exists already in the sizeMappingInterStore (check for equivalence of 'code' && 'mediaTypes' properties)
+  const adUnitDetail = adUnitsForAuction.filter(adUnitDetail => adUnitDetail.adUnitCode === adUnit.code && utils.deepEqual(adUnitDetail.mediaTypes, adUnit.mediaTypes));
 
   if (adUnitDetail.length > 0) {
     return adUnitDetail[0];
@@ -445,16 +449,17 @@ export function getAdUnitDetail(auctionId, adUnit) {
       transformedMediaTypes
     };
 
-    // 'filteredMediaTypes' are the mediaTypes that got removed/filtered-out from adUnit.mediaTypes after sizeConfig filtration.
-    const filteredMediaTypes = Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1)
-
-    utils.logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code} - Active size buckets after filtration: `, sizeBucketToSizeMap);
-    if (filteredMediaTypes.length > 0) {
-      utils.logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code} - mediaTypes that got filtered out: ${filteredMediaTypes}`);
-    }
-
     // set adUnitDetail in sizeMappingInternalStore against the correct 'auctionId'.
     sizeMappingInternalStore.setAuctionDetail(auctionId, adUnitDetail);
+
+    // 'filteredMediaTypes' are the mediaTypes that got removed/filtered-out from adUnit.mediaTypes after sizeConfig filtration.
+    const filteredMediaTypes = Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1);
+
+    utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code} => Active size buckets after filtration: `, sizeBucketToSizeMap);
+    if (filteredMediaTypes.length > 0) {
+      utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code} => Media types that got filtered out: ${filteredMediaTypes}`);
+    }
+
     return adUnitDetail;
   }
 }
@@ -468,7 +473,7 @@ export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, label
         // check if adUnit has any active media types remaining, if not drop the adUnit from auction,
         // else proceed to evaluate the bids object.
         if (Object.keys(transformedMediaTypes).length === 0) {
-          utils.logInfo(`SizeMappingV2:: Ad Unit: ${adUnit.code} is disabled since there are no active media types after sizeConfig filtration.`);
+          utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code} => Ad unit disabled since there are no active media types after sizeConfig filtration.`);
           return result;
         }
         result
@@ -488,7 +493,7 @@ export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, label
                 if (bid.sizeConfig) {
                   const relevantMediaTypes = internal.getRelevantMediaTypesForBidder(bid.sizeConfig, activeViewport);
                   if (relevantMediaTypes.length === 0) {
-                    utils.logError(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - sizeConfig is not configured properly. This bidder won't be eligible for sizeConfig checks and will remail active.`);
+                    utils.logError(`Size Mapping V2:: Ad Unit: ${adUnit.code}, Bidder: ${bidderCode} => 'sizeConfig' is not configured properly. This bidder won't be eligible for sizeConfig checks and will remail active.`);
                     bid = Object.assign({}, bid);
                   } else if (relevantMediaTypes[0] !== 'none') {
                     const bidderMediaTypes = Object
@@ -502,11 +507,11 @@ export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, label
                     if (Object.keys(bidderMediaTypes).length > 0) {
                       bid = Object.assign({}, bid, { mediaTypes: bidderMediaTypes });
                     } else {
-                      utils.logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bid.bidder} - 'relevantMediaTypes' for this bidder does not match with any of the active mediaTypes at the Ad Unit level. This bidder is disabled.`);
+                      utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}, Bidder: ${bid.bidder} => 'relevantMediaTypes' does not match with any of the active mediaTypes at the Ad Unit level. This bidder is disabled.`);
                       return bids;
                     }
                   } else {
-                    utils.logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bid.bidder} - 'relevantMediaTypes' is set to 'none' in sizeConfig for current viewport size. This bidder is disabled.`);
+                    utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}, Bidder: ${bid.bidder} => 'relevantMediaTypes' is set to 'none' in sizeConfig for current viewport size. This bidder is disabled.`);
                     return bids;
                   }
                 }
@@ -525,15 +530,15 @@ export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, label
                 }));
                 return bids;
               } else {
-                utils.logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bid.bidder} - Label check for this bidder has failed. This bidder is disabled.`);
+                utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}, Bidder: ${bid.bidder} => Label check for this bidder has failed. This bidder is disabled.`);
                 return bids;
               }
             }, []));
       } else {
-        utils.logWarn(`SizeMappingV2:: Ad Unit: ${adUnit.code} has declared invalid mediaTypes or has not declared a mediaTypes property`);
+        utils.logWarn(`Size Mapping V2:: Ad Unit: ${adUnit.code} => Ad unit has declared invalid 'mediaTypes' or has not declared a 'mediaTypes' property`);
       }
     } else {
-      utils.logInfo(`SizeMappingV2:: Ad Unit: ${adUnit.code} is disabled due to failing label check.`);
+      utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code} => Ad unit is disabled due to failing label check.`);
       return result;
     }
     return result;
