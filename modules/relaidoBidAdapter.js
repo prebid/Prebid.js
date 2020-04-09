@@ -214,11 +214,14 @@ function outstreamRender(bid) {
 }
 
 function receiveMessage() {
-  window.addEventListener('message', function (e) {
-    if (e.data && e.data.relaido_uuid) {
-      storage.setDataInLocalStorage(UUID_KEY, e.data.relaido_uuid);
-    }
-  });
+  window.addEventListener('message', setUuid);
+}
+
+function setUuid(e) {
+  if (e.data && e.data.relaido_uuid) {
+    storage.setDataInLocalStorage(UUID_KEY, e.data.relaido_uuid);
+    window.removeEventListener('message', setUuid);
+  }
 }
 
 function isBannerValid(bid) {
