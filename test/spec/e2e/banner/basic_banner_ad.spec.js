@@ -25,8 +25,7 @@ describe('Prebid.js Banner Ad Unit Test', function () {
     } catch (e) {
       // If creative Iframe didn't load, repeat the steps again!
       // Due to some reason if the Ad server doesn't respond, the test case will time out after 60000 ms as defined in file wdio.conf.js
-      console.log("error occurred: ", e);
-      // loadTestPage();
+      loadTestPage();
     }
   });
 

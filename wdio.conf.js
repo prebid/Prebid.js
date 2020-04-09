@@ -12,7 +12,7 @@ function getCapabilities() {
   // only Edge 16, Chrome 74 & Firefox 66 run as part of functional tests
   // rest of the browsers are discarded.
   delete browsers['bs_ie_11_windows_10'];
-  delete browsers['bs_edge_17_windows_10'];
+  // delete browsers['bs_edge_17_windows_10'];
   delete browsers['bs_chrome_75_windows_10'];
   delete browsers['bs_firefox_67_windows_10'];
   delete browsers['bs_safari_11_mac_high_sierra'];
