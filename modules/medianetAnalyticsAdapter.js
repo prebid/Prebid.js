@@ -4,7 +4,6 @@ import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import * as url from '../src/url.js';
 import { getPriceGranularity, AUCTION_IN_PROGRESS, AUCTION_COMPLETED } from '../src/auction.js'
 
 const analyticsType = 'endpoint';
@@ -120,7 +119,7 @@ class Configure {
 
   init() {
     // Forces Logging % to 100%
-    let urlObj = url.parse(pageDetails.page);
+    let urlObj = utils.parseUrl(pageDetails.page);
     if (utils.deepAccess(urlObj, 'search.medianet_test') || urlObj.hostname === 'localhost') {
       this.loggingPercent = 100;
       this.ajaxState = CONFIG_PASS;
@@ -144,7 +143,7 @@ class PageDetail {
     const twitterUrl = this._getUrlFromSelector('meta[name="twitter:url"]', 'content');
     const refererInfo = getRefererInfo();
 
-    this.domain = url.parse(refererInfo.referer).host;
+    this.domain = utils.parseUrl(refererInfo.referer).host;
     this.page = refererInfo.referer;
     this.is_top = refererInfo.reachedTop;
     this.referrer = this._getTopWindowReferrer();

@@ -7,7 +7,6 @@
 
 import * as utils from '../src/utils.js'
 import * as ajax from '../src/ajax.js'
-import * as urlLib from '../src/url.js'
 import { getRefererInfo } from '../src/refererDetection.js'
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -30,7 +29,7 @@ function areCookiesWriteable() {
 }
 
 function extractProtocolHost (url, returnOnlyHost = false) {
-  const parsedUrl = urlLib.parse(url)
+  const parsedUrl = utils.parseUrl(url)
   return returnOnlyHost
     ? `${parsedUrl.hostname}`
     : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;

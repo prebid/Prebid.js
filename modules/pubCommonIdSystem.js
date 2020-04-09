@@ -6,7 +6,6 @@
  */
 
 import * as utils from '../src/utils.js';
-import * as url from '../src/url.js';
 import {submodule} from '../src/hook.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
@@ -32,9 +31,9 @@ export const pubCommonIdSubmodule = {
     }
 
     // Use pubcid as a cache buster
-    const urlInfo = url.parse(pixelUrl);
+    const urlInfo = utils.parseUrl(pixelUrl);
     urlInfo.search.id = encodeURIComponent('pubcid:' + id);
-    const targetUrl = url.format(urlInfo);
+    const targetUrl = utils.buildUrl(urlInfo);
 
     return function () {
       utils.triggerPixel(targetUrl);
