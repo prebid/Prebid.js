@@ -326,11 +326,11 @@ function setupE2e(done) {
   done();
 }
 
-gulp.task('updatepath', function () {
+function injectMockServerEndpoint() {
   return gulp.src(['build/dist/*.js'])
     .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', `http://${MOCK_SERVER_HOST}:${MOCK_SERVER_PORT}/`))
     .pipe(gulp.dest('build/dist'));
-});
+}
 
 // support tasks
 gulp.task(lint);
