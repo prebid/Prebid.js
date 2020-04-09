@@ -1,16 +1,16 @@
 /**
  * invisiblyAdapterAdapter.js - analytics adapter for Invisibly
  */
-import { ajaxBuilder } from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import { ajaxBuilder } from "../src/ajax";
+import adapter from "../src/AnalyticsAdapter";
+import adapterManager from "../src/adapterManager";
 
-const DEFAULT_EVENT_URL = 'https://api.pymx5.com/v1/' + 'sites/events';
-const analyticsType = 'endpoint';
-const analyticsName = 'Invisibly Analytics Adapter:';
+const DEFAULT_EVENT_URL = "https://api.pymx5.com/v1/" + "sites/events";
+const analyticsType = "endpoint";
+const analyticsName = "Invisibly Analytics Adapter:";
 
-const utils = require('../src/utils');
-const CONSTANTS = require('../src/constants.json');
+const utils = require("../src/utils");
+const CONSTANTS = require("../src/constants.json");
 const ajax = ajaxBuilder(0);
 
 // Events needed
@@ -28,8 +28,8 @@ const {
     SET_TARGETING,
     REQUEST_BIDS,
     ADD_AD_UNITS,
-    AD_RENDER_FAILED
-  }
+    AD_RENDER_FAILED,
+  },
 } = CONSTANTS;
 
 const _VERSION = 1;
@@ -43,20 +43,38 @@ let invisiblyAnalyticsEnabled = false;
 const w = window;
 const d = document;
 let e = d.documentElement;
-let g = d.getElementsByTagName('body')[0];
+let g = d.getElementsByTagName("body")[0];
 let x = w.innerWidth || e.clientWidth || g.clientWidth;
 let y = w.innerHeight || e.clientHeight || g.clientHeight;
 
 let _pageView = {
-  eventType: 'pageView',
+  eventType: "pageView",
   userAgent: window.navigator.userAgent,
   timestamp: Date.now(),
   timezoneOffset: new Date().getTimezoneOffset(),
   language: window.navigator.language,
   vendor: window.navigator.vendor,
   screenWidth: x,
-  screenHeight: y
+  screenHeight: y,
 };
+
+let weightedFilter = (function () {
+  let weightedRand = function (spec) {
+    let i;
+    let sum = 0;
+    let r = Math.random();
+    for (i in spec) {
+      sum += spec[i];
+      if (r <= sum) return i;
+    }
+  };
+  // filter only 5% of events
+  let filter = weightedRand({ fail: 0.95, pass: 0.05 }) == "pass";
+
+  return {
+    filter,
+  };
+})();
 
 let _eventQueue = [_pageView];
 
@@ -66,15 +84,16 @@ let invisiblyAdapter = Object.assign(
     track({ eventType, args }) {
       handleEvent(eventType, args);
     },
-    sendEvent
+    sendEvent,
+    weightedFilter,
   }
 );
 
 invisiblyAdapter.originEnableAnalytics = invisiblyAdapter.enableAnalytics;
-invisiblyAdapter.enableAnalytics = function(config) {
+invisiblyAdapter.enableAnalytics = function (config) {
   initOptions = config.options || {};
   initOptions.url = initOptions.url || DEFAULT_EVENT_URL;
-  if (initOptions.url && initOptions.account) {
+  if (initOptions.url && initOptions.account && weightedFilter.filter) {
     invisiblyAnalyticsEnabled = true;
     invisiblyAdapter.originEnableAnalytics(config);
   } else {
@@ -85,7 +104,7 @@ invisiblyAdapter.enableAnalytics = function(config) {
 };
 
 invisiblyAdapter.originDisableAnalytics = invisiblyAdapter.disableAnalytics;
-invisiblyAdapter.disableAnalytics = function() {
+invisiblyAdapter.disableAnalytics = function () {
   if (!invisiblyAnalyticsEnabled) {
     return;
   }
@@ -102,28 +121,28 @@ function flush() {
   if (_eventQueue.length > 0) {
     while (_eventQueue.length) {
       let eventFromQue = _eventQueue.shift();
-      let eventtype = 'PREBID_' + eventFromQue.eventType;
+      let eventtype = "PREBID_" + eventFromQue.eventType;
       delete eventFromQue.eventType;
 
       let data = {
         pageViewId: _pageViewId,
         ver: _VERSION,
         bundleId: initOptions.bundleId,
-        ...eventFromQue
+        ...eventFromQue,
       };
 
       let payload = {
         event_type: eventtype,
-        event_data: { ...data }
+        event_data: { ...data },
       };
       ajax(
         initOptions.url,
         () => utils.logInfo(`${analyticsName} sent events batch`),
         JSON.stringify(payload),
         {
-          contentType: 'application/json',
-          method: 'POST',
-          withCredentials: true
+          contentType: "application/json",
+          method: "POST",
+          withCredentials: true,
         }
       );
     }
@@ -212,10 +231,10 @@ function sendEvent(event) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: invisiblyAdapter,
-  code: 'invisiblyAnalytics'
+  code: "invisiblyAnalytics",
 });
 
-invisiblyAdapter.getOptions = function() {
+invisiblyAdapter.getOptions = function () {
   return initOptions;
 };
 
