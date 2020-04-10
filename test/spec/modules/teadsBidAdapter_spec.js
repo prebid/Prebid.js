@@ -1,15 +1,15 @@
 import {expect} from 'chai';
-import {spec} from 'modules/teadsBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/teadsBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
-const ENDPOINT = '//a.teads.tv/hb/bid-request';
-const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="http://a.teads.tv/hb/getAdSettings"></script>"';
+const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
+const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
 
-describe('teadsBidAdapter', function() {
+describe('teadsBidAdapter', () => {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', function() {
-    it('exists and is a function', function() {
+  describe('inherited functions', () => {
+    it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
@@ -109,6 +109,22 @@ describe('teadsBidAdapter', function() {
       expect(request.method).to.equal('POST');
     });
 
+    it('should send US Privacy to endpoint', function() {
+      let usPrivacy = 'OHHHFCP1'
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'uspConsent': usPrivacy
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.us_privacy).to.exist;
+      expect(payload.us_privacy).to.equal(usPrivacy);
+    });
+
     it('should send GDPR to endpoint', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
@@ -120,7 +136,8 @@ describe('teadsBidAdapter', function() {
           'gdprApplies': true,
           'vendorData': {
             'hasGlobalConsent': false
-          }
+          },
+          'apiVersion': 1
         }
       };
 
@@ -130,6 +147,23 @@ describe('teadsBidAdapter', function() {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(12);
+      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+    });
+
+    it('should add referer info to payload', function () {
+      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'https://example.com/page.html',
+          reachedTop: true,
+          numIframes: 2
+        }
+      }
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.referrer).to.exist;
+      expect(payload.referrer).to.deep.equal('https://example.com/page.html')
     });
 
     it('should send GDPR to endpoint with 11 status', function() {
@@ -143,7 +177,8 @@ describe('teadsBidAdapter', function() {
           'gdprApplies': true,
           'vendorData': {
             'hasGlobalScope': true
-          }
+          },
+          'apiVersion': 1
         }
       };
 
@@ -153,6 +188,32 @@ describe('teadsBidAdapter', function() {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(11);
+      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+    });
+
+    it('should send GDPR TCF2 to endpoint with 12 status', function() {
+      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          'consentString': consentString,
+          'gdprApplies': true,
+          'vendorData': {
+            'isServiceSpecific': true
+          },
+          'apiVersion': 2
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr_iab).to.exist;
+      expect(payload.gdpr_iab.consent).to.equal(consentString);
+      expect(payload.gdpr_iab.status).to.equal(12);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should send GDPR to endpoint with 22 status', function() {
@@ -164,7 +225,8 @@ describe('teadsBidAdapter', function() {
         'gdprConsent': {
           'consentString': undefined,
           'gdprApplies': undefined,
-          'vendorData': undefined
+          'vendorData': undefined,
+          'apiVersion': 1
         }
       };
 
@@ -174,6 +236,7 @@ describe('teadsBidAdapter', function() {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal('');
       expect(payload.gdpr_iab.status).to.equal(22);
+      expect(payload.gdpr_iab.apiVersion).to.equal(1);
     });
 
     it('should send GDPR to endpoint with 0 status', function() {
@@ -187,7 +250,8 @@ describe('teadsBidAdapter', function() {
           'gdprApplies': false,
           'vendorData': {
             'hasGlobalScope': false
-          }
+          },
+          'apiVersion': 1
         }
       };
 
@@ -197,6 +261,7 @@ describe('teadsBidAdapter', function() {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(0);
+      expect(payload.gdpr_iab.apiVersion).to.equal(1);
     });
 
     it('should use good mediaTypes video playerSizes', function() {
@@ -208,6 +273,34 @@ describe('teadsBidAdapter', function() {
         }
       };
       checkMediaTypesSizes(mediaTypesPlayerSize, '32x34')
+    });
+
+    it('should add schain info to payload if available', function () {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{
+            asi: 'example.com',
+            sid: '00001',
+            hp: 1
+          }]
+        }
+      });
+
+      const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.schain).to.exist;
+      expect(payload.schain).to.deep.equal({
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'example.com',
+          sid: '00001',
+          hp: 1
+        }]
+      });
     });
 
     it('should use good mediaTypes video sizes', function() {
@@ -270,16 +363,17 @@ describe('teadsBidAdapter', function() {
           'currency': 'USD',
           'height': 250,
           'netRevenue': true,
-          'requestId': '3ede2a3fa0db94',
+          'bidId': '3ede2a3fa0db94',
           'ttl': 360,
           'width': 300,
-          'creativeId': 'er2ee'
+          'creativeId': 'er2ee',
+          'placementId': 34
         }]
       }
     };
 
     it('should get correct bid response', function() {
-      let expectedResponse = [{
+      let expectedResponse = {
         'cpm': 0.5,
         'width': 300,
         'height': 250,
@@ -288,11 +382,12 @@ describe('teadsBidAdapter', function() {
         'ttl': 360,
         'ad': AD_SCRIPT,
         'requestId': '3ede2a3fa0db94',
-        'creativeId': 'er2ee'
-      }];
+        'creativeId': 'er2ee',
+        'placementId': 34
+      };
 
       let result = spec.interpretResponse(bids);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.deep.equal(expectedResponse);
     });
 
     it('handles nobid responses', function() {

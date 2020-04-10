@@ -1,6 +1,7 @@
 import {expect} from 'chai';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {spec} from 'modules/telariaBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
 const AD_CODE = 'ssp-!demo!-lufip';
@@ -16,7 +17,7 @@ const REQUEST = {
   },
   'mediaType': 'video',
   'bids': [{
-    'bidder': 'tremor',
+    'bidder': 'telaria',
     'params': {
       'videoId': 'MyCoolVideo',
       'inclSync': true
@@ -24,9 +25,43 @@ const REQUEST = {
   }]
 };
 
+const REQUEST_WITH_SCHAIN = [{
+  'bidder': 'telaria',
+  'params': {
+    'videoId': 'MyCoolVideo',
+    'inclSync': true,
+    'schain': {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'exchange1.com',
+          'sid': '1234',
+          'hp': 1,
+          'rid': 'bid-request-1',
+          'name': 'publisher',
+          'domain': 'publisher.com'
+        },
+        {
+          'asi': 'exchange2.com',
+          'sid': 'abcd',
+          'hp': 1,
+          'rid': 'bid-request-2',
+          'name': 'intermediary',
+          'domain': 'intermediary.com'
+        }
+      ]
+    }
+  }
+}];
+
 const BIDDER_REQUEST = {
   'refererInfo': {
     'referer': 'www.test.com'
+  },
+  'gdprConsent': {
+    'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+    'gdprApplies': true
   }
 };
 
@@ -83,7 +118,7 @@ describe('TelariaAdapter', () => {
   });
 
   describe('buildRequests', () => {
-    const stub = [{
+    const stub = () => ([{
       mediaTypes: {
         video: {
           playerSize: [[640, 480]],
@@ -96,19 +131,21 @@ describe('TelariaAdapter', () => {
         adCode: 'ssp-!demo!-lufip',
         videoId: 'MyCoolVideo'
       }
-    }];
+    }]);
+
+    const schainStub = REQUEST_WITH_SCHAIN;
 
     it('exists and is a function', () => {
       expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
 
     it('requires supply code & ad code to make a request', () => {
-      const tempRequest = spec.buildRequests(stub, BIDDER_REQUEST);
+      const tempRequest = spec.buildRequests(stub(), BIDDER_REQUEST);
       expect(tempRequest.length).to.equal(1);
     });
 
     it('generates an array of requests with 4 params, method, url, bidId and vastUrl', () => {
-      const tempRequest = spec.buildRequests(stub, BIDDER_REQUEST);
+      const tempRequest = spec.buildRequests(stub(), BIDDER_REQUEST);
 
       expect(tempRequest.length).to.equal(1);
       expect(tempRequest[0].method).to.equal('GET');
@@ -118,7 +155,7 @@ describe('TelariaAdapter', () => {
     });
 
     it('doesn\'t require player size but is highly recommended', () => {
-      let tempBid = stub;
+      let tempBid = stub();
       tempBid[0].mediaTypes.video.playerSize = null;
       const tempRequest = spec.buildRequests(tempBid, BIDDER_REQUEST);
 
@@ -126,7 +163,7 @@ describe('TelariaAdapter', () => {
     });
 
     it('generates a valid request with sizes as an array of two elements', () => {
-      let tempBid = stub;
+      let tempBid = stub();
       tempBid[0].mediaTypes.video.playerSize = [640, 480];
       tempBid[0].params.adCode = 'ssp-!demo!-lufip';
       tempBid[0].params.supplyCode = 'ssp-demo-rm6rh';
@@ -135,13 +172,47 @@ describe('TelariaAdapter', () => {
     });
 
     it('requires ad code and supply code to make a request', () => {
-      let tempBid = stub;
+      let tempBid = stub();
       tempBid[0].params.adCode = null;
       tempBid[0].params.supplyCode = null;
 
       const tempRequest = spec.buildRequests(tempBid, BIDDER_REQUEST);
 
       expect(tempRequest.length).to.equal(0);
+    });
+
+    it('converts the schain object into a tag param', () => {
+      let tempBid = schainStub;
+      tempBid[0].params.adCode = 'ssp-!demo!-lufip';
+      tempBid[0].params.supplyCode = 'ssp-demo-rm6rh';
+      let builtRequests = spec.buildRequests(tempBid, BIDDER_REQUEST);
+      expect(builtRequests.length).to.equal(1);
+    });
+
+    it('adds adUnitCode to the request url', () => {
+      const builtRequests = spec.buildRequests(stub(), BIDDER_REQUEST);
+
+      expect(builtRequests.length).to.equal(1);
+      const parts = builtRequests[0].url.split('adCode=');
+      expect(parts.length).to.equal(2);
+    });
+
+    it('adds srcPageUrl to the request url', () => {
+      const builtRequests = spec.buildRequests(stub(), BIDDER_REQUEST);
+
+      expect(builtRequests.length).to.equal(1);
+      const parts = builtRequests[0].url.split('srcPageUrl=');
+      expect(parts.length).to.equal(2);
+    });
+
+    it('adds srcPageUrl from params to the request only once', () => {
+      const tempBid = stub();
+      tempBid[0].params.srcPageUrl = 'http://www.test.com';
+      const builtRequests = spec.buildRequests(tempBid, BIDDER_REQUEST);
+
+      expect(builtRequests.length).to.equal(1);
+      const parts = builtRequests[0].url.split('srcPageUrl=');
+      expect(parts.length).to.equal(2);
     });
   });
 
@@ -209,6 +280,38 @@ describe('TelariaAdapter', () => {
     it('should get the correct number of sync urls', () => {
       let urls = spec.getUserSyncs({pixelEnabled: true}, responses);
       expect(urls.length).to.equal(2);
+    });
+  });
+
+  describe('onTimeout', () => {
+    const timeoutData = [{
+      adUnitCode: 'video1',
+      auctionId: 'd8d239f4-303a-4798-8c8c-dd3151ced4e7',
+      bidId: '2c749c0101ea92',
+      bidder: 'telaria',
+      params: [{
+        adCode: 'ssp-!demo!-lufip',
+        supplyCode: 'ssp-demo-rm6rh',
+        mediaId: 'MyCoolVideo'
+      }]
+    }];
+
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+    it('should return a pixel url', () => {
+      let url = getTimeoutUrl(timeoutData);
+      assert(url);
+    });
+
+    it('should fire a pixel', () => {
+      expect(spec.onTimeout(timeoutData)).to.be.undefined;
+      expect(utils.triggerPixel.called).to.equal(true);
     });
   });
 });

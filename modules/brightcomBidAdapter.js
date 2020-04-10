@@ -1,8 +1,7 @@
-import * as utils from '../src/utils';
-import * as url from '../src/url';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
-import { config } from '../src/config';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'brightcom';
 const URL = 'https://brightcombid.marphezis.com/hb';
@@ -25,9 +24,10 @@ function buildRequests(bidReqs, bidderRequest) {
     const brightcomImps = [];
     const publisherId = utils.getBidIdParameter('publisherId', bidReqs[0].params);
     utils._each(bidReqs, function (bid) {
-      bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
-      bid.sizes = bid.sizes.filter(size => utils.isArray(size));
-      const processedSizes = bid.sizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
+      let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+      bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
+      bidSizes = bidSizes.filter(size => utils.isArray(size));
+      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
 
       const element = document.getElementById(bid.adUnitCode);
       const minSize = _getMinSize(processedSizes);
@@ -56,7 +56,7 @@ function buildRequests(bidReqs, bidderRequest) {
       id: utils.getUniqueIdentifierStr(),
       imp: brightcomImps,
       site: {
-        domain: url.parse(referrer).host,
+        domain: utils.parseUrl(referrer).host,
         page: referrer,
         publisher: {
           id: publisherId

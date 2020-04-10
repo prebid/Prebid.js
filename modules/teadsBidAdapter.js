@@ -1,7 +1,7 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-const utils = require('../src/utils');
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+const utils = require('../src/utils.js');
 const BIDDER_CODE = 'teads';
-const ENDPOINT_URL = '//a.teads.tv/hb/bid-request';
+const ENDPOINT_URL = 'https://a.teads.tv/hb/bid-request';
 const gdprStatus = {
   GDPR_APPLIES_PUBLISHER: 12,
   GDPR_APPLIES_GLOBAL: 11,
@@ -40,20 +40,30 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
     const payload = {
-      referrer: utils.getTopWindowUrl(),
+      referrer: getReferrerInfo(bidderRequest),
       data: bids,
-      deviceWidth: screen.width
+      deviceWidth: screen.width,
+      hb_version: '$prebid.version$'
     };
+
+    if (validBidRequests[0].schain) {
+      payload.schain = validBidRequests[0].schain;
+    }
 
     let gdpr = bidderRequest.gdprConsent;
     if (bidderRequest && gdpr) {
       let isCmp = (typeof gdpr.gdprApplies === 'boolean')
       let isConsentString = (typeof gdpr.consentString === 'string')
-      let status = isCmp ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData) : gdprStatus.CMP_NOT_FOUND_OR_ERROR
+      let status = isCmp ? findGdprStatus(gdpr) : gdprStatus.CMP_NOT_FOUND_OR_ERROR
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
-        status: status
+        status: status,
+        apiVersion: gdpr.apiVersion
       };
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
     }
 
     const payloadString = JSON.stringify(payload);
@@ -84,29 +94,35 @@ export const spec = {
           ttl: bid.ttl,
           ad: bid.ad,
           requestId: bid.bidId,
-          creativeId: bid.creativeId
+          creativeId: bid.creativeId,
+          placementId: bid.placementId
         };
         bidResponses.push(bidResponse);
       });
     }
     return bidResponses;
   },
-
-  getUserSyncs: function(syncOptions, responses, gdprApplies) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: '//sync.teads.tv/iframe'
-      }];
-    }
-  }
 };
 
-function findGdprStatus(gdprApplies, gdprData) {
+function getReferrerInfo(bidderRequest) {
+  let ref = '';
+  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+    ref = bidderRequest.refererInfo.referer;
+  }
+  return ref;
+}
+
+function findGdprStatus(gdprConsent) {
+  const gdprApplies = gdprConsent.gdprApplies
+  const gdprData = gdprConsent.vendorData
+  const apiVersion = gdprConsent.apiVersion
   let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
+  const globalConsent = apiVersion === 1
+    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
+    : !gdprData.isServiceSpecific
 
   if (gdprApplies) {
-    if (gdprData.hasGlobalScope || gdprData.hasGlobalConsent) status = gdprStatus.GDPR_APPLIES_GLOBAL
+    if (globalConsent) status = gdprStatus.GDPR_APPLIES_GLOBAL
   } else status = gdprStatus.GDPR_DOESNT_APPLY
   return status;
 }

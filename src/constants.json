@@ -33,6 +33,7 @@
     "BID_WON": "bidWon",
     "BIDDER_DONE": "bidderDone",
     "SET_TARGETING": "setTargeting",
+    "BEFORE_REQUEST_BIDS": "beforeRequestBids",
     "REQUEST_BIDS": "requestBids",
     "ADD_AD_UNITS": "addAdUnits",
     "AD_RENDER_FAILED" : "adRenderFailed"
@@ -64,13 +65,15 @@
     "SOURCE": "hb_source",
     "FORMAT": "hb_format",
     "UUID": "hb_uuid",
-    "CACHE_ID": "hb_cache_id"
+    "CACHE_ID": "hb_cache_id",
+    "CACHE_HOST": "hb_cache_host"
   },
   "NATIVE_KEYS": {
     "title": "hb_native_title",
     "body": "hb_native_body",
     "body2": "hb_native_body2",
     "privacyLink": "hb_native_privacy",
+    "privacyIcon": "hb_native_privicon",
     "sponsoredBy": "hb_native_brand",
     "image": "hb_native_image",
     "icon": "hb_native_icon",
@@ -92,6 +95,10 @@
   },
   "BID_STATUS" : {
     "BID_TARGETING_SET": "targetingSet",
-    "RENDERED": "rendered"
+    "RENDERED": "rendered",
+    "BID_REJECTED": "bidRejected"
+  },
+  "SUBMODULES_THAT_ALWAYS_REFRESH_ID": {
+    "parrableId": true
   }
 }

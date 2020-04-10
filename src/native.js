@@ -1,5 +1,5 @@
-import { deepAccess, getBidRequest, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils';
-import includes from 'core-js/library/fn/array/includes';
+import { deepAccess, getBidRequest, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -132,7 +132,6 @@ export function nativeBidIsValid(bid, bidRequests) {
  */
 export function fireNativeTrackers(message, adObject) {
   let trackers;
-
   if (message.action === 'click') {
     trackers = adObject['native'] && adObject['native'].clickTrackers;
   } else {

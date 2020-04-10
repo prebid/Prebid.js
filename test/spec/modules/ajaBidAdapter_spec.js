@@ -1,7 +1,7 @@
-import { spec } from 'modules/ajaBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/ajaBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
-const ENDPOINT = '//ad.as.amanad.adtdp.com/v2/prebid';
+const ENDPOINT = 'https://ad.as.amanad.adtdp.com/v2/prebid';
 
 describe('AjaAdapter', function () {
   const adapter = newBidder(spec);
@@ -48,10 +48,17 @@ describe('AjaAdapter', function () {
       }
     ];
 
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'https://hoge.com'
+      }
+    };
+
     it('sends bid request to ENDPOINT via GET', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
+      expect(requests[0].data).to.equal('asi=123456&skt=5&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&');
     });
   });
 
@@ -70,7 +77,7 @@ describe('AjaAdapter', function () {
             'h': 250,
             'tag': '<div></div>',
             'imps': [
-              '//as.amanad.adtdp.com/v1/imp'
+              'https://as.amanad.adtdp.com/v1/imp'
             ]
           }
         },
@@ -113,7 +120,7 @@ describe('AjaAdapter', function () {
             'w': 300,
             'h': 250,
             'vtag': '<VAST></VAST>',
-            'purl': 'http://cdn/player',
+            'purl': 'https://cdn/player',
             'progress': true,
             'loop': false,
             'inread': false
@@ -210,7 +217,8 @@ describe('AjaAdapter', function () {
             'clickUrl': 'https://example.com/lp?k=v',
             'impressionTrackers': [
               'https://example.com/imp'
-            ]
+            ],
+            'privacyLink': 'https://aja-kk.co.jp/optout',
           }
         }
       ];

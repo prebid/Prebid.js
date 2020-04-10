@@ -1,13 +1,14 @@
-import CONSTANTS from './constants';
-import { ajax } from './ajax';
+import CONSTANTS from './constants.json';
+import { ajax } from './ajax.js';
 
-const events = require('./events');
-const utils = require('./utils');
+const events = require('./events.js');
+const utils = require('./utils.js');
 
 const {
   EVENTS: {
     AUCTION_INIT,
     AUCTION_END,
+    REQUEST_BIDS,
     BID_REQUESTED,
     BID_TIMEOUT,
     BID_RESPONSE,
@@ -16,7 +17,8 @@ const {
     BID_ADJUSTMENT,
     BIDDER_DONE,
     SET_TARGETING,
-    AD_RENDER_FAILED
+    AD_RENDER_FAILED,
+    ADD_AD_UNITS
   }
 } = CONSTANTS;
 
@@ -99,6 +101,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       // Next register event listeners to send data immediately
 
       _handlers = {
+        [REQUEST_BIDS]: args => this.enqueue({ eventType: REQUEST_BIDS, args }),
         [BID_REQUESTED]: args => this.enqueue({ eventType: BID_REQUESTED, args }),
         [BID_RESPONSE]: args => this.enqueue({ eventType: BID_RESPONSE, args }),
         [NO_BID]: args => this.enqueue({ eventType: NO_BID, args }),
@@ -109,6 +112,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         [SET_TARGETING]: args => this.enqueue({ eventType: SET_TARGETING, args }),
         [AUCTION_END]: args => this.enqueue({ eventType: AUCTION_END, args }),
         [AD_RENDER_FAILED]: args => this.enqueue({ eventType: AD_RENDER_FAILED, args }),
+        [ADD_AD_UNITS]: args => this.enqueue({ eventType: ADD_AD_UNITS, args }),
         [AUCTION_INIT]: args => {
           args.config = typeof config === 'object' ? config.options || {} : {}; // enableAnaltyics configuration object
           this.enqueue({ eventType: AUCTION_INIT, args });

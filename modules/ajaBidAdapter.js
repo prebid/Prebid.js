@@ -1,10 +1,10 @@
-import { Renderer } from '../src/Renderer';
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes';
+import { Renderer } from '../src/Renderer.js';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'aja';
-const URL = '//ad.as.amanad.adtdp.com/v2/prebid';
+const URL = 'https://ad.as.amanad.adtdp.com/v2/prebid';
 const SDK_TYPE = 5;
 const AD_TYPE = {
   BANNER: 1,
@@ -30,6 +30,10 @@ export const spec = {
       queryString = utils.tryAppendQueryString(queryString, 'skt', SDK_TYPE);
       queryString = utils.tryAppendQueryString(queryString, 'prebid_id', bid.bidId);
       queryString = utils.tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
+
+      if (bidderRequest && bidderRequest.refererInfo) {
+        queryString = utils.tryAppendQueryString(queryString, 'page_url', bidderRequest.refererInfo.referer);
+      }
 
       bidRequests.push({
         method: 'GET',
@@ -103,6 +107,7 @@ export const spec = {
           sponsoredBy: assets.sponsor,
           clickUrl: assets.lp_link,
           impressionTrackers: nativeAd.imps,
+          privacyLink: assets.adchoice_url,
         };
 
         if (assets.img_main !== undefined) {

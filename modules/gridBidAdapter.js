@@ -1,12 +1,15 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { VIDEO, BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'grid';
-const ENDPOINT_URL = '//grid.bidswitch.net/hb';
+const ENDPOINT_URL = 'https://grid.bidswitch.net/hb';
+const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=iow_labs';
 const TIME_TO_LIVE = 360;
-const RENDERER_URL = '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+
+let hasSynced = false;
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -41,26 +44,55 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
+    const slotsMapByUid = {};
+    const sizeMap = {};
     const bids = validBidRequests || [];
     let reqId;
 
     bids.forEach(bid => {
       reqId = bid.bidderRequestId;
-      if (!bidsMap[bid.params.uid]) {
-        bidsMap[bid.params.uid] = [bid];
-        auids.push(bid.params.uid);
-      } else {
-        bidsMap[bid.params.uid].push(bid);
+      const {params: {uid}, adUnitCode} = bid;
+      auids.push(uid);
+      const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!slotsMapByUid[uid]) {
+        slotsMapByUid[uid] = {};
       }
+      const slotsMap = slotsMapByUid[uid];
+      if (!slotsMap[adUnitCode]) {
+        slotsMap[adUnitCode] = {adUnitCode, bids: [bid], parents: []};
+      } else {
+        slotsMap[adUnitCode].bids.push(bid);
+      }
+      const slot = slotsMap[adUnitCode];
+
+      sizesId.forEach((sizeId) => {
+        sizeMap[sizeId] = true;
+        if (!bidsMap[uid]) {
+          bidsMap[uid] = {};
+        }
+
+        if (!bidsMap[uid][sizeId]) {
+          bidsMap[uid][sizeId] = [slot];
+        } else {
+          bidsMap[uid][sizeId].push(slot);
+        }
+        slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
+      });
     });
 
     const payload = {
-      u: utils.getTopWindowUrl(),
       auids: auids.join(','),
-      r: reqId
+      sizes: utils.getKeys(sizeMap).join(','),
+      r: reqId,
+      wrapperType: 'Prebid_js',
+      wrapperVersion: '$prebid.version$'
     };
 
     if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = bidderRequest.refererInfo.referer;
+      }
       if (bidderRequest.timeout) {
         payload.wtimeout = bidderRequest.timeout;
       }
@@ -71,6 +103,9 @@ export const spec = {
         payload.gdpr_applies =
           (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
             ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
+      if (bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
       }
     }
 
@@ -107,8 +142,30 @@ export const spec = {
     }
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
+  },
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+    if (!hasSynced && syncOptions.pixelEnabled) {
+      let params = '';
+
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params += `&gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
+      if (uspConsent) {
+        params += `&us_privacy=${uspConsent}`;
+      }
+
+      hasSynced = true;
+      return {
+        type: 'image',
+        url: SYNC_URL + params
+      };
+    }
   }
-}
+};
 
 function _getBidFromResponse(respItem) {
   if (!respItem) {
@@ -129,24 +186,25 @@ function _addBidResponse(serverBid, bidsMap, bidResponses) {
   else {
     const awaitingBids = bidsMap[serverBid.auid];
     if (awaitingBids) {
-      awaitingBids.forEach(bid => {
-        const size = bid.sizes[0];
-        if (serverBid.w && serverBid.h) {
-          size[0] = serverBid.w;
-          size[1] = serverBid.h;
-        }
+      const sizeId = `${serverBid.w}x${serverBid.h}`;
+      if (awaitingBids[sizeId]) {
+        const slot = awaitingBids[sizeId][0];
+
+        const bid = slot.bids.shift();
+
         const bidResponse = {
           requestId: bid.bidId, // bid.bidderRequestId,
           bidderCode: spec.code,
           cpm: serverBid.price,
-          width: size[0],
-          height: size[1],
+          width: serverBid.w,
+          height: serverBid.h,
           creativeId: serverBid.auid, // bid.bidId,
           currency: 'USD',
           netRevenue: false,
           ttl: TIME_TO_LIVE,
           dealId: serverBid.dealid
         };
+
         if (serverBid.content_type === 'video') {
           bidResponse.vastXml = serverBid.adm;
           bidResponse.mediaType = VIDEO;
@@ -164,7 +222,22 @@ function _addBidResponse(serverBid, bidsMap, bidResponses) {
           bidResponse.mediaType = BANNER;
         }
         bidResponses.push(bidResponse);
-      });
+
+        if (!slot.bids.length) {
+          slot.parents.forEach(({parent, key, uid}) => {
+            const index = parent[key].indexOf(slot);
+            if (index > -1) {
+              parent[key].splice(index, 1);
+            }
+            if (!parent[key].length) {
+              delete parent[key];
+              if (!utils.getKeys(parent).length) {
+                delete bidsMap[uid];
+              }
+            }
+          });
+        }
+      }
     } else {
       errorMessage = LOG_ERROR_MESS.noPlacementCode + serverBid.auid;
     }
@@ -197,6 +270,14 @@ function createRenderer (bid, rendererParams) {
   }
 
   return renderer;
+}
+
+export function resetUserSync() {
+  hasSynced = false;
+}
+
+export function getSyncUrl() {
+  return SYNC_URL;
 }
 
 registerBidder(spec);

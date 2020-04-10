@@ -1,17 +1,20 @@
-import Adapter from '../adapter';
-import adapterManager from '../adapterManager';
-import { config } from '../config';
-import { createBid } from '../bidfactory';
-import { userSync } from '../userSync';
-import { nativeBidIsValid } from '../native';
-import { isValidVideoBid } from '../video';
+import Adapter from '../adapter.js';
+import adapterManager from '../adapterManager.js';
+import { config } from '../config.js';
+import { createBid } from '../bidfactory.js';
+import { userSync } from '../userSync.js';
+import { nativeBidIsValid } from '../native.js';
+import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
-import events from '../events';
-import includes from 'core-js/library/fn/array/includes';
-import { ajax } from '../ajax';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
-import { ADPOD } from '../mediaTypes';
-import { getHook } from '../hook';
+import events from '../events.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import { ajax } from '../ajax.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray } from '../utils.js';
+import { ADPOD } from '../mediaTypes.js';
+import { getHook, hook } from '../hook.js';
+import { getCoreStorageManager } from '../storageManager.js';
+
+export const storage = getCoreStorageManager('bidderFactory');
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -168,7 +171,7 @@ export function newBidder(spec) {
       return Object.freeze(spec);
     },
     registerSyncs,
-    callBids: function(bidderRequest, addBidResponse, done, ajax) {
+    callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse, configEnabledCallback) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
@@ -187,7 +190,7 @@ export function newBidder(spec) {
       function afterAllResponses() {
         done();
         events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-        registerSyncs(responses, bidderRequest.gdprConsent);
+        registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
@@ -216,7 +219,7 @@ export function newBidder(spec) {
       // Callbacks don't compose as nicely as Promises. We should call done() once _all_ the
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
-      const onResponse = delayExecution(afterAllResponses, requests.length)
+      const onResponse = delayExecution(configEnabledCallback(afterAllResponses), requests.length)
       requests.forEach(processRequest);
 
       function formatGetParameters(data) {
@@ -233,7 +236,7 @@ export function newBidder(spec) {
             ajax(
               `${request.url}${formatGetParameters(request.data)}`,
               {
-                success: onSuccess,
+                success: configEnabledCallback(onSuccess),
                 error: onFailure
               },
               undefined,
@@ -247,7 +250,7 @@ export function newBidder(spec) {
             ajax(
               request.url,
               {
-                success: onSuccess,
+                success: configEnabledCallback(onSuccess),
                 error: onFailure
               },
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
@@ -267,6 +270,8 @@ export function newBidder(spec) {
         // If the adapter code fails, no bids should be added. After all the bids have been added, make
         // sure to call the `onResponse` function so that we're one step closer to calling done().
         function onSuccess(response, responseObj) {
+          onTimelyResponse(spec.code);
+
           try {
             response = JSON.parse(response);
           } catch (e) { /* response might not be JSON... that's ok. */ }
@@ -288,7 +293,7 @@ export function newBidder(spec) {
           }
 
           if (bids) {
-            if (bids.forEach) {
+            if (isArray(bids)) {
               bids.forEach(addBidUsingRequestMap);
             } else {
               addBidUsingRequestMap(bids);
@@ -299,6 +304,9 @@ export function newBidder(spec) {
           function addBidUsingRequestMap(bid) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
+              // creating a copy of original values as cpm and currency are modified later
+              bid.originalCpm = bid.cpm;
+              bid.originalCurrency = bid.currency;
               const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
@@ -316,6 +324,8 @@ export function newBidder(spec) {
         // If the server responds with an error, there's not much we can do. Log it, and make sure to
         // call onResponse() so that we're one step closer to calling done().
         function onFailure(err) {
+          onTimelyResponse(spec.code);
+
           logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
           onResponse();
         }
@@ -323,22 +333,8 @@ export function newBidder(spec) {
     }
   });
 
-  function registerSyncs(responses, gdprConsent) {
-    if (spec.getUserSyncs) {
-      let filterConfig = config.getConfig('userSync.filterSettings');
-      let syncs = spec.getUserSyncs({
-        iframeEnabled: !!(config.getConfig('userSync.iframeEnabled') || (filterConfig && (filterConfig.iframe || filterConfig.all))),
-        pixelEnabled: !!(config.getConfig('userSync.pixelEnabled') || (filterConfig && (filterConfig.image || filterConfig.all))),
-      }, responses, gdprConsent);
-      if (syncs) {
-        if (!Array.isArray(syncs)) {
-          syncs = [syncs];
-        }
-        syncs.forEach((sync) => {
-          userSync.registerSync(sync.type, spec.code, sync.url)
-        });
-      }
-    }
+  function registerSyncs(responses, gdprConsent, uspConsent) {
+    registerSyncInner(spec, responses, gdprConsent, uspConsent);
   }
 
   function filterAndWarn(bid) {
@@ -349,6 +345,25 @@ export function newBidder(spec) {
     return true;
   }
 }
+
+export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent) {
+  const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
+  if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
+    let filterConfig = config.getConfig('userSync.filterSettings');
+    let syncs = spec.getUserSyncs({
+      iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
+      pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
+    }, responses, gdprConsent, uspConsent);
+    if (syncs) {
+      if (!Array.isArray(syncs)) {
+        syncs = [syncs];
+      }
+      syncs.forEach((sync) => {
+        userSync.registerSync(sync.type, spec.code, sync.url)
+      });
+    }
+  }
+}, 'registerSyncs')
 
 export function preloadBidderMappingFile(fn, adUnits) {
   if (!config.getConfig('adpod.brandCategoryExclusion')) {
@@ -366,7 +381,7 @@ export function preloadBidderMappingFile(fn, adUnits) {
       let info = bidderSpec.getSpec().getMappingFileInfo();
       let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
       let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
-      let mappingData = getDataFromLocalStorage(key);
+      let mappingData = storage.getDataFromLocalStorage(key);
       if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
         ajax(info.url,
           {
@@ -377,7 +392,7 @@ export function preloadBidderMappingFile(fn, adUnits) {
                   lastUpdated: timestamp(),
                   mapping: response.mapping
                 }
-                setDataInLocalStorage(key, JSON.stringify(mapping));
+                storage.setDataInLocalStorage(key, JSON.stringify(mapping));
               } catch (error) {
                 logError(`Failed to parse ${bidder} bidder translation mapping file`);
               }
@@ -405,7 +420,7 @@ export function getIabSubCategory(bidderCode, category) {
   if (bidderSpec.getSpec().getMappingFileInfo) {
     let info = bidderSpec.getSpec().getMappingFileInfo();
     let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getBidderCode();
-    let data = getDataFromLocalStorage(key);
+    let data = storage.getDataFromLocalStorage(key);
     if (data) {
       try {
         data = JSON.parse(data);
@@ -419,7 +434,9 @@ export function getIabSubCategory(bidderCode, category) {
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, bidRequests) {
-  if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
+  if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
+    bid.width = parseInt(bid.width, 10);
+    bid.height = parseInt(bid.height, 10);
     return true;
   }
 
@@ -432,8 +449,8 @@ function validBidSize(adUnitCode, bid, bidRequests) {
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
     const [ width, height ] = parsedSizes[0].split('x');
-    bid.width = width;
-    bid.height = height;
+    bid.width = parseInt(width, 10);
+    bid.height = parseInt(height, 10);
     return true;
   }
 

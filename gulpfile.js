@@ -19,18 +19,22 @@ var header = require('gulp-header');
 var footer = require('gulp-footer');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
-var optimizejs = require('gulp-optimize-js');
 var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
+const path = require('path');
+const execa = require('execa');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var port = 9999;
+const mockServerPort = 4444;
+const host = argv.host ? argv.host : 'localhost';
+const { spawn } = require('child_process');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -51,22 +55,6 @@ function clean() {
     .pipe(gulpClean());
 }
 
-function e2etestReport() {
-  var reportPort = 9010;
-  var targetDestinationDir = './e2etest-report';
-  helpers.createEnd2EndTestReport(targetDestinationDir);
-  connect.server({
-    port: reportPort,
-    root: './',
-    livereload: true
-  });
-
-  setTimeout(function() {
-    opens('http://localhost:' + reportPort + '/' + targetDestinationDir.slice(2) + '/results.html');
-  }, 5000);
-};
-e2etestReport.displayName = 'e2etest-report';
-
 // Dependant task for building postbid. It escapes postbid-config file.
 function escapePostbidConfig() {
   gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
@@ -79,11 +67,11 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const isFixed = function(file) {
+  const isFixed = function (file) {
     return file.eslint != null && file.eslint.fixed;
   }
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], {base: './'})
-    .pipe(gulpif(argv.nolintfix, eslint(), eslint({fix: true})))
+  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], { base: './' })
+    .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
     .pipe(gulpif(isFixed, gulp.dest('./')));
@@ -92,13 +80,14 @@ function lint(done) {
 // View the code coverage report in the browser.
 function viewCoverage(done) {
   var coveragePort = 1999;
+  var mylocalhost = (argv.host) ? argv.host : 'localhost';
 
   connect.server({
     port: coveragePort,
-    root: 'build/coverage/karma_html',
+    root: 'build/coverage/lcov-report',
     livereload: false
   });
-  opens('http://localhost:' + coveragePort);
+  opens('http://' + mylocalhost + ':' + coveragePort);
   done();
 };
 
@@ -158,7 +147,6 @@ function makeWebpackPkg() {
     .pipe(webpackStream(cloned, webpack))
     .pipe(uglify())
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
-    .pipe(optimizejs())
     .pipe(gulp.dest('build/dist'));
 }
 
@@ -172,7 +160,7 @@ function nodeBundle(modules) {
       .on('error', (err) => {
         reject(err);
       })
-      .pipe(through.obj(function(file, enc, done) {
+      .pipe(through.obj(function (file, enc, done) {
         resolve(file.contents.toString(enc));
         done();
       }));
@@ -211,25 +199,13 @@ function bundle(dev, moduleArr) {
   return gulp.src(
     entries
   )
-    .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
+    .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
       global: prebid.globalVarName
     }
     )))
     .pipe(gulpif(dev, sourcemaps.write('.')));
-}
-
-// Workaround for incompatibility between Karma & gulp callbacks.
-// See https://github.com/karma-runner/gulp-karma/issues/18 for some related discussion.
-function newKarmaCallback(done) {
-  return function (exitCode) {
-    if (exitCode) {
-      done(new Error('Karma tests failed with exit code ' + exitCode));
-    } else {
-      done();
-    }
-  }
 }
 
 // Run the unit tests.
@@ -241,9 +217,49 @@ function newKarmaCallback(done) {
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
+
 function test(done) {
   if (argv.notest) {
     done();
+  } else if (argv.e2e) {
+    let wdioCmd = path.join(__dirname, 'node_modules/.bin/wdio');
+    let wdioConf = path.join(__dirname, 'wdio.conf.js');
+    let wdioOpts;
+
+    if (argv.file) {
+      wdioOpts = [
+        wdioConf,
+        `--spec`,
+        `${argv.file}`
+      ]
+    } else {
+      wdioOpts = [
+        wdioConf
+      ];
+    }
+
+    //run mock-server
+    const mockServer = spawn('node', ['./test/mock-server/index.js', '--port=' + mockServerPort]);
+    mockServer.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`);
+    });
+    mockServer.stderr.on('data', (data) => {
+      console.log(`stderr: ${data}`);
+    });
+
+    execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
+      .then(stdout => {
+        // kill mock server
+        mockServer.kill('SIGINT');
+        done();
+        process.exit(0);
+      })
+      .catch(err => {
+        // kill mock server
+        mockServer.kill('SIGINT');
+        done(new Error(`Tests failed with error: ${err}`));
+        process.exit(1);
+      });
   } else {
     var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
@@ -256,6 +272,22 @@ function test(done) {
   }
 }
 
+function newKarmaCallback(done) {
+  return function (exitCode) {
+    if (exitCode) {
+      done(new Error('Karma tests failed with exit code ' + exitCode));
+      if (argv.browserstack) {
+        process.exit(exitCode);
+      }
+    } else {
+      done();
+      if (argv.browserstack) {
+        process.exit(exitCode);
+      }
+    }
+  }
+}
+
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 function testCoverage(done) {
   new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
@@ -264,37 +296,8 @@ function testCoverage(done) {
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // first send results of istanbul's test coverage to coveralls.io.
   return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
-  // have to read it.
+    // have to read it.
     .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
-}
-
-function e2eTest() {
-  var cmdQueue = [];
-  if (argv.browserstack) {
-    var browsers = require('./browsers.json');
-    delete browsers['bs_ie_9_windows_7'];
-
-    var cmdStr = ' --config nightwatch.conf.js';
-    if (argv.group) {
-      cmdStr = cmdStr + ' --group ' + argv.group;
-    }
-    cmdStr = cmdStr + ' --reporter ./test/spec/e2e/custom-reporter/pbjs-html-reporter.js';
-
-    var startWith = 'bs';
-
-    Object.keys(browsers).filter(function(v) {
-      return v.substring(0, startWith.length) === startWith && browsers[v].browser !== 'iphone';
-    }).map(function(v, i, arr) {
-      var newArr = (i % 2 === 0) ? arr.slice(i, i + 2) : null;
-      if (newArr) {
-        var cmd = 'nightwatch --env ' + newArr.join(',') + cmdStr;
-        cmdQueue.push(cmd);
-      }
-    });
-  }
-
-  return gulp.src('')
-    .pipe(shell(cmdQueue.join(';')));
 }
 
 // This task creates postbid.js. Postbid setup is different from prebid.js
@@ -307,6 +310,27 @@ function buildPostbid() {
     .pipe(replace('\[%%postbid%%\]', fileContent))
     .pipe(gulp.dest('build/postbid/'));
 }
+
+function setupE2e(done) {
+  if (!argv.host) {
+    throw new gutil.PluginError({
+      plugin: 'E2E test',
+      message: gutil.colors.red('Host should be defined e.g. ap.localhost, anlocalhost. localhost cannot be used as safari browserstack is not able to connect to localhost')
+    });
+  }
+  process.env.TEST_SERVER_HOST = argv.host;
+  if (argv.https) {
+    process.env.TEST_SERVER_PROTOCOL = argv.https;
+  }
+  argv.e2e = true;
+  done();
+}
+
+gulp.task('updatepath', function () {
+  return gulp.src(['build/dist/*.js'])
+    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', 'http://' + host + ':' + mockServerPort + '/'))
+    .pipe(gulp.dest('build/dist'));
+});
 
 // support tasks
 gulp.task(lint);
@@ -333,12 +357,9 @@ gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
-gulp.task(e2etestReport);
-gulp.task('e2etest', gulp.series(clean, gulp.parallel(makeDevpackPkg, makeWebpackPkg), e2eTest));
-
+gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), 'updatepath', test));
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
-gulp.task('serve-nw', gulp.parallel(lint, watch, 'e2etest'));
 
 module.exports = nodeBundle;
