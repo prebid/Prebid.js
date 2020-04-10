@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'freewheel-ssp';
 
@@ -319,7 +319,11 @@ export const spec = {
     var playerSize = [];
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-      playerSize = bidrequest.mediaTypes.video.playerSize;
+      if (utils.isArray(bidrequest.mediaTypes.video.playerSize[0])) {
+        playerSize = bidrequest.mediaTypes.video.playerSize[0];
+      } else {
+        playerSize = bidrequest.mediaTypes.video.playerSize;
+      }
     } else if (bidrequest.mediaTypes.banner.sizes) {
       // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
       playerSize = getBiggerSizeWithLimit(bidrequest.mediaTypes.banner.sizes, bidrequest.mediaTypes.banner.minSizeLimit, bidrequest.mediaTypes.banner.maxSizeLimit);
@@ -363,6 +367,12 @@ export const spec = {
         netRevenue: true,
         ttl: 360
       };
+
+      if (bidrequest.mediaTypes.video) {
+        bidResponse.vastXml = serverResponse;
+        bidResponse.mediaType = 'video';
+      }
+
       bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);
     }

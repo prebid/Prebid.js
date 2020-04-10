@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/teadsBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/teadsBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -136,7 +136,8 @@ describe('teadsBidAdapter', () => {
           'gdprApplies': true,
           'vendorData': {
             'hasGlobalConsent': false
-          }
+          },
+          'apiVersion': 1
         }
       };
 
@@ -146,6 +147,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(12);
+      expect(payload.gdpr_iab.apiVersion).to.equal(1);
     });
 
     it('should add referer info to payload', function () {
@@ -175,7 +177,8 @@ describe('teadsBidAdapter', () => {
           'gdprApplies': true,
           'vendorData': {
             'hasGlobalScope': true
-          }
+          },
+          'apiVersion': 1
         }
       };
 
@@ -185,6 +188,32 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(11);
+      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+    });
+
+    it('should send GDPR TCF2 to endpoint with 12 status', function() {
+      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          'consentString': consentString,
+          'gdprApplies': true,
+          'vendorData': {
+            'isServiceSpecific': true
+          },
+          'apiVersion': 2
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr_iab).to.exist;
+      expect(payload.gdpr_iab.consent).to.equal(consentString);
+      expect(payload.gdpr_iab.status).to.equal(12);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should send GDPR to endpoint with 22 status', function() {
@@ -196,7 +225,8 @@ describe('teadsBidAdapter', () => {
         'gdprConsent': {
           'consentString': undefined,
           'gdprApplies': undefined,
-          'vendorData': undefined
+          'vendorData': undefined,
+          'apiVersion': 1
         }
       };
 
@@ -206,6 +236,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal('');
       expect(payload.gdpr_iab.status).to.equal(22);
+      expect(payload.gdpr_iab.apiVersion).to.equal(1);
     });
 
     it('should send GDPR to endpoint with 0 status', function() {
@@ -219,7 +250,8 @@ describe('teadsBidAdapter', () => {
           'gdprApplies': false,
           'vendorData': {
             'hasGlobalScope': false
-          }
+          },
+          'apiVersion': 1
         }
       };
 
@@ -229,6 +261,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(0);
+      expect(payload.gdpr_iab.apiVersion).to.equal(1);
     });
 
     it('should use good mediaTypes video playerSizes', function() {
@@ -367,72 +400,5 @@ describe('teadsBidAdapter', () => {
       let result = spec.interpretResponse(bids);
       expect(result.length).to.equal(0);
     });
-  });
-
-  it('should call userSync with good params', function() {
-    let bids = [{
-      'body': {
-        'responses': [{
-          'ad': '<script>',
-          'cpm': 0.5,
-          'currency': 'USD',
-          'height': 250,
-          'netRevenue': true,
-          'bidId': '3ede2a3fa0db94',
-          'ttl': 360,
-          'width': 300,
-          'creativeId': 'er2ee',
-          'placementId': 34
-        }]
-      }
-    }];
-    let syncOptions = { 'iframeEnabled': true };
-    let consentString = 'JRJ8FCP29RPZDeBNsERRDCSAAZ+A==';
-    let gdprConsent = {
-      'consentString': consentString,
-      'gdprApplies': true,
-      'vendorData': {
-        'hasGlobalConsent': false
-      }
-    };
-    let hb_version = '$prebid.version$'
-    let finalUrl = `https://sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&placementId=34&`;
-    const userSync = spec.getUserSyncs(syncOptions, bids, gdprConsent);
-
-    expect(userSync[0].type).to.equal('iframe');
-    expect(decodeURIComponent(userSync[0].url)).to.equal(finalUrl);
-  });
-
-  it('should call userSync without placementId param', function() {
-    let bids = [{
-      'body': {
-        'responses': [{
-          'ad': '<script>',
-          'cpm': 0.5,
-          'currency': 'USD',
-          'height': 250,
-          'netRevenue': true,
-          'bidId': '3ede2a3fa0db94',
-          'ttl': 360,
-          'width': 300,
-          'creativeId': 'er2ee'
-        }]
-      }
-    }];
-    let syncOptions = { 'iframeEnabled': true };
-    let consentString = 'JRJ8FCP29RPZDeBNsERRDCSAAZ+A==';
-    let gdprConsent = {
-      'consentString': consentString,
-      'gdprApplies': true,
-      'vendorData': {
-        'hasGlobalConsent': false
-      }
-    };
-    let hb_version = '$prebid.version$'
-    let finalUrl = `https://sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&`;
-    const userSync = spec.getUserSyncs(syncOptions, bids, gdprConsent);
-
-    expect(userSync[0].type).to.equal('iframe');
-    expect(decodeURIComponent(userSync[0].url)).to.equal(finalUrl);
   });
 });

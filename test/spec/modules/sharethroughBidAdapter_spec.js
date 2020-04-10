@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 const bidRequests = [
@@ -457,7 +457,7 @@ describe('sharethrough adapter spec', function () {
         /data-str-native-key="pKey" data-stx-response-name="str_response_bidId"/);
       expect(!!adMarkup.indexOf(resp)).to.eql(true);
       expect(adMarkup).to.match(
-        /<script src="\/\/native.sharethrough.com\/assets\/sfp.js"><\/script>/);
+        /<script src="https:\/\/native.sharethrough.com\/assets\/sfp.js"><\/script>/);
     });
   });
 

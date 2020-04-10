@@ -1,7 +1,7 @@
-import { criteoIdSubmodule } from 'modules/criteoIdSystem';
-import * as utils from 'src/utils';
-import * as ajaxLib from 'src/ajax';
-import * as urlLib from 'src/url';
+import { criteoIdSubmodule, storage } from 'modules/criteoIdSystem.js';
+import * as utils from 'src/utils.js';
+import * as ajaxLib from 'src/ajax.js';
+import * as urlLib from 'src/url.js';
 
 const pastDateString = new Date(0).toString()
 
@@ -27,11 +27,11 @@ describe('CriteoId module', function () {
   let triggerPixelStub;
 
   beforeEach(function (done) {
-    getCookieStub = sinon.stub(utils, 'getCookie');
-    setCookieStub = sinon.stub(utils, 'setCookie');
-    getLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
-    setLocalStorageStub = sinon.stub(utils, 'setDataInLocalStorage');
-    removeFromLocalStorageStub = sinon.stub(utils, 'removeDataFromLocalStorage');
+    getCookieStub = sinon.stub(storage, 'getCookie');
+    setCookieStub = sinon.stub(storage, 'setCookie');
+    getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
+    removeFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
     ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse('{}'));
     parseUrlStub = sinon.stub(urlLib, 'parse').returns({protocol: 'https', hostname: 'testdev.com'})

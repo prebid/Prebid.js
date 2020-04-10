@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { spec } from 'modules/nobidBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
+import * as utils from 'src/utils.js';
+import { spec } from 'modules/nobidBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as bidderFactory from 'src/adapters/bidderFactory.js';
 
 describe('Nobid Adapter', function () {
   const adapter = newBidder(spec);
@@ -70,7 +71,7 @@ describe('Nobid Adapter', function () {
       refererInfo: {referer: REFERER}
     }
 
-    it('should add source and verison to the tag', function () {
+    it('should add source and version to the tag', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.sid).to.equal(SITE_ID);
@@ -281,6 +282,109 @@ describe('Nobid Adapter', function () {
     });
   });
 
+  describe('buildRequestsWithSupplyChain', function () {
+    const SITE_ID = 2;
+    let bidRequests = [
+      {
+        bidder: 'nobid',
+        params: {
+          siteId: SITE_ID
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        coppa: true,
+        schain: {
+		    validation: 'strict',
+		    config: {
+		      ver: '1.0',
+		      complete: 1,
+		      nodes: [
+		        {
+		          asi: 'indirectseller.com',
+		          sid: '00001',
+		          name: 'name.com',
+		          hp: 1
+		        }
+		      ]
+		    }
+        }
+      }
+    ];
+
+    it('schain exist', function () {
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.schain).to.exist;
+      expect(payload.schain.validation).to.exist.and.to.equal('strict');
+      expect(payload.schain.config.ver).to.exist.and.to.equal('1.0');
+      expect(payload.schain.config.complete).to.exist.and.to.equal(1);
+      expect(payload.schain.config.nodes[0].asi).to.exist.and.to.equal('indirectseller.com');
+      expect(payload.schain.config.nodes[0].sid).to.exist.and.to.equal('00001');
+      expect(payload.schain.config.nodes[0].name).to.exist.and.to.equal('name.com');
+      expect(payload.schain.config.nodes[0].hp).to.exist.and.to.equal(1);
+      expect(payload.coppa).to.exist;
+      expect(payload.coppa).to.exist.and.to.be.true;
+      expect(payload.a).to.be.lengthOf(1);
+      expect(request.method).to.equal('POST');
+    });
+  });
+
+  describe('interpretResponseWithUserLimit', function () {
+    const CREATIVE_ID_300x250 = 'CREATIVE-100';
+    const ADUNIT_300x250 = 'ADUNIT-1';
+    const ADMARKUP_300x250 = 'ADMARKUP-300x250';
+    const PRICE_300x250 = 0.51;
+    const REQUEST_ID = '3db3773286ee59';
+    const DEAL_ID = 'deal123';
+    const ULIMIT = 1;
+    let response = {
+      country: 'US',
+      ip: '68.83.15.75',
+      device: 'COMPUTER',
+      site: 2,
+      ublock: ULIMIT,
+      bids: [
+        {id: 1,
+          bdrid: 101,
+          divid: ADUNIT_300x250,
+          dealid: DEAL_ID,
+          creativeid: CREATIVE_ID_300x250,
+          size: {'w': 300, 'h': 250},
+          adm: ADMARKUP_300x250,
+          price: '' + PRICE_300x250
+        }
+      ]
+    };
+
+    it('should ULimit be respected', function () {
+      const bidderRequest = {
+        bids: [{
+          bidId: REQUEST_ID,
+          adUnitCode: ADUNIT_300x250
+        }]
+      }
+      const bidRequests = [
+        {
+          'bidder': 'nobid',
+          'params': {
+            'siteId': 2
+          },
+          'adUnitCode': 'adunit-code',
+          'sizes': [[300, 250]],
+          'bidId': '30b31c1838de1e',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+        }
+      ];
+      spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request).to.equal(undefined);
+    });
+  });
+
   describe('getUserSyncs', function () {
     const GDPR_CONSENT_STRING = 'GDPR_CONSENT_STRING';
     it('should get correct user sync when iframeEnabled', function () {
@@ -304,6 +408,13 @@ describe('Nobid Adapter', function () {
     it('should get correct user sync when !iframeEnabled', function () {
       let pixel = spec.getUserSyncs({iframeEnabled: false})
       expect(pixel.length).to.equal(0);
+    });
+
+    it('should get correct user sync when !iframeEnabled and pixelEnabled', function () {
+      let pixel = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{body: {syncs: ['sync_url']}}])
+      expect(pixel.length).to.equal(1);
+      expect(pixel[0].type).to.equal('image');
+      expect(pixel[0].url).to.equal('sync_url');
     });
 
     it('should get correct user sync when !iframeEnabled', function () {

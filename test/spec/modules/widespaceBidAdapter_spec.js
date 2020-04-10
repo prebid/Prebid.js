@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/widespaceBidAdapter';
-import includes from 'core-js/library/fn/array/includes';
+import {spec, storage} from 'modules/widespaceBidAdapter.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 describe('+widespaceAdatperTest', function () {
   // Dummy bid request
@@ -141,8 +141,11 @@ describe('+widespaceAdatperTest', function () {
   });
 
   describe('+bidRequest', function () {
-    const request = spec.buildRequests(bidRequest, bidderRequest);
+    let request;
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
+    before(function() {
+      request = spec.buildRequests(bidRequest, bidderRequest);
+    })
 
     let fakeLocalStorage = {};
     let lsSetStub;
@@ -150,15 +153,15 @@ describe('+widespaceAdatperTest', function () {
     let lsRemoveStub;
 
     beforeEach(function () {
-      lsSetStub = sinon.stub(window.localStorage, 'setItem').callsFake(function (name, value) {
+      lsSetStub = sinon.stub(storage, 'setDataInLocalStorage').callsFake(function (name, value) {
         fakeLocalStorage[name] = value;
       });
 
-      lsGetStub = sinon.stub(window.localStorage, 'getItem').callsFake(function (key) {
+      lsGetStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(function (key) {
         return fakeLocalStorage[key] || null;
       });
 
-      lsRemoveStub = sinon.stub(window.localStorage, 'removeItem').callsFake(function (key) {
+      lsRemoveStub = sinon.stub(storage, 'removeDataFromLocalStorage').callsFake(function (key) {
         if (key && (fakeLocalStorage[key] !== null || fakeLocalStorage[key] !== undefined)) {
           delete fakeLocalStorage[key];
         }

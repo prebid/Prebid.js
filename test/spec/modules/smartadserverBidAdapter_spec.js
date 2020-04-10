@@ -3,15 +3,15 @@ import {
 } from 'chai';
 import {
   spec
-} from 'modules/smartadserverBidAdapter';
+} from 'modules/smartadserverBidAdapter.js';
 import {
   newBidder
-} from 'src/adapters/bidderFactory';
+} from 'src/adapters/bidderFactory.js';
 import {
   config
-} from 'src/config';
-import * as utils from 'src/utils';
-import { requestBidsHook } from 'modules/consentManagement';
+} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import { requestBidsHook } from 'modules/consentManagement.js';
 
 // Default params with optional ones
 describe('Smart bid adapter tests', function () {
@@ -268,6 +268,35 @@ describe('Smart bid adapter tests', function () {
       const requestContent = JSON.parse(request[0].data);
       expect(requestContent).to.not.have.property('gdpr');
       expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
+    });
+  });
+
+  describe('ccpa/us privacy tests', function () {
+    afterEach(function () {
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+    });
+
+    it('Verify build request with us privacy', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        },
+        consentManagement: {
+          cmp: 'iab',
+          consentRequired: true,
+          timeout: 1000,
+          allowAuctionWithoutConsent: true
+        }
+      });
+
+      const uspConsentValue = '1YNN'
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        uspConsent: uspConsentValue
+      });
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('us_privacy').and.to.equal(uspConsentValue);
     });
   });
 

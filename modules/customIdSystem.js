@@ -5,8 +5,8 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils';
-import {submodule} from '../src/hook';
+import * as utils from '../src/utils.js';
+import {submodule} from '../src/hook.js';
 
 /** @type {Submodule} */
 export const customIdSubmodule = {

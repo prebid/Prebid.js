@@ -1,11 +1,12 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'fidelity';
 const BIDDER_SERVER = 'x.fidelity-media.com';
 const FIDELITY_VENDOR_ID = 408;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 408,
   isBidRequestValid: function isBidRequestValid(bid) {
     return !!(bid && bid.params && bid.params.zoneid);
   },

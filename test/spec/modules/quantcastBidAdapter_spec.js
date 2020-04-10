@@ -8,9 +8,10 @@ import {
   QUANTCAST_PROTOCOL,
   QUANTCAST_PORT,
   spec as qcSpec
-} from '../../../modules/quantcastBidAdapter';
-import { newBidder } from '../../../src/adapters/bidderFactory';
-import { parse } from 'src/url';
+} from '../../../modules/quantcastBidAdapter.js';
+import { newBidder } from '../../../src/adapters/bidderFactory.js';
+import { parse } from 'src/url.js';
+import { config } from 'src/config.js';
 
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
@@ -138,6 +139,7 @@ describe('Quantcast adapter', function () {
       bidId: '2f7b179d443f14',
       gdprSignal: 0,
       uspSignal: 0,
+      coppa: 0,
       prebidJsVersion: '$prebid.version$'
     };
 
@@ -205,6 +207,7 @@ describe('Quantcast adapter', function () {
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
         uspSignal: 0,
+        coppa: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -240,6 +243,7 @@ describe('Quantcast adapter', function () {
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
         uspSignal: 0,
+        coppa: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -271,6 +275,7 @@ describe('Quantcast adapter', function () {
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
         uspSignal: 0,
+        coppa: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -334,6 +339,7 @@ describe('Quantcast adapter', function () {
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
         uspSignal: 0,
+        coppa: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -355,6 +361,50 @@ describe('Quantcast adapter', function () {
     const parsed = JSON.parse(requests[0].data);
     expect(parsed.uspSignal).to.equal(1);
     expect(parsed.uspConsent).to.equal('consentString');
+  });
+
+  describe('propagates coppa', function() {
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('propagates coppa as 1 if coppa param is set to true in the bid request', function () {
+      bidRequest.params = {
+        publisherId: 'test_publisher_id',
+        coppa: true
+      };
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        const config = {
+          'coppa': true
+        };
+        return config[key];
+      });
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(requests[0].data).coppa).to.equal(1);
+    });
+
+    it('propagates coppa as 0 if there is no coppa param or coppa is set to false in the bid request', function () {
+      const requestsWithoutCoppa = qcSpec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(requestsWithoutCoppa[0].data).coppa).to.equal(0);
+
+      bidRequest.params = {
+        publisherId: 'test_publisher_id',
+        coppa: false
+      };
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        const config = {
+          'coppa': false
+        };
+        return config[key];
+      });
+      const requestsWithFalseCoppa = qcSpec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(requestsWithFalseCoppa[0].data).coppa).to.equal(0);
+    });
   });
 
   describe('`interpretResponse`', function () {

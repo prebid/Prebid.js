@@ -9,9 +9,13 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils'
-import { ajax } from '../src/ajax';
-import { submodule } from '../src/hook';
+import * as utils from '../src/utils.js'
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const DT_VENDOR_ID = 64; // cmp gvlVendorId
+const storage = getStorageManager(DT_VENDOR_ID);
 
 var fallbackTimeout = 1550; // timeout value that allows userId system to execute first
 var fallbackTimer = 0; // timer Id for fallback init so we don't double call
@@ -40,13 +44,19 @@ var noop = function () {
 
 const MAX_RETRIES = 2;
 const DT_ID_SVC = 'https://prebid.digitru.st/id/v1';
-const DT_VENDOR_ID = 64; // cmp gvlVendorId
 
 var isFunc = function (fn) {
   return typeof (fn) === 'function';
 }
 
+var _savedId = null; // closure variable for storing Id to avoid additional requests
+
 function callApi(options) {
+  var ajaxOptions = {
+    method: 'GET',
+    withCredentials: true
+  };
+
   ajax(
     DT_ID_SVC,
     {
@@ -54,9 +64,7 @@ function callApi(options) {
       error: options.fail
     },
     null,
-    {
-      method: 'GET'
-    }
+    ajaxOptions
   );
 }
 
@@ -69,7 +77,7 @@ function encId(id) {
     if (typeof (id) !== 'string') {
       id = JSON.stringify(id);
     }
-    return encodeURIComponent(btoa(id));
+    return btoa(id);
   } catch (ex) {
     return id;
   }
@@ -83,8 +91,7 @@ function writeDigiId(id) {
   var key = 'DigiTrust.v1.identity';
   var date = new Date();
   date.setTime(date.getTime() + 604800000);
-  var exp = 'expires=' + date.toUTCString();
-  document.cookie = key + '=' + encId(id) + '; ' + exp + '; path=/;SameSite=none;';
+  storage.setCookie(key, encId(id), date.toUTCString(), 'none');
 }
 
 /**
@@ -92,8 +99,6 @@ function writeDigiId(id) {
  *
  */
 function initDigitrustFacade(config) {
-  var _savedId = null; // closure variable for storing Id to avoid additional requests
-
   clearTimeout(fallbackTimer);
   fallbackTimer = 0;
 
@@ -117,7 +122,7 @@ function initDigitrustFacade(config) {
           try {
             inter.initCallback(idResponse);
           } catch (ex) {
-            utils.logError('Exception in passed DigiTrust init callback');
+            utils.logError('Exception in passed DigiTrust init callback', ex);
           }
         }
       }
@@ -147,9 +152,9 @@ function initDigitrustFacade(config) {
             success: true
           }
           try {
-            writeDigiId(respText);
             idResult.identity = JSON.parse(respText);
-            _savedId = idResult;
+            _savedId = idResult; // Save result to the cache variable
+            writeDigiId(respText);
           } catch (ex) {
             idResult.success = false;
             delete idResult.identity;
@@ -207,9 +212,9 @@ var gdprConsent = {
     var consentAnswer = false;
     if (typeof (window.__cmp) !== 'undefined') {
       stopTimer = setTimeout(function () {
-        consentAnswer = true;
-        consentCb(consentAnswer);
+        consentAnswer = false;
         processed = true;
+        consentCb(consentAnswer);
       }, options.consentTimeout);
 
       window.__cmp('ping', null, function(pingAnswer) {
@@ -227,9 +232,12 @@ var gdprConsent = {
           consentCb(consentAnswer);
         }
       });
+    } else {
+      // __cmp library is not preset.
+      // ignore this check and rely on id system GDPR consent management
+      consentAnswer = true;
+      consentCb(consentAnswer);
     }
-    consentAnswer = true;
-    consentCb(consentAnswer);
   }
 }
 
@@ -251,6 +259,10 @@ var ResultWrapper = function (opts) {
    */
   this.userIdCallback = function (callback) {
     idSystemFn = callback;
+    if (me.idObj == null) {
+      me.idObj = _savedId;
+    }
+
     if (me.idObj != null && isFunc(callback)) {
       callback(wrapIdResult());
     }
@@ -260,6 +272,10 @@ var ResultWrapper = function (opts) {
    * Return a wrapped result formatted for userId system
    */
   function wrapIdResult() {
+    if (me.idObj == null) {
+      me.idObj = _savedId;
+    }
+
     if (me.idObj == null) {
       return null;
     }
