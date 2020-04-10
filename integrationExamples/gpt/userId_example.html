@@ -184,9 +184,16 @@
                         name: 'idl_env',
                         expires: 30
                       }
+                    }, {
+                      name: "sharedId",
+                      storage: {
+                        type: "cookie",
+                        name: "sharedId",
+                        expires: 30
+                      },
                     }],
                     syncDelay: 5000,
-                    auctionDelay: 1000 
+                    auctionDelay: 1000
                 }
             });
             pbjs.addAdUnits(adUnits);
