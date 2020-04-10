@@ -1435,6 +1435,20 @@ describe('the rubicon adapter', function () {
         it('should make a well-formed video request', function () {
           createVideoBidderRequest();
 
+          const _config = {
+            site: {
+              publisher: {
+                id: '1234',
+                domain: 'test.com'
+              },
+              content: {
+                language: 'fr'
+              }
+            }
+          };
+
+          config.setConfig(_config);
+
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
@@ -1461,7 +1475,16 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.size_id).to.equal(201);
           expect(imp.ext.rubicon.video.language).to.equal('en');
           // Also want it to be in post.site.content.language
-          expect(post.site.content.language).to.equal('en');
+          expect(post.site).to.deep.equal({
+            publisher: {
+              id: '1234',
+              domain: 'test.com'
+            },
+            content: {
+              language: 'fr'
+            },
+            page: 'localhost'
+          });
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');

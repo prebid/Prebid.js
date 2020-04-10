@@ -924,18 +924,26 @@ function appendSiteAppDevice(data, bidRequest, bidderRequest) {
   if (typeof config.getConfig('app') === 'object') {
     data.app = config.getConfig('app');
   } else {
-    data.site = {
-      page: _getPageUrl(bidRequest, bidderRequest)
+    data.site = {};
+    if (typeof config.getConfig('site') === 'object') {
+      data.site = config.getConfig('site');
     }
+    data.site.page = _getPageUrl(bidRequest, bidderRequest);
   }
+
   if (typeof config.getConfig('device') === 'object') {
     data.device = config.getConfig('device');
   }
+
   // Add language to site and device objects if there
   if (bidRequest.params.video.language) {
     ['site', 'device'].forEach(function(param) {
       if (data[param]) {
-        data[param].content = Object.assign({language: bidRequest.params.video.language}, data[param].content)
+        if (param == 'site' && !utils.deepAccess(data[param], 'content.language')) {
+          utils.deepSetValue(data[param], 'content.language', bidRequest.params.video.language)
+        } else {
+          data[param].content = Object.assign({language: bidRequest.params.video.language}, data[param].content)
+        }
       }
     });
   }
