@@ -1031,6 +1031,8 @@ export const spec = {
                   br.ttl = 300;
                   br.referrer = parsedReferrer;
                   br.ad = bid.adm;
+                  br.pm_seat = seatbidder.seat || null;
+                  br.pm_dspid = bid.ext && bid.ext.dspid ? bid.ext.dspid : null
                   if (requestData.imp && requestData.imp.length > 0) {
                     requestData.imp.forEach(req => {
                       if (bid.impid === req.id) {
