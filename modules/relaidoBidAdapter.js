@@ -132,9 +132,13 @@ function interpretResponse(serverResponse, bidRequest) {
 }
 
 function getUserSyncs(syncOptions, serverResponses) {
-  const resSyncUrl = utils.deepAccess(serverResponses, '0.body.syncUrl');
-  const proSyncUrl = `https://${BIDDER_DOMAIN}/tr/v1/prebid/sync.html`;
-  const syncUrl = resSyncUrl || proSyncUrl;
+  if (!syncOptions.iframeEnabled) {
+    return [];
+  }
+  let syncUrl = `https://${BIDDER_DOMAIN}/tr/v1/prebid/sync.html`;
+  if (serverResponses.length > 0) {
+    syncUrl = utils.deepAccess(serverResponses, '0.body.syncUrl') || syncUrl;
+  }
   receiveMessage();
   return [{
     type: 'iframe',
@@ -218,7 +222,7 @@ function receiveMessage() {
 }
 
 function setUuid(e) {
-  if (e.data && e.data.relaido_uuid) {
+  if (utils.isPlainObject(e.data) && e.data.relaido_uuid) {
     storage.setDataInLocalStorage(UUID_KEY, e.data.relaido_uuid);
     window.removeEventListener('message', setUuid);
   }

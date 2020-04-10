@@ -223,20 +223,33 @@ describe('RelaidoAdapter', function () {
 
   describe('spec.getUserSyncs', function () {
     it('should choose iframe sync urls', function () {
-      let userSyncs = spec.getUserSyncs({}, [serverResponse]);
+      let userSyncs = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
         url: serverResponse.body.syncUrl
       }]);
     });
 
-    it('should choose iframe sync urls if syncUrl are undefined', function () {
-      serverResponse.body.syncUrl = undefined;
-      let userSyncs = spec.getUserSyncs({}, [serverResponse]);
+    it('should choose iframe sync urls if serverResponse are empty', function () {
+      let userSyncs = spec.getUserSyncs({iframeEnabled: true}, []);
       expect(userSyncs).to.deep.equal([{
         type: 'iframe',
         url: 'https://api.relaido.jp/tr/v1/prebid/sync.html'
       }]);
+    });
+
+    it('should choose iframe sync urls if syncUrl are undefined', function () {
+      serverResponse.body.syncUrl = undefined;
+      let userSyncs = spec.getUserSyncs({iframeEnabled: true}, [serverResponse]);
+      expect(userSyncs).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://api.relaido.jp/tr/v1/prebid/sync.html'
+      }]);
+    });
+
+    it('should return empty if iframeEnabled are false', function () {
+      let userSyncs = spec.getUserSyncs({iframeEnabled: false}, [serverResponse]);
+      expect(userSyncs).to.have.lengthOf(0);
     });
   });
 
