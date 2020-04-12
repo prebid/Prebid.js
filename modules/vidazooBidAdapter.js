@@ -39,6 +39,9 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
       data.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
     }
   }
+  if (bidderRequest.uspConsent) {
+    data.usPrivacy = bidderRequest.uspConsent
+  }
   const dto = {
     method: 'POST',
     url: `${URL}/prebid/multi/${cId}`,
