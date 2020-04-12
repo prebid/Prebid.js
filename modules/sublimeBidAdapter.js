@@ -10,6 +10,7 @@ const SUBLIME_VERSION = '0.4.0';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 114,
   aliases: [],
 
   /**

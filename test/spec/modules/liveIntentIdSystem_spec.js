@@ -1,4 +1,4 @@
-import {liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule} from 'modules/liveIntentIdSystem.js';
+import {liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage} from 'modules/liveIntentIdSystem.js';
 import * as utils from 'src/utils.js';
 import {uspDataHandler} from '../../../src/adapterManager.js';
 import {server} from 'test/mocks/xhr.js';
@@ -17,8 +17,8 @@ describe('LiveIntentId', function () {
 
   beforeEach(function () {
     imgStub = sinon.stub(window, 'Image').returns(pixel);
-    getCookieStub = sinon.stub(utils, 'getCookie');
-    getDataFromLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
+    getCookieStub = sinon.stub(storage, 'getCookie');
+    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     logErrorStub = sinon.stub(utils, 'logError');
     consentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
   });
