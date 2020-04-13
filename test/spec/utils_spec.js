@@ -18,24 +18,6 @@ describe('Utils', function () {
     type_array = 'Array',
     type_function = 'Function';
 
-  describe('replaceTokenInString', function () {
-    it('should replace all given tokens in a String', function () {
-      var tokensToReplace = {
-        foo: 'bar',
-        zap: 'quux'
-      };
-
-      var output = utils.replaceTokenInString('hello %FOO%, I am %ZAP%', tokensToReplace, '%');
-      assert.equal(output, 'hello bar, I am quux');
-    });
-
-    it('should ignore tokens it does not see', function () {
-      var output = utils.replaceTokenInString('hello %FOO%', {}, '%');
-
-      assert.equal(output, 'hello %FOO%');
-    });
-  });
-
   describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
       var obj = {
@@ -86,7 +68,7 @@ describe('Utils', function () {
       };
 
       var output = utils.parseQueryStringParameters(obj);
-      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2') + '&';
+      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2');
       assert.equal(output, expectedResult);
     });
 
@@ -699,20 +681,6 @@ describe('Utils', function () {
     });
   });
 
-  describe('createContentToExecuteExtScriptInFriendlyFrame', function () {
-    it('should return empty string if url is not passed', function () {
-      var output = utils.createContentToExecuteExtScriptInFriendlyFrame();
-      assert.equal(output, '');
-    });
-
-    it('should have URL in returned value if url is passed', function () {
-      var url = 'https://abcd.com/service?a=1&b=2&c=3';
-      var output = utils.createContentToExecuteExtScriptInFriendlyFrame(url);
-      var expected = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><script>inDapIF=true;</script></head><body><!--PRE_SCRIPT_TAG_MACRO--><script src="${url}"></script><!--POST_SCRIPT_TAG_MACRO--></body></html>`;
-      assert.equal(output, expected);
-    });
-  });
-
   describe('getDefinedParams', function () {
     it('builds an object consisting of defined params', function () {
       const adUnit = {
@@ -830,6 +798,98 @@ describe('Utils', function () {
 
       sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
       expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
+    });
+  });
+
+  describe('URL helpers', function () {
+    describe('parseUrl()', function () {
+      let parsed;
+
+      beforeEach(function () {
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash');
+      });
+
+      it('extracts the protocol', function () {
+        expect(parsed).to.have.property('protocol', 'http');
+      });
+
+      it('extracts the hostname', function () {
+        expect(parsed).to.have.property('hostname', 'example.com');
+      });
+
+      it('extracts the port', function () {
+        expect(parsed).to.have.property('port', 3000);
+      });
+
+      it('extracts the pathname', function () {
+        expect(parsed).to.have.property('pathname', '/pathname/');
+      });
+
+      it('extracts the search query', function () {
+        expect(parsed).to.have.property('search');
+        expect(parsed.search).to.eql({
+          foo: 'xxx',
+          search: 'test',
+          bar: 'foo',
+        });
+      });
+
+      it('extracts the hash', function () {
+        expect(parsed).to.have.property('hash', 'hash');
+      });
+
+      it('extracts the host', function () {
+        expect(parsed).to.have.property('host', 'example.com:3000');
+      });
+    });
+
+    describe('parseUrl(url, {noDecodeWholeURL: true})', function () {
+      let parsed;
+
+      beforeEach(function () {
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {noDecodeWholeURL: true});
+      });
+
+      it('extracts the search query', function () {
+        expect(parsed).to.have.property('search');
+        expect(parsed.search).to.eql({
+          foo: 'bar',
+          search: 'test',
+          bar: 'foo%26foo%3Dxxx',
+        });
+      });
+    });
+
+    describe('buildUrl()', function () {
+      it('formats an object in to a URL', function () {
+        expect(utils.buildUrl({
+          protocol: 'http',
+          hostname: 'example.com',
+          port: 3000,
+          pathname: '/pathname/',
+          search: {foo: 'bar', search: 'test', bar: 'foo%26foo%3Dxxx'},
+          hash: 'hash'
+        })).to.equal('http://example.com:3000/pathname/?foo=bar&search=test&bar=foo%26foo%3Dxxx#hash');
+      });
+
+      it('will use defaults for missing properties', function () {
+        expect(utils.buildUrl({
+          hostname: 'example.com'
+        })).to.equal('http://example.com');
+      });
+    });
+
+    describe('parseUrl(url, {decodeSearchAsString: true})', function () {
+      let parsed;
+
+      beforeEach(function () {
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {decodeSearchAsString: true});
+      });
+
+      it('extracts the search query', function () {
+        expect(parsed).to.have.property('search');
+        expect(parsed.search).to.equal('?search=test&foo=bar&bar=foo&foo=xxx');
+      });
     });
   });
 
