@@ -50,6 +50,7 @@ describe('kargo adapter tests', function () {
           return {adServerCurrency: 'USD'};
         }
         if (key === 'debug') return true;
+        if (key === 'deviceAccess') return true;
         throw new Error(`Config stub incomplete! Missing key "${key}"`)
       });
 

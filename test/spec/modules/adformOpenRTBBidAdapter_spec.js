@@ -1,6 +1,5 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
-import * as url from 'src/url.js';
 import {spec} from 'modules/adformOpenRTBBidAdapter.js';
 import { NATIVE } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
