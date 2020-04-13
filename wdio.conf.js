@@ -36,7 +36,8 @@ function getCapabilities() {
 
 exports.config = {
   specs: [
-    './test/spec/e2e/banner/*.spec.js' // running only banner tests for now!
+    './test/spec/e2e/native/*.spec.js',
+    './test/spec/e2e/banner/*.spec.js'
   ],
   services: ['browserstack'],
   user: process.env.BROWSERSTACK_USERNAME,
