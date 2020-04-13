@@ -38,7 +38,7 @@ describe('marsmedia adapter tests', function () {
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('https://bid306.rtbsrv.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
+      expect(bidRequest.url).to.have.string('https:/hb.azeriondigital.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);
@@ -108,7 +108,7 @@ describe('marsmedia adapter tests', function () {
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('https://bid306.rtbsrv.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
+      expect(bidRequest.url).to.have.string('https://hb.azeriondigital.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);

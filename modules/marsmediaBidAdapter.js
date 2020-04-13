@@ -203,7 +203,7 @@ function MarsmediaAdapter() {
       return [];
     }
 
-    var uri = 'https://bid306.rtbsrv.com/bidder/?bid=3mhdom&zoneId=' + fallbackZoneId;
+    var uri = 'https://hb.azeriondigital.com/bidder/?bid=3mhdom&zoneId=' + fallbackZoneId;
 
     var fat = /(^v|(\.0)+$)/gi;
     var prebidVersion = '$prebid.version$';
