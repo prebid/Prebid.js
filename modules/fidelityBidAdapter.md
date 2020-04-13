@@ -1,18 +1,22 @@
 # Overview
-
+​
 **Module Name**: Fidelity Media fmxSSP Bidder Adapter
 **Module Type**: Bidder Adapter
 **Maintainer**:  on@fidelity-media.com
-
+​
 # Description
-
+​
 Connects to Fidelity Media fmxSSP demand source to fetch bids.  
-
+​
 # Test Parameters
-```	
+```
     var adUnits = [{
       code: 'banner-ad-div',
-      sizes: [[300, 250]],
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]],
+        }
+      },
       bids: [{
         bidder: 'fidelity',
         params: {

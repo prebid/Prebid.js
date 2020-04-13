@@ -1,14 +1,23 @@
 /* COPYRIGHT SCALEABLE LLC 2019 */
 
-import { ajax } from '../src/ajax';
+import { ajax } from '../src/ajax.js';
 import CONSTANTS from '../src/constants.json';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
-import * as utils from '../src/utils';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+import * as utils from '../src/utils.js';
+
+// Object.entries polyfill
+const entries = Object.entries || function(obj) {
+  const ownProps = Object.keys(obj);
+  let i = ownProps.length;
+  let resArray = new Array(i); // preallocate the Array
+  while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]]; }
+
+  return resArray;
+};
 
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT;
-const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
@@ -34,9 +43,6 @@ let scaleableAnalytics = Object.assign({},
           break;
         case BID_WON:
           onBidWon(args);
-          break;
-        case BID_RESPONSE:
-          onBidResponse(args);
           break;
         case BID_TIMEOUT:
           onBidTimeout(args);
@@ -70,22 +76,93 @@ const sendDataToServer = data => ajax(URL, () => {}, JSON.stringify(data));
 const onAuctionInit = args => {
   const config = scaleableAnalytics.config || {options: {}};
 
-  for (let idx = args.adUnitCodes.length; idx--;) {
-    const data = {
-      event: 'request',
-      site: config.options.site,
-      adunit: args.adUnitCodes[idx]
-    };
+  let adunitObj = {};
+  let adunits = [];
 
-    sendDataToServer(data);
+  // Loop through adunit codes first
+  args.adUnitCodes.forEach((code) => {
+    adunitObj[code] = [{
+      bidder: 'scaleable_adunit_request'
+    }]
+  });
+
+  // Loop through bidder requests and bids
+  args.bidderRequests.forEach((bidderObj) => {
+    bidderObj.bids.forEach((bidObj) => {
+      adunitObj[bidObj.adUnitCode].push({
+        bidder: bidObj.bidder,
+        params: bidObj.params
+      })
+    });
+  });
+
+  entries(adunitObj).forEach(([adunitCode, bidRequests]) => {
+    adunits.push({
+      code: adunitCode,
+      bidRequests: bidRequests
+    });
+  });
+
+  const data = {
+    event: 'request',
+    site: config.options.site,
+    adunits: adunits
   }
+
+  sendDataToServer(data);
 }
 
 // Handle all events besides requests and wins
 const onAuctionEnd = args => {
-  for (let adunit in auctionData) {
-    sendDataToServer(auctionData[adunit]);
+  const config = scaleableAnalytics.config || {options: {}};
+
+  let adunitObj = {};
+  let adunits = [];
+
+  // Add Bids Received
+  args.bidsReceived.forEach((bidObj) => {
+    if (!adunitObj[bidObj.adUnitCode]) { adunitObj[bidObj.adUnitCode] = []; }
+
+    adunitObj[bidObj.adUnitCode].push({
+      bidder: bidObj.bidderCode || bidObj.bidder,
+      cpm: bidObj.cpm,
+      currency: bidObj.currency,
+      dealId: bidObj.dealId,
+      type: bidObj.mediaType,
+      ttr: bidObj.timeToRespond,
+      size: bidObj.size
+    });
+  });
+
+  // Add in other data (timeouts) as we push to adunits
+  entries(adunitObj).forEach(([adunitCode, bidsReceived]) => {
+    const bidData = bidsReceived.concat(auctionData[adunitCode] || []);
+    adunits.push({
+      code: adunitCode,
+      bidData: bidData
+    });
+
+    delete auctionData[adunitCode];
+  });
+
+  // Add in any missed auction data
+  entries(auctionData).forEach(([adunitCode, bidData]) => {
+    adunits.push({
+      code: adunitCode,
+      bidData: bidData
+    })
+  });
+
+  const data = {
+    event: 'bids',
+    site: config.options.site,
+    adunits: adunits
   }
+
+  if (adunits.length) { sendDataToServer(data); }
+
+  // Reset auctionData
+  auctionData = {}
 }
 
 // Bid Win Events occur after auction end
@@ -98,51 +175,24 @@ const onBidWon = args => {
     adunit: args.adUnitCode,
     code: args.bidderCode,
     cpm: args.cpm,
-    ttr: args.timeToRespond
+    ttr: args.timeToRespond,
+    params: args.params
   };
 
   sendDataToServer(data);
 }
 
-const onBidResponse = args => {
-  const config = scaleableAnalytics.config || {options: {}};
-
-  if (!auctionData[args.adUnitCode]) {
-    auctionData[args.adUnitCode] = {
-      event: 'bids',
-      bids: [],
-      adunit: args.adUnitCode,
-      site: config.options.site
-    };
-  }
-
-  const currBidData = {
-    code: args.bidderCode,
-    cpm: args.cpm,
-    ttr: args.timeToRespond
-  };
-
-  auctionData[args.adUnitCode].bids.push(currBidData);
-}
-
 const onBidTimeout = args => {
-  const config = scaleableAnalytics.config || {options: {}};
-
-  for (let i = args.length; i--;) {
-    let currObj = args[i];
-
+  args.forEach(currObj => {
     if (!auctionData[currObj.adUnitCode]) {
-      auctionData[currObj.adUnitCode] = {
-        event: 'bids',
-        bids: [],
-        timeouts: [],
-        adunit: currObj.adUnitCode,
-        site: config.options.site
-      };
+      auctionData[currObj.adUnitCode] = []
     }
 
-    auctionData[currObj.adUnitCode].timeouts.push(currObj.bidder);
-  }
+    auctionData[currObj.adUnitCode].push({
+      timeouts: 1,
+      bidder: currObj.bidder
+    });
+  });
 }
 
 adapterManager.registerAnalyticsAdapter({

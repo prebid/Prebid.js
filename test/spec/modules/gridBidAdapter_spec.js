@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/gridBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec, resetUserSync, getSyncUrl } from 'modules/gridBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('TheMediaGrid Adapter', function () {
   const adapter = newBidder(spec);
@@ -47,7 +47,7 @@ describe('TheMediaGrid Adapter', function () {
       });
       return res;
     }
-    const bidderRequest = {refererInfo: {referer: 'http://example.com'}};
+    const bidderRequest = {refererInfo: {referer: 'https://example.com'}};
     const referrer = bidderRequest.refererInfo.referer;
     let bidRequests = [
       {
@@ -130,6 +130,14 @@ describe('TheMediaGrid Adapter', function () {
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
       expect(payload).to.have.property('gdpr_applies', '1');
+    });
+
+    it('if usPrivacy is present payload must have us_privacy param', function () {
+      const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithUSP);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('us_privacy', '1YNN');
     });
   });
 
@@ -575,6 +583,99 @@ describe('TheMediaGrid Adapter', function () {
 
       const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
       expect(result).to.deep.equal(expectedResponse);
+    });
+  });
+
+  describe('user sync', function () {
+    const syncUrl = getSyncUrl();
+
+    beforeEach(function () {
+      resetUserSync();
+    });
+
+    it('should register the Emily iframe', function () {
+      let syncs = spec.getUserSyncs({
+        pixelEnabled: true
+      });
+
+      expect(syncs).to.deep.equal({type: 'image', url: syncUrl});
+    });
+
+    it('should not register the Emily iframe more than once', function () {
+      let syncs = spec.getUserSyncs({
+        pixelEnabled: true
+      });
+      expect(syncs).to.deep.equal({type: 'image', url: syncUrl});
+
+      // when called again, should still have only been called once
+      syncs = spec.getUserSyncs();
+      expect(syncs).to.equal(undefined);
+    });
+
+    it('should pass gdpr params if consent is true', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        gdprApplies: true, consentString: 'foo'
+      })).to.deep.equal({
+        type: 'image', url: `${syncUrl}&gdpr=1&gdpr_consent=foo`
+      });
+    });
+
+    it('should pass gdpr params if consent is false', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        gdprApplies: false, consentString: 'foo'
+      })).to.deep.equal({
+        type: 'image', url: `${syncUrl}&gdpr=0&gdpr_consent=foo`
+      });
+    });
+
+    it('should pass gdpr param gdpr_consent only when gdprApplies is undefined', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        consentString: 'foo'
+      })).to.deep.equal({
+        type: 'image', url: `${syncUrl}&gdpr_consent=foo`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is not defined', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {})).to.deep.equal({
+        type: 'image', url: syncUrl
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a number', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        consentString: 0
+      })).to.deep.equal({
+        type: 'image', url: syncUrl
+      });
+    });
+
+    it('should pass no params if gdpr consentString is null', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        consentString: null
+      })).to.deep.equal({
+        type: 'image', url: syncUrl
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a object', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        consentString: {}
+      })).to.deep.equal({
+        type: 'image', url: syncUrl
+      });
+    });
+
+    it('should pass no params if gdpr is not defined', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined)).to.deep.equal({
+        type: 'image', url: syncUrl
+      });
+    });
+
+    it('should pass usPrivacy param if it is available', function() {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {}, '1YNN')).to.deep.equal({
+        type: 'image', url: `${syncUrl}&us_privacy=1YNN`
+      });
     });
   });
 });
