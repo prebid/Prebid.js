@@ -7,7 +7,6 @@ import CONSTANTS from '../src/constants.json';
 import { getHook } from '../src/hook.js';
 import { createBid } from '../src/bidfactory.js';
 import find from 'core-js/library/fn/array/find.js';
-import { parse as urlParse } from '../src/url.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 /**
@@ -61,7 +60,7 @@ function roundUp(number, precision) {
 
 let referrerHostname;
 function getHostNameFromReferer(referer) {
-  referrerHostname = urlParse(referer, {noDecodeWholeURL: true}).hostname;
+  referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
   return referrerHostname;
 }
 
