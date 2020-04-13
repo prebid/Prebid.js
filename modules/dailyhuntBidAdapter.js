@@ -61,7 +61,12 @@ const ORTB_NATIVE_PARAMS = {
     id: 5,
     type: 12,
     name: 'data'
-  }
+  },
+  body2: {
+    id: 4,
+    name: 'data',
+    type: 10
+  },
 };
 
 // Encode URI.
