@@ -1,0 +1,73 @@
+{
+	"httpRequest": {
+		"method": "POST",
+		"path": "/",
+		"body": {
+			"tags": [
+				{
+					"sizes": [
+						{
+							"width": 300,
+							"height": 250
+						},
+						{
+							"width": 300,
+							"height": 600
+						}
+					],
+					"primary_size": {
+						"width": 300,
+						"height": 250
+					},
+					"ad_types": [
+						"banner"
+					],
+					"uuid": "236b4580fc2c41",
+					"id": 13144370,
+					"allow_smaller_sizes": false,
+					"use_pmt_rule": false,
+					"prebid": true,
+					"disable_psa": true,
+					"hb_source": 1
+				},
+				{
+					"sizes": [
+						{
+							"width": 300,
+							"height": 250
+						},
+						{
+							"width": 300,
+							"height": 600
+						}
+					],
+					"primary_size": {
+						"width": 300,
+						"height": 250
+					},
+					"ad_types": [
+						"banner"
+					],
+					"uuid": "3f9147d0a1c446",
+					"id": 13144370,
+					"allow_smaller_sizes": false,
+					"use_pmt_rule": false,
+					"prebid": true,
+					"disable_psa": true,
+					"hb_source": 1
+				}
+			],
+			"user": {},
+			"sdk": {
+				"source": "pbjs",
+				"version": "3.16.0-pre"
+			},
+			"referrer_detection": {
+				"rd_ref": "http%3A%2F%2Ftest.localhost%3A9999%2Ftest%2Fpages%2Fbanner.html%3Fpbjs_debug%3Dtrue",
+				"rd_top": true,
+				"rd_ifs": 0,
+				"rd_stk": "http%3A%2F%2Ftest.localhost%3A9999%2Ftest%2Fpages%2Fbanner.html%3Fpbjs_debug%3Dtrue"
+			}
+		}
+	}
+}

@@ -4,7 +4,7 @@ const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const argv = require('yargs').argv;
-const fakeResponder = require('./middleware.js');
+const fakeResponder = require('./fake-responder.js');
 
 const PORT = argv.port || '3000';
 
