@@ -81,6 +81,11 @@ const USER_IDS_CONFIG = {
   'netId': {
     source: 'netid.de',
     atype: 1
+  },
+  // sharedId
+  'sharedId': {
+    source: 'rubiconproject.com',
+    atype: 1
   }
 };
 

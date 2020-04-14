@@ -32,7 +32,7 @@ export const sharedIdSubmodule = {
    * @returns {{sharedId:string}}
    */
   decode(value) {
-    return { 'sharedId': value }
+    return (value && typeof value['sharedId'] === 'string') ? { 'sharedId': value['sharedId'] } : undefined;
   },
 
   /**

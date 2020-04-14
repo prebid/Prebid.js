@@ -64,6 +64,13 @@ pbjs.setConfig({
                 name: '_li_pbid',
                 expires: 60
             }
+        }, {
+             name: 'sharedId',
+             storage: {
+                 type: 'cookie',
+                 name: 'sharedId',
+                 expires: 28
+                 }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -112,6 +119,13 @@ pbjs.setConfig({
                  type: 'html5',
                  name: '_li_pbid',
                  expires: 60
+             }
+        }, {
+             name: 'sharedId',
+             storage: {
+                type: 'cookie',
+                name: 'sharedId',
+                expires: 28
              }
         }],
         syncDelay: 5000
