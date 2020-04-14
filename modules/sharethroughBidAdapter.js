@@ -1,15 +1,17 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 
-const VERSION = '3.1.0';
+const VERSION = '3.2.1';
 const BIDDER_CODE = 'sharethrough';
-const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/WYu2BXv1/v1';
+const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
 
 // this allows stubbing of utility function that is used internally by the sharethrough adapter
 export const sharethroughInternal = {
   b64EncodeUnicode,
   handleIframe,
-  isLockedInFrame
+  isLockedInFrame,
+  getProtocol
 };
 
 export const sharethroughAdapterSpec = {
@@ -29,6 +31,9 @@ export const sharethroughAdapterSpec = {
         strVersion: VERSION
       };
 
+      const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
+      query.secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
+
       if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
         query.consent_string = bidderRequest.gdprConsent.consentString;
       }
@@ -37,8 +42,20 @@ export const sharethroughAdapterSpec = {
         query.consent_required = !!bidderRequest.gdprConsent.gdprApplies;
       }
 
+      if (bidderRequest && bidderRequest.uspConsent) {
+        query.us_privacy = bidderRequest.uspConsent
+      }
+
       if (bidRequest.userId && bidRequest.userId.tdid) {
         query.ttduid = bidRequest.userId.tdid;
+      }
+
+      if (bidRequest.schain) {
+        query.schain = JSON.stringify(bidRequest.schain);
+      }
+
+      if (bidRequest.bidfloor) {
+        query.bidfloor = parseFloat(bidRequest.bidfloor);
       }
 
       // Data that does not need to go to the server,
@@ -85,7 +102,8 @@ export const sharethroughAdapterSpec = {
     }];
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const syncParams = uspConsent ? `&us_privacy=${uspConsent}` : '';
     const syncs = [];
     const shouldCookieSync = syncOptions.pixelEnabled &&
       serverResponses.length > 0 &&
@@ -94,7 +112,7 @@ export const sharethroughAdapterSpec = {
 
     if (shouldCookieSync) {
       serverResponses[0].body.cookieSyncUrls.forEach(url => {
-        syncs.push({ type: 'image', url: url });
+        syncs.push({ type: 'image', url: url + syncParams });
       });
     }
 
@@ -136,7 +154,7 @@ function generateAd(body, req) {
 
   if (req.strData.skipIframeBusting) {
     // Don't break out of iframe
-    adMarkup = adMarkup + `<script src="//native.sharethrough.com/assets/sfp.js"></script>`;
+    adMarkup = adMarkup + `<script src="https://native.sharethrough.com/assets/sfp.js"></script>`;
   } else {
     // Add logic to the markup that detects whether or not in top level document is accessible
     // this logic will deploy sfp.js and/or iframe buster script(s) as appropriate
@@ -158,20 +176,20 @@ function handleIframe () {
   var iframeBusterLoaded = false;
   if (!window.lockedInFrame) {
     var sfpIframeBusterJs = document.createElement('script');
-    sfpIframeBusterJs.src = '//native.sharethrough.com/assets/sfp-set-targeting.js';
+    sfpIframeBusterJs.src = 'https://native.sharethrough.com/assets/sfp-set-targeting.js';
     sfpIframeBusterJs.type = 'text/javascript';
     try {
       window.document.getElementsByTagName('body')[0].appendChild(sfpIframeBusterJs);
       iframeBusterLoaded = true;
     } catch (e) {
-      console.error(e);
+      utils.logError('Trouble writing frame buster script, error details:', e);
     }
   }
 
   var clientJsLoaded = (!iframeBusterLoaded) ? !!(window.STR && window.STR.Tag) : !!(window.top.STR && window.top.STR.Tag);
   if (!clientJsLoaded) {
     var sfpJs = document.createElement('script');
-    sfpJs.src = '//native.sharethrough.com/assets/sfp.js';
+    sfpJs.src = 'https://native.sharethrough.com/assets/sfp.js';
     sfpJs.type = 'text/javascript';
 
     // only add sfp js to window.top if iframe busting successfully loaded; otherwise, add to iframe
@@ -182,7 +200,7 @@ function handleIframe () {
         window.document.getElementsByTagName('body')[0].appendChild(sfpJs);
       }
     } catch (e) {
-      console.error(e);
+      utils.logError('Trouble writing sfp script, error details:', e);
     }
   }
 }
@@ -226,6 +244,10 @@ function canAutoPlayHTML5Video() {
   } else {
     return false;
   }
+}
+
+function getProtocol() {
+  return document.location.protocol;
 }
 
 registerBidder(sharethroughAdapterSpec);

@@ -1,7 +1,6 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE } from '../src/mediaTypes';
-import { parse as parseUrl } from '../src/url';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 const NATIVE_MAP = {
   'body': 2,
   'body2': 10,
@@ -43,12 +42,17 @@ const NATIVE_IMAGE = [{
   }
 }];
 
+const VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay',
+  'placement', 'linearity', 'skip', 'skipmin', 'skipafter', 'sequence', 'battr', 'maxextended',
+  'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery',
+  'pos', 'companionad', 'api', 'companiontype', 'ext'];
+
 export const spec = {
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   code: 'datablocks',
   isBidRequestValid: function(bid) {
     return !!(bid.params.host && bid.params.sourceId &&
-      bid.mediaTypes && (bid.mediaTypes.banner || bid.mediaTypes.native));
+      bid.mediaTypes && (bid.mediaTypes.banner || bid.mediaTypes.native || bid.mediaTypes.video));
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     if (!validBidRequests.length) { return []; }
@@ -56,7 +60,7 @@ export const spec = {
     let imps = {};
     let site = {};
     let device = {};
-    let refurl = parseUrl(bidderRequest.referrer);
+    let refurl = utils.parseUrl(bidderRequest.referrer);
     let requests = [];
 
     validBidRequests.forEach(bidRequest => {
@@ -142,6 +146,43 @@ export const spec = {
             request: JSON.stringify({native: {assets: nativeAssets}})
           };
         }
+      } else if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+        let video = bidRequest.mediaTypes.video;
+        let sizes = video.playerSize || bidRequest.sizes || [];
+        if (sizes.length && Array.isArray(sizes[0])) {
+          imp.video = {
+            w: sizes[0][0],
+            h: sizes[0][1]
+          };
+        } else if (sizes.length == 2 && !Array.isArray(sizes[0])) {
+          imp.video = {
+            w: sizes[0],
+            h: sizes[1]
+          };
+        } else {
+          return;
+        }
+
+        if (video.durationRangeSec) {
+          if (Array.isArray(video.durationRangeSec)) {
+            if (video.durationRangeSec.length == 1) {
+              imp.video.maxduration = video.durationRangeSec[0];
+            } else if (video.durationRangeSec.length == 2) {
+              imp.video.minduration = video.durationRangeSec[0];
+              imp.video.maxduration = video.durationRangeSec[1];
+            }
+          } else {
+            imp.video.maxduration = video.durationRangeSec;
+          }
+        }
+
+        if (bidRequest.params.video) {
+          Object.keys(bidRequest.params.video).forEach(k => {
+            if (VIDEO_PARAMS.indexOf(k) > -1) {
+              imp.video[k] = bidRequest.params.video[k];
+            }
+          })
+        }
       }
       let host = bidRequest.params.host;
       let sourceId = bidRequest.params.sourceId;
@@ -181,7 +222,6 @@ export const spec = {
         }
       })
     });
-
     return requests;
 
     function RtbRequest(device, site, imps) {
@@ -191,7 +231,7 @@ export const spec = {
         Object.keys(sourceIds).forEach(sourceId => {
           let impObj = sourceIds[sourceId];
           collection.push({
-            url: `${impObj.protocol}${host}/${impObj.path}/?${impObj.idParam}=${sourceId}`,
+            url: `https://${host}/${impObj.path}/?${impObj.idParam}=${sourceId}`,
             body: {
               id: bidderRequest.auctionId,
               imp: impObj.imps,
@@ -276,6 +316,11 @@ export const spec = {
           }
         })
         br.native = result;
+      } else if (imp.video) {
+        br.mediaType = VIDEO;
+        br.width = rtbBid.w;
+        br.height = rtbBid.h;
+        if (rtbBid.adm) { br.vastXml = rtbBid.adm; } else if (rtbBid.nurl) { br.vastUrl = rtbBid.nurl; }
       }
       return br;
     });

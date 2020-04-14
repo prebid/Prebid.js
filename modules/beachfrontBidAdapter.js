@@ -1,19 +1,18 @@
-import * as utils from '../src/utils';
-import { parse as parseUrl } from '../src/url';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { VIDEO, BANNER } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
-const ADAPTER_VERSION = '1.7';
+const ADAPTER_VERSION = '1.9';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
 export const VIDEO_ENDPOINT = 'https://reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = 'https://display.bfmio.com/prebid_display';
-export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
+export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 
 export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
@@ -68,10 +67,11 @@ export const spec = {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
         vastUrl: response.url,
+        vastXml: response.vast,
         cpm: response.bidPrice,
         width: firstSize.w,
         height: firstSize.h,
-        creativeId: response.cmpId,
+        creativeId: response.crid || response.cmpId,
         renderer: context === OUTSTREAM ? createRenderer(bidRequest) : null,
         mediaType: VIDEO,
         currency: 'USD',
@@ -104,9 +104,9 @@ export const spec = {
     }
   },
 
-  getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}) {
+  getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '') {
     let syncs = [];
-    let { gdprApplies, consentString } = gdprConsent;
+    let { gdprApplies, consentString = '' } = gdprConsent;
     let bannerResponse = find(serverResponses, (res) => utils.isArray(res.body));
 
     if (bannerResponse) {
@@ -123,12 +123,12 @@ export const spec = {
     } else if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `https://sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+        url: `https://sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString}&gce=1&us_privacy=${uspConsent}`
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: `https://sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+        url: `https://sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString}&gce=1&us_privacy=${uspConsent}`
       });
     }
 
@@ -151,7 +151,8 @@ function createRenderer(bidRequest) {
         height: bid.height,
         expandInView: getPlayerBidParam(bidRequest, 'expandInView', false),
         collapseOnComplete: getPlayerBidParam(bidRequest, 'collapseOnComplete', true),
-        progressColor: getPlayerBidParam(bidRequest, 'progressColor')
+        progressColor: getPlayerBidParam(bidRequest, 'progressColor'),
+        adPosterColor: getPlayerBidParam(bidRequest, 'adPosterColor')
       });
     });
   });
@@ -245,7 +246,7 @@ function isBannerBidValid(bid) {
 
 function getTopWindowLocation(bidderRequest) {
   let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+  return utils.parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
 }
 
 function getTopWindowReferrer() {
@@ -284,7 +285,9 @@ function createVideoRequestData(bid, bidderRequest) {
         mimes: DEFAULT_MIMES
       }, video),
       bidfloor: bidfloor,
-      secure: topLocation.protocol === 'https:' ? 1 : 0
+      secure: topLocation.protocol === 'https:' ? 1 : 0,
+      displaymanager: ADAPTER_NAME,
+      displaymanagerver: ADAPTER_VERSION
     }],
     site: {
       page: topLocation.href,
@@ -307,6 +310,10 @@ function createVideoRequestData(bid, bidderRequest) {
     cur: ['USD']
   };
 
+  if (bidderRequest && bidderRequest.uspConsent) {
+    payload.regs.ext.us_privacy = bidderRequest.uspConsent;
+  }
+
   if (bidderRequest && bidderRequest.gdprConsent) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     payload.regs.ext.gdpr = gdprApplies ? 1 : 0;
@@ -323,6 +330,11 @@ function createVideoRequestData(bid, bidderRequest) {
         }
       }]
     }];
+  }
+
+  let connection = navigator.connection || navigator.webkitConnection;
+  if (connection && connection.effectiveType) {
+    payload.device.connectiontype = connection.effectiveType;
   }
 
   return payload;
@@ -353,6 +365,10 @@ function createBannerRequestData(bids, bidderRequest) {
     adapterVersion: ADAPTER_VERSION,
     adapterName: ADAPTER_NAME
   };
+
+  if (bidderRequest && bidderRequest.uspConsent) {
+    payload.usPrivacy = bidderRequest.uspConsent;
+  }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;

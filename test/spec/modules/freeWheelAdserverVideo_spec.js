@@ -1,13 +1,12 @@
 import { expect } from 'chai';
-import { adpodUtils } from 'modules/freeWheelAdserverVideo';
-import { auctionManager } from 'src/auctionManager';
-import { config } from 'src/config';
+import { adpodUtils } from 'modules/freeWheelAdserverVideo.js';
+import { auctionManager } from 'src/auctionManager.js';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 
 describe('freeWheel adserver module', function() {
   let amStub;
   let amGetAdUnitsStub;
-  let xhr;
-  let requests;
 
   before(function () {
     let adUnits = [{
@@ -56,10 +55,6 @@ describe('freeWheel adserver module', function() {
   });
 
   beforeEach(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
-
     config.setConfig({
       adpod: {
         brandCategoryExclusion: false,
@@ -70,7 +65,6 @@ describe('freeWheel adserver module', function() {
 
   afterEach(function() {
     config.resetConfig();
-    xhr.restore();
   });
 
   after(function () {
@@ -188,7 +182,7 @@ describe('freeWheel adserver module', function() {
       }
     });
 
-    requests[0].respond(
+    server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
       JSON.stringify({'responses': getBidsReceived().slice(0, 4)})
@@ -197,6 +191,96 @@ describe('freeWheel adserver module', function() {
     expect(targeting['preroll_1'].length).to.equal(3);
     expect(targeting['midroll_1'].length).to.equal(3);
   });
+
+  it('should prioritize bids with deal', function() {
+    config.setConfig({
+      adpod: {
+        deferCaching: true,
+        prioritizeDeals: true
+      }
+    });
+
+    let tier6Bid = createBid(10, 'preroll_1', 15, 'tier6_395_15s', '123', '395');
+    tier6Bid['video']['dealTier'] = 'tier6'
+
+    let tier7Bid = createBid(11, 'preroll_1', 45, 'tier7_395_15s', '123', '395');
+    tier7Bid['video']['dealTier'] = 'tier7'
+
+    let bidsReceived = [
+      tier6Bid,
+      tier7Bid,
+      createBid(15, 'preroll_1', 90, '15.00_395_90s', '123', '395'),
+    ]
+    amStub.returns(bidsReceived);
+    let targeting;
+    adpodUtils.getTargeting({
+      callback: function(errorMsg, targetingResult) {
+        targeting = targetingResult;
+      }
+    });
+
+    server.requests[0].respond(
+      200,
+      { 'Content-Type': 'text/plain' },
+      JSON.stringify({'responses': bidsReceived.slice(1)})
+    );
+
+    expect(targeting['preroll_1'].length).to.equal(3);
+    expect(targeting['preroll_1']).to.deep.include({'hb_pb_cat_dur': 'tier6_395_15s'});
+    expect(targeting['preroll_1']).to.deep.include({'hb_pb_cat_dur': 'tier7_395_15s'});
+    expect(targeting['preroll_1']).to.deep.include({'hb_cache_id': '123'});
+  });
+
+  it('should apply minDealTier to bids if configured', function() {
+    config.setConfig({
+      adpod: {
+        deferCaching: true,
+        prioritizeDeals: true,
+        dealTier: {
+          'appnexus': {
+            prefix: 'tier',
+            minDealTier: 5
+          }
+        }
+      }
+    });
+
+    let tier2Bid = createBid(10, 'preroll_1', 15, 'tier2_395_15s', '123', '395');
+    tier2Bid['video']['dealTier'] = 2
+    tier2Bid['adserverTargeting']['hb_pb'] = '10.00'
+
+    let tier7Bid = createBid(11, 'preroll_1', 45, 'tier7_395_15s', '123', '395');
+    tier7Bid['video']['dealTier'] = 7
+    tier7Bid['adserverTargeting']['hb_pb'] = '11.00'
+
+    let bid = createBid(15, 'preroll_1', 15, '15.00_395_90s', '123', '395');
+    bid['adserverTargeting']['hb_pb'] = '15.00'
+
+    let bidsReceived = [
+      tier2Bid,
+      tier7Bid,
+      bid
+    ]
+    amStub.returns(bidsReceived);
+    let targeting;
+    adpodUtils.getTargeting({
+      callback: function(errorMsg, targetingResult) {
+        targeting = targetingResult;
+      }
+    });
+
+    server.requests[0].respond(
+      200,
+      { 'Content-Type': 'text/plain' },
+      JSON.stringify({'responses': [tier7Bid, bid]})
+    );
+
+    expect(targeting['preroll_1'].length).to.equal(3);
+    expect(targeting['preroll_1']).to.deep.include({'hb_pb_cat_dur': 'tier7_395_15s'});
+    expect(targeting['preroll_1']).to.deep.include({'hb_pb_cat_dur': '15.00_395_90s'});
+    expect(targeting['preroll_1']).to.not.include({'hb_pb_cat_dur': 'tier2_395_15s'});
+    expect(targeting['preroll_1']).to.deep.include({'hb_cache_id': '123'});
+  })
 });
 
 function getBidsReceived() {

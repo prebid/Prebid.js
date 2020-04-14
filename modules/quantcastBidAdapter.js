@@ -1,7 +1,8 @@
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -11,27 +12,8 @@ export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
 export const QUANTCAST_NET_REVENUE = true;
 export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
 export const QUANTCAST_TTL = 4;
-export const QUANTCAST_PROTOCOL =
-  window.location.protocol === 'http:'
-    ? 'http'
-    : 'https';
-export const QUANTCAST_PORT =
-  QUANTCAST_PROTOCOL === 'http'
-    ? '8080'
-    : '8443';
-
-function extractBidSizes(bid) {
-  const bidSizes = [];
-
-  bid.sizes.forEach(size => {
-    bidSizes.push({
-      width: size[0],
-      height: size[1]
-    });
-  });
-
-  return bidSizes;
-}
+export const QUANTCAST_PROTOCOL = 'https';
+export const QUANTCAST_PORT = '8443';
 
 function makeVideoImp(bid) {
   const video = {};
@@ -67,10 +49,17 @@ function makeVideoImp(bid) {
 }
 
 function makeBannerImp(bid) {
+  const sizes = bid.sizes || bid.mediaTypes.banner.sizes;
+
   return {
     banner: {
       battr: bid.params.battr,
-      sizes: extractBidSizes(bid),
+      sizes: sizes.map(size => {
+        return {
+          width: size[0],
+          height: size[1]
+        };
+      })
     },
     placementCode: bid.placementCode,
     bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
@@ -90,7 +79,9 @@ function getDomain(url) {
  */
 export const spec = {
   code: BIDDER_CODE,
+  GVLID: 11,
   supportedMediaTypes: ['banner', 'video'],
+  hasUserSynced: false,
 
   /**
    * Verify the `AdUnits.bids` response with `true` for valid request and `false`
@@ -113,8 +104,8 @@ export const spec = {
    */
   buildRequests(bidRequests, bidderRequest) {
     const bids = bidRequests || [];
-    const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
-
+    const gdprConsent = utils.deepAccess(bidderRequest, 'gdprConsent') || {};
+    const uspConsent = utils.deepAccess(bidderRequest, 'uspConsent');
     const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
     const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
     const domain = getDomain(page);
@@ -151,6 +142,9 @@ export const spec = {
         bidId: bid.bidId,
         gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
         gdprConsent: gdprConsent.consentString,
+        uspSignal: uspConsent ? 1 : 0,
+        uspConsent,
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -189,12 +183,13 @@ export const spec = {
 
     const response = serverResponse['body'];
 
-    if (
-      response === undefined ||
-      !response.hasOwnProperty('bids') ||
-      utils.isEmpty(response.bids)
-    ) {
+    if (response === undefined || !response.hasOwnProperty('bids')) {
       utils.logError('Sub-optimal JSON received from Quantcast server');
+      return [];
+    }
+
+    if (utils.isEmpty(response.bids)) {
+      // Shortcut response handling if no bids are present
       return [];
     }
 
@@ -230,6 +225,27 @@ export const spec = {
   onTimeout(timeoutData) {
     const url = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
     ajax(url, null, null);
+  },
+  getUserSyncs(syncOptions, serverResponses) {
+    const syncs = []
+    if (!this.hasUserSynced && syncOptions.pixelEnabled) {
+      const responseWithUrl = find(serverResponses, serverResponse =>
+        utils.deepAccess(serverResponse.body, 'userSync.url')
+      );
+
+      if (responseWithUrl) {
+        const url = utils.deepAccess(responseWithUrl.body, 'userSync.url')
+        syncs.push({
+          type: 'image',
+          url: url
+        });
+      }
+      this.hasUserSynced = true;
+    }
+    return syncs;
+  },
+  resetUserSync() {
+    this.hasUserSynced = false;
   }
 };
 
