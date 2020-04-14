@@ -22,8 +22,9 @@ export const spec = {
       const params = bidRequest.params;
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
-      const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      const referrer = bidderRequest.refererInfo.referer;
       const bidId = bidRequest.bidId;
+      const transactionId = bidRequest.transactionId;
       const unitCode = bidRequest.adUnitCode;
       const timeout = config.getConfig('bidderTimeout');
       const payload = {
@@ -32,6 +33,7 @@ export const spec = {
         cb: cb,
         r: referrer,
         uid: bidId,
+        tid: transactionId,
         uc: unitCode,
         tmax: timeout,
         t: 'i'

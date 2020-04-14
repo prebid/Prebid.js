@@ -17,6 +17,11 @@ export const id5IdSubmodule = {
    */
   name: 'id5Id',
   /**
+   * Vendor id of ID5
+   * @type {Number}
+   */
+  gvlid: 131,
+  /**
    * decode the stored id value for passing to bid requests
    * @function decode
    * @param {(Object|string)} value
