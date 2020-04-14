@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/ucfunnelBidAdapter';
-import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes';
+import { spec } from 'modules/ucfunnelBidAdapter.js';
+import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes.js';
 
 const URL = 'https://hb.aralego.com/header';
 const BIDDER_CODE = 'ucfunnel';
@@ -104,6 +104,7 @@ const validNativeBidRes = {
       heigh: 84
     },
     clickUrl: 'https://www.ucfunnel.com',
+    clicktrackers: ['https://dev-ad-track.aralego.com/v1/nat/click?iid=72165d02-408a-470c-bb52-ae7d7b0a4549'],
     impressionTrackers: ['https://www.aralego.net/imp?mf=native&adid=ad-9A22D466494297EAC443D967B2622DA9&auc=9ad1fa8d-2297-4660-a018-b39945054746'],
   },
   cpm: 1.01,
@@ -244,6 +245,8 @@ describe('ucfunnel Adapter', function () {
         expect(bid.cpm).to.equal(1.01);
         expect(bid.width).to.equal(1);
         expect(bid.height).to.equal(1);
+        expect(bid.native.clickUrl).to.equal('https://www.ucfunnel.com');
+        expect(bid.native.clickTrackers[0]).to.equal('https://dev-ad-track.aralego.com/v1/nat/click?iid=72165d02-408a-470c-bb52-ae7d7b0a4549');
       });
     });
   });

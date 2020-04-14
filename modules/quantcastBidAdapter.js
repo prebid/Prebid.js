@@ -1,7 +1,8 @@
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -78,7 +79,9 @@ function getDomain(url) {
  */
 export const spec = {
   code: BIDDER_CODE,
+  GVLID: 11,
   supportedMediaTypes: ['banner', 'video'],
+  hasUserSynced: false,
 
   /**
    * Verify the `AdUnits.bids` response with `true` for valid request and `false`
@@ -141,6 +144,7 @@ export const spec = {
         gdprConsent: gdprConsent.consentString,
         uspSignal: uspConsent ? 1 : 0,
         uspConsent,
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -179,12 +183,13 @@ export const spec = {
 
     const response = serverResponse['body'];
 
-    if (
-      response === undefined ||
-      !response.hasOwnProperty('bids') ||
-      utils.isEmpty(response.bids)
-    ) {
+    if (response === undefined || !response.hasOwnProperty('bids')) {
       utils.logError('Sub-optimal JSON received from Quantcast server');
+      return [];
+    }
+
+    if (utils.isEmpty(response.bids)) {
+      // Shortcut response handling if no bids are present
       return [];
     }
 
@@ -220,6 +225,27 @@ export const spec = {
   onTimeout(timeoutData) {
     const url = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
     ajax(url, null, null);
+  },
+  getUserSyncs(syncOptions, serverResponses) {
+    const syncs = []
+    if (!this.hasUserSynced && syncOptions.pixelEnabled) {
+      const responseWithUrl = find(serverResponses, serverResponse =>
+        utils.deepAccess(serverResponse.body, 'userSync.url')
+      );
+
+      if (responseWithUrl) {
+        const url = utils.deepAccess(responseWithUrl.body, 'userSync.url')
+        syncs.push({
+          type: 'image',
+          url: url
+        });
+      }
+      this.hasUserSynced = true;
+    }
+    return syncs;
+  },
+  resetUserSync() {
+    this.hasUserSynced = false;
   }
 };
 

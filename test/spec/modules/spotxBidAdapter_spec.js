@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter';
+import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter.js';
 
 describe('the spotx adapter', function () {
   function getValidBidObject() {
@@ -384,6 +384,7 @@ describe('the spotx adapter', function () {
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].ttl).to.equal(360);
       expect(responses[0].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(responses[0].videoCacheKey).to.equal('cache123');
       expect(responses[0].width).to.equal(400);
       expect(responses[1].cache_key).to.equal('cache124');
       expect(responses[1].channel_id).to.equal(12345);
@@ -396,6 +397,7 @@ describe('the spotx adapter', function () {
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].ttl).to.equal(360);
       expect(responses[1].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache124');
+      expect(responses[1].videoCacheKey).to.equal('cache124');
       expect(responses[1].width).to.equal(200);
     });
   });

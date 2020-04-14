@@ -1,8 +1,8 @@
-import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter';
-import includes from 'core-js/library/fn/array/includes';
+import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter.js';
+import includes from 'core-js/library/fn/array/includes.js';
 import { expect } from 'chai';
-import { parse as parseURL } from 'src/url';
-import { server } from 'test/mocks/xhr';
+import { parseUrl } from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
@@ -81,7 +81,7 @@ describe('finteza analytics adapter', function () {
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
 
-        const url = parseURL(server.requests[0].url);
+        const url = parseUrl(server.requests[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -124,7 +124,7 @@ describe('finteza analytics adapter', function () {
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
 
-        let url = parseURL(server.requests[0].url);
+        let url = parseUrl(server.requests[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -138,7 +138,7 @@ describe('finteza analytics adapter', function () {
         expect(server.requests[1].method).to.equal('GET');
         expect(server.requests[1].withCredentials).to.equal(true);
 
-        url = parseURL(server.requests[1].url);
+        url = parseUrl(server.requests[1].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -178,7 +178,7 @@ describe('finteza analytics adapter', function () {
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
 
-        const url = parseURL(server.requests[0].url);
+        const url = parseUrl(server.requests[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');
@@ -217,7 +217,7 @@ describe('finteza analytics adapter', function () {
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
 
-        const url = parseURL(server.requests[0].url);
+        const url = parseUrl(server.requests[0].url);
 
         expect(url.protocol).to.equal('https');
         expect(url.hostname).to.equal('content.mql5.com');

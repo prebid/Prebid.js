@@ -20,12 +20,16 @@ Please reach out to your Technical account manager for more information.
     var adUnits = [
         {
             code: 'test-div',
-            sizes: [[300, 250]],  // a display size
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]]
+                }
+            },
             bids: [
                 {
                     bidder: "smart",
                     params: {
-                        domain: 'http://ww251.smartadserver.com',
+                        domain: 'https://prg.smartadserver.com',
                         siteId: 207435,
                         pageId: 896536,
                         formatId: 62913,
@@ -42,12 +46,16 @@ Please reach out to your Technical account manager for more information.
     var adUnits = [
         {
             code: 'test-div',
-            sizes: [[300, 250]],  // a display size
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]]
+                }
+            },
             bids: [
                 {
                     bidder: "smart",
                     params: {
-                        domain: 'http://ww251.smartadserver.com',
+                        domain: 'https://prg.smartadserver.com',
                         siteId: 207435,
                         pageId: 896536,
                         formatId: 65906,
@@ -74,14 +82,14 @@ Please reach out to your Technical account manager for more information.
         bids: [{
             bidder: "smart",
             params: {
-                domain: 'http://ww251.smartadserver.com',
+                domain: 'https://prg.smartadserver.com',
                 siteId: 326147,
                 pageId: 1153895,
-                formatId: 55710
+                formatId: 55710,
                 bidfloor: 5,
                 video: {
                     protocol: 6,
-                    startDelay: 0
+                    startDelay: 1
                 }
             }
         }]

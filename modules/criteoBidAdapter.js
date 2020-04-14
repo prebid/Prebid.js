@@ -1,21 +1,23 @@
-import { loadExternalScript } from '../src/adloader';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { parse } from '../src/url';
-import * as utils from '../src/utils';
-import find from 'core-js/library/fn/array/find';
-import { verify } from 'criteo-direct-rsa-validate/build/verify';
+import { loadExternalScript } from '../src/adloader.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
+import find from 'core-js/library/fn/array/find.js';
+import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
+import { getStorageManager } from '../src/storageManager.js';
 
-export const ADAPTER_VERSION = 25;
+const GVLID = 91;
+export const ADAPTER_VERSION = 27;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
+const storage = getStorageManager(GVLID);
 
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
-const PUBLISHER_TAG_URL = '//static.criteo.net/js/ld/publishertag.prebid.js';
+const PUBLISHER_TAG_URL = 'https://static.criteo.net/js/ld/publishertag.prebid.js';
 
 const FAST_BID_PUBKEY_E = 65537;
 const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
@@ -23,7 +25,8 @@ const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDe
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  gvlid: GVLID,
+  supportedMediaTypes: [ BANNER, VIDEO, NATIVE ],
 
   /**
    * @param {object} bid
@@ -54,7 +57,11 @@ export const spec = {
     let url;
     let data;
 
-    Object.assign(bidderRequest, { ceh: config.getConfig('criteo.ceh') });
+    Object.assign(bidderRequest, {
+      publisherExt: config.getConfig('fpd.context'),
+      userExt: config.getConfig('fpd.user'),
+      ceh: config.getConfig('criteo.ceh')
+    });
 
     // If publisher tag not already loaded try to get it from fast bid
     if (!publisherTagAvailable()) {
@@ -72,6 +79,10 @@ export const spec = {
     if (publisherTagAvailable()) {
       // eslint-disable-next-line no-undef
       const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
+      const enableSendAllBids = config.getConfig('enableSendAllBids');
+      if (adapter.setEnableSendAllBids && typeof adapter.setEnableSendAllBids === 'function' && typeof enableSendAllBids === 'boolean') {
+        adapter.setEnableSendAllBids(enableSendAllBids);
+      }
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -120,7 +131,14 @@ export const spec = {
           dealId: slot.dealCode,
         };
         if (slot.native) {
-          bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
+          if (bidRequest.params.nativeCallback) {
+            bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
+          } else if (config.getConfig('enableSendAllBids') === true) {
+            return;
+          } else {
+            bid.native = createPrebidNativeAd(slot.native);
+            bid.mediaType = NATIVE;
+          }
         } else if (slot.video) {
           bid.vastUrl = slot.displayurl;
           bid.mediaType = VIDEO;
@@ -179,14 +197,13 @@ function publisherTagAvailable() {
 /**
  * @param {BidRequest[]} bidRequests
  * @param bidderRequest
- * @return {CriteoContext}
  */
 function buildContext(bidRequests, bidderRequest) {
   let referrer = '';
   if (bidderRequest && bidderRequest.refererInfo) {
     referrer = bidderRequest.refererInfo.referer;
   }
-  const queryString = parse(referrer).search;
+  const queryString = utils.parseUrl(referrer).search;
 
   const context = {
     url: referrer,
@@ -238,6 +255,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   const request = {
     publisher: {
       url: context.url,
+      ext: bidderRequest.publisherExt
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
@@ -250,10 +268,16 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.zoneId) {
         slot.zoneid = bidRequest.params.zoneId;
       }
+      if (bidRequest.fpd && bidRequest.fpd.context) {
+        slot.ext = bidRequest.fpd.context;
+      }
+      if (bidRequest.params.ext) {
+        slot.ext = Object.assign({}, slot.ext, bidRequest.params.ext);
+      }
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
-      if (bidRequest.params.nativeCallback) {
+      if (bidRequest.params.nativeCallback || utils.deepAccess(bidRequest, `mediaTypes.${NATIVE}`)) {
         slot.native = true;
       }
       if (hasVideoMediaType(bidRequest)) {
@@ -279,7 +303,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (networkId) {
     request.publisher.networkid = networkId;
   }
-  request.user = {};
+  request.user = {
+    ext: bidderRequest.userExt
+  };
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }
@@ -363,6 +389,27 @@ function hasValidVideoMediaType(bidRequest) {
 }
 
 /**
+ * Create prebid compatible native ad with native payload
+ * @param {*} payload
+ * @returns prebid native ad assets
+ */
+function createPrebidNativeAd(payload) {
+  return {
+    title: payload.products[0].title,
+    body: payload.products[0].description,
+    sponsoredBy: payload.advertiser.description,
+    icon: payload.advertiser.logo,
+    image: payload.products[0].image,
+    clickUrl: payload.products[0].click_url,
+    privacyLink: payload.privacy.optout_click_url,
+    privacyIcon: payload.privacy.optout_image_url,
+    cta: payload.products[0].call_to_action,
+    price: payload.products[0].price,
+    impressionTrackers: payload.impression_pixels.map(pix => pix.url)
+  };
+}
+
+/**
  * @param {string} id
  * @param {*} payload
  * @param {*} callback
@@ -392,7 +439,7 @@ export function tryGetCriteoFastBid() {
   try {
     const fastBidStorageKey = 'criteo_fast_bid';
     const hashPrefix = '// Hash: ';
-    const fastBidFromStorage = localStorage.getItem(fastBidStorageKey);
+    const fastBidFromStorage = storage.getDataFromLocalStorage(fastBidStorageKey);
 
     if (fastBidFromStorage !== null) {
       // The value stored must contain the file's encrypted hash as first line
@@ -401,7 +448,7 @@ export function tryGetCriteoFastBid() {
 
       if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
         utils.logWarn('No hash found in FastBid');
-        localStorage.removeItem(fastBidStorageKey);
+        storage.removeDataFromLocalStorage(fastBidStorageKey);
       } else {
         // Remove the hash part from the locally stored value
         const publisherTagHash = firstLine.substr(hashPrefix.length);
@@ -415,7 +462,7 @@ export function tryGetCriteoFastBid() {
           utils.insertElement(script);
         } else {
           utils.logWarn('Invalid Criteo FastBid found');
-          localStorage.removeItem(fastBidStorageKey);
+          storage.removeDataFromLocalStorage(fastBidStorageKey);
         }
       }
     }

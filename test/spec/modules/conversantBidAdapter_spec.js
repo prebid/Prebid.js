@@ -1,6 +1,7 @@
 import {expect} from 'chai';
-import {spec} from 'modules/conversantBidAdapter';
-import * as utils from 'src/utils';
+import {spec, storage} from 'modules/conversantBidAdapter.js';
+import * as utils from 'src/utils.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -395,6 +396,7 @@ describe('Conversant adapter tests', function() {
     // add pubcid to every entry
     requests.forEach((unit) => {
       Object.assign(unit, {userId: {pubcid: 67890}});
+      Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
@@ -468,13 +470,14 @@ describe('Conversant adapter tests', function() {
 
       // add pubcid to every entry
       requests.forEach((unit) => {
-        Object.assign(unit, {userId: {pubcid: 112233, tdid: 223344, idl_env: 334455}});
+        Object.assign(unit, {userId: {pubcid: '112233', tdid: '223344', idl_env: '334455'}});
+        Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
       });
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
-        {source: 'adserver.org', uids: [{id: 223344, atype: 1}]},
-        {source: 'liveramp.com', uids: [{id: 334455, atype: 1}]}
+        {source: 'adserver.org', uids: [{id: '223344', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'liveramp.com', uids: [{id: '334455', atype: 1}]}
       ]);
     });
   });
@@ -505,7 +508,7 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid cookie
-      utils.setCookie(ID_NAME, '12345', expStr(TIMEOUT));
+      storage.setCookie(ID_NAME, '12345', expStr(TIMEOUT));
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -518,7 +521,7 @@ describe('Conversant adapter tests', function() {
       requests[0].params.pubcid_name = CUSTOM_ID_NAME;
 
       // add a pubcid cookie
-      utils.setCookie(CUSTOM_ID_NAME, '12345', expStr(TIMEOUT));
+      storage.setCookie(CUSTOM_ID_NAME, '12345', expStr(TIMEOUT));
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -530,8 +533,8 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(ID_NAME + EXP, '');
-      utils.setDataInLocalStorage(ID_NAME, 'abcde');
+      storage.setDataInLocalStorage(ID_NAME + EXP, '');
+      storage.setDataInLocalStorage(ID_NAME, 'abcde');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -543,8 +546,8 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(ID_NAME + EXP, expStr(TIMEOUT));
-      utils.setDataInLocalStorage(ID_NAME, 'fghijk');
+      storage.setDataInLocalStorage(ID_NAME + EXP, expStr(TIMEOUT));
+      storage.setDataInLocalStorage(ID_NAME, 'fghijk');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -556,8 +559,8 @@ describe('Conversant adapter tests', function() {
       const requests = utils.deepClone(bidRequests);
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(ID_NAME + EXP, expStr(-TIMEOUT));
-      utils.setDataInLocalStorage(ID_NAME, 'lmnopq');
+      storage.setDataInLocalStorage(ID_NAME + EXP, expStr(-TIMEOUT));
+      storage.setDataInLocalStorage(ID_NAME, 'lmnopq');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
@@ -570,8 +573,8 @@ describe('Conversant adapter tests', function() {
       requests[0].params.pubcid_name = CUSTOM_ID_NAME;
 
       // add a pubcid in local storage
-      utils.setDataInLocalStorage(CUSTOM_ID_NAME + EXP, expStr(TIMEOUT));
-      utils.setDataInLocalStorage(CUSTOM_ID_NAME, 'fghijk');
+      storage.setDataInLocalStorage(CUSTOM_ID_NAME + EXP, expStr(TIMEOUT));
+      storage.setDataInLocalStorage(CUSTOM_ID_NAME, 'fghijk');
 
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;

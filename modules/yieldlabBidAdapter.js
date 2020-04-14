@@ -1,8 +1,8 @@
-import * as utils from '../src/utils'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import find from 'core-js/library/fn/array/find'
-import { VIDEO, BANNER } from '../src/mediaTypes'
-import { Renderer } from '../src/Renderer'
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import find from 'core-js/library/fn/array/find.js'
+import { VIDEO, BANNER } from '../src/mediaTypes.js'
+import { Renderer } from '../src/Renderer.js'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -38,6 +38,9 @@ export const spec = {
       adslotIds.push(bid.params.adslotId)
       if (bid.params.targeting) {
         query.t = createQueryString(bid.params.targeting)
+      }
+      if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
+        query.ids = createUserIdString(bid.userIdAsEids)
       }
     })
 
@@ -80,6 +83,8 @@ export const spec = {
         const primarysize = bidRequest.sizes.length === 2 && !utils.isArray(bidRequest.sizes[0]) ? bidRequest.sizes : bidRequest.sizes[0]
         const customsize = bidRequest.params.adSize !== undefined ? parseSize(bidRequest.params.adSize) : primarysize
         const extId = bidRequest.params.extId !== undefined ? '&id=' + bidRequest.params.extId : ''
+        const adType = matchedBid.adtype !== undefined ? matchedBid.adtype : ''
+
         const bidResponse = {
           requestId: bidRequest.bidId,
           cpm: matchedBid.price / 100,
@@ -94,7 +99,7 @@ export const spec = {
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}"></script>`
         }
 
-        if (isVideo(bidRequest)) {
+        if (isVideo(bidRequest, adType)) {
           const playersize = getPlayerSize(bidRequest)
           if (playersize) {
             bidResponse.width = playersize[0]
@@ -124,10 +129,11 @@ export const spec = {
 /**
  * Is this a video format?
  * @param {Object} format
+ * @param {String} adtype
  * @returns {Boolean}
  */
-function isVideo (format) {
-  return utils.deepAccess(format, 'mediaTypes.video')
+function isVideo (format, adtype) {
+  return utils.deepAccess(format, 'mediaTypes.video') && adtype.toLowerCase() === 'video'
 }
 
 /**
@@ -157,6 +163,19 @@ function getPlayerSize (format) {
  */
 function parseSize (size) {
   return size.split('x').map(Number)
+}
+
+/**
+ * Creates a string out of an array of eids with source and uid
+ * @param {Array} eids
+ * @returns {String}
+ */
+function createUserIdString (eids) {
+  let str = []
+  for (let i = 0; i < eids.length; i++) {
+    str.push(eids[i].source + ':' + eids[i].uids[0].id)
+  }
+  return str.join(',')
 }
 
 /**

@@ -1,6 +1,6 @@
-import { loadExternalScript } from './adloader';
-import * as utils from './utils';
-import find from 'core-js/library/fn/array/find';
+import { loadExternalScript } from './adloader.js';
+import * as utils from './utils.js';
+import find from 'core-js/library/fn/array/find.js';
 const moduleCode = 'outstream';
 
 /**

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/bidfluenceBidAdapter';
+import { spec } from 'modules/bidfluenceBidAdapter.js';
 
 const BIDDER_CODE = 'bidfluence';
 const PLACEMENT_ID = '1000';
@@ -51,30 +51,30 @@ describe('Bidfluence Adapter test', () => {
   });
 
   describe('buildRequests', function () {
-    const request = spec.buildRequests(validBidRequests, bidderRequest);
-
     it('sends bid request to our endpoint via POST', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.method).to.equal('POST');
+      const payload = JSON.parse(request.data);
+
+      expect(payload.bids[0].bid).to.equal(validBidRequests[0].bidId);
+      expect(payload.azr).to.equal(true);
+      expect(payload.ck).to.not.be.undefined;
+      expect(payload.bids[0].tid).to.equal(PLACEMENT_ID);
+      expect(payload.bids[0].pid).to.equal(PUB_ID);
+      expect(payload.bids[0].rp).to.be.a('number');
+      expect(payload.re).to.not.be.undefined;
+      expect(payload.st).to.not.be.undefined;
+      expect(payload.tz).to.not.be.undefined;
+      expect(payload.sr).to.not.be.undefined;
+      expect(payload.vp).to.not.be.undefined;
+      expect(payload.sdt).to.not.be.undefined;
+      expect(payload.bids[0].w).to.equal('300');
+      expect(payload.bids[0].h).to.equal('250');
     });
 
-    const payload = JSON.parse(request.data);
-
-    expect(payload.bids[0].bid).to.equal(validBidRequests[0].bidId);
-    expect(payload.azr).to.equal(true);
-    expect(payload.ck).to.not.be.undefined;
-    expect(payload.bids[0].tid).to.equal(PLACEMENT_ID);
-    expect(payload.bids[0].pid).to.equal(PUB_ID);
-    expect(payload.bids[0].rp).to.be.a('number');
-    expect(payload.re).to.not.be.undefined;
-    expect(payload.st).to.not.be.undefined;
-    expect(payload.tz).to.not.be.undefined;
-    expect(payload.sr).to.not.be.undefined;
-    expect(payload.vp).to.not.be.undefined;
-    expect(payload.sdt).to.not.be.undefined;
-    expect(payload.bids[0].w).to.equal('300');
-    expect(payload.bids[0].h).to.equal('250');
-
     it('sends gdpr info if exists', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
       expect(payload.gdpr).to.equal(true);
       expect(payload.gdprc).to.equal(CONSENT_STRING);
     });

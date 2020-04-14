@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/advertlyBidAdapter';
+import { spec } from 'modules/advertlyBidAdapter.js';
 
 const ENDPOINT = 'https://api.advertly.com/www/admin/plugins/Prebid/getAd.php';
 

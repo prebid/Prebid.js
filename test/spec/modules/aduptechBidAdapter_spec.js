@@ -10,8 +10,8 @@ import {
   extractSizesFromBidRequest,
   extractTopWindowReferrerFromBidRequest,
   extractTopWindowUrlFromBidRequest
-} from '../../../modules/aduptechBidAdapter';
-import { newBidder } from '../../../src/adapters/bidderFactory';
+} from '../../../modules/aduptechBidAdapter.js';
+import { newBidder } from '../../../src/adapters/bidderFactory.js';
 
 describe('AduptechBidAdapter', () => {
   describe('extractGdprFromBidderRequest', () => {

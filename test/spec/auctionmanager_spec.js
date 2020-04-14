@@ -1,14 +1,14 @@
-import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction';
+import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction.js';
 import CONSTANTS from 'src/constants.json';
-import { adjustBids, getMediaTypeGranularity } from 'src/auction';
-import * as auctionModule from 'src/auction';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { createBid } from 'src/bidfactory';
-import { config } from 'src/config';
-import * as store from 'src/videoCache';
-import * as ajaxLib from 'src/ajax';
-import find from 'core-js/library/fn/array/find';
-import { server } from 'test/mocks/xhr';
+import { adjustBids, getMediaTypeGranularity } from 'src/auction.js';
+import * as auctionModule from 'src/auction.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { createBid } from 'src/bidfactory.js';
+import { config } from 'src/config.js';
+import * as store from 'src/videoCache.js';
+import * as ajaxLib from 'src/ajax.js';
+import find from 'core-js/library/fn/array/find.js';
+import { server } from 'test/mocks/xhr.js';
 
 var assert = require('assert');
 
@@ -979,6 +979,103 @@ describe('auctionmanager.js', function () {
 
       config.getConfig.restore();
       store.store.restore();
+    });
+  });
+
+  describe('addBidRequests', function () {
+    let createAuctionStub;
+    let adUnits;
+    let adUnitCodes;
+    let spec;
+    let spec1;
+    let auction;
+    let ajaxStub;
+    let logMessageStub;
+    let logInfoStub;
+    let logWarnStub;
+    let logErrorStub;
+
+    let bids = TEST_BIDS;
+    let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
+
+    before(function () {
+      logMessageStub = sinon.stub(utils, 'logMessage');
+      logInfoStub = sinon.stub(utils, 'logInfo');
+      logWarnStub = sinon.stub(utils, 'logWarn');
+      logErrorStub = sinon.stub(utils, 'logError');
+      let bidRequests = [
+        mockBidRequest(bids[0]),
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 })
+      ];
+      let makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
+      makeRequestsStub.returns(bidRequests);
+
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+    });
+
+    after(function () {
+      logMessageStub.restore();
+      logInfoStub.restore();
+      logWarnStub.restore();
+      logErrorStub.restore();
+      ajaxStub.restore();
+      adapterManager.makeBidRequests.restore();
+    });
+
+    beforeEach(function () {
+      config.setConfig({
+        debugging: {
+          enabled: true,
+          bidRequests: [{
+            bidderCode: BIDDER_CODE,
+            adUnitCode: ADUNIT_CODE,
+            storedAuctionResponse: '11111'
+          }]
+        }
+      });
+
+      adUnits = [{
+        code: ADUNIT_CODE,
+        bids: [
+          {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+        ]
+      }, {
+        code: ADUNIT_CODE1,
+        bids: [
+          {bidder: BIDDER_CODE1, params: {placementId: 'id'}},
+        ]
+      }];
+      adUnitCodes = adUnits.map(({ code }) => code);
+      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+      createAuctionStub = sinon.stub(auctionModule, 'newAuction');
+      createAuctionStub.returns(auction);
+
+      spec = mockBidder(BIDDER_CODE, bids);
+      spec1 = mockBidder(BIDDER_CODE1, bids1);
+
+      registerBidder(spec);
+      registerBidder(spec1);
+    });
+
+    afterEach(function () {
+      logMessageStub.resetHistory();
+      logInfoStub.resetHistory();
+      logWarnStub.resetHistory();
+      logErrorStub.resetHistory();
+      auctionModule.newAuction.restore();
+      config.resetConfig();
+    });
+
+    it('should override bidRequest properties when config debugging has a matching bidRequest defined', function () {
+      auction.callBids();
+      const auctionBidRequests = auction.getBidRequests();
+      assert.equal(auctionBidRequests.length > 0, true);
+      assert.equal(Array.isArray(auctionBidRequests[0].bids), true);
+
+      const bid = find(auctionBidRequests[0].bids, bid => bid.adUnitCode === ADUNIT_CODE);
+      assert.equal(typeof bid !== 'undefined', true);
+      assert.equal(bid.hasOwnProperty('storedAuctionResponse'), true);
+      assert.equal(bid.storedAuctionResponse, '11111');
     });
   });
 
