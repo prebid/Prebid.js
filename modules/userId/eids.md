@@ -87,7 +87,7 @@ userIdAsEids = [
         }]
     },
     {
-        source: 'rubiconproject.com',
+        source: 'sharedid.org',
         uids: [{
             id: 'some-random-id-value',
             atype: 1

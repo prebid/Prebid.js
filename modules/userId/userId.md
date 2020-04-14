@@ -68,7 +68,7 @@ pbjs.setConfig({
              name: 'sharedId',
              storage: {
                  type: 'cookie',
-                 name: 'sharedId',
+                 name: 'sharedid',
                  expires: 28
                  }
         }],
@@ -124,7 +124,7 @@ pbjs.setConfig({
              name: 'sharedId',
              storage: {
                 type: 'cookie',
-                name: 'sharedId',
+                name: 'sharedid',
                 expires: 28
              }
         }],

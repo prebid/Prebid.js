@@ -153,7 +153,7 @@ describe('eids array generation for known sub-modules', function() {
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
-      source: 'rubiconproject.com',
+      source: 'sharedid.org',
       uids: [{id: 'test_sharedId', atype: 1}]
     });
   });

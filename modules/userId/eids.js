@@ -84,7 +84,7 @@ const USER_IDS_CONFIG = {
   },
   // sharedId
   'sharedId': {
-    source: 'rubiconproject.com',
+    source: 'sharedid.org',
     atype: 1
   }
 };

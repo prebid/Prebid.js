@@ -363,7 +363,7 @@ describe('User ID', function() {
             storage: { name: 'netId', type: 'cookie' }
           }, {
             name: 'sharedId',
-            storage: { name: 'sharedId', type: 'cookie' }
+            storage: { name: 'sharedid', type: 'cookie' }
           } ]
         }
       });

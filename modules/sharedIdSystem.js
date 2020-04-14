@@ -44,7 +44,8 @@ export const sharedIdSubmodule = {
   getId: function(configParams) {
     let sharedId = this.sharedIdGenerator();
     return {
-      id: sharedId }
+      id: sharedId
+    }
   },
 
   sharedIdGenerator: function () {
