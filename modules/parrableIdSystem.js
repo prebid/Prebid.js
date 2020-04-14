@@ -27,12 +27,12 @@ function isValidConfig(configParams) {
 function fetchId(configParams, consentData, currentStoredId) {
   if (!isValidConfig(configParams)) return;
 
-  const { referer } = getRefererInfo();
+  const refererInfo = getRefererInfo();
 
   const data = {
     eid: currentStoredId || null,
     trackers: configParams.partner.split(','),
-    url: referer
+    url: refererInfo.referer
   };
 
   const searchParams = {
