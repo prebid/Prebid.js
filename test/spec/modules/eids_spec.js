@@ -146,9 +146,9 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
-  it('SharedId', function() {
+  it('Sharedid', function() {
     const userId = {
-      sharedId: 'test_sharedId'
+      sharedid: 'test_sharedId'
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);

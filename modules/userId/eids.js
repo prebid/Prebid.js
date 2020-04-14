@@ -82,8 +82,8 @@ const USER_IDS_CONFIG = {
     source: 'netid.de',
     atype: 1
   },
-  // sharedId
-  'sharedId': {
+  // sharedid
+  'sharedid': {
     source: 'sharedid.org',
     atype: 1
   }

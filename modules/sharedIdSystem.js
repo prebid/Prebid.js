@@ -29,10 +29,10 @@ export const sharedIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{sharedId:string}}
+   * @returns {{sharedid:string}} or undefined if value doesn't exists
    */
   decode(value) {
-    return (value && typeof value['sharedId'] === 'string') ? { 'sharedId': value['sharedId'] } : undefined;
+    return (value && typeof value['sharedid'] === 'string') ? { 'sharedid': value['sharedid'] } : undefined;
   },
 
   /**
@@ -47,7 +47,10 @@ export const sharedIdSubmodule = {
       id: sharedId
     }
   },
-
+  /**
+   * the shared id generator factory.
+   * @returns {*}
+   */
   sharedIdGenerator: function () {
     if (!this.sharedIdFactory) {
       this.sharedIdFactory = this.factory();
@@ -56,6 +59,11 @@ export const sharedIdSubmodule = {
     return this.sharedIdFactory();
   },
 
+  /**
+   * the factory to generate unique identifier based on time and current pseudorandom number
+   * @param {string} the current pseudorandom number
+   * @returns {function(*=): *}
+   */
   factory: function (currPrng) {
     if (!currPrng) {
       currPrng = this.detectPrng();
@@ -67,12 +75,23 @@ export const sharedIdSubmodule = {
       return this.encodeTime(seedTime, TIME_LEN) + this.encodeRandom(RANDOM_LEN, currPrng);
     };
   },
+  /**
+   * creates and logs the error message
+   * @function
+   * @param {string} error message
+   * @returns {Error}
+   */
   createError: function(message) {
     utils.logError(message);
     const err = new Error(message);
     err.source = 'sharedId';
     return err;
   },
+  /**
+   * gets a a random charcter from generated pseudorandom number
+   * @param {string} the generated pseudorandom number
+   * @returns {string}
+   */
   randomChar: function(prng) {
     let rand = Math.floor(prng() * ENCODING_LEN);
     if (rand === ENCODING_LEN) {
@@ -80,19 +99,35 @@ export const sharedIdSubmodule = {
     }
     return ENCODING.charAt(rand);
   },
+  /**
+   * encodes the time based on the length
+   * @param now
+   * @param len
+   * @returns {string} encoded time.
+   */
   encodeTime: function (now, len) {
     if (isNaN(now)) {
       throw new Error(now + ' must be a number');
     }
+
+    if (Number.isInteger(now) === false) {
+      throw this.createError('time must be an integer');
+    }
+
     if (now > TIME_MAX) {
       throw this.createError('cannot encode time greater than ' + TIME_MAX);
     }
     if (now < 0) {
       throw this.createError('time must be positive');
     }
-    if (Number.isInteger(now) === false) {
-      throw this.createError('time must be an integer');
+
+    if (Number.isInteger(len) === false) {
+      throw this.createError('length must be an integer');
     }
+    if (len < 0) {
+      throw this.createError('length must be positive');
+    }
+
     let mod;
     let str = '';
     for (; len > 0; len--) {
@@ -102,6 +137,13 @@ export const sharedIdSubmodule = {
     }
     return str;
   },
+
+  /**
+   * encodes random character
+   * @param len
+   * @param prng
+   * @returns {string}
+   */
   encodeRandom: function (len, prng) {
     let str = '';
     for (; len > 0; len--) {
@@ -109,6 +151,12 @@ export const sharedIdSubmodule = {
     }
     return str;
   },
+  /**
+   * detects the pseudorandom number generator and generates the random number
+   * @function
+   * @param {string} error message
+   * @returns {string} a random number
+   */
   detectPrng: function (root) {
     if (!root) {
       root = typeof window !== 'undefined' ? window : null;
