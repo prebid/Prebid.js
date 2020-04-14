@@ -21,7 +21,7 @@ function bidRequestedHandler(args) {
       user_browser: (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari()),
       user_platform: navigator.platform,
       auction_start: new Date(args.auctionStart).toJSON(),
-      domain: window.location.hostname,
+      domain: args.refererInfo.referer,
       pid: atsAnalyticsAdapter.context.pid,
     };
   });
