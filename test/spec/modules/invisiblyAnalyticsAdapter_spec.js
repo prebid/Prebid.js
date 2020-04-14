@@ -1,4 +1,4 @@
-import invisiblyAdapter from 'modules/invisiblyAnalyticsAdapter';
+import invisiblyAdapter from 'modules/invisiblyAnalyticsAdapter.js';
 import { expect } from 'chai';
 let events = require('src/events');
 let constants = require('src/constants.json');
