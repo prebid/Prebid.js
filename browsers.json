@@ -47,11 +47,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_72_windows_10": {
+  "bs_firefox_74_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "firefox",
-    "browser_version": "72.0",
+    "browser_version": "74.0",
     "device": null,
     "os": "Windows"
   },

@@ -19,7 +19,7 @@ describe('Prebid.js Banner Ad Unit Test', function () {
   before(function loadTestPage() {
     browser.url(TEST_PAGE_URL).pause(3000);
     try {
-      browser.waitForExist(CREATIVE_IFRAME_CSS_SELECTOR, 5000);
+      browser.waitForExist(CREATIVE_IFRAME_CSS_SELECTOR, 2000);
       const creativeIframe = $(CREATIVE_IFRAME_CSS_SELECTOR).value;
       browser.frame(creativeIframe);
     } catch (e) {

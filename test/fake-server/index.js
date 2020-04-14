@@ -34,5 +34,5 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`server listening on http://localhost:${PORT}`);
+  console.log(`fake-server listening on http://localhost:${PORT}`);
 });

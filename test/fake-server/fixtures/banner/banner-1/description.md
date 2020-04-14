@@ -1,6 +1,7 @@
 Test Page - 'test/pages/banner.html'
 Test Spec File - 'test/spec/e2e/native/basic_banner_ad.spec.js'
-These are a 'Reqeust - Response' JSON objects for the following Ad Unit.
+
+Ad Unit that generates given 'Request' - 'Response' pairs.
 
 ```(javascript)
 [{

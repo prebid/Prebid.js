@@ -1,3 +1,4 @@
+/* eslint no-console: 0 */
 'use strict';
 
 var _ = require('lodash');
@@ -238,25 +239,25 @@ function test(done) {
       ];
     }
 
-    //run mock-server
-    const mockServer = spawn('node', ['./test/fake-server/index.js', `--port=${MOCK_SERVER_PORT}`]);
-    mockServer.stdout.on('data', (data) => {
+    // run fake-server
+    const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${MOCK_SERVER_PORT}`]);
+    fakeServer.stdout.on('data', (data) => {
       console.log(`stdout: ${data}`);
     });
-    mockServer.stderr.on('data', (data) => {
+    fakeServer.stderr.on('data', (data) => {
       console.log(`stderr: ${data}`);
     });
 
     execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
       .then(stdout => {
         // kill mock server
-        mockServer.kill('SIGINT');
+        fakeServer.kill('SIGINT');
         done();
         process.exit(0);
       })
       .catch(err => {
         // kill mock server
-        mockServer.kill('SIGINT');
+        fakeServer.kill('SIGINT');
         done(new Error(`Tests failed with error: ${err}`));
         process.exit(1);
       });
