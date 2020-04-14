@@ -28,7 +28,11 @@ Prebid Blue Billywig Bidder Adapter
                     bidder: 'bluebillywig',
                     params: {
 			publicationName: "bbprebid",
+<<<<<<< HEAD
 			rendererCode: "renderer",
+=======
+			renderer: "renderer",
+>>>>>>> 1ae44aa5... add Blue Billywig adapter
 			accountId: 642,
   			connections: [ 'bluebillywig' ],
 			bluebillywig: {}

@@ -1,11 +1,16 @@
 import { expect } from 'chai';
+<<<<<<< HEAD
 import { spec } from 'modules/bluebillywigBidAdapter.js';
+=======
+import { spec, BB_CONSTANTS } from 'modules/bluebillywigBidAdapter.js';
+>>>>>>> 1ae44aa5... add Blue Billywig adapter
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone, deepAccess } from 'src/utils.js';
 import { config } from 'src/config.js';
 import { VIDEO } from 'src/mediaTypes.js';
 
+<<<<<<< HEAD
 const BB_CONSTANTS = {
   BIDDER_CODE: 'bluebillywig',
   AUCTION_URL: '$$URL_STARTpbs.bluebillywig.com/openrtb2/auction?pub=$$PUBLICATION',
@@ -18,6 +23,8 @@ const BB_CONSTANTS = {
   DEFAULT_NET_REVENUE: true
 };
 
+=======
+>>>>>>> 1ae44aa5... add Blue Billywig adapter
 describe('BlueBillywigAdapter', () => {
   describe('isBidRequestValid', () => {
     const baseValidBid = {
@@ -358,6 +365,7 @@ describe('BlueBillywigAdapter', () => {
       expect(payload.device.h).to.be.a('number');
     });
 
+<<<<<<< HEAD
     it('should add site when specified in config', () => {
       config.setConfig({ site: { name: 'Blue Billywig', domain: 'bluebillywig.com', page: 'https://bluebillywig.com/', publisher: { id: 'abc', name: 'Blue Billywig', domain: 'bluebillywig.com' } } });
 
@@ -376,6 +384,8 @@ describe('BlueBillywigAdapter', () => {
       config.resetConfig();
     });
 
+=======
+>>>>>>> 1ae44aa5... add Blue Billywig adapter
     it('should add app when specified in config', () => {
       config.setConfig({ app: { bundle: 'org.prebid.mobile.demoapp', domain: 'prebid.org' } });
 
@@ -493,7 +503,11 @@ describe('BlueBillywigAdapter', () => {
       const userId = { tdid: 123 };
 
       const newBaseValidBidRequests = deepClone(baseValidBidRequests);
+<<<<<<< HEAD
       newBaseValidBidRequests[0].userId = { criteoId: 'sample-userid' };
+=======
+      newBaseValidBidRequests[0].userId = userId;
+>>>>>>> 1ae44aa5... add Blue Billywig adapter
 
       const request = spec.buildRequests(newBaseValidBidRequests, validBidderRequest);
       const payload = JSON.parse(request.data);
