@@ -9,8 +9,10 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
 import { uspDataHandler } from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'liveIntentId';
+export const storage = getStorageManager(null, MODULE_NAME);
 
 let eventFired = false;
 let liveConnect = null;
@@ -83,7 +85,7 @@ function initializeLiveConnect(configParams) {
   }
 
   // The second param is the storage object, which means that all LS & Cookie manipulation will go through PBJS utils.
-  liveConnect = LiveConnect(liveConnectConfig, utils);
+  liveConnect = LiveConnect(liveConnectConfig, storage);
   return liveConnect;
 }
 

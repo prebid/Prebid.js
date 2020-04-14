@@ -1,4 +1,4 @@
-import { newBidder, registerBidder, preloadBidderMappingFile } from 'src/adapters/bidderFactory.js';
+import { newBidder, registerBidder, preloadBidderMappingFile, storage } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
@@ -247,7 +247,7 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2&`);
+      expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2`);
       expect(ajaxStub.firstCall.args[2]).to.be.undefined;
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({
         method: 'GET',
@@ -271,7 +271,7 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2&`);
+      expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2`);
       expect(ajaxStub.firstCall.args[2]).to.be.undefined;
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({
         method: 'GET',
@@ -844,7 +844,7 @@ describe('preload mapping url hook', function() {
 
   beforeEach(function () {
     fakeTranslationServer = server;
-    getLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
+    getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     adapterManagerStub = sinon.stub(adapterManager, 'getBidAdapter');
   });
 
