@@ -33,8 +33,8 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var port = 9999;
-const MOCK_SERVER_HOST = argv.host ? argv.host : 'localhost';
-const MOCK_SERVER_PORT = 4444;
+const FAKE_SERVER_HOST = argv.host ? argv.host : 'localhost';
+const FAKE_SERVER_PORT = 4444;
 const { spawn } = require('child_process');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
@@ -240,7 +240,7 @@ function test(done) {
     }
 
     // run fake-server
-    const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${MOCK_SERVER_PORT}`]);
+    const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${FAKE_SERVER_PORT}`]);
     fakeServer.stdout.on('data', (data) => {
       console.log(`stdout: ${data}`);
     });
@@ -329,7 +329,7 @@ function setupE2e(done) {
 
 function injectMockServerEndpoint() {
   return gulp.src(['build/dist/*.js'])
-    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', `http://${MOCK_SERVER_HOST}:${MOCK_SERVER_PORT}/`))
+    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', `http://${FAKE_SERVER_HOST}:${FAKE_SERVER_PORT}/`))
     .pipe(gulp.dest('build/dist'));
 }
 
