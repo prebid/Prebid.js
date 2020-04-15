@@ -37,7 +37,7 @@ const UlidGenerator = {
 
   /**
    * the factory to generate unique identifier based on time and current pseudorandom number
-   * @param {string} the current pseudorandom number
+   * @param {string} the current pseudorandom number generator
    * @returns {function(*=): *}
    */
   factory: function (currPrng) {
