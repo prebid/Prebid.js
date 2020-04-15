@@ -204,12 +204,24 @@ const createOrtbImpNativeObj = (bid, nativeObj) => {
   return { request: JSON.stringify(request) };
 }
 
-const createOrtbImpVideoObj = (bid, videoObj) => ({
-  ...videoObj,
-  mimes: [
-    'video/mp4'
-  ]
-})
+const createOrtbImpVideoObj = (bid, videoObj) => {
+  let obj = {};
+  let params = bid.params
+  console.log(bid.params.video !== {})
+  if (!utils.isEmpty(bid.params.video)) {
+    obj = {
+      ...params.video,
+    }
+  } else {
+    obj = {
+      mimes: ['video/mp4'],
+    };
+  }
+  obj.ext = {
+    ...videoObj,
+  }
+  return obj;
+}
 
 const createServerRequest = (ortbRequest, validBidRequests, isTestMode = 'false') => ({
   method: 'POST',
@@ -374,4 +386,5 @@ export const spec = {
     })
   }
 }
+
 registerBidder(spec);
