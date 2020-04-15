@@ -4,8 +4,10 @@
  * @module modules/sharedIdSystem
  * @requires module:modules/userId
  */
+
 import { submodule } from '../src/hook.js';
 import * as utils from '../src/utils.js';
+
 // These values should NEVER change. If
 // they do, we're no longer making ulids!
 const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford's Base32
@@ -15,43 +17,17 @@ const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 const MODULE_NAME = 'sharedId';
 
-/** @type {Submodule} */
-export const sharedIdSubmodule = {
-  /**
-   * used to link submodule with config
-   * @type {string}
-   */
-  name: MODULE_NAME,
-
+/**
+ * Primary module for generating ulid.
+ */
+const UlidGenerator = {
   sharedIdFactory: undefined,
 
-  /**
-   * decode the stored id value for passing to bid requests
-   * @function
-   * @param {string} value
-   * @returns {{sharedid:string}} or undefined if value doesn't exists
-   */
-  decode(value) {
-    return (value && typeof value['sharedid'] === 'string') ? { 'sharedid': value['sharedid'] } : undefined;
-  },
-
-  /**
-   * performs action to obtain id and return a value.
-   * @function
-   * @param {SubmoduleParams} [configParams]
-   * @returns {sharedId}
-   */
-  getId: function(configParams) {
-    let sharedId = this.sharedIdGenerator();
-    return {
-      id: sharedId
-    }
-  },
   /**
    * the shared id generator factory.
    * @returns {*}
    */
-  sharedIdGenerator: function () {
+  generateId: function () {
     if (!this.sharedIdFactory) {
       this.sharedIdFactory = this.factory();
     }
@@ -75,6 +51,7 @@ export const sharedIdSubmodule = {
       return this.encodeTime(seedTime, TIME_LEN) + this.encodeRandom(RANDOM_LEN, currPrng);
     };
   },
+
   /**
    * creates and logs the error message
    * @function
@@ -87,6 +64,7 @@ export const sharedIdSubmodule = {
     err.source = 'sharedId';
     return err;
   },
+
   /**
    * gets a a random charcter from generated pseudorandom number
    * @param {string} the generated pseudorandom number
@@ -99,6 +77,7 @@ export const sharedIdSubmodule = {
     }
     return ENCODING.charAt(rand);
   },
+
   /**
    * encodes the time based on the length
    * @param now
@@ -151,6 +130,7 @@ export const sharedIdSubmodule = {
     }
     return str;
   },
+
   /**
    * detects the pseudorandom number generator and generates the random number
    * @function
@@ -173,4 +153,37 @@ export const sharedIdSubmodule = {
   }
 };
 
+/** @type {Submodule} */
+export const sharedIdSubmodule = {
+  /**
+   * used to link submodule with config
+   * @type {string}
+   */
+  name: MODULE_NAME,
+
+  /**
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param {string} value
+   * @returns {{sharedid:string}} or undefined if value doesn't exists
+   */
+  decode(value) {
+    return (value && typeof value['sharedid'] === 'string') ? { 'sharedid': value['sharedid'] } : undefined;
+  },
+
+  /**
+   * performs action to obtain id and return a value.
+   * @function
+   * @param {SubmoduleParams} [configParams]
+   * @returns {sharedId}
+   */
+  getId: function(configParams) {
+    let sharedId = UlidGenerator.generateId();
+    return {
+      id: sharedId
+    }
+  },
+};
+
+// Register submodule for userId
 submodule('userId', sharedIdSubmodule);
