@@ -1,7 +1,6 @@
 import { criteoIdSubmodule, storage } from 'modules/criteoIdSystem.js';
 import * as utils from 'src/utils.js';
 import * as ajaxLib from 'src/ajax.js';
-import * as urlLib from 'src/url.js';
 
 const pastDateString = new Date(0).toString()
 
@@ -34,7 +33,7 @@ describe('CriteoId module', function () {
     removeFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
     ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse('{}'));
-    parseUrlStub = sinon.stub(urlLib, 'parse').returns({protocol: 'https', hostname: 'testdev.com'})
+    parseUrlStub = sinon.stub(utils, 'parseUrl').returns({protocol: 'https', hostname: 'testdev.com'})
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     done();
   });
