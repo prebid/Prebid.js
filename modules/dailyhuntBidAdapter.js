@@ -126,6 +126,7 @@ const createOrtbPublisherObj = (validBidRequests) => ({ ...extractKeyInfo(validB
 
 const createOrtbImpObj = (bid) => {
   let params = bid.params
+  let testMode = !!bid.params.test_mode
 
   // Validate Banner Request.
   let bannerObj = utils.deepAccess(bid.mediaTypes, `banner`);
@@ -138,10 +139,15 @@ const createOrtbImpObj = (bid) => {
     ext: {
       dailyhunt: {
         placement_id: params.placement_id,
-        publisher_id: params.publisher_id
+        publisher_id: params.publisher_id,
       }
     }
   };
+
+  // Test Mode Campaign.
+  if (testMode) {
+    imp.ext.test_mode = testMode;
+  }
 
   if (bannerObj) {
     imp.banner = {
