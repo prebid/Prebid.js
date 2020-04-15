@@ -46,15 +46,15 @@ export const spec = {
     const width = response.width || 0;
     const height = response.height || 0;
     let cpm = response.cpm || 0;
-	if(width == 300 && height == 250){
-		cpm = cpm*0.2;               
-	}	
-	if(width == 320 && height == 50){
-		cpm = cpm*0.55;                
-	}
-	if(cpm < 1){
-		return;
-	}
+    if (width == 300 && height == 250) {
+      cpm = cpm * 0.2;
+    }
+    if (width == 320 && height == 50) {
+      cpm = cpm * 0.55;
+    }
+    if (cpm < 1) {
+      return;
+    }
     if (width !== 0 && height !== 0 && cpm !== 0 && crid !== 0) {
       const dealId = response.dealid || '';
       const currency = response.currency || 'USD';
