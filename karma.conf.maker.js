@@ -18,7 +18,7 @@ function newWebpackConfig(codeCoverage) {
   if (codeCoverage) {
     webpackConfig.module.rules.push({
       enforce: 'post',
-      exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
+      exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)|(src\/utils.js)/,
       use: {
         loader: 'istanbul-instrumenter-loader',
         options: { esModules: true }
