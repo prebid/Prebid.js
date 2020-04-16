@@ -1,7 +1,6 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import includes from 'core-js/library/fn/array/includes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -18,7 +17,7 @@ const DEFAULT_APIS = [1, 2];
 export const spec = {
 
   code: 'platformio',
-  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
+  supportedMediaTypes: ['banner', 'native', 'video'],
 
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.pubId && bid.params.placementId)
@@ -35,7 +34,7 @@ export const spec = {
     applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
-      url: '//piohbdisp.hb.adx1.com/',
+      url: 'https://piohbdisp.hb.adx1.com/',
       data: JSON.stringify(request),
     };
   },
@@ -90,8 +89,8 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_PRICE(%7D|\})/gi, idToBidMap[id].price);
         bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_CURRENCY(%7D|\})/gi, bidResponse.cur);
         bid.ad = bid.ad.replace(/\$(%7B|\{)AUCTION_BID_ID(%7D|\})/gi, bidResponse.bidid);
-        bid.width = idToImpMap[id].banner.w;
-        bid.height = idToImpMap[id].banner.h;
+        bid.width = idToBidMap[id].w;
+        bid.height = idToBidMap[id].h;
         bid.mediaType = 'banner';
       }
       bids.push(bid);
@@ -111,37 +110,31 @@ function impression(slot) {
   };
 }
 
-function getSizes(slot) {
-  if (slot.params.size) {
-    const size = slot.params.size.toUpperCase().split('X');
-    return {
-      width: parseInt(size[0]),
-      height: parseInt(size[1]),
-    };
-  }
-  return {
-    width: 1,
-    height: 1,
-  };
-}
-
 function banner(slot) {
   if (slot.mediaType === 'banner' || utils.deepAccess(slot, 'mediaTypes.banner')) {
-    const sizes = getSizes(slot);
-    return {
-      w: sizes.width,
-      h: sizes.height,
-    };
+    const sizes = utils.deepAccess(slot, 'mediaTypes.banner.sizes');
+    if (sizes.length > 1) {
+      let format = [];
+      for (let f = 0; f < sizes.length; f++) {
+        format.push({'w': sizes[f][0], 'h': sizes[f][1]});
+      }
+      return {'format': format};
+    } else {
+      return {
+        w: sizes[0][0],
+        h: sizes[0][1]
+      }
+    }
   }
   return null;
 }
 
 function videoImpression(slot) {
   if (slot.mediaType === 'video' || utils.deepAccess(slot, 'mediaTypes.video')) {
-    const sizes = getSizes(slot);
+    const sizes = utils.deepAccess(slot, 'mediaTypes.video.playerSize');
     const video = {
-      w: sizes.width,
-      h: sizes.height,
+      w: sizes[0][0],
+      h: sizes[0][1],
       mimes: DEFAULT_MIMES,
       protocols: DEFAULT_PROTOCOLS,
       api: DEFAULT_APIS,
@@ -220,11 +213,11 @@ function site(bidderRequest) {
     return {
       publisher: {
         id: pubId.toString(),
-        domain: utils.getTopWindowLocation().hostname,
+        domain: window.location.hostname,
       },
       id: siteId.toString(),
-      ref: utils.getTopWindowReferrer(),
-      page: utils.getTopWindowLocation().href,
+      ref: window.top.document.referrer,
+      page: window.location.href,
     }
   }
   return null;
@@ -272,7 +265,7 @@ function parse(rawResponse) {
       return JSON.parse(rawResponse);
     }
   } catch (ex) {
-    logError('platformio.parse', 'ERROR', ex);
+    utils.logError('platformio.parse', 'ERROR', ex);
   }
   return null;
 }

@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'sublime';
 const DEFAULT_BID_HOST = 'pbjs.sskzlabs.com';
@@ -10,6 +10,7 @@ const SUBLIME_VERSION = '0.4.0';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 114,
   aliases: [],
 
   /**

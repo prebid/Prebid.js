@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/orbidderBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import openxAdapter from '../../../modules/openxAnalyticsAdapter';
-import {detectReferer} from 'src/refererDetection';
+import {spec} from 'modules/orbidderBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import openxAdapter from '../../../modules/openxAnalyticsAdapter.js';
+import {detectReferer} from 'src/refererDetection.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -10,6 +10,7 @@ describe('orbidderBidAdapter', () => {
     bidId: 'd66fa86787e0b0ca900a96eacfd5f0bb',
     auctionId: 'ccc4c7cdfe11cfbd74065e6dd28413d8',
     transactionId: 'd58851660c0c4461e4aa06344fc9c0c6',
+    bidRequestCount: 1,
     adUnitCode: 'adunit-code',
     sizes: [[300, 250], [300, 600]],
     params: {
@@ -30,7 +31,7 @@ describe('orbidderBidAdapter', () => {
     return spec.buildRequests(buildRequest, {
       ...bidderRequest || {},
       refererInfo: {
-        referer: 'http://localhost:9876/'
+        referer: 'https://localhost:9876/'
       }
     })[0];
   };
@@ -46,9 +47,9 @@ describe('orbidderBidAdapter', () => {
       expect(spec.isBidRequestValid(defaultBidRequest)).to.equal(true);
     });
 
-    it('accepts optional keyValues object', () => {
+    it('accepts optional profile object', () => {
       const bidRequest = deepClone(defaultBidRequest);
-      bidRequest.params.keyValues = {'key': 'value'};
+      bidRequest.params.profile = {'key': 'value'};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
@@ -58,9 +59,9 @@ describe('orbidderBidAdapter', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('doesn\'t accept malformed keyValues', () => {
+    it('doesn\'t accept malformed profile', () => {
       const bidRequest = deepClone(defaultBidRequest);
-      bidRequest.params.keyValues = 'another not usable string';
+      bidRequest.params.profile = 'another not usable string';
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
@@ -95,10 +96,14 @@ describe('orbidderBidAdapter', () => {
       expect(request.url).to.equal(`${spec.orbidderHost}/bid`);
     });
 
+    it('contains prebid version parameter', () => {
+      expect(request.data.v).to.equal($$PREBID_GLOBAL$$.version);
+    });
+
     it('sends correct bid parameters', () => {
-      // we add one, because we add referer information from bidderRequest object
-      expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequest).length + 1);
-      expect(request.data.pageUrl).to.equal('http://localhost:9876/');
+      // we add two, because we add referer information and version from bidderRequest object
+      expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequest).length + 2);
+      expect(request.data.pageUrl).to.equal('https://localhost:9876/');
       // expect(request.data.referrer).to.equal('');
       Object.keys(defaultBidRequest).forEach((key) => {
         expect(defaultBidRequest[key]).to.equal(request.data[key]);
@@ -161,6 +166,7 @@ describe('orbidderBidAdapter', () => {
     spec.bidParams['123req456'] = {'accountId': '123acc456'};
 
     let bidObjClone = deepClone(bidObj);
+    bidObjClone.v = $$PREBID_GLOBAL$$.version;
     bidObjClone.pageUrl = detectReferer(window)().referer;
     bidObjClone.params = [{'accountId': '123acc456'}];
 

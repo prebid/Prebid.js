@@ -2,13 +2,12 @@
  * This module adds [DFP support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import { registerVideoSupport } from '../src/adServerManager';
-import { targeting } from '../src/targeting';
-import { formatQS, format as buildUrl, parse } from '../src/url';
-import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils';
-import { config } from '../src/config';
-import { getHook, submodule } from '../src/hook';
-import { auctionManager } from '../src/auctionManager';
+import { registerVideoSupport } from '../src/adServerManager.js';
+import { targeting } from '../src/targeting.js';
+import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, buildUrl } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { getHook, submodule } from '../src/hook.js';
+import { auctionManager } from '../src/auctionManager.js';
 
 /**
  * @typedef {Object} DfpVideoParams
@@ -74,7 +73,7 @@ export function buildDfpVideoUrl(options) {
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parse(options.url, {noDecodeWholeURL: true});
+    urlComponents = parseUrl(options.url, {noDecodeWholeURL: true});
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
@@ -101,7 +100,7 @@ export function buildDfpVideoUrl(options) {
 
   return buildUrl({
     protocol: 'https',
-    host: 'pubads.g.doubleclick.net',
+    host: 'securepubads.g.doubleclick.net',
     pathname: '/gampad/ads',
     search: queryParams
   });
@@ -184,7 +183,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
 
     const masterTag = buildUrl({
       protocol: 'https',
-      host: 'pubads.g.doubleclick.net',
+      host: 'securepubads.g.doubleclick.net',
       pathname: '/gampad/ads',
       search: queryParams
     });
