@@ -15,14 +15,17 @@ About us : http://betweendigital.com
 ```javascript
     var adUnits = [
         {
-            code: 'test-div',
+						code: 'ad_slot',
+						mediaTypes: {
+                banner: {
+                    sizes: [[970, 250], [240, 400], [728, 90]]
+                }
+            },
             bids: [
                 {
                     bidder: "between",
                     params: {
-                        w: 200,
-                        h: 400,
-                        s: 111
+                        s: 122938
                     }
                 }
             ]
@@ -45,14 +48,16 @@ Where:
         var PREBID_TIMEOUT = 700;
 
         var adUnits = [{
-          code: 'example',
-          sizes: [[300, 250], [200,400]],
+					code: 'example',
+					mediaTypes: {
+                banner: {
+                    sizes: [[970, 250], [240, 400], [728, 90]]
+                }
+          },
           bids: [{
             bidder: 'between',
             params: {
-              w: 240,
-              h: 400,
-              s: 8
+              s: 809832
             }
           }]
 
