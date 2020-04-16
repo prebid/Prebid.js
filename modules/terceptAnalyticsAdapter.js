@@ -68,10 +68,10 @@ function mapBidRequests(params) {
 
 function mapBidResponse(bidResponse, status) {
   if (status !== 'win') {
-    let bid = events.bids.filter(o => o.bidId == bidResponse.bidId || o.bidId == bidResponse.requestId)[0];
+    let bid = events.bids.filter(o => o.bidId === bidResponse.bidId || o.bidId === bidResponse.requestId)[0];
     Object.assign(bid, {
       bidderCode: bidResponse.bidder,
-      bidId: status == 'timeout' ? bidResponse.bidId : bidResponse.requestId,
+      bidId: status === 'timeout' ? bidResponse.bidId : bidResponse.requestId,
       adUnitCode: bidResponse.adUnitCode,
       auctionId: bidResponse.auctionId,
       creativeId: bidResponse.creativeId,
@@ -82,12 +82,12 @@ function mapBidResponse(bidResponse, status) {
       mediaType: bidResponse.mediaType,
       statusMessage: bidResponse.statusMessage,
       status: bidResponse.status,
-      renderStatus: status == 'timeout' ? 3 : 2,
+      renderStatus: status === 'timeout' ? 3 : 2,
       timeToRespond: bidResponse.timeToRespond,
       requestTimestamp: bidResponse.requestTimestamp,
       responseTimestamp: bidResponse.responseTimestamp
     });
-  } else if (status == 'win') {
+  } else {
     return {
       bidderCode: bidResponse.bidder,
       bidId: bidResponse.requestId,
@@ -113,7 +113,7 @@ function mapBidResponse(bidResponse, status) {
 function send(data, status) {
   let location = utils.getWindowLocation();
   if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-    data.auctionInit = Object.assign({ host: location.host, path: location.pathname, search: location.search }, data.auctionInit);
+    Object.assign(data.auctionInit, { host: location.host, path: location.pathname, search: location.search });
   }
   data.initOptions = initOptions;
 
