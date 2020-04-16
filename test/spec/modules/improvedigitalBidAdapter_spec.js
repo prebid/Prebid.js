@@ -22,7 +22,7 @@ describe('Improve Digital Adapter Tests', function () {
     auctionId: '192721e36a0239',
     mediaTypes: {
       banner: {
-          sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
+        sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
       }
     },
     sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
@@ -32,7 +32,7 @@ describe('Improve Digital Adapter Tests', function () {
   instreamBidRequest.mediaTypes = {
     video: {
       context: 'instream',
-      playerSize: [640,480]
+      playerSize: [640, 480]
     }
   };
 
@@ -40,7 +40,7 @@ describe('Improve Digital Adapter Tests', function () {
   outstreamBidRequest.mediaTypes = {
     video: {
       context: 'outstream',
-      playerSize: [640,480]
+      playerSize: [640, 480]
     }
   };
 
@@ -51,7 +51,7 @@ describe('Improve Digital Adapter Tests', function () {
     },
     video: {
       context: 'outstream',
-      playerSize: [640,480]
+      playerSize: [640, 480]
     }
   };
 
@@ -878,14 +878,14 @@ describe('Improve Digital Adapter Tests', function () {
     it('should return a well-formed outstream video bid', function () {
       const bids = spec.interpretResponse(serverResponseVideo, {bidderRequest: outstreamBidderRequest});
       expect(bids[0].renderer).to.exist;
-      delete(bids[0].renderer);
+      delete (bids[0].renderer);
       expect(bids).to.deep.equal(expectedBidOutstreamVideo);
     });
 
     it('should return a well-formed outstream video bid for multi-format ad unit', function () {
       const bids = spec.interpretResponse(serverResponseVideo, {bidderRequest: multiFormatBidderRequest});
       expect(bids[0].renderer).to.exist;
-      delete(bids[0].renderer);
+      delete (bids[0].renderer);
       expect(bids).to.deep.equal(expectedBidOutstreamVideo);
     });
   });
