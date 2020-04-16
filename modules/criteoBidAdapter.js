@@ -246,6 +246,16 @@ function buildCdbUrl(context) {
   return url;
 }
 
+function checkNativeSendId(bidRequest) {
+  return !(bidRequest.nativeParams &&
+    ((bidRequest.nativeParams.image && bidRequest.nativeParams.image.sendId !== true) ||
+      (bidRequest.nativeParams.icon && bidRequest.nativeParams.icon.sendId !== true) ||
+      (bidRequest.nativeParams.clickUrl && bidRequest.nativeParams.clickUrl.sendId !== true) ||
+      (bidRequest.nativeParams.displayUrl && bidRequest.nativeParams.displayUrl.sendId !== true) ||
+      (bidRequest.nativeParams.privacyLink && bidRequest.nativeParams.privacyLink.sendId !== true) ||
+      (bidRequest.nativeParams.privacyIcon && bidRequest.nativeParams.privacyIcon.sendId !== true)));
+}
+
 /**
  * @param {CriteoContext} context
  * @param {BidRequest[]} bidRequests
@@ -253,7 +263,6 @@ function buildCdbUrl(context) {
  */
 function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
-  let hasNativeSendId = true;
   const request = {
     publisher: {
       url: context.url,
@@ -281,15 +290,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       }
       if (bidRequest.params.nativeCallback || utils.deepAccess(bidRequest, `mediaTypes.${NATIVE}`)) {
         slot.native = true;
-        if (bidRequest.nativeParams &&
-          ((bidRequest.nativeParams.image && bidRequest.nativeParams.image.sendId !== true) ||
-            (bidRequest.nativeParams.icon && bidRequest.nativeParams.icon.sendId !== true) ||
-            (bidRequest.nativeParams.clickUrl && bidRequest.nativeParams.clickUrl.sendId !== true) ||
-            (bidRequest.nativeParams.displayUrl && bidRequest.nativeParams.displayUrl.sendId !== true) ||
-            (bidRequest.nativeParams.privacyLink && bidRequest.nativeParams.privacyLink.sendId !== true) ||
-            (bidRequest.nativeParams.privacyIcon && bidRequest.nativeParams.privacyIcon.sendId !== true))
-        ) {
-          hasNativeSendId = false;
+        if (!checkNativeSendId(bidRequest)) {
+          utils.logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)');
         }
       }
       if (hasVideoMediaType(bidRequest)) {
@@ -312,9 +314,6 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       return slot;
     }),
   };
-  if (!hasNativeSendId) {
-    utils.logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, privacyLink, privacyIcon)');
-  }
   if (networkId) {
     request.publisher.networkid = networkId;
   }
