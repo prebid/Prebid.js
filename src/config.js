@@ -15,7 +15,7 @@
 import { isValidPriceConfig } from './cpmBucketManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
-import Set from 'core-js-pure/features/set.js';
+import Set from 'core-js-pure/features/set';
 import { mergeDeep } from './utils.js';
 
 const from = require('core-js-pure/features/array/from.js');

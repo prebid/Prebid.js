@@ -20,7 +20,7 @@ import { setupBeforeHookFnOnce, module } from '../src/hook.js';
 import { store } from '../src/videoCache.js';
 import { config } from '../src/config.js';
 import { ADPOD } from '../src/mediaTypes.js';
-import Set from 'core-js-pure/features/set.js';
+import Set from 'core-js-pure/features/set';
 import find from 'core-js-pure/features/array/find.js';
 import { auctionManager } from '../src/auctionManager.js';
 import CONSTANTS from '../src/constants.json';
