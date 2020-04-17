@@ -3,7 +3,7 @@
 import { getAdUnitSizes, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const BID_HOST = 'https://prebid.technoratimedia.com';
 const USER_SYNC_HOST = 'https://ad-cdn.technoratimedia.com';

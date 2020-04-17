@@ -8,10 +8,10 @@ import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
 import { processNativeAdUnitParams } from '../../src/native.js';
 import { isValid } from '../../src/adapters/bidderFactory.js';
 import events from '../../src/events.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const getConfig = config.getConfig;
 

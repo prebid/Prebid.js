@@ -15,7 +15,7 @@ import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { _sendAdToCreative } from 'src/secureCreatives.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
