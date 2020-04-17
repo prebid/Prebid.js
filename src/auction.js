@@ -57,8 +57,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue} from './utils.js';
-import { parse as parseURL } from './url.js';
+import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl} from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
 import { getNativeTargeting } from './native.js';
 import { getCacheUrl, store } from './videoCache.js';
@@ -651,7 +650,7 @@ export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
 
     // Adding hb_cache_host
     if (config.getConfig('cache.url') && (!bidderCode || utils.deepAccess(bidderSettings, `${bidderCode}.sendStandardTargeting`) !== false)) {
-      const urlInfo = parseURL(config.getConfig('cache.url'));
+      const urlInfo = parseUrl(config.getConfig('cache.url'));
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {

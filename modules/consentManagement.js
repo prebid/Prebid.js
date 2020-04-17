@@ -99,7 +99,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     if (success) {
       if (tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         cmpSuccess(tcfData, hookConfig);
-      } else if (tcfData.eventStatus === 'cmpuishown' && tcfData.tcString.length > 0 && tcfData.purposeOneTreatment === true) {
+      } else if (tcfData.eventStatus === 'cmpuishown' && tcfData.tcString && tcfData.purposeOneTreatment === true) {
         cmpSuccess(tcfData, hookConfig);
       }
     } else {

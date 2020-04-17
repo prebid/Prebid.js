@@ -3,7 +3,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import includes from 'core-js-pure/features/array/includes';
-import {parse as parseUrl} from '../src/url.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
@@ -130,7 +129,7 @@ export const emxAdapter = {
     }
   },
   getSite: (refInfo) => {
-    let url = parseUrl(refInfo.referer);
+    let url = utils.parseUrl(refInfo.referer);
     return {
       domain: url.hostname,
       page: refInfo.referer,

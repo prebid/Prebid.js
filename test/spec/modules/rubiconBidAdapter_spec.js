@@ -1920,6 +1920,12 @@ describe('the rubicon adapter', function () {
             }
           });
         });
+
+        it('should not fail if keywords param is not an array', function () {
+          bidderRequest.bids[0].params.keywords = 'a,b,c';
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], bidderRequest);
+          expect(slotParams.kw).to.equal('');
+        });
       });
 
       describe('hasVideoMediaType', function () {

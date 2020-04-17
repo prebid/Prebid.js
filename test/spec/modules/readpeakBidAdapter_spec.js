@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec, ENDPOINT } from 'modules/readpeakBidAdapter.js';
 import { config } from 'src/config.js';
-import { parse as parseUrl } from 'src/url.js';
+import { parseUrl } from 'src/utils.js';
 
 describe('ReadPeakAdapter', function() {
   let bidRequest;

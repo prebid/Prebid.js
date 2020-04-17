@@ -16,13 +16,13 @@ import { isValidPriceConfig } from './cpmBucketManager.js';
 import find from 'core-js-pure/features/array/find';
 import includes from 'core-js-pure/features/array/includes';
 import Set from 'core-js-pure/features/set';
-import { parseQS } from './url.js';
+import { mergeDeep } from './utils.js';
 
 const from = require('core-js-pure/features/array/from');
 const utils = require('./utils.js');
 const CONSTANTS = require('./constants.json');
 
-const DEFAULT_DEBUG = (parseQS(window.location.search)[CONSTANTS.DEBUG_MODE] || '').toUpperCase() === 'TRUE';
+const DEFAULT_DEBUG = utils.getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
@@ -255,7 +255,7 @@ export function newConfig() {
           memo[topic] = currBidderConfig[topic];
         } else {
           if (utils.isPlainObject(currBidderConfig[topic])) {
-            memo[topic] = Object.assign({}, config[topic], currBidderConfig[topic]);
+            memo[topic] = mergeDeep({}, config[topic], currBidderConfig[topic]);
           } else {
             memo[topic] = currBidderConfig[topic];
           }
