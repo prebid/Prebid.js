@@ -11,7 +11,7 @@ Maintainer: Lovell Fuller
 | Name          | Scope    | Description                                     | Example                           |
 | :------------ | :------- | :---------------------------------------------- | :--------------------------------- |
 | `placementId` | required | The Placement ID from Audience Network          | "555555555555555\_555555555555555" |
-| `format`      | optional | Format, one of "native", "fullwidth" or "video" | "native"                           |
+| `format`      | optional | Format, one of "native" or "video"              | "native"                           |
 
 # Example ad units
 

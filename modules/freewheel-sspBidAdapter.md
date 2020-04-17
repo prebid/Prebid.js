@@ -13,7 +13,13 @@ Module that connects to Freewheel ssp's demand sources
     var adUnits = [
            {
                code: 'test-div',
-               sizes: [[300, 250]],  // a display size
+
+               mediaTypes: {
+                  banner: {
+                    sizes: [[300, 250]],  // a display size
+                  }
+               },
+
                bids: [
                    {
                        bidder: "freewheel-ssp",

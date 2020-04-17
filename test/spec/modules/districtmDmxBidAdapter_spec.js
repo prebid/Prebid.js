@@ -1,8 +1,59 @@
 import {expect} from 'chai';
 import * as _ from 'lodash';
-import {spec, matchRequest, checkDeepArray, defaultSize} from '../../../modules/districtmDMXBidAdapter';
+import {spec, matchRequest, checkDeepArray, defaultSize, upto5, cleanSizes, shuffle} from '../../../modules/districtmDMXBidAdapter.js';
 
+const supportedSize = [
+  {
+    size: [300, 250],
+    s: 100
+  },
+  {
+    size: [728, 90],
+    s: 95
+  },
+  {
+    size: [300, 600],
+    s: 90
+  },
+  {
+    size: [160, 600],
+    s: 88
+  },
+  {
+    size: [320, 50],
+    s: 85
+  },
+  {
+    size: [300, 50],
+    s: 80
+  },
+  {
+    size: [970, 250],
+    s: 75
+  },
+  {
+    size: [970, 90],
+    s: 60
+  },
+];
 const bidRequest = [{
+  'bidder': 'districtmDMX',
+  'params': {
+    'dmxid': 100001,
+    'memberid': 100003,
+  },
+  'adUnitCode': 'div-gpt-ad-12345678-1',
+  'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
+  'sizes': [
+    [300, 250],
+    [300, 600]
+  ],
+  'bidId': '29a28a1bbc8a8d',
+  'bidderRequestId': '124b579a136515',
+  'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf'
+}];
+
+const bidRequestNoCoppa = [{
   'bidder': 'districtmDMX',
   'params': {
     'dmxid': 100001,
@@ -18,7 +69,6 @@ const bidRequest = [{
   'bidderRequestId': '124b579a136515',
   'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf'
 }];
-
 const bidderRequest = {
   'bidderCode': 'districtmDMX',
   'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf',
@@ -27,7 +77,7 @@ const bidderRequest = {
     'bidder': 'districtmDMX',
     'params': {
       'dmxid': 100001,
-      'memberid': 100003
+      'memberid': 100003,
     },
     'adUnitCode': 'div-gpt-ad-12345678-1',
     'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
@@ -41,6 +91,7 @@ const bidderRequest = {
   }],
   'auctionStart': 1529511035677,
   'timeout': 700,
+  'uspConsent': '1NY',
   'gdprConsent': {
     'consentString': 'BOPqNzUOPqNzUAHABBAAA5AAAAAAAA',
     'vendorData': {
@@ -385,6 +436,32 @@ const bidderRequest = {
   'doneCbCallCount': 0
 };
 
+const bidderRequestNoCoppa = {
+  'bidderCode': 'districtmDMX',
+  'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf',
+  'bidderRequestId': '124b579a136515',
+  'bids': [{
+    'bidder': 'districtmDMX',
+    'params': {
+      'dmxid': 100001,
+      'memberid': 100003,
+    },
+    'adUnitCode': 'div-gpt-ad-12345678-1',
+    'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
+    'sizes': [
+      [300, 250],
+      [300, 600]
+    ],
+    'bidId': '29a28a1bbc8a8d',
+    'bidderRequestId': '124b579a136515',
+    'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf'
+  }],
+  'auctionStart': 1529511035677,
+  'timeout': 700,
+  'start': 1529511035686,
+  'doneCbCallCount': 0
+};
+
 const responses = {
   'body': {
     'id': '1f45b37c-5298-4934-b517-4d911aadabfd',
@@ -422,6 +499,12 @@ const emptyResponseSeatBid = { body: { seatbid: [] } };
 
 describe('DistrictM Adaptor', function () {
   const districtm = spec;
+  describe('verification of upto5', function() {
+    it('upto5 function should always break 12 imps into 3 request same for 15', function() {
+      expect(upto5([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], bidRequest, bidderRequest, 'https://google').length).to.be.equal(3)
+      expect(upto5([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], bidRequest, bidderRequest, 'https://google').length).to.be.equal(3)
+    })
+  })
   describe('All needed functions are available', function () {
     it(`isBidRequestValid is present and type function`, function () {
       expect(districtm.isBidRequestValid).to.exist.and.to.be.a('function')
@@ -481,9 +564,26 @@ describe('DistrictM Adaptor', function () {
 
   describe(`buildRequests test usage`, function () {
     const buildRequestResults = districtm.buildRequests(bidRequest, bidderRequest);
+    const buildRequestResultsNoCoppa = districtm.buildRequests(bidRequestNoCoppa, bidderRequestNoCoppa);
     it(`the function should return an array`, function () {
       expect(buildRequestResults).to.be.an('object');
     });
+    it(`contain gdpr consent & ccpa`, function() {
+      const bidr = JSON.parse(buildRequestResults.data)
+      expect(bidr.regs.ext.gdpr).to.be.equal(1);
+      expect(bidr.regs.ext.us_privacy).to.be.equal('1NY');
+      expect(bidr.user.ext.consent).to.be.an('string');
+    });
+    it(`test contain COPPA`, function() {
+      const bidr = JSON.parse(buildRequestResults.data)
+      bidr.regs = bidr.regs || {};
+      bidr.regs.coppa = 1;
+      expect(bidr.regs.coppa).to.be.equal(1)
+    })
+    it(`test should not contain COPPA`, function() {
+      const bidr = JSON.parse(buildRequestResultsNoCoppa.data)
+      expect(bidr.regs.coppa).to.be.equal(0)
+    })
     it(`the function should return array length of 1`, function () {
       expect(buildRequestResults.data).to.be.a('string');
     });
@@ -511,6 +611,32 @@ describe('DistrictM Adaptor', function () {
       expect(emptyResponseResultsNegation.length).to.be.equal(0);
     });
   });
+
+  describe(`check validation for id sync gdpr ccpa`, () => {
+    let allin = spec.getUserSyncs({iframeEnabled: true}, {}, bidderRequest.gdprConsent, bidderRequest.uspConsent)[0]
+    let noCCPA = spec.getUserSyncs({iframeEnabled: true}, {}, bidderRequest.gdprConsent, null)[0]
+    let noGDPR = spec.getUserSyncs({iframeEnabled: true}, {}, null, bidderRequest.uspConsent)[0]
+    let nothing = spec.getUserSyncs({iframeEnabled: true}, {}, null, null)[0]
+
+    /*
+
+    'uspConsent': '1NY',
+  'gdprConsent': {
+    'consentString': 'BOPqNzUOPqNzUAHABBAAA5AAAAAAAA',
+     */
+    it(`gdpr & ccpa should be present`, () => {
+      expect(allin.url).to.be.equal('https://cdn.districtm.io/ids/index.html?gdpr=BOPqNzUOPqNzUAHABBAAA5AAAAAAAA&ccpa=1NY')
+    })
+    it(`ccpa should be present`, () => {
+      expect(noGDPR.url).to.be.equal('https://cdn.districtm.io/ids/index.html?ccpa=1NY')
+    })
+    it(`gdpr should be present`, () => {
+      expect(noCCPA.url).to.be.equal('https://cdn.districtm.io/ids/index.html?gdpr=BOPqNzUOPqNzUAHABBAAA5AAAAAAAA')
+    })
+    it(`gdpr & ccpa shouldn't be present`, () => {
+      expect(nothing.url).to.be.equal('https://cdn.districtm.io/ids/index.html')
+    })
+  })
 
   describe(`Helper function testing`, function () {
     const bid = matchRequest('29a28a1bbc8a8d', {bidderRequest});

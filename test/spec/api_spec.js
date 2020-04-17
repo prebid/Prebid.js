@@ -24,6 +24,10 @@ describe('Publisher API', function () {
     it('should have $$PREBID_GLOBAL$$.que.push function', function () {
       assert.isFunction($$PREBID_GLOBAL$$.que.push);
     });
+
+    it('should have global pointer for PBJS global', function () {
+      assert.isArray(window._pbjsGlobals);
+    });
   });
 
   describe('has function', function () {
@@ -37,6 +41,10 @@ describe('Publisher API', function () {
 
     it('should have function $$PREBID_GLOBAL$$.getBidResponses', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getBidResponses);
+    });
+
+    it('should have function $$PREBID_GLOBAL$$.getBidResponses', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getNoBids);
     });
 
     it('should have function $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode', function () {

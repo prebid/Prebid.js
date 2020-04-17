@@ -11,42 +11,82 @@ Connects to Aja exchange for bids.
 Aja bid adapter supports Banner and Outstream Video.
 
 # Test Parameters
-```
+```js
 var adUnits = [
-   // Banner adUnit
-   {
-       code: 'banner-div',
-       mediaTypes: {
-         banner: {
-           sizes: [
-             [300, 250]
-           ],
-         }
-       },
-       bids: [{
-         bidder: 'aja',
-         params: {
-           asi: 'szs4htFiR'
-         }
-       }]
-   },
-   // Video outstream adUnit
-   {
-     code: 'video-outstream',
-     mediaTypes: {
-       video: {
-         context: 'outstream',
-         playerSize: [300, 250]
-       }
-     },
-     bids: [
-       {
-         bidder: 'aja',
-         params: {
-           asi: 'Kp2O2tFig'
-         }
-       }
-     ]
-   }
+  // Banner adUnit
+  {
+    code: 'prebid_banner',
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250]
+        ],
+      }
+    },
+    bids: [{
+      bidder: 'aja',
+      params: {
+        asi: 'tk82gbLmg'
+      }
+    }]
+  },
+  // Video outstream adUnit
+  {
+    code: 'prebid_video',
+    mediaTypes: {
+      video: {
+        context: 'outstream',
+        playerSize: [300, 250]
+      }
+    },
+    bids: [{
+      bidder: 'aja',
+      params: {
+        asi: '1-KwEG_iR'
+      }
+    }]
+  },
+  // Native adUnit
+  {
+    code: 'prebid_native',
+    mediaTypes: {
+      native: {
+        image: {
+          required: true,
+          sendId: false
+        },
+        title: {
+          required: true,
+          sendId: true
+        },
+        sponsoredBy: {
+          required: false,
+          sendId: true
+        },
+        clickUrl: {
+          required: false,
+          sendId: true
+        },
+        body: {
+          required: false,
+          sendId: true
+        },
+        icon: {
+          required: false,
+          sendId: false
+        },
+        privacyLink: {
+          required: true,
+          sendId: true
+        },
+      }
+    },
+    bids: [{
+      bidder: 'aja',
+      params: {
+        asi: 'qxueUGliR'
+      }
+    }]
+  }
 ];
 ```
