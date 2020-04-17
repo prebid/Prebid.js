@@ -272,6 +272,23 @@ pbjs.setConfig({
 });
 ```
 
+#### User Sync
+Add the following code to enable user sync. IX strongly recommends enabling user syncing through iframes. This functionality improves DSP user match rates and increases the IX bid rate and bid price. Be sure to call `pbjs.setConfig()` only once.
+
+```
+pbjs.setConfig({
+    userSync: {
+        iframeEnabled: true,
+        filterSettings: {
+            iframe: {
+                bidders: ['ix'],
+                filter: 'include'
+            }
+        }
+    }
+});
+```
+
 ### 2. Include `ixBidAdapter` in your build process
 
 When running the build command, include `ixBidAdapter` as a module, as well as `dfpAdServerVideo` if you require video support.
@@ -365,7 +382,7 @@ to `'ix'` across all ad units that bids are being requested for does not exceed 
 
 ### Time-To-Live (TTL)
 
-All bids received from IX have a TTL of 35 seconds, after which time they become
+Banner bids from IX have a TTL of 300 seconds while video bids have a TTL of 1 hour, after which time they become
 invalid.
 
 If an invalid bid wins, and its associated ad is rendered, it will not count

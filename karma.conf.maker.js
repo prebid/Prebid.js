@@ -4,7 +4,6 @@
 
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf');
-var path = require('path')
 var karmaConstants = require('karma').constants;
 
 function newWebpackConfig(codeCoverage) {
@@ -33,7 +32,7 @@ function newWebpackConfig(codeCoverage) {
 function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
-    'karma-coverage-istanbul-reporter',
+    'karma-coverage',
     'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
@@ -66,18 +65,15 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
       suppressPassed: true
     };
   }
+
   if (codeCoverage) {
-    karmaConf.reporters.push('coverage-istanbul');
-    karmaConf.coverageIstanbulReporter = {
-      reports: ['html', 'lcovonly', 'text-summary'],
-      dir: path.join(__dirname, 'build', 'coverage'),
-      'report-config': {
-        html: {
-          subdir: 'karma_html',
-          urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
-        }
-      }
-    }
+    karmaConf.reporters.push('coverage');
+    karmaConf.coverageReporter = {
+      dir: 'build/coverage',
+      reporters: [
+        { type: 'lcov', subdir: '.' }
+      ]
+    };
   }
 }
 
@@ -92,7 +88,7 @@ function setBrowsers(karmaConf, browserstack) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
-    karmaConf.customLaunchers = require('./browsers.json')
+    karmaConf.customLaunchers = require('./browsers.json');
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
     var isDocker = require('is-docker')();
@@ -157,6 +153,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     autoWatch: true,
 
     reporters: ['mocha'],
+
     mochaReporter: {
       showDiff: true,
       output: 'minimal'
@@ -165,10 +162,11 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 10000, // default 2000
-    browserDisconnectTolerance: 1, // default 0
-    browserNoActivityTimeout: 4 * 60 * 1000, // default 10000
-    captureTimeout: 4 * 60 * 1000, // default 60000
+    browserDisconnectTimeout: 3e5, // default 2000
+    browserNoActivityTimeout: 3e5, // default 10000
+    captureTimeout: 3e5, // default 60000,
+    browserDisconnectTolerance: 3,
+    concurrency: 5,
 
     plugins: plugins
   }
