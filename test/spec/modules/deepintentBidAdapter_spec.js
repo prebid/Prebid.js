@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/deepintentBidAdapter';
-import * as utils from '../../../src/utils';
+import {spec} from 'modules/deepintentBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 
 describe('Deepintent adapter', function () {
   let request;
@@ -19,6 +19,7 @@ describe('Deepintent adapter', function () {
           tagId: '100013',
           w: 728,
           h: 90,
+          pos: 1,
           user: {
             id: 'di_testuid',
             buyeruid: 'di_testbuyeruid',
@@ -129,6 +130,11 @@ describe('Deepintent adapter', function () {
       expect(data.imp[0].ext).to.be.a('object');
       expect(data.imp[0].ext.deepintent.position).to.equal('right-box');
     });
+    it('bid request check: position check', function () {
+      let bRequest = spec.buildRequests(request);
+      let data = JSON.parse(bRequest.data);
+      expect(data.imp[0].banner.pos).to.equal(1);
+    });
     it('bid request check: displaymanager check', function() {
       let bRequest = spec.buildRequests(request);
       let data = JSON.parse(bRequest.data);
@@ -143,7 +149,19 @@ describe('Deepintent adapter', function () {
       expect(data.user.buyeruid).to.equal('di_testbuyeruid');
       expect(data.user.yob).to.equal(2002);
       expect(data.user.gender).to.equal('F');
-    })
+    });
+    it('bid request check: CCPA Check', function () {
+      let bidRequest = {
+        uspConsent: '1NYN'
+      };
+      let bRequest = spec.buildRequests(request, bidRequest);
+      let data = JSON.parse(bRequest.data);
+      expect(data.regs.ext.us_privacy).to.equal('1NYN');
+      let bidRequest2 = {};
+      let bRequest2 = spec.buildRequests(request, bidRequest2);
+      let data2 = JSON.parse(bRequest2.data);
+      expect(data2.regs).to.equal(undefined);
+    });
   });
   describe('user sync check', function () {
     it('user sync url check', function () {

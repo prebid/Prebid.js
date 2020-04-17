@@ -1,10 +1,13 @@
-import adapter from '../src/AnalyticsAdapter';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import { getRefererInfo } from '../src/refererDetection';
-import { parse } from '../src/url';
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax';
+import adapterManager from '../src/adapterManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { parse } from '../src/url.js';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storageObj = getStorageManager();
 
 const ANALYTICS_VERSION = '1.0.0';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
@@ -212,10 +215,10 @@ const ORGANIC = '(organic)';
 
 export let storage = {
   getItem: (name) => {
-    return localStorage.getItem(name);
+    return storageObj.getDataFromLocalStorage(name);
   },
   setItem: (name, value) => {
-    localStorage.setItem(name, value);
+    storageObj.setDataInLocalStorage(name, value);
   }
 };
 

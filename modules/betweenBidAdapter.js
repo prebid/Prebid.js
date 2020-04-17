@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
 const BIDDER_CODE = 'between';
 
 export const spec = {
@@ -13,7 +13,7 @@ export const spec = {
    * @return boolean True  if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.w && bid.params.h && bid.params.s);
+    return Boolean(bid.params.s);
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -27,13 +27,12 @@ export const spec = {
 
     validBidRequests.forEach(i => {
       let params = {
+        sizes: parseSizesInput(getAdUnitSizes(i)),
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
         fl: getFl(),
         rr: getRr(),
-        w: i.params.w,
-        h: i.params.h,
         s: i.params.s,
         bidid: i.bidId,
         transactionid: i.transactionId,

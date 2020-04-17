@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-const utils = require('../src/utils');
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+const utils = require('../src/utils.js');
 const BIDDER_CODE = 'teads';
 const ENDPOINT_URL = 'https://a.teads.tv/hb/bid-request';
 const gdprStatus = {
@@ -54,10 +54,11 @@ export const spec = {
     if (bidderRequest && gdpr) {
       let isCmp = (typeof gdpr.gdprApplies === 'boolean')
       let isConsentString = (typeof gdpr.consentString === 'string')
-      let status = isCmp ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData) : gdprStatus.CMP_NOT_FOUND_OR_ERROR
+      let status = isCmp ? findGdprStatus(gdpr) : gdprStatus.CMP_NOT_FOUND_OR_ERROR
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
-        status: status
+        status: status,
+        apiVersion: gdpr.apiVersion
       };
     }
 
@@ -101,33 +102,6 @@ export const spec = {
     }
     return bidResponses;
   },
-
-  getUserSyncs: function(syncOptions, responses, gdprConsent) {
-    let queryParams = {
-      hb_provider: 'prebid',
-      hb_version: '$prebid.version$'
-    };
-
-    if (gdprConsent) {
-      let gdprIab = {
-        status: findGdprStatus(gdprConsent.gdprApplies, gdprConsent.vendorData),
-        consent: gdprConsent.consentString
-      };
-
-      queryParams.gdprIab = JSON.stringify(gdprIab)
-    }
-
-    if (utils.deepAccess(responses[0], 'body.responses.0.placementId')) {
-      queryParams.placementId = responses[0].body.responses[0].placementId
-    };
-
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: 'https://sync.teads.tv/iframe?' + utils.parseQueryStringParameters(queryParams)
-      }];
-    }
-  }
 };
 
 function getReferrerInfo(bidderRequest) {
@@ -138,11 +112,17 @@ function getReferrerInfo(bidderRequest) {
   return ref;
 }
 
-function findGdprStatus(gdprApplies, gdprData) {
+function findGdprStatus(gdprConsent) {
+  const gdprApplies = gdprConsent.gdprApplies
+  const gdprData = gdprConsent.vendorData
+  const apiVersion = gdprConsent.apiVersion
   let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
+  const globalConsent = apiVersion === 1
+    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
+    : !gdprData.isServiceSpecific
 
   if (gdprApplies) {
-    if (gdprData.hasGlobalScope || gdprData.hasGlobalConsent) status = gdprStatus.GDPR_APPLIES_GLOBAL
+    if (globalConsent) status = gdprStatus.GDPR_APPLIES_GLOBAL
   } else status = gdprStatus.GDPR_DOESNT_APPLY
   return status;
 }

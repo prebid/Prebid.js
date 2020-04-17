@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
+import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
+import { config } from 'src/config.js';
 import prebid from '../../../package.json';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
@@ -152,11 +153,22 @@ describe('triplelift adapter', function () {
       expect(payload.user).to.deep.equal({ext: {eids: [{source: 'liveramp.com', uids: [{id, ext: {rtiPartner: 'idl'}}]}]}});
     });
 
-    it('should add both tdid and idl_env to the payload if both are included', function () {
+    it('should add criteoId to the payload if included', function () {
+      const id = '53e30ea700424f7bbdd793b02abc5d7';
+      bidRequests[0].userId.criteoId = id;
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.exist;
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'criteo.com', uids: [{id, ext: {rtiPartner: 'criteoId'}}]}]}});
+    });
+
+    it('should add tdid, idl_env and criteoId to the payload if both are included', function () {
       const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
+      const criteoId = '53e30ea700424f7bbdd793b02abc5d7';
       bidRequests[0].userId.tdid = tdidId;
       bidRequests[0].userId.idl_env = idlEnvId;
+      bidRequests[0].userId.criteoId = criteoId;
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
@@ -182,6 +194,15 @@ describe('triplelift adapter', function () {
                   ext: { rtiPartner: 'idl' }
                 }
               ]
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
             }
           ]
         }
@@ -191,10 +212,12 @@ describe('triplelift adapter', function () {
     it('should add user ids from multiple bid requests', function () {
       const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
+      const criteoId = '53e30ea700424f7bbdd793b02abc5d7';
 
       const bidRequestsMultiple = [
         { ...bidRequests[0], userId: { tdid: tdidId } },
         { ...bidRequests[0], userId: { idl_env: idlEnvId } },
+        { ...bidRequests[0], userId: { criteoId: criteoId } }
       ];
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
@@ -220,6 +243,15 @@ describe('triplelift adapter', function () {
                   ext: { rtiPartner: 'idl' }
                 }
               ]
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
             }
           ]
         }
@@ -241,6 +273,20 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
+    });
+    it('should return coppa param when COPPA config is set to true', function() {
+      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      config.getConfig.restore();
+      const url = request.url;
+      expect(url).to.match(/(\?|&)coppa=true/);
+    });
+    it('should not return coppa param when COPPA config is set to false', function() {
+      sinon.stub(config, 'getConfig').withArgs('coppa').returns(false);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      config.getConfig.restore();
+      const url = request.url;
+      expect(url).not.to.match(/(\?|&)coppa=/);
     });
     it('should return schain when present', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);

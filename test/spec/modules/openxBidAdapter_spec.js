@@ -1,9 +1,9 @@
 import {expect} from 'chai';
-import {spec, resetBoPixel} from 'modules/openxBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {userSync} from 'src/userSync';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
+import {spec, USER_ID_CODE_TO_QUERY_ARG} from 'modules/openxBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {userSync} from 'src/userSync.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
 
 const URLBASE = '/w/1.0/arj';
 const URLBASEVIDEO = '/v/1.0/avjp';
@@ -1026,120 +1026,66 @@ describe('OpenxAdapter', function () {
     });
 
     describe('when there are userid providers', function () {
-      describe('with publisher common id', function () {
-        it('should not send a pubcid query param when there is no crumbs.pubcid and no userId.pubcid defined in the bid requests', function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-          expect(request[0].data).to.not.have.any.keys('pubcid');
-        });
+      const EXAMPLE_DATA_BY_ATTR = {
+        britepoolid: '1111-britepoolid',
+        criteoId: '1111-criteoId',
+        digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
+        id5id: '1111-id5id',
+        idl_env: '1111-idl_env',
+        lipb: {lipbid: '1111-lipb'},
+        netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
+        parrableid: 'eidVersion.encryptionKeyReference.encryptedValue',
+        pubcid: '1111-pubcid',
+        tdid: '1111-tdid',
+      };
 
-        it('should send a pubcid query param when crumbs.pubcid is defined in the bid requests', function () {
-          const bidRequestsWithPubcid = [{
-            bidder: 'openx',
-            params: {
-              unit: '11',
-              delDomain: 'test-del-domain'
-            },
-            crumbs: {
-              pubcid: 'c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6'
-            },
-            adUnitCode: 'adunit-code',
-            mediaTypes: {
-              banner: {
-                sizes: [[300, 250], [300, 600]]
-              }
-            },
-            bidId: 'test-bid-id-1',
-            bidderRequestId: 'test-bid-request-1',
-            auctionId: 'test-auction-1'
-          }];
-          const request = spec.buildRequests(bidRequestsWithPubcid, mockBidderRequest);
-          expect(request[0].data.pubcid).to.equal('c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
-        });
+      // generates the same set of tests for each id provider
+      utils._each(USER_ID_CODE_TO_QUERY_ARG, (userIdQueryArg, userIdProviderKey) => {
+        describe(`with userId attribute: ${userIdProviderKey}`, function () {
+          it(`should not send a ${userIdQueryArg} query param when there is no userId.${userIdProviderKey} defined in the bid requests`, function () {
+            const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+            expect(request[0].data).to.not.have.any.keys(userIdQueryArg);
+          });
 
-        it('should send a pubcid query param when userId.pubcid is defined in the bid requests', function () {
-          const bidRequestsWithPubcid = [{
-            bidder: 'openx',
-            params: {
-              unit: '11',
-              delDomain: 'test-del-domain'
-            },
-            userId: {
-              pubcid: 'c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6'
-            },
-            adUnitCode: 'adunit-code',
-            mediaTypes: {
-              banner: {
-                sizes: [[300, 250], [300, 600]]
-              }
-            },
-            bidId: 'test-bid-id-1',
-            bidderRequestId: 'test-bid-request-1',
-            auctionId: 'test-auction-1'
-          }];
-          const request = spec.buildRequests(bidRequestsWithPubcid, mockBidderRequest);
-          expect(request[0].data.pubcid).to.equal('c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
-        });
-      });
+          it(`should send a ${userIdQueryArg} query param when userId.${userIdProviderKey} is defined in the bid requests`, function () {
+            const bidRequestsWithUserId = [{
+              bidder: 'openx',
+              params: {
+                unit: '11',
+                delDomain: 'test-del-domain'
+              },
+              userId: {
+              },
+              adUnitCode: 'adunit-code',
+              mediaTypes: {
+                banner: {
+                  sizes: [[300, 250], [300, 600]]
+                }
+              },
+              bidId: 'test-bid-id-1',
+              bidderRequestId: 'test-bid-request-1',
+              auctionId: 'test-auction-1'
+            }];
+            // enrich bid request with userId key/value
+            bidRequestsWithUserId[0].userId[userIdProviderKey] = EXAMPLE_DATA_BY_ATTR[userIdProviderKey];
 
-      describe('with the trade desk unified id', function () {
-        it('should not send a tdid query param when there is no userId.tdid defined in the bid requests', function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-          expect(request[0].data).to.not.have.any.keys('ttduuid');
-        });
+            const request = spec.buildRequests(bidRequestsWithUserId, mockBidderRequest);
 
-        it('should send a tdid query param when userId.tdid is defined in the bid requests', function () {
-          const bidRequestsWithTdid = [{
-            bidder: 'openx',
-            params: {
-              unit: '11',
-              delDomain: 'test-del-domain'
-            },
-            userId: {
-              tdid: '00000000-aaaa-1111-bbbb-222222222222'
-            },
-            adUnitCode: 'adunit-code',
-            mediaTypes: {
-              banner: {
-                sizes: [[300, 250], [300, 600]]
-              }
-            },
-            bidId: 'test-bid-id-1',
-            bidderRequestId: 'test-bid-request-1',
-            auctionId: 'test-auction-1'
-          }];
-          const request = spec.buildRequests(bidRequestsWithTdid, mockBidderRequest);
-          expect(request[0].data.ttduuid).to.equal('00000000-aaaa-1111-bbbb-222222222222');
-        });
-      });
+            let userIdValue;
+            // handle cases where userId key refers to an object
+            switch (userIdProviderKey) {
+              case 'digitrustid':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.digitrustid.data.id;
+                break;
+              case 'lipb':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.lipb.lipbid;
+                break;
+              default:
+                userIdValue = EXAMPLE_DATA_BY_ATTR[userIdProviderKey];
+            }
 
-      describe('with the liveRamp identity link envelope', function () {
-        it('should not send a tdid query param when there is no userId.lre defined in the bid requests', function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-          expect(request[0].data).to.not.have.any.keys('lre');
-        });
-
-        it('should send a lre query param when userId.lre is defined in the bid requests', function () {
-          const bidRequestsWithLiveRampEnvelope = [{
-            bidder: 'openx',
-            params: {
-              unit: '11',
-              delDomain: 'test-del-domain'
-            },
-            userId: {
-              idl_env: '00000000-aaaa-1111-bbbb-222222222222'
-            },
-            adUnitCode: 'adunit-code',
-            mediaTypes: {
-              banner: {
-                sizes: [[300, 250], [300, 600]]
-              }
-            },
-            bidId: 'test-bid-id-1',
-            bidderRequestId: 'test-bid-request-1',
-            auctionId: 'test-auction-1'
-          }];
-          const request = spec.buildRequests(bidRequestsWithLiveRampEnvelope, mockBidderRequest);
-          expect(request[0].data.lre).to.equal('00000000-aaaa-1111-bbbb-222222222222');
+            expect(request[0].data[USER_ID_CODE_TO_QUERY_ARG[userIdProviderKey]]).to.equal(userIdValue);
+          });
         });
       });
     });

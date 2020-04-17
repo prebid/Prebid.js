@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import * as ajax from '../src/ajax';
-import {userSync} from '../src/userSync';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import * as ajax from '../src/ajax.js';
+import {userSync} from '../src/userSync.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 const constants = require('../src/constants.json');
 
 const BIDDER_CODE = 'pubmaticServer';

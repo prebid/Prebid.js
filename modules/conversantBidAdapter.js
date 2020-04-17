@@ -1,12 +1,17 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const GVLID = 24;
+export const storage = getStorageManager(GVLID);
 
 const BIDDER_CODE = 'conversant';
 const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['cnvr'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -314,36 +319,24 @@ function copyOptProperty(src, dst, dstName) {
 function collectEids(bidRequests) {
   const request = bidRequests[0]; // bidRequests have the same userId object
   const eids = [];
-
-  addEid(eids, request, 'userId.tdid', 'adserver.org');
-  addEid(eids, request, 'userId.idl_env', 'liveramp.com');
-  addEid(eids, request, 'userId.criteoId', 'criteo.com');
-  addEid(eids, request, 'userId.id5id', 'id5-sync.com');
-  addEid(eids, request, 'userId.parrableid', 'parrable.com');
-  addEid(eids, request, 'userId.digitrustid.data.id', 'digitru.st');
-  addEid(eids, request, 'userId.lipb.lipbid', 'liveintent.com');
-
-  return eids;
-}
-
-/**
- * Extract and push a single extended id into eids array
- * @param eids Array of extended IDs
- * @param idObj Object containing IDs
- * @param keyPath Nested properties expressed as a path
- * @param source Source for the ID
- */
-function addEid(eids, idObj, keyPath, source) {
-  const id = utils.deepAccess(idObj, keyPath);
-  if (id) {
-    eids.push({
-      source: source,
-      uids: [{
-        id: id,
-        atype: 1
-      }]
+  if (utils.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
+    // later following white-list can be converted to block-list if needed
+    const requiredSourceValues = {
+      'adserver.org': 1,
+      'liveramp.com': 1,
+      'criteo.com': 1,
+      'id5-sync.com': 1,
+      'parrable.com': 1,
+      'digitru.st': 1,
+      'liveintent.com': 1
+    };
+    request.userIdAsEids.forEach(function(eid) {
+      if (requiredSourceValues.hasOwnProperty(eid.source)) {
+        eids.push(eid);
+      }
     });
   }
+  return eids;
 }
 
 /**
@@ -355,13 +348,13 @@ function readStoredValue(key) {
   let storedValue;
   try {
     // check cookies first
-    storedValue = utils.getCookie(key);
+    storedValue = storage.getCookie(key);
 
     if (!storedValue) {
       // check expiration time before reading local storage
-      const storedValueExp = utils.getDataFromLocalStorage(`${key}_exp`);
+      const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
       if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
-        storedValue = utils.getDataFromLocalStorage(key);
+        storedValue = storage.getDataFromLocalStorage(key);
         storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
       }
     }

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { Renderer } from 'src/Renderer';
-import * as utils from 'src/utils';
-import { loadExternalScript } from 'src/adloader';
+import { Renderer } from 'src/Renderer.js';
+import * as utils from 'src/utils.js';
+import { loadExternalScript } from 'src/adloader.js';
 
 describe('Renderer', function () {
   describe('Renderer: A renderer installed on a bid response', function () {

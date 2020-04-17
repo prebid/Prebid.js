@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/mantisBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/mantisBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 describe('MantisAdapter', function () {
   const adapter = newBidder(spec);

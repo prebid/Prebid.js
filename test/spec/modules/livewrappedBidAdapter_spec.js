@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/livewrappedBidAdapter';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
-import { BANNER, NATIVE } from 'src/mediaTypes';
+import {spec, storage} from 'modules/livewrappedBidAdapter.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import { BANNER, NATIVE } from 'src/mediaTypes.js';
 
 describe('Livewrapped adapter tests', function () {
   let sandbox,
@@ -88,7 +88,7 @@ describe('Livewrapped adapter tests', function () {
   describe('buildRequests', function() {
     it('should make a well-formed single request object', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
       let data = JSON.parse(result.data);
 
@@ -116,7 +116,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make a well-formed multiple request object', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let multiplebidRequest = clone(bidderRequest);
       multiplebidRequest.bids.push(clone(bidderRequest.bids[0]));
       multiplebidRequest.bids[1].adUnitCode = 'box_d_1';
@@ -156,7 +156,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make a well-formed single request object with AdUnitName', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       testbidRequest.bids[0].params.adUnitName = 'caller id 1';
       delete testbidRequest.bids[0].params.adUnitId;
@@ -186,7 +186,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make a well-formed single request object with less parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       delete testbidRequest.bids[0].params.userId;
       delete testbidRequest.bids[0].params.seats;
@@ -215,7 +215,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make a well-formed single request object with less parameters, no publisherId', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       delete testbidRequest.bids[0].params.userId;
       delete testbidRequest.bids[0].params.seats;
@@ -244,7 +244,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make a well-formed single request object with app parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       delete testbidRequest.bids[0].params.userId;
       delete testbidRequest.bids[0].params.seats;
@@ -275,7 +275,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make a well-formed single request object with debug parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       delete testbidRequest.bids[0].params.userId;
       delete testbidRequest.bids[0].params.seats;
@@ -306,7 +306,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make a well-formed single request object with optional parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       delete testbidRequest.bids[0].params.userId;
       delete testbidRequest.bids[0].params.seats;
@@ -336,7 +336,7 @@ describe('Livewrapped adapter tests', function () {
     it('should make a well-formed single request object with ad blocker revovered parameter', function() {
       sandbox.stub(utils, 'getWindowTop').returns({ I12C: { Morph: 1 } });
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       delete testbidRequest.bids[0].params.userId;
       delete testbidRequest.bids[0].params.seats;
@@ -364,7 +364,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make a well-formed single request object with native only parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       delete testbidRequest.bids[0].params.userId;
       delete testbidRequest.bids[0].params.seats;
@@ -393,7 +393,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make a well-formed single request object with native and banner parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       delete testbidRequest.bids[0].params.userId;
       delete testbidRequest.bids[0].params.seats;
@@ -423,7 +423,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should use mediaTypes.banner.sizes before legacy sizes', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       delete testbidRequest.bids[0].params.userId;
       delete testbidRequest.bids[0].params.seats;
@@ -451,7 +451,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should pass gdpr true parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testRequest = clone(bidderRequest);
       testRequest.gdprConsent = {
         gdprApplies: true,
@@ -486,7 +486,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should pass gdpr false parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testRequest = clone(bidderRequest);
       testRequest.gdprConsent = {
         gdprApplies: false
@@ -518,7 +518,7 @@ describe('Livewrapped adapter tests', function () {
     });
 
     it('should pass no cookie support', function() {
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => false);
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
       let data = JSON.parse(result.data);
@@ -546,7 +546,7 @@ describe('Livewrapped adapter tests', function () {
     });
 
     it('should pass no cookie support Safari', function() {
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => true);
       let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
       let data = JSON.parse(result.data);
@@ -605,7 +605,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make use of pubcid if available', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       delete testbidRequest.bids[0].params.userId;
       testbidRequest.bids[0].crumbs = {pubcid: 'pubcid 123'};
@@ -636,7 +636,7 @@ describe('Livewrapped adapter tests', function () {
 
     it('should make userId take precedence over pubcid', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
       testbidRequest.bids[0].crumbs = {pubcid: 'pubcid 123'};
       let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
@@ -667,7 +667,7 @@ describe('Livewrapped adapter tests', function () {
 
   it('should make use of Id5-Id if available', function() {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-    sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
     let testbidRequest = clone(bidderRequest);
     delete testbidRequest.bids[0].params.userId;
     testbidRequest.bids[0].userId = {};
@@ -686,7 +686,7 @@ describe('Livewrapped adapter tests', function () {
 
   it('should make use of publisher common Id if available', function() {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-    sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
     let testbidRequest = clone(bidderRequest);
     delete testbidRequest.bids[0].params.userId;
     testbidRequest.bids[0].userId = {};

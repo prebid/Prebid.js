@@ -4,15 +4,97 @@
  * @module modules/liveIntentIdSystem
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils'
-import {ajax} from '../src/ajax';
-import {submodule} from '../src/hook';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
+import { uspDataHandler } from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'liveIntentId';
-const LIVE_CONNECT_DUID_KEY = '_li_duid';
-const DOMAIN_USER_ID_QUERY_PARAM_KEY = 'duid';
-const DEFAULT_LIVEINTENT_IDENTITY_URL = 'https://idx.liadm.com';
-const DEFAULT_PREBID_SOURCE = 'prebid';
+export const storage = getStorageManager(null, MODULE_NAME);
+
+let eventFired = false;
+let liveConnect = null;
+
+/**
+ * This function is used in tests
+ */
+export function reset() {
+  eventFired = false;
+  liveConnect = null;
+}
+
+function parseLiveIntentCollectorConfig(collectConfig) {
+  const config = {};
+  if (collectConfig) {
+    if (collectConfig.appId) {
+      config.appId = collectConfig.appId;
+    }
+    if (collectConfig.fpiStorageStrategy) {
+      config.storageStrategy = collectConfig.fpiStorageStrategy;
+    }
+    if (collectConfig.fpiExpirationDays) {
+      config.expirationDays = collectConfig.fpiExpirationDays;
+    }
+    if (collectConfig.collectorUrl) {
+      config.collectorUrl = collectConfig.collectorUrl;
+    }
+  }
+  return config;
+}
+
+function initializeLiveConnect(configParams) {
+  if (liveConnect) {
+    return liveConnect;
+  }
+
+  const publisherId = configParams && configParams.publisherId;
+  if (!publisherId && typeof publisherId !== 'string') {
+    utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
+    return;
+  }
+
+  const identityResolutionConfig = {
+    source: 'prebid',
+    publisherId: publisherId
+  };
+  if (configParams.url) {
+    identityResolutionConfig.url = configParams.url
+  }
+  if (configParams.partner) {
+    identityResolutionConfig.source = configParams.partner
+  }
+  if (configParams.storage && configParams.storage.expires) {
+    identityResolutionConfig.expirationDays = configParams.storage.expires;
+  }
+  if (configParams.ajaxTimeout) {
+    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
+  }
+
+  const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
+  liveConnectConfig.wrapperName = 'prebid';
+  liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
+  liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
+  if (configParams.providedIdentifierName) {
+    liveConnectConfig.providedIdentifierName = configParams.providedIdentifierName;
+  }
+  const usPrivacyString = uspDataHandler.getConsentData();
+  if (usPrivacyString) {
+    liveConnectConfig.usPrivacyString = usPrivacyString;
+  }
+
+  // The second param is the storage object, which means that all LS & Cookie manipulation will go through PBJS utils.
+  liveConnect = LiveConnect(liveConnectConfig, storage);
+  return liveConnect;
+}
+
+function tryFireEvent() {
+  if (!eventFired && liveConnect) {
+    liveConnect.fire();
+    eventFired = true;
+  }
+}
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
@@ -28,14 +110,21 @@ export const liveIntentIdSubmodule = {
    * `publisherId` params.
    * @function
    * @param {{unifiedId:string}} value
+   * @param {SubmoduleParams|undefined} [configParams]
    * @returns {{lipb:Object}}
    */
-  decode(value) {
+  decode(value, configParams) {
     function composeIdObject(value) {
-      const base = {'lipbid': value['unifiedId']};
+      const base = { 'lipbid': value['unifiedId'] };
       delete value.unifiedId;
-      return {'lipb': {...base, ...value}};
+      return { 'lipb': { ...base, ...value } };
     }
+
+    if (configParams) {
+      initializeLiveConnect(configParams);
+      tryFireEvent();
+    }
+
     return (value && typeof value['unifiedId'] === 'string') ? composeIdObject(value) : undefined;
   },
 
@@ -46,38 +135,13 @@ export const liveIntentIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(configParams) {
-    const publisherId = configParams && configParams.publisherId;
-    if (!publisherId && typeof publisherId !== 'string') {
-      utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
+    const liveConnect = initializeLiveConnect(configParams);
+    if (!liveConnect) {
       return;
     }
-    let baseUrl = DEFAULT_LIVEINTENT_IDENTITY_URL;
-    let source = DEFAULT_PREBID_SOURCE;
-    if (configParams.url) {
-      baseUrl = configParams.url
-    }
-    if (configParams.partner) {
-      source = configParams.partner
-    }
-
-    const additionalIdentifierNames = configParams.identifiersToResolve || [];
-
-    const additionalIdentifiers = additionalIdentifierNames.concat([LIVE_CONNECT_DUID_KEY]).reduce((obj, identifier) => {
-      const value = utils.getCookie(identifier) || utils.getDataFromLocalStorage(identifier);
-      const key = identifier.replace(LIVE_CONNECT_DUID_KEY, DOMAIN_USER_ID_QUERY_PARAM_KEY);
-      if (value) {
-        if (typeof value === 'object') {
-          obj[key] = JSON.stringify(value);
-        } else {
-          obj[key] = value;
-        }
-      }
-      return obj
-    }, {});
-
-    const queryString = utils.parseQueryStringParameters(additionalIdentifiers)
-    const url = `${baseUrl}/idex/${source}/${publisherId}?${queryString}`;
-
+    tryFireEvent();
+    // Don't do the internal ajax call, but use the composed url and fire it via PBJS ajax module
+    const url = liveConnect.resolutionCallUrl();
     const result = function (callback) {
       ajax(url, response => {
         let responseObj = {};

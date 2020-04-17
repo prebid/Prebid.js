@@ -1,6 +1,6 @@
-import adagioAnalyticsAdapter from 'modules/adagioAnalyticsAdapter';
+import adagioAnalyticsAdapter from 'modules/adagioAnalyticsAdapter.js';
 import { expect } from 'chai';
-import * as utils from 'src/utils';
+import * as utils from 'src/utils.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');

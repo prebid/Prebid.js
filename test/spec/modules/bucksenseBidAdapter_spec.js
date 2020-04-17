@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/bucksenseBidAdapter';
+import {spec} from 'modules/bucksenseBidAdapter.js';
 
 describe('Bucksense Adapter', function() {
   const BIDDER_CODE = 'bucksense';
@@ -104,7 +104,7 @@ describe('Bucksense Adapter', function() {
     beforeEach(function() {
       serverRequest = {
         'method': 'POST',
-        'url': 'https://prebid.bksn.se:445/prebidjs/',
+        'url': 'https://prebid.bksn.se/prebidjs/',
         'data': {
           'pub_id': 'prebid.org',
           'pl_id': '1000',

@@ -1,8 +1,8 @@
-import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter';
-import includes from 'core-js/library/fn/array/includes';
+import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter.js';
+import includes from 'core-js/library/fn/array/includes.js';
 import { expect } from 'chai';
-import { parse as parseURL } from 'src/url';
-import { server } from 'test/mocks/xhr';
+import { parse as parseURL } from 'src/url.js';
+import { server } from 'test/mocks/xhr.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');

@@ -1,14 +1,14 @@
-import * as utils from '../src/utils';
+import * as utils from '../src/utils.js';
 import {
   BANNER,
   VIDEO
-} from '../src/mediaTypes';
+} from '../src/mediaTypes.js';
 import {
   config
-} from '../src/config';
+} from '../src/config.js';
 import {
   registerBidder
-} from '../src/adapters/bidderFactory';
+} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'smartadserver';
 export const spec = {
   code: BIDDER_CODE,
@@ -81,6 +81,10 @@ export const spec = {
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
       }
 
       var payloadString = JSON.stringify(payload);

@@ -1,10 +1,10 @@
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { Renderer } from '../src/Renderer';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import * as utils from '../src/utils.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js';
 
