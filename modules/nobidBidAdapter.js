@@ -204,7 +204,7 @@ function nobidBuildRequests(bids, bidderRequest) {
       adType = 'banner';
     }
 
-    if (siteId && adType) {
+    if (siteId) {
       newAdunit({
         div: divid,
         sizes: sizes,
