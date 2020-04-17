@@ -56,34 +56,6 @@ describe('Nobid Adapter', function () {
       params: {
         siteId: 2,
         video: {
-        skippable: true,
-        playback_methods: ['auto_play_sound_off'],
-        position: 'atf',
-        mimes: ['video/x-flv', 'video/mp4', 'video/x-ms-wmv', 'application/x-shockwave-flash', 'application/javascript'],
-        minduration: 1,
-        maxduration: 30,
-        frameworks: [1, 2, 3, 4, 5, 6]
-        }
-      },
-      adUnitCode: 'adunit-code',
-      sizes: [[640, 480]],
-      bidId: '30b31c1838de1e',
-      bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475',
-      mediaTypes: {
-      video: {
-        context: 'instream'
-      }
-    }
-    };
-    const SITE_ID = 2;
-    const REFERER = 'https://www.examplereferer.com';
-    let bidRequests = [
-      {
-        bidder: 'nobid',
-        params: {
-        siteId: SITE_ID,
-        video: {
           skippable: true,
           playback_methods: ['auto_play_sound_off'],
           position: 'atf',
@@ -92,6 +64,34 @@ describe('Nobid Adapter', function () {
           maxduration: 30,
           frameworks: [1, 2, 3, 4, 5, 6]
         }
+      },
+      adUnitCode: 'adunit-code',
+      sizes: [[640, 480]],
+      bidId: '30b31c1838de1e',
+      bidderRequestId: '22edbae2733bf6',
+      auctionId: '1d1a030790a475',
+      mediaTypes: {
+        video: {
+          context: 'instream'
+        }
+      }
+    };
+    const SITE_ID = 2;
+    const REFERER = 'https://www.examplereferer.com';
+    let bidRequests = [
+      {
+        bidder: 'nobid',
+        params: {
+          siteId: SITE_ID,
+          video: {
+            skippable: true,
+            playback_methods: ['auto_play_sound_off'],
+            position: 'atf',
+            mimes: ['video/x-flv', 'video/mp4', 'video/x-ms-wmv', 'application/x-shockwave-flash', 'application/javascript'],
+            minduration: 1,
+            maxduration: 30,
+            frameworks: [1, 2, 3, 4, 5, 6]
+          }
         },
         adUnitCode: 'adunit-code',
         bidId: '30b31c1838de1e',
