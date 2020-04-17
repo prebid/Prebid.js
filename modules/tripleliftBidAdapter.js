@@ -204,6 +204,7 @@ function _buildResponseObject(bidderRequest, bid) {
       dealId: dealId,
       currency: 'USD',
       ttl: 33,
+      tl_source: bid.tl_source,
     };
   };
   return bidResponse;
