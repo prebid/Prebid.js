@@ -12,7 +12,7 @@ import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
 import * as store from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
-import find from 'core-js-pure/features/array/find';
+import find from 'core-js/library/fn/array/find.js';
 import { server } from 'test/mocks/xhr.js';
 
 var assert = require('assert');

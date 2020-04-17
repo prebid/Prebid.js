@@ -2,8 +2,8 @@
 import { config } from './config.js';
 import clone from 'just-clone';
 import deepequal from 'deep-equal';
-import find from 'core-js-pure/features/array/find';
-import includes from 'core-js-pure/features/array/includes';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 const CONSTANTS = require('./constants.json');
 

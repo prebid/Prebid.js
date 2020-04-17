@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js'
 
 import { config } from '../src/config.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import includes from 'core-js-pure/features/array/includes';
+import includes from 'core-js/library/fn/array/includes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { getStorageManager } from '../src/storageManager.js';
 

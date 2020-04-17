@@ -8,9 +8,9 @@ import { fireNativeTrackers, getAssetMessage } from './native.js';
 import { EVENTS } from './constants.json';
 import { logWarn, replaceAuctionPrice } from './utils.js';
 import { auctionManager } from './auctionManager.js';
-import find from 'core-js-pure/features/array/find';
+import find from 'core-js/library/fn/array/find.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
-import includes from 'core-js-pure/features/array/includes';
+import includes from 'core-js/library/fn/array/includes.js';
 
 const BID_WON = EVENTS.BID_WON;
 

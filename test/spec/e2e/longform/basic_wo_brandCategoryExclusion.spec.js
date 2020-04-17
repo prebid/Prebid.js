@@ -1,4 +1,4 @@
-const includes = require('core-js-pure/features/array/includes');
+const includes = require('core-js/library/fn/array/includes');
 const expect = require('chai').expect;
 const testServer = require('../../../helpers/testing-utils');
 

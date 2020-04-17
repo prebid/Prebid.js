@@ -108,7 +108,7 @@
  * @property {(function|undefined)} callback - function that will return an id
  */
 
-import find from 'core-js-pure/features/array/find';
+import find from 'core-js/library/fn/array/find.js';
 import {config} from '../../src/config.js';
 import events from '../../src/events.js';
 import * as utils from '../../src/utils.js';

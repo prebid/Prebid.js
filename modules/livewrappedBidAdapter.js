@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import find from 'core-js-pure/features/array/find';
+import find from 'core-js/library/fn/array/find.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
