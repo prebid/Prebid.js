@@ -106,6 +106,7 @@
     "fun-hooks": "^0.9.8",
     "jsencrypt": "^3.0.0-rc.1",
     "just-clone": "^1.0.2",
-    "live-connect-js": "1.1.1"
+    "live-connect-js": "1.1.1",
+    "validator": "^13.0.0"
   }
 }
