@@ -321,6 +321,12 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.not.have.property('user'); // there should be no user by default
   });
 
+  it('Verify override url', function() {
+    const testUrl = 'https://someurl?name=value';
+    const request = spec.buildRequests([{params: {white_label_url: testUrl}}]);
+    expect(request.url).to.equal(testUrl);
+  });
+
   it('Verify interpretResponse', function() {
     const request = spec.buildRequests(bidRequests);
     const response = spec.interpretResponse(bidResponses, request);
