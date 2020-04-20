@@ -216,7 +216,7 @@ describe('adapterManager tests', function () {
         buildRequests: {
           data: 1
         },
-        test1: { speedy: true },
+        test1: { speedy: true, fun: { test: true } },
         interpretResponse: 'baseInterpret',
         afterInterpretResponse: 'anotherBaseInterpret'
       });
@@ -253,7 +253,7 @@ describe('adapterManager tests', function () {
               data: 1,
               test: 2
             },
-            { fun: { safe: true, cheap: false }, speedy: true },
+            { fun: { safe: true, cheap: false, test: true }, speedy: true },
             { amazing: true },
             'appnexusInterpret',
             'anotherBaseInterpret'
@@ -262,14 +262,14 @@ describe('adapterManager tests', function () {
             {
               data: 1
             },
-            { speedy: true },
+            { fun: { test: true }, speedy: true },
             undefined,
             'baseInterpret',
             'anotherBaseInterpret'
           ],
           'rubicon': [
             'rubiconBuild',
-            { speedy: true },
+            { fun: { test: true }, speedy: true },
             { amazing: true },
             null,
             'anotherBaseInterpret'
