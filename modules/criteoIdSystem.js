@@ -102,8 +102,9 @@ function callCriteoUserSync(parsedCriteoData, gdprString) {
       }
     },
     error: error => {
-      if (error !== '')
+      if (error !== '') {
         utils.logError(error);
+      }
     }
   });
 }
