@@ -11,7 +11,7 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return !!(bid.params.placementId);
   },
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
       const sizes = utils.parseSizesInput(bidRequest.sizes)[0];
@@ -19,7 +19,7 @@ export const spec = {
       const height = sizes.split('x')[1];
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
-      const referrer = encodeURIComponent(utils.getTopWindowUrl());
+      const referrer = bidderRequest.refererInfo.referer || '';
       const bidId = bidRequest.bidId;
       const payload = {
         v: 'hb1',
@@ -59,7 +59,6 @@ export const spec = {
       const dealId = response.dealid || '';
       const currency = response.currency || 'USD';
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
-      const referrer = utils.getTopWindowUrl();
       const bidResponse = {
         requestId: bidRequest.data.uid,
         cpm: cpm,
@@ -70,7 +69,7 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         ttl: config.getConfig('_bidderTimeout'),
-        referrer: referrer,
+        referrer: bidRequest.data.r,
         ad: response.ad
       };
       bidResponses.push(bidResponse);
