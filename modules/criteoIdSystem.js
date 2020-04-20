@@ -6,7 +6,7 @@
  */
 
 import * as utils from '../src/utils.js'
-import * as ajax from '../src/ajax.js'
+import { ajax } from '../src/ajax.js'
 import { getRefererInfo } from '../src/refererDetection.js'
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -85,9 +85,8 @@ function callCriteoUserSync(parsedCriteoData, gdprString) {
     gdprString
   );
 
-  ajax.ajaxBuilder()(
-    url,
-    response => {
+  ajax(url, {
+    success: response => {
       const jsonResponse = JSON.parse(response);
       if (jsonResponse.bidId) {
         saveOnAllStorages(bididStorageKey, jsonResponse.bidId);
@@ -101,8 +100,12 @@ function callCriteoUserSync(parsedCriteoData, gdprString) {
       } else if (jsonResponse.bundle) {
         saveOnAllStorages(bundleStorageKey, jsonResponse.bundle);
       }
+    },
+    error: error => {
+      if (error !== '')
+        utils.logError(error);
     }
-  );
+  });
 }
 
 /** @type {Submodule} */
