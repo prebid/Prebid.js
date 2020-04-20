@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/deepintentBidAdapter';
-import * as utils from '../../../src/utils';
+import {spec} from 'modules/deepintentBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 
 describe('Deepintent adapter', function () {
   let request;
@@ -19,9 +19,15 @@ describe('Deepintent adapter', function () {
           tagId: '100013',
           w: 728,
           h: 90,
+          pos: 1,
+          user: {
+            id: 'di_testuid',
+            buyeruid: 'di_testbuyeruid',
+            yob: 2002,
+            gender: 'F'
+          },
           custom: {
-            user_gender: 'female',
-            user_max_age: 25
+            'position': 'right-box'
           }
         }
       }
@@ -122,15 +128,40 @@ describe('Deepintent adapter', function () {
       let bRequest = spec.buildRequests(request);
       let data = JSON.parse(bRequest.data);
       expect(data.imp[0].ext).to.be.a('object');
-      expect(data.imp[0].ext.user_gender).to.equal('female');
-      expect(data.imp[0].ext.user_max_age).to.equal(25);
+      expect(data.imp[0].ext.deepintent.position).to.equal('right-box');
     });
-    it('bid request check: source params', function () {
+    it('bid request check: position check', function () {
       let bRequest = spec.buildRequests(request);
       let data = JSON.parse(bRequest.data);
-      expect(data.source.fd).to.equal(0);
-      expect(data.source.ext.type).to.equal(2);
-    })
+      expect(data.imp[0].banner.pos).to.equal(1);
+    });
+    it('bid request check: displaymanager check', function() {
+      let bRequest = spec.buildRequests(request);
+      let data = JSON.parse(bRequest.data);
+      expect(data.imp[0].displaymanager).to.equal('di_prebid');
+      expect(data.imp[0].displaymanagerver).to.equal('1.0.0');
+    });
+    it('bid request check: user object check', function () {
+      let bRequest = spec.buildRequests(request);
+      let data = JSON.parse(bRequest.data);
+      expect(data.user).to.be.a('object');
+      expect(data.user.id).to.equal('di_testuid');
+      expect(data.user.buyeruid).to.equal('di_testbuyeruid');
+      expect(data.user.yob).to.equal(2002);
+      expect(data.user.gender).to.equal('F');
+    });
+    it('bid request check: CCPA Check', function () {
+      let bidRequest = {
+        uspConsent: '1NYN'
+      };
+      let bRequest = spec.buildRequests(request, bidRequest);
+      let data = JSON.parse(bRequest.data);
+      expect(data.regs.ext.us_privacy).to.equal('1NYN');
+      let bidRequest2 = {};
+      let bRequest2 = spec.buildRequests(request, bidRequest2);
+      let data2 = JSON.parse(bRequest2.data);
+      expect(data2.regs).to.equal(undefined);
+    });
   });
   describe('user sync check', function () {
     it('user sync url check', function () {
@@ -140,7 +171,7 @@ describe('Deepintent adapter', function () {
       let userSync = spec.getUserSyncs(syncOptions);
       expect(userSync).to.be.an('array').with.length.above(0);
       expect(userSync[0].type).to.equal('iframe');
-      expect(userSync[0].url).to.equal('https://beacon.deepintent.com/usersync.html');
+      expect(userSync[0].url).to.equal('https://cdn.deepintent.com/syncpixel.html');
     });
   });
   describe('response check', function () {

@@ -1,12 +1,15 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { VIDEO, BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'grid';
-const ENDPOINT_URL = '//grid.bidswitch.net/hb';
+const ENDPOINT_URL = 'https://grid.bidswitch.net/hb';
+const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=iow_labs';
 const TIME_TO_LIVE = 360;
-const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+
+let hasSynced = false;
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -101,6 +104,9 @@ export const spec = {
           (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
             ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
       }
+      if (bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
+      }
     }
 
     return {
@@ -136,6 +142,28 @@ export const spec = {
     }
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
+  },
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+    if (!hasSynced && syncOptions.pixelEnabled) {
+      let params = '';
+
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params += `&gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
+      if (uspConsent) {
+        params += `&us_privacy=${uspConsent}`;
+      }
+
+      hasSynced = true;
+      return {
+        type: 'image',
+        url: SYNC_URL + params
+      };
+    }
   }
 };
 
@@ -242,6 +270,14 @@ function createRenderer (bid, rendererParams) {
   }
 
   return renderer;
+}
+
+export function resetUserSync() {
+  hasSynced = false;
+}
+
+export function getSyncUrl() {
+  return SYNC_URL;
 }
 
 registerBidder(spec);

@@ -1,12 +1,12 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '6.0.0',
+  version: '6.1.0',
   code: BIDDER_CODE,
   aliases: ['id'],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
@@ -41,6 +41,10 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
       requestParameters.gdpr = bidderRequest.gdprConsent.consentString;
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      requestParameters.usPrivacy = bidderRequest.uspConsent;
     }
 
     if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -170,6 +174,12 @@ export const spec = {
   }
 };
 
+function isInstreamVideo(bid) {
+  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+  return bid.mediaType === 'video' || (videoMediaType && context !== 'outstream');
+}
+
 function getNormalizedBidRequest(bid) {
   let adUnitId = utils.getBidIdParameter('adUnitCode', bid) || null;
   let placementId = utils.getBidIdParameter('placementId', bid.params) || null;
@@ -189,9 +199,7 @@ function getNormalizedBidRequest(bid) {
   const bidFloorCur = utils.getBidIdParameter('bidFloorCur', bid.params);
 
   let normalizedBidRequest = {};
-  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-  if (bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) {
+  if (isInstreamVideo(bid)) {
     normalizedBidRequest.adTypes = [ VIDEO ];
   }
   if (placementId) {
@@ -209,7 +217,7 @@ function getNormalizedBidRequest(bid) {
     normalizedBidRequest.keyValues = keyValues;
   }
 
-  if (config.getConfig('improvedigital.usePrebidSizes') === true && bid.sizes && bid.sizes.length > 0) {
+  if (config.getConfig('improvedigital.usePrebidSizes') === true && !isInstreamVideo(bid) && bid.sizes && bid.sizes.length > 0) {
     normalizedBidRequest.format = bid.sizes;
   } else if (singleSizeFilter && singleSizeFilter.w && singleSizeFilter.h) {
     normalizedBidRequest.size = {};
@@ -339,7 +347,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     AD_SERVER_BASE_URL: 'ice.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-6.2.0',
+    CLIENT_VERSION: 'JS-6.3.0',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
       MISSING_PLACEMENT_PARAMS: 2,
@@ -492,6 +500,9 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
     if (requestParameters.gdpr || requestParameters.gdpr === 0) {
       impressionBidRequestObject.gdpr = requestParameters.gdpr;
+    }
+    if (requestParameters.usPrivacy) {
+      impressionBidRequestObject.us_privacy = requestParameters.usPrivacy;
     }
     if (requestParameters.schain) {
       impressionBidRequestObject.schain = requestParameters.schain;

@@ -1,9 +1,9 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'imonomy';
-const ENDPOINT = '//b.imonomy.com/openrtb/hb/00000';
-const USYNCURL = '//b.imonomy.com/UserMatching/b/';
+const ENDPOINT = 'https://b.imonomy.com/openrtb/hb/00000';
+const USYNCURL = 'https://b.imonomy.com/UserMatching/b/';
 
 export const spec = {
   code: BIDDER_CODE,

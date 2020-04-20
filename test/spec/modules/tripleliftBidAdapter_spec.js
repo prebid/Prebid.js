@@ -1,10 +1,12 @@
 import { expect } from 'chai';
-import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
+import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
+import { config } from 'src/config.js';
 import prebid from '../../../package.json';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
+const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
 
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
@@ -104,10 +106,10 @@ describe('triplelift adapter', function () {
           }
         ],
         refererInfo: {
-          referer: 'http://examplereferer.com'
+          referer: 'https://examplereferer.com'
         },
         gdprConsent: {
-          consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+          consentString: GDPR_CONSENT_STR,
           gdprApplies: true
         },
       };
@@ -151,11 +153,22 @@ describe('triplelift adapter', function () {
       expect(payload.user).to.deep.equal({ext: {eids: [{source: 'liveramp.com', uids: [{id, ext: {rtiPartner: 'idl'}}]}]}});
     });
 
-    it('should add both tdid and idl_env to the payload if both are included', function () {
+    it('should add criteoId to the payload if included', function () {
+      const id = '53e30ea700424f7bbdd793b02abc5d7';
+      bidRequests[0].userId.criteoId = id;
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.exist;
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'criteo.com', uids: [{id, ext: {rtiPartner: 'criteoId'}}]}]}});
+    });
+
+    it('should add tdid, idl_env and criteoId to the payload if both are included', function () {
       const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
+      const criteoId = '53e30ea700424f7bbdd793b02abc5d7';
       bidRequests[0].userId.tdid = tdidId;
       bidRequests[0].userId.idl_env = idlEnvId;
+      bidRequests[0].userId.criteoId = criteoId;
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
@@ -181,6 +194,15 @@ describe('triplelift adapter', function () {
                   ext: { rtiPartner: 'idl' }
                 }
               ]
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
             }
           ]
         }
@@ -190,10 +212,12 @@ describe('triplelift adapter', function () {
     it('should add user ids from multiple bid requests', function () {
       const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
+      const criteoId = '53e30ea700424f7bbdd793b02abc5d7';
 
       const bidRequestsMultiple = [
         { ...bidRequests[0], userId: { tdid: tdidId } },
         { ...bidRequests[0], userId: { idl_env: idlEnvId } },
+        { ...bidRequests[0], userId: { criteoId: criteoId } }
       ];
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
@@ -219,6 +243,15 @@ describe('triplelift adapter', function () {
                   ext: { rtiPartner: 'idl' }
                 }
               ]
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
             }
           ]
         }
@@ -234,6 +267,26 @@ describe('triplelift adapter', function () {
       expect(url).to.match(/(?:lib=prebid)/)
       expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
       expect(url).to.match(/(?:referrer)/);
+    });
+    it('should return us_privacy param when CCPA info is available', function() {
+      bidderRequest.uspConsent = '1YYY';
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const url = request.url;
+      expect(url).to.match(/(\?|&)us_privacy=1YYY/);
+    });
+    it('should return coppa param when COPPA config is set to true', function() {
+      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      config.getConfig.restore();
+      const url = request.url;
+      expect(url).to.match(/(\?|&)coppa=true/);
+    });
+    it('should not return coppa param when COPPA config is set to false', function() {
+      sinon.stub(config, 'getConfig').withArgs('coppa').returns(false);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      config.getConfig.restore();
+      const url = request.url;
+      expect(url).not.to.match(/(\?|&)coppa=/);
     });
     it('should return schain when present', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
@@ -278,10 +331,10 @@ describe('triplelift adapter', function () {
         }
       ],
       refererInfo: {
-        referer: 'http://examplereferer.com'
+        referer: 'https://examplereferer.com'
       },
       gdprConsent: {
-        consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+        consentString: GDPR_CONSENT_STR,
         gdprApplies: true
       }
     };
@@ -352,15 +405,60 @@ describe('triplelift adapter', function () {
           }
         ],
         refererInfo: {
-          referer: 'http://examplereferer.com'
+          referer: 'https://examplereferer.com'
         },
         gdprConsent: {
-          consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+          consentString: GDPR_CONSENT_STR,
           gdprApplies: true
         }
       };
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
       expect(result).to.have.length(2);
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    let expectedIframeSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+    let expectedImageSyncUrl = 'https://eb2.3lift.com/sync?px=1&src=prebid&gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+
+    it('returns undefined when syncing is not enabled', function() {
+      expect(tripleliftAdapterSpec.getUserSyncs({})).to.equal(undefined);
+      expect(tripleliftAdapterSpec.getUserSyncs()).to.equal(undefined);
+    });
+
+    it('returns iframe user sync pixel when iframe syncing is enabled', function() {
+      let syncOptions = {
+        iframeEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal(expectedIframeSyncUrl);
+    });
+
+    it('returns image user sync pixel when iframe syncing is disabled', function() {
+      let syncOptions = {
+        pixelEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('image')
+      expect(result[0].url).to.equal(expectedImageSyncUrl);
+    });
+
+    it('returns iframe user sync pixel when both options are enabled', function() {
+      let syncOptions = {
+        pixelEnabled: true,
+        iframeEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal(expectedIframeSyncUrl);
+    });
+    it('sends us_privacy param when info is available', function() {
+      let syncOptions = {
+        iframeEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions, null, null, '1YYY');
+      expect(result[0].url).to.match(/(\?|&)us_privacy=1YYY/);
     });
   });
 });

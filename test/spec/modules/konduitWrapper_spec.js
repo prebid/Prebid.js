@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 
 import parse from 'url-parse';
-import { buildVastUrl } from 'modules/konduitWrapper';
-import { parseQS } from 'src/url';
-import { config } from 'src/config';
+import { buildVastUrl } from 'modules/konduitWrapper.js';
+import { parseQS } from 'src/utils.js';
+import { config } from 'src/config.js';
 
 describe('The Konduit vast wrapper module', function () {
   it('should make a wrapped request url when `bid` passed', function () {
