@@ -2,7 +2,6 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as url from '../src/url.js';
 import * as utils from '../src/utils.js';
 
 const emptyUrl = '';
@@ -115,7 +114,7 @@ function send(data, status) {
   }
   data.initOptions = initOptions;
 
-  let yuktamediaAnalyticsRequestUrl = url.format({
+  let yuktamediaAnalyticsRequestUrl = utils.buildUrl({
     protocol: 'https',
     hostname: 'analytics-prebid.yuktamedia.com',
     pathname: status == 'auctionEnd' ? '/api/bids' : '/api/bid/won',

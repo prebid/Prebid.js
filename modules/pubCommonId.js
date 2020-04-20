@@ -6,7 +6,6 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import events from '../src/events.js';
-import * as url from '../src/url.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -142,9 +141,9 @@ function queuePixelCallback(pixelUrl, id) {
   id = id || '';
 
   // Use pubcid as a cache buster
-  const urlInfo = url.parse(pixelUrl);
+  const urlInfo = utils.parseUrl(pixelUrl);
   urlInfo.search.id = encodeURIComponent('pubcid:' + id);
-  const targetUrl = url.format(urlInfo);
+  const targetUrl = utils.buildUrl(urlInfo);
 
   events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
     events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
