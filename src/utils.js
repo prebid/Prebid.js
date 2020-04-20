@@ -1,11 +1,13 @@
+/* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
+import deepequal from 'deep-equal';
 import find from 'core-js/library/fn/array/find.js';
 import includes from 'core-js/library/fn/array/includes.js';
 
 const CONSTANTS = require('./constants.json');
 
-export { default as deepAccess } from 'dlv';
+export { default as deepAccess } from 'dlv/index.js';
 export { default as deepSetValue } from 'dset';
 
 var tArr = 'Array';
@@ -35,7 +37,8 @@ export const internal = {
   logError,
   logWarn,
   logMessage,
-  logInfo
+  logInfo,
+  deepEqual
 };
 
 var uniqueRef = {};
@@ -826,37 +829,20 @@ export function timestamp() {
   return new Date().getTime();
 }
 
-export function checkCookieSupport() {
-  if (window.navigator.cookieEnabled || !!document.cookie.length) {
-    return true;
-  }
-}
-export function cookiesAreEnabled() {
-  if (internal.checkCookieSupport()) {
-    return true;
-  }
-  window.document.cookie = 'prebid.cookieTest';
-  return window.document.cookie.indexOf('prebid.cookieTest') != -1;
-}
-
-export function getCookie(name) {
-  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
-  return m ? decodeURIComponent(m[2]) : null;
-}
-
-export function setCookie(key, value, expires, sameSite) {
-  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
+/**
+ * When the deviceAccess flag config option is false, no cookies should be read or set
+ * @returns {boolean}
+ */
+export function hasDeviceAccess() {
+  return config.getConfig('deviceAccess') !== false;
 }
 
 /**
- * @returns {boolean}
+ * @returns {(boolean|undefined)}
  */
-export function localStorageIsEnabled () {
-  try {
-    localStorage.setItem('prebid.cookieTest', '1');
-    return localStorage.getItem('prebid.cookieTest') === '1';
-  } catch (error) {
-    return false;
+export function checkCookieSupport() {
+  if (window.navigator.cookieEnabled || !!document.cookie.length) {
+    return true;
   }
 }
 
@@ -1013,6 +999,24 @@ export function isAdUnitCodeMatchingSlot(slot) {
 export function isSlotMatchingAdUnitCode(adUnitCode) {
   return (slot) => compareCodeAndSlot(slot, adUnitCode);
 }
+
+/**
+ * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ */
+export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+  let matchingSlot;
+  if (isGptPubadsDefined()) {
+    // find the first matching gpt slot on the page
+    matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
+  }
+  if (matchingSlot) {
+    return {
+      gptSlot: matchingSlot.getAdUnitPath(),
+      divId: matchingSlot.getSlotElementId()
+    }
+  }
+  return {};
+};
 
 /**
  * Constructs warning message for when unsupported bidders are dropped from an adunit
@@ -1178,32 +1182,6 @@ export function convertTypes(types, params) {
   return params;
 }
 
-export function setDataInLocalStorage(key, value) {
-  if (hasLocalStorage()) {
-    window.localStorage.setItem(key, value);
-  }
-}
-
-export function getDataFromLocalStorage(key) {
-  if (hasLocalStorage()) {
-    return window.localStorage.getItem(key);
-  }
-}
-
-export function removeDataFromLocalStorage(key) {
-  if (hasLocalStorage()) {
-    window.localStorage.removeItem(key);
-  }
-}
-
-export function hasLocalStorage() {
-  try {
-    return !!window.localStorage;
-  } catch (e) {
-    logError('Local storage api disabled');
-  }
-}
-
 export function isArrayOfNums(val, size) {
   return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
 }
@@ -1265,4 +1243,14 @@ export function compareOn(property) {
     }
     return 0;
   }
+}
+
+/**
+ * This function compares two objects for checking their equivalence.
+ * @param {Object} obj1
+ * @param {Object} obj2
+ * @returns {boolean}
+ */
+export function deepEqual(obj1, obj2) {
+  return deepequal(obj1, obj2);
 }
