@@ -5,10 +5,42 @@
  * @requires module:modules/userId
  */
 
+import * as utils from '../src/utils.js'
+import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as sharedIdGenerator from '../src/sharedIdGenerator.js';
 
 const MODULE_NAME = 'sharedId';
+const ID_SVC = 'http://qa.sharedid.org/id';
+
+/**
+ * id generation call back
+ * @param result
+ * @param callback
+ * @returns {{success: success, error: error}}
+ */
+function idGenerationCallback(result, callback) {
+  return {
+    success: function (responseBody) {
+      let responseObj;
+      if (responseBody) {
+        try {
+          responseObj = JSON.parse(responseBody);
+          result.id = responseObj.sharedId;
+          utils.logInfo('SharedId: Generated SharedId: ' + result.id);
+        } catch (error) {
+          utils.logError(error);
+        }
+      }
+      callback(result.id);
+    },
+    error: function (statusText, responseBody) {
+      result.id = sharedIdGenerator.id();
+      utils.logInfo('SharedId: Ulid Generated SharedId: ' + result.id);
+      callback(result.id);
+    }
+  }
+}
 
 /** @type {Submodule} */
 export const sharedIdSubmodule = {
@@ -34,12 +66,18 @@ export const sharedIdSubmodule = {
    * @param {SubmoduleParams} [configParams]
    * @returns {sharedId}
    */
-  getId: function(configParams) {
-    let sharedId = sharedIdGenerator.id();
-    return {
-      id: sharedId
+  getId(configParams) {
+    var result = {
+      id: null
     }
-  },
+
+    const resp = function (callback) {
+      utils.logInfo('sharedId doesnt exists');
+
+      ajax(ID_SVC, idGenerationCallback(result, callback), undefined, {method: 'GET', withCredentials: true});
+    };
+    return {callback: resp};
+  }
 };
 
 // Register submodule for userId
