@@ -44,8 +44,8 @@ const storage = getStorageManager(GVLID, BIDDER_CODE);
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'and', 'brealtime', 'emxdigital', 'pangaea', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'xhb', 'adasta', 'beintoo'],
   gvlid: GVLID,
+  aliases: ['appnexusAst', 'and', 'brealtime', 'emxdigital', 'pangaea', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'xhb', 'adasta', 'beintoo'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
