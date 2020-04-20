@@ -265,6 +265,10 @@ function decorateLog(args, prefix) {
   return args;
 }
 
+export function hasConsoleLogger() {
+  return consoleLogExists;
+}
+
 export function debugTurnedOn() {
   return !!config.getConfig('debug');
 }
@@ -1165,4 +1169,28 @@ export function buildUrl(obj) {
  */
 export function deepEqual(obj1, obj2) {
   return deepequal(obj1, obj2);
+}
+
+export function mergeDeep(target, ...sources) {
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isPlainObject(target) && isPlainObject(source)) {
+    for (const key in source) {
+      if (isPlainObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key], source[key]);
+      } else if (isArray(source[key])) {
+        if (!target[key]) {
+          Object.assign(target, { [key]: source[key] });
+        } else if (isArray(target[key])) {
+          target[key] = target[key].concat(source[key]);
+        }
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return mergeDeep(target, ...sources);
 }

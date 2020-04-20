@@ -16,6 +16,7 @@ import { isValidPriceConfig } from './cpmBucketManager.js';
 import find from 'core-js/library/fn/array/find.js';
 import includes from 'core-js/library/fn/array/includes.js';
 import Set from 'core-js/library/fn/set.js';
+import { mergeDeep } from './utils.js';
 
 const from = require('core-js/library/fn/array/from.js');
 const utils = require('./utils.js');
@@ -254,7 +255,7 @@ export function newConfig() {
           memo[topic] = currBidderConfig[topic];
         } else {
           if (utils.isPlainObject(currBidderConfig[topic])) {
-            memo[topic] = Object.assign({}, config[topic], currBidderConfig[topic]);
+            memo[topic] = mergeDeep({}, config[topic], currBidderConfig[topic]);
           } else {
             memo[topic] = currBidderConfig[topic];
           }
