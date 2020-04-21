@@ -134,7 +134,7 @@ function getProviderData(adUnits, callback) {
  * @param {Object} data received from provider
  * @return {Object} valid data for GPT targeting
  */
-function validateProviderDataForGPT(data) {
+export function validateProviderDataForGPT(data) {
   // data must be an object, contains object with string as value
   if (typeof data !== 'object') {
     return {};
@@ -144,6 +144,7 @@ function validateProviderDataForGPT(data) {
       for (let innerKey in data[key]) {
         if (data[key].hasOwnProperty(innerKey)) {
           if (typeof data[key][innerKey] !== 'string') {
+            utils.logWarn(`removing ${key}: {${innerKey}:${data[key][innerKey]} } from GPT targeting because of invalid type (must be string)`);
             delete data[key][innerKey];
           }
         }

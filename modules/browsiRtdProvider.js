@@ -196,11 +196,11 @@ function getSlotByCode(code) {
 
 /**
  * generate id according to macro script
- * @param {string} macro replacement macro
+ * @param {Object} macro replacement macro
  * @param {Object} slot google slot
  * @return {?Object}
  */
-function getMacroId(macro, slot) {
+export function getMacroId(macro, slot) {
   if (macro) {
     try {
       const macroResult = evaluate(macro, slot.getSlotElementId(), slot.getAdUnitPath(), (match, p1) => {
