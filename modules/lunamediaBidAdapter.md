@@ -16,17 +16,19 @@ For more informatio
 
 # Sample Display Ad Unit: For Publishers
 ```javascript
+
 var displayAdUnit = [
 {
     code: 'display',
-    sizes: [
-        [300, 250],
-        [320, 50]
-    ],
+    mediaTypes: {
+        banner: {
+            sizes: [[300, 250],[320, 50]]
+        }
+    }
     bids: [{
         bidder: 'lunamedia',
         params: {
-            pubid: '0cf8d6d643e13d86a5b6374148a4afac',
+            pubid: '121ab139faf7ac67428a23f1d0a9a71b',
             placement: 1234
         }
     }]
@@ -49,7 +51,7 @@ var videoAdUnit = {
       {
       	bidder: 'lunamedia',
       	params: {
-        	pubid: '8537f00948fc37cc03c5f0f88e198a76',
+        	pubid: '121ab139faf7ac67428a23f1d0a9a71b',
         	placement: 1234,
         	video: {
             	id: 123,
