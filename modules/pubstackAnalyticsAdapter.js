@@ -2,7 +2,7 @@ import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
 const pubstackAdapter = adapter({
-  global: 'pbstckR',
+  global: 'PubstackAnalytics',
   handler: 'on',
   analyticsType: 'bundle'
 });
