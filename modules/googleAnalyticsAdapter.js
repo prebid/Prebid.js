@@ -2,10 +2,10 @@
  * ga.js - analytics adapter for google analytics
  */
 
-var events = require('../src/events');
-var utils = require('../src/utils');
+var events = require('../src/events.js');
+var utils = require('../src/utils.js');
 var CONSTANTS = require('../src/constants.json');
-var adapterManager = require('../src/adapterManager').default;
+var adapterManager = require('../src/adapterManager.js').default;
 
 var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
@@ -19,6 +19,7 @@ var _enableCheck = true;
 var _category = 'Prebid.js Bids';
 var _eventCount = 0;
 var _enableDistribution = false;
+var _cpmDistribution = null;
 var _trackerSend = null;
 var _sampled = true;
 
@@ -41,6 +42,9 @@ adapter.enableAnalytics = function ({ provider, options }) {
   }
   if (options && typeof options.enableDistribution !== 'undefined') {
     _enableDistribution = options.enableDistribution;
+  }
+  if (options && typeof options.cpmDistribution === 'function') {
+    _cpmDistribution = options.cpmDistribution;
   }
 
   var bid = null;
@@ -166,6 +170,9 @@ function getLoadTimeDistribution(time) {
 }
 
 function getCpmDistribution(cpm) {
+  if (_cpmDistribution) {
+    return _cpmDistribution(cpm);
+  }
   var distribution;
   if (cpm >= 0 && cpm < 0.5) {
     distribution = '$0-0.5';
@@ -254,6 +261,11 @@ function sendBidWonToGa(bid) {
 
   checkAnalytics();
 }
+
+/**
+ * Exposed for testing purposes
+ */
+adapter.getCpmDistribution = getCpmDistribution;
 
 adapterManager.registerAnalyticsAdapter({
   adapter,

@@ -9,11 +9,14 @@ import {
   setStorageItem,
   getStorageItem,
   removeStorageItem,
-  getPubcidConfig } from 'modules/pubCommonId';
-import { getAdUnits } from 'test/fixtures/fixtures';
-import * as auctionModule from 'src/auction';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+  getPubcidConfig } from 'modules/pubCommonId.js';
+import { getAdUnits } from 'test/fixtures/fixtures.js';
+import * as auctionModule from 'src/auction.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
+
+let events = require('src/events');
+let constants = require('src/constants.json');
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -231,13 +234,13 @@ describe('Publisher Common ID', function () {
       });
     });
 
-    it('read only', function() {
+    it('disable auto create', function() {
       setConfig({
-        readOnly: true
+        create: false
       });
 
       const config = getPubcidConfig();
-      expect(config.readOnly).to.be.true;
+      expect(config.create).to.be.false;
       expect(config.typeEnabled).to.equal('html5');
 
       let adUnits = getAdUnits();
@@ -333,6 +336,35 @@ describe('Publisher Common ID', function () {
       expect(localStorage.getItem(key)).to.equal(val);
       expect(getStorageItem(key)).to.be.null;
       expect(localStorage.getItem(key)).to.be.null;
+    });
+  });
+
+  describe('event callback', () => {
+    beforeEach(() => {
+      setConfig();
+      cleanUp();
+      sinon.stub(events, 'getEvents').returns([]);
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(() => {
+      setConfig();
+      cleanUp();
+      events.getEvents.restore();
+      utils.triggerPixel.restore();
+    });
+    it('auction end trigger', () => {
+      setConfig({
+        pixelUrl: '/any/url'
+      });
+
+      let adUnits = getAdUnits();
+      let innerAdUnits;
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+
+      expect(utils.triggerPixel.called).to.be.false;
+      events.emit(constants.EVENTS.AUCTION_END, {});
+      expect(utils.triggerPixel.called).to.be.true;
+      expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/url');
     });
   });
 });

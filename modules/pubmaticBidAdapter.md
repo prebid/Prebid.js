@@ -25,7 +25,7 @@ var adUnits = [
       bidder: 'pubmatic',
       params: {
         publisherId: '156209',               // required
-        adSlot: 'pubmatic_test2',            // required
+        adSlot: 'pubmatic_test2',            // optional
         pmzoneid: 'zone1, zone11',           // optional
         lat: '40.712775',                    // optional
         lon: '-74.005973',                   // optional
@@ -35,7 +35,8 @@ var adUnits = [
         kadfloor: '0.50',                    // optional
         currency: 'AUD',                     // optional (Value configured only in the 1st adunit will be passed on. < br/> Values if present in subsequent adunits, will be ignored.)
         dctr: 'key1=123|key2=345',            // optional (Value configured only in the 1st adunit will be passed on. < br/> Values if present in subsequent adunits, will be ignored.)
-        bcat: ['IAB1-5', 'IAB1-7']                // Optional: Blocked IAB Categories. (Values from all slots will be combined and only unique values will be passed. An array of strings only. Each category should be a string of a length of more than 3 characters.)
+        bcat: ['IAB1-5', 'IAB1-7'],                // Optional: Blocked IAB Categories. (Values from all slots will be combined and only unique values will be passed. An array of strings only. Each category should be a string of a length of more than 3 characters.)
+        deals: ['deal-id-1', 'deal-id-200']   // optional: PMP Deals, should be array of strings
       }
     }]
 }];
@@ -56,7 +57,7 @@ var adVideoAdUnits = [
       bidder: 'pubmatic',
       params: {
         publisherId: '156209',                  // required
-        adSlot: 'pubmatic_video1',              // required
+        adSlot: 'pubmatic_video1',              // optional
         video: {
           mimes: ['video/mp4','video/x-flv'],   // required
           skippable: true,                      // optional
@@ -104,7 +105,7 @@ var adUnits = [
       bidder: 'pubmatic',
       params: {
         publisherId: '156295',               // required
-        adSlot: 'pubmatic_test2@1x1',       // required
+        adSlot: 'pubmatic_test2@1x1',       // optional
       }
     }]
 }];
@@ -146,7 +147,7 @@ var adUnits = [
       bidder: 'pubmatic',
       params: {
         publisherId: '156209',               // required
-        adSlot: 'pubmatic_test2@300x250',    // required
+        adSlot: 'pubmatic_test2@300x250',    // optional
         pmzoneid: 'zone1, zone11',           // optional
         lat: '40.712775',                    // optional
         lon: '-74.005973',                   // optional
@@ -199,4 +200,7 @@ pbjs.setConfig({
 });
 
 ```
-Note: Combine the above the configuration with any other UserSync configuration.  Multiple setConfig() calls overwrite each other and only last call for a given attribute will take effect.
+Note: Combine the above the configuration with any other UserSync configuration.  Multiple setConfig() calls overwrite each other and only last call for a given attribute will take effect. 
+
+Note: PubMatic will return a test-bid if "pubmaticTest=true" is present in page URL
+
