@@ -177,7 +177,7 @@ describe('Deepintent adapter', function () {
       let bRequest2 = spec.buildRequests(request, bidRequest2);
       let data2 = JSON.parse(bRequest2.data);
       expect(data2.regs).to.equal(undefined);
-      expect(data.user.ext.consent).to.equal(undefined);
+      expect(data2.user.ext).to.equal(undefined);
     });
   });
   describe('user sync check', function () {
