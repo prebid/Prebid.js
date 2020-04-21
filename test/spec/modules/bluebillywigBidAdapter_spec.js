@@ -1,9 +1,13 @@
 import { expect } from 'chai';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { spec } from 'modules/bluebillywigBidAdapter.js';
 =======
 import { spec, BB_CONSTANTS } from 'modules/bluebillywigBidAdapter.js';
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+import { spec } from 'modules/bluebillywigBidAdapter.js';
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone, deepAccess } from 'src/utils.js';
@@ -11,6 +15,9 @@ import { config } from 'src/config.js';
 import { VIDEO } from 'src/mediaTypes.js';
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
 const BB_CONSTANTS = {
   BIDDER_CODE: 'bluebillywig',
   AUCTION_URL: '$$URL_STARTpbs.bluebillywig.com/openrtb2/auction?pub=$$PUBLICATION',
@@ -23,8 +30,11 @@ const BB_CONSTANTS = {
   DEFAULT_NET_REVENUE: true
 };
 
+<<<<<<< HEAD
 =======
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
 describe('BlueBillywigAdapter', () => {
   describe('isBidRequestValid', () => {
     const baseValidBid = {
@@ -504,10 +514,14 @@ describe('BlueBillywigAdapter', () => {
 
       const newBaseValidBidRequests = deepClone(baseValidBidRequests);
 <<<<<<< HEAD
+<<<<<<< HEAD
       newBaseValidBidRequests[0].userId = { criteoId: 'sample-userid' };
 =======
       newBaseValidBidRequests[0].userId = userId;
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+      newBaseValidBidRequests[0].userId = { criteoId: 'sample-userid' };
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
 
       const request = spec.buildRequests(newBaseValidBidRequests, validBidderRequest);
       const payload = JSON.parse(request.data);

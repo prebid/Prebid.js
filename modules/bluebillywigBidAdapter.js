@@ -1,6 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -11,15 +12,25 @@ import { VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+import { VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { createEidsArray } from './userId/eids.js';
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
 
 const DEV_MODE = window.location.search.match(/bbpbs_debug=true/);
 
 // Blue Billywig Constants
 <<<<<<< HEAD
+<<<<<<< HEAD
 const BB_CONSTANTS = {
 =======
 export const BB_CONSTANTS = {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+const BB_CONSTANTS = {
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
   BIDDER_CODE: 'bluebillywig',
   AUCTION_URL: '$$URL_STARTpbs.bluebillywig.com/openrtb2/auction?pub=$$PUBLICATION',
   SYNC_URL: '$$URL_STARTpbs.bluebillywig.com/static/cookie-sync.html?pub=$$PUBLICATION',
@@ -70,6 +81,7 @@ export const BB_HELPERS = {
     if (schain) request.source.ext = { schain: schain };
   },
 <<<<<<< HEAD
+<<<<<<< HEAD
   addCurrency: function(request) {
 =======
   addAliases: (request, aliases) => {
@@ -77,6 +89,8 @@ export const BB_HELPERS = {
 
     if (!utils.isEmpty(aliases)) request.ext.prebid.aliases = aliases;
   },
+=======
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
   addCurrency: (request) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
     if (!request) return;
@@ -117,102 +131,11 @@ export const BB_HELPERS = {
   addUserIds: (request, validBidRequests) => {
     if (!request) return;
 
-    // NB straight rip from prebidServerAdapter, keep track for updates
     const bidUserId = utils.deepAccess(validBidRequests, '0.userId');
+    const eids = createEidsArray(bidUserId);
 
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.criteoId || bidUserId.britepoolid || bidUserId.idl_env)) {
-      utils.deepSetValue(request, 'user.ext.eids', []);
-
-      if (bidUserId.tdid) {
-        request.user.ext.eids.push({
-          source: 'adserver.org',
-          uids: [{
-            id: bidUserId.tdid,
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }]
-        });
-      }
-
-      if (bidUserId.pubcid) {
-        request.user.ext.eids.push({
-          source: 'pubcid.org',
-          uids: [{
-            id: bidUserId.pubcid,
-          }]
-        });
-      }
-
-      if (bidUserId.parrableid) {
-        request.user.ext.eids.push({
-          source: 'parrable.com',
-          uids: [{
-            id: bidUserId.parrableid
-          }]
-        });
-      }
-
-      if (bidUserId.lipb && bidUserId.lipb.lipbid) {
-        const liveIntent = {
-          source: 'liveintent.com',
-          uids: [{
-            id: bidUserId.lipb.lipbid
-          }]
-        };
-
-        if (Array.isArray(bidUserId.lipb.segments) && bidUserId.lipb.segments.length) {
-          liveIntent.ext = {
-            segments: bidUserId.lipb.segments
-          };
-        }
-        request.user.ext.eids.push(liveIntent);
-      }
-
-      if (bidUserId.id5id) {
-        request.user.ext.eids.push({
-          source: 'id5-sync.com',
-          uids: [{
-            id: bidUserId.id5id,
-          }]
-        });
-      }
-
-      if (bidUserId.criteoId) {
-        request.user.ext.eids.push({
-          source: 'criteo.com',
-          uids: [{
-            id: bidUserId.criteoId
-          }]
-        });
-      }
-
-      if (bidUserId.britepoolid) {
-        request.user.ext.eids.push({
-          source: 'britepool.com',
-          uids: [{
-            id: bidUserId.britepoolid
-          }]
-        });
-      }
-
-      if (bidUserId.idl_env) {
-        request.user.ext.eids.push({
-          source: 'liveramp.com',
-          uids: [{
-            id: bidUserId.idl_env
-          }]
-        });
-      }
-
-      if (bidUserId.netId) {
-        request.user.ext.eids.push({
-          source: 'netid.de',
-          uids: [{
-            id: bidUserId.netId
-          }]
-        });
-      }
+    if (eids && eids.length) {
+      utils.deepSetValue(request, 'user.ext.eids', eids);
     }
   },
   addDigiTrust: (request, bidRequests) => {
@@ -230,20 +153,6 @@ export const BB_HELPERS = {
   },
   getRendererUrl: (publication, renderer) => {
     return BB_HELPERS.substituteUrl(BB_CONSTANTS.RENDERER_URL, publication, renderer);
-  },
-  getAliasesFromRegistry: (name) => {
-    if (!name) return null;
-
-    let aliases = adapterManager.aliasRegistry[name];
-
-    if (aliases) return aliases;
-    else return null;
-  },
-  getBidAdapterFromManager: (name) => {
-    if (!name) return null;
-
-    const adapter = adapterManager.getBidAdapter && adapterManager.getBidAdapter(name);
-    return adapter || null;
   },
   getDigiTrustParams: (bidRequest) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
@@ -267,6 +176,7 @@ export const BB_HELPERS = {
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   },
 <<<<<<< HEAD
+<<<<<<< HEAD
   transformRTBToPrebidProps: function(bid, serverResponse) {
 =======
   transformBidParams: (adapter, bidRequest, name) => {
@@ -276,6 +186,8 @@ export const BB_HELPERS = {
       }
     }
   },
+=======
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
   transformRTBToPrebidProps: (bid, serverResponse) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
     bid.cpm = bid.price; delete bid.price;
@@ -414,11 +326,16 @@ export const spec = {
         return false;
       } else {
 <<<<<<< HEAD
+<<<<<<< HEAD
         for (let connectionIndex = 0; connectionIndex < bid.params.connections.length; connectionIndex++) {
           const connection = bid.params.connections[connectionIndex];
 =======
         for (const connection of bid.params.connections) {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+        for (let connectionIndex = 0; connectionIndex < bid.params.connections.length; connectionIndex++) {
+          const connection = bid.params.connections[connectionIndex];
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
           if (!bid.params.hasOwnProperty(connection)) {
             utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: connection specified in params.connections, but not configured in params. Rejecting bid: `, bid);
             return false;
@@ -450,6 +367,7 @@ export const spec = {
   buildRequests(validBidRequests, bidderRequest) {
     const imps = [];
 <<<<<<< HEAD
+<<<<<<< HEAD
 
     for (let validBidRequestIndex = 0; validBidRequestIndex < validBidRequests.length; validBidRequestIndex++) {
       const validBidRequest = validBidRequests[validBidRequestIndex];
@@ -460,20 +378,24 @@ export const spec = {
 
 =======
     const aliases = {};
+=======
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
 
-    for (const validBidRequest of validBidRequests) {
+    for (let validBidRequestIndex = 0; validBidRequestIndex < validBidRequests.length; validBidRequestIndex++) {
+      const validBidRequest = validBidRequests[validBidRequestIndex];
       const _this = this;
 
       const ext = validBidRequest.params.connections.reduce((extBuilder, connection) => {
-        const adapter = BB_HELPERS.getBidAdapterFromManager(connection);
-        BB_HELPERS.transformBidParams(adapter, validBidRequest, connection);
         extBuilder[connection] = validBidRequest.params[connection];
 
+<<<<<<< HEAD
         // check for and store valid aliases to add to the request
         let connectionAliases = BB_HELPERS.getAliasesFromRegistry(connection);
         if (connectionAliases) aliases[connection] = connectionAliases;
 
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
         if (_this.syncStore.bidders.indexOf(connection) === -1) _this.syncStore.bidders.push(connection);
 
         return extBuilder;
@@ -514,9 +436,12 @@ export const spec = {
     BB_HELPERS.addSiteAppDevice(request, bidderRequest.refererInfo && bidderRequest.refererInfo.referer);
     BB_HELPERS.addSchain(request, validBidRequests);
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     BB_HELPERS.addAliases(request, aliases);
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+>>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
     BB_HELPERS.addCurrency(request);
     BB_HELPERS.addUserIds(request, validBidRequests);
     BB_HELPERS.addDigiTrust(request, validBidRequests);
