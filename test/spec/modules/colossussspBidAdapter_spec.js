@@ -119,7 +119,8 @@ describe('ColossussspAdapter', function () {
         expect(placement).to.have.property('eids')
         expect(placement.eids).to.be.an('array')
         expect(placement.eids.length).to.be.equal(4)
-        for (let v of placement.eids) {
+        for (let index in placement.eids) {
+          let v = placement.eids[index];
           expect(v).to.have.all.keys('source', 'uids')
           expect(v.source).to.be.oneOf(['britepool.com', 'identityLink', 'adserver.org', 'id5-sync.com'])
           expect(v.uids).to.be.an('array');
