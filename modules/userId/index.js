@@ -586,7 +586,7 @@ export function init(config) {
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
-  (getGlobal()).getUserIdsAsEids = getUserIdsAsEids
+  (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
 }
 
 // init config update listener to start the application
