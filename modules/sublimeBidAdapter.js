@@ -1,7 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
-import * as url from '../src/url.js';
 
 const BIDDER_CODE = 'sublime';
 const BIDDER_GVLID = 114;
@@ -55,7 +54,7 @@ export function sendEvent(eventName) {
 
   log('Sending pixel for event: ' + eventName, eventObject);
 
-  const queryString = url.formatQS(eventObject);
+  const queryString = utils.formatQS(eventObject);
   utils.triggerPixel('https://' + SUBLIME_ANTENNA + '/?' + queryString);
 }
 
