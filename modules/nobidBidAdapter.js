@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.4';
+window.nobidVersion = '1.2.5';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -197,11 +197,11 @@ function nobidBuildRequests(bids, bidderRequest) {
     siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
     var placementId = bid.params['placementId'];
 
-    var adType = false;
-    if (bid && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context == 'instream') {
-      adType = 'video';
-    } else {
-      adType = 'banner';
+    var adType = 'banner';
+    const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+    const context        = utils.deepAccess(bid, 'mediaTypes.video.context');
+    if (bid.mediaType === VIDEO || (videoMediaType && context !== 'instream')) {
+      adType = 'video';	
     }
 
     if (siteId) {
