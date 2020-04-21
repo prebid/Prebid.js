@@ -2,7 +2,7 @@ import { expect } from 'chai';
 
 import parse from 'url-parse';
 import { buildVastUrl } from 'modules/konduitWrapper.js';
-import { parseQS } from 'src/url.js';
+import { parseQS } from 'src/utils.js';
 import { config } from 'src/config.js';
 
 describe('The Konduit vast wrapper module', function () {

@@ -1,5 +1,4 @@
 import * as utils from '../src/utils.js'
-import {parse} from '../src/url.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 
@@ -62,7 +61,7 @@ export const spec = {
       const page = bidderRequest.refererInfo.referer
 
       // clever trick to get the domain
-      const domain = parse(page).hostname
+      const domain = utils.parseUrl(page).hostname
 
       const sovrnBidReq = {
         id: utils.getUniqueIdentifierStr(),
