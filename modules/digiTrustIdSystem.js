@@ -95,6 +95,31 @@ function writeDigiId(id) {
 }
 
 /**
+ * Tests to see if the current browser is FireFox
+ */
+function isFirefoxBrowser(ua) {
+  ua = ua || navigator.userAgent;
+  ua = ua.toLowerCase();
+  if (ua.indexOf('firefox') !== -1) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Test to see if the user has a browser that is disallowed for making AJAX
+ * requests due to the behavior not supported DigiTrust ID Cookie.
+ */
+function isDisallowedBrowserForApiCall() {
+  if (utils.isSafariBrowser()) {
+    return true;
+  } else if (isFirefoxBrowser()) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Set up a DigiTrust facade object to mimic the API
  *
  */
@@ -169,6 +194,14 @@ function initDigitrustFacade(config) {
       // check gdpr vendor here. Full DigiTrust library has vendor check built in
       gdprConsent.hasConsent(null, function (hasConsent) {
         if (hasConsent) {
+          if (isDisallowedBrowserForApiCall()) {
+            let resultObj = {
+              success: false,
+              err: 'Your browser does not support DigiTrust Identity'
+            }
+            checkAndCallInitializeCb(resultObj);
+            return;
+          }
           callApi(opts);
         }
       })
