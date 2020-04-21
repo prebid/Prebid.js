@@ -199,9 +199,9 @@ function nobidBuildRequests(bids, bidderRequest) {
 
     var adType = 'banner';
     const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-    const context        = utils.deepAccess(bid, 'mediaTypes.video.context');
+    const context = utils.deepAccess(bid, 'mediaTypes.video.context');
     if (bid.mediaType === VIDEO || (videoMediaType && context !== 'instream')) {
-      adType = 'video';	
+      adType = 'video';
     }
 
     if (siteId) {
