@@ -3,7 +3,6 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import find from 'core-js/library/fn/array/find.js';
 import includes from 'core-js/library/fn/array/includes.js';
-import {parse as parseUrl} from '../src/url.js';
 
 /*
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -274,7 +273,7 @@ function getLanguage() {
  * Creates site description object
  */
 function createSite(refInfo) {
-  let url = parseUrl(refInfo.referer);
+  let url = utils.parseUrl(refInfo.referer);
   let site = {
     'domain': url.hostname,
     'page': `${url.protocol}://${url.hostname}${url.pathname}`

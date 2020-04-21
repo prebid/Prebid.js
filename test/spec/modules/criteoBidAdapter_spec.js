@@ -7,17 +7,20 @@ import { config } from '../../../src/config.js';
 import { NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('The Criteo bidding adapter', function () {
-  let utilsMock;
+  let utilsMock, sandbox;
 
   beforeEach(function () {
     // Remove FastBid to avoid side effects
     localStorage.removeItem('criteo_fast_bid');
     utilsMock = sinon.mock(utils);
+
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(function() {
     global.Criteo = undefined;
     utilsMock.restore();
+    sandbox.restore();
   });
 
   describe('isBidRequestValid', function () {
@@ -704,6 +707,115 @@ describe('The Criteo bidding adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.user).to.not.be.null;
       expect(request.data.user.ceh).to.equal('hashedemail');
+    });
+
+    it('should properly build a request without first party data', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123
+          }
+        },
+      ];
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+        };
+        return utils.deepAccess(config, key);
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.publisher.ext).to.equal(undefined);
+      expect(request.data.user.ext).to.equal(undefined);
+      expect(request.data.slots[0].ext).to.equal(undefined);
+    });
+
+    it('should properly build a request with criteo specific ad unit first party data', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          }
+        },
+      ];
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+        };
+        return utils.deepAccess(config, key);
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].ext).to.deep.equal({
+        bidfloor: 0.75,
+      });
+    });
+
+    it('should properly build a request with first party data', function () {
+      const contextData = {
+        keywords: ['power tools'],
+        data: {
+          pageType: 'article'
+        }
+      };
+      const userData = {
+        gender: 'M',
+        data: {
+          registered: true
+        }
+      };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          fpd: {
+            context: {
+              data: {
+                someContextAttribute: 'abc'
+              }
+            }
+          }
+        },
+      ];
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+          fpd: {
+            context: contextData,
+            user: userData
+          }
+        };
+        return utils.deepAccess(config, key);
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.publisher.ext).to.deep.equal(contextData);
+      expect(request.data.user.ext).to.deep.equal(userData);
+      expect(request.data.slots[0].ext).to.deep.equal({
+        bidfloor: 0.75,
+        data: {
+          someContextAttribute: 'abc'
+        }
+      });
     });
   });
 

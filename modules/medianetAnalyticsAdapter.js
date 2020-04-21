@@ -4,7 +4,6 @@ import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import * as url from '../src/url.js';
 import { getPriceGranularity, AUCTION_IN_PROGRESS, AUCTION_COMPLETED } from '../src/auction.js'
 
 const analyticsType = 'endpoint';
@@ -120,7 +119,7 @@ class Configure {
 
   init() {
     // Forces Logging % to 100%
-    let urlObj = url.parse(pageDetails.page);
+    let urlObj = utils.parseUrl(pageDetails.page);
     if (utils.deepAccess(urlObj, 'search.medianet_test') || urlObj.hostname === 'localhost') {
       this.loggingPercent = 100;
       this.ajaxState = CONFIG_PASS;
@@ -144,7 +143,7 @@ class PageDetail {
     const twitterUrl = this._getUrlFromSelector('meta[name="twitter:url"]', 'content');
     const refererInfo = getRefererInfo();
 
-    this.domain = url.parse(refererInfo.referer).host;
+    this.domain = utils.parseUrl(refererInfo.referer).host;
     this.page = refererInfo.referer;
     this.is_top = refererInfo.reachedTop;
     this.referrer = this._getTopWindowReferrer();
@@ -346,11 +345,15 @@ function auctionInitHandler({auctionId, timestamp}) {
   }
 }
 
-function bidRequestedHandler({ auctionId, auctionStart, bids, start, timeout, uspConsent, gdprConsent }) {
+function bidRequestedHandler({ auctionId, auctionStart, bids, start, timeout, uspConsent, gdpr }) {
   if (!(auctions[auctionId] instanceof Auction)) {
     return;
   }
-  config.gdprConsent = config.gdprConsent || gdprConsent;
+
+  if (gdpr && gdpr.gdprApplies) {
+    config.gdprConsent = gdpr.consentString || '';
+  }
+
   config.uspConsent = config.uspConsent || uspConsent;
 
   bids.forEach(bid => {
@@ -542,7 +545,15 @@ function fireAuctionLog(acid, adtag, isBidWonEvent) {
 }
 
 function formatQS(data) {
-  return utils._map(data, (value, key) => value === undefined ? key + '=' : key + '=' + encodeURIComponent(value)).join('&');
+  return utils._map(data, (value, key) => {
+    if (value === undefined) {
+      return key + '=';
+    }
+    if (utils.isPlainObject(value)) {
+      value = JSON.stringify(value);
+    }
+    return key + '=' + encodeURIComponent(value);
+  }).join('&');
 }
 
 function firePixel(qs) {

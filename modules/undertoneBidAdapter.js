@@ -2,7 +2,7 @@
  * Adapter to send bids to Undertone
  */
 
-import * as urlUtils from '../src/url.js';
+import { parseUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'undertone';
@@ -92,7 +92,7 @@ export const spec = {
       }
     };
     const referer = bidderRequest.refererInfo.referer;
-    const hostname = urlUtils.parse(referer).hostname;
+    const hostname = parseUrl(referer).hostname;
     let domain = extractDomainFromHost(hostname);
     const pageUrl = getCanonicalUrl() || referer;
 
