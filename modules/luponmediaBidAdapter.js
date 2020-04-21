@@ -106,11 +106,12 @@ export const spec = {
           }
         }
       });
-      hasSynced = true;
-      return allUserSyncs;
     } else {
       utils.logWarn('Luponmedia: Please enable iframe/pixel based user sync.');
     }
+
+    hasSynced = true;
+    return allUserSyncs;
   },
 };
 
