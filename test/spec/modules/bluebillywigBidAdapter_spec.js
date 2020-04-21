@@ -1,10 +1,22 @@
 import { expect } from 'chai';
-import { spec, BB_CONSTANTS } from 'modules/bluebillywigBidAdapter.js';
+import { spec } from 'modules/bluebillywigBidAdapter.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone, deepAccess } from 'src/utils.js';
 import { config } from 'src/config.js';
 import { VIDEO } from 'src/mediaTypes.js';
+
+const BB_CONSTANTS = {
+  BIDDER_CODE: 'bluebillywig',
+  AUCTION_URL: '$$URL_STARTpbs.bluebillywig.com/openrtb2/auction?pub=$$PUBLICATION',
+  SYNC_URL: '$$URL_STARTpbs.bluebillywig.com/static/cookie-sync.html?pub=$$PUBLICATION',
+  RENDERER_URL: 'https://$$PUBLICATION.bbvms.com/r/$$RENDERER.js',
+  DEFAULT_TIMEOUT: 5000,
+  DEFAULT_TTL: 300,
+  DEFAULT_WIDTH: 768,
+  DEFAULT_HEIGHT: 432,
+  DEFAULT_NET_REVENUE: true
+};
 
 describe('BlueBillywigAdapter', () => {
   describe('isBidRequestValid', () => {
@@ -463,7 +475,7 @@ describe('BlueBillywigAdapter', () => {
       const userId = { tdid: 123 };
 
       const newBaseValidBidRequests = deepClone(baseValidBidRequests);
-      newBaseValidBidRequests[0].userId = userId;
+      newBaseValidBidRequests[0].userId = { criteoId: 'sample-userid' };
 
       const request = spec.buildRequests(newBaseValidBidRequests, validBidderRequest);
       const payload = JSON.parse(request.data);
