@@ -72,6 +72,10 @@ export const spec = {
         }
         data.gdpr_consent = bidderRequest.gdprConsent.consentString;
       }
+      // Add CCPA consent string
+      if (bidderRequest && bidderRequest.uspConsent) {
+        data.usp = bidderRequest.uspConsent;
+      }
 
       let dimType = DIM_TYPE[String(bidRequest.params.dimId)]
       if (dimType) {
