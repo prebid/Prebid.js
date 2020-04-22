@@ -14,19 +14,22 @@
  * @author Emoteev Engineering <engineering@emoteev.io>.
  */
 
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 import {
   triggerPixel,
   getUniqueIdentifierStr,
   contains,
   deepAccess,
   isArray,
-  getParameterByName
-} from '../src/utils';
-import {config} from '../src/config';
-import * as url from '../src/url';
-import {getCookie} from './pubCommonId';
+  isInteger,
+  getParameterByName,
+  buildUrl
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 export const BIDDER_CODE = 'emoteev';
 
@@ -35,8 +38,8 @@ export const BIDDER_CODE = 'emoteev';
  */
 export const ADAPTER_VERSION = '1.35.0';
 
-export const DOMAIN = 'prebid.emoteev.io';
-export const DOMAIN_STAGING = 'prebid-staging.emoteev.io';
+export const DOMAIN = 'prebid.emoteev.xyz';
+export const DOMAIN_STAGING = 'prebid-staging.emoteev.xyz';
 export const DOMAIN_DEVELOPMENT = 'localhost:3000';
 
 /**
@@ -60,6 +63,19 @@ export const ON_ADAPTER_CALLED = 'on_adapter_called';
 export const ON_BID_WON = 'on_bid_won';
 export const ON_BIDDER_TIMEOUT = 'on_bidder_timeout';
 
+export const IN_CONTENT = 'content';
+export const FOOTER = 'footer';
+export const OVERLAY = 'overlay';
+export const WALLPAPER = 'wallpaper';
+
+/**
+ * Vendor ID assigned to Emoteev from the Global Vendor & CMP List.
+ *
+ * See https://vendorlist.consensu.org/vendorinfo.json for more information.
+ * @type {number}
+ */
+export const VENDOR_ID = 15;
+
 /**
  * Pure function. See http://prebid.org/dev-docs/bidder-adaptor.html#valid-build-requests-array for detailed semantic.
  *
@@ -71,6 +87,8 @@ export const isBidRequestValid = (bidRequest) => {
     bidRequest &&
     bidRequest.params &&
     deepAccess(bidRequest, 'params.adSpaceId') &&
+    validateContext(deepAccess(bidRequest, 'params.context')) &&
+    validateExternalId(deepAccess(bidRequest, 'params.externalId')) &&
     bidRequest.bidder === BIDDER_CODE &&
     validateSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes')));
 };
@@ -89,7 +107,7 @@ export const buildRequests = (env, debug, currency, validBidRequests, bidderRequ
   return {
     method: 'POST',
     url: bidderUrl(env),
-    data: JSON.stringify(requestsPayload(debug, currency, validBidRequests, bidderRequest))
+    data: JSON.stringify(requestsPayload(debug, currency, validBidRequests, bidderRequest)) // Keys with undefined values will be filtered out.
   };
 };
 
@@ -216,7 +234,7 @@ export const domain = (env) => {
  * @param {string} env Emoteev environment parameter
  * @returns {string} The full URL which events is sent to.
  */
-export const eventsUrl = env => url.format({
+export const eventsUrl = env => buildUrl({
   protocol: (env === DEVELOPMENT) ? 'http' : 'https',
   hostname: domain(env),
   pathname: EVENTS_PATH
@@ -228,7 +246,7 @@ export const eventsUrl = env => url.format({
  * @param {string} env Emoteev environment parameter
  * @returns {string} The full URL which bidderRequest is sent to.
  */
-export const bidderUrl = env => url.format({
+export const bidderUrl = env => buildUrl({
   protocol: (env === DEVELOPMENT) ? 'http' : 'https',
   hostname: domain(env),
   pathname: BIDDER_PATH
@@ -240,7 +258,7 @@ export const bidderUrl = env => url.format({
  * @param {string} env Emoteev environment parameter
  * @returns {string} The full URL called for iframe-based user sync
  */
-export const userSyncIframeUrl = env => url.format({
+export const userSyncIframeUrl = env => buildUrl({
   protocol: (env === DEVELOPMENT) ? 'http' : 'https',
   hostname: domain(env),
   pathname: USER_SYNC_IFRAME_PATH
@@ -252,7 +270,7 @@ export const userSyncIframeUrl = env => url.format({
  * @param {string} env Emoteev environment parameter
  * @returns {string} The full URL called for image-based user sync
  */
-export const userSyncImageUrl = env => url.format({
+export const userSyncImageUrl = env => buildUrl({
   protocol: (env === DEVELOPMENT) ? 'http' : 'https',
   hostname: domain(env),
   pathname: USER_SYNC_IMAGE_PATH
@@ -264,7 +282,23 @@ export const userSyncImageUrl = env => url.format({
  * @param {Array<Array<int>>} sizes
  * @returns {boolean} are sizes valid?
  */
-const validateSizes = sizes => isArray(sizes) && sizes.some(size => isArray(size) && size.length === 2);
+export const validateSizes = sizes => isArray(sizes) && sizes.length > 0 && sizes.every(size => isArray(size) && size.length === 2);
+
+/**
+ * Pure function.
+ *
+ * @param {string} context
+ * @returns {boolean} is param `context` valid?
+ */
+export const validateContext = context => contains([IN_CONTENT, FOOTER, OVERLAY, WALLPAPER], context);
+
+/**
+ * Pure function.
+ *
+ * @param {(number|null|undefined)} externalId
+ * @returns {boolean} is param `externalId` valid?
+ */
+export const validateExternalId = externalId => externalId === undefined || externalId === null || (isInteger(externalId) && externalId > 0);
 
 /**
  * Pure function.
@@ -281,6 +315,14 @@ export const conformBidRequest = bidRequest => {
     bidderRequestId: bidRequest.bidderRequestId,
   };
 };
+
+/**
+ * Pure function.
+ *
+ * @param {object} bidderRequest
+ * @returns {(boolean|undefined)} raw consent data.
+ */
+export const gdprConsent = (bidderRequest) => (deepAccess(bidderRequest, 'gdprConsent.vendorData.vendorConsents') || {})[VENDOR_ID];
 
 /**
  * Pure function.
@@ -306,7 +348,7 @@ export const requestsPayload = (debug, currency, validBidRequests, bidderRequest
       isWebGLEnabled(document)),
     userAgent: navigator.userAgent,
     gdprApplies: deepAccess(bidderRequest, 'gdprConsent.gdprApplies'),
-    gdprConsent: deepAccess(bidderRequest, 'gdprConsent.consentString'),
+    gdprConsent: gdprConsent(bidderRequest),
   };
 };
 
@@ -426,7 +468,7 @@ export const getDeviceInfo = (deviceDimensions, viewDimensions, documentDimensio
  * Pure function
  * @param {object} config pbjs config value
  * @param {string} parameter Environment override from URL query param.
- * @returns One of [PRODUCTION, STAGING, DEVELOPMENT].
+ * @returns {string} One of [PRODUCTION, STAGING, DEVELOPMENT].
  */
 export const resolveEnv = (config, parameter) => {
   const configEnv = deepAccess(config, 'emoteev.env');
@@ -466,12 +508,12 @@ export const spec = {
       bidderRequest),
   interpretResponse: interpretResponse,
   onBidWon: (bidObject) =>
-    triggerPixel(url.format(onBidWon(
+    triggerPixel(buildUrl(onBidWon(
       resolveEnv(config.getConfig(), getParameterByName('emoteevEnv')),
-      getCookie('_pubcid'),
+      storage.getCookie('_pubcid'),
       bidObject))),
   onTimeout: (bidRequest) =>
-    triggerPixel(url.format(onTimeout(
+    triggerPixel(buildUrl(onTimeout(
       resolveEnv(config.getConfig(), getParameterByName('emoteevEnv')),
       bidRequest))),
   getUserSyncs: (syncOptions) =>

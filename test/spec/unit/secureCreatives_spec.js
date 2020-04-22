@@ -1,8 +1,8 @@
 import {
   _sendAdToCreative
-} from '../../../src/secureCreatives';
+} from '../../../src/secureCreatives.js';
 import { expect } from 'chai';
-import * as utils from 'src/utils';
+import * as utils from 'src/utils.js';
 
 describe('secureCreatives', () => {
   describe('_sendAdToCreative', () => {

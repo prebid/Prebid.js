@@ -1,12 +1,10 @@
-import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter';
+import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter.js';
 import {expect} from 'chai';
+import {server} from 'test/mocks/xhr.js';
 let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('Prebid Manager Analytics Adapter', function () {
-  let xhr;
-  let requests;
-
   let bidWonEvent = {
     'bidderCode': 'appnexus',
     'width': 300,
@@ -33,18 +31,8 @@ describe('Prebid Manager Analytics Adapter', function () {
     'adUrl': 'ad url'
   };
 
-  before(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-    xhr.onCreate = request => requests.push(request);
-  });
-
-  after(function () {
-    xhr.restore();
-  });
-
   describe('Prebid Manager Analytic tests', function () {
     beforeEach(function () {
-      requests = [];
       sinon.stub(events, 'getEvents').returns([]);
     });
 
@@ -67,7 +55,6 @@ describe('Prebid Manager Analytics Adapter', function () {
     });
 
     it('bid won event', function() {
-      xhr.onCreate = request => requests.push(request);
       let bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
@@ -79,11 +66,11 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.BID_WON, bidWonEvent);
       prebidmanagerAnalytics.flush();
 
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://endpoint.prebidmanager.com/endpoint');
-      expect(requests[0].requestBody.substring(0, 2)).to.equal('1:');
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://endpoint.prebidmanager.com/endpoint');
+      expect(server.requests[0].requestBody.substring(0, 2)).to.equal('1:');
 
-      const pmEvents = JSON.parse(requests[0].requestBody.substring(2));
+      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
       expect(pmEvents.pageViewId).to.exist;
       expect(pmEvents.bundleId).to.equal(bundleId);
       expect(pmEvents.ver).to.equal(1);
@@ -112,6 +99,40 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
       sinon.assert.callCount(prebidmanagerAnalytics.track, 6);
+    });
+  });
+
+  describe('build utm tag data', function () {
+    beforeEach(function () {
+      localStorage.setItem('pm_utm_source', 'utm_source');
+      localStorage.setItem('pm_utm_medium', 'utm_medium');
+      localStorage.setItem('pm_utm_campaign', 'utm_camp');
+      localStorage.setItem('pm_utm_term', '');
+      localStorage.setItem('pm_utm_content', '');
+    });
+    afterEach(function () {
+      localStorage.removeItem('pm_utm_source');
+      localStorage.removeItem('pm_utm_medium');
+      localStorage.removeItem('pm_utm_campaign');
+      localStorage.removeItem('pm_utm_term');
+      localStorage.removeItem('pm_utm_content');
+      prebidmanagerAnalytics.disableAnalytics()
+    });
+    it('should build utm data from local storage', function () {
+      prebidmanagerAnalytics.enableAnalytics({
+        provider: 'prebidmanager',
+        options: {
+          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        }
+      });
+
+      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
+
+      expect(pmEvents.utmTags.utm_source).to.equal('utm_source');
+      expect(pmEvents.utmTags.utm_medium).to.equal('utm_medium');
+      expect(pmEvents.utmTags.utm_campaign).to.equal('utm_camp');
+      expect(pmEvents.utmTags.utm_term).to.equal('');
+      expect(pmEvents.utmTags.utm_content).to.equal('');
     });
   });
 });

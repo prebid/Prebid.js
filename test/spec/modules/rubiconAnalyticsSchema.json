@@ -191,6 +191,9 @@
           }
         ]
       }
+    },
+    "wrapperName": {
+      "type": "string"
     }
   },
   "definitions": {
@@ -289,7 +292,8 @@
           "enum": [
             "success",
             "no-bid",
-            "error"
+            "error",
+            "rejected"
           ]
         },
         "error": {
