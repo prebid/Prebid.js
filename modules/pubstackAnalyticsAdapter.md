@@ -6,4 +6,4 @@ Maintainer: support@pubstack.io
 
 # Description
 
-This is the Pubstack Analytics Adapter. [Contact Guillaume from out Support Team](mailto:support@pubstack.io) to start analyzing your HB stack.
+This is the Pubstack Analytics Adapter. [Contact Guillaume from our Support Team](mailto:support@pubstack.io) to start analyzing your HB stack.
