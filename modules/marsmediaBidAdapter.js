@@ -1,8 +1,8 @@
 'use strict';
 
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 function MarsmediaAdapter() {
   this.code = 'marsmedia';
@@ -16,7 +16,7 @@ function MarsmediaAdapter() {
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
   let that = this;
-  let version = '2.1';
+  let version = '2.2';
 
   this.isBidRequestValid = function (bid) {
     return !!(bid.params && bid.params.zoneId);
@@ -172,7 +172,7 @@ function MarsmediaAdapter() {
         }
       },
       at: 1,
-      tmax: 1000,
+      tmax: 650,
       regs: {
         ext: {
           gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false
@@ -203,7 +203,7 @@ function MarsmediaAdapter() {
       return [];
     }
 
-    var uri = 'https://bid306.rtbsrv.com/bidder/?bid=3mhdom&zoneId=' + fallbackZoneId;
+    var uri = 'https://hb.azeriondigital.com/bidder/?bid=3mhdom&zoneId=' + fallbackZoneId;
 
     var fat = /(^v|(\.0)+$)/gi;
     var prebidVersion = '$prebid.version$';
@@ -240,7 +240,7 @@ function MarsmediaAdapter() {
       let bid = responses[i];
       let bidRequest = slotsToBids[bid.impid];
       let bidResponse = {
-        requestId: bidRequest.id,
+        requestId: bidRequest.bidId,
         bidderCode: that.code,
         cpm: parseFloat(bid.price),
         width: bid.w,
@@ -252,12 +252,17 @@ function MarsmediaAdapter() {
       };
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
-        bidResponse.vastUrl = bid.adm;
+        if (bid.adm.charAt(0) === '<') {
+          bidResponse.vastXml = bid.adm;
+        } else {
+          bidResponse.vastUrl = bid.adm;
+        }
         bidResponse.mediaType = 'video';
         bidResponse.ttl = 600;
       } else {
         bidResponse.ad = bid.adm;
       }
+
       bids.push(bidResponse);
     }
 

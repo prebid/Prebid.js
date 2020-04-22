@@ -1,24 +1,25 @@
 /** @module pbjs */
 
-import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, isArrayOfNums } from './utils';
-import { listenMessagesFromCreative } from './secureCreatives';
+import { getGlobal } from './prebidGlobal.js';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, isArrayOfNums } from './utils.js';
+import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
-import { config } from './config';
-import { auctionManager } from './auctionManager';
-import { targeting } from './targeting';
-import { hook } from './hook';
-import { sessionLoader } from './debugging';
-import includes from 'core-js/library/fn/array/includes';
-import { adunitCounter } from './adUnits';
-import { isRendererRequired, executeRenderer } from './Renderer';
-import { createBid } from './bidfactory';
+import { config } from './config.js';
+import { auctionManager } from './auctionManager.js';
+import { targeting } from './targeting.js';
+import { hook } from './hook.js';
+import { sessionLoader } from './debugging.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import { adunitCounter } from './adUnits.js';
+import { isRendererRequired, executeRenderer } from './Renderer.js';
+import { createBid } from './bidfactory.js';
+import { storageCallbacks } from './storageManager.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
 const utils = require('./utils.js');
-const adapterManager = require('./adapterManager').default;
-const events = require('./events');
+const adapterManager = require('./adapterManager.js').default;
+const events = require('./events.js');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
@@ -68,20 +69,74 @@ function setRenderSize(doc, width, height) {
   }
 }
 
-export const checkAdUnitSetup = hook('sync', function (adUnits) {
-  function validateSizes(sizes, targLength) {
-    let cleanSizes = [];
-    if (utils.isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
-      // check if an array of arrays or array of numbers
-      if (sizes.every(sz => isArrayOfNums(sz, 2))) {
-        cleanSizes = sizes;
-      } else if (isArrayOfNums(sizes, 2)) {
-        cleanSizes.push(sizes);
-      }
+function validateSizes(sizes, targLength) {
+  let cleanSizes = [];
+  if (utils.isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
+    // check if an array of arrays or array of numbers
+    if (sizes.every(sz => isArrayOfNums(sz, 2))) {
+      cleanSizes = sizes;
+    } else if (isArrayOfNums(sizes, 2)) {
+      cleanSizes.push(sizes);
     }
-    return cleanSizes;
   }
+  return cleanSizes;
+}
 
+function validateBannerMediaType(adUnit) {
+  const banner = adUnit.mediaTypes.banner;
+  const bannerSizes = validateSizes(banner.sizes);
+  if (bannerSizes.length > 0) {
+    banner.sizes = bannerSizes;
+    // Deprecation Warning: This property will be deprecated in next release in favor of adUnit.mediaTypes.banner.sizes
+    adUnit.sizes = bannerSizes;
+  } else {
+    utils.logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
+    delete adUnit.mediaTypes.banner
+  }
+}
+
+function validateVideoMediaType(adUnit) {
+  const video = adUnit.mediaTypes.video;
+  let tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
+
+  const videoSizes = validateSizes(video.playerSize, tarPlayerSizeLen);
+  if (videoSizes.length > 0) {
+    if (tarPlayerSizeLen === 2) {
+      utils.logInfo('Transforming video.playerSize from [640,480] to [[640,480]] so it\'s in the proper format.');
+    }
+    video.playerSize = videoSizes;
+    // Deprecation Warning: This property will be deprecated in next release in favor of adUnit.mediaTypes.video.playerSize
+    adUnit.sizes = videoSizes;
+  } else {
+    utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
+    delete adUnit.mediaTypes.video.playerSize;
+  }
+}
+
+function validateNativeMediaType(adUnit) {
+  const native = adUnit.mediaTypes.native;
+  if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
+    utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
+    delete adUnit.mediaTypes.native.image.sizes;
+  }
+  if (native.image && native.image.aspect_ratios && !Array.isArray(native.image.aspect_ratios)) {
+    utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
+    delete adUnit.mediaTypes.native.image.aspect_ratios;
+  }
+  if (native.icon && native.icon.sizes && !Array.isArray(native.icon.sizes)) {
+    utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
+    delete adUnit.mediaTypes.native.icon.sizes;
+  }
+}
+
+export const adUnitSetupChecks = {
+  validateBannerMediaType,
+  validateVideoMediaType,
+  validateNativeMediaType,
+  validateSizes
+};
+
+export const checkAdUnitSetup = hook('sync', function (adUnits) {
   return adUnits.filter(adUnit => {
     const mediaTypes = adUnit.mediaTypes;
     if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
@@ -90,45 +145,18 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
     }
 
     if (mediaTypes.banner) {
-      const bannerSizes = validateSizes(mediaTypes.banner.sizes);
-      if (bannerSizes.length > 0) {
-        mediaTypes.banner.sizes = bannerSizes;
-        // TODO eventually remove this internal copy once we're ready to deprecate bidders from reading this adUnit.sizes property
-        adUnit.sizes = bannerSizes;
-      } else {
-        utils.logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
-        delete adUnit.mediaTypes.banner;
-      }
+      validateBannerMediaType(adUnit);
     }
 
     if (mediaTypes.video) {
       const video = mediaTypes.video;
       if (video.playerSize) {
-        let tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
-        const videoSizes = validateSizes(video.playerSize, tarPlayerSizeLen);
-        if (videoSizes.length > 0) {
-          adUnit.sizes = video.playerSize = videoSizes;
-        } else {
-          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
-          delete adUnit.mediaTypes.video.playerSize;
-        }
+        validateVideoMediaType(adUnit);
       }
     }
 
     if (mediaTypes.native) {
-      const nativeObj = mediaTypes.native;
-      if (nativeObj.image && nativeObj.image.sizes && !Array.isArray(nativeObj.image.sizes)) {
-        utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
-        delete adUnit.mediaTypes.native.image.sizes;
-      }
-      if (nativeObj.image && nativeObj.image.aspect_ratios && !Array.isArray(nativeObj.image.aspect_ratios)) {
-        utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
-        delete adUnit.mediaTypes.native.image.aspect_ratios;
-      }
-      if (nativeObj.icon && nativeObj.icon.sizes && !Array.isArray(nativeObj.icon.sizes)) {
-        utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
-        delete adUnit.mediaTypes.native.icon.sizes;
-      }
+      validateNativeMediaType(adUnit);
     }
     return true;
   });
@@ -495,6 +523,20 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
   auction.callBids();
   return auction;
 });
+
+export function executeStorageCallbacks(fn, reqBidsConfigObj) {
+  runAll(storageCallbacks);
+  fn.call(this, reqBidsConfigObj);
+  function runAll(queue) {
+    var queued;
+    while ((queued = queue.shift())) {
+      queued();
+    }
+  }
+}
+
+// This hook will execute all storage callbacks which were registered before gdpr enforcement hook was added. Some bidders, user id modules use storage functions when module is parsed but gdpr enforcement hook is not added at that stage as setConfig callbacks are yet to be called. Hence for such calls we execute all the stored callbacks just before requestBids. At this hook point we will know for sure that gdprEnforcement module is added or not
+$$PREBID_GLOBAL$$.requestBids.before(executeStorageCallbacks, 49);
 
 /**
  *

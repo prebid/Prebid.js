@@ -1,14 +1,14 @@
-import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction';
+import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction.js';
 import CONSTANTS from 'src/constants.json';
-import { adjustBids, getMediaTypeGranularity } from 'src/auction';
-import * as auctionModule from 'src/auction';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { createBid } from 'src/bidfactory';
-import { config } from 'src/config';
-import * as store from 'src/videoCache';
-import * as ajaxLib from 'src/ajax';
-import find from 'core-js/library/fn/array/find';
-import { server } from 'test/mocks/xhr';
+import { adjustBids, getMediaTypeGranularity } from 'src/auction.js';
+import * as auctionModule from 'src/auction.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { createBid } from 'src/bidfactory.js';
+import { config } from 'src/config.js';
+import * as store from 'src/videoCache.js';
+import * as ajaxLib from 'src/ajax.js';
+import find from 'core-js/library/fn/array/find.js';
+import { server } from 'test/mocks/xhr.js';
 
 var assert = require('assert');
 
@@ -990,11 +990,19 @@ describe('auctionmanager.js', function () {
     let spec1;
     let auction;
     let ajaxStub;
+    let logMessageStub;
+    let logInfoStub;
+    let logWarnStub;
+    let logErrorStub;
 
     let bids = TEST_BIDS;
     let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
 
     before(function () {
+      logMessageStub = sinon.stub(utils, 'logMessage');
+      logInfoStub = sinon.stub(utils, 'logInfo');
+      logWarnStub = sinon.stub(utils, 'logWarn');
+      logErrorStub = sinon.stub(utils, 'logError');
       let bidRequests = [
         mockBidRequest(bids[0]),
         mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 })
@@ -1006,6 +1014,10 @@ describe('auctionmanager.js', function () {
     });
 
     after(function () {
+      logMessageStub.restore();
+      logInfoStub.restore();
+      logWarnStub.restore();
+      logErrorStub.restore();
       ajaxStub.restore();
       adapterManager.makeBidRequests.restore();
     });
@@ -1046,6 +1058,10 @@ describe('auctionmanager.js', function () {
     });
 
     afterEach(function () {
+      logMessageStub.resetHistory();
+      logInfoStub.resetHistory();
+      logWarnStub.resetHistory();
+      logErrorStub.resetHistory();
       auctionModule.newAuction.restore();
       config.resetConfig();
     });

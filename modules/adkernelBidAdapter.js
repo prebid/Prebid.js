@@ -1,9 +1,8 @@
-import * as utils from '../src/utils';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import {parse as parseUrl} from '../src/url';
+import * as utils from '../src/utils.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 /*
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -15,7 +14,30 @@ import {parse as parseUrl} from '../src/url';
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
   'pos', 'api', 'ext'];
-const VERSION = '1.3';
+const VERSION = '1.4';
+
+const NATIVE_MODEL = [
+  {name: 'title', assetType: 'title'},
+  {name: 'icon', assetType: 'img', type: 1},
+  {name: 'image', assetType: 'img', type: 3},
+  {name: 'body', assetType: 'data', type: 2},
+  {name: 'body2', assetType: 'data', type: 10},
+  {name: 'sponsoredBy', assetType: 'data', type: 1},
+  {name: 'phone', assetType: 'data', type: 8},
+  {name: 'address', assetType: 'data', type: 9},
+  {name: 'price', assetType: 'data', type: 6},
+  {name: 'salePrice', assetType: 'data', type: 7},
+  {name: 'cta', assetType: 'data', type: 12},
+  {name: 'rating', assetType: 'data', type: 3},
+  {name: 'downloads', assetType: 'data', type: 5},
+  {name: 'likes', assetType: 'data', type: 4},
+  {name: 'displayUrl', assetType: 'data', type: 11}
+];
+
+const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
+  acc[val.name] = {id: idx, ...val};
+  return acc;
+}, {});
 
 /**
  * Adapter for requesting bids from AdKernel white-label display platform
@@ -24,7 +46,7 @@ export const spec = {
 
   code: 'adkernel',
   aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon'],
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest &&
       typeof bidRequest.params.host !== 'undefined' &&
@@ -32,7 +54,7 @@ export const spec = {
       !isNaN(Number(bidRequest.params.zoneId)) &&
       bidRequest.params.zoneId > 0 &&
       bidRequest.mediaTypes &&
-      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video);
+      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video || (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native)));
   },
   buildRequests: function(bidRequests, bidderRequest) {
     let impDispatch = dispatchImps(bidRequests, bidderRequest.refererInfo);
@@ -76,12 +98,14 @@ export const spec = {
         prBid.width = rtbBid.w;
         prBid.height = rtbBid.h;
         prBid.ad = formatAdMarkup(rtbBid);
-      }
-      if ('video' in imp) {
+      } else if ('video' in imp) {
         prBid.mediaType = VIDEO;
         prBid.vastUrl = rtbBid.nurl;
         prBid.width = imp.video.w;
         prBid.height = imp.video.h;
+      } else if ('native' in imp) {
+        prBid.mediaType = NATIVE;
+        prBid.native = buildNativeAd(JSON.parse(rtbBid.adm));
       }
       return prBid;
     });
@@ -138,11 +162,62 @@ function buildImp(bidRequest, secure) {
         .filter(key => includes(VIDEO_TARGETING, key))
         .forEach(key => imp.video[key] = bidRequest.params.video[key]);
     }
+  } else if (utils.deepAccess(bidRequest, 'mediaTypes.native')) {
+    let nativeRequest = buildNativeRequest(bidRequest.mediaTypes.native);
+    imp.native = {
+      ver: '1.1',
+      request: JSON.stringify(nativeRequest)
+    }
   }
   if (secure) {
     imp.secure = 1;
   }
   return imp;
+}
+
+/**
+ * Builds native request from native adunit
+ */
+function buildNativeRequest(nativeReq) {
+  let request = {ver: '1.1', assets: []};
+  for (let k of Object.keys(nativeReq)) {
+    let v = nativeReq[k];
+    let desc = NATIVE_INDEX[k];
+    if (desc === undefined) {
+      continue;
+    }
+    let assetRoot = {
+      id: desc.id,
+      required: ~~v.required,
+    };
+    if (desc.assetType === 'img') {
+      assetRoot[desc.assetType] = buildImageAsset(desc, v);
+    } else if (desc.assetType === 'data') {
+      assetRoot.data = utils.cleanObj({type: desc.type, len: v.len});
+    } else if (desc.assetType === 'title') {
+      assetRoot.title = {len: v.len || 90};
+    } else {
+      return;
+    }
+    request.assets.push(assetRoot);
+  }
+  return request;
+}
+
+/**
+ *  Builds image asset request
+ */
+function buildImageAsset(desc, val) {
+  let img = {
+    type: desc.type
+  };
+  if (val.sizes) {
+    [img.w, img.h] = val.sizes;
+  } else if (val.aspect_ratios) {
+    img.wmin = val.aspect_ratios[0].min_width;
+    img.hmin = val.aspect_ratios[0].min_height;
+  }
+  return utils.cleanObj(img);
 }
 
 /**
@@ -198,7 +273,7 @@ function getLanguage() {
  * Creates site description object
  */
 function createSite(refInfo) {
-  let url = parseUrl(refInfo.referer);
+  let url = utils.parseUrl(refInfo.referer);
   let site = {
     'domain': url.hostname,
     'page': `${url.protocol}://${url.hostname}${url.pathname}`
@@ -223,4 +298,52 @@ function formatAdMarkup(bid) {
     adm += utils.createTrackPixelHtml(`${bid.nurl}&px=1`);
   }
   return adm;
+}
+
+/**
+ * Basic validates to comply with platform requirements
+ */
+function validateNativeAdUnit(adUnit) {
+  return validateNativeImageSize(adUnit.image) && validateNativeImageSize(adUnit.icon) &&
+    !utils.deepAccess(adUnit, 'privacyLink.required') && // not supported yet
+    !utils.deepAccess(adUnit, 'privacyIcon.required'); // not supported yet
+}
+
+/**
+ * Validates image asset size definition
+ */
+function validateNativeImageSize(img) {
+  if (!img) {
+    return true;
+  }
+  if (img.sizes) {
+    return utils.isArrayOfNums(img.sizes, 2);
+  }
+  if (utils.isArray(img.aspect_ratios)) {
+    return img.aspect_ratios.length > 0 && img.aspect_ratios[0].min_height && img.aspect_ratios[0].min_width;
+  }
+  return true;
+}
+
+/**
+ * Creates native ad for native 1.1 response
+ */
+function buildNativeAd(nativeResp) {
+  const {assets, link, imptrackers, jstracker, privacy} = nativeResp.native;
+  let nativeAd = {
+    clickUrl: link.url,
+    impressionTrackers: imptrackers,
+    javascriptTrackers: jstracker ? [jstracker] : undefined,
+    privacyLink: privacy,
+  };
+  utils._each(assets, asset => {
+    let assetName = NATIVE_MODEL[asset.id].name;
+    let assetType = NATIVE_MODEL[asset.id].assetType;
+    nativeAd[assetName] = asset[assetType].text || asset[assetType].value || utils.cleanObj({
+      url: asset[assetType].url,
+      width: asset[assetType].w,
+      height: asset[assetType].h
+    });
+  });
+  return utils.cleanObj(nativeAd);
 }

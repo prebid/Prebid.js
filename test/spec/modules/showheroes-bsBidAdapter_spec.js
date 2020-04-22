@@ -1,7 +1,7 @@
 import {expect} from 'chai'
-import {spec} from 'modules/showheroes-bsBidAdapter'
-import {newBidder} from 'src/adapters/bidderFactory'
-import {VIDEO, BANNER} from 'src/mediaTypes'
+import {spec} from 'modules/showheroes-bsBidAdapter.js'
+import {newBidder} from 'src/adapters/bidderFactory.js'
+import {VIDEO, BANNER} from 'src/mediaTypes.js'
 
 const bidderRequest = {
   refererInfo: {
@@ -79,6 +79,22 @@ const bidRequestBanner = {
   }
 }
 
+const bidRequestBannerMultiSizes = {
+  ...bidRequestCommonParams,
+  ...{
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[640, 360], [480, 320]]
+      }
+    }
+  }
+}
+
+const bidRequestVideoAndBanner = {
+  ...bidRequestBanner,
+  ...bidRequestVideo
+}
+
 describe('shBidAdapter', function () {
   const adapter = newBidder(spec)
 
@@ -120,8 +136,8 @@ describe('shBidAdapter', function () {
       }], bidderRequest)
       const payload = request.data.requests[0];
       expect(payload).to.be.an('object');
-      expect(payload.video).to.have.property('width', 640);
-      expect(payload.video).to.have.property('height', 480);
+      expect(payload.size).to.have.property('width', 640);
+      expect(payload.size).to.have.property('height', 480);
 
       const request2 = spec.buildRequests([{
         'params': {},
@@ -130,8 +146,8 @@ describe('shBidAdapter', function () {
       }], bidderRequest)
       const payload2 = request2.data.requests[0];
       expect(payload).to.be.an('object');
-      expect(payload2.video).to.have.property('width', 320);
-      expect(payload2.video).to.have.property('height', 240);
+      expect(payload2.size).to.have.property('width', 320);
+      expect(payload2.size).to.have.property('height', 240);
     })
 
     it('should get size from mediaTypes when sizes property is empty', function () {
@@ -146,8 +162,8 @@ describe('shBidAdapter', function () {
       }], bidderRequest)
       const payload = request.data.requests[0];
       expect(payload).to.be.an('object');
-      expect(payload.video).to.have.property('width', 640);
-      expect(payload.video).to.have.property('height', 480);
+      expect(payload.size).to.have.property('width', 640);
+      expect(payload.size).to.have.property('height', 480);
 
       const request2 = spec.buildRequests([{
         'params': {},
@@ -160,8 +176,8 @@ describe('shBidAdapter', function () {
       }], bidderRequest)
       const payload2 = request2.data.requests[0];
       expect(payload).to.be.an('object');
-      expect(payload2.video).to.have.property('width', 320);
-      expect(payload2.video).to.have.property('height', 240);
+      expect(payload2.size).to.have.property('width', 320);
+      expect(payload2.size).to.have.property('height', 240);
     })
 
     it('should attach valid params to the payload when type is video', function () {
@@ -191,6 +207,38 @@ describe('shBidAdapter', function () {
       expect(payload).to.have.property('type', 5);
     })
 
+    it('should attach valid params to the payload when type is banner (multi sizes)', function () {
+      const request = spec.buildRequests([bidRequestBannerMultiSizes], bidderRequest)
+      const payload = request.data.requests[0];
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('playerId', '47427aa0-f11a-4d24-abca-1295a46a46cd');
+      expect(payload).to.have.property('mediaType', BANNER);
+      expect(payload).to.have.property('type', 5);
+      expect(payload).to.have.nested.property('size.width', 640);
+      expect(payload).to.have.nested.property('size.height', 360);
+      const payload2 = request.data.requests[1];
+      expect(payload2).to.be.an('object');
+      expect(payload2).to.have.property('playerId', '47427aa0-f11a-4d24-abca-1295a46a46cd');
+      expect(payload2).to.have.property('mediaType', BANNER);
+      expect(payload2).to.have.property('type', 5);
+      expect(payload2).to.have.nested.property('size.width', 480);
+      expect(payload2).to.have.nested.property('size.height', 320);
+    })
+
+    it('should attach valid params to the payload when type is banner and video', function () {
+      const request = spec.buildRequests([bidRequestVideoAndBanner], bidderRequest)
+      const payload = request.data.requests[0];
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('playerId', '47427aa0-f11a-4d24-abca-1295a46a46cd');
+      expect(payload).to.have.property('mediaType', VIDEO);
+      expect(payload).to.have.property('type', 2);
+      const payload2 = request.data.requests[1];
+      expect(payload2).to.be.an('object');
+      expect(payload2).to.have.property('playerId', '47427aa0-f11a-4d24-abca-1295a46a46cd');
+      expect(payload2).to.have.property('mediaType', BANNER);
+      expect(payload2).to.have.property('type', 5);
+    })
+
     it('passes gdpr if present', function () {
       const request = spec.buildRequests([bidRequestVideo], {...bidderRequest, ...gdpr})
       const payload = request.data.requests[0];
@@ -208,16 +256,36 @@ describe('shBidAdapter', function () {
     const vastTag = 'https://video-library.stage.showheroes.com/commercial/wrapper?player_id=47427aa0-f11a-4d24-abca-1295a46a46cd&ad_bidder=showheroes-bs&master_shadt=1&description_url=https%3A%2F%2Fbid-service.stage.showheroes.com%2Fvast%2Fad%2Fcache%2F4840b920-40e1-4e09-9231-60bbf088c8d6'
     const vastXml = '<?xml version="1.0" encoding="utf-8"?><VAST version="3.0"><Error><![CDATA[https://static.showheroes.com/shim.gif]]></Error></VAST>'
 
-    const response = {
+    const basicResponse = {
+      'cpm': 5,
+      'currency': 'EUR',
+      'mediaType': VIDEO,
+      'context': 'instream',
+      'bidId': '38b373e1e31c18',
+      'size': {'width': 640, 'height': 480},
+      'vastTag': 'https:\/\/video-library.stage.showheroes.com\/commercial\/wrapper?player_id=47427aa0-f11a-4d24-abca-1295a46a46cd&ad_bidder=showheroes-bs&master_shadt=1&description_url=https%3A%2F%2Fbid-service.stage.showheroes.com%2Fvast%2Fad%2Fcache%2F4840b920-40e1-4e09-9231-60bbf088c8d6',
+      'vastXml': vastXml,
+    };
+
+    const responseVideo = {
       'bids': [{
-        'cpm': 5,
-        'currency': 'EUR',
-        'bidId': '38b373e1e31c18',
-        'video': {'width': 640, 'height': 480},
-        'vastTag': 'https:\/\/video-library.stage.showheroes.com\/commercial\/wrapper?player_id=47427aa0-f11a-4d24-abca-1295a46a46cd&ad_bidder=showheroes-bs&master_shadt=1&description_url=https%3A%2F%2Fbid-service.stage.showheroes.com%2Fvast%2Fad%2Fcache%2F4840b920-40e1-4e09-9231-60bbf088c8d6',
-        'vastXml': vastXml,
+        ...basicResponse,
       }],
-    }
+    };
+
+    const responseVideoOutstream = {
+      'bids': [{
+        ...basicResponse,
+        'context': 'outstream',
+      }],
+    };
+
+    const responseBanner = {
+      'bids': [{
+        ...basicResponse,
+        'mediaType': BANNER,
+      }],
+    };
 
     it('should get correct bid response when type is video', function () {
       const request = spec.buildRequests([bidRequestVideo], bidderRequest)
@@ -240,14 +308,14 @@ describe('shBidAdapter', function () {
         }
       ]
 
-      const result = spec.interpretResponse({'body': response}, request)
+      const result = spec.interpretResponse({'body': responseVideo}, request)
       expect(result).to.deep.equal(expectedResponse)
     })
 
     it('should get correct bid response when type is banner', function () {
       const request = spec.buildRequests([bidRequestBanner], bidderRequest)
 
-      const result = spec.interpretResponse({'body': response}, request)
+      const result = spec.interpretResponse({'body': responseBanner}, request)
       expect(result[0]).to.have.property('mediaType', BANNER);
       expect(result[0].ad).to.include('<script async src="https://static.showheroes.com/publishertag.js')
       expect(result[0].ad).to.include('<div class="showheroes-spot"')
@@ -266,7 +334,7 @@ describe('shBidAdapter', function () {
 
       const request = spec.buildRequests([bidRequest], bidderRequest)
 
-      const result = spec.interpretResponse({'body': response}, request)
+      const result = spec.interpretResponse({'body': responseVideoOutstream}, request)
       const bid = result[0]
       expect(bid).to.have.property('mediaType', VIDEO);
 
@@ -297,7 +365,7 @@ describe('shBidAdapter', function () {
 
       const request = spec.buildRequests([bidRequest], bidderRequest)
 
-      const result = spec.interpretResponse({'body': response}, request)
+      const result = spec.interpretResponse({'body': responseVideoOutstream}, request)
       const bid = result[0]
       expect(bid).to.have.property('mediaType', VIDEO);
 
@@ -332,7 +400,7 @@ describe('shBidAdapter', function () {
 
       const request = spec.buildRequests([bidRequest], bidderRequest)
 
-      const result = spec.interpretResponse({'body': response}, request)
+      const result = spec.interpretResponse({'body': responseVideoOutstream}, request)
       const bid = result[0]
       expect(bid).to.have.property('mediaType', VIDEO);
 

@@ -1,4 +1,4 @@
-import sigmoidAnalytic from 'modules/sigmoidAnalyticsAdapter';
+import sigmoidAnalytic from 'modules/sigmoidAnalyticsAdapter.js';
 import { expect } from 'chai';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;

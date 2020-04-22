@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec, getWidthAndHeightFromVideoObject, playerSizeIsNestedArray, defaultSize } from 'modules/ozoneBidAdapter';
-import { config } from 'src/config';
-import {Renderer} from '../../../src/Renderer';
-import {getGranularityKeyName, getGranularityObject} from '../../../modules/ozoneBidAdapter';
-import * as utils from '../../../src/utils';
+import { spec, getWidthAndHeightFromVideoObject, playerSizeIsNestedArray, defaultSize } from 'modules/ozoneBidAdapter.js';
+import { config } from 'src/config.js';
+import {Renderer} from '../../../src/Renderer.js';
+import {getGranularityKeyName, getGranularityObject} from '../../../modules/ozoneBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const BIDDER_CODE = 'ozone';
 /*
@@ -781,25 +781,6 @@ describe('ozone Adapter', function () {
       expect(spec.isBidRequestValid(xBadLotame)).to.equal(false);
     });
 
-    var xBadVideoContext = {
-      bidder: BIDDER_CODE,
-      params: {
-        'placementId': '1234567890',
-        'publisherId': '9876abcd12-3',
-        'lotameData': {},
-        siteId: '1234567890'
-      },
-      mediaTypes: {
-        video: {
-          mimes: ['video/mp4'],
-          'context': 'instream'},
-      }
-    };
-
-    it('should not validate video instream being sent', function () {
-      expect(spec.isBidRequestValid(xBadVideoContext)).to.equal(false);
-    });
-
     var xBadVideoContext2 = {
       bidder: BIDDER_CODE,
       params: {
@@ -834,6 +815,40 @@ describe('ozone Adapter', function () {
 
     it('should validate video outstream being sent', function () {
       expect(spec.isBidRequestValid(validVideoBidReq)).to.equal(true);
+    });
+    it('should validate video instream being sent even though its not properly supported yet', function () {
+      let instreamVid = JSON.parse(JSON.stringify(validVideoBidReq));
+      instreamVid.mediaTypes.video.context = 'instream';
+      expect(spec.isBidRequestValid(instreamVid)).to.equal(true);
+    });
+    // validate lotame override parameters
+    it('should validate lotame override params', function () {
+      // mock the getGetParametersAsObject function to simulate GET parameters for lotame overrides:
+      spec.getGetParametersAsObject = function() {
+        return {'oz_lotameid': '123abc', 'oz_lotamepid': 'pid123', 'oz_lotametpid': 'tpid123'};
+      };
+      expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
+    });
+    it('should validate missing lotame override params', function () {
+      // mock the getGetParametersAsObject function to simulate GET parameters for lotame overrides:
+      spec.getGetParametersAsObject = function() {
+        return {'oz_lotameid': '123abc', 'oz_lotamepid': 'pid123'};
+      };
+      expect(spec.isBidRequestValid(validBidReq)).to.equal(false);
+    });
+    it('should validate invalid lotame override params', function () {
+      // mock the getGetParametersAsObject function to simulate GET parameters for lotame overrides:
+      spec.getGetParametersAsObject = function() {
+        return {'oz_lotameid': '123abc', 'oz_lotamepid': 'pid123', 'oz_lotametpid': '123 "this ain\\t right!" eee'};
+      };
+      expect(spec.isBidRequestValid(validBidReq)).to.equal(false);
+    });
+    it('should validate no lotame override params', function () {
+      // mock the getGetParametersAsObject function to simulate GET parameters for lotame overrides:
+      spec.getGetParametersAsObject = function() {
+        return {};
+      };
+      expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
     });
   });
 
@@ -931,7 +946,8 @@ describe('ozone Adapter', function () {
       expect(payload.user.ext.consent).to.equal(consentString);
     });
 
-    it('should add gdpr consent information to the request when ozone is true and vendorData is missing vendorConsents (Mirror)', function () {
+    // mirror
+    it('should add gdpr consent information to the request when ozone.oz_enforceGdpr is false and vendorData is missing vendorConsents (Mirror)', function () {
       let consentString = 'BOcocyaOcocyaAfEYDENCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NphLgA==';
       let bidderRequest = validBidderRequest;
       bidderRequest.gdprConsent = {
@@ -947,6 +963,39 @@ describe('ozone Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.regs.ext.gdpr).to.equal(1);
       expect(payload.user.ext.consent).to.equal(consentString);
+    });
+    it('should add gdpr consent information to the request when ozone.oz_enforceGdpr is NOT PRESENT and vendorData is missing vendorConsents (Mirror)', function () {
+      let consentString = 'BOcocyaOcocyaAfEYDENCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NphLgA==';
+      let bidderRequest = validBidderRequest;
+      bidderRequest.gdprConsent = {
+        consentString: consentString,
+        gdprApplies: true,
+        vendorData: {
+          metadata: consentString,
+          gdprApplies: true
+        }
+      }
+      const request = spec.buildRequests(validBidRequestsNoSizes, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.regs.ext.gdpr).to.equal(1);
+      expect(payload.user.ext.consent).to.equal(consentString);
+      config.resetConfig();
+    });
+    it('should kill the auction request when ozone.oz_enforceGdpr is true & vendorData is missing vendorConsents (Mirror)', function () {
+      let consentString = 'BOcocyaOcocyaAfEYDENCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NphLgA==';
+      let bidderRequest = validBidderRequest;
+      bidderRequest.gdprConsent = {
+        consentString: consentString,
+        gdprApplies: true,
+        vendorData: {
+          metadata: consentString,
+          gdprApplies: true
+        }
+      }
+      config.setConfig({'ozone': {'oz_enforceGdpr': true}});
+      const request = spec.buildRequests(validBidRequestsNoSizes, bidderRequest);
+      expect(request.length).to.equal(0);
+      config.resetConfig();
     });
 
     it('should set regs.ext.gdpr flag to 0 when gdprApplies is false', function () {
@@ -1002,7 +1051,6 @@ describe('ozone Adapter', function () {
     });
 
     it('should pick up the value of pubcid when built using the pubCommonId module (not userId)', function () {
-      console.log(validBidRequests[0].crumbs);
       let bidRequests = validBidRequests;
       // values from http://prebid.org/dev-docs/modules/userId.html#pubcommon-id
       bidRequests[0]['userId'] = {
@@ -1084,6 +1132,68 @@ describe('ozone Adapter', function () {
       expect(data.ext.ozone.oz_rw).to.equal(0);
       expect(data.imp[0].ext.prebid.storedrequest.id).to.equal('1310000099');
     });
+
+    it('should pick up the value of valid lotame override parameters when there is a lotame object', function () {
+      spec.getGetParametersAsObject = function() {
+        return {'oz_lotameid': '123abc', 'oz_lotamepid': 'pid123', 'oz_lotametpid': '123eee'};
+      };
+      const request = spec.buildRequests(validBidRequests, validBidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.ozone.lotameData.Profile.Audiences.Audience[0].id).to.equal('123abc');
+      expect(payload.ext.ozone.oz_lot_rw).to.equal(1);
+    });
+    it('should pick up the value of valid lotame override parameters when there is an empty lotame object', function () {
+      let nolotameBidReq = JSON.parse(JSON.stringify(validBidRequests));
+      nolotameBidReq[0].params.lotameData = {};
+      spec.getGetParametersAsObject = function() {
+        return {'oz_lotameid': '123abc', 'oz_lotamepid': 'pid123', 'oz_lotametpid': '123eeetpid'};
+      };
+      const request = spec.buildRequests(nolotameBidReq, validBidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.ozone.lotameData.Profile.Audiences.Audience[0].id).to.equal('123abc');
+      expect(payload.imp[0].ext.ozone.lotameData.Profile.tpid).to.equal('123eeetpid');
+      expect(payload.imp[0].ext.ozone.lotameData.Profile.pid).to.equal('pid123');
+      expect(payload.ext.ozone.oz_lot_rw).to.equal(1);
+    });
+    it('should pick up the value of valid lotame override parameters when there is NO "lotame" key at all', function () {
+      let nolotameBidReq = JSON.parse(JSON.stringify(validBidRequests));
+      delete (nolotameBidReq[0].params['lotameData']);
+      spec.getGetParametersAsObject = function() {
+        return {'oz_lotameid': '123abc', 'oz_lotamepid': 'pid123', 'oz_lotametpid': '123eeetpid'};
+      };
+      const request = spec.buildRequests(nolotameBidReq, validBidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].ext.ozone.lotameData.Profile.Audiences.Audience[0].id).to.equal('123abc');
+      expect(payload.imp[0].ext.ozone.lotameData.Profile.tpid).to.equal('123eeetpid');
+      expect(payload.imp[0].ext.ozone.lotameData.Profile.pid).to.equal('pid123');
+      expect(payload.ext.ozone.oz_lot_rw).to.equal(1);
+    });
+    // NOTE - only one negative test case;
+    // you can't send invalid lotame params to buildRequests because 'validate' will have rejected them
+    it('should not use lotame override parameters if they dont exist', function () {
+      spec.getGetParametersAsObject = function() {
+        return {}; //  no lotame override params
+      };
+      const request = spec.buildRequests(validBidRequests, validBidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.ext.ozone.oz_lot_rw).to.equal(0);
+    });
+
+    it('should pick up the config value of coppa & set it in the request', function () {
+      config.setConfig({'coppa': true});
+      const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.regs).to.include.keys('coppa');
+      expect(payload.regs.coppa).to.equal(1);
+      config.resetConfig();
+    });
+    it('should pick up the config value of coppa & only set it in the request if its true', function () {
+      config.setConfig({'coppa': false});
+      const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(utils.deepAccess(payload, 'regs.coppa')).to.be.undefined;
+      config.resetConfig();
+    });
   });
 
   describe('interpretResponse', function () {
@@ -1103,9 +1213,10 @@ describe('ozone Adapter', function () {
     });
 
     it('should build bid array with gdpr', function () {
-      var validBidderRequestWithGdpr = bidderRequestWithFullGdpr;
-      validBidderRequestWithGdpr.gdprConsent = {'gdprApplies': 1, 'consentString': 'This is the gdpr consent string'};
-      const request = spec.buildRequests(validBidRequests, validBidderRequestWithGdpr);
+      let validBR = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
+      validBR.gdprConsent = {'gdprApplies': 1, 'consentString': 'This is the gdpr consent string'};
+      const request = spec.buildRequests(validBidRequests, validBR); // works the old way, with GDPR not enforced by default
+      // const request = spec.buildRequests(validBidRequests, bidderRequestWithFullGdpr); // works with oz_enforceGdpr true by default
       const result = spec.interpretResponse(validResponse, request);
       expect(result.length).to.equal(1);
     });
@@ -1256,6 +1367,135 @@ describe('ozone Adapter', function () {
     it('should return an object as-is', function() {
       const result = getGranularityObject('', false, 'custom', {'name': 'rupert'});
       expect(result.name).to.equal('rupert');
+    });
+  });
+
+  describe('blockTheRequest', function() {
+    it('should return true if oz_request is false', function() {
+      config.setConfig({'ozone': {'oz_request': false}});
+      let result = spec.blockTheRequest(bidderRequestWithFullGdpr);
+      expect(result).to.be.true;
+      config.resetConfig();
+    });
+    it('should return false if oz_request is true', function() {
+      config.setConfig({'ozone': {'oz_request': true}});
+      let result = spec.blockTheRequest(bidderRequestWithFullGdpr);
+      expect(result).to.be.false;
+      config.resetConfig();
+    });
+    it('should return true if oz_enforceGdpr is true and consentString is undefined', function() {
+      config.setConfig({'ozone': {'oz_enforceGdpr': true}});
+      let req = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
+      delete req.gdprConsent.consentString;
+      let result = spec.blockTheRequest(req);
+      expect(result).to.be.true;
+      config.resetConfig();
+    });
+    it('should return false if oz_enforceGdpr is false and consentString is undefined', function() {
+      config.setConfig({'ozone': {'oz_enforceGdpr': false}});
+      let req = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
+      delete req.gdprConsent.consentString;
+      let result = spec.blockTheRequest(req);
+      expect(result).to.be.false;
+      config.resetConfig();
+    });
+    it('should return false if oz_enforceGdpr is NOT SET (default) and consentString is undefined', function() {
+      let req = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
+      delete req.gdprConsent.consentString;
+      let result = spec.blockTheRequest(req);
+      expect(result).to.be.false;
+    });
+    it('should return false if gdprApplies is false', function() {
+      config.setConfig({'ozone': {'oz_request': true}});
+      let req = {'gdprConsent': {'gdprApplies': false}};
+      let result = spec.blockTheRequest(req);
+      expect(result).to.be.false;
+      config.resetConfig();
+    });
+    it('should return false if gdprConsent key does not exist', function() {
+      let req = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
+      config.setConfig({'ozone': {'oz_enforceGdpr': true}});
+      delete req.gdprConsent;
+      let result = spec.blockTheRequest(req);
+      expect(result).to.be.false;
+      config.resetConfig();
+    });
+    it('should return false if gdpr is set, and all is ok', function() {
+      let req = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
+      config.setConfig({'ozone': {'oz_enforceGdpr': true}});
+      let result = spec.blockTheRequest(req);
+      expect(result).to.be.false;
+      config.resetConfig();
+    });
+  });
+
+  describe('failsGdprCheck', function() {
+    it('should return false for a a fully accepted user', function () {
+      let result = spec.failsGdprCheck(bidderRequestWithFullGdpr);
+      expect(result).to.be.false;
+    });
+    it('should return false if gdprConsent is not present on the bidder object', function () {
+      let result = spec.failsGdprCheck(validBidderRequest);
+      expect(result).to.be.false;
+    });
+    it('should return true if gdpr applies and vendorData is not an array', function () {
+      let req = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
+      req.gdprConsent.vendorData = null;
+      let result = spec.failsGdprCheck(req);
+      expect(result).to.be.true;
+    });
+    it('should return true if gdpr applies and purposeConsents do not contain all the required true values', function () {
+      let req = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
+      req.gdprConsent.vendorData.purposeConsents[1] = false;
+      let result = spec.failsGdprCheck(req);
+      expect(result).to.be.true;
+    });
+    it('should return true if gdpr applies and vendorConsents[524] is not true', function () {
+      config.setConfig({'ozone': {'oz_enforceGdpr': true}});
+      let req = JSON.parse(JSON.stringify(bidderRequestWithFullGdpr));
+      req.gdprConsent.vendorData.vendorConsents[524] = false;
+      let result = spec.failsGdprCheck(req);
+      expect(result).to.be.true;
+      config.resetConfig();
+    });
+  });
+
+  describe('makeLotameObjectFromOverride', function() {
+    it('should update an object with valid lotame data', function () {
+      let objLotameOverride = {'oz_lotametpid': '1234', 'oz_lotameid': '12345', 'oz_lotamepid': '123456'};
+      let result = spec.makeLotameObjectFromOverride(
+        objLotameOverride,
+        {'Profile': {'pid': 'originalpid', 'tpid': 'originaltpid', 'Audiences': {'Audience': [{'id': 'aud1'}]}}}
+      );
+      expect(result.Profile.Audiences.Audience).to.be.an('array');
+      expect(result.Profile.Audiences.Audience[0]).to.be.an('object');
+      expect(result.Profile.Audiences.Audience[0]).to.deep.include({'id': '12345', 'abbr': '12345'});
+    });
+    it('should return the original object if it seems weird', function () {
+      let objLotameOverride = {'oz_lotametpid': '1234', 'oz_lotameid': '12345', 'oz_lotamepid': '123456'};
+      let objLotameOriginal = {'Profile': {'pid': 'originalpid', 'tpid': 'originaltpid', 'somethingstrange': [{'id': 'aud1'}]}};
+      let result = spec.makeLotameObjectFromOverride(
+        objLotameOverride,
+        objLotameOriginal
+      );
+      expect(result).to.equal(objLotameOriginal);
+    });
+  });
+  describe('lotameDataIsValid', function() {
+    it('should allow a valid minimum lotame object', function() {
+      let obj = {'Profile': {'pid': '', 'tpid': '', 'Audiences': {'Audience': []}}};
+      let result = spec.isLotameDataValid(obj);
+      expect(result).to.be.true;
+    });
+    it('should allow a valid lotame object', function() {
+      let obj = {'Profile': {'pid': '12345', 'tpid': '45678', 'Audiences': {'Audience': [{'id': '1234', 'abbr': '567'}, {'id': '9999', 'abbr': '1111'}]}}};
+      let result = spec.isLotameDataValid(obj);
+      expect(result).to.be.true;
+    });
+    it('should disallow a lotame object without an Audience.id', function() {
+      let obj = {'Profile': {'tpid': '', 'pid': '', 'Audiences': {'Audience': [{'abbr': 'marktest'}]}}};
+      let result = spec.isLotameDataValid(obj);
+      expect(result).to.be.false;
     });
   });
 });

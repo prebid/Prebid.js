@@ -1,5 +1,5 @@
-import {spec} from '../../../modules/marsmediaBidAdapter';
-import * as utils from '../../../src/utils';
+import {spec} from '../../../modules/marsmediaBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 import * as sinon from 'sinon';
 
 var r1adapter = spec;
@@ -38,7 +38,7 @@ describe('marsmedia adapter tests', function () {
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('https://bid306.rtbsrv.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
+      expect(bidRequest.url).to.have.string('https://hb.azeriondigital.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);
@@ -108,7 +108,7 @@ describe('marsmedia adapter tests', function () {
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('https://bid306.rtbsrv.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
+      expect(bidRequest.url).to.have.string('https://hb.azeriondigital.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);
@@ -127,7 +127,7 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5]);
     });
 
-    it('interpretResponse works', function() {
+    it('interpretResponse with vast url works', function() {
       var bidList = {
         'body': [
           {
@@ -152,6 +152,39 @@ describe('marsmedia adapter tests', function () {
       expect(bid.width).to.equal(800);
       expect(bid.height).to.equal(600);
       expect(bid.vastUrl).to.equal('https://example.com/');
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.creativeId).to.equal('cr-vid');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.cpm).to.equal(1.0);
+      expect(bid.ttl).to.equal(600);
+    });
+
+    it('interpretResponse with xml works', function() {
+      var bidList = {
+        'body': [
+          {
+            'impid': 'div-gpt-ad-1438287399331-1',
+            'price': 1,
+            'adm': '<?xml><VAST></VAST>',
+            'adomain': [
+              'test.com'
+            ],
+            'cid': '467415',
+            'crid': 'cr-vid',
+            'w': 800,
+            'h': 600
+          }
+        ]
+      };
+
+      var videoBids = r1adapter.interpretResponse(bidList);
+
+      expect(videoBids.length).to.equal(1);
+      const bid = videoBids[0];
+      expect(bid.width).to.equal(800);
+      expect(bid.height).to.equal(600);
+      expect(bid.vastXml).to.equal('<?xml><VAST></VAST>');
       expect(bid.mediaType).to.equal('video');
       expect(bid.creativeId).to.equal('cr-vid');
       expect(bid.currency).to.equal('USD');

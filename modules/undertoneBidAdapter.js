@@ -2,8 +2,8 @@
  * Adapter to send bids to Undertone
  */
 
-import * as urlUtils from '../src/url';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { parseUrl } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'undertone';
 const URL = 'https://hb.undertone.com/hb';
@@ -51,6 +51,26 @@ function getGdprQueryParams(gdprConsent) {
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
+function getBannerCoords(id) {
+  let element = document.getElementById(id);
+  let left = -1;
+  let top = -1;
+  if (element) {
+    left = element.offsetLeft;
+    top = element.offsetTop;
+
+    let parent = element.offsetParent;
+    if (parent) {
+      left += parent.offsetLeft;
+      top += parent.offsetTop;
+    }
+
+    return [left, top];
+  } else {
+    return null;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
@@ -60,15 +80,19 @@ export const spec = {
     }
   },
   buildRequests: function(validBidRequests, bidderRequest) {
+    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
     const payload = {
       'x-ut-hb-params': [],
       'commons': {
         'adapterVersion': '$prebid.version$',
-        'uids': validBidRequests[0].userId
+        'uids': validBidRequests[0].userId,
+        'pageSize': pageSizeArray
       }
     };
     const referer = bidderRequest.refererInfo.referer;
-    const hostname = urlUtils.parse(referer).hostname;
+    const hostname = parseUrl(referer).hostname;
     let domain = extractDomainFromHost(hostname);
     const pageUrl = getCanonicalUrl() || referer;
 
@@ -87,6 +111,7 @@ export const spec = {
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
+        coordinates: getBannerCoords(bidReq.adUnitCode),
         hbadaptor: 'prebid',
         url: pageUrl,
         domain: domain,

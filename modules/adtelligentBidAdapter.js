@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {VIDEO, BANNER} from '../src/mediaTypes';
-import {Renderer} from '../src/Renderer';
-import find from 'core-js/library/fn/array/find';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {VIDEO, BANNER} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const URL = 'https://ghb.adtelligent.com/auction/';
 const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
@@ -13,7 +13,8 @@ const syncsCache = {};
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['onefiftytwomedia'],
+  gvlid: 410,
+  aliases: ['onefiftytwomedia', 'selectmedia'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
     return !!utils.deepAccess(bid, 'params.aid');

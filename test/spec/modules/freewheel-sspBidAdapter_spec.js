@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/freewheel-sspBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/freewheel-sspBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
 
@@ -103,7 +103,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('should add parameters to the tag', () => {
       const request = spec.buildRequests(bidRequests);
-      const payload = request.data;
+      const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
@@ -113,8 +113,8 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('sends bid request to ENDPOINT via GET', () => {
       const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.contain(ENDPOINT);
-      expect(request.method).to.equal('GET');
+      expect(request[0].url).to.contain(ENDPOINT);
+      expect(request[0].method).to.equal('GET');
     });
 
     it('should add usp consent to the request', () => {
@@ -122,7 +122,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       let bidderRequest = {};
       bidderRequest.uspConsent = uspConsentString;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
@@ -141,7 +141,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       };
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
@@ -174,7 +174,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('should add parameters to the tag', () => {
       const request = spec.buildRequests(bidRequests);
-      const payload = request.data;
+      const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
@@ -184,8 +184,8 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('sends bid request to ENDPOINT via GET', () => {
       const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.contain(ENDPOINT);
-      expect(request.method).to.equal('GET');
+      expect(request[0].url).to.contain(ENDPOINT);
+      expect(request[0].method).to.equal('GET');
     });
 
     it('should add usp consent to the request', () => {
@@ -193,7 +193,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       let bidderRequest = {};
       bidderRequest.uspConsent = uspConsentString;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
@@ -212,7 +212,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       };
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = request.data;
+      const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
@@ -327,7 +327,7 @@ describe('freewheelSSP BidAdapter Test', () => {
         }
       ];
 
-      let result = spec.interpretResponse(response, request);
+      let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
@@ -348,15 +348,15 @@ describe('freewheelSSP BidAdapter Test', () => {
         }
       ];
 
-      let result = spec.interpretResponse(response, request);
+      let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', () => {
-      var reqest = spec.buildRequests(formattedBidRequests);
+      var request = spec.buildRequests(formattedBidRequests);
       let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'></VAST>';
 
-      let result = spec.interpretResponse(response, reqest);
+      let result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);
     });
   });
@@ -454,11 +454,13 @@ describe('freewheelSSP BidAdapter Test', () => {
           currency: 'EUR',
           netRevenue: true,
           ttl: 360,
+          vastXml: response,
+          mediaType: 'video',
           ad: ad
         }
       ];
 
-      let result = spec.interpretResponse(response, request);
+      let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
@@ -475,19 +477,21 @@ describe('freewheelSSP BidAdapter Test', () => {
           currency: 'EUR',
           netRevenue: true,
           ttl: 360,
+          vastXml: response,
+          mediaType: 'video',
           ad: formattedAd
         }
       ];
 
-      let result = spec.interpretResponse(response, request);
+      let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', () => {
-      var reqest = spec.buildRequests(formattedBidRequests);
+      var request = spec.buildRequests(formattedBidRequests);
       let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'></VAST>';
 
-      let result = spec.interpretResponse(response, reqest);
+      let result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);
     });
   });

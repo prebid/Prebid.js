@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/dspxBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/dspxBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
@@ -108,6 +108,7 @@ describe('dspxAdapter', function () {
         'crid': 100500,
         'width': '300',
         'height': '250',
+        'type': 'sspHTML',
         'tag': '<!-- test creative -->',
         'requestId': '220ed41385952a',
         'currency': 'EUR',
@@ -127,6 +128,7 @@ describe('dspxAdapter', function () {
       currency: 'EUR',
       netRevenue: true,
       ttl: 300,
+      type: 'sspHTML',
       ad: '<!-- test creative -->'
     }];
 

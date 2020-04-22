@@ -1,20 +1,20 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils';
-import { getLabels, resolveStatus } from './sizeMapping';
-import { processNativeAdUnitParams, nativeAdapters } from './native';
-import { newBidder } from './adapters/bidderFactory';
-import { ajaxBuilder } from './ajax';
-import { config, RANDOM } from './config';
-import { hook } from './hook';
-import includes from 'core-js/library/fn/array/includes';
-import find from 'core-js/library/fn/array/find';
-import { adunitCounter } from './adUnits';
-import { getRefererInfo } from './refererDetection';
+import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils.js';
+import { getLabels, resolveStatus } from './sizeMapping.js';
+import { processNativeAdUnitParams, nativeAdapters } from './native.js';
+import { newBidder } from './adapters/bidderFactory.js';
+import { ajaxBuilder } from './ajax.js';
+import { config, RANDOM } from './config.js';
+import { hook } from './hook.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js/library/fn/array/find.js';
+import { adunitCounter } from './adUnits.js';
+import { getRefererInfo } from './refererDetection.js';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
-var events = require('./events');
+var events = require('./events.js');
 let s2sTestingModule; // store s2sTesting module if it's loaded
 
 let adapterManager = {};
@@ -115,6 +115,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
     return result;
   }, []).reduce(flatten, []).filter(val => val !== '');
 }
+
+const hookedGetBids = hook('sync', getBids, 'getBids');
 
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
@@ -229,7 +231,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
         auctionId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
+        bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC,
@@ -264,7 +266,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
+      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo
@@ -366,19 +368,25 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    config.runWithBidder(
-      bidRequest.bidderCode,
-      bind.call(
-        adapter.callBids,
-        adapter,
-        bidRequest,
-        addBidResponse.bind(bidRequest),
-        doneCb.bind(bidRequest),
-        ajax,
-        onTimelyResponse,
-        config.callbackWithBidder(bidRequest.bidderCode)
-      )
-    );
+    const adapterDone = doneCb.bind(bidRequest);
+    try {
+      config.runWithBidder(
+        bidRequest.bidderCode,
+        bind.call(
+          adapter.callBids,
+          adapter,
+          bidRequest,
+          addBidResponse.bind(bidRequest),
+          adapterDone,
+          ajax,
+          onTimelyResponse,
+          config.callbackWithBidder(bidRequest.bidderCode)
+        )
+      );
+    } catch (e) {
+      utils.logError(`${bidRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, {e, bidRequest});
+      adapterDone();
+    }
   });
 };
 

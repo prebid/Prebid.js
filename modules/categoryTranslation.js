@@ -11,12 +11,14 @@
  * If publisher has not defined translation file than prebid will use default prebid translation file provided here //cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json
  */
 
-import { config } from '../src/config';
-import { setupBeforeHookFnOnce, hook } from '../src/hook';
-import { ajax } from '../src/ajax';
-import { timestamp, logError, setDataInLocalStorage, getDataFromLocalStorage } from '../src/utils';
-import { addBidResponse } from '../src/auction';
+import { config } from '../src/config.js';
+import { setupBeforeHookFnOnce, hook } from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { timestamp, logError } from '../src/utils.js';
+import { addBidResponse } from '../src/auction.js';
+import { getCoreStorageManager } from '../src/storageManager.js';
 
+export const storage = getCoreStorageManager('categoryTranslation');
 const DEFAULT_TRANSLATION_FILE_URL = 'https://cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY = 'iabToFwMappingkey';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB = 'iabToFwMappingkeyPub';
@@ -43,7 +45,7 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
   let localStorageKey = (config.getConfig('brandCategoryTranslation.translationFile')) ? DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB : DEFAULT_IAB_TO_FW_MAPPING_KEY;
 
   if (bid.meta && !bid.meta.adServerCatId) {
-    let mapping = getDataFromLocalStorage(localStorageKey);
+    let mapping = storage.getDataFromLocalStorage(localStorageKey);
     if (mapping) {
       try {
         mapping = JSON.parse(mapping);
@@ -65,7 +67,7 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
 
 export function initTranslation(url, localStorageKey) {
   setupBeforeHookFnOnce(addBidResponse, getAdserverCategoryHook, 50);
-  let mappingData = getDataFromLocalStorage(localStorageKey);
+  let mappingData = storage.getDataFromLocalStorage(localStorageKey);
   if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
     ajax(url,
       {
@@ -73,7 +75,7 @@ export function initTranslation(url, localStorageKey) {
           try {
             response = JSON.parse(response);
             response['lastUpdated'] = timestamp();
-            setDataInLocalStorage(localStorageKey, JSON.stringify(response));
+            storage.setDataInLocalStorage(localStorageKey, JSON.stringify(response));
           } catch (error) {
             logError('Failed to parse translation mapping file');
           }

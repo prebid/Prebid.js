@@ -1,8 +1,6 @@
-import * as utils from '../src/utils';
-import { format } from '../src/url';
-// import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import find from 'core-js/library/fn/array/find';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
@@ -145,7 +143,7 @@ function getPageRefreshed() {
 /* Create endpoint url */
 function createEndpoint(bidRequests, bidderRequest) {
   let host = getHostname(bidRequests);
-  return format({
+  return utils.buildUrl({
     protocol: 'https',
     host: `${DEFAULT_DC}${host}.omnitagjs.com`,
     pathname: '/hb-api/prebid/v1',

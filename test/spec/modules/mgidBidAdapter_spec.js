@@ -1,7 +1,6 @@
 import {assert, expect} from 'chai';
-import {spec} from 'modules/mgidBidAdapter';
-import * as utils from '../../../src/utils';
-import * as urlUtils from '../../../src/url';
+import {spec} from 'modules/mgidBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 
 describe('Mgid bid adapter', function () {
   let sandbox;
@@ -361,7 +360,7 @@ describe('Mgid bid adapter', function () {
       };
       let bidRequests = [bid];
       const page = top.location.href;
-      const domain = urlUtils.parse(page).hostname;
+      const domain = utils.parseUrl(page).hostname;
       const request = spec.buildRequests(bidRequests);
       expect(request.url).deep.equal('https://prebid.mgid.com/prebid/1');
       expect(request.method).deep.equal('POST');
@@ -409,7 +408,7 @@ describe('Mgid bid adapter', function () {
 
       let bidRequests = [bid];
       const page = top.location.href;
-      const domain = urlUtils.parse(page).hostname;
+      const domain = utils.parseUrl(page).hostname;
       const request = spec.buildRequests(bidRequests);
       expect(request).to.be.a('object');
       expect(request.url).deep.equal('https://prebid.mgid.com/prebid/1');
@@ -446,7 +445,7 @@ describe('Mgid bid adapter', function () {
 
       let bidRequests = [bid];
       const page = top.location.href;
-      const domain = urlUtils.parse(page).hostname;
+      const domain = utils.parseUrl(page).hostname;
       const request = spec.buildRequests(bidRequests);
       expect(request).to.be.a('object');
       expect(request.url).deep.equal('https://prebid.mgid.com/prebid/1');
@@ -482,7 +481,7 @@ describe('Mgid bid adapter', function () {
 
       let bidRequests = [bid];
       const page = top.location.href;
-      const domain = urlUtils.parse(page).hostname;
+      const domain = utils.parseUrl(page).hostname;
       const request = spec.buildRequests(bidRequests);
       expect(request).to.be.a('object');
       expect(request.url).deep.equal('https://prebid.mgid.com/prebid/1');
@@ -516,7 +515,7 @@ describe('Mgid bid adapter', function () {
       const request = spec.buildRequests(bidRequests);
 
       const page = top.location.href;
-      const domain = urlUtils.parse(page).hostname;
+      const domain = utils.parseUrl(page).hostname;
       expect(request.url).deep.equal('https://prebid.mgid.com/prebid/1');
       expect(request.method).deep.equal('POST');
       const data = JSON.parse(request.data);

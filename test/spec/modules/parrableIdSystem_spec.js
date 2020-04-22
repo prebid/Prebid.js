@@ -1,8 +1,11 @@
 import { expect } from 'chai';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
-import { parrableIdSubmodule } from 'modules/parrableIdSystem';
+import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
+import { newStorageManager } from 'src/storageManager.js';
+
+const storage = newStorageManager();
 
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const P_COOKIE_NAME = '_parrable_eid';
@@ -52,7 +55,7 @@ describe('Parrable ID System', function() {
 
     it('should append parrableid to bid request', function(done) {
       // simulate existing browser local storage values
-      utils.setCookie(
+      storage.setCookie(
         P_COOKIE_NAME,
         P_COOKIE_VALUE,
         (new Date(Date.now() + 5000).toUTCString())
@@ -69,7 +72,7 @@ describe('Parrable ID System', function() {
             expect(bid.userId.parrableid).to.equal(P_COOKIE_VALUE);
           });
         });
-        utils.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
+        storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
         done();
       }, { adUnits });
     });

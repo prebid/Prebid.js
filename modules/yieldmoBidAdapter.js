@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
@@ -13,10 +13,10 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner'],
   /**
-    * Determines whether or not the given bid request is valid.
-    * @param {object} bid, bid to validate
-    * @return boolean, true if valid, otherwise false
-    */
+   * Determines whether or not the given bid request is valid.
+   * @param {object} bid, bid to validate
+   * @return boolean, true if valid, otherwise false
+   */
   isBidRequestValid: function(bid) {
     return !!(bid && bid.adUnitCode && bid.bidId);
   },
@@ -41,13 +41,19 @@ export const spec = {
       h: localWindow.innerHeight,
       userConsent: JSON.stringify({
         // case of undefined, stringify will remove param
-        gdprApplies: bidderRequest && bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
-        cmp: bidderRequest && bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined
+        gdprApplies:
+          bidderRequest && bidderRequest.gdprConsent
+            ? bidderRequest.gdprConsent.gdprApplies
+            : undefined,
+        cmp:
+          bidderRequest && bidderRequest.gdprConsent
+            ? bidderRequest.gdprConsent.consentString
+            : undefined
       }),
-      us_privacy: bidderRequest && bidderRequest.us_privacy,
+      us_privacy: bidderRequest && bidderRequest.us_privacy
     };
 
-    bidRequests.forEach((request) => {
+    bidRequests.forEach(request => {
       serverRequest.p.push(addPlacement(request));
       const pubcid = getId(request, 'pubcid');
       if (pubcid) {
@@ -61,6 +67,10 @@ export const spec = {
       if (tdid) {
         serverRequest.tdid = tdid;
       }
+      const criteoId = getId(request, 'criteoId');
+      if (criteoId) {
+        serverRequest.cri_prebid = criteoId;
+      }
       if (request.schain) {
         serverRequest.schain = JSON.stringify(request.schain);
       }
@@ -70,7 +80,7 @@ export const spec = {
       method: 'GET',
       url: SERVER_ENDPOINT,
       data: serverRequest
-    }
+    };
   },
   /**
    * Makes Yieldmo Ad Server response compatible to Prebid specs
@@ -81,7 +91,7 @@ export const spec = {
     let bids = [];
     let data = serverResponse.body;
     if (data.length > 0) {
-      data.forEach((response) => {
+      data.forEach(response => {
         if (response.cpm && response.cpm > 0) {
           bids.push(createNewBid(response));
         }
@@ -91,15 +101,17 @@ export const spec = {
   },
   getUserSync: function(syncOptions) {
     if (trackingEnabled(syncOptions)) {
-      return [{
-        type: 'iframe',
-        url: SYNC_ENDPOINT + utils.getOrigin()
-      }];
+      return [
+        {
+          type: 'iframe',
+          url: SYNC_ENDPOINT + utils.getOrigin()
+        }
+      ];
     } else {
       return [];
     }
   }
-}
+};
 registerBidder(spec);
 
 /***************************************
@@ -115,7 +127,7 @@ function addPlacement(request) {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
     sizes: request.mediaTypes.banner.sizes
-  }
+  };
   if (request.params) {
     if (request.params.placementId) {
       placementInfo.ym_placement_id = request.params.placementId;
@@ -128,9 +140,9 @@ function addPlacement(request) {
 }
 
 /**
-  * creates a new bid with response information
-  * @param response server response
-  */
+ * creates a new bid with response information
+ * @param response server response
+ */
 function createNewBid(response) {
   return {
     requestId: response['callback_id'],
@@ -150,23 +162,25 @@ function createNewBid(response) {
  * @returns false if dnt or if not iframe/pixel enabled
  */
 function trackingEnabled(options) {
-  return (isIOS() && !getDNT() && options.iframeEnabled);
+  return isIOS() && !getDNT() && options.iframeEnabled;
 }
 
 /**
-  * Detects whether we're in iOS
-  * @returns true if in iOS
-  */
+ * Detects whether we're in iOS
+ * @returns true if in iOS
+ */
 function isIOS() {
   return /iPhone|iPad|iPod/i.test(window.navigator.userAgent);
 }
 
 /**
-  * Detects whether dnt is true
-  * @returns true if user enabled dnt
-  */
+ * Detects whether dnt is true
+ * @returns true if user enabled dnt
+ */
 function getDNT() {
-  return window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false;
+  return (
+    window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false
+  );
 }
 
 /**
@@ -174,7 +188,9 @@ function getDNT() {
  */
 function getPageDescription() {
   if (document.querySelector('meta[name="description"]')) {
-    return document.querySelector('meta[name="description"]').getAttribute('content'); // Value of the description metadata from the publisher's page.
+    return document
+      .querySelector('meta[name="description"]')
+      .getAttribute('content'); // Value of the description metadata from the publisher's page.
   } else {
     return '';
   }
@@ -200,9 +216,9 @@ function getPageDescription() {
  */
 
 /**
-  * Detects what environment we're in
-  * @returns Environment kind
-  */
+ * Detects what environment we're in
+ * @returns Environment kind
+ */
 function getEnvironment() {
   if (isSuperSandboxedIframe()) {
     return 89;
@@ -228,28 +244,31 @@ function getEnvironment() {
 }
 
 /**
-  * @returns true if we are running on the top window at dispatch time
-  */
+ * @returns true if we are running on the top window at dispatch time
+ */
 function isCodeOnPage() {
   return window === window.parent;
 }
 
 /**
-  * @returns true if the environment is both DFP and AMP
-  */
+ * @returns true if the environment is both DFP and AMP
+ */
 function isDfpInAmp() {
   return isDfp() && isAmp();
 }
 
 /**
-  * @returns true if the window is in an iframe whose id and parent element id match DFP
-  */
+ * @returns true if the window is in an iframe whose id and parent element id match DFP
+ */
 function isDfp() {
   try {
     const frameElement = window.frameElement;
     const parentElement = window.frameElement.parentNode;
     if (frameElement && parentElement) {
-      return frameElement.id.indexOf('google_ads_iframe') > -1 && parentElement.id.indexOf('google_ads_iframe') > -1;
+      return (
+        frameElement.id.indexOf('google_ads_iframe') > -1 &&
+        parentElement.id.indexOf('google_ads_iframe') > -1
+      );
     }
     return false;
   } catch (e) {
@@ -258,8 +277,8 @@ function isDfp() {
 }
 
 /**
-* @returns true if there is an AMP context object
-*/
+ * @returns true if there is an AMP context object
+ */
 function isAmp() {
   try {
     const ampContext = window.context || window.parent.context;
@@ -285,7 +304,11 @@ function isSafeFrame() {
 function isDFPSafeFrame() {
   if (window.location && window.location.href) {
     const href = window.location.href;
-    return isSafeFrame() && href.indexOf('google') !== -1 && href.indexOf('safeframe') !== -1;
+    return (
+      isSafeFrame() &&
+      href.indexOf('google') !== -1 &&
+      href.indexOf('safeframe') !== -1
+    );
   }
   return false;
 }
@@ -318,7 +341,7 @@ function isSuperSandboxedIframe() {
  * @returns true if the window has the attribute identifying MRAID
  */
 function isMraid() {
-  return !!(window.mraid);
+  return !!window.mraid;
 }
 
 /**
@@ -329,7 +352,12 @@ function isMraid() {
  */
 function getId(request, idType) {
   let id;
-  if (request && request.userId && request.userId[idType] && typeof request.userId === 'object') {
+  if (
+    request &&
+    request.userId &&
+    request.userId[idType] &&
+    typeof request.userId === 'object'
+  ) {
     id = request.userId[idType];
   }
   return id;

@@ -1,22 +1,27 @@
-import * as utils from './utils';
-import { config } from './config';
-import includes from 'core-js/library/fn/array/includes';
+import * as utils from './utils.js';
+import { config } from './config.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import { getCoreStorageManager } from './storageManager.js';
+
+export const USERSYNC_DEFAULT_CONFIG = {
+  syncEnabled: true,
+  filterSettings: {
+    image: {
+      bidders: '*',
+      filter: 'include'
+    }
+  },
+  syncsPerBidder: 5,
+  syncDelay: 3000,
+  auctionDelay: 0
+};
 
 // Set userSync default values
 config.setDefaults({
-  'userSync': {
-    syncEnabled: true,
-    filterSettings: {
-      image: {
-        bidders: '*',
-        filter: 'include'
-      }
-    },
-    syncsPerBidder: 5,
-    syncDelay: 3000,
-    auctionDelay: 0
-  }
+  'userSync': utils.deepClone(USERSYNC_DEFAULT_CONFIG)
 });
+
+const storage = getCoreStorageManager('usersync');
 
 /**
  * Factory function which creates a new UserSyncPool.
@@ -45,6 +50,20 @@ export function newUserSync(userSyncDependencies) {
   let usConfig = userSyncDependencies.config;
   // Update if it's (re)set
   config.getConfig('userSync', (conf) => {
+    // Added this logic for https://github.com/prebid/Prebid.js/issues/4864
+    // if userSync.filterSettings does not contain image/all configs, merge in default image config to ensure image pixels are fired
+    if (conf.userSync) {
+      let fs = conf.userSync.filterSettings;
+      if (utils.isPlainObject(fs)) {
+        if (!fs.image && !fs.all) {
+          conf.userSync.filterSettings.image = {
+            bidders: '*',
+            filter: 'include'
+          };
+        }
+      }
+    }
+
     usConfig = Object.assign(usConfig, conf.userSync);
   });
 
@@ -283,7 +302,7 @@ export function newUserSync(userSyncDependencies) {
   return publicApi;
 }
 
-const browserSupportsCookies = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
+const browserSupportsCookies = !utils.isSafariBrowser() && storage.cookiesAreEnabled();
 
 export const userSync = newUserSync({
   config: config.getConfig('userSync'),
