@@ -1044,6 +1044,13 @@ export const spec = {
                 newBid.meta.clickUrl = bid.adomain[0];
               }
 
+              // adserverTargeting
+              if (bid.ext && bid.ext.buyid) {
+                newBid.adserverTargeting = {
+                  'hb_buyid_pubmatic': bid.ext.buyid
+                };
+              }
+
               bidResponses.push(newBid);
             });
         });

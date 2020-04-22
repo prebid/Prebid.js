@@ -545,7 +545,8 @@ describe('PubMatic adapter', function () {
             'ext': {
               'deal_channel': 6,
               'advid': 976,
-              'dspid': 123
+              'dspid': 123,
+              'buyid': 'BUYER-ID-987'
             }
           }]
         }, {
@@ -560,7 +561,8 @@ describe('PubMatic adapter', function () {
             'ext': {
               'deal_channel': 5,
               'advid': 832,
-              'dspid': 422
+              'dspid': 422,
+              'buyid': 'BUYER-ID-789'
             }
           }]
         }]
@@ -2622,6 +2624,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].netRevenue).to.equal(false);
         expect(response[0].ttl).to.equal(300);
         expect(response[0].meta.networkId).to.equal(123);
+        expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
         expect(response[0].meta.buyerId).to.equal(976);
         expect(response[0].meta.clickUrl).to.equal('blackrock.com');
         expect(response[0].referrer).to.include(data.site.ref);
@@ -2643,6 +2646,7 @@ describe('PubMatic adapter', function () {
         expect(response[1].netRevenue).to.equal(false);
         expect(response[1].ttl).to.equal(300);
         expect(response[1].meta.networkId).to.equal(422);
+        expect(response[1].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-789');
         expect(response[1].meta.buyerId).to.equal(832);
         expect(response[1].meta.clickUrl).to.equal('hivehome.com');
         expect(response[1].referrer).to.include(data.site.ref);
