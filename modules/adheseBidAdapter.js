@@ -170,22 +170,15 @@ function getAdDetails(ad) {
   if (isAdheseAd(ad)) {
     creativeId = ad.id;
     dealId = ad.orderId;
-<<<<<<< HEAD
     originData = { priority: ad.priority, orderProperty: ad.orderProperty, adFormat: ad.adFormat, adType: ad.adType, libId: ad.libId, adspaceId: ad.adspaceId, viewableImpressionCounter: ad.viewableImpressionCounter, slotId: ad.slotID, slotName: ad.slotName, advertiserId: ad.advertiserId, adId: ad.id };
-=======
-    originData = { priority: ad.priority, orderProperty: ad.orderProperty, adFormat: ad.adFormat, adType: ad.adType, libId: ad.libId, adspaceId: ad.adspaceId, viewableImpressionCounter: ad.viewableImpressionCounter };
->>>>>>> master
   } else {
     creativeId = ad.origin + (ad.originInstance ? '-' + ad.originInstance : '');
     if (ad.originData) {
       originData = ad.originData;
-<<<<<<< HEAD
       originData.slotId = ad.slotID;
       originData.slotName = ad.slotName;
       originData.adType = ad.adType;
       if (ad.adFormat) originData.adFormat = ad.adFormat;
-=======
->>>>>>> master
       if (ad.originData.seatbid && ad.originData.seatbid.length) {
         const seatbid = ad.originData.seatbid[0];
         if (seatbid.bid && seatbid.bid.length) {
