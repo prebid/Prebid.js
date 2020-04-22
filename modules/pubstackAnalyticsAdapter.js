@@ -1,15 +1,15 @@
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
-const pubstackAdapter = adapter({
+const pubstackAnalytics = adapter({
   global: 'PubstackAnalytics',
   handler: 'on',
   analyticsType: 'bundle'
 });
 
 adapterManager.registerAnalyticsAdapter({
-  adapter: pubstackAdapter,
+  adapter: pubstackAnalytics,
   code: 'pubstack',
 });
 
-export default pubstackAdapter;
+export default pubstackAnalytics;
