@@ -27,7 +27,6 @@ var adUnits = [
         bidder: 'wipes',
         params: {
           asid: 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ'
-          bid_id: '51ef8751f9aead',
         }
       }]
    }]
