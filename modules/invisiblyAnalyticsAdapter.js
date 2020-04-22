@@ -70,7 +70,6 @@ let weightedFilter = (function () {
   };
   // filter only 50% of events
   let filter = weightedRand({ fail: 0.5, pass: 0.5 }) == 'pass';
-  console.log(weightedRand, filter)
   return {
     filter,
   };
