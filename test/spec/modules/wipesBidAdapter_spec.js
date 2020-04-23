@@ -93,6 +93,7 @@ describe('wipesBidAdapter', function () {
         'url': ENDPOINT_URL,
         'data': {
           'asid': 'dWyPondh2EGB_bNlrVjzIXRZO9F0k1dpo0I8ZvQ',
+          'bid_id': '23beaa6af6cdde',
         }
       }
     ];
@@ -106,7 +107,8 @@ describe('wipesBidAdapter', function () {
         'cpm': 850,
         'status_message': '',
         'currency': 'JPY',
-        'video_creative_id': 600004
+        'video_creative_id': 600004,
+        'bid_id': '23beaa6af6cdde'
       }
     };
 
