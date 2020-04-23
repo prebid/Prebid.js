@@ -517,6 +517,11 @@ export const spec = {
                         mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : UNDEFINED,
                         regexPattern: summary.regex || undefined
                       }
+                      if (bid.ext && bid.ext.buyid) {
+                        newBid.adserverTargeting = {
+                          'hb_buyid_pubmatic': bid.ext.buyid
+                        };
+                      }
                       break;
                     default:
                       requestData.imp.forEach(function(impObj) {
