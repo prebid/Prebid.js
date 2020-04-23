@@ -534,6 +534,9 @@ describe('PubMatic adapter', function () {
         'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
         'seatbid': [{
           'seat': 'seat-id',
+          'ext': {
+            'buyid': 'BUYER-ID-987'
+          },
           'bid': [{
             'id': '74858439-49D7-4169-BA5D-44A046315B2F',
             'impid': '22bddb28db77d',
@@ -545,11 +548,13 @@ describe('PubMatic adapter', function () {
             'ext': {
               'deal_channel': 6,
               'advid': 976,
-              'dspid': 123,
-              'buyid': 'BUYER-ID-987'
+              'dspid': 123
             }
           }]
         }, {
+          'ext': {
+            'buyid': 'BUYER-ID-789'
+          },
           'bid': [{
             'id': '74858439-49D7-4169-BA5D-44A046315BEF',
             'impid': '22bddb28db77e',
@@ -561,8 +566,7 @@ describe('PubMatic adapter', function () {
             'ext': {
               'deal_channel': 5,
               'advid': 832,
-              'dspid': 422,
-              'buyid': 'BUYER-ID-789'
+              'dspid': 422
             }
           }]
         }]

@@ -1045,9 +1045,9 @@ export const spec = {
               }
 
               // adserverTargeting
-              if (bid.ext && bid.ext.buyid) {
+              if (seatbidder.ext && seatbidder.ext.buyid) {
                 newBid.adserverTargeting = {
-                  'hb_buyid_pubmatic': bid.ext.buyid
+                  'hb_buyid_pubmatic': seatbidder.ext.buyid
                 };
               }
 
