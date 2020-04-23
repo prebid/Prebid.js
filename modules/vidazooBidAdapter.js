@@ -21,13 +21,14 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const {params, bidId} = bid;
+  const {params, bidId, adUnitCode} = bid;
   const {bidFloor, cId, pId, ext} = params;
   let data = {
     url: encodeURIComponent(topWindowUrl),
     cb: Date.now(),
     bidFloor: bidFloor,
     bidId: bidId,
+    adUnitCode: adUnitCode,
     publisherId: pId,
     sizes: sizes,
   };
