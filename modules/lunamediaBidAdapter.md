@@ -1,32 +1,34 @@
 # Overview
 
 ```
-Module Name: Advangelists Bidder Adapter
+Module Name: LunaMedia Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: lokesh@advangelists.com
 ```
 
 # Description
 
-Connects to Advangelists exchange for bids.
+Connects to LunaMedia exchange for bids.
 
-Advangelists bid adapter supports Banner and Video ads currently.
+LunaMedia bid adapter supports Banner and Video ads currently.
 
 For more informatio
 
 # Sample Display Ad Unit: For Publishers
 ```javascript
+
 var displayAdUnit = [
 {
     code: 'display',
-    sizes: [
-        [300, 250],
-        [320, 50]
-    ],
+    mediaTypes: {
+        banner: {
+            sizes: [[300, 250],[320, 50]]
+        }
+    }
     bids: [{
-        bidder: 'advangelists',
+        bidder: 'lunamedia',
         params: {
-            pubid: '0cf8d6d643e13d86a5b6374148a4afac',
+            pubid: '121ab139faf7ac67428a23f1d0a9a71b',
             placement: 1234
         }
     }]
@@ -47,9 +49,9 @@ var videoAdUnit = {
 	},
     bids: [
       {
-      	bidder: 'advangelists',
+      	bidder: 'lunamedia',
       	params: {
-        	pubid: '8537f00948fc37cc03c5f0f88e198a76',
+        	pubid: '121ab139faf7ac67428a23f1d0a9a71b',
         	placement: 1234,
         	video: {
             	id: 123,
