@@ -19,8 +19,8 @@ export const spec = {
       const height = sizes.split('x')[1];
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
-      const referrer = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
       const bidId = bidRequest.bidId;
+      const referrer = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
       const payload = {
         v: 'hb1',
         p: placementId,

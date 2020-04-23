@@ -103,7 +103,7 @@ describe('colombiaBidAdapter', function() {
 
     let serverResponse = {
       body: {
-        'ad': '<div>This is test case</div> ',
+        'ad': '<div>This is test case for colombia adapter</div> ',
         'cpm': 3.14,
         'creativeId': '6b958110-612c-4b03-b6a9-7436c9f746dc-1sk24',
         'currency': 'USD',
@@ -128,7 +128,7 @@ describe('colombiaBidAdapter', function() {
         'netRevenue': true,
         'ttl': 3000,
         'referrer': '',
-        'ad': '<div>This is test case</div>'
+        'ad': '<div>This is test case for colombia adapter</div>'
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
