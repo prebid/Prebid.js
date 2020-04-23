@@ -203,7 +203,8 @@ function _buildResponseObject(bidderRequest, bid) {
       creativeId: creativeId,
       dealId: dealId,
       currency: 'USD',
-      ttl: 33,
+      ttl: 300,
+      tl_source: bid.tl_source,
     };
   };
   return bidResponse;
