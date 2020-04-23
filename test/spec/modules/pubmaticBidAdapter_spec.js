@@ -533,6 +533,7 @@ describe('PubMatic adapter', function () {
       'body': {
         'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
         'seatbid': [{
+          'seat': 'seat-id',
           'bid': [{
             'id': '74858439-49D7-4169-BA5D-44A046315B2F',
             'impid': '22bddb28db77d',
@@ -767,6 +768,70 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
+
+      it('Merge the device info from config', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            device: {
+              'newkey': 'new-device-data'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.device.js).to.equal(1);
+        expect(data.device.dnt).to.equal((navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0);
+        expect(data.device.h).to.equal(screen.height);
+        expect(data.device.w).to.equal(screen.width);
+        expect(data.device.language).to.equal(navigator.language);
+        expect(data.device.newkey).to.equal('new-device-data');// additional data from config
+        sandbox.restore();
+      });
+
+      it('Merge the device info from config; data from config overrides the info we have gathered', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            device: {
+              newkey: 'new-device-data',
+              language: 'MARATHI'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.device.js).to.equal(1);
+        expect(data.device.dnt).to.equal((navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0);
+        expect(data.device.h).to.equal(screen.height);
+        expect(data.device.w).to.equal(screen.width);
+        expect(data.device.language).to.equal('MARATHI');// // data overriding from config
+        expect(data.device.newkey).to.equal('new-device-data');// additional data from config
+        sandbox.restore();
+      });
+
+      it('Set app from config, copy publisher and ext from site, unset site', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            app: {
+              bundle: 'org.prebid.mobile.demoapp',
+              domain: 'prebid.org'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.app.bundle).to.equal('org.prebid.mobile.demoapp');
+        expect(data.app.domain).to.equal('prebid.org');
+        expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
+        expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+        expect(data.site).to.not.exist;
+        sandbox.restore();
+      });
 
       it('Request params check: without adSlot', function () {
         delete bidRequests[0].params.adSlot;
@@ -2561,6 +2626,8 @@ describe('PubMatic adapter', function () {
         expect(response[0].meta.clickUrl).to.equal('blackrock.com');
         expect(response[0].referrer).to.include(data.site.ref);
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
+        expect(response[0].pm_seat).to.equal(bidResponses.body.seatbid[0].seat);
+        expect(response[0].pm_dspid).to.equal(bidResponses.body.seatbid[0].bid[0].ext.dspid);
 
         expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
         expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
@@ -2580,6 +2647,8 @@ describe('PubMatic adapter', function () {
         expect(response[1].meta.clickUrl).to.equal('hivehome.com');
         expect(response[1].referrer).to.include(data.site.ref);
         expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
+        expect(response[1].pm_seat).to.equal(bidResponses.body.seatbid[1].seat || null);
+        expect(response[1].pm_dspid).to.equal(bidResponses.body.seatbid[1].bid[0].ext.dspid);
       });
 
       it('should check for dealChannel value selection', function () {
@@ -2642,37 +2711,53 @@ describe('PubMatic adapter', function () {
     });
 
     describe('getUserSyncs', function() {
-      const syncurl = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=5670';
+      const syncurl_iframe = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=5670';
+      const syncurl_image = 'https://image8.pubmatic.com/AdServer/ImgSync?p=5670';
       let sandbox;
       beforeEach(function () {
         sandbox = sinon.sandbox.create();
       });
       afterEach(function() {
         sandbox.restore();
-      })
+      });
 
-      it('execute only if iframeEnabled', function() {
+      it('execute as per config', function() {
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
-          type: 'iframe', url: syncurl
+          type: 'iframe', url: syncurl_iframe
         }]);
-        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.equal(undefined);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'image', url: syncurl_image
+        }]);
       });
 
       it('CCPA/USP', function() {
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&us_privacy=1NYN`
+          type: 'iframe', url: `${syncurl_iframe}&us_privacy=1NYN`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, '1NYN')).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&us_privacy=1NYN`
         }]);
       });
 
       it('GDPR', function() {
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&gdpr=1&gdpr_consent=foo`
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo`
         }]);
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&gdpr=0&gdpr_consent=foo`
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=0&gdpr_consent=foo`
         }]);
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&gdpr=1&gdpr_consent=`
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=`
+        }]);
+
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&gdpr=0&gdpr_consent=foo`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=`
         }]);
       });
 
@@ -2684,7 +2769,10 @@ describe('PubMatic adapter', function () {
           return config[key];
         });
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&coppa=1`
+          type: 'iframe', url: `${syncurl_iframe}&coppa=1`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&coppa=1`
         }]);
       });
 
@@ -2696,7 +2784,10 @@ describe('PubMatic adapter', function () {
           return config[key];
         });
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}`
+          type: 'iframe', url: `${syncurl_iframe}`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}`
         }]);
       });
 
@@ -2708,7 +2799,10 @@ describe('PubMatic adapter', function () {
           return config[key];
         });
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
+          type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
         }]);
       });
     });
