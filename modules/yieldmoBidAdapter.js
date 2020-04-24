@@ -5,7 +5,6 @@ const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
-const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
 const SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 const localWindow = utils.getWindowTop();
 
@@ -99,7 +98,7 @@ export const spec = {
     }
     return bids;
   },
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function() {
     return [];
   }
 };
@@ -146,22 +145,6 @@ function createNewBid(response) {
     ttl: TIME_TO_LIVE,
     ad: response.ad
   };
-}
-
-/**
- * Detects if tracking is allowed
- * @returns false if dnt or if not iframe/pixel enabled
- */
-function trackingEnabled(options) {
-  return isIOS() && !getDNT() && options.iframeEnabled;
-}
-
-/**
- * Detects whether we're in iOS
- * @returns true if in iOS
- */
-function isIOS() {
-  return /iPhone|iPad|iPod/i.test(window.navigator.userAgent);
 }
 
 /**
