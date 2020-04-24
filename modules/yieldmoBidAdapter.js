@@ -16,11 +16,7 @@ export const spec = {
    * @param {object} bid, bid to validate
    * @return boolean, true if valid, otherwise false
    */
-<<<<<<< Updated upstream
   isBidRequestValid: function(bid) {
-=======
-  isBidRequestValid: function (bid) {
->>>>>>> Stashed changes
     return !!(bid && bid.adUnitCode && bid.bidId);
   },
   /**
@@ -30,8 +26,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    console.log(bidderRequest, 'bidderRequest');
-    console.log(bidRequests, 'bid requests');
     let serverRequest = {
       p: [],
       page_url: bidderRequest.refererInfo.referer,
@@ -87,15 +81,11 @@ export const spec = {
         );
       }
     });
-    serverRequest.p = '[' + serverRequest.p.toString() + ']';
+    serverRequest.p = encodeURIComponent('[' + serverRequest.p.toString() + ']');
     return {
       method: 'GET',
       url: SERVER_ENDPOINT,
-<<<<<<< Updated upstream
       data: serverRequest
-=======
-      data: serverRequest,
->>>>>>> Stashed changes
     };
   },
   /**
@@ -115,15 +105,9 @@ export const spec = {
     }
     return bids;
   },
-<<<<<<< Updated upstream
   getUserSyncs: function() {
     return [];
   }
-=======
-  getUserSyncs: function () {
-    return [];
-  },
->>>>>>> Stashed changes
 };
 registerBidder(spec);
 
@@ -139,11 +123,7 @@ function addPlacement(request) {
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
-<<<<<<< Updated upstream
     sizes: request.mediaTypes.banner.sizes
-=======
-    sizes: request.mediaTypes.banner.sizes,
->>>>>>> Stashed changes
   };
   if (request.params) {
     if (request.params.placementId) {
