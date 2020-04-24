@@ -1,17 +1,17 @@
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {
-  cookiesAreEnabled,
   parseQueryStringParameters,
   parseSizesInput
-} from '../src/utils';
-import includes from 'core-js/library/fn/array/includes';
-import find from 'core-js/library/fn/array/find';
+} from '../src/utils.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js/library/fn/array/find.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
-const LOCAL_STORAGE_AVAILABLE = window.localStorage;
-const COOKIE_ENABLED = cookiesAreEnabled();
 const LS_KEYS = {
   PERF_DATA: 'wsPerfData',
   LC_UID: 'wsLcuid',
@@ -175,37 +175,37 @@ export const spec = {
 
 function storeData(data, name, stringify = true) {
   const value = stringify ? JSON.stringify(data) : data;
-  if (LOCAL_STORAGE_AVAILABLE) {
-    localStorage.setItem(name, value);
+  if (storage.hasLocalStorage()) {
+    storage.setDataInLocalStorage(name, value);
     return true;
-  } else if (COOKIE_ENABLED) {
+  } else if (storage.cookiesAreEnabled()) {
     const theDate = new Date();
     const expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString();
-    window.document.cookie = `${name}=${value};path=/;expires=${expDate}`;
+    storage.setCookie(name, value, expDate);
     return true;
   }
 }
 
 function getData(name, remove = true) {
   let data = [];
-  if (LOCAL_STORAGE_AVAILABLE) {
+  if (storage.hasLocalStorage()) {
     Object.keys(localStorage).filter((key) => {
       if (key.indexOf(name) > -1) {
-        data.push(localStorage.getItem(key));
+        data.push(storage.getDataFromLocalStorage(key));
         if (remove) {
-          localStorage.removeItem(key);
+          storage.removeDataFromLocalStorage(key);
         }
       }
     });
   }
 
-  if (COOKIE_ENABLED) {
+  if (storage.cookiesAreEnabled()) {
     document.cookie.split(';').forEach((item) => {
       let value = item.split('=');
       if (value[0].indexOf(name) > -1) {
         data.push(value[1]);
         if (remove) {
-          document.cookie = `${value[0]}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+          storage.setCookie(value[0], '', 'Thu, 01 Jan 1970 00:00:01 GMT');
         }
       }
     });

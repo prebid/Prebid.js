@@ -53,7 +53,7 @@ module.exports = {
       // override the regular exclusion from above (for being inside node_modules).
       {
         test: /.js$/,
-        include: new RegExp(`\\${path.sep}prebid\.js`),
+        include: new RegExp(`\\${path.sep}prebid\\.js`),
         use: {
           loader: 'babel-loader',
           // presets and plugins for Prebid.js must be manually specified separate from your other babel rule.

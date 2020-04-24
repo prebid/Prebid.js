@@ -1,13 +1,12 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { Renderer } from '../src/Renderer';
-import includes from 'core-js/library/fn/array/includes';
-import {parse as parseUrl} from '../src/url';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
-const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
+const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.5.0';
 const DEFAULT_CUR = 'USD';
 
@@ -130,7 +129,7 @@ export const emxAdapter = {
     }
   },
   getSite: (refInfo) => {
-    let url = parseUrl(refInfo.referer);
+    let url = utils.parseUrl(refInfo.referer);
     return {
       domain: url.hostname,
       page: refInfo.referer,
@@ -201,7 +200,7 @@ export const spec = {
     const emxImps = [];
     const timeout = bidderRequest.timeout || '';
     const timestamp = Date.now();
-    const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
+    const url = 'https://' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
     const secure = location.protocol.indexOf('https') > -1 ? 1 : 0;
     const device = emxAdapter.getDevice();
     const site = emxAdapter.getSite(bidderRequest.refererInfo);
@@ -281,7 +280,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: '//biddr.brealtime.com/check.html'
+        url: 'https://biddr.brealtime.com/check.html'
       });
     }
     return syncs;

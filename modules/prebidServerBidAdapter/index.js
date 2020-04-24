@@ -1,16 +1,17 @@
-import Adapter from '../../src/adapter';
-import { createBid } from '../../src/bidfactory';
-import * as utils from '../../src/utils';
-import { STATUS, S2S, EVENTS } from '../../src/constants';
-import adapterManager from '../../src/adapterManager';
-import { config } from '../../src/config';
-import { VIDEO, NATIVE } from '../../src/mediaTypes';
-import { processNativeAdUnitParams } from '../../src/native';
-import { isValid } from '../../src/adapters/bidderFactory';
-import events from '../../src/events';
-import includes from 'core-js/library/fn/array/includes';
+import Adapter from '../../src/adapter.js';
+import { createBid } from '../../src/bidfactory.js';
+import * as utils from '../../src/utils.js';
+import { STATUS, S2S, EVENTS } from '../../src/constants.json';
+import adapterManager from '../../src/adapterManager.js';
+import { config } from '../../src/config.js';
+import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
+import { processNativeAdUnitParams } from '../../src/native.js';
+import { isValid } from '../../src/adapters/bidderFactory.js';
+import events from '../../src/events.js';
+import includes from 'core-js/library/fn/array/includes.js';
 import { S2S_VENDORS } from './config.js';
-import { ajax } from '../../src/ajax';
+import { ajax } from '../../src/ajax.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const getConfig = config.getConfig;
 
@@ -267,10 +268,12 @@ function _appendSiteAppDevice(request, pageUrl) {
     request.app = config.getConfig('app');
     request.app.publisher = {id: _s2sConfig.accountId}
   } else {
-    request.site = {
-      publisher: { id: _s2sConfig.accountId },
-      page: pageUrl
+    request.site = {};
+    if (typeof config.getConfig('site') === 'object') {
+      request.site = config.getConfig('site');
     }
+    utils.deepSetValue(request.site, 'publisher.id', _s2sConfig.accountId);
+    request.site.page = pageUrl;
   }
   if (typeof config.getConfig('device') === 'object') {
     request.device = config.getConfig('device');
@@ -283,6 +286,32 @@ function _appendSiteAppDevice(request, pageUrl) {
   }
   if (!request.device.h) {
     request.device.h = window.innerHeight;
+  }
+}
+
+function addBidderFirstPartyDataToRequest(request) {
+  const bidderConfig = config.getBidderConfig();
+  const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
+    const currBidderConfig = bidderConfig[bidder];
+    if (currBidderConfig.fpd) {
+      const fpd = {};
+      if (currBidderConfig.fpd.context) {
+        fpd.site = currBidderConfig.fpd.context;
+      }
+      if (currBidderConfig.fpd.user) {
+        fpd.user = currBidderConfig.fpd.user;
+      }
+
+      acc.push({
+        bidders: [ bidder ],
+        config: { fpd }
+      });
+    }
+    return acc;
+  }, []);
+
+  if (fpdConfigs.length) {
+    utils.deepSetValue(request, 'ext.prebid.bidderconfig', fpdConfigs);
   }
 }
 
@@ -481,7 +510,22 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
+      /**
+       * Prebid AdSlot
+       * @type {(string|undefined)}
+       */
+      const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
+      if (typeof pbAdSlot === 'string' && pbAdSlot) {
+        utils.deepSetValue(imp, 'ext.context.data.adslot', pbAdSlot);
+      }
+
       Object.assign(imp, mediaTypes);
+
+      // if storedAuctionResponse has been set, pass SRID
+      const storedAuctionResponseBid = find(bidRequests[0].bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
+      if (storedAuctionResponseBid) {
+        utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
+      }
 
       if (imp.banner || imp.video || imp.native) {
         imps.push(imp);
@@ -546,82 +590,9 @@ const OPEN_RTB_PROTOCOL = {
       request.ext.prebid.aliases = aliases;
     }
 
-    const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.criteoId || bidUserId.britepoolid)) {
-      utils.deepSetValue(request, 'user.ext.eids', []);
-
-      if (bidUserId.tdid) {
-        request.user.ext.eids.push({
-          source: 'adserver.org',
-          uids: [{
-            id: bidUserId.tdid,
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }]
-        });
-      }
-
-      if (bidUserId.pubcid) {
-        request.user.ext.eids.push({
-          source: 'pubcid.org',
-          uids: [{
-            id: bidUserId.pubcid,
-          }]
-        });
-      }
-
-      if (bidUserId.parrableid) {
-        request.user.ext.eids.push({
-          source: 'parrable.com',
-          uids: [{
-            id: bidUserId.parrableid
-          }]
-        });
-      }
-
-      if (bidUserId.lipb && bidUserId.lipb.lipbid) {
-        const liveIntent = {
-          source: 'liveintent.com',
-          uids: [{
-            id: bidUserId.lipb.lipbid
-          }]
-        };
-
-        if (Array.isArray(bidUserId.lipb.segments) && bidUserId.lipb.segments.length) {
-          liveIntent.ext = {
-            segments: bidUserId.lipb.segments
-          };
-        }
-        request.user.ext.eids.push(liveIntent);
-      }
-
-      if (bidUserId.id5id) {
-        request.user.ext.eids.push({
-          source: 'id5-sync.com',
-          uids: [{
-            id: bidUserId.id5id,
-          }]
-        });
-      }
-
-      if (bidUserId.criteoId) {
-        request.user.ext.eids.push({
-          source: 'criteo.com',
-          uids: [{
-            id: bidUserId.criteoId
-          }]
-        });
-      }
-
-      if (bidUserId.britepoolid) {
-        request.user.ext.eids.push({
-          source: 'britepool.com',
-          uids: [{
-            id: bidUserId.britepoolid
-          }]
-        });
-      }
+    const bidUserIdAsEids = utils.deepAccess(bidRequests, '0.bids.0.userIdAsEids');
+    if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+      utils.deepSetValue(request, 'user.ext.eids', bidUserIdAsEids);
     }
 
     if (bidRequests) {
@@ -644,6 +615,15 @@ const OPEN_RTB_PROTOCOL = {
     if (getConfig('coppa') === true) {
       utils.deepSetValue(request, 'regs.coppa', 1);
     }
+
+    const commonFpd = getConfig('fpd') || {};
+    if (commonFpd.context) {
+      utils.deepSetValue(request, 'site.ext.data', commonFpd.context);
+    }
+    if (commonFpd.user) {
+      utils.deepSetValue(request, 'user.ext.data', commonFpd.user);
+    }
+    addBidderFirstPartyDataToRequest(request);
 
     return request;
   },
@@ -693,7 +673,7 @@ const OPEN_RTB_PROTOCOL = {
             bidObject.playerHeight = sizes[0];
             bidObject.playerWidth = sizes[1];
 
-            // try to get cache values from 'response.ext.prebid.cache'
+            // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
             if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
               bidObject.videoCacheKey = bid.ext.prebid.cache.vastXml.cacheId;

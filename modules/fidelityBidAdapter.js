@@ -1,11 +1,12 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'fidelity';
 const BIDDER_SERVER = 'x.fidelity-media.com';
 const FIDELITY_VENDOR_ID = 408;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 408,
   isBidRequestValid: function isBidRequestValid(bid) {
     return !!(bid && bid.params && bid.params.zoneid);
   },
@@ -26,6 +27,7 @@ export const spec = {
         tmax: bidderRequest.timeout,
         defloc: bidderRequest.refererInfo.referer,
         referrer: getTopWindowReferrer(),
+        schain: getSupplyChain(bidRequest.schain),
       };
       setConsentParams(bidderRequest.gdprConsent, bidderRequest.uspConsent, payload);
 
@@ -117,4 +119,25 @@ function setConsentParams(gdprConsent, uspConsent, payload) {
   }
 }
 
+function getSupplyChain(schain) {
+  var supplyChain = '';
+  if (schain != null && schain.nodes) {
+    supplyChain = schain.ver + ',' + schain.complete;
+    for (let i = 0; i < schain.nodes.length; i++) {
+      supplyChain += '!';
+      supplyChain += (schain.nodes[i].asi) ? encodeURIComponent(schain.nodes[i].asi) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].sid) ? encodeURIComponent(schain.nodes[i].sid) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].hp) ? encodeURIComponent(schain.nodes[i].hp) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].rid) ? encodeURIComponent(schain.nodes[i].rid) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].name) ? encodeURIComponent(schain.nodes[i].name) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].domain) ? encodeURIComponent(schain.nodes[i].domain) : '';
+    }
+  }
+  return supplyChain;
+}
 registerBidder(spec);

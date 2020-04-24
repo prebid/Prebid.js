@@ -1,8 +1,7 @@
-import { registerVideoSupport } from '../src/adServerManager';
-import { targeting } from '../src/targeting';
-import { format as buildUrl } from '../src/url';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
+import { registerVideoSupport } from '../src/adServerManager.js';
+import { targeting } from '../src/targeting.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const MODULE_NAME = 'Konduit';
 
@@ -52,7 +51,7 @@ export function buildVastUrl(options) {
   let resultingUrl = null;
 
   if (queryParams.konduit_url) {
-    resultingUrl = buildUrl({
+    resultingUrl = utils.buildUrl({
       protocol: 'https',
       host: 'p.konduit.me',
       pathname: '/api/vastProxy',

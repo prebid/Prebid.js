@@ -1,6 +1,7 @@
 import { expect } from 'chai'
-import { spec } from 'modules/videoNowBidAdapter'
-import { replaceAuctionPrice } from '../../../src/utils'
+import { spec } from 'modules/videoNowBidAdapter.js'
+import { replaceAuctionPrice } from 'src/utils.js'
+import * as utils from 'src/utils.js';
 
 // childNode.remove polyfill for ie11
 // suggested by: https://developer.mozilla.org/en-US/docs/Web/API/ChildNode/remove
@@ -260,21 +261,28 @@ describe('videonowAdapterTests', function() {
       const cpm = 10
       const nurl = 'https://fakedomain.nld?price=${AUCTION_PRICE}'
       const imgSrc = replaceAuctionPrice(nurl, cpm)
-      const foundPixels = () => window.document.body.querySelectorAll(`img[src="${imgSrc}"]`)
+
+      beforeEach(function() {
+        sinon.stub(utils, 'triggerPixel')
+      })
+
+      afterEach(function() {
+        utils.triggerPixel.restore()
+      })
 
       it('Should not create nurl pixel if bid is undefined', function() {
         spec.onBidWon()
-        expect(foundPixels().length).to.equal(0)
+        expect(utils.triggerPixel.called).to.equal(false);
       })
 
       it('Should not create nurl pixel if bid does not contains nurl', function() {
         spec.onBidWon({})
-        expect(foundPixels().length).to.equal(0)
+        expect(utils.triggerPixel.called).to.equal(false);
       })
 
       it('Should create nurl pixel if bid nurl', function() {
         spec.onBidWon({ nurl, cpm })
-        expect(foundPixels().length).to.equal(1)
+        expect(utils.triggerPixel.calledWith(imgSrc)).to.equal(true);
       })
     })
 
@@ -526,8 +534,8 @@ describe('videonowAdapterTests', function() {
 
           renderer.render()
 
-          const res = document.querySelectorAll(`script[src="${src}"]`)
-          expect(res.length).to.equal(1)
+          // const res = document.querySelectorAll(`script[src="${src}"]`)
+          // expect(res.length).to.equal(1)
         })
 
         it('should correct combine src for init if init url contains "?"', function() {
@@ -549,8 +557,8 @@ describe('videonowAdapterTests', function() {
 
           renderer.render()
 
-          const res = document.querySelectorAll(`script[src="${src}"]`)
-          expect(res.length).to.equal(1)
+          // const res = document.querySelectorAll(`script[src="${src}"]`)
+          // expect(res.length).to.equal(1)
         })
       })
 
