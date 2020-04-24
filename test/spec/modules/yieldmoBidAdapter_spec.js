@@ -229,17 +229,24 @@ describe('YieldmoAdapter', function () {
         gdprApplies: true,
       };
       const data = spec.buildRequests(bidArray, bidderRequest).data;
+<<<<<<< Updated upstream
       expect(data.userConsent).equal(
         JSON.stringify({
           gdprApplies: true,
           cmp: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
         })
       );
+=======
+      expect(data.userConsent).equal(encodeURIComponent(JSON.stringify({
+        'gdprApplies': true,
+        'cmp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
+      })));
+>>>>>>> Stashed changes
     });
 
     it('should add ccpa information to request if available', () => {
       const privacy = '1YNY';
-      bidderRequest.us_privacy = privacy;
+      bidderRequest.uspConsent = privacy;
       const data = spec.buildRequests(bidArray, bidderRequest).data;
       expect(data.us_privacy).equal(privacy);
     });
@@ -252,8 +259,13 @@ describe('YieldmoAdapter', function () {
       };
       bidArray[0].schain = schain;
       const request = spec.buildRequests([bidArray[0]], bidderRequest);
+<<<<<<< Updated upstream
       expect(request.data.schain).equal(JSON.stringify(schain));
     });
+=======
+      expect(request.data.schain).equal(encodeURIComponent(JSON.stringify(schain)));
+    })
+>>>>>>> Stashed changes
   });
 
   describe('interpretResponse', function () {

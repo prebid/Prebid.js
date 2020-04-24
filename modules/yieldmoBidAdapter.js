@@ -16,7 +16,11 @@ export const spec = {
    * @param {object} bid, bid to validate
    * @return boolean, true if valid, otherwise false
    */
+<<<<<<< Updated upstream
   isBidRequestValid: function(bid) {
+=======
+  isBidRequestValid: function (bid) {
+>>>>>>> Stashed changes
     return !!(bid && bid.adUnitCode && bid.bidId);
   },
   /**
@@ -25,7 +29,9 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
+    console.log(bidderRequest, 'bidderRequest');
+    console.log(bidRequests, 'bid requests');
     let serverRequest = {
       p: [],
       page_url: bidderRequest.refererInfo.referer,
@@ -38,18 +44,23 @@ export const spec = {
       title: localWindow.document.title || '',
       w: localWindow.innerWidth,
       h: localWindow.innerHeight,
-      userConsent: JSON.stringify({
-        // case of undefined, stringify will remove param
-        gdprApplies:
-          bidderRequest && bidderRequest.gdprConsent
-            ? bidderRequest.gdprConsent.gdprApplies
-            : undefined,
-        cmp:
-          bidderRequest && bidderRequest.gdprConsent
-            ? bidderRequest.gdprConsent.consentString
-            : undefined
-      }),
-      us_privacy: bidderRequest && bidderRequest.us_privacy
+      userConsent: encodeURIComponent(
+        JSON.stringify({
+          // case of undefined, stringify will remove param
+          gdprApplies:
+            bidderRequest && bidderRequest.gdprConsent
+              ? bidderRequest.gdprConsent.gdprApplies
+              : '',
+          cmp:
+            bidderRequest && bidderRequest.gdprConsent
+              ? bidderRequest.gdprConsent.consentString
+              : '',
+        })
+      ),
+      us_privacy:
+        bidderRequest && bidderRequest.uspConsent
+          ? encodeURIComponent(bidderRequest.uspConsent)
+          : '',
     };
 
     bidRequests.forEach(request => {
@@ -71,14 +82,20 @@ export const spec = {
         serverRequest.cri_prebid = criteoId;
       }
       if (request.schain) {
-        serverRequest.schain = JSON.stringify(request.schain);
+        serverRequest.schain = encodeURIComponent(
+          JSON.stringify(request.schain)
+        );
       }
     });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
     return {
       method: 'GET',
       url: SERVER_ENDPOINT,
+<<<<<<< Updated upstream
       data: serverRequest
+=======
+      data: serverRequest,
+>>>>>>> Stashed changes
     };
   },
   /**
@@ -86,7 +103,7 @@ export const spec = {
    * @param serverResponse successful response from Ad Server
    * @return {Bid[]} an array of bids
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     let bids = [];
     let data = serverResponse.body;
     if (data.length > 0) {
@@ -98,9 +115,15 @@ export const spec = {
     }
     return bids;
   },
+<<<<<<< Updated upstream
   getUserSyncs: function() {
     return [];
   }
+=======
+  getUserSyncs: function () {
+    return [];
+  },
+>>>>>>> Stashed changes
 };
 registerBidder(spec);
 
@@ -116,7 +139,11 @@ function addPlacement(request) {
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
+<<<<<<< Updated upstream
     sizes: request.mediaTypes.banner.sizes
+=======
+    sizes: request.mediaTypes.banner.sizes,
+>>>>>>> Stashed changes
   };
   if (request.params) {
     if (request.params.placementId) {
@@ -143,7 +170,7 @@ function createNewBid(response) {
     currency: CURRENCY,
     netRevenue: NET_REVENUE,
     ttl: TIME_TO_LIVE,
-    ad: response.ad
+    ad: response.ad,
   };
 }
 
