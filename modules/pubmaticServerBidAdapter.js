@@ -517,9 +517,9 @@ export const spec = {
                         mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : UNDEFINED,
                         regexPattern: summary.regex || undefined
                       }
-                      if (bid.ext && bid.ext.buyid) {
+                      if (seatbidder.ext && seatbidder.ext.buyid) {
                         newBid.adserverTargeting = {
-                          'hb_buyid_pubmatic': bid.ext.buyid
+                          'hb_buyid_pubmatic': seatbidder.ext.buyid
                         };
                       }
                       break;

@@ -96,11 +96,11 @@ describe('PubMaticServer adapter', () => {
                 'bid': 1.3,
                 'width': 300,
                 'height': 250
-              }],
-              'buyid': 'testbuyerid'
+              }]
             }
           }],
-          'seat': 'pubmatic'
+          'seat': 'pubmatic',
+          'ext': {'buyid': 'testbuyerid'}
         }],
         'ext': {
           'responsetimemillis': {
