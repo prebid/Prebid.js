@@ -141,6 +141,17 @@
                             expires: 30
                         },
                     }, {
+                        name: "pubDirectId",
+                        params: {
+                            publisherId: pubdirect_1001 //publisherId is assigned by pub.direct account management team. For more information email hello@pub.direct.
+                        },
+                        storage: {
+                            type: "html5",
+                            name: "pubDirectId",
+                            expires: 90,
+                        },
+
+                    }, {
                         name: "id5Id",
                         params: {
                             partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
@@ -152,7 +163,8 @@
                             refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
                         },
 
-                    }, {
+                    },
+                    {
                         name: "parrableId",
                         params: {
                             // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
@@ -186,7 +198,7 @@
                       }
                     }],
                     syncDelay: 5000,
-                    auctionDelay: 1000 
+                    auctionDelay: 1000
                 }
             });
             pbjs.addAdUnits(adUnits);

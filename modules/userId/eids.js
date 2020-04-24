@@ -28,6 +28,12 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // pubDirect
+  'pubDirectId': {
+    source: 'pub.direct/sync.html',
+    atype: 1
+  },
+
   // parrableId
   'parrableid': {
     source: 'parrable.com',
