@@ -8,10 +8,9 @@ import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 91;
-export const ADAPTER_VERSION = 28;
+export const ADAPTER_VERSION = 29;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
-const CRITEO_VENDOR_ID = 91;
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
 const storage = getStorageManager(GVLID);
@@ -259,6 +258,7 @@ function checkNativeSendId(bidRequest) {
 /**
  * @param {CriteoContext} context
  * @param {BidRequest[]} bidRequests
+ * @param bidderRequest
  * @return {*}
  */
 function buildCdbRequest(context, bidRequests, bidderRequest) {
@@ -328,10 +328,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
       request.gdprConsent.gdprApplies = !!(bidderRequest.gdprConsent.gdprApplies);
     }
-    if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
-      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ] !== 'undefined') {
-      request.gdprConsent.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[ CRITEO_VENDOR_ID.toString(10) ]);
-    }
+    request.gdprConsent.version = bidderRequest.gdprConsent.apiVersion;
     if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
       request.gdprConsent.consentData = bidderRequest.gdprConsent.consentString;
     }
