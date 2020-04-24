@@ -19,7 +19,6 @@ export const errorMessages = {
   CACHE_FAILURE: 'A bid was not cached',
 };
 
-
 // This function is copy from prebid core
 function formatQS(query) {
   return Object
