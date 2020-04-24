@@ -16,7 +16,11 @@ COLOMBIA adapter requires setup and approval from the COLOMBIA team. Please reac
 ```
   var adUnits = [{
     code: 'test-ad-div',
-    sizes: [[300, 250]],
+    mediaTypes: {
+       banner: {
+         sizes: [[300, 250],[728,90],[320,50]]
+       }
+    },
     bids: [{
     bidder: 'colombia',
       params: { 

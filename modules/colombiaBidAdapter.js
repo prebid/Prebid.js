@@ -1,6 +1,7 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'colombia';
 const ENDPOINT_URL = 'https://ade.clmbtech.com/cde/prebid.htm';
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
@@ -8,6 +9,7 @@ const HOST_NAME = document.location.protocol + '//' + window.location.host;
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['clmb'],
+  supportedMediaTypes: [BANNER],
   isBidRequestValid: function(bid) {
     return !!(bid.params.placementId);
   },
@@ -53,7 +55,7 @@ export const spec = {
       cpm = cpm * 0.55;
     }
     if (cpm < 1) {
-      return;
+      return bidResponses;
     }
     if (width !== 0 && height !== 0 && cpm !== 0 && crid !== 0) {
       const dealId = response.dealid || '';
