@@ -54,7 +54,9 @@ export const spec = {
     if (bidderRequest && gdpr) {
       let isCmp = (typeof gdpr.gdprApplies === 'boolean')
       let isConsentString = (typeof gdpr.consentString === 'string')
-      let status = isCmp ? findGdprStatus(gdpr) : gdprStatus.CMP_NOT_FOUND_OR_ERROR
+      let status = isCmp
+        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData, gdpr.apiVersion)
+        : gdprStatus.CMP_NOT_FOUND_OR_ERROR
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
         status: status,
@@ -112,19 +114,20 @@ function getReferrerInfo(bidderRequest) {
   return ref;
 }
 
-function findGdprStatus(gdprConsent) {
-  const gdprApplies = gdprConsent.gdprApplies
-  const gdprData = gdprConsent.vendorData
-  const apiVersion = gdprConsent.apiVersion
-  let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
-  const globalConsent = apiVersion === 1
-    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
-    : !gdprData.isServiceSpecific
-
+function findGdprStatus(gdprApplies, gdprData, apiVersion) {
+  let status = gdprStatus.GDPR_APPLIES_PUBLISHER
   if (gdprApplies) {
-    if (globalConsent) status = gdprStatus.GDPR_APPLIES_GLOBAL
+    if (isGlobalConsent(gdprData, apiVersion)) status = gdprStatus.GDPR_APPLIES_GLOBAL
   } else status = gdprStatus.GDPR_DOESNT_APPLY
   return status;
+}
+
+function isGlobalConsent(gdprData, apiVersion) {
+  return gdprData && apiVersion === 1
+    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
+    : gdprData && apiVersion === 2
+      ? !gdprData.isServiceSpecific
+      : false
 }
 
 function buildRequestObject(bid) {
