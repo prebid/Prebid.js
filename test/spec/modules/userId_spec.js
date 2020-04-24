@@ -14,8 +14,8 @@ import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import {getGlobal} from 'src/prebidGlobal.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
-import {pubDirectSubmodule} from 'modules/pubDirectSystem.js';
 import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem.js';
+import {pubDirectSubmodule} from 'modules/pubDirectSystem.js';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
@@ -751,6 +751,54 @@ describe('User ID', function() {
         done();
       }, {adUnits});
     });
+    it('test hook from pubDirectId cookies when refresh needed', function(done) {
+      // simulate existing browser local storage values
+      coreStorage.setCookie('pubDirectId', JSON.stringify({'PUBDIRECTID': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('pubDirectId_last', (new Date(Date.now() - 7200 * 1000)).toUTCString(), (new Date(Date.now() + 5000).toUTCString()));
+
+      sinon.stub(utils, 'logError'); // getId should failed with a logError as it has no partnerId
+
+      setSubmoduleRegistry([pubDirectSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['pubDirect', 'pubDirectId', 'cookie', 10, 3600]));
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.pubDirectId');
+            expect(bid.userId.pubDirectId).to.equal('testidpubdirect');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'pub.direct/sync.html',
+              uids: [{id: 'testidpubdirect', atype: 1}]
+            });
+          });
+        });
+        sinon.assert.calledOnce(utils.logError);
+        coreStorage.setCookie('pubDirectId', '', EXPIRED_COOKIE_DATE);
+        utils.logError.restore();
+        done();
+      }, {adUnits});
+    });
+
+    it('test hook from pubDirect value-based config', function(done) {
+      setSubmoduleRegistry([pubDirectSubmodule]);
+      init(config);
+      config.setConfig(getConfigValueMock('pubDirect', {'pubDirectId': 'testidpubdirect'}));
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.pubDirectId');
+            expect(bid.userId.pubDirectId).to.equal('testidpubdirect');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'pub.direct/sync.html',
+              uids: [{id: 'testidpubdirect', atype: 1}]
+            });
+          });
+        });
+        done();
+      }, {adUnits});
+    });
 
     it('test hook from identityLink cookie', function(done) {
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', (new Date(Date.now() + 100000).toUTCString()));
@@ -819,55 +867,6 @@ describe('User ID', function() {
           });
         });
         coreStorage.setCookie('_li_pbid', '', EXPIRED_COOKIE_DATE);
-        done();
-      }, {adUnits});
-    });
-
-    it('test hook from pubDirectId cookies when refresh needed', function(done) {
-      // simulate existing browser local storage values
-      coreStorage.setCookie('pubDirectId', JSON.stringify({'PUBDIRECTID': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('pubDirectId_last', (new Date(Date.now() - 7200 * 1000)).toUTCString(), (new Date(Date.now() + 5000).toUTCString()));
-
-      sinon.stub(utils, 'logError'); // getId should failed with a logError as it has no partnerId
-
-      setSubmoduleRegistry([pubDirectSubmodule]);
-      init(config);
-      config.setConfig(getConfigMock(['pubDirect', 'pubDirectId', 'cookie', 10, 3600]));
-
-      requestBidsHook(function() {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.pubDirectId');
-            expect(bid.userId.pubDirectId).to.equal('testidpubdirect');
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'pub.direct/sync.html',
-              uids: [{id: 'testidpubdirect', atype: 1}]
-            });
-          });
-        });
-        sinon.assert.calledOnce(utils.logError);
-        coreStorage.setCookie('pubDirectId', '', EXPIRED_COOKIE_DATE);
-        utils.logError.restore();
-        done();
-      }, {adUnits});
-    });
-
-    it('test hook from pubDirect value-based config', function(done) {
-      setSubmoduleRegistry([pubDirectSubmodule]);
-      init(config);
-      config.setConfig(getConfigValueMock('pubDirect', {'pubDirectId': 'testidpubdirect'}));
-
-      requestBidsHook(function() {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.pubDirectId');
-            expect(bid.userId.pubDirectId).to.equal('testidpubdirect');
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'pub.direct/sync.html',
-              uids: [{id: 'testidpubdirect', atype: 1}]
-            });
-          });
-        });
         done();
       }, {adUnits});
     });
@@ -1021,24 +1020,24 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
-    it('test hook when pubCommonId, unifiedId, id5Id, pubDirectId, identityLink, britepoolId and netId have data to pass', function(done) {
+    it('test hook when pubCommonId, unifiedId, pubDirectId, id5Id, identityLink, britepoolId and netId have data to pass', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('pubDirectId', JSON.stringify({'PUBDIRECTID': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, pubDirectSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, pubDirectSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
         ['unifiedId', 'unifiedid', 'cookie'],
         ['id5Id', 'id5id', 'cookie'],
-        ['pubDirect', 'pubDirectId', 'cookie'],
         ['identityLink', 'idl_env', 'cookie'],
-        ['britepoolId', 'britepoolid', 'cookie'],
-        ['netId', 'netId', 'cookie']));
+        ['netId', 'netId', 'cookie'],
+        ['pubDirect', 'pubDirectId', 'cookie'],
+        ['britepoolId', 'britepoolid', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -1049,12 +1048,12 @@ describe('User ID', function() {
             // also check that UnifiedId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.tdid');
             expect(bid.userId.tdid).to.equal('testunifiedid');
-            // also check that Id5Id id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.id5id');
-            expect(bid.userId.id5id).to.equal('testid5id');
             // also check that pubDirectId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.pubDirectId');
             expect(bid.userId.pubDirectId).to.equal('testidpubdirect');
+            // also check that Id5Id id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.id5id');
+            expect(bid.userId.id5id).to.equal('testid5id');
             // check that identityLink id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
@@ -1069,8 +1068,8 @@ describe('User ID', function() {
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('pubDirectId', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
@@ -1078,11 +1077,11 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
-    it('test hook when pubCommonId, unifiedId, id5Id, pubDirect, britepoolId and netId have their modules added before and after init', function(done) {
+    it('test hook when pubCommonId, unifiedId, pubDirectId, id5Id, britepoolId and netId have their modules added before and after init', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
-      coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('pubDirectId', JSON.stringify({'PUBDIRECTID': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1096,16 +1095,16 @@ describe('User ID', function() {
 
       // attaching after init
       attachIdSystem(unifiedIdSubmodule);
-      attachIdSystem(id5IdSubmodule);
       attachIdSystem(pubDirectSubmodule);
+      attachIdSystem(id5IdSubmodule);
       attachIdSystem(identityLinkSubmodule);
       attachIdSystem(britepoolIdSubmodule);
       attachIdSystem(netIdSubmodule);
 
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
         ['unifiedId', 'unifiedid', 'cookie'],
-        ['id5Id', 'id5id', 'cookie'],
         ['pubDirect', 'pubDirectId', 'cookie'],
+        ['id5Id', 'id5id', 'cookie'],
         ['identityLink', 'idl_env', 'cookie'],
         ['britepoolId', 'britepoolid', 'cookie'],
         ['netId', 'netId', 'cookie']));
@@ -1119,14 +1118,12 @@ describe('User ID', function() {
             // also check that UnifiedId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.tdid');
             expect(bid.userId.tdid).to.equal('cookie-value-add-module-variations');
-            // also check that Id5Id id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.id5id');
-            expect(bid.userId.id5id).to.equal('testid5id');
-
             // also check that pubDirectId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.pubDirectId');
             expect(bid.userId.pubDirectId).to.equal('testidpubdirect');
-
+            // also check that Id5Id id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.id5id');
+            expect(bid.userId.id5id).to.equal('testid5id');
             // also check that identityLink id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
@@ -1141,9 +1138,8 @@ describe('User ID', function() {
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('pubDirectId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('pubDirectId', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('pubDirectId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
@@ -1154,14 +1150,14 @@ describe('User ID', function() {
     it('should add new id system ', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
-      coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('pubDirectId', JSON.stringify({'PUBDIRECTID': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, pubDirectSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, pubDirectSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule]);
       init(config);
 
       config.setConfig({
@@ -1172,9 +1168,9 @@ describe('User ID', function() {
           }, {
             name: 'unifiedId', storage: { name: 'unifiedid', type: 'cookie' }
           }, {
-            name: 'id5Id', storage: { name: 'id5id', type: 'cookie' }
-          }, {
             name: 'pubDirect', storage: { name: 'pubDirectId', type: 'cookie' }
+          }, {
+            name: 'id5Id', storage: { name: 'id5id', type: 'cookie' }
           }, {
             name: 'identityLink', storage: { name: 'idl_env', type: 'cookie' }
           }, {
@@ -1210,12 +1206,12 @@ describe('User ID', function() {
             // check UnifiedId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.tdid');
             expect(bid.userId.tdid).to.equal('cookie-value-add-module-variations');
-            // also check that Id5Id id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.id5id');
-            expect(bid.userId.id5id).to.equal('testid5id');
             // also check that pubDirect id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.pubDirectId');
             expect(bid.userId.pubDirectId).to.equal('testidpubdirect');
+            // also check that Id5Id id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.id5id');
+            expect(bid.userId.id5id).to.equal('testid5id');
             // also check that identityLink id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
@@ -1233,8 +1229,8 @@ describe('User ID', function() {
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('pubDirectId', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);

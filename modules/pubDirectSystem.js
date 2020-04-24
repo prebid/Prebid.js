@@ -1,5 +1,5 @@
 /**
- * This module adds ID5 to the User ID module
+ * This module adds pubDirect to the User ID module
  * The {@link module:modules/userId} module is required
  * @module modules/unifiedIdSystem
  * @requires module:modules/userId

@@ -28,7 +28,7 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // pubDirect
+  // pubDirectId
   'pubDirectId': {
     source: 'pub.direct/sync.html',
     atype: 1
