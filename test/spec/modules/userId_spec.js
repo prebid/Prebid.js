@@ -43,8 +43,8 @@ describe('User ID', function() {
         ].filter(i => i)}
     }
   }
-  function getStorageMock(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30, refreshInSeconds) {
-    return { name: name, storage: { name: key, type: type, expires: expires, refreshInSeconds: refreshInSeconds } }
+  function getStorageMock(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30, refreshInSeconds, configParams) {
+    return { name: name, storage: { name: key, type: type, expires: expires, refreshInSeconds: refreshInSeconds }, params: configParams }
   }
   function getConfigValueMock(name, value) {
     return {
@@ -753,15 +753,16 @@ describe('User ID', function() {
     });
     it('test hook from pubDirectId cookies when refresh needed', function(done) {
       // simulate existing browser local storage values
-      coreStorage.setCookie('pubDirectId', JSON.stringify({'PUBDIRECTID': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('pubDirectId_last', (new Date(Date.now() - 7200 * 1000)).toUTCString(), (new Date(Date.now() + 5000).toUTCString()));
-
-      sinon.stub(utils, 'logError'); // getId should failed with a logError as it has no partnerId
+      coreStorage.setCookie('pubDirectId', JSON.stringify({'pubDirectId': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([pubDirectSubmodule]);
       init(config);
-      config.setConfig(getConfigMock(['pubDirect', 'pubDirectId', 'cookie', 10, 3600]));
-
+      config.setConfig(getConfigMock(['pubDirect', 'pubDirectId', 'cookie', undefined, undefined, {
+        publisherId: 'pubdirect_Test_Network',
+        segments: {
+          'testkey': 'testvalue'
+        }
+      }]));
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
@@ -773,9 +774,7 @@ describe('User ID', function() {
             });
           });
         });
-        sinon.assert.calledOnce(utils.logError);
         coreStorage.setCookie('pubDirectId', '', EXPIRED_COOKIE_DATE);
-        utils.logError.restore();
         done();
       }, {adUnits});
     });
@@ -1023,7 +1022,7 @@ describe('User ID', function() {
     it('test hook when pubCommonId, unifiedId, pubDirectId, id5Id, identityLink, britepoolId and netId have data to pass', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('pubDirectId', JSON.stringify({'PUBDIRECTID': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('pubDirectId', JSON.stringify({'pubDirectId': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1036,7 +1035,12 @@ describe('User ID', function() {
         ['id5Id', 'id5id', 'cookie'],
         ['identityLink', 'idl_env', 'cookie'],
         ['netId', 'netId', 'cookie'],
-        ['pubDirect', 'pubDirectId', 'cookie'],
+        ['pubDirect', 'pubDirectId', 'cookie', undefined, undefined, {
+          publisherId: 'pubdirect_Test_Network',
+          segments: {
+            'testkey': 'testvalue'
+          }
+        }],
         ['britepoolId', 'britepoolid', 'cookie']));
 
       requestBidsHook(function() {
@@ -1080,7 +1084,7 @@ describe('User ID', function() {
     it('test hook when pubCommonId, unifiedId, pubDirectId, id5Id, britepoolId and netId have their modules added before and after init', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
-      coreStorage.setCookie('pubDirectId', JSON.stringify({'PUBDIRECTID': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('pubDirectId', JSON.stringify({'pubDirectId': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1103,7 +1107,12 @@ describe('User ID', function() {
 
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
         ['unifiedId', 'unifiedid', 'cookie'],
-        ['pubDirect', 'pubDirectId', 'cookie'],
+        ['pubDirect', 'pubDirectId', 'cookie', undefined, undefined, {
+          publisherId: 'pubdirect_Test_Network',
+          segments: {
+            'testkey': 'testvalue'
+          }
+        }],
         ['id5Id', 'id5id', 'cookie'],
         ['identityLink', 'idl_env', 'cookie'],
         ['britepoolId', 'britepoolid', 'cookie'],
@@ -1150,7 +1159,7 @@ describe('User ID', function() {
     it('should add new id system ', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
-      coreStorage.setCookie('pubDirectId', JSON.stringify({'PUBDIRECTID': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('pubDirectId', JSON.stringify({'pubDirectId': 'testidpubdirect'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1168,7 +1177,14 @@ describe('User ID', function() {
           }, {
             name: 'unifiedId', storage: { name: 'unifiedid', type: 'cookie' }
           }, {
-            name: 'pubDirect', storage: { name: 'pubDirectId', type: 'cookie' }
+            name: 'pubDirect',
+            storage: { name: 'pubDirectId', type: 'cookie' },
+            params: {
+              publisherId: 'pubdirect_Test_Network',
+              segments: {
+                'testkey': 'testvalue'
+              }
+            }
           }, {
             name: 'id5Id', storage: { name: 'id5id', type: 'cookie' }
           }, {
