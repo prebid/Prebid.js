@@ -2,6 +2,7 @@
   "userId": [
     "unifiedIdSystem",
     "pubCommonIdSystem",
+    "pubDirectSystem",
     "digiTrustIdSystem",
     "id5IdSystem",
     "parrableIdSystem",

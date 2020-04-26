@@ -179,7 +179,18 @@
                         //     foo: '9879878907987',
                         //     bar:'93939'
                         // }
-                    },  {
+                    }, 							{
+							name: "pubDirect",
+							params: {
+								publisherId: "pubdirect_1001", //change publisherId to your own
+								segments: {'test': 'test'} //optional object to pass data to pubDirect's datastore
+							},
+							storage: {
+								type: "cookie",
+								name: "pubDirectId",
+								expires: 60
+							}
+					}, {
                       name: 'identityLink',
                       params: {
                         pid: '14' // Set your real identityLink placement ID here
@@ -191,7 +202,7 @@
                       }
                     }],
                     syncDelay: 5000,
-                    auctionDelay: 1000 
+                    auctionDelay: 1000
                 },
                 realTimeData: {
                     auctionDelay: 1000,
