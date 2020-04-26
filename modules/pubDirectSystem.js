@@ -30,7 +30,7 @@ export const pubDirectSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
-    if (config !== undefined && config.params.segments) {
+    if (config !== undefined && config.params.segments !== undefined) {
       parseData(config.params.publisherId, config.params.segments);
     }
     return (value && typeof value['pubDirectId'] === 'string') ? { 'pubDirectId': value['pubDirectId'] } : undefined;
