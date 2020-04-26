@@ -10,7 +10,7 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 
 function parseData(networkCode, segments) {
-  if (Object.keys(segments) !== 0 && networkCode && JSON.parse(localStorage.getItem('pubId'))) {
+  if (Object.keys(segments).length !== 0 && networkCode && JSON.parse(localStorage.getItem('pubId'))) {
     const userId = JSON.parse(localStorage.getItem('pubId'));
     const url = `https://api.staging.pub.direct/aud-xchg/v1/sync/${networkCode}/${userId.ID}`;
     ajax(url, undefined, JSON.stringify(segments), undefined);
@@ -30,12 +30,7 @@ export const pubDirectSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
-    // eslint-disable-next-line no-console
-    console.log(config, 'config pb');
-    // eslint-disable-next-line no-console
-    console.log(value, 'value pb');
-
-    if (config.params.segments) {
+    if (config !== undefined && config.params.segments) {
       parseData(config.params.publisherId, config.params.segments);
     }
     return (value && typeof value['pubDirectId'] === 'string') ? { 'pubDirectId': value['pubDirectId'] } : undefined;
