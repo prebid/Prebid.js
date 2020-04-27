@@ -6,10 +6,10 @@ import find from 'core-js/library/fn/array/find.js';
 import includes from 'core-js/library/fn/array/includes.js';
 
 const ADAPTER_VERSION = '1.0';
-const BIDDER_CODE = 'advangelists';
+const BIDDER_CODE = 'lunamedia';
 
-export const VIDEO_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
-export const BANNER_ENDPOINT = 'https://nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
+export const VIDEO_ENDPOINT = 'https://api.lunamedia.io/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
+export const BANNER_ENDPOINT = 'https://api.lunamedia.io/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
 export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
@@ -260,6 +260,8 @@ function createVideoRequestData(bid, bidderRequest) {
   });
 
   let placement = getVideoBidParam(bid, 'placement');
+  let floor = getVideoBidParam(bid, 'floor');
+  if (floor == null) { floor = 0.5; }
 
   for (let j = 0; j < sizes.length; j++) {
     o.imp.push({
@@ -267,7 +269,7 @@ function createVideoRequestData(bid, bidderRequest) {
       'displaymanager': '' + BIDDER_CODE,
       'displaymanagerver': '' + ADAPTER_VERSION,
       'tagId': placement,
-      'bidfloor': 2.0,
+      'bidfloor': floor,
       'bidfloorcur': 'USD',
       'secure': secure,
       'video': Object.assign({
@@ -349,12 +351,15 @@ function createBannerRequestData(bid, bidderRequest) {
   for (let j = 0; j < sizes.length; j++) {
     let size = sizes[j];
 
+    let floor = getBannerBidParam(bid, 'floor');
+    if (floor == null) { floor = 0.1; }
+
     o.imp.push({
       'id': '' + j,
       'displaymanager': '' + BIDDER_CODE,
       'displaymanagerver': '' + ADAPTER_VERSION,
       'tagId': placement,
-      'bidfloor': 2.0,
+      'bidfloor': floor,
       'bidfloorcur': 'USD',
       'secure': secure,
       'banner': {
