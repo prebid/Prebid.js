@@ -105,7 +105,7 @@ describe('pubGENIUS adapter', () => {
     };
     const expectedRequest = {
       method: 'POST',
-      url: 'https://blackpearl-test.api.pubgenius.io/api/v1/auction',
+      url: 'https://ortb.adpearl.io/prebid/auction',
       options: { contentType: 'application/json' },
       data: {
         id: 'fake-auction-id',
