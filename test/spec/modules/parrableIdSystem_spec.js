@@ -4,6 +4,7 @@ import * as utils from 'src/utils.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
 import { newStorageManager } from 'src/storageManager.js';
+import {server} from 'test/mocks/xhr.js';
 
 const storage = newStorageManager();
 
@@ -23,6 +24,7 @@ const P_CONFIG_MOCK = {
 };
 
 describe('Parrable ID System', function() {
+  let logErrorStub;
   function getConfigMock() {
     return {
       userSync: {
@@ -51,6 +53,11 @@ describe('Parrable ID System', function() {
 
     beforeEach(function() {
       adUnits = [getAdUnitMock()];
+      logErrorStub = sinon.stub(utils, 'logError');
+    });
+
+    this.afterEach(function() {
+      logErrorStub.restore();
     });
 
     it('should append parrableid to bid request', function(done) {
@@ -75,6 +82,21 @@ describe('Parrable ID System', function() {
         storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
         done();
       }, { adUnits });
+    });
+
+    it('should log an error and continue to callback if ajax request errors', function () {
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = parrableIdSubmodule.getId({partner: 'prebid'}).callback;
+      submoduleCallback(callBackSpy);
+      let request = server.requests[0];
+      expect(request.url).to.contain('h.parrable.com/prebid');
+      request.respond(
+        503,
+        null,
+        'Unavailable'
+      );
+      expect(logErrorStub.calledOnce).to.be.true;
+      expect(callBackSpy.calledOnce).to.be.true;
     });
   });
 });
