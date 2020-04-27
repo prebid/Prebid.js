@@ -15,32 +15,34 @@ Module that connects to pubGENIUS's demand sources
 ```
 var adUnits = [
   {
-    code: 'test-div',
+    code: 'test-desktop-banner',
     mediaTypes: {
       banner: {
-        sizes: [[300, 250]],  // a display size
+        sizes: [[300, 250]]
       }
     },
     bids: [
       {
         bidder: 'pubgenius',
         params: {
-          placement: '12345'
+          adUnitId: '1000'
         }
       }
     ]
-  },{
-    code: 'test-div',
+  },
+  {
+    code: 'test-mobile-banner',
     mediaTypes: {
       banner: {
-        sizes: [[320, 50]],   // a mobile size
+        sizes: [[320, 50]]
       }
     },
     bids: [
       {
         bidder: 'pubgenius',
         params: {
-          placement: 67890
+          adUnitId: '1000',
+          bidFloor: 0.5
         }
       }
     ]
@@ -48,3 +50,12 @@ var adUnits = [
 ];
 ```
 
+# Optional Config
+
+By default, the adapter uses the page URL as provided in referer info by Prebid.js.
+The following config overrides this behavior and specifies the URL to be used:
+```
+pbjs.setConfig({
+  pageUrl: 'https://example.com/top-page-url/'
+});
+```
