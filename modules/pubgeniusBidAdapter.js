@@ -1,11 +1,21 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import { BANNER } from '../src/mediaTypes';
-import { deepAccess, deepSetValue, inIframe, isArrayOfNums, isInteger, isNumber, isStr, logError } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
+import {
+  deepAccess,
+  deepSetValue,
+  inIframe,
+  isArrayOfNums,
+  isInteger,
+  isNumber,
+  isStr,
+  logError,
+  parseQueryStringParameters,
+} from '../src/utils.js';
 
 const BIDDER_VERSION = '1.0.0';
-const BASE_URL = 'https://blackpearl-test.api.pubgenius.io/api/v1';
-const AUCTION_URL = BASE_URL + '/auction';
+const BASE_URL = 'https://ortb.adpearl.io';
+const AUCTION_URL = BASE_URL + '/prebid/auction';
 
 export const spec = {
   code: 'pubgenius',
@@ -87,7 +97,30 @@ export const spec = {
     return bidResponses;
   },
 
-  // getUserSyncs
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = []
+
+    if (syncOptions.iframeEnabled) {
+      let params = {};
+      if (gdprConsent) {
+        params.gdpr = numericBoolean(gdprConsent.gdprApplies);
+        if (gdprConsent.consentString) {
+          params.consent = gdprConsent.consentString;
+        }
+      }
+      if (uspConsent) {
+        params.us_privacy = uspConsent;
+      }
+
+      const qs = parseQueryStringParameters(params);
+      syncs.push({
+        type: 'iframe',
+        url: `${BASE_URL}/usersync/pixels.html?${qs}`,
+      });
+    }
+
+    return syncs;
+  },
 
   onTimeout(data) {
     // empty

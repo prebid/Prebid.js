@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 
-import { spec } from 'modules/pubgeniusBidAdapter';
-import { deepClone } from 'src/utils';
-import { config } from 'src/config';
+import { spec } from 'modules/pubgeniusBidAdapter.js';
+import { deepClone } from 'src/utils.js';
+import { config } from 'src/config.js';
 
 const {
   code,
