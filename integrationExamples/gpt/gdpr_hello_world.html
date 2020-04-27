@@ -93,9 +93,9 @@
 
           // Replace this object to test a new Adapter!
           bids: [{
-            bidder: 'admixer',
+            bidder: 'appnexus',
             params: {
-              zone: '2eb6bd58-865c-47ce-af7f-a918108c3fd2'
+              placementId: 13144370
             }
           }]
 
@@ -117,19 +117,9 @@
           pbjs.addAdUnits(adUnits);
           pbjs.setConfig({
             consentManagement: {
-                gdpr: {
-                    cmpApi: 'iab',
-                    allowAuctionWithoutConsent: false, // suppress auctions if there's no GDPR consent string
-                    timeout: 3000  // GDPR timeout 3000ms
-                },
-                usp: {
-                    cmpApi: 'static',
-                    consentData: {
-                        getUSPData: {
-                            uspString: '1YYY'
-                        }
-                    }
-                }
+              cmpApi: 'iab',
+              timeout: 5000,
+              allowAuctionWithoutConsent: true
             },
             pubcid: {
               enable: false
