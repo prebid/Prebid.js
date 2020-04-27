@@ -202,6 +202,7 @@ describe('QuantumdexBidAdapter', function () {
       },
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
+      'targetKey': 0,
       'bidId': '30b31c1838de1f',
     },
     {
@@ -213,6 +214,7 @@ describe('QuantumdexBidAdapter', function () {
       },
       'adUnitCode': 'adunit-code-2',
       'sizes': [[120, 600], [300, 600], [160, 600]],
+      'targetKey': 1,
       'bidId': '30b31c1838de1e',
     }];
 

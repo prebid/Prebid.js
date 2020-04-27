@@ -6,7 +6,6 @@ const USER_SYNC_URL = 'https://useast.quantumdex.io/usersync/adapter';
 var bySlotTargetKey = {};
 var bySlotSizesCount = {}
 
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner', 'video'],
@@ -46,7 +45,7 @@ export const spec = {
       } else {
         var biggestSize = _getBiggestSize(bidReq.sizes);
         if (biggestSize) {
-          if (bySlotSizesCount[biggestSize] != undefined){
+          if (bySlotSizesCount[biggestSize] != undefined) {
             bySlotSizesCount[biggestSize]++
             targetKey = bySlotSizesCount[biggestSize];
           } else {
@@ -58,7 +57,7 @@ export const spec = {
       bySlotTargetKey[bidReq.adUnitCode] = targetKey;
       bidReq.targetKey = targetKey;
     });
-    
+
     payload.device = {};
     payload.device.ua = navigator.userAgent;
     payload.device.height = window.innerHeight;
@@ -173,7 +172,7 @@ function _getBiggestSize(sizes) {
       index = i;
     }
   }
-  return sizes[index][0] + "x" + sizes[index][1];
+  return sizes[index][0] + 'x' + sizes[index][1];
 }
 
 function _getDoNotTrack() {
