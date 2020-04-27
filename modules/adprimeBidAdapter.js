@@ -94,7 +94,7 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses) => {
-    return
+
   }
 
 };
