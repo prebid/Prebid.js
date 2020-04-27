@@ -1,21 +1,21 @@
 import {expect} from 'chai';
-import {spec} from 'modules/admixerBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/admixerBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'admixer';
-const ENDPOINT_URL = '//inv-nets.admixer.net/prebid.1.0.aspx';
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.0.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
 
-describe('AdmixerAdapter', () => {
+describe('AdmixerAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.be.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': BIDDER_CODE,
       'params': {
@@ -28,11 +28,11 @@ describe('AdmixerAdapter', () => {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -42,8 +42,8 @@ describe('AdmixerAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
-    let bidRequests = [
+  describe('buildRequests', function () {
+    let validRequest = [
       {
         'bidder': BIDDER_CODE,
         'params': {
@@ -56,22 +56,27 @@ describe('AdmixerAdapter', () => {
         'auctionId': '1d1a030790a475',
       }
     ];
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'https://example.com'
+      }
+    };
 
-    it('should add referrer and imp to be equal bidRequest', () => {
-      const request = spec.buildRequests(bidRequests);
+    it('should add referrer and imp to be equal bidRequest', function () {
+      const request = spec.buildRequests(validRequest, bidderRequest);
       const payload = JSON.parse(request.data.substr(5));
       expect(payload.referrer).to.not.be.undefined;
-      expect(payload.imps[0]).to.deep.equal(bidRequests[0]);
+      expect(payload.imps[0]).to.deep.equal(validRequest[0]);
     });
 
-    it('sends bid request to ENDPOINT via GET', () => {
-      const request = spec.buildRequests(bidRequests);
+    it('sends bid request to ENDPOINT via GET', function () {
+      const request = spec.buildRequests(validRequest, bidderRequest);
       expect(request.url).to.equal(ENDPOINT_URL);
       expect(request.method).to.equal('GET');
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       body: [{
         'currency': 'USD',
@@ -86,7 +91,7 @@ describe('AdmixerAdapter', () => {
       }]
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const body = response.body;
       let expectedResponse = [
         {
@@ -107,7 +112,7 @@ describe('AdmixerAdapter', () => {
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = [];
 
       let result = spec.interpretResponse(response);

@@ -19,6 +19,8 @@ Banner, Outstream and Native formats are supported.
           bidder: 'sekindoUM',
           params: { 
               spaceId: 14071
+			  width:300, ///optional
+			  height:250, //optional
           }
       }]
     },

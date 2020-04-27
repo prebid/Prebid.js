@@ -1,8 +1,8 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 export const spec = {
   code: 'sekindoUM',
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -25,11 +25,17 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     var pubUrl = null;
-    if (parent !== window) {
-      pubUrl = document.referrer;
-    } else {
-      pubUrl = window.location.href;
-    }
+    try {
+      if (window.top == window) {
+        pubUrl = window.location.href;
+      } else {
+        try {
+          pubUrl = window.top.location.href;
+        } catch (e2) {
+          pubUrl = document.referrer;
+        }
+      }
+    } catch (e1) {}
 
     return validBidRequests.map(bidRequest => {
       var subId = utils.getBidIdParameter('subId', bidRequest.params);
@@ -47,10 +53,16 @@ export const spec = {
       queryString = utils.tryAppendQueryString(queryString, 'hbcb', '1');/// legasy
       queryString = utils.tryAppendQueryString(queryString, 'dcpmflr', bidfloor);
       queryString = utils.tryAppendQueryString(queryString, 'protocol', protocol);
+      queryString = utils.tryAppendQueryString(queryString, 'x', bidRequest.params.width);
+      queryString = utils.tryAppendQueryString(queryString, 'y', bidRequest.params.height);
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        queryString = utils.tryAppendQueryString(queryString, 'gdprConsent', bidderRequest.gdprConsent.consentString);
+        queryString = utils.tryAppendQueryString(queryString, 'gdpr', (bidderRequest.gdprConsent.gdprApplies) ? '1' : '0');
+      }
       if (bidRequest.mediaType === 'video' || (typeof bidRequest.mediaTypes == 'object' && typeof bidRequest.mediaTypes.video == 'object')) {
         queryString = utils.tryAppendQueryString(queryString, 'x', bidRequest.params.playerWidth);
         queryString = utils.tryAppendQueryString(queryString, 'y', bidRequest.params.playerHeight);
-        if (typeof vid_vastType != 'undefined') {
+        if (typeof vid_vastType != 'undefined') { // eslint-disable-line camelcase
           queryString = utils.tryAppendQueryString(queryString, 'vid_vastType', bidRequest.params.vid_vastType);
         }
         if (typeof bidRequest.mediaTypes == 'object' && typeof bidRequest.mediaTypes.video == 'object' && typeof bidRequest.mediaTypes.video.context == 'string') {
@@ -58,7 +70,7 @@ export const spec = {
         }
       }
 
-      var endpointUrl = 'http' + protocol + '://hb.sekindo.com/live/liveView.php';
+      var endpointUrl = 'https' + '://hb.sekindo.com/live/liveView.php';
 
       return {
         method: 'GET',
@@ -102,14 +114,6 @@ export const spec = {
 
     bidResponses.push(bidResponse);
     return bidResponses;
-  },
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: 'ADAPTER_SYNC_URL'
-      }];
-    }
   }
 }
 registerBidder(spec);
