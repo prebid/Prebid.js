@@ -25,7 +25,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (bidRequests, bidderRequest) {
+  buildRequests: function(bidRequests, bidderRequest) {
     let serverRequest = {
       p: [],
       page_url: bidderRequest.refererInfo.referer,
@@ -93,7 +93,7 @@ export const spec = {
    * @param serverResponse successful response from Ad Server
    * @return {Bid[]} an array of bids
    */
-  interpretResponse: function (serverResponse) {
+  interpretResponse: function(serverResponse) {
     let bids = [];
     let data = serverResponse.body;
     if (data.length > 0) {
