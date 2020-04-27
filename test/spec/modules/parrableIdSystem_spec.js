@@ -89,7 +89,7 @@ describe('Parrable ID System', function() {
       let submoduleCallback = parrableIdSubmodule.getId({partner: 'prebid'}).callback;
       submoduleCallback(callBackSpy);
       let request = server.requests[0];
-      expect(request.url).to.contain('h.parrable.com/prebid');
+      expect(request.url).to.contain('h.parrable.com');
       request.respond(
         503,
         null,
