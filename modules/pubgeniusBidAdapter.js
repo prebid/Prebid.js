@@ -1,4 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {
@@ -73,6 +74,14 @@ export const spec = {
       deepSetValue(data, 'regs.coppa', 1);
     }
 
+    const bidUserIdAsEids = deepAccess(bidRequests, '0.userIdAsEids');
+    if (bidUserIdAsEids && bidUserIdAsEids.length) {
+      const eids = bidUserIdAsEids.filter(eid => eid.source === 'adserver.org');
+      if (eids.length) {
+        deepSetValue(data, 'user.ext.eids', eids);
+      }
+    }
+
     return {
       method: 'POST',
       url: AUCTION_URL,
@@ -123,7 +132,10 @@ export const spec = {
   },
 
   onTimeout(data) {
-    // empty
+    ajax(`${BASE_URL}/prebid/events?type=timeout`, null, JSON.stringify(data), {
+      method: 'POST',
+      contentType: 'application/json',
+    });
   },
 };
 
