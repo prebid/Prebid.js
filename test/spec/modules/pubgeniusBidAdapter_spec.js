@@ -116,12 +116,14 @@ describe('pubGENIUS adapter', () => {
         },
         transactionId: 'fake-transaction-id',
       };
+
       bidderRequest = {
         auctionId: 'fake-auction-id',
         bidderCode: 'pubgenius',
         bidderRequestId: 'fakebidderrequestid',
         refererInfo: {},
       };
+
       expectedRequest = {
         method: 'POST',
         url: 'https://ortb.adpearl.io/prebid/auction',
@@ -158,6 +160,25 @@ describe('pubGENIUS adapter', () => {
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
     });
 
+    it('should build requests with multiple ad units', () => {
+      const bidRequest1 = deepClone(bidRequest);
+      bidRequest1.adUnitCode = 'test-div-1';
+      bidRequest1.bidId = 'fakebidid1';
+      bidRequest1.mediaTypes.banner.sizes = [[728, 90]];
+      bidRequest1.params.adUnitId = '1111';
+
+      expectedRequest.data.imp.push({
+        id: 'fakebidid1',
+        banner: {
+          format: [{ w: 728, h: 90 }],
+          topframe: 0,
+        },
+        tagid: '1111',
+      });
+
+      expect(buildRequests([bidRequest, bidRequest1], bidderRequest)).to.deep.equal(expectedRequest);
+    });
+
     it('should take bid floor in bidder params', () => {
       bidRequest.params.bidFloor = 0.5;
       expectedRequest.data.imp[0].bidfloor = 0.5;
@@ -175,7 +196,7 @@ describe('pubGENIUS adapter', () => {
     it('should take pageUrl in config over referer in refererInfo', () => {
       config.setConfig({ pageUrl: 'http://pageurl.org' });
       bidderRequest.refererInfo.referer = 'http://referer.org';
-      expectedRequest.data.site = { page: encodeURIComponent('http://pageurl.org') };
+      expectedRequest.data.site = { page: 'http://pageurl.org' };
 
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
     });

@@ -29,6 +29,7 @@ export const spec = {
       logError('pubgenius bidder params: adUnitId must be a string or integer.');
       return false;
     }
+
     const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
     return Boolean(sizes && sizes.length) && sizes.every(size => isArrayOfNums(size, 2));
   },
@@ -94,6 +95,7 @@ export const spec = {
     const bidResponses = [];
     const currency = body.cur || 'USD';
     const seatbids = body.seatbid;
+
     if (seatbids) {
       seatbids.forEach(seatbid => {
         seatbid.bid.forEach(bid => {
@@ -103,6 +105,7 @@ export const spec = {
         });
       });
     }
+
     return bidResponses;
   },
 
@@ -111,12 +114,14 @@ export const spec = {
 
     if (syncOptions.iframeEnabled) {
       let params = {};
+
       if (gdprConsent) {
         params.gdpr = numericBoolean(gdprConsent.gdprApplies);
         if (gdprConsent.consentString) {
           params.consent = gdprConsent.consentString;
         }
       }
+
       if (uspConsent) {
         params.us_privacy = uspConsent;
       }
@@ -148,14 +153,17 @@ function buildImp(bid) {
     },
     tagid: String(bid.params.adUnitId),
   };
+
   const bidFloor = bid.params.bidFloor;
   if (isNumber(bidFloor)) {
     imp.bidfloor = bidFloor;
   }
+
   const pos = bid.params.position;
   if (isInteger(pos)) {
     imp.banner.pos = pos;
   }
+
   return imp;
 }
 
@@ -163,9 +171,10 @@ function buildSite(bidderRequest) {
   const pageUrl = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
   if (pageUrl) {
     return {
-      page: encodeURIComponent(pageUrl),
+      page: pageUrl,
     };
   }
+
   return null;
 }
 
@@ -180,11 +189,13 @@ function interpretBid(bid) {
     creativeId: bid.crid,
     netRevenue: true,
   };
+
   if (bid.adomain && bid.adomain.length) {
     bidResponse.meta = {
       advertiserDomains: bid.adomain,
     };
   }
+
   return bidResponse;
 }
 
