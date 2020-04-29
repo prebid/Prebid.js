@@ -68,7 +68,7 @@ let weightedFilter = (function () {
       if (r <= sum) return i;
     }
   };
-  // filter only 50% of events
+  // pass only 1% of events & fail the rest 99%
   let filter = weightedRand({ fail: 0.99, pass: 0.01 }) == 'pass';
   return {
     filter,
