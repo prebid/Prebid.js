@@ -48,6 +48,7 @@ const getConfig = config.getConfig;
 // Helper Functions
 export const BB_HELPERS = {
 <<<<<<< HEAD
+<<<<<<< HEAD
   addSiteAppDevice: function(request, pageUrl) {
     if (!request) return;
 
@@ -59,6 +60,9 @@ export const BB_HELPERS = {
     }
 =======
   addSiteAppDevice: (request, pageUrl) => {
+=======
+  addSiteAppDevice: function(request, pageUrl) {
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     if (!request) return;
 
     if (typeof getConfig('app') === 'object') request.app = getConfig('app');
@@ -71,15 +75,20 @@ export const BB_HELPERS = {
     if (!request.device.h) request.device.h = window.innerHeight;
   },
 <<<<<<< HEAD
+<<<<<<< HEAD
   addSchain: function(request, validBidRequests) {
 =======
   addSchain: (request, validBidRequests) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+  addSchain: function(request, validBidRequests) {
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     if (!request) return;
 
     const schain = utils.deepAccess(validBidRequests, '0.schain');
     if (schain) request.source.ext = { schain: schain };
   },
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
   addCurrency: function(request) {
@@ -93,12 +102,16 @@ export const BB_HELPERS = {
 >>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
   addCurrency: (request) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+  addCurrency: function(request) {
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     if (!request) return;
 
     const adServerCur = getConfig('currency.adServerCurrency');
     if (adServerCur && typeof adServerCur === 'string') request.cur = [adServerCur];
     else if (Array.isArray(adServerCur) && adServerCur.length) request.cur = [adServerCur[0]];
   },
+<<<<<<< HEAD
 <<<<<<< HEAD
   addUserIds: function(request, validBidRequests) {
     if (!request) return;
@@ -129,33 +142,40 @@ export const BB_HELPERS = {
   getDigiTrustParams: function(bidRequest) {
 =======
   addUserIds: (request, validBidRequests) => {
+=======
+  addUserIds: function(request, validBidRequests) {
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     if (!request) return;
 
     const bidUserId = utils.deepAccess(validBidRequests, '0.userId');
     const eids = createEidsArray(bidUserId);
 
-    if (eids && eids.length) {
+    if (eids.length) {
       utils.deepSetValue(request, 'user.ext.eids', eids);
     }
   },
-  addDigiTrust: (request, bidRequests) => {
+  addDigiTrust: function(request, bidRequests) {
     const digiTrust = BB_HELPERS.getDigiTrustParams(bidRequests && bidRequests[0]);
     if (digiTrust) utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
   },
-  substituteUrl: (url, publication, renderer) => {
+  substituteUrl: function (url, publication, renderer) {
     return url.replace('$$URL_START', (DEV_MODE) ? 'https://dev.' : 'https://').replace('$$PUBLICATION', publication).replace('$$RENDERER', renderer);
   },
-  getAuctionUrl: (publication) => {
+  getAuctionUrl: function(publication) {
     return BB_HELPERS.substituteUrl(BB_CONSTANTS.AUCTION_URL, publication);
   },
-  getSyncUrl: (publication) => {
+  getSyncUrl: function(publication) {
     return BB_HELPERS.substituteUrl(BB_CONSTANTS.SYNC_URL, publication);
   },
-  getRendererUrl: (publication, renderer) => {
+  getRendererUrl: function(publication, renderer) {
     return BB_HELPERS.substituteUrl(BB_CONSTANTS.RENDERER_URL, publication, renderer);
   },
+<<<<<<< HEAD
   getDigiTrustParams: (bidRequest) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+  getDigiTrustParams: function(bidRequest) {
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     const digiTrustId = BB_HELPERS.getDigiTrustId(bidRequest);
 
     if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) return null;
@@ -165,16 +185,21 @@ export const BB_HELPERS = {
     }
   },
 <<<<<<< HEAD
+<<<<<<< HEAD
   getDigiTrustId: function(bidRequest) {
 =======
   getDigiTrustId: (bidRequest) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+  getDigiTrustId: function(bidRequest) {
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     const bidRequestDigiTrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
     if (bidRequestDigiTrust) return bidRequestDigiTrust;
 
     const digiTrustUser = getConfig('digiTrustId');
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   },
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
   transformRTBToPrebidProps: function(bid, serverResponse) {
@@ -190,6 +215,9 @@ export const BB_HELPERS = {
 >>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
   transformRTBToPrebidProps: (bid, serverResponse) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+  transformRTBToPrebidProps: function(bid, serverResponse) {
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     bid.cpm = bid.price; delete bid.price;
     bid.bidId = bid.impid;
     bid.requestId = bid.impid; delete bid.impid;
@@ -214,10 +242,14 @@ export const BB_HELPERS = {
 // Renderer Functions
 const BB_RENDERER = {
 <<<<<<< HEAD
+<<<<<<< HEAD
   bootstrapPlayer: function(bid) {
 =======
   bootstrapPlayer: (bid) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+  bootstrapPlayer: function(bid) {
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     const config = {
       code: bid.adUnitCode,
     };
@@ -234,6 +266,9 @@ const BB_RENDERER = {
 
     const ele = document.getElementById(bid.adUnitCode); // NB convention
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
 
     let renderer;
 
@@ -243,18 +278,25 @@ const BB_RENDERER = {
         break;
       }
     }
+<<<<<<< HEAD
 =======
     const renderer = window.bluebillywig.renderers.find((renderer) => renderer._id === rendererId);
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
 
     if (renderer) renderer.bootstrap(config, ele);
     else utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Couldn't find a renderer with ${rendererId}`);
   },
 <<<<<<< HEAD
+<<<<<<< HEAD
   newRenderer: function(rendererUrl, adUnitCode) {
 =======
   newRenderer: (rendererUrl, adUnitCode) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+  newRenderer: function(rendererUrl, adUnitCode) {
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     const renderer = Renderer.install({
       url: rendererUrl,
       loaded: false,
@@ -270,6 +312,7 @@ const BB_RENDERER = {
     return renderer;
   },
 <<<<<<< HEAD
+<<<<<<< HEAD
   outstreamRender: function(bid) {
     bid.renderer.push(function() { BB_RENDERER.bootstrapPlayer(bid) });
   },
@@ -280,6 +323,12 @@ const BB_RENDERER = {
   },
   getRendererId: (pub, renderer) => {
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+  outstreamRender: function(bid) {
+    bid.renderer.push(function() { BB_RENDERER.bootstrapPlayer(bid) });
+  },
+  getRendererId: function(pub, renderer) {
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     return `${pub}-${renderer}`; // NB convention!
   }
 };
@@ -385,7 +434,7 @@ export const spec = {
       const validBidRequest = validBidRequests[validBidRequestIndex];
       const _this = this;
 
-      const ext = validBidRequest.params.connections.reduce((extBuilder, connection) => {
+      const ext = validBidRequest.params.connections.reduce(function(extBuilder, connection) {
         extBuilder[connection] = validBidRequest.params[connection];
 
 <<<<<<< HEAD
@@ -463,6 +512,7 @@ export const spec = {
     const bids = [];
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     for (let seatbidIndex = 0; seatbidIndex < serverResponse.seatbid.length; seatbidIndex++) {
       const seatbid = serverResponse.seatbid[seatbidIndex];
       if (!seatbid.bid || !Array.isArray(seatbid.bid)) continue;
@@ -484,16 +534,34 @@ export const spec = {
         }
 =======
     for (const seatbid of serverResponse.seatbid) {
+=======
+    for (let seatbidIndex = 0; seatbidIndex < serverResponse.seatbid.length; seatbidIndex++) {
+      const seatbid = serverResponse.seatbid[seatbidIndex];
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
       if (!seatbid.bid || !Array.isArray(seatbid.bid)) continue;
-      for (const bid of seatbid.bid) {
+      for (let bidIndex = 0; bidIndex < seatbid.bid.length; bidIndex++) {
+        const bid = seatbid.bid[bidIndex];
         BB_HELPERS.transformRTBToPrebidProps(bid, serverResponse);
 
-        const bidParams = request.bidderRequest.bids.find(_bid => _bid.bidId === bid.bidId).params;
+        let bidParams;
+        for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
+          if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === bid.bidId) {
+            bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
+          }
+        }
 
+<<<<<<< HEAD
         bid.publicationName = bidParams.publicationName;
         bid.rendererCode = bidParams.rendererCode;
         bid.accountId = bidParams.accountId;
 >>>>>>> 1ae44aa5... add Blue Billywig adapter
+=======
+        if (bidParams) {
+          bid.publicationName = bidParams.publicationName;
+          bid.rendererCode = bidParams.rendererCode;
+          bid.accountId = bidParams.accountId;
+        }
+>>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
 
         const rendererUrl = BB_HELPERS.getRendererUrl(bid.publicationName, bid.rendererCode);
 
