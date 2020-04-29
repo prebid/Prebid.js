@@ -1,11 +1,13 @@
-import { ajax } from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import { ajax } from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils';
+import * as utils from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 const defaultUrl = 'https://adxpremium.services/graphql';
+
+let reqCountry = reqCountry || null;
 
 // Events needed
 const {
@@ -31,7 +33,7 @@ let completeObject = {
   referer: null,
   screen_resolution: window.screen.width + 'x' + window.screen.height,
   device_type: null,
-  geo: reqCountry || null,
+  geo: reqCountry,
   events: []
 };
 
