@@ -25,7 +25,7 @@ const getConfig = config.getConfig;
 
 // Helper Functions
 export const BB_HELPERS = {
-  addSiteAppDevice: (request, pageUrl) => {
+  addSiteAppDevice: function(request, pageUrl) {
     if (!request) return;
 
     if (typeof getConfig('app') === 'object') request.app = getConfig('app');
@@ -36,46 +36,46 @@ export const BB_HELPERS = {
     if (!request.device.w) request.device.w = window.innerWidth;
     if (!request.device.h) request.device.h = window.innerHeight;
   },
-  addSchain: (request, validBidRequests) => {
+  addSchain: function(request, validBidRequests) {
     if (!request) return;
 
     const schain = utils.deepAccess(validBidRequests, '0.schain');
     if (schain) request.source.ext = { schain: schain };
   },
-  addCurrency: (request) => {
+  addCurrency: function(request) {
     if (!request) return;
 
     const adServerCur = getConfig('currency.adServerCurrency');
     if (adServerCur && typeof adServerCur === 'string') request.cur = [adServerCur];
     else if (Array.isArray(adServerCur) && adServerCur.length) request.cur = [adServerCur[0]];
   },
-  addUserIds: (request, validBidRequests) => {
+  addUserIds: function(request, validBidRequests) {
     if (!request) return;
 
     const bidUserId = utils.deepAccess(validBidRequests, '0.userId');
     const eids = createEidsArray(bidUserId);
 
-    if (eids && eids.length) {
+    if (eids.length) {
       utils.deepSetValue(request, 'user.ext.eids', eids);
     }
   },
-  addDigiTrust: (request, bidRequests) => {
+  addDigiTrust: function(request, bidRequests) {
     const digiTrust = BB_HELPERS.getDigiTrustParams(bidRequests && bidRequests[0]);
     if (digiTrust) utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
   },
-  substituteUrl: (url, publication, renderer) => {
+  substituteUrl: function (url, publication, renderer) {
     return url.replace('$$URL_START', (DEV_MODE) ? 'https://dev.' : 'https://').replace('$$PUBLICATION', publication).replace('$$RENDERER', renderer);
   },
-  getAuctionUrl: (publication) => {
+  getAuctionUrl: function(publication) {
     return BB_HELPERS.substituteUrl(BB_CONSTANTS.AUCTION_URL, publication);
   },
-  getSyncUrl: (publication) => {
+  getSyncUrl: function(publication) {
     return BB_HELPERS.substituteUrl(BB_CONSTANTS.SYNC_URL, publication);
   },
-  getRendererUrl: (publication, renderer) => {
+  getRendererUrl: function(publication, renderer) {
     return BB_HELPERS.substituteUrl(BB_CONSTANTS.RENDERER_URL, publication, renderer);
   },
-  getDigiTrustParams: (bidRequest) => {
+  getDigiTrustParams: function(bidRequest) {
     const digiTrustId = BB_HELPERS.getDigiTrustId(bidRequest);
 
     if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) return null;
@@ -84,14 +84,14 @@ export const BB_HELPERS = {
       keyv: digiTrustId.keyv
     }
   },
-  getDigiTrustId: (bidRequest) => {
+  getDigiTrustId: function(bidRequest) {
     const bidRequestDigiTrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
     if (bidRequestDigiTrust) return bidRequestDigiTrust;
 
     const digiTrustUser = getConfig('digiTrustId');
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   },
-  transformRTBToPrebidProps: (bid, serverResponse) => {
+  transformRTBToPrebidProps: function(bid, serverResponse) {
     bid.cpm = bid.price; delete bid.price;
     bid.bidId = bid.impid;
     bid.requestId = bid.impid; delete bid.impid;
@@ -115,7 +115,7 @@ export const BB_HELPERS = {
 
 // Renderer Functions
 const BB_RENDERER = {
-  bootstrapPlayer: (bid) => {
+  bootstrapPlayer: function(bid) {
     const config = {
       code: bid.adUnitCode,
     };
@@ -131,12 +131,20 @@ const BB_RENDERER = {
     const rendererId = BB_RENDERER.getRendererId(bid.publicationName, bid.rendererCode);
 
     const ele = document.getElementById(bid.adUnitCode); // NB convention
-    const renderer = window.bluebillywig.renderers.find((renderer) => renderer._id === rendererId);
+
+    let renderer;
+
+    for (let rendererIndex = 0; rendererIndex < window.bluebillywig.renderers.length; rendererIndex++) {
+      if (window.bluebillywig.renderers[rendererIndex]._id === rendererId) {
+        renderer = window.bluebillywig.renderers[rendererIndex];
+        break;
+      }
+    }
 
     if (renderer) renderer.bootstrap(config, ele);
     else utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Couldn't find a renderer with ${rendererId}`);
   },
-  newRenderer: (rendererUrl, adUnitCode) => {
+  newRenderer: function(rendererUrl, adUnitCode) {
     const renderer = Renderer.install({
       url: rendererUrl,
       loaded: false,
@@ -151,10 +159,10 @@ const BB_RENDERER = {
 
     return renderer;
   },
-  outstreamRender: (bid) => {
-    bid.renderer.push(() => BB_RENDERER.bootstrapPlayer(bid));
+  outstreamRender: function(bid) {
+    bid.renderer.push(function() { BB_RENDERER.bootstrapPlayer(bid) });
   },
-  getRendererId: (pub, renderer) => {
+  getRendererId: function(pub, renderer) {
     return `${pub}-${renderer}`; // NB convention!
   }
 };
@@ -237,7 +245,7 @@ export const spec = {
       const validBidRequest = validBidRequests[validBidRequestIndex];
       const _this = this;
 
-      const ext = validBidRequest.params.connections.reduce((extBuilder, connection) => {
+      const ext = validBidRequest.params.connections.reduce(function(extBuilder, connection) {
         extBuilder[connection] = validBidRequest.params[connection];
 
         if (_this.syncStore.bidders.indexOf(connection) === -1) _this.syncStore.bidders.push(connection);
@@ -299,16 +307,25 @@ export const spec = {
 
     const bids = [];
 
-    for (const seatbid of serverResponse.seatbid) {
+    for (let seatbidIndex = 0; seatbidIndex < serverResponse.seatbid.length; seatbidIndex++) {
+      const seatbid = serverResponse.seatbid[seatbidIndex];
       if (!seatbid.bid || !Array.isArray(seatbid.bid)) continue;
-      for (const bid of seatbid.bid) {
+      for (let bidIndex = 0; bidIndex < seatbid.bid.length; bidIndex++) {
+        const bid = seatbid.bid[bidIndex];
         BB_HELPERS.transformRTBToPrebidProps(bid, serverResponse);
 
-        const bidParams = request.bidderRequest.bids.find(_bid => _bid.bidId === bid.bidId).params;
+        let bidParams;
+        for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
+          if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === bid.bidId) {
+            bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
+          }
+        }
 
-        bid.publicationName = bidParams.publicationName;
-        bid.rendererCode = bidParams.rendererCode;
-        bid.accountId = bidParams.accountId;
+        if (bidParams) {
+          bid.publicationName = bidParams.publicationName;
+          bid.rendererCode = bidParams.rendererCode;
+          bid.accountId = bidParams.accountId;
+        }
 
         const rendererUrl = BB_HELPERS.getRendererUrl(bid.publicationName, bid.rendererCode);
 
