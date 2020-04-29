@@ -58,22 +58,8 @@ let _pageView = {
   screenHeight: y,
 };
 
-let weightedFilter = (function () {
-  let weightedRand = function (spec) {
-    let i;
-    let sum = 0;
-    let r = Math.random();
-    for (i in spec) {
-      sum += spec[i];
-      if (r <= sum) return i;
-    }
-  };
-  // pass only 1% of events & fail the rest 99%
-  let filter = weightedRand({ fail: 0.99, pass: 0.01 }) == 'pass';
-  return {
-    filter,
-  };
-})();
+// pass only 1% of events & fail the rest 99%
+let weightedFilter = { filter: Math.random() > 0.99 };
 
 let _eventQueue = [_pageView];
 
