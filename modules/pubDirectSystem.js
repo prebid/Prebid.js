@@ -170,7 +170,7 @@ export const pubDirectSubmodule = {
       }
     });
     function callModule(callbackfromIndex) {
-      const assignId = function(callback) {
+      function assignId(callback) {
         if (localStorage.getItem('pubId')) {
           let callValue = localStorage.getItem('pubId');
           callValue = JSON.parse(callValue).ID;
