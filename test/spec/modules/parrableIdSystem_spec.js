@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
-import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
 import { newStorageManager } from 'src/storageManager.js';
 import { getRefererInfo } from 'src/refererDetection.js';
-
+import * as consentUsp from 'modules/consentManagementUsp.js';
+import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
+import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
 import { server } from 'test/mocks/xhr';
 
 const storage = newStorageManager();
@@ -52,44 +52,78 @@ describe('Parrable ID System', function() {
   }
 
   describe('parrableIdSystem.getId()', function() {
-    let submoduleCallback;
     let callbackSpy = sinon.spy();
 
     beforeEach(function() {
-      submoduleCallback = parrableIdSubmodule.getId(
-        P_CONFIG_MOCK.params,
-        null,
-        P_COOKIE_EID
-      ).callback;
       callbackSpy.reset();
     });
 
     it('returns a callback used to refresh the ID', function() {
-      expect(submoduleCallback).to.be.a('function');
+      let getIdResponse = parrableIdSubmodule.getId(
+        P_CONFIG_MOCK.params,
+        null,
+        P_COOKIE_EID
+      );
+      expect(getIdResponse.callback).to.be.a('function');
     });
 
-    it('invoked callback creates an xhr request to Parrable with id and telemetry', function() {
-      submoduleCallback(callbackSpy);
+    it('callback creates xhr to Parrable that synchronizes the ID', function() {
+      let getIdCallback = parrableIdSubmodule.getId(
+        P_CONFIG_MOCK.params,
+        null,
+        P_COOKIE_EID
+      ).callback;
+
+      getIdCallback(callbackSpy);
 
       let request = server.requests[0];
       let queryParams = utils.parseQS(request.url.split('?')[1]);
       let data = JSON.parse(atob(queryParams.data));
 
       expect(request.url).to.contain('h.parrable.com/prebid');
+      expect(queryParams.us_privacy).to.equal('null');
       expect(data).to.deep.equal({
         eid: P_COOKIE_EID,
         trackers: P_CONFIG_MOCK.params.partner.split(','),
         url: getRefererInfo().referer
       });
-    });
 
-    it('callback responds with updated eid from Parrable backend', function() {
-      submoduleCallback(callbackSpy);
       server.requests[0].respond(200,
         { 'Content-Type': 'text/plain' },
         JSON.stringify({ eid: P_XHR_EID })
       );
+
       expect(callbackSpy.calledWith(P_XHR_EID)).to.be.true;
+    });
+
+    it('passes the uspString to Parrable', function(done) {
+      let adUnits = [getAdUnitMock()];
+      let uspString = '1YNN';
+      let consentManagementConfig = {
+        usp: {
+          cmpApi: 'static',
+          consentData: {
+            getUSPData: {
+              uspString
+            }
+          }
+        }
+      };
+
+      // Outside of tests the consentManagementUsp module is run at priority 50
+      // in the requestBids hook, where userId runs at 40 (later than 50)
+      // So when userId module collects userIdSystem callbacks the Usp data
+      // should be present.
+      consentUsp.setConsentConfig(consentManagementConfig);
+      consentUsp.requestBidsHook(function() {
+        parrableIdSubmodule.getId(
+          P_CONFIG_MOCK.params,
+          null,
+          P_COOKIE_EID
+        ).callback(callbackSpy);
+        expect(server.requests[0].url).to.contain('us_privacy=' + uspString);
+        done();
+      }, { adUnits });
     });
   });
 
