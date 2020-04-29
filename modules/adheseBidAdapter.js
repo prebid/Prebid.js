@@ -85,7 +85,9 @@ function adResponse(bid, ad) {
     creativeId: adDetails.creativeId,
     dealId: adDetails.dealId,
     adhese: {
-      originData: adDetails.originData
+      originData: adDetails.originData,
+      origin: adDetails.origin,
+      originInstance: adDetails.originInstance
     }
   });
 
@@ -166,6 +168,8 @@ function getAdDetails(ad) {
   let creativeId = '';
   let dealId = '';
   let originData = {};
+  let origin = '';
+  let originInstance = '';
 
   if (isAdheseAd(ad)) {
     creativeId = ad.id;
@@ -188,8 +192,10 @@ function getAdDetails(ad) {
         }
       }
     }
+    if (ad.originInstance) originInstance = ad.originInstance;
+    if (ad.origin) origin = ad.origin;
   }
-  return { creativeId: creativeId, dealId: dealId, originData: originData };
+  return { creativeId: creativeId, dealId: dealId, originData: originData, origin: origin, originInstance: originInstance };
 }
 
 function base64urlEncode(s) {
