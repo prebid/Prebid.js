@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
@@ -42,14 +43,13 @@ export const emxAdapter = {
   formatVideoResponse: (bidResponse, emxBid, bidRequest) => {
     bidResponse.vastXml = emxBid.adm;
     if (bidRequest.bidderRequest && bidRequest.bidderRequest.bids && bidRequest.bidderRequest.bids.length > 0) {
-      bidRequest.bidderRequest.bids.forEach((bid) => {
-        if (bidResponse.requestId && bid.bidId && bidResponse.requestId === bid.bidId && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream') {
-          bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
-            id: emxBid.id,
-            url: RENDERER_URL
-          });
-        }
-      });
+      const matchingBid = find(bidRequest.bidderRequest.bids, bid => bidResponse.requestId && bid.bidId && bidResponse.requestId === bid.bidId && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream');
+      if (matchingBid) {
+        bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
+          id: emxBid.id,
+          url: RENDERER_URL
+        });
+      }
     }
     return bidResponse;
   },
