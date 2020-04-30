@@ -108,8 +108,11 @@ const bidRequestBannerMultiSizes = {
 }
 
 const bidRequestVideoAndBanner = {
-  ...bidRequestBanner,
-  ...bidRequestVideo
+  ...bidRequestCommonParams,
+  'mediaTypes': {
+    ...bidRequestBanner.mediaTypes,
+    ...bidRequestVideo.mediaTypes
+  }
 }
 
 describe('shBidAdapter', function () {
@@ -148,23 +151,29 @@ describe('shBidAdapter', function () {
     it('check sizes formats', function () {
       const request = spec.buildRequests([{
         'params': {},
-        'mediaTypes': {},
-        'sizes': [[640, 480]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[320, 240]]
+          }
+        },
       }], bidderRequest)
       const payload = request.data.requests[0];
       expect(payload).to.be.an('object');
-      expect(payload.size).to.have.property('width', 640);
-      expect(payload.size).to.have.property('height', 480);
+      expect(payload.size).to.have.property('width', 320);
+      expect(payload.size).to.have.property('height', 240);
 
       const request2 = spec.buildRequests([{
         'params': {},
-        'mediaTypes': {},
-        'sizes': [320, 240],
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 360]
+          }
+        },
       }], bidderRequest)
       const payload2 = request2.data.requests[0];
       expect(payload).to.be.an('object');
-      expect(payload2.size).to.have.property('width', 320);
-      expect(payload2.size).to.have.property('height', 240);
+      expect(payload2.size).to.have.property('width', 640);
+      expect(payload2.size).to.have.property('height', 360);
     })
 
     it('should get size from mediaTypes when sizes property is empty', function () {
