@@ -1,11 +1,12 @@
-import { deviceAccessHook, setEnforcementConfig, userSyncHook, userIdHook } from 'modules/gdprEnforcement.js';
+import { deviceAccessHook, setEnforcementConfig, userSyncHook, userIdHook, makeBidRequestsHook } from 'modules/gdprEnforcement.js';
 import { config } from 'src/config.js';
 import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { validateStorageEnforcement } from 'src/storageManager.js';
 import { executeStorageCallbacks } from 'src/prebid.js';
+import events from 'src/events.js';
 
-describe('gdpr enforcement', function() {
+describe('gdpr enforcement', function () {
   let nextFnSpy;
   let logWarnSpy;
   let gdprDataHandlerStub;
@@ -46,7 +47,9 @@ describe('gdpr enforcement', function() {
           'consents': {
             '1': true,
             '2': true,
-            '3': false
+            '3': false,
+            '4': true,
+            '5': false
           },
           'legitimateInterests': {
             '1': false,
@@ -81,23 +84,24 @@ describe('gdpr enforcement', function() {
     }
   };
 
-  after(function() {
-    validateStorageEnforcement.getHooks({hook: deviceAccessHook}).remove();
-    $$PREBID_GLOBAL$$.requestBids.getHooks({hook: executeStorageCallbacks}).remove();
+  after(function () {
+    validateStorageEnforcement.getHooks({ hook: deviceAccessHook }).remove();
+    $$PREBID_GLOBAL$$.requestBids.getHooks({ hook: executeStorageCallbacks }).remove();
+    adapterManager.makeBidRequests.getHooks({ hook: makeBidRequestsHook }).remove();
   })
 
-  describe('deviceAccessHook', function() {
-    beforeEach(function() {
+  describe('deviceAccessHook', function () {
+    beforeEach(function () {
       nextFnSpy = sinon.spy();
       gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
       logWarnSpy = sinon.spy(utils, 'logWarn');
     });
-    afterEach(function() {
+    afterEach(function () {
       config.resetConfig();
       gdprDataHandler.getConsentData.restore();
       logWarnSpy.restore();
     });
-    it('should not allow device access when device access flag is set to false', function() {
+    it('should not allow device access when device access flag is set to false', function () {
       config.setConfig({
         deviceAccess: false,
         consentManagement: {
@@ -118,10 +122,11 @@ describe('gdpr enforcement', function() {
         hasEnforcementHook: true,
         valid: false
       }
-      expect(nextFnSpy.calledWith(undefined, result));
+      sinon.assert.calledWith(nextFnSpy, undefined, undefined, result);
+      // expect(nextFnSpy.calledWith(undefined, result));
     });
 
-    it('should only check for consent for vendor exceptions when enforcePurpose and enforceVendor are false', function() {
+    it('should only check for consent for vendor exceptions when enforcePurpose and enforceVendor are false', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -143,7 +148,7 @@ describe('gdpr enforcement', function() {
       expect(logWarnSpy.callCount).to.equal(0);
     });
 
-    it('should check consent for all vendors when enforcePurpose and enforceVendor are true', function() {
+    it('should check consent for all vendors when enforcePurpose and enforceVendor are true', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -164,7 +169,7 @@ describe('gdpr enforcement', function() {
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
-    it('should allow device access when gdprApplies is false and hasDeviceAccess flag is true', function() {
+    it('should allow device access when gdprApplies is false and hasDeviceAccess flag is true', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -187,15 +192,16 @@ describe('gdpr enforcement', function() {
         hasEnforcementHook: true,
         valid: true
       }
-      expect(nextFnSpy.calledWith(undefined, result));
+      sinon.assert.calledWith(nextFnSpy, 1, 'appnexus', result);
+      // expect(nextFnSpy.calledWith(undefined, result));
     });
   });
 
-  describe('userSyncHook', function() {
+  describe('userSyncHook', function () {
     let curBidderStub;
     let adapterManagerStub;
 
-    beforeEach(function() {
+    beforeEach(function () {
       gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
       logWarnSpy = sinon.spy(utils, 'logWarn');
       curBidderStub = sinon.stub(config, 'getCurrentBidder');
@@ -203,7 +209,7 @@ describe('gdpr enforcement', function() {
       nextFnSpy = sinon.spy();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       config.getCurrentBidder.restore();
       config.resetConfig();
       gdprDataHandler.getConsentData.restore();
@@ -211,7 +217,7 @@ describe('gdpr enforcement', function() {
       logWarnSpy.restore();
     });
 
-    it('should allow bidder to do user sync if consent is true', function() {
+    it('should allow bidder to do user sync if consent is true', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -230,7 +236,7 @@ describe('gdpr enforcement', function() {
 
       curBidderStub.returns('sampleBidder1');
       adapterManagerStub.withArgs('sampleBidder1').returns({
-        getSpec: function() {
+        getSpec: function () {
           return {
             'gvlid': 1
           }
@@ -240,7 +246,7 @@ describe('gdpr enforcement', function() {
 
       curBidderStub.returns('sampleBidder2');
       adapterManagerStub.withArgs('sampleBidder2').returns({
-        getSpec: function() {
+        getSpec: function () {
           return {
             'gvlid': 3
           }
@@ -250,7 +256,7 @@ describe('gdpr enforcement', function() {
       expect(nextFnSpy.calledTwice).to.equal(true);
     });
 
-    it('should not allow bidder to do user sync if user has denied consent', function() {
+    it('should not allow bidder to do user sync if user has denied consent', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -269,7 +275,7 @@ describe('gdpr enforcement', function() {
 
       curBidderStub.returns('sampleBidder1');
       adapterManagerStub.withArgs('sampleBidder1').returns({
-        getSpec: function() {
+        getSpec: function () {
           return {
             'gvlid': 1
           }
@@ -279,7 +285,7 @@ describe('gdpr enforcement', function() {
 
       curBidderStub.returns('sampleBidder2');
       adapterManagerStub.withArgs('sampleBidder2').returns({
-        getSpec: function() {
+        getSpec: function () {
           return {
             'gvlid': 3
           }
@@ -290,7 +296,7 @@ describe('gdpr enforcement', function() {
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
-    it('should not check vendor consent when enforceVendor is false', function() {
+    it('should not check vendor consent when enforceVendor is false', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -309,7 +315,7 @@ describe('gdpr enforcement', function() {
 
       curBidderStub.returns('sampleBidder1');
       adapterManagerStub.withArgs('sampleBidder1').returns({
-        getSpec: function() {
+        getSpec: function () {
           return {
             'gvlid': 1
           }
@@ -319,7 +325,7 @@ describe('gdpr enforcement', function() {
 
       curBidderStub.returns('sampleBidder2');
       adapterManagerStub.withArgs('sampleBidder2').returns({
-        getSpec: function() {
+        getSpec: function () {
           return {
             'gvlid': 3
           }
@@ -331,16 +337,16 @@ describe('gdpr enforcement', function() {
     });
   });
 
-  describe('userIdHook', function() {
-    beforeEach(function() {
+  describe('userIdHook', function () {
+    beforeEach(function () {
       logWarnSpy = sinon.spy(utils, 'logWarn');
       nextFnSpy = sinon.spy();
     });
-    afterEach(function() {
+    afterEach(function () {
       config.resetConfig();
       logWarnSpy.restore();
     });
-    it('should allow user id module if consent is given', function() {
+    it('should allow user id module if consent is given', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -365,7 +371,7 @@ describe('gdpr enforcement', function() {
       expect(nextFnSpy.calledOnce).to.equal(true);
     });
 
-    it('should allow userId module if gdpr not in scope', function() {
+    it('should allow userId module if gdpr not in scope', function () {
       let submodules = [{
         submodule: {
           gvlid: 1,
@@ -375,10 +381,11 @@ describe('gdpr enforcement', function() {
       let consentData = null;
       userIdHook(nextFnSpy, submodules, consentData);
       expect(nextFnSpy.calledOnce).to.equal(true);
-      expect(nextFnSpy.calledWith(undefined, submodules, consentData));
+      sinon.assert.calledWith(nextFnSpy, submodules, consentData);
+      // expect(nextFnSpy.calledWith(undefined, submodules, consentData));
     });
 
-    it('should not allow user id module if user denied consent', function() {
+    it('should not allow user id module if user denied consent', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -412,7 +419,106 @@ describe('gdpr enforcement', function() {
           name: 'sampleUserId'
         }
       }]
-      expect(nextFnSpy.calledWith(undefined, expectedSubmodules, consentData));
+      sinon.assert.calledWith(nextFnSpy, expectedSubmodules, consentData);
+      // expect(nextFnSpy.calledWith(undefined, expectedSubmodules, consentData));
+    });
+  });
+
+  describe('makeBidRequestsHook', function () {
+    let sandbox;
+    let adapterManagerStub;
+    let emitEventSpy;
+    const MOCK_AD_UNITS = [{
+      code: 'ad-unit-1',
+      mediaTypes: {},
+      bids: [{
+        bidder: 'bidder_1' // has consent
+      }, {
+        bidder: 'bidder_2' // doesn't have consent
+      }]
+    }, {
+      code: 'ad-unit-2',
+      mediaTypes: {},
+      bids: [{
+        bidder: 'bidder_2'
+      }]
+    }];
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      gdprDataHandlerStub = sandbox.stub(gdprDataHandler, 'getConsentData');
+      adapterManagerStub = sandbox.stub(adapterManager, 'getBidAdapter');
+      logWarnSpy = sandbox.spy(utils, 'logWarn');
+      nextFnSpy = sandbox.spy();
+      emitEventSpy = sandbox.spy(events, 'emit');
+    });
+    afterEach(function () {
+      config.resetConfig();
+      sandbox.restore();
+    });
+    it('should block bidder which does not have consent and allow bidder which has consent', function () {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'basicAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      const consentData = {};
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.apiVersion = 2;
+      consentData.gdprApplies = true;
+
+      gdprDataHandlerStub.returns(consentData);
+      adapterManagerStub.withArgs('bidder_1').returns({
+        getSpec: function () {
+          return { 'gvlid': 4 }
+        }
+      });
+      adapterManagerStub.withArgs('bidder_2').returns({
+        getSpec: function () {
+          return { 'gvlid': 5 }
+        }
+      });
+      makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
+
+      // Assertions
+      expect(nextFnSpy.calledOnce).to.equal(true);
+      sinon.assert.calledWith(nextFnSpy, [{
+        code: 'ad-unit-1',
+        mediaTypes: {},
+        bids: [
+          sinon.match({ bidder: 'bidder_1' })
+        ]
+      }, {
+        code: 'ad-unit-2',
+        mediaTypes: {},
+        bids: []
+      }], []);
+      expect(emitEventSpy.calledOnce).to.equal(true);
+      expect(logWarnSpy.calledOnce).to.equal(true);
+    });
+
+    it('should skip TCF v2.0 validation checks if "Purpose 2" enforcment not present in gdpr config rules', function () {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforePurpose: false,
+            enforceVendor: false,
+            vendorExceptions: []
+          }]
+        }
+      });
+      makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
+
+      // Assertions
+      expect(nextFnSpy.calledOnce).to.equal(true);
+      sinon.assert.calledWith(nextFnSpy, sinon.match.array.deepEquals(MOCK_AD_UNITS), []);
+      expect(emitEventSpy.notCalled).to.equal(true);
+      expect(logWarnSpy.notCalled).to.equal(true);
     });
   });
 });
