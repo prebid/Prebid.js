@@ -46,7 +46,7 @@ describe('AdprimebBidAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer');
       expect(placement.placementId).to.equal(0);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal('banner');
