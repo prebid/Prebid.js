@@ -3,7 +3,7 @@ import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { newStorageManager } from 'src/storageManager.js';
 import { getRefererInfo } from 'src/refererDetection.js';
-import * as consentUsp from 'modules/consentManagementUsp.js';
+import { uspDataHandler } from 'src/adapterManager.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
 import { server } from 'test/mocks/xhr';
@@ -55,7 +55,7 @@ describe('Parrable ID System', function() {
     let callbackSpy = sinon.spy();
 
     beforeEach(function() {
-      callbackSpy.reset();
+      callbackSpy.resetHistory();
     });
 
     it('returns a callback used to refresh the ID', function() {
@@ -96,34 +96,15 @@ describe('Parrable ID System', function() {
       expect(callbackSpy.calledWith(P_XHR_EID)).to.be.true;
     });
 
-    it('passes the uspString to Parrable', function(done) {
-      let adUnits = [getAdUnitMock()];
+    it('passes the uspString to Parrable', function() {
       let uspString = '1YNN';
-      let consentManagementConfig = {
-        usp: {
-          cmpApi: 'static',
-          consentData: {
-            getUSPData: {
-              uspString
-            }
-          }
-        }
-      };
-
-      // Outside of tests the consentManagementUsp module is run at priority 50
-      // in the requestBids hook, where userId runs at 40 (later than 50)
-      // So when userId module collects userIdSystem callbacks the Usp data
-      // should be present.
-      consentUsp.setConsentConfig(consentManagementConfig);
-      consentUsp.requestBidsHook(function() {
-        parrableIdSubmodule.getId(
-          P_CONFIG_MOCK.params,
-          null,
-          P_COOKIE_EID
-        ).callback(callbackSpy);
-        expect(server.requests[0].url).to.contain('us_privacy=' + uspString);
-        done();
-      }, { adUnits });
+      uspDataHandler.setConsentData(uspString);
+      parrableIdSubmodule.getId(
+        P_CONFIG_MOCK.params,
+        null,
+        P_COOKIE_EID
+      ).callback(callbackSpy);
+      expect(server.requests[0].url).to.contain('us_privacy=' + uspString);
     });
   });
 
