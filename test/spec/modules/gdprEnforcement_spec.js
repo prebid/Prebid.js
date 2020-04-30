@@ -123,7 +123,6 @@ describe('gdpr enforcement', function () {
         valid: false
       }
       sinon.assert.calledWith(nextFnSpy, undefined, undefined, result);
-      // expect(nextFnSpy.calledWith(undefined, result));
     });
 
     it('should only check for consent for vendor exceptions when enforcePurpose and enforceVendor are false', function () {
@@ -193,7 +192,6 @@ describe('gdpr enforcement', function () {
         valid: true
       }
       sinon.assert.calledWith(nextFnSpy, 1, 'appnexus', result);
-      // expect(nextFnSpy.calledWith(undefined, result));
     });
   });
 
@@ -382,7 +380,6 @@ describe('gdpr enforcement', function () {
       userIdHook(nextFnSpy, submodules, consentData);
       expect(nextFnSpy.calledOnce).to.equal(true);
       sinon.assert.calledWith(nextFnSpy, submodules, consentData);
-      // expect(nextFnSpy.calledWith(undefined, submodules, consentData));
     });
 
     it('should not allow user id module if user denied consent', function () {
@@ -420,7 +417,6 @@ describe('gdpr enforcement', function () {
         }
       }]
       sinon.assert.calledWith(nextFnSpy, expectedSubmodules, consentData);
-      // expect(nextFnSpy.calledWith(undefined, expectedSubmodules, consentData));
     });
   });
 
