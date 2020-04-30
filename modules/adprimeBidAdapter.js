@@ -64,10 +64,10 @@ export const spec = {
       let bid = validBidRequests[i];
       let sizes
       if (bid.mediaTypes) {
-        if (bid.mediaType[BANNER] && bid.mediaType[BANNER].sizes) {
-          sizes = bid.mediaType[BANNER].sizes
-        } else if (bid.mediaType[VIDEO] && bid.mediaType[VIDEO].playerSize) {
-          sizes = bid.mediaType[VIDEO].playerSize
+        if (bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
+          sizes = bid.mediaTypes[BANNER].sizes
+        } else if (bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
+          sizes = bid.mediaTypes[VIDEO].playerSize
         }
       }
       placements.push({
