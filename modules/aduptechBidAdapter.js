@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes'
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js'
+import * as utils from '../src/utils.js';
 
 export const BIDDER_CODE = 'aduptech';
 export const PUBLISHER_PLACEHOLDER = '{PUBLISHER}';

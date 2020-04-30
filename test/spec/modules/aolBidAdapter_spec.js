@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import * as utils from 'src/utils';
-import {spec} from 'modules/aolBidAdapter';
-import {config} from 'src/config';
+import * as utils from 'src/utils.js';
+import {spec} from 'modules/aolBidAdapter.js';
+import {config} from 'src/config.js';
 
 const DEFAULT_AD_CONTENT = '<script>logInfo(\'ad\');</script>';
 

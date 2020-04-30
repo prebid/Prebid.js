@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/microadBidAdapter';
-import * as utils from 'src/utils';
+import { spec } from 'modules/microadBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('microadBidAdapter', () => {
   const bidRequestTemplate = {

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import events from 'src/events';
+import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
-import { server } from 'test/mocks/xhr';
+import { server } from 'test/mocks/xhr.js';
 
 const REQUEST_BIDS = CONSTANTS.EVENTS.REQUEST_BIDS;
 const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;

@@ -1,5 +1,8 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
@@ -108,12 +111,11 @@ function getPublisherUrl() {
 function buildTrionUrlParams(bid, bidderRequest) {
   var pubId = utils.getBidIdParameter('pubId', bid.params);
   var sectionId = utils.getBidIdParameter('sectionId', bid.params);
-  var re = utils.getBidIdParameter('re', bid.params);
   var url = getPublisherUrl();
   var bidSizes = getBidSizesFromBidRequest(bid);
   var sizes = utils.parseSizesInput(bidSizes).join(',');
-  var isAutomated = (navigator && navigator.webdriver) ? 1 : 0;
-  var isHidden = (document.hidden) ? 1 : 0;
+  var isAutomated = (navigator && navigator.webdriver) ? '1' : '0';
+  var isHidden = (document.hidden) ? '1' : '0';
   var visibilityState = encodeURIComponent(document.visibilityState);
 
   var intT = window.TR_INT_T && window.TR_INT_T != -1 ? window.TR_INT_T : null;
@@ -129,7 +131,7 @@ function buildTrionUrlParams(bid, bidderRequest) {
   trionUrl = utils.tryAppendQueryString(trionUrl, 'bidId', bid.bidId);
   trionUrl = utils.tryAppendQueryString(trionUrl, 'pubId', pubId);
   trionUrl = utils.tryAppendQueryString(trionUrl, 'sectionId', sectionId);
-  trionUrl = utils.tryAppendQueryString(trionUrl, 're', re);
+  trionUrl = utils.tryAppendQueryString(trionUrl, 'vers', '$prebid.version$');
   if (url) {
     trionUrl += 'url=' + url + '&';
   }
@@ -177,8 +179,8 @@ function handlePostMessage() {
 export function getStorageData(key) {
   var item = null;
   try {
-    if (window.localStorage) {
-      item = window.localStorage.getItem(key);
+    if (storage.hasLocalStorage()) {
+      item = storage.getDataFromLocalStorage(key);
     }
   } catch (e) {
   }
@@ -187,8 +189,8 @@ export function getStorageData(key) {
 
 export function setStorageData(key, item) {
   try {
-    if (window.localStorage) {
-      window.localStorage.setItem(key, item);
+    if (storage.hasLocalStorage()) {
+      storage.setDataInLocalStorage(key, item);
     }
   } catch (e) {
   }

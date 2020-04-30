@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils'
-import {ajax} from '../src/ajax';
-import {submodule} from '../src/hook';
+import * as utils from '../src/utils.js'
+import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook.js';
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
@@ -16,6 +16,11 @@ export const id5IdSubmodule = {
    * @type {string}
    */
   name: 'id5Id',
+  /**
+   * Vendor id of ID5
+   * @type {Number}
+   */
+  gvlid: 131,
   /**
    * decode the stored id value for passing to bid requests
    * @function decode

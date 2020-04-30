@@ -1,15 +1,14 @@
 import { expect } from 'chai';
 
 import parse from 'url-parse';
-import { buildDfpVideoUrl, buildAdpodVideoUrl } from 'modules/dfpAdServerVideo';
-import { parseQS } from 'src/url';
-import adUnit from 'test/fixtures/video/adUnit';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { targeting } from 'src/targeting';
-import { auctionManager } from 'src/auctionManager';
-import * as adpod from 'modules/adpod';
-import { server } from 'test/mocks/xhr';
+import { buildDfpVideoUrl, buildAdpodVideoUrl } from 'modules/dfpAdServerVideo.js';
+import adUnit from 'test/fixtures/video/adUnit.json';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { targeting } from 'src/targeting.js';
+import { auctionManager } from 'src/auctionManager.js';
+import * as adpod from 'modules/adpod.js';
+import { server } from 'test/mocks/xhr.js';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -33,7 +32,7 @@ describe('The DFP video support module', function () {
     expect(url.protocol).to.equal('https:');
     expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
-    const queryParams = parseQS(url.query);
+    const queryParams = utils.parseQS(url.query);
     expect(queryParams).to.have.property('correlator');
     expect(queryParams).to.have.property('description_url', 'someUrl.com');
     expect(queryParams).to.have.property('env', 'vp');
@@ -57,7 +56,7 @@ describe('The DFP video support module', function () {
 
     expect(url.host).to.equal('video.adserver.example');
 
-    const queryObject = parseQS(url.query);
+    const queryObject = utils.parseQS(url.query);
     expect(queryObject.description_url).to.equal('vastUrl.example');
   });
 
@@ -78,7 +77,7 @@ describe('The DFP video support module', function () {
       params: { iu: 'my/adUnit' }
     }));
 
-    const queryObject = parseQS(url.query);
+    const queryObject = utils.parseQS(url.query);
     expect(queryObject.iu).to.equal('my/adUnit');
   });
 
@@ -92,7 +91,7 @@ describe('The DFP video support module', function () {
       }
     }));
 
-    expect(parseQS(url.query)).to.have.property('output', 'vast');
+    expect(utils.parseQS(url.query)).to.have.property('output', 'vast');
   });
 
   it('should include the cache key and adserver targeting in cust_params', function () {
@@ -108,8 +107,8 @@ describe('The DFP video support module', function () {
         'iu': 'my/adUnit'
       }
     }));
-    const queryObject = parseQS(url.query);
-    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
 
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
@@ -178,8 +177,8 @@ describe('The DFP video support module', function () {
           'iu': 'my/adUnit'
         }
       }));
-      const queryObject = parseQS(url.query);
-      const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+      const queryObject = utils.parseQS(url.query);
+      const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
 
       expect(customParams).to.have.property('hb_adid', 'ad_id');
       expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
@@ -205,8 +204,8 @@ describe('The DFP video support module', function () {
         },
       },
     }));
-    const queryObject = parseQS(url.query);
-    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
 
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('my_targeting', 'foo');
@@ -224,8 +223,8 @@ describe('The DFP video support module', function () {
       url: 'https://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s&cust_params=section%3dblog%26mykey%3dmyvalue'
     }));
 
-    const queryObject = parseQS(url.query);
-    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
 
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('section', 'blog');
@@ -247,7 +246,7 @@ describe('The DFP video support module', function () {
       }
     }));
 
-    const queryObject = parseQS(url.query);
+    const queryObject = utils.parseQS(url.query);
     expect(queryObject.description_url).to.equal('descriptionurl.example');
   });
 
@@ -272,8 +271,8 @@ describe('The DFP video support module', function () {
         'iu': 'my/adUnit'
       }
     }));
-    const queryObject = parseQS(url.query);
-    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
 
     expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
     expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
@@ -293,8 +292,8 @@ describe('The DFP video support module', function () {
         'iu': 'my/adUnit'
       }
     }));
-    const queryObject = parseQS(url.query);
-    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
 
     expect(customParams).to.have.property('hb_uuid', 'def');
     expect(customParams).to.have.property('hb_cache_id', 'def');
@@ -370,7 +369,7 @@ describe('The DFP video support module', function () {
         expect(url.protocol).to.equal('https:');
         expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
-        const queryParams = parseQS(url.query);
+        const queryParams = utils.parseQS(url.query);
         expect(queryParams).to.have.property('correlator');
         expect(queryParams).to.have.property('description_url', 'someUrl.com');
         expect(queryParams).to.have.property('env', 'vp');
@@ -382,7 +381,7 @@ describe('The DFP video support module', function () {
         expect(queryParams).to.have.property('url');
         expect(queryParams).to.have.property('cust_params');
 
-        const custParams = parseQS(decodeURIComponent(queryParams.cust_params));
+        const custParams = utils.parseQS(decodeURIComponent(queryParams.cust_params));
         expect(custParams).to.have.property('hb_cache_id', '123');
         expect(custParams).to.have.property('hb_pb_cat_dur', '15.00_395_15s,15.00_406_30s,10.00_395_15s');
       }
@@ -424,7 +423,7 @@ describe('The DFP video support module', function () {
         expect(url.protocol).to.equal('https:');
         expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
-        const queryParams = parseQS(url.query);
+        const queryParams = utils.parseQS(url.query);
         expect(queryParams).to.have.property('correlator');
         expect(queryParams).to.have.property('description_url', 'someUrl.com');
         expect(queryParams).to.have.property('env', 'vp');
@@ -436,7 +435,7 @@ describe('The DFP video support module', function () {
         expect(queryParams).to.have.property('url');
         expect(queryParams).to.have.property('cust_params');
 
-        const custParams = parseQS(decodeURIComponent(queryParams.cust_params));
+        const custParams = utils.parseQS(decodeURIComponent(queryParams.cust_params));
         expect(custParams).to.have.property('hb_cache_id', '123');
         expect(custParams).to.have.property('hb_pb_cat_dur', '10.00_15s,15.00_15s,15.00_30s');
       }

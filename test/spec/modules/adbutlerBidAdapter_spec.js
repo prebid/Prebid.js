@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adbutlerBidAdapter';
+import {spec} from 'modules/adbutlerBidAdapter.js';
 
 describe('AdButler adapter', function () {
   let bidRequests;

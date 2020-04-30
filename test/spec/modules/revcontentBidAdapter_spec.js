@@ -1,9 +1,8 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
-import * as url from 'src/url';
-import {spec} from 'modules/revcontentBidAdapter';
-import { NATIVE } from 'src/mediaTypes';
-import { config } from 'src/config';
+import {spec} from 'modules/revcontentBidAdapter.js';
+import { NATIVE } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 
 describe('revcontent adapter', function () {
   let serverResponse, bidRequest, bidResponses;

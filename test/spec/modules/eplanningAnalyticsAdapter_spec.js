@@ -1,8 +1,8 @@
-import eplAnalyticsAdapter from 'modules/eplanningAnalyticsAdapter';
-import includes from 'core-js/library/fn/array/includes';
+import eplAnalyticsAdapter from 'modules/eplanningAnalyticsAdapter.js';
+import includes from 'core-js/library/fn/array/includes.js';
 import { expect } from 'chai';
-import {parse as parseURL} from 'src/url';
-import { server } from 'test/mocks/xhr';
+import { parseUrl } from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
@@ -118,7 +118,7 @@ describe('eplanning analytics adapter', function () {
       expect(includes(['https://ads.ar.e-planning.net/hba/1/12345?d='], requests[0].url));
 
       let info = requests[0].url;
-      let purl = parseURL(info);
+      let purl = parseUrl(info);
       let eplData = JSON.parse(decodeURIComponent(purl.search.d));
 
       // Step 8 check that 6 events were sent
