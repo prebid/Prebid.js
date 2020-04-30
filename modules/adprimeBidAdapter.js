@@ -50,7 +50,6 @@ export const spec = {
       'page': location.pathname,
       'placements': placements
     };
-    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
@@ -63,13 +62,21 @@ export const spec = {
 
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
-
+      let sizes
+      if (bid.mediaTypes) {
+        if (bid.mediaType[BANNER] && bid.mediaType[BANNER].sizes) {
+          sizes = bid.mediaType[BANNER].sizes
+        } else if (bid.mediaType[VIDEO] && bid.mediaType[VIDEO].playerSize) {
+          sizes = bid.mediaType[VIDEO].playerSize
+        }
+      }
       placements.push({
         placementId: bid.params.placementId,
         bidId: bid.bidId,
-        sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
-        traffic: traff
+        sizes: sizes || [],
+        wPlayer: sizes ? sizes[0] : 0,
+        hPlayer: sizes ? sizes[1] : 0,
+        traffic: bid.params.traffic || BANNER
       });
       if (bid.schain) {
         placements.schain = bid.schain;
@@ -92,11 +99,6 @@ export const spec = {
     }
     return response;
   },
-
-  getUserSyncs: (syncOptions, serverResponses) => {
-
-  }
-
 };
 
 registerBidder(spec);
