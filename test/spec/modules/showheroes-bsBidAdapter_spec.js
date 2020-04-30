@@ -16,6 +16,23 @@ const gdpr = {
   }
 }
 
+const schain = {
+  'schain': {
+    'validation': 'strict',
+    'config': {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'some.com',
+          'sid': '00001',
+          'hp': 1
+        }
+      ]
+    }
+  }
+}
+
 const bidRequestCommonParams = {
   'bidder': 'showheroes-bs',
   'params': {
@@ -244,6 +261,16 @@ describe('shBidAdapter', function () {
       const payload = request.data.requests[0];
       expect(payload).to.be.an('object');
       expect(payload.gdprConsent).to.eql(gdpr.gdprConsent)
+    })
+
+    it('passes schain object if present', function() {
+      const request = spec.buildRequests([{
+        ...bidRequestVideo,
+        ...schain
+      }], bidderRequest)
+      const payload = request.data.requests[0];
+      expect(payload).to.be.an('object');
+      expect(payload.schain).to.eql(schain.schain);
     })
   })
 
