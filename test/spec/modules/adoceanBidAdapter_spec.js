@@ -20,7 +20,11 @@ describe('AdoceanAdapter', function () {
         'emiter': 'myao.adocean.pl'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250]]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -51,7 +55,11 @@ describe('AdoceanAdapter', function () {
           'emiter': 'myao.adocean.pl'
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250], [300, 600]]
+          }
+        },
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
@@ -64,7 +72,11 @@ describe('AdoceanAdapter', function () {
           'emiter': 'myao.adocean.pl'
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 200], [600, 250]]
+          }
+        },
         'bidId': '30b31c1838de1f',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
@@ -92,21 +104,27 @@ describe('AdoceanAdapter', function () {
       }
     });
 
-    it('sends bid request to url via GET', function () {
+    it('sends bid request to url via GET', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('GET');
       expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/_[0-9]*/ad.json`));
     });
 
-    it('should attach id to url', function () {
+    it('should attach id to url', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.include('id=' + bidRequests[0].params.masterId);
     });
 
-    it('should attach consent information to url', function () {
+    it('should attach consent information to url', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.include('gdpr=1');
       expect(request.url).to.include('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+    });
+
+    it('should attach sizes information to url', () => {
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.include('-myaozpniqismex=300x250_300x600');
+      expect(requests[1].url).to.include('-myaozpniqismex=300x200_600x250');
     });
   })
 

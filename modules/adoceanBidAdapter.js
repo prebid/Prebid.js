@@ -3,17 +3,14 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'adocean';
 
-function buildEndpointUrl(emiter, payload) {
-  let payloadString = '';
-  utils._each(payload, function(v, k) {
-    if (payloadString.length) {
-      payloadString += '&';
-    }
-    payloadString += k + '=' + encodeURIComponent(v);
+function buildEndpointUrl(emiter, payloadMap) {
+  const payload = [];
+  utils._each(payloadMap, function(v, k) {
+    payload.push(k + '=' + encodeURIComponent(v));
   });
 
   const randomizedPart = Math.random().toString().slice(2);
-  return 'https://' + emiter + '/_' + randomizedPart + '/ad.json?' + payloadString;
+  return 'https://' + emiter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
 }
 
 function buildRequest(masterBidRequests, masterId, gdprConsent) {
@@ -32,6 +29,11 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
     if (!emiter) {
       emiter = bid.params.emiter;
     }
+
+    const sizes = utils.parseSizesInput(bid.mediaTypes.banner.sizes).join('_');
+    const id = '-' + bid.params.slaveId.replace('adocean', '');
+    payload[id] = sizes;
+
     bidIdMap[slaveId] = bid.bidId;
   });
 
@@ -86,7 +88,12 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    return !!(bid.params.slaveId && bid.params.masterId && bid.params.emiter);
+    const requiredParams = ['slaveId', 'masterId', 'emiter'];
+    if (requiredParams.some(name => !utils.isStr(bid.params[name]) || !bid.params[name].length)) {
+      return false;
+    }
+
+    return !!bid.mediaTypes.banner;
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
