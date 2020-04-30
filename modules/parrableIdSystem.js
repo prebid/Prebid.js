@@ -39,9 +39,12 @@ function fetchId(configParams, currentStoredId) {
 
   const searchParams = {
     data: btoa(JSON.stringify(data)),
-    us_privacy: uspString,
     _rand: Math.random()
   };
+
+  if (uspString) {
+    searchParams.us_privacy = uspString;
+  }
 
   const options = {
     method: 'GET',
