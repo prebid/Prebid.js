@@ -8,7 +8,7 @@ const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
 const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
-const CMER_PLAYER_URL = 'http://an.cmertv.com/hb/renderer/cmertv-video-yone-prebid.min.js';
+const CMER_PLAYER_URL = 'https://an.cmertv.com/hb/renderer/cmertv-video-yone-prebid.min.js';
 const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/prebid-adformat-config.js';
 
 export const spec = {
