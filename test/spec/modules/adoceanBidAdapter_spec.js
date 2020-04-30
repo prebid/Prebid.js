@@ -90,12 +90,12 @@ describe('AdoceanAdapter', function () {
       }
     };
 
-    it('should send two requests if slave is duplicated', () => {
+    it('should send two requests if slave is duplicated', function () {
       const nrOfRequests = spec.buildRequests(bidRequests, bidderRequest).length;
       expect(nrOfRequests).to.equal(2);
     });
 
-    it('should add bidIdMap with correct slaveId => bidId mapping', () => {
+    it('should add bidIdMap with correct slaveId => bidId mapping', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (let i = 0; i < bidRequests.length; i++) {
         expect(requests[i]).to.exist;
@@ -104,24 +104,24 @@ describe('AdoceanAdapter', function () {
       }
     });
 
-    it('sends bid request to url via GET', () => {
+    it('sends bid request to url via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('GET');
       expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/_[0-9]*/ad.json`));
     });
 
-    it('should attach id to url', () => {
+    it('should attach id to url', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.include('id=' + bidRequests[0].params.masterId);
     });
 
-    it('should attach consent information to url', () => {
+    it('should attach consent information to url', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.include('gdpr=1');
       expect(request.url).to.include('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
     });
 
-    it('should attach sizes information to url', () => {
+    it('should attach sizes information to url', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.include('-myaozpniqismex=300x250_300x600');
       expect(requests[1].url).to.include('-myaozpniqismex=300x200_600x250');
