@@ -211,11 +211,14 @@ export const spec = {
         nurl: seatbid.bid[x]['nurl'],
         bidderCode: 'revcontent',
         mediaType: 'native',
-        native: ad,
-        width: size.width,
-        height: size.height,
-        ad: displayNative(ad, getTemplate(size, originalBidRequest.bid[0].params.template))
+        native: ad
       };
+
+      if (size && size.width && size.height) {
+        bidResponse.width = size.width;
+        bidResponse.height = size.height;
+        bidResponse.ad = displayNative(ad, getTemplate(size, originalBidRequest.bid[0].params.template));
+      }
 
       bidResponses.push(bidResponse);
     }
