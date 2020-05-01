@@ -1,7 +1,7 @@
 import {assert} from 'chai';
-import {spec} from 'modules/stroeerCoreBidAdapter';
-import * as utils from 'src/utils';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {spec} from 'modules/stroeerCoreBidAdapter.js';
+import * as utils from 'src/utils.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;

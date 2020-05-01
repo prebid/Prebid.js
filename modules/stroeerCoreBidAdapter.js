@@ -1,11 +1,10 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import includes from 'core-js/library/fn/array/includes';
-import find from 'core-js/library/fn/array/find';
-import {ajax} from '../src/ajax';
-import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js/library/fn/array/find.js';
+import {ajax} from '../src/ajax.js';
+import {BANNER} from '../src/mediaTypes.js';
 
-const utils = require('../src/utils');
-const url = require('../src/url');
+const utils = require('../src/utils.js');
 
 const BIDDER_CODE = 'stroeerCore';
 const DEFAULT_HOST = 'hb.adscale.de';
@@ -88,7 +87,7 @@ function buildUrl({host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePor
     port = securePort;
   }
 
-  return url.format({protocol: 'https', hostname, port, pathname});
+  return utils.buildUrl({protocol: 'https', hostname, port, pathname});
 }
 
 function setupGlobalNamespace(anyBid) {
