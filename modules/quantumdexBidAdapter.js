@@ -60,16 +60,16 @@ export const spec = {
 
     payload.device = {};
     payload.device.ua = navigator.userAgent;
-    payload.device.height = window.innerHeight;
-    payload.device.width = window.innerWidth;
+    payload.device.height = window.top.innerHeight;
+    payload.device.width = window.top.innerWidth;
     payload.device.dnt = _getDoNotTrack();
     payload.device.language = navigator.language;
 
     payload.site = {};
     payload.site.id = bids[0].params.siteId;
-    payload.site.page = window.location.href;
+    payload.site.page = window.top.location.href;
     payload.site.referrer = document.referrer;
-    payload.site.hostname = window.location.hostname;
+    payload.site.hostname = window.top.location.hostname;
 
     // Apply GDPR parameters to request.
     payload.gdpr = {};
@@ -149,15 +149,6 @@ export const spec = {
       }
     } catch (e) { }
     return syncs;
-  },
-
-  onTimeout: function (timeoutData) {
-  },
-
-  onBidWon: function (bid) {
-  },
-
-  onSetTargeting: function (bid) {
   }
 };
 
@@ -176,8 +167,8 @@ function _getBiggestSize(sizes) {
 }
 
 function _getDoNotTrack() {
-  if (window.doNotTrack || navigator.doNotTrack || navigator.msDoNotTrack) {
-    if (window.doNotTrack == '1' || navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') {
+  if (window.top.doNotTrack || navigator.doNotTrack || navigator.msDoNotTrack) {
+    if (window.top.doNotTrack == '1' || navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') {
       return 1;
     } else {
       return 0;
