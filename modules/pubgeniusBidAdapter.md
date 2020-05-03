@@ -25,7 +25,8 @@ var adUnits = [
       {
         bidder: 'pubgenius',
         params: {
-          adUnitId: '1000'
+          adUnitId: '1000',
+          test: true
         }
       }
     ]
@@ -42,7 +43,8 @@ var adUnits = [
         bidder: 'pubgenius',
         params: {
           adUnitId: '1000',
-          bidFloor: 0.5
+          bidFloor: 0.5,
+          test: true
         }
       }
     ]

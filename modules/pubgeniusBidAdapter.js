@@ -164,6 +164,10 @@ function buildImp(bid) {
     imp.banner.pos = pos;
   }
 
+  if (bid.params.test) {
+    deepSetValue(imp, 'ext.test', true);
+  }
+
   return imp;
 }
 
