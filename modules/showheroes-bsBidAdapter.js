@@ -5,7 +5,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { loadExternalScript } from '../src/adloader.js';
 
-const PROD_ENDPOINT = 'https://bs1.showheroes.com/api/v1/bid';
+const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
 const STAGE_ENDPOINT = 'https://bid-service.stage.showheroes.com/api/v1/bid';
 const PROD_PUBLISHER_TAG = 'https://static.showheroes.com/publishertag.js';
 const STAGE_PUBLISHER_TAG = 'https://pubtag.stage.showheroes.com/publishertag.js';
