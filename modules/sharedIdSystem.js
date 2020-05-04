@@ -11,7 +11,7 @@ import {submodule} from '../src/hook.js';
 import * as sharedIdGenerator from '../src/sharedIdGenerator.js';
 
 const MODULE_NAME = 'sharedId';
-const ID_SVC = 'https://id-qa.sharedid.org/id';
+const ID_SVC = 'https://id.sharedid.org/id';
 
 /**
  * Constructs cookie value
@@ -25,7 +25,7 @@ function constructCookieValue(value, needSync) {
   if (needSync) {
     cookieValue.ns = true;
   }
-  utils.logInfo('SharedId: cookie Value: ' + cookieValue);
+  utils.logInfo('SharedId: cookie Value: ' + JSON.stringify(cookieValue));
   return cookieValue;
 }
 
