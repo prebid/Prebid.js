@@ -46,6 +46,24 @@ describe('stroeerCore bid adapter', function () {
 
   const AUCTION_ID = utils.getUniqueIdentifierStr();
 
+  // Vendor user ids and associated data
+  const userIds = Object.freeze({
+    criteoId: 'criteo-user-id',
+    digitrustid: {
+      data: {
+        id: 'encrypted-user-id==',
+        keyv: 4,
+        privacy: {optout: false},
+        producer: 'ABC',
+        version: 2
+      }
+    },
+    lipb: {
+      lipbid: 'T7JiRRvsRAmh88',
+      segments: ['999']
+    }
+  });
+
   const buildBidderRequest = () => ({
     auctionId: AUCTION_ID,
     bidderRequestId: 'bidder-request-id-123',
@@ -63,7 +81,8 @@ describe('stroeerCore bid adapter', function () {
       },
       params: {
         sid: 'NDA='
-      }
+      },
+      userId: userIds
     }, {
       bidId: 'bid2',
       bidder: 'stroeerCore',
@@ -75,7 +94,8 @@ describe('stroeerCore bid adapter', function () {
       },
       params: {
         sid: 'ODA='
-      }
+      },
+      userId: userIds
     }],
   });
 
@@ -432,7 +452,8 @@ describe('stroeerCore bid adapter', function () {
             'sid': 'NDA=', 'bid': 'bid1', 'siz': [[300, 600], [160, 60]], 'viz': true
           }, {
             'sid': 'ODA=', 'bid': 'bid2', 'siz': [[728, 90]], 'viz': true
-          }]
+          }],
+          'uids': userIds
         };
 
         assert.deepEqual(serverRequestInfo.data, expectedJsonPayload);
@@ -568,6 +589,14 @@ describe('stroeerCore bid adapter', function () {
             assert.isUndefined(actualGdpr);
           });
         });
+
+        it('should be able to build without third party user id data', () => {
+          const bidReq = buildBidderRequest();
+          bidReq.bids.forEach(bid => delete bid.userId);
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+          assert.lengthOf(serverRequestInfo.data.bids, 2);
+          assert.notProperty(serverRequestInfo, 'uids');
+        })
       });
     });
   });

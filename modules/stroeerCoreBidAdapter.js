@@ -172,6 +172,12 @@ export const spec = {
       yl2: bidRequestWithYl2 ? bidRequestWithYl2.params.yl2 : (localStorage.sdgYieldtest === '1')
     };
 
+    const userIds = anyBid.userId;
+
+    if (!utils.isEmpty(userIds)) {
+      payload.uids = userIds;
+    }
+
     const gdprConsent = bidderRequest.gdprConsent;
 
     if (gdprConsent && gdprConsent.consentString != null && gdprConsent.gdprApplies != null) {
