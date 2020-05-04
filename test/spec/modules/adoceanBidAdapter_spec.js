@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adoceanBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
 
 describe('AdoceanAdapter', function () {
   const adapter = newBidder(spec);
@@ -122,9 +123,16 @@ describe('AdoceanAdapter', function () {
     });
 
     it('should attach sizes information to url', function () {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].url).to.include('-myaozpniqismex=300x250_300x600');
-      expect(requests[1].url).to.include('-myaozpniqismex=300x200_600x250');
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600');
+      expect(requests[1].url).to.include('aosspsizes=myaozpniqismex~300x200_600x250');
+
+      const differentSlavesBids = deepClone(bidRequests);
+      differentSlavesBids[1].params.slaveId = 'adoceanmyaowafpdwlrks';
+      requests = spec.buildRequests(differentSlavesBids, bidderRequest);
+      expect(requests.length).to.equal(1);
+      expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600*myaowafpdwlrks~300x200_600x250');
+      expect((requests[0].url.match(/aosspsizes=/g) || []).length).to.equal(1);
     });
   })
 

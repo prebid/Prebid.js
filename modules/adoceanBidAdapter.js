@@ -17,6 +17,7 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
   let emiter;
   const payload = {
     id: masterId,
+    aosspsizes: []
   };
   if (gdprConsent) {
     payload.gdpr_consent = gdprConsent.consentString || undefined;
@@ -30,12 +31,14 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
       emiter = bid.params.emiter;
     }
 
-    const sizes = utils.parseSizesInput(bid.mediaTypes.banner.sizes).join('_');
-    const id = '-' + bid.params.slaveId.replace('adocean', '');
-    payload[id] = sizes;
+    const slaveSizes = utils.parseSizesInput(bid.mediaTypes.banner.sizes).join('_');
+    const rawSlaveId = bid.params.slaveId.replace('adocean', '');
+    payload.aosspsizes.push(rawSlaveId + '~' + slaveSizes);
 
     bidIdMap[slaveId] = bid.bidId;
   });
+
+  payload.aosspsizes = payload.aosspsizes.join('*');
 
   return {
     method: 'GET',
