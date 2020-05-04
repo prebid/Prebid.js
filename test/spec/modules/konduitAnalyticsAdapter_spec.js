@@ -119,7 +119,7 @@ describe(`Konduit Analytics Adapter`, () => {
 
     const requestBody = JSON.parse(server.requests[0].requestBody);
     expect(requestBody.konduitId).to.be.equal(konduitId);
-    expect(requestBody.prebidVersion).to.be.equal($$PREBID_GLOBAL$$.version);
+    expect(requestBody.prebidVersion).to.be.equal('$prebid.version$');
     expect(requestBody.environment).to.be.an('object');
     sinon.assert.callCount(konduitAnalyticsAdapter.track, 6);
   });
