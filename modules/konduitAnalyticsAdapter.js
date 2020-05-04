@@ -167,7 +167,7 @@ function composeRequestPayload () {
 
   return {
     konduitId,
-    prebidVersion: $$PREBID_GLOBAL$$.version,
+    prebidVersion: '$prebid.version$',
     environment: {
       screen: { width, height },
       language: navigator.language,
