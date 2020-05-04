@@ -165,7 +165,7 @@ function buildImp(bid) {
   }
 
   if (bid.params.test) {
-    deepSetValue(imp, 'ext.test', true);
+    deepSetValue(imp, 'ext.test', 1);
   }
 
   return imp;
