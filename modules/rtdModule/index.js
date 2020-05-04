@@ -222,12 +222,12 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  * @param {Object} data - key values to set
  */
 function setDataForPrimaryAdServer(data) {
-  if (!utils.isGptPubadsDefined()) {
-    utils.logError('window.googletag is not defined on the page');
-    return;
-  }
   data = validateProviderDataForGPT(data);
-  targeting.setTargetingForGPT(data, null);
+  utils.isGptPubadsDefined()
+    ? targeting.setTargetingForGPT(data, null)
+    : window.googletag.cmd.push(() => {
+      targeting.setTargetingForGPT(data, null);
+    });
 }
 
 /**

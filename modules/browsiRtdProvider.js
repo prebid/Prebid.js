@@ -120,17 +120,12 @@ function sendDataToModule(adUnits, onDone) {
       if (!_predictions || !Object.keys(_predictions).length) {
         return onDone({});
       }
-      const slots = getAllSlots();
-      if (!slots || !slots.length) {
-        return onDone({});
-      }
       let dataToReturn = adUnits.reduce((rp, cau) => {
         const adUnitCode = cau && cau.code;
         if (!adUnitCode) { return rp }
         const adSlot = getSlotByCode(adUnitCode);
-        if (!adSlot) { return rp }
-        const macroId = getMacroId(_predictionsData.pmd, adSlot);
-        const predictionData = _predictions[macroId];
+        const identifier = adSlot ? getMacroId(_predictionsData.pmd, adSlot) : adUnitCode;
+        const predictionData = _predictions[identifier];
         if (!predictionData) { return rp }
 
         if (predictionData.p) {
@@ -153,7 +148,7 @@ function sendDataToModule(adUnits, onDone) {
  * @return {Object[]} slot GoogleTag slots
  */
 function getAllSlots() {
-  return utils.isGptPubadsDefined && window.googletag.pubads().getSlots();
+  return utils.isGptPubadsDefined() && window.googletag.pubads().getSlots();
 }
 /**
  * get prediction and return valid object for key value set
@@ -174,7 +169,7 @@ function getKVObject(p, keyName) {
  * @return {boolean}
  */
 export function isIdMatchingAdUnit(slot, whitelist) {
-  if (!whitelist || !whitelist.length) {
+  if (!whitelist || !whitelist.length || !slot) {
     return true;
   }
   const slotAdUnits = slot.getAdUnitPath();
