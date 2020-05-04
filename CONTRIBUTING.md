@@ -76,9 +76,3 @@ describe('<Adapter>', function () {
   // Add other `describe` or `it` blocks as necessary
 });
 ```
-
-## Typescript
-
-Typescript types are provided for the bid adapter interface in `bidderFactory.d.ts`. However, the Prebid build will not
-compile Typescript code. To utilize typescript for your module you must compile your typescript code using `tsc` (the 
-typescript compiler) and submit the generated code as part of your pull-request.

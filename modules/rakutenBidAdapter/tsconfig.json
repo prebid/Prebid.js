@@ -1,8 +1,0 @@
-{
-  "compilerOptions": {
-    "strict": true,
-    "types": [],
-    "module": "ESNext",
-    "target": "ES2019"
-  }
-}
