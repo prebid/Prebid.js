@@ -102,6 +102,24 @@ function getCreativeId(xmlNode) {
   return creaId;
 }
 
+function getDealId(xmlNode) {
+  var dealId = '';
+  var impNodes = xmlNode.querySelectorAll('Impression'); // Nodelist.forEach is not supported in IE and Edge
+  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
+
+  Array.prototype.forEach.call(impNodes, function (el) {
+    var queries = el.textContent.substring(el.textContent.indexOf('?') + 1).split('&');
+    Array.prototype.forEach.call(queries, function (item) {
+      var split = item.split('=');
+      if (split[0] == 'dealId') {
+        dealId = split[1];
+      }
+    });
+  });
+
+  return dealId;
+}
+
 /**
 * returns the top most accessible window
 */
@@ -280,7 +298,6 @@ export const spec = {
         requestParams.loc = location;
       }
 
-<<<<<<< HEAD
       var playerSize = [];
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
@@ -296,23 +313,6 @@ export const spec = {
         // Backward compatible code, in case size still pass by sizes in bid request
         playerSize = getBiggerSize(currentBidRequest.sizes);
       }
-=======
-    var playerSize = [];
-    if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
-      // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-      if (utils.isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
-        playerSize = currentBidRequest.mediaTypes.video.playerSize[0];
-      } else {
-        playerSize = currentBidRequest.mediaTypes.video.playerSize;
-      }
-    } else if (currentBidRequest.mediaTypes.banner.sizes) {
-      // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
-      playerSize = getBiggerSizeWithLimit(currentBidRequest.mediaTypes.banner.sizes, currentBidRequest.mediaTypes.banner.minSizeLimit, currentBidRequest.mediaTypes.banner.maxSizeLimit);
-    } else {
-      // Backward compatible code, in case size still pass by sizes in bid request
-      playerSize = getBiggerSize(currentBidRequest.sizes);
-    }
->>>>>>> freewheel-ssp fix issue on playerSize of bidRequest
 
       if (playerSize[0] > 0 || playerSize[1] > 0) {
         requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
@@ -371,6 +371,7 @@ export const spec = {
 
     const princingData = getPricing(xmlDoc);
     const creativeId = getCreativeId(xmlDoc);
+    const dealId = getDealId(xmlDoc);
 
     const topWin = getTopMostWindow();
     if (!topWin.freewheelssp_cache) {
@@ -389,7 +390,8 @@ export const spec = {
         creativeId: creativeId,
         currency: princingData.currency,
         netRevenue: true,
-        ttl: 360
+        ttl: 360,
+        dealId: dealId
       };
 
       if (bidrequest.mediaTypes.video) {
