@@ -36,7 +36,8 @@ exports.getRequest = function() {
           'video': {
             'skippable': true,
             'playback_method': ['auto_play_sound_off']
-          }
+          },
+          'hb_source': 1
         }, {
           'sizes': [{
             'width': 640,
@@ -55,7 +56,8 @@ exports.getRequest = function() {
           'video': {
             'skippable': true,
             'playback_method': ['auto_play_sound_off']
-          }
+          },
+          'hb_source': 1
         }],
         'user': {}
       }
