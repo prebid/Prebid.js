@@ -10,8 +10,40 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { uspDataHandler } from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
+const LEGACY_COOKIE_NAME = '_parrable_eid';
+
+const storage = getStorageManager();
+const cookieExpireDate = new Date(0).toString();
+
+function deserializeParrableId(parrableIdStr) {
+  const parrableId = {};
+  const values = parrableIdStr.split(',');
+
+  values.forEach(function(value) {
+    const pair = value.split(':');
+    // unpack a value of 1 as true
+    parrableId[pair[0]] = +pair[1] === 1 ? true : pair[1];
+  });
+
+  return parrableId;
+}
+
+function serializeParrableId(parrableId) {
+  let str = '';
+  if (parrableId.eid) {
+    str += 'eid:' + parrableId.eid;
+  }
+  if (parrableId.ibaOptout) {
+    str += ',ibaOptout:1';
+  }
+  if (parrableId.ccpaOptout) {
+    str += ',ccpaOptout:1';
+  }
+  return str;
+}
 
 function isValidConfig(configParams) {
   if (!configParams) {
@@ -25,14 +57,25 @@ function isValidConfig(configParams) {
   return true;
 }
 
-function fetchId(configParams, currentStoredId) {
+function readLegacyEid() {
+  legacyEid = storage.getCookie(LEGACY_COOKIE_NAME);
+  if (legacyEid) {
+    storage.setCookie(LEGACY_COOKIE_NAME, '', cookieExpireDate);
+    return legacyEid;
+  }
+  return undefined;
+}
+
+function fetchId(configParams, parrableIdStr) {
   if (!isValidConfig(configParams)) return;
 
+  const parrableId = deserializeParrableId(parrableIdStr);
+  const legacyEid = readLegacyEid();
   const refererInfo = getRefererInfo();
   const uspString = uspDataHandler.getConsentData();
 
   const data = {
-    eid: currentStoredId || null,
+    eid: (parrableId && parrableId.eid) || legacyEid || null,
     trackers: configParams.partner.split(','),
     url: refererInfo.referer
   };
@@ -53,21 +96,33 @@ function fetchId(configParams, currentStoredId) {
 
   const callback = function (cb) {
     const onSuccess = (response) => {
-      let eid;
+      let parrableId = {};
       if (response) {
         try {
           let responseObj = JSON.parse(response);
+          if (responseObj) {
+            parrableId = {
+              eid: responseObj.eid,
+              ibaOptout: responseObj.ibaOptout,
+              ccpaOptout: responseObj.ccpaOptout
+            };
+          }
           eid = responseObj ? responseObj.eid : undefined;
         } catch (error) {
           utils.logError(error);
         }
       }
-      cb(eid);
+      cb(serializeParrableId(parrableId));
     };
     ajax(PARRABLE_URL, onSuccess, searchParams, options);
   };
 
-  return { callback };
+  // provide the legacyStoredId so it gets used in auction on the first
+  // impression where the legacy cookie is migrated to the new cookie
+  return {
+    callback,
+    id: serializeParrableId({ eid: legacyStoredId })
+  };
 };
 
 /** @type {Submodule} */
@@ -80,11 +135,15 @@ export const parrableIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {Object|string} value
+   * @param {string} value
    * @return {(Object|undefined}
    */
   decode(value) {
-    return (value && typeof value === 'string') ? { 'parrableid': value } : undefined;
+    if (value && utils.isStr(value)) {
+      const idObject = deserializeParrableId(value);
+      return { 'parrableId': idObject };
+    }
+    return undefined;
   },
 
   /**
