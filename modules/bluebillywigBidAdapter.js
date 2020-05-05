@@ -348,8 +348,10 @@ export const spec = {
     const serverResponse = serverResponses[0];
     if (!serverResponse.body || !serverResponse.body.seatbid) return [];
 
-    for (const seatbid of serverResponse.body.seatbid) {
-      for (const bid of seatbid.bid) {
+    for (let seatbidIndex = 0; seatbidIndex < serverResponse.body.seatbid.length; seatbidIndex++) {
+      const seatbid = serverResponse.body.seatbid[seatbidIndex];
+      for (let bidIndex = 0; bidIndex < seatbid.bid.length; bidIndex++) {
+        const bid = seatbid.bid[bidIndex];
         accountId = bid.accountId || null;
         publication = bid.publicationName || null;
 
