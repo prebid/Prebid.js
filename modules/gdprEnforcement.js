@@ -16,9 +16,11 @@ import { EVENTS } from '../src/constants.json';
 
 const PURPOSE_1 = 'storage';
 const PURPOSE_2 = 'basicAds';
+const PURPOSE_4 = 'personalizedAds';
 
 let hasDefinedPurpose1 = false;
 let hasDefinedPurpose2 = false;
+let hasDefinedPurpose4 = false;
 let addedDeviceAccessHook = false;
 let enforcementRules;
 
@@ -235,6 +237,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
 
 const hasPurpose1 = (rule) => { return rule.purpose === PURPOSE_1 }
 const hasPurpose2 = (rule) => { return rule.purpose === PURPOSE_2 }
+const hasPurpose4 = (rule) => { return rule.purpose === PURPOSE_4 }
 
 /**
  * A configuration function that initializes some module variables, as well as add hooks
@@ -250,6 +253,7 @@ export function setEnforcementConfig(config) {
   enforcementRules = rules;
   hasDefinedPurpose1 = find(enforcementRules, hasPurpose1);
   hasDefinedPurpose2 = find(enforcementRules, hasPurpose2);
+  hasDefinedPurpose4 = find(enforcementRules, hasPurpose4);
 
   if (hasDefinedPurpose1 && !addedDeviceAccessHook) {
     addedDeviceAccessHook = true;
