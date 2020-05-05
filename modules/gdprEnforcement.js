@@ -206,24 +206,29 @@ export function userIdHook(fn, submodules, consentData) {
  */
 export function makeBidRequestsHook(fn, adUnits, ...args) {
   const consentData = gdprDataHandler.getConsentData();
-  if (consentData && consentData.apiVersion === 2) {
-    const disabledBidders = [];
-    adUnits.forEach(adUnit => {
-      adUnit.bids = adUnit.bids.filter(bid => {
-        const currBidder = bid.bidder;
-        const gvlId = getGvlid(currBidder);
-        if (includes(disabledBidders, currBidder)) return false;
-        const isAllowed = validateRules(purpose2Rule, consentData, 2, currBidder, gvlId);
-        if (!isAllowed) {
-          utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
-          // Emit an event for the Analytics adapters to listen
-          events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
-          disabledBidders.push(currBidder);
-        }
-        return isAllowed;
+  if (consentData && consentData.gdprApplies) {
+    if (consentData.apiVersion === 2) {
+      const disabledBidders = [];
+      adUnits.forEach(adUnit => {
+        adUnit.bids = adUnit.bids.filter(bid => {
+          const currBidder = bid.bidder;
+          const gvlId = getGvlid(currBidder);
+          if (includes(disabledBidders, currBidder)) return false;
+          const isAllowed = validateRules(purpose2Rule, consentData, 2, currBidder, gvlId);
+          if (!isAllowed) {
+            utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
+            // Emit an event for the Analytics adapters to listen
+            events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
+            disabledBidders.push(currBidder);
+          }
+          return isAllowed;
+        });
       });
-    });
-    fn.call(this, adUnits, ...args);
+      fn.call(this, adUnits, ...args);
+    } else {
+      utils.logInfo('Enforcing TCF2 only');
+      fn.call(this, adUnits, ...args);
+    }
   } else {
     fn.call(this, adUnits, ...args);
   }

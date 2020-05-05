@@ -424,6 +424,7 @@ describe('gdpr enforcement', function () {
     let sandbox;
     let adapterManagerStub;
     let emitEventSpy;
+    let logInfoSpy;
     const MOCK_AD_UNITS = [{
       code: 'ad-unit-1',
       mediaTypes: {},
@@ -444,6 +445,7 @@ describe('gdpr enforcement', function () {
       gdprDataHandlerStub = sandbox.stub(gdprDataHandler, 'getConsentData');
       adapterManagerStub = sandbox.stub(adapterManager, 'getBidAdapter');
       logWarnSpy = sandbox.spy(utils, 'logWarn');
+      logInfoSpy = sandbox.spy(utils, 'logInfo');
       nextFnSpy = sandbox.spy();
       emitEventSpy = sandbox.spy(events, 'emit');
     });
@@ -522,6 +524,7 @@ describe('gdpr enforcement', function () {
       sinon.assert.calledWith(nextFnSpy, sinon.match.array.deepEquals(MOCK_AD_UNITS), []);
       expect(emitEventSpy.notCalled).to.equal(true);
       expect(logWarnSpy.notCalled).to.equal(true);
+      expect(logInfoSpy.calledOnce).to.equal(true);
     });
   });
 });
