@@ -95,7 +95,8 @@
   },
   "BID_STATUS" : {
     "BID_TARGETING_SET": "targetingSet",
-    "RENDERED": "rendered"
+    "RENDERED": "rendered",
+    "BID_REJECTED": "bidRejected"
   },
   "SUBMODULES_THAT_ALWAYS_REFRESH_ID": {
     "parrableId": true
