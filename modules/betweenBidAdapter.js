@@ -27,7 +27,7 @@ export const spec = {
 
     validBidRequests.forEach(i => {
       let params = {
-        sizes: parseSizesInput(getAdUnitSizes(i)),
+        sizes: parseSizesInput(getAdUnitSizes(i)).join('%2C'),
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
