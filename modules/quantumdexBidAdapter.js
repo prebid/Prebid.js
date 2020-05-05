@@ -79,9 +79,11 @@ export const spec = {
         payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
       }
     }
+    // Apply schain.
     if (bids[0].schain) {
       payload.schain = JSON.stringify(bids[0].schain)
     }
+    // Apply us_privacy.
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
     }
