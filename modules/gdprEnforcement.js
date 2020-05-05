@@ -17,8 +17,8 @@ import { EVENTS } from '../src/constants.json';
 const PURPOSE_1 = 'storage';
 const PURPOSE_2 = 'basicAds';
 
-let hasDefinedPurpose1 = false;
-let hasDefinedPurpose2 = false;
+let purpose1Rule;
+let purpose2Rule;
 let addedDeviceAccessHook = false;
 let enforcementRules;
 
@@ -113,7 +113,6 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
           gvlid = getGvlid();
         }
         const curModule = moduleName || config.getCurrentBidder();
-        const purpose1Rule = hasDefinedPurpose1;
         let isAllowed = validateRules(purpose1Rule, consentData, 1, curModule, gvlid);
         if (isAllowed) {
           result.valid = true;
@@ -147,7 +146,6 @@ export function userSyncHook(fn, ...args) {
       const gvlid = getGvlid();
       const curBidder = config.getCurrentBidder();
       if (gvlid) {
-        const purpose1Rule = hasDefinedPurpose1;
         let isAllowed = validateRules(purpose1Rule, consentData, 1, curBidder, gvlid);
         if (isAllowed) {
           fn.call(this, ...args);
@@ -179,7 +177,6 @@ export function userIdHook(fn, submodules, consentData) {
         const gvlid = submodule.submodule.gvlid;
         const moduleName = submodule.submodule.name;
         if (gvlid) {
-          const purpose1Rule = hasDefinedPurpose1;
           let isAllowed = validateRules(purpose1Rule, consentData, 1, moduleName, gvlid);
           if (isAllowed) {
             return submodule;
@@ -208,9 +205,8 @@ export function userIdHook(fn, submodules, consentData) {
  * @param {Array<adUnits>} adUnits
  */
 export function makeBidRequestsHook(fn, adUnits, ...args) {
-  const purpose2Rule = hasDefinedPurpose2;
-  if (purpose2Rule) {
-    const consentData = gdprDataHandler.getConsentData();
+  const consentData = gdprDataHandler.getConsentData();
+  if (consentData && consentData.apiVersion === 2) {
     const disabledBidders = [];
     adUnits.forEach(adUnit => {
       adUnit.bids = adUnit.bids.filter(bid => {
@@ -248,17 +244,17 @@ export function setEnforcementConfig(config) {
   }
 
   enforcementRules = rules;
-  hasDefinedPurpose1 = find(enforcementRules, hasPurpose1);
-  hasDefinedPurpose2 = find(enforcementRules, hasPurpose2);
+  purpose1Rule = find(enforcementRules, hasPurpose1);
+  purpose2Rule = find(enforcementRules, hasPurpose2);
 
-  if (hasDefinedPurpose1 && !addedDeviceAccessHook) {
+  if (purpose1Rule && !addedDeviceAccessHook) {
     addedDeviceAccessHook = true;
     validateStorageEnforcement.before(deviceAccessHook, 49);
     registerSyncInner.before(userSyncHook, 48);
     // Using getHook as user id and gdprEnforcement are both optional modules. Using import will auto include the file in build
     getHook('validateGdprEnforcement').before(userIdHook, 47);
   }
-  if (hasDefinedPurpose2) {
+  if (purpose2Rule) {
     adapterManager.makeBidRequests.before(makeBidRequestsHook);
   }
 }
