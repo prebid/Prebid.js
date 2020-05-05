@@ -67,8 +67,8 @@ export const spec = {
 
     payload.site = {};
     payload.site.id = bids[0].params.siteId;
-    payload.site.page = window.top.location.href;
-    payload.site.referrer = document.referrer;
+    payload.site.page = _extractTopWindowUrlFromBidderRequest(bidderRequest);
+    payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
     payload.site.hostname = window.top.location.hostname;
 
     // Apply GDPR parameters to request.
@@ -175,6 +175,42 @@ function _getDoNotTrack() {
     }
   } else {
     return 0;
+  }
+}
+
+/**
+ * Extracts the page url from given bid request or use the (top) window location as fallback
+ *
+ * @param {*} bidderRequest
+ * @returns {string}
+ */
+function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
+  if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl')) {
+    return bidderRequest.refererInfo.canonicalUrl;
+  }
+
+  try {
+    return window.top.location.href;
+  } catch (e) {
+    return window.location.href;
+  }
+}
+
+/**
+ * Extracts the referrer from given bid request or use the (top) document referrer as fallback
+ *
+ * @param {*} bidderRequest
+ * @returns {string}
+ */
+function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
+  if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
+    return bidderRequest.refererInfo.referer;
+  }
+
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return window.document.referrer;
   }
 }
 
