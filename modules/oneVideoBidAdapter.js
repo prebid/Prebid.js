@@ -21,7 +21,12 @@ export const spec = {
     }
 
     // Video validations
-    if (typeof bid.params.video === 'undefined' || typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight == 'undefined' || typeof bid.params.video.mimes == 'undefined') {
+    if (typeof bid.params.video === 'undefined' || typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight == 'undefined' || typeof bid.params.video.mimes == 'undefined' || (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1)) {
+      return false;
+    }
+
+    // Banner DAP validation
+    if (bid.mediaTypes.banner && typeof bid.params.video.display === 'undefined') {
       return false;
     }
 
