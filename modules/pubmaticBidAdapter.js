@@ -1081,7 +1081,7 @@ export const spec = {
                   if (bid.adomain && bid.adomain.length > 0) {
                     br.meta.clickUrl = bid.adomain[0];
                   }
-                    // adserverTargeting
+                  // adserverTargeting
                   if (seatbidder.ext && seatbidder.ext.buyid) {
                     br.adserverTargeting = {
                       'hb_buyid_pubmatic': seatbidder.ext.buyid
