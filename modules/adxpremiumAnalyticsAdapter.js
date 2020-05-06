@@ -7,7 +7,7 @@ import * as utils from '../src/utils.js';
 const analyticsType = 'endpoint';
 const defaultUrl = 'https://adxpremium.services/graphql';
 
-let reqCountry = reqCountry || null;
+let reqCountry = window.reqCountry || null;
 
 // Events needed
 const {
