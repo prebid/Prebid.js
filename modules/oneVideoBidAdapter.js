@@ -8,7 +8,7 @@ export const spec = {
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
   SYNC_ENDPOINT3: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['video', 'banner'],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -82,18 +82,31 @@ export const spec = {
       creativeId: bid.crid,
       width: size.width,
       height: size.height,
-      mediaType: 'video',
       currency: response.cur,
       ttl: 100,
       netRevenue: true,
       adUnitCode: bidRequest.adUnitCode
     };
+
+    if (bidRequest.mediaTypes.banner) {
+      bidResponse.mediaType = 'banner'
+    } else {
+      bidResponse.mediaType = 'video'
+    }
+
+
     if (bid.nurl) {
       bidResponse.vastUrl = bid.nurl;
+    } else if (bid.adm && bidRequest.params.video.display === 1) {
+      bidResponse.ad = bid.adm
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
-    bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
+
+    if (bidRequest.mediaTypes.video) {
+      bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
+    }
+
     return bidResponse;
   },
   /**
