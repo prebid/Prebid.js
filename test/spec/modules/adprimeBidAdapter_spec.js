@@ -1,13 +1,20 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/adprimeBidAdapter.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('AdprimebBidAdapter', function () {
-  let bid = {
+  const bid = {
     bidId: '23fhj33i987f',
     bidder: 'adprime',
     params: {
       placementId: 0,
-      traffic: 'banner'
+      traffic: BANNER
+    }
+  };
+
+  const bidderRequest = {
+    refererInfo: {
+      referer: 'test.com'
     }
   };
 
@@ -22,7 +29,7 @@ describe('AdprimebBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests([bid]);
+    let serverRequest = spec.buildRequests([bid], bidderRequest);
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
@@ -45,12 +52,54 @@ describe('AdprimebBidAdapter', function () {
       expect(data.secure).to.be.within(0, 1);
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
+      expect(data.gdpr).to.not.exist;
+      expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer', 'schain');
       expect(placement.placementId).to.equal(0);
       expect(placement.bidId).to.equal('23fhj33i987f');
-      expect(placement.traffic).to.equal('banner');
+      expect(placement.traffic).to.equal(BANNER);
+      expect(placement.schain).to.be.an('object');
     });
+
+    it('Returns valid data for mediatype video', function () {
+      const playerSize = [300, 300];
+      bid.mediaTypes = {};
+      bid.params.traffic = VIDEO;
+      bid.mediaTypes[VIDEO] = {
+        playerSize
+      };
+      serverRequest = spec.buildRequests([bid], bidderRequest);
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      let placement = data['placements'][0];
+      expect(placement).to.be.an('object');
+      expect(placement.traffic).to.equal(VIDEO);
+      expect(placement.wPlayer).to.equal(playerSize[0]);
+      expect(placement.hPlayer).to.equal(playerSize[1]);
+    });
+
+    it('Returns data with gdprConsent and without uspConsent', function () {
+      bidderRequest.gdprConsent = 'test';
+      serverRequest = spec.buildRequests([bid], bidderRequest);
+      let data = serverRequest.data;
+      expect(data.gdpr).to.exist;
+      expect(data.gdpr).to.be.a('string');
+      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
+      expect(data.ccpa).to.not.exist;
+      delete bidderRequest.gdprConsent;
+    });
+
+    it('Returns data with uspConsent and without gdprConsent', function () {
+      bidderRequest.uspConsent = 'test';
+      serverRequest = spec.buildRequests([bid], bidderRequest);
+      let data = serverRequest.data;
+      expect(data.ccpa).to.exist;
+      expect(data.ccpa).to.be.a('string');
+      expect(data.ccpa).to.equal(bidderRequest.uspConsent);
+      expect(data.gdpr).to.not.exist;
+    });
+
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
       let data = serverRequest.data;

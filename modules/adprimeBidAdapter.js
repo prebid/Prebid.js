@@ -76,11 +76,9 @@ export const spec = {
         sizes: sizes || [],
         wPlayer: sizes ? sizes[0] : 0,
         hPlayer: sizes ? sizes[1] : 0,
-        traffic: bid.params.traffic || BANNER
+        traffic: bid.params.traffic || BANNER,
+        schain: bid.schain || {}
       });
-      if (bid.schain) {
-        placements.schain = bid.schain;
-      }
     }
     return {
       method: 'POST',
