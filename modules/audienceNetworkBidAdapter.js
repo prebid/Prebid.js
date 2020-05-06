@@ -2,8 +2,7 @@
  * @file AudienceNetwork adapter.
  */
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { formatQS } from '../src/url.js';
-import { generateUUID, deepAccess, convertTypes } from '../src/utils.js';
+import { generateUUID, deepAccess, convertTypes, formatQS } from '../src/utils.js';
 import findIndex from 'core-js/library/fn/array/find-index.js';
 import includes from 'core-js/library/fn/array/includes.js';
 

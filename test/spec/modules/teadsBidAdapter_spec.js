@@ -264,6 +264,54 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab.apiVersion).to.equal(1);
     });
 
+    it('should send GDPR to endpoint with 0 status when gdprApplies = false (vendorData = undefined)', function() {
+      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          'consentString': undefined,
+          'gdprApplies': false,
+          'vendorData': undefined,
+          'apiVersion': 1
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr_iab).to.exist;
+      expect(payload.gdpr_iab.consent).to.equal('');
+      expect(payload.gdpr_iab.status).to.equal(0);
+      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+    });
+
+    it('should send GDPR to endpoint with 12 status when apiVersion = 0', function() {
+      let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          'consentString': consentString,
+          'gdprApplies': true,
+          'vendorData': {
+            'hasGlobalScope': false
+          },
+          'apiVersion': 0
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr_iab).to.exist;
+      expect(payload.gdpr_iab.consent).to.equal(consentString);
+      expect(payload.gdpr_iab.status).to.equal(12);
+      expect(payload.gdpr_iab.apiVersion).to.equal(0);
+    });
+
     it('should use good mediaTypes video playerSizes', function() {
       const mediaTypesPlayerSize = {
         'mediaTypes': {

@@ -4,7 +4,6 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
-import * as urlLib from '../src/url.js'
 import { getGlobal } from '../src/prebidGlobal.js';
 
 const {
@@ -43,7 +42,7 @@ const cache = {
 
 export function getHostNameFromReferer(referer) {
   try {
-    rubiconAdapter.referrerHostname = urlLib.parse(referer, {noDecodeWholeURL: true}).hostname;
+    rubiconAdapter.referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
   } catch (e) {
     utils.logError('Rubicon Analytics: Unable to parse hostname from supplied url: ', referer, e);
     rubiconAdapter.referrerHostname = '';
