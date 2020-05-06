@@ -2,6 +2,7 @@
 import funHooks from 'fun-hooks/no-eval/index.js';
 
 export let hook = funHooks({
+  useProxy: false,
   ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
 });
 

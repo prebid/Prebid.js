@@ -255,6 +255,13 @@ function getCustParams(bid, options) {
     adserverTargeting,
     optCustParams,
   );
+  // TODO : Remove below function and change the constant value in file to update the key names for video
+  // Changing few key name might have impact on banner as well as we ignore few key names , hence using below function
+  // to get the cust_params that should be attached to dfp.
+  // It will also handle the send allBids cases
+  if (window.PWT && window.PWT.getCustomParamsForDFPVideo) {
+    customParams = window.PWT.getCustomParamsForDFPVideo(optCustParams, bid);
+  }
   return encodeURIComponent(formatQS(customParams));
 }
 
