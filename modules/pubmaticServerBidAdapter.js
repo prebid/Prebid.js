@@ -517,10 +517,8 @@ export const spec = {
                         mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : UNDEFINED,
                         regexPattern: summary.regex || undefined
                       }
-                      if (seatbidder.ext && seatbidder.ext.buyid) {
-                        newBid.adserverTargeting = {
-                          'hb_buyid_pubmatic': seatbidder.ext.buyid
-                        };
+                      if (bid.ext.prebid && bid.ext.prebid.targeting) {
+                        newBid.adserverTargeting = bid.ext.prebid.targeting
                       }
                       break;
                     default:
