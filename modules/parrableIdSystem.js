@@ -88,8 +88,8 @@ function readLegacyCookies() {
     legacyParrableId.eid = legacyEid;
   }
   let legacyOptout = storage.getCookie(LEGACY_OPTOUT_COOKIE_NAME);
-  if (legacyOptout) {
-    legacyParrableId.ibaOptout = legacyOptout;
+  if (legacyOptout === 'true') {
+    legacyParrableId.ibaOptout = true;
   }
   return legacyParrableId;
 }
