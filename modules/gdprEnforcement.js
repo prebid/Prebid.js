@@ -36,48 +36,15 @@ function getGvlid() {
  * @returns {boolean}
  */
 function validateRules(rule, consentData, currentModule, gvlid) {
-  let isAllowed = false;
-  if (!rule.vendorExceptions) rule.vendorExceptions = [];
-  if (rule.enforcePurpose && rule.enforceVendor) {
-    if (
-      includes(rule.vendorExceptions, currentModule) ||
-      (
-        utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true &&
-        utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true
-      )
-    ) {
-      isAllowed = true;
-    }
-  } else if (rule.enforcePurpose === false && rule.enforceVendor === true) {
-    if (
-      includes(rule.vendorExceptions, currentModule) ||
-      (
-        utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true
-      )
-    ) {
-      isAllowed = true;
-    }
-  } else if (rule.enforcePurpose === false && rule.enforceVendor === false) {
-    if (
-      !includes(rule.vendorExceptions, currentModule) ||
-      (
-        (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true) &&
-        (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
-      )
-    ) {
-      isAllowed = true;
-    }
-  } else if (rule.enforcePurpose === true && rule.enforceVendor === false) {
-    if (
-      (utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true) &&
-      (
-        !includes(rule.vendorExceptions, currentModule) ||
-        (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
-      )
-    ) {
-      isAllowed = true;
-    }
+  // if vendor has exception => always true
+  if (includes(rule.vendorExceptions || [], currentModule)) {
+    return true;
   }
+  let isAllowed = false;
+  // if enforcePurpose is false or purpose was granted isAllowed is true, otherwise false
+  isAllowed = rule.enforcePurpose === false || utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === true;
+  // if enforceVendor is false or vendor was granted isAllowed is true, otherwise false
+  isAllowed = rule.enforceVendor === false || utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true;
   return isAllowed;
 }
 
