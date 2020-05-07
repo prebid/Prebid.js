@@ -11,45 +11,41 @@ import { server } from 'test/mocks/xhr';
 const storage = newStorageManager();
 
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
-const P_COOKIE_NAME = '_parrable_eid';
+const P_COOKIE_NAME = '_parrable_id';
 const P_COOKIE_EID = '01.1563917337.test-eid';
 const P_XHR_EID = '01.1588030911.test-new-eid'
 const P_CONFIG_MOCK = {
   name: 'parrableId',
   params: {
     partner: 'parrable_test_partner_123,parrable_test_partner_456'
-  },
-  storage: {
-    name: '_parrable_eid',
-    type: 'cookie',
-    expires: 364
   }
 };
 
-describe('Parrable ID System', function() {
-  function getConfigMock() {
-    return {
-      userSync: {
-        syncDelay: 0,
-        userIds: [P_CONFIG_MOCK]
-      }
+function getConfigMock() {
+  return {
+    userSync: {
+      syncDelay: 0,
+      userIds: [P_CONFIG_MOCK]
     }
   }
+}
 
-  function getAdUnitMock(code = 'adUnit-code') {
-    return {
-      code,
-      mediaTypes: {banner: {}, native: {}},
-      sizes: [
-        [300, 200],
-        [300, 600]
-      ],
-      bids: [{
-        bidder: 'sampleBidder',
-        params: { placementId: 'banner-only-bidder' }
-      }]
-    };
-  }
+function getAdUnitMock(code = 'adUnit-code') {
+  return {
+    code,
+    mediaTypes: {banner: {}, native: {}},
+    sizes: [
+      [300, 200],
+      [300, 600]
+    ],
+    bids: [{
+      bidder: 'sampleBidder',
+      params: { placementId: 'banner-only-bidder' }
+    }]
+  };
+}
+
+describe('Parrable ID System', function() {
 
   describe('parrableIdSystem.getId()', function() {
     let callbackSpy = sinon.spy();
@@ -108,7 +104,8 @@ describe('Parrable ID System', function() {
     });
   });
 
-  describe('Parrable ID in Bid Request', function() {
+  describe('userId requestBids hook', function() {
+    const parrableEid = '01.234.test-eid';
     let adUnits;
 
     beforeEach(function() {
@@ -116,7 +113,7 @@ describe('Parrable ID System', function() {
       // simulate existing browser local storage values
       storage.setCookie(
         P_COOKIE_NAME,
-        P_COOKIE_EID,
+        encodeURIComponent('eid:' + parrableEid),
         (new Date(Date.now() + 5000).toUTCString())
       );
       setSubmoduleRegistry([parrableIdSubmodule]);
@@ -128,12 +125,12 @@ describe('Parrable ID System', function() {
       storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
     });
 
-    it('provides the parrableid in the bid request', function(done) {
+    it('when a stored Parrable ID exists it is added to bids', function(done) {
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.parrableid');
-            expect(bid.userId.parrableid).to.equal(P_COOKIE_EID);
+            expect(bid.userId.parrableid).to.equal(parrableEid);
           });
         });
         done();
