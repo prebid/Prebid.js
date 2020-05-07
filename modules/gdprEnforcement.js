@@ -14,8 +14,15 @@ import { validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
 
-const PURPOSE_1 = 'storage';
-const PURPOSE_2 = 'basicAds';
+const PURPOSE_1 = {
+  id: 1,
+  name: 'storage'
+}
+
+const PURPOSE_2 = {
+  id: 2,
+  name: 'basicAds'
+}
 
 let purpose1Rule;
 let purpose2Rule;
@@ -113,7 +120,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
           gvlid = getGvlid();
         }
         const curModule = moduleName || config.getCurrentBidder();
-        let isAllowed = validateRules(purpose1Rule, consentData, 1, curModule, gvlid);
+        let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, curModule, gvlid);
         if (isAllowed) {
           result.valid = true;
           fn.call(this, gvlid, moduleName, result);
@@ -146,7 +153,7 @@ export function userSyncHook(fn, ...args) {
       const gvlid = getGvlid();
       const curBidder = config.getCurrentBidder();
       if (gvlid) {
-        let isAllowed = validateRules(purpose1Rule, consentData, 1, curBidder, gvlid);
+        let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, curBidder, gvlid);
         if (isAllowed) {
           fn.call(this, ...args);
         } else {
@@ -177,7 +184,7 @@ export function userIdHook(fn, submodules, consentData) {
         const gvlid = submodule.submodule.gvlid;
         const moduleName = submodule.submodule.name;
         if (gvlid) {
-          let isAllowed = validateRules(purpose1Rule, consentData, 1, moduleName, gvlid);
+          let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, moduleName, gvlid);
           if (isAllowed) {
             return submodule;
           } else {
@@ -214,10 +221,9 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
           const currBidder = bid.bidder;
           const gvlId = getGvlid(currBidder);
           if (includes(disabledBidders, currBidder)) return false;
-          const isAllowed = validateRules(purpose2Rule, consentData, 2, currBidder, gvlId);
+          const isAllowed = validateRules(purpose2Rule, consentData, PURPOSE_2.id, currBidder, gvlId);
           if (!isAllowed) {
             utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
-            // Emit an event for the Analytics adapters to listen
             events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
             disabledBidders.push(currBidder);
           }
@@ -234,8 +240,8 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
   }
 }
 
-const hasPurpose1 = (rule) => { return rule.purpose === PURPOSE_1 }
-const hasPurpose2 = (rule) => { return rule.purpose === PURPOSE_2 }
+const hasPurpose1 = (rule) => { return rule.purpose === PURPOSE_1.name }
+const hasPurpose2 = (rule) => { return rule.purpose === PURPOSE_2.name }
 
 /**
  * A configuration function that initializes some module variables, as well as add hooks
