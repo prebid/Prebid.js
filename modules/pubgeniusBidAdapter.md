@@ -12,6 +12,8 @@ Module that connects to pubGENIUS's demand sources
 
 # Test Parameters
 
+Test bids have $0.01 CPM by default. Use `bidFloor` in bidder params to control CPM for testing purposes.
+
 ```
 var adUnits = [
   {
