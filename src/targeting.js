@@ -110,16 +110,18 @@ export function newTargeting(auctionManager) {
     latestAuctionForAdUnit[adUnitCode] = auctionId;
   };
 
-  targeting.resetPresetTargeting = function(adUnitCode) {
+  targeting.resetPresetTargeting = function(adUnitCode, customSlotMatching) {
     if (isGptPubadsDefined()) {
       const adUnitCodes = getAdUnitCodes(adUnitCode);
       const adUnits = auctionManager.getAdUnits().filter(adUnit => includes(adUnitCodes, adUnit.code));
       window.googletag.pubads().getSlots().forEach(slot => {
+        let customSlotMatchingFunc = utils.isFn(customSlotMatching) && customSlotMatching(slot);
         pbTargetingKeys.forEach(function(key) {
           // reset only registered adunits
           adUnits.forEach(function(unit) {
             if (unit.code === slot.getAdUnitPath() ||
-                unit.code === slot.getSlotElementId()) {
+                unit.code === slot.getSlotElementId() ||
+                (utils.isFn(customSlotMatchingFunc) && customSlotMatchingFunc(unit.code))) {
               slot.setTargeting(key, null);
             }
           });

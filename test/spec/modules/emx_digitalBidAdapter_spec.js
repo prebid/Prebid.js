@@ -335,11 +335,12 @@ describe('emx_digital Adapter', function () {
 
     it('should have the right gdpr info when enabled', function () {
       let consentString = 'OIJSZsOAFsABAB8EMXZZZZZ+A==';
-      bidderRequest.gdprConsent = {
+      const gdprBidderRequest = utils.deepClone(bidderRequest);
+      gdprBidderRequest.gdprConsent = {
         'consentString': consentString,
         'gdprApplies': true
       };
-      let request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      let request = spec.buildRequests(gdprBidderRequest.bids, gdprBidderRequest);
 
       request = JSON.parse(request.data)
       expect(request.regs.ext).to.have.property('gdpr', 1);
@@ -347,18 +348,21 @@ describe('emx_digital Adapter', function () {
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
-      bidderRequest.gdprConsent = {
+      const nonGdprBidderRequest = utils.deepClone(bidderRequest);
+      nonGdprBidderRequest.gdprConsent = {
         'gdprApplies': false
       };
-      let request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      let request = spec.buildRequests(nonGdprBidderRequest.bids, nonGdprBidderRequest);
       request = JSON.parse(request.data)
       expect(request.regs.ext).to.have.property('gdpr', 0);
       expect(request).to.not.have.property('user');
     });
+
     it('should add us privacy info to request', function() {
+      const uspBidderRequest = utils.deepClone(bidderRequest);
       let consentString = '1YNN';
-      bidderRequest.uspConsent = consentString;
-      let request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      uspBidderRequest.uspConsent = consentString;
+      let request = spec.buildRequests(uspBidderRequest.bids, uspBidderRequest);
       request = JSON.parse(request.data);
       expect(request.us_privacy).to.exist;
       expect(request.us_privacy).to.exist.and.to.equal(consentString);
@@ -388,6 +392,52 @@ describe('emx_digital Adapter', function () {
       'auctionId': '1d1a01234a475'
     };
 
+    const bid_outstream = {
+      'bidderRequest': {
+        'bids': [{
+          'bidder': 'emx_digital',
+          'params': {
+            'tagid': '25251',
+            'video': {}
+          },
+          'mediaTypes': {
+            'video': {
+              'context': 'outstream',
+              'playerSize': [640, 480]
+            }
+          },
+          'adUnitCode': 'adunit-code',
+          'sizes': [
+            [300, 250],
+            [300, 600]
+          ],
+          'bidId': '987654321cba',
+          'bidderRequestId': '22edbae3120bf6',
+          'auctionId': '1d1a01234a475'
+        }, {
+          'bidder': 'emx_digital',
+          'params': {
+            'tagid': '25252',
+            'video': {}
+          },
+          'mediaTypes': {
+            'video': {
+              'context': 'instream',
+              'playerSize': [640, 480]
+            }
+          },
+          'adUnitCode': 'adunit-code',
+          'sizes': [
+            [300, 250],
+            [300, 600]
+          ],
+          'bidId': '987654321dcb',
+          'bidderRequestId': '22edbae3120bf6',
+          'auctionId': '1d1a01234a475'
+        }]
+      }
+    };
+
     const serverResponse = {
       'id': '12819a18-56e1-4256-b836-b69a10202668',
       'seatbid': [{
@@ -408,7 +458,7 @@ describe('emx_digital Adapter', function () {
           'adm': '<!-- Creative -->',
           'crid': '3434abab35',
           'h': 600,
-          'id': '987654321cba',
+          'id': '987654321dcb',
           'price': 0.5,
           'ttl': 300,
           'w': 300
@@ -506,23 +556,37 @@ describe('emx_digital Adapter', function () {
     });
 
     it('returns a vastXml kvp for video creatives', function () {
-      serverResponse.seatbid[0].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
-      serverResponse.seatbid[1].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
+      const vastServerResponse = utils.deepClone(serverResponse);
+      vastServerResponse.seatbid[0].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
+      vastServerResponse.seatbid[1].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
 
       let result = spec.interpretResponse({
-        body: serverResponse
+        body: vastServerResponse
       }, { bidRequest: bid }
       );
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.mediaType).to.equal('video');
       expect(ad0.ad.indexOf('<?xml version') > -1).to.equal(true);
-      expect(ad0.vastXml).to.equal(serverResponse.seatbid[0].bid[0].adm);
+      expect(ad0.vastXml).to.equal(vastServerResponse.seatbid[0].bid[0].adm);
       expect(ad0.ad).to.exist.and.to.be.a('string');
       expect(ad1.mediaType).to.equal('video');
       expect(ad1.ad.indexOf('<?xml version') > -1).to.equal(true);
-      expect(ad1.vastXml).to.equal(serverResponse.seatbid[1].bid[0].adm);
+      expect(ad1.vastXml).to.equal(vastServerResponse.seatbid[1].bid[0].adm);
       expect(ad1.ad).to.exist.and.to.be.a('string');
+    });
+
+    it('returns a renderer for outstream video creatives', function () {
+      const vastServerResponse = utils.deepClone(serverResponse);
+      vastServerResponse.seatbid[0].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
+      vastServerResponse.seatbid[1].bid[0].adm = '<?xml version=><VAST></VAST></xml>';
+      let result = spec.interpretResponse({body: vastServerResponse}, bid_outstream);
+      const ad0 = result[0];
+      const ad1 = result[1];
+      expect(ad0.renderer).to.exist.and.to.be.a('object');
+      expect(ad0.renderer.url).to.equal('https://js.brealtime.com/outstream/1.30.0/bundle.js');
+      expect(ad0.renderer.id).to.equal('987654321cba');
+      expect(ad1.renderer).to.equal(undefined);
     });
 
     it('handles nobid responses', function () {
@@ -537,11 +601,12 @@ describe('emx_digital Adapter', function () {
     });
 
     it('should not throw an error when decoding an improperly encoded adm', function () {
-      serverResponse.seatbid[0].bid[0].adm = '<script\\ src\\=\\\"https\\:\\/\\/nym1\\-ib\\.adnxs\\.com\\/ab\\?an_audit\\=0\\&referrer=https%3A%2F%2Fwww.emxdigital.com%3Ftest%3DhAiE3%VVl%26prebid%3D%25123%25\\&e\\=wqT_3QLPCfBDzwQAAAMA1gAFAQj2iaPtBRCdw\\-qeto72gkEYlNWN2smGoJhTKjYJzGJi83G9KkARzGJi83G9KkAZAAAAgD0KEkAhzGIJGwApESTIMQAAAGBmZu4_MMvWgAc4zApAzApIAlDo\\-YEUWNbsR2AAaIrFCnjOpQWAAQGKAQNVU0SSBQbwQJgB2AWgAVqoAQGwAQC4AQLAAQTIAQLQAQnYAQDgAQDwAQCKAjp1ZignYScsIDI4OTEwMSwgMTU3MTM0MTU1OCk7ARwscicsIDQxOTc1MDE2Nh4A9DQBkgLhAiE3VVlCWndpQmpwOEpFT2o1Z1JRWUFDRFc3RWN3QURnQVFBUkl6QXBReTlhQUIxZ0FZTHdFYUFCd0NuZ0FnQUZFaUFFQWtBRUFtQUVBb0FFQnFBRURzQUVBdVFGS1I2cF9jYjBxUU1FQlNrZXFmM0c5S2tESkFaR1JfRy1UVnRNXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFJQUNBSWdDcVlMWEJaQUNBWmdDQUtBQ0FLZ0NBTFVDQUFBQUFMMENBQUFBQU9BQ0FPZ0NBUGdDQUlBREFaZ0RBYWdEZ1k2ZkNib0RDVTVaVFRJNk5ESTRNdUFEOHhQNEE0NnV2Z3lJQkFDUUJBQ1lCQUd5QkFvSXFZTFhCUkNPcnI0TXdRUUFBQUFBQUFBQUFNa0VBQUFBBXgMQURSQgkJLEF3Q0ZBMkFRQThRUQ0SYEFBQVBnRUFJZ0Z1aUUumgKJASE2eElrelE2ZQGgMXV4SElBUW9BREU5Q3RlamNMMHFRRG9KVGxsTk1qbzBNamd5UVBNVFMRWAxQQV9VEQwMQUFBVx0MAFkdDABhHQwAYw0MAaXwi2VBQS7YAqwD4AK30UbqAlxodHRwczovL3d3dy5jZWxlYnV6ei5jb20vZy90YXlsb3Itc3dpZnQtZGVidXRzLXJlZC1oYWlyLWluLXN1Z2FybGFuZC12aWRlby8_YmlkZHJfZGVidWc9dHJ1ZfICEwoPQ1VTVE9NX01PREVMX0lEEgDyAhoKFkNVU1RPERY8TEVBRl9OQU1FEgDyAh4KGjYdAPQqAUFTVF9NT0RJRklFRBIAgAMAiAMBkAMAmAMUoAMBqgMAwAOsAsgDANgDlCHgAwDoAwD4AwOABACSBAkvb3BlbnJ0YjKYBACiBA8xNDQuMTIxLjIzMy4yMzeoBIkWsgQMCAAQABgAIAAwADgAuAQAwAQAyASxgoIB0gQOMTM1NiNOWU0yOjQyODLaBAIIAeAEAPAE6PmBFPoEEgkAAAAAZqdHQBEAAAAgWpRewIgFAZgFAKAF____________AaoFFjQ5MTgxNTcxMzQxNTU2NTI2OTQ5ZTHABQDJBQAAAAAAAPA_0gUJCQAAAAAAAAAA2AUB4AUB8AXW7gr6BQQIABAAkAYAmAYAuAYAwQYAAAAAAADwP8gGANAGwgTaBhYKEAAAAAAAAAAAAAAABQpQEAAYAOAGAfIGAggAgAcBiAcAoAcB\\&s\\=630dbbd55f593c7bfd9e7bccc4dbaa28203daaed\\&pp\\=\\$\\{EMX_MACRO\\}\\\"\\>\\<\\/script\\>';
-      serverResponse.seatbid[1].bid[0].adm = '%3F%%3Demx%3C3prebid'
+      const badAdmServerResponse = utils.deepClone(serverResponse);
+      badAdmServerResponse.seatbid[0].bid[0].adm = '<script\\ src\\=\\\"https\\:\\/\\/nym1\\-ib\\.adnxs\\.com\\/ab\\?an_audit\\=0\\&referrer=https%3A%2F%2Fwww.emxdigital.com%3Ftest%3DhAiE3%VVl%26prebid%3D%25123%25\\&e\\=wqT_3QLPCfBDzwQAAAMA1gAFAQj2iaPtBRCdw\\-qeto72gkEYlNWN2smGoJhTKjYJzGJi83G9KkARzGJi83G9KkAZAAAAgD0KEkAhzGIJGwApESTIMQAAAGBmZu4_MMvWgAc4zApAzApIAlDo\\-YEUWNbsR2AAaIrFCnjOpQWAAQGKAQNVU0SSBQbwQJgB2AWgAVqoAQGwAQC4AQLAAQTIAQLQAQnYAQDgAQDwAQCKAjp1ZignYScsIDI4OTEwMSwgMTU3MTM0MTU1OCk7ARwscicsIDQxOTc1MDE2Nh4A9DQBkgLhAiE3VVlCWndpQmpwOEpFT2o1Z1JRWUFDRFc3RWN3QURnQVFBUkl6QXBReTlhQUIxZ0FZTHdFYUFCd0NuZ0FnQUZFaUFFQWtBRUFtQUVBb0FFQnFBRURzQUVBdVFGS1I2cF9jYjBxUU1FQlNrZXFmM0c5S2tESkFaR1JfRy1UVnRNXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFJQUNBSWdDcVlMWEJaQUNBWmdDQUtBQ0FLZ0NBTFVDQUFBQUFMMENBQUFBQU9BQ0FPZ0NBUGdDQUlBREFaZ0RBYWdEZ1k2ZkNib0RDVTVaVFRJNk5ESTRNdUFEOHhQNEE0NnV2Z3lJQkFDUUJBQ1lCQUd5QkFvSXFZTFhCUkNPcnI0TXdRUUFBQUFBQUFBQUFNa0VBQUFBBXgMQURSQgkJLEF3Q0ZBMkFRQThRUQ0SYEFBQVBnRUFJZ0Z1aUUumgKJASE2eElrelE2ZQGgMXV4SElBUW9BREU5Q3RlamNMMHFRRG9KVGxsTk1qbzBNamd5UVBNVFMRWAxQQV9VEQwMQUFBVx0MAFkdDABhHQwAYw0MAaXwi2VBQS7YAqwD4AK30UbqAlxodHRwczovL3d3dy5jZWxlYnV6ei5jb20vZy90YXlsb3Itc3dpZnQtZGVidXRzLXJlZC1oYWlyLWluLXN1Z2FybGFuZC12aWRlby8_YmlkZHJfZGVidWc9dHJ1ZfICEwoPQ1VTVE9NX01PREVMX0lEEgDyAhoKFkNVU1RPERY8TEVBRl9OQU1FEgDyAh4KGjYdAPQqAUFTVF9NT0RJRklFRBIAgAMAiAMBkAMAmAMUoAMBqgMAwAOsAsgDANgDlCHgAwDoAwD4AwOABACSBAkvb3BlbnJ0YjKYBACiBA8xNDQuMTIxLjIzMy4yMzeoBIkWsgQMCAAQABgAIAAwADgAuAQAwAQAyASxgoIB0gQOMTM1NiNOWU0yOjQyODLaBAIIAeAEAPAE6PmBFPoEEgkAAAAAZqdHQBEAAAAgWpRewIgFAZgFAKAF____________AaoFFjQ5MTgxNTcxMzQxNTU2NTI2OTQ5ZTHABQDJBQAAAAAAAPA_0gUJCQAAAAAAAAAA2AUB4AUB8AXW7gr6BQQIABAAkAYAmAYAuAYAwQYAAAAAAADwP8gGANAGwgTaBhYKEAAAAAAAAAAAAAAABQpQEAAYAOAGAfIGAggAgAcBiAcAoAcB\\&s\\=630dbbd55f593c7bfd9e7bccc4dbaa28203daaed\\&pp\\=\\$\\{EMX_MACRO\\}\\\"\\>\\<\\/script\\>';
+      badAdmServerResponse.seatbid[1].bid[0].adm = '%3F%%3Demx%3C3prebid';
 
       assert.doesNotThrow(() => spec.interpretResponse({
-        body: serverResponse
+        body: badAdmServerResponse
       }));
     });
   });

@@ -84,6 +84,11 @@ export const spec = {
       adRequests: [...adRequests],
       rtbData: handleEids(bidRequests)
     };
+
+    if (config.getConfig().debug) {
+      payload.dbg = true;
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -100,6 +105,10 @@ export const spec = {
    */
   interpretResponse: function(serverResponse) {
     const bidResponses = [];
+
+    if (serverResponse.body.dbg && window.livewrapped && window.livewrapped.s2sDebug) {
+      window.livewrapped.s2sDebug(serverResponse.body.dbg);
+    }
 
     serverResponse.body.ads.forEach(function(ad) {
       var bidResponse = {
