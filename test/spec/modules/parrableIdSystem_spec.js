@@ -87,11 +87,7 @@ describe('Parrable ID System', function() {
     })
 
     it('creates xhr to Parrable that synchronizes the ID', function() {
-      let getIdResult = parrableIdSubmodule.getId(
-        P_CONFIG_MOCK.params,
-        null,
-        null
-      );
+      let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK.params);
 
       getIdResult.callback(callbackSpy);
 
@@ -116,6 +112,10 @@ describe('Parrable ID System', function() {
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({
         eid: P_XHR_EID
       });
+
+      expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
+        encodeURIComponent('eid:' + P_XHR_EID)
+      );
     });
 
     it('xhr passes the uspString to Parrable', function() {
@@ -132,12 +132,51 @@ describe('Parrable ID System', function() {
   });
 
   describe('parrableIdSystem.getId() id', function() {
-    it('provides the stored Parrable values if a cookie exists');
-    it('migrates legacy cookies to new compound cookie format');
+    it('provides the stored Parrable values if a cookie exists', function() {
+      writeParrableCookie({ eid: P_COOKIE_EID });
+      let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK.params);
+      removeParrableCookie();
+
+      expect(getIdResult.id).to.deep.equal({
+        eid: P_COOKIE_EID
+      });
+    });
+
+    it('provides the stored legacy Parrable ID values if cookies exist', function() {
+      let oldEid = '01.111.old-eid';
+      let oldEidCookieName = '_parrable_eid';
+      let oldOptoutCookieName = '_parrable_optout';
+
+      storage.setCookie(oldEidCookieName, oldEid);
+      storage.setCookie(oldOptoutCookieName, 'true');
+
+      let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK.params);
+      expect(getIdResult.id).to.deep.equal({
+        eid: oldEid,
+        ibaOptout: true
+      });
+
+      // The ID system is expected to migrate old cookies to the new format
+      expect(storage.getCookie(P_COOKIE_NAME)).to.equal(
+        encodeURIComponent('eid:' + oldEid + ',ibaOptout:1')
+      );
+      expect(storage.getCookie(oldEidCookieName)).to.equal(null);
+      expect(storage.getCookie(oldOptoutCookieName)).to.equal(null);
+    });
   });
 
   describe('parrableIdSystem.decode()', function() {
-    it('provides the Parrable ID (EID) from a stored object');
+    it('provides the Parrable ID (EID) from a stored object', function() {
+      let eid = '01.123.4567890';
+      let parrableId = {
+        eid,
+        ccpaOptout: true
+      };
+
+      expect(parrableIdSubmodule.decode(parrableId)).to.deep.equal({
+        parrableid: eid
+      });
+    });
   });
 
   describe('userId requestBids hook', function() {
