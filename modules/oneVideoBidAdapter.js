@@ -99,11 +99,7 @@ export const spec = {
       adUnitCode: bidRequest.adUnitCode
     };
 
-    if (bidRequest.mediaTypes.banner) {
-      bidResponse.mediaType = 'banner'
-    } else {
-      bidResponse.mediaType = 'video'
-    }
+    bidResponse.mediaType = (bidRequest.mediaTypes.banner) ? 'banner' : 'video'
 
     if (bid.nurl) {
       bidResponse.vastUrl = bid.nurl;
