@@ -134,12 +134,34 @@ describe('OneVideoBidAdapter', function () {
             sizes: [640, 480]
           }
         },
+        bidder: 'oneVideo',
+        sizes: [640, 480],
+        bidId: '30b3efwfwe1e',
+        adUnitCode: 'video1',
         params: {
           video: {
+            playerWidth: 640,
+            playerHeight: 480,
+            mimes: ['video/mp4', 'application/javascript'],
+            protocols: [2, 5],
+            api: [2],
+            position: 1,
+            delivery: [2],
+            playbackmethod: [1, 5],
+            sid: 134,
+            rewarded: 1,
+            placement: 1,
+            inventoryid: 123,
             display: 1
-          }
+          },
+          site: {
+            id: 1,
+            page: 'https://news.yahoo.com/portfolios',
+            referrer: 'http://www.yahoo.com'
+          },
+          pubId: 'brxd'
         }
-      }
+      };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     })
 
@@ -259,7 +281,7 @@ describe('OneVideoBidAdapter', function () {
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.ad).to.equal('<div>DAP UNIT HERE</div>');
       expect(bidResponse.mediaType).to.equal('banner');
-      expect(bidResponse.renderer).to.equal('undefined');
+      expect(bidResponse.renderer).to.be.undefined;
     });
   });
 
