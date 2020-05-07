@@ -227,11 +227,8 @@ export const spec = {
   },
   onBidWon: function (bid) {
     var winUrl = bid.nurl;
-    winUrl = winUrl.replace(/\$\{AUCTION_PRICE\}/, bid.cpm);
-    var host = extractHostname(winUrl);
 
-    ajax(winUrl + '&viewed=1', null, {withCredentials: true});
-    ajax('https://' + host + '/imp.php', null, 'v=' + encodeURIComponent(encodeURIComponent(getQueryVariable('d', winUrl))) + '&i=' + encodeURIComponent(window.location.href), {method: 'POST', contentType: 'application/x-www-form-urlencoded'});
+    ajax(winUrl);
 
     return true;
   }
