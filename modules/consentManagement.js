@@ -7,8 +7,8 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import strIncludes from 'core-js/library/fn/string/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;

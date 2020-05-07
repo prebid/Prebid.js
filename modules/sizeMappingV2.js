@@ -6,7 +6,7 @@
 import * as utils from '../src/utils.js';
 import { processNativeAdUnitParams } from '../src/native.js';
 import { adunitCounter } from '../src/adUnits.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { getHook } from '../src/hook.js';
 import {
   adUnitSetupChecks

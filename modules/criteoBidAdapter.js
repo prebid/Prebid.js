@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
 

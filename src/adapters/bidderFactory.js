@@ -7,7 +7,7 @@ import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
 import events from '../events.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
