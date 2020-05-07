@@ -45,37 +45,61 @@ function getAdUnitMock(code = 'adUnit-code') {
   };
 }
 
-describe('Parrable ID System', function() {
+function serializeParrableId(parrableId) {
+  let str = '';
+  if (parrableId.eid) {
+    str += 'eid:' + parrableId.eid;
+  }
+  if (parrableId.ibaOptout) {
+    str += ',ibaOptout:1';
+  }
+  if (parrableId.ccpaOptout) {
+    str += ',ccpaOptout:1';
+  }
+  return str;
+}
 
-  describe('parrableIdSystem.getId()', function() {
+function writeParrableCookie(parrableId) {
+  let cookieValue = encodeURIComponent(serializeParrableId(parrableId));
+  storage.setCookie(
+    P_COOKIE_NAME,
+    cookieValue,
+    (new Date(Date.now() + 5000).toUTCString()),
+    'lax'
+  );
+}
+
+function removeParrableCookie() {
+  storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
+}
+
+describe('Parrable ID System', function() {
+  describe('parrableIdSystem.getId() callback', function() {
     let callbackSpy = sinon.spy();
 
     beforeEach(function() {
       callbackSpy.resetHistory();
+      writeParrableCookie({ eid: P_COOKIE_EID });
     });
 
-    it('returns a callback used to refresh the ID', function() {
-      let getIdResponse = parrableIdSubmodule.getId(
+    afterEach(function() {
+      removeParrableCookie();
+    })
+
+    it('creates xhr to Parrable that synchronizes the ID', function() {
+      let getIdResult = parrableIdSubmodule.getId(
         P_CONFIG_MOCK.params,
         null,
-        P_COOKIE_EID
+        null
       );
-      expect(getIdResponse.callback).to.be.a('function');
-    });
 
-    it('callback creates xhr to Parrable that synchronizes the ID', function() {
-      let getIdCallback = parrableIdSubmodule.getId(
-        P_CONFIG_MOCK.params,
-        null,
-        P_COOKIE_EID
-      ).callback;
-
-      getIdCallback(callbackSpy);
+      getIdResult.callback(callbackSpy);
 
       let request = server.requests[0];
       let queryParams = utils.parseQS(request.url.split('?')[1]);
       let data = JSON.parse(atob(queryParams.data));
 
+      expect(getIdResult.callback).to.be.a('function');
       expect(request.url).to.contain('h.parrable.com/prebid');
       expect(queryParams).to.not.have.property('us_privacy');
       expect(data).to.deep.equal({
@@ -89,40 +113,46 @@ describe('Parrable ID System', function() {
         JSON.stringify({ eid: P_XHR_EID })
       );
 
-      expect(callbackSpy.calledWith(P_XHR_EID)).to.be.true;
+      expect(callbackSpy.lastCall.lastArg).to.deep.equal({
+        eid: P_XHR_EID
+      });
     });
 
-    it('passes the uspString to Parrable', function() {
+    it('xhr passes the uspString to Parrable', function() {
       let uspString = '1YNN';
       uspDataHandler.setConsentData(uspString);
       parrableIdSubmodule.getId(
         P_CONFIG_MOCK.params,
         null,
-        P_COOKIE_EID
+        null
       ).callback(callbackSpy);
+      uspDataHandler.setConsentData(null);
       expect(server.requests[0].url).to.contain('us_privacy=' + uspString);
     });
   });
 
+  describe('parrableIdSystem.getId() id', function() {
+    it('provides the stored Parrable values if a cookie exists');
+    it('migrates legacy cookies to new compound cookie format');
+  });
+
+  describe('parrableIdSystem.decode()', function() {
+    it('provides the Parrable ID (EID) from a stored object');
+  });
+
   describe('userId requestBids hook', function() {
-    const parrableEid = '01.234.test-eid';
     let adUnits;
 
     beforeEach(function() {
       adUnits = [getAdUnitMock()];
-      // simulate existing browser local storage values
-      storage.setCookie(
-        P_COOKIE_NAME,
-        encodeURIComponent('eid:' + parrableEid),
-        (new Date(Date.now() + 5000).toUTCString())
-      );
+      writeParrableCookie({ eid: P_COOKIE_EID });
       setSubmoduleRegistry([parrableIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock());
     });
 
     afterEach(function() {
-      storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
+      removeParrableCookie();
     });
 
     it('when a stored Parrable ID exists it is added to bids', function(done) {
@@ -130,7 +160,7 @@ describe('Parrable ID System', function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.parrableid');
-            expect(bid.userId.parrableid).to.equal(parrableEid);
+            expect(bid.userId.parrableid).to.equal(P_COOKIE_EID);
           });
         });
         done();
