@@ -21,12 +21,18 @@ export const spec = {
     }
 
     // Video validations
-    if (typeof bid.params.video === 'undefined' || typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight == 'undefined' || typeof bid.params.video.mimes == 'undefined' || (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1)) {
+    if (typeof bid.params.video === 'undefined' || typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight == 'undefined' || typeof bid.params.video.mimes == 'undefined') {
       return false;
     }
 
+    // Prevend DAP Outstream validation
+    if (bid.mediaTypes.video) {
+      if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
+        return false;
+      }
+    }
     // Banner DAP validation
-    if (bid.mediaTypes.banner && typeof bid.params.video.display === 'undefined') {
+    if (bid.mediaTypes.banner && (typeof bid.params.video.display === 'undefined' || !bid.params.video.display)) {
       return false;
     }
 
