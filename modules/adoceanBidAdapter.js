@@ -43,7 +43,7 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
   return {
     method: 'GET',
     url: buildEndpointUrl(emiter, payload),
-    data: {},
+    data: '',
     bidIdMap: bidIdMap
   };
 }
