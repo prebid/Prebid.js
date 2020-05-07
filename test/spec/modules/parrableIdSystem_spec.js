@@ -96,7 +96,8 @@ describe('Parrable ID System', function() {
       let data = JSON.parse(atob(queryParams.data));
 
       expect(getIdResult.callback).to.be.a('function');
-      expect(request.url).to.contain('h.parrable.com/prebid');
+      expect(request.url).to.contain('h.parrable.com');
+
       expect(queryParams).to.not.have.property('us_privacy');
       expect(data).to.deep.equal({
         eid: P_COOKIE_EID,
