@@ -38,7 +38,7 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
     bidIdMap[slaveId] = bid.bidId;
   });
 
-  payload.aosspsizes = payload.aosspsizes.join('*');
+  payload.aosspsizes = payload.aosspsizes.join('-');
 
   return {
     method: 'GET',

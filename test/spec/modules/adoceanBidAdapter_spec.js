@@ -131,7 +131,7 @@ describe('AdoceanAdapter', function () {
       differentSlavesBids[1].params.slaveId = 'adoceanmyaowafpdwlrks';
       requests = spec.buildRequests(differentSlavesBids, bidderRequest);
       expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600*myaowafpdwlrks~300x200_600x250');
+      expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600-myaowafpdwlrks~300x200_600x250');
       expect((requests[0].url.match(/aosspsizes=/g) || []).length).to.equal(1);
     });
   })
