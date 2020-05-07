@@ -13,10 +13,18 @@ import { uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
-const LEGACY_COOKIE_NAME = '_parrable_eid';
+const PARRABLE_COOKIE_NAME = '_parrable_id';
+const LEGACY_ID_COOKIE_NAME = '_parrable_eid';
+const LEGACY_OPTOUT_COOKIE_NAME = '_parrable_optout';
+const ONE_YEAR_MS = 364 * 24 * 60 * 60 * 1000;
 
 const storage = getStorageManager();
-const cookieExpireDate = new Date(0).toString();
+const expiredCookieDate = new Date(0).toString();
+
+function getExpirationDate() {
+  const oneYearFromNow = new Date(utils.timestamp() + ONE_YEAR_MS);
+  return oneYearFromNow.toGMTString();
+}
 
 function deserializeParrableId(parrableIdStr) {
   const parrableId = {};
@@ -54,28 +62,62 @@ function isValidConfig(configParams) {
     utils.logError('User ID - parrableId submodule requires partner list');
     return false;
   }
+  if (configParams.storage) {
+    utils.logWarn('User ID - parrableId submodule does not require a storage config');
+  }
   return true;
 }
 
-function readLegacyEid() {
-  legacyEid = storage.getCookie(LEGACY_COOKIE_NAME);
-  if (legacyEid) {
-    storage.setCookie(LEGACY_COOKIE_NAME, '', cookieExpireDate);
-    return legacyEid;
+function readCookie() {
+  const parrableIdStr = storage.getCookie(PARRABLE_COOKIE_NAME);
+  if (parrableIdStr) {
+    return deserializeParrableId(decodeURIComponent(parrableIdStr));
   }
   return undefined;
 }
 
-function fetchId(configParams, parrableIdStr) {
+function writeCookie(parrableId) {
+  const parrableIdStr = encodeURIComponent(serializeParrableId(parrableId));
+  storage.setCookie(PARRABLE_COOKIE_NAME, parrableIdStr, getExpirationDate(), 'lax');
+}
+
+function readLegacyCookies() {
+  let legacyParrableId = {};
+  let legacyEid = storage.getCookie(LEGACY_ID_COOKIE_NAME);
+  if (legacyEid) {
+    legacyParrableId.eid = legacyEid;
+  }
+  let legacyOptout = storage.getCookie(LEGACY_OPTOUT_COOKIE_NAME);
+  if (legacyOptout) {
+    legacyParrableId.ibaOptout = legacyOptout;
+  }
+  return legacyParrableId;
+}
+
+function migrateLegacyCookies(parrableId) {
+  writeCookie(parrableId);
+  if (parrableId.eid) {
+    storage.setCookie(LEGACY_ID_COOKIE_NAME, '', expiredCookieDate);
+  }
+  if (parrableId.ibaOptout) {
+    storage.setCookie(LEGACY_OPTOUT_COOKIE_NAME, '', expiredCookieDate);
+  }
+}
+
+function fetchId(configParams) {
   if (!isValidConfig(configParams)) return;
 
-  const parrableId = deserializeParrableId(parrableIdStr);
-  const legacyEid = readLegacyEid();
+  let parrableId = readCookie();
+  if (!parrableId) {
+    parrableId = readLegacyCookies();
+    migrateLegacyCookies(parrableId);
+  }
+
   const refererInfo = getRefererInfo();
   const uspString = uspDataHandler.getConsentData();
 
   const data = {
-    eid: (parrableId && parrableId.eid) || legacyEid || null,
+    eid: (parrableId && parrableId.eid) || null,
     trackers: configParams.partner.split(','),
     url: refererInfo.referer
   };
@@ -101,27 +143,28 @@ function fetchId(configParams, parrableIdStr) {
         try {
           let responseObj = JSON.parse(response);
           if (responseObj) {
-            parrableId = {
-              eid: responseObj.eid,
-              ibaOptout: responseObj.ibaOptout,
-              ccpaOptout: responseObj.ccpaOptout
-            };
+            if (responseObj.ccpaOptout !== true) {
+              parrableId.eid = responseObj.eid;
+            } else {
+              parrableId.ccpaOptout = true;
+            }
+            if (responseObj.ibaOptout === true) {
+              parrableId.ibaOptout = true;
+            }
+            writeCookie(responseObj);
           }
-          eid = responseObj ? responseObj.eid : undefined;
         } catch (error) {
           utils.logError(error);
         }
       }
-      cb(serializeParrableId(parrableId));
+      cb(parrableId);
     };
     ajax(PARRABLE_URL, onSuccess, searchParams, options);
   };
 
-  // provide the legacyStoredId so it gets used in auction on the first
-  // impression where the legacy cookie is migrated to the new cookie
   return {
     callback,
-    id: serializeParrableId({ eid: legacyStoredId })
+    id: parrableId
   };
 };
 
@@ -139,9 +182,8 @@ export const parrableIdSubmodule = {
    * @return {(Object|undefined}
    */
   decode(value) {
-    if (value && utils.isStr(value)) {
-      const idObject = deserializeParrableId(value);
-      return { 'parrableId': idObject };
+    if (value && utils.isPlainObject(value)) {
+      return { 'parrableid': value.eid };
     }
     return undefined;
   },
@@ -154,7 +196,7 @@ export const parrableIdSubmodule = {
    * @returns {function(callback:function)}
    */
   getId(configParams, gdprConsentData, currentStoredId) {
-    return fetchId(configParams, currentStoredId);
+    return fetchId(configParams);
   }
 };
 
