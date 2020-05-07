@@ -106,20 +106,20 @@ const videoEqResponse = [{
   currency: 'USD',
   height: 480,
   width: 640,
-  ttl: 3600,
+  ttl: 300,
   cpm: 0.9
 }];
 
 const displayEqResponse = [{
   requestId: '2e41f65424c87c',
   creativeId: 342516,
-  mediaType: 'display',
+  mediaType: 'banner',
   netRevenue: true,
   currency: 'USD',
   ad: '<!-- Creative -->',
   height: 250,
   width: 300,
-  ttl: 3600,
+  ttl: 300,
   cpm: 0.9
 }];
 

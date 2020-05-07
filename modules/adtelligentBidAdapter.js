@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {VIDEO, BANNER} from '../src/mediaTypes.js';
+import {VIDEO, BANNER, ADPOD} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import find from 'core-js/library/fn/array/find.js';
 
@@ -80,7 +80,7 @@ export const spec = {
    * @param bidderRequest
    * @return {Bid[]} An array of bids which were nested inside the server
    */
-  interpretResponse: function (serverResponse, {bidderRequest}) {
+  interpretResponse: function (serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     let bids = [];
 
@@ -116,7 +116,7 @@ function parseRTBResponse(serverResponse, bidderRequest) {
     });
 
     if (serverBid.cpm !== 0 && request !== undefined) {
-      const bid = createBid(serverBid, getMediaType(request));
+      const bid = createBid(serverBid, request);
 
       bids.push(bid);
     }
@@ -170,10 +170,7 @@ function prepareRTBRequestParams(_index, bid) {
  * @returns {object}
  */
 function getMediaType(bidderRequest) {
-  const videoMediaType = utils.deepAccess(bidderRequest, 'mediaTypes.video');
-  const context = utils.deepAccess(bidderRequest, 'mediaTypes.video.context');
-
-  return !videoMediaType ? DISPLAY : context === OUTSTREAM ? OUTSTREAM : VIDEO;
+  return utils.deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
 }
 
 /**
@@ -182,7 +179,9 @@ function getMediaType(bidderRequest) {
  * @param mediaType {Object}
  * @returns {object}
  */
-function createBid(bidResponse, mediaType) {
+function createBid(bidResponse, bidderRequest) {
+  const mediaType = getMediaType(bidderRequest)
+  const context = utils.deepAccess(bidderRequest, 'mediaTypes.video.context');
   const bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,
@@ -192,12 +191,24 @@ function createBid(bidResponse, mediaType) {
     cpm: bidResponse.cpm,
     netRevenue: true,
     mediaType,
-    ttl: 3600
+    ttl: 300
   };
 
-  if (mediaType === DISPLAY) {
+  if (mediaType === BANNER) {
     return Object.assign(bid, {
       ad: bidResponse.ad
+    });
+  }
+  if (context === ADPOD) {
+    Object.assign(bid, {
+      meta: {
+        iabSubCatId: bidResponse.iabSubCatId,
+      },
+      video: {
+        context: ADPOD,
+        durationSeconds: bidResponse.durationSeconds,
+        durationBucket: bidResponse.durationBucket
+      }
     });
   }
 
@@ -205,9 +216,8 @@ function createBid(bidResponse, mediaType) {
     vastUrl: bidResponse.vastUrl
   });
 
-  if (mediaType === OUTSTREAM) {
+  if (context === OUTSTREAM) {
     Object.assign(bid, {
-      mediaType: 'video',
       adResponse: bidResponse,
       renderer: newRenderer(bidResponse.requestId)
     });
