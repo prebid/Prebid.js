@@ -2,8 +2,8 @@
 import { config } from './config.js';
 import clone from 'just-clone';
 import deepequal from 'deep-equal';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -263,6 +263,10 @@ function decorateLog(args, prefix) {
   args.unshift('display: inline-block; color: #fff; background: #3b88c3; padding: 1px 4px; border-radius: 3px;');
   args.unshift('%cPrebid');
   return args;
+}
+
+export function hasConsoleLogger() {
+  return consoleLogExists;
 }
 
 export function debugTurnedOn() {
@@ -1165,4 +1169,28 @@ export function buildUrl(obj) {
  */
 export function deepEqual(obj1, obj2) {
   return deepequal(obj1, obj2);
+}
+
+export function mergeDeep(target, ...sources) {
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isPlainObject(target) && isPlainObject(source)) {
+    for (const key in source) {
+      if (isPlainObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key], source[key]);
+      } else if (isArray(source[key])) {
+        if (!target[key]) {
+          Object.assign(target, { [key]: source[key] });
+        } else if (isArray(target[key])) {
+          target[key] = target[key].concat(source[key]);
+        }
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return mergeDeep(target, ...sources);
 }

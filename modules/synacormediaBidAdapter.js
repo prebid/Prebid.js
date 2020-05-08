@@ -3,7 +3,8 @@
 import { getAdUnitSizes, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import {config} from '../src/config.js';
 
 const BID_HOST = 'https://prebid.technoratimedia.com';
 const USER_SYNC_HOST = 'https://ad-cdn.technoratimedia.com';
@@ -156,7 +157,9 @@ export const spec = {
           };
           if (isVideo) {
             const [, uuid] = nurl.match(/ID=([^&]*)&?/);
-            bidObj.videoCacheKey = encodeURIComponent(uuid);
+            if (!config.getConfig('cache.url')) {
+              bidObj.videoCacheKey = encodeURIComponent(uuid);
+            }
             bidObj.vastUrl = nurl;
           }
           bids.push(bidObj);

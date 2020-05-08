@@ -92,3 +92,6 @@ workflows:
                 - master
     jobs:
       - e2etest
+
+experimental:
+  pipelines: true
