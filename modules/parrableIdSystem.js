@@ -180,12 +180,12 @@ export const parrableIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {string} value
+   * @param {ParrableId} parrableId
    * @return {(Object|undefined}
    */
-  decode(value) {
-    if (value && utils.isPlainObject(value)) {
-      return { 'parrableid': value.eid };
+  decode(parrableId) {
+    if (parrableId && utils.isPlainObject(parrableId)) {
+      return { 'parrableid': parrableId.eid };
     }
     return undefined;
   },
@@ -195,7 +195,7 @@ export const parrableIdSubmodule = {
    * @function
    * @param {SubmoduleParams} [configParams]
    * @param {ConsentData} [consentData]
-   * @returns {function(callback:function)}
+   * @returns {function(callback:function), id:ParrableId}
    */
   getId(configParams, gdprConsentData, currentStoredId) {
     return fetchId(configParams);
