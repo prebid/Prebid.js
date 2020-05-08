@@ -575,7 +575,7 @@ export const spec = {
     const keywords = (params.keywords || []).concat(
       utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
       utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
-    data.kw = keywords.length ? keywords.join(',') : '';
+    data.kw = Array.isArray(keywords) && keywords.length ? keywords.join(',') : '';
 
     /**
      * Prebid AdSlot

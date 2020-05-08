@@ -311,7 +311,8 @@ describe('triplelift adapter', function () {
             width: 300,
             height: 250,
             ad: 'ad-markup',
-            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+            tl_source: 'tlx',
           }
         ]
       }
@@ -327,7 +328,8 @@ describe('triplelift adapter', function () {
           width: 300,
           height: 250,
           ad: 'ad-markup',
-          iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+          iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+          tl_source: 'tlx',
         }
       ],
       refererInfo: {
@@ -352,6 +354,7 @@ describe('triplelift adapter', function () {
           dealId: '',
           currency: 'USD',
           ttl: 33,
+          tl_source: 'tlx',
         }
       ];
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
@@ -369,7 +372,8 @@ describe('triplelift adapter', function () {
               width: 300,
               height: 250,
               ad: 'ad-markup',
-              iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+              iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+              tl_source: 'tlx',
             },
             {
               imp_id: 0,
@@ -377,7 +381,8 @@ describe('triplelift adapter', function () {
               width: 300,
               height: 600,
               ad: 'ad-markup-2',
-              iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+              iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+              tl_source: 'tlx',
             }
           ]
         }
@@ -393,7 +398,8 @@ describe('triplelift adapter', function () {
             width: 300,
             height: 600,
             ad: 'ad-markup',
-            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+            tl_source: 'tlx',
           },
           {
             imp_id: 0,
@@ -401,7 +407,8 @@ describe('triplelift adapter', function () {
             width: 300,
             height: 250,
             ad: 'ad-markup-2',
-            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+            tl_source: 'tlx',
           }
         ],
         refererInfo: {

@@ -258,7 +258,7 @@ describe('AppNexusAdapter', function () {
 
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
-        externalUid: '123',
+        external_uid: '123',
       });
     });
 
