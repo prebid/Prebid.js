@@ -5,7 +5,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { loadExternalScript } from '../src/adloader.js';
 
-const PROD_ENDPOINT = 'https://bs1.showheroes.com/api/v1/bid';
+const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
 const STAGE_ENDPOINT = 'https://bid-service.stage.showheroes.com/api/v1/bid';
 const PROD_PUBLISHER_TAG = 'https://static.showheroes.com/publishertag.js';
 const STAGE_PUBLISHER_TAG = 'https://pubtag.stage.showheroes.com/publishertag.js';
@@ -38,6 +38,7 @@ export const spec = {
     const isNativeRender = utils.deepAccess(validBidRequests[0], 'renderer');
     const outstreamOptions = utils.deepAccess(validBidRequests[0], 'params.outstreamOptions');
     const isBanner = !!validBidRequests[0].mediaTypes.banner || (isOutstream && !(isCustomRender || isNativeRender || isNodeRender));
+    const defaultSchain = validBidRequests[0].schain || {};
 
     validBidRequests.forEach((bid) => {
       const videoSizes = getVideoSizes(bid);
@@ -76,6 +77,7 @@ export const spec = {
             height: size[1]
           },
           params: bid.params,
+          schain: bid.schain || defaultSchain,
         };
       };
 
@@ -215,7 +217,7 @@ function outstreamRender(bid) {
         return;
       }
 
-      const slot = utils.getBidIdParameter('slot', bid.renderer.config);
+      const slot = utils.getBidIdParameter('slot', bid.renderer.config) || bid.adUnitCode;
       if (slot && window.document.getElementById(slot)) {
         window.document.getElementById(slot).appendChild(embedCode);
       } else if (slot) {
@@ -274,7 +276,7 @@ function getVideoSizes(bidRequest) {
 }
 
 function getBannerSizes(bidRequest) {
-  return formatSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes || []);
+  return formatSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || []);
 }
 
 function formatSizes(sizes) {

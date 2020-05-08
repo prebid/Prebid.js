@@ -9,7 +9,7 @@ import { auctionManager } from './auctionManager.js';
 import { targeting } from './targeting.js';
 import { hook } from './hook.js';
 import { sessionLoader } from './debugging.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { adunitCounter } from './adUnits.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
 import { createBid } from './bidfactory.js';
@@ -521,7 +521,6 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
-  return auction;
 });
 
 export function executeStorageCallbacks(fn, reqBidsConfigObj) {
