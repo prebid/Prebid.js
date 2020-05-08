@@ -1,72 +1,123 @@
 import { expect } from 'chai';
 
-import parse from 'url-parse';
-import { buildVastUrl } from 'modules/konduitWrapper.js';
-import { parseQS } from 'src/utils.js';
+import { processBids, errorMessages } from 'modules/konduitWrapper.js';
 import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 
 describe('The Konduit vast wrapper module', function () {
-  it('should make a wrapped request url when `bid` passed', function () {
-    const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
-
-    const url = parse(buildVastUrl({
-      bid,
-      params: { 'konduit_id': 'testId' },
-    }));
-
-    expect(url.protocol).to.equal('https:');
-    expect(url.host).to.equal('p.konduit.me');
-
-    const queryParams = parseQS(url.query);
-    expect(queryParams).to.have.property('konduit_url', encodeURIComponent('http://some-vast-url.com'));
-    expect(queryParams).to.have.property('konduit_header_bidding', '1');
-    expect(queryParams).to.have.property('konduit_id', 'testId');
+  const konduitId = 'test';
+  beforeEach(function() {
+    config.setConfig({ konduit: { konduitId } });
   });
 
-  it('should return null when no `konduit_id` (required param) passed', function () {
-    const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+  describe('processBids function', () => {
+    it(`should make a correct processBids request and add kCpm and konduitCacheKey
+     to the passed bids and to the adserverTargeting object`, function () {
+      const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
 
-    const url = buildVastUrl({ bid });
+      server.respondWith(JSON.stringify({
+        kCpmData: { [`${bid.bidderCode}:${bid.creativeId}`]: bid.cpm },
+        cacheData: { [`${bid.bidderCode}:${bid.creativeId}`]: 'test_cache_key' },
+      }));
 
-    expect(url).to.equal(null);
-  });
+      processBids({ bid });
+      server.respond();
 
-  it('should return null when either bid or adUnit is not passed', function () {
-    const url = buildVastUrl({ params: { 'konduit_id': 'testId' } });
+      expect(server.requests.length).to.equal(1);
 
-    expect(url).to.equal(null);
-  });
+      const requestBody = JSON.parse(server.requests[0].requestBody);
 
-  it('should return null when bid does not contain vastUrl', function () {
-    const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+      expect(requestBody.clientId).to.equal(konduitId);
 
-    delete bid.vastUrl;
+      expect(bid.konduitCacheKey).to.equal('test_cache_key');
+      expect(bid.kCpm).to.equal(bid.cpm);
 
-    const url = buildVastUrl({
-      bid,
-      params: { 'konduit_id': 'testId' },
+      expect(bid.adserverTargeting).to.be.an('object');
+
+      expect(bid.adserverTargeting.k_cpm).to.equal(bid.pbCg || bid.pbAg);
+      expect(bid.adserverTargeting.konduit_cache_key).to.equal('test_cache_key');
+      expect(bid.adserverTargeting.konduit_id).to.equal(konduitId);
     });
 
-    expect(url).to.equal(null);
-  });
+    it(`should call callback with error object in arguments if cacheData is empty in the response`, function () {
+      const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
 
-  it('should return wrapped vastUrl based on cached url in params', function () {
-    config.setConfig({ cache: { url: 'https://cached.url.com' } });
-    const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+      server.respondWith(JSON.stringify({
+        kCpmData: { [`${bid.bidderCode}:${bid.creativeId}`]: bid.cpm },
+        cacheData: {},
+      }));
+      const callback = sinon.spy();
+      processBids({ bid, callback });
+      server.respond();
 
-    delete bid.vastUrl;
+      expect(server.requests.length).to.equal(1);
 
-    const expectedUrl = encodeURIComponent(`https://cached.url.com?uuid=${bid.videoCacheKey}`);
+      const requestBody = JSON.parse(server.requests[0].requestBody);
 
-    const url = parse(buildVastUrl({
-      bid,
-      params: { 'konduit_id': 'testId' },
-    }));
-    const queryParams = parseQS(url.query);
+      expect(requestBody.clientId).to.equal(konduitId);
 
-    expect(queryParams).to.have.property('konduit_url', expectedUrl);
+      expect(bid.konduitCacheKey).to.be.undefined;
+      expect(bid.kCpm).to.equal(bid.cpm);
 
-    config.resetConfig();
+      expect(bid.adserverTargeting.k_cpm).to.equal(bid.pbCg || bid.pbAg);
+      expect(bid.adserverTargeting.konduit_cache_key).to.be.undefined;
+      expect(bid.adserverTargeting.konduit_id).to.be.undefined;
+
+      expect(callback.firstCall.args[0]).to.be.an('error');
+    });
+
+    it('should call callback if processBids request is sent successfully', function () {
+      const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+      server.respondWith(JSON.stringify({ key: 'test' }));
+      const callback = sinon.spy();
+      processBids({
+        bid,
+        callback
+      });
+      server.respond();
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('should call callback with error object in arguments if processBids request is failed', function () {
+      const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+      const callback = sinon.spy();
+      processBids({
+        bid,
+        callback
+      });
+      server.respond();
+
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args[0]).to.be.an('error');
+    });
+
+    it('should call callback with error object in arguments if no konduitId in configs', function () {
+      config.setConfig({ konduit: { konduitId: null } });
+
+      const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+      const callback = sinon.spy();
+      processBids({
+        bid,
+        callback
+      });
+
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args[0]).to.be.an('error');
+      expect(callback.firstCall.args[0].message).to.equal(errorMessages.NO_KONDUIT_ID);
+    });
+
+    it('should call callback with error object in arguments if no bids found', function () {
+      const callback = sinon.spy();
+      processBids({
+        bid: null,
+        callback
+      });
+
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args[0]).to.be.an('error');
+      expect(callback.firstCall.args[0].message).to.equal(errorMessages.NO_BID);
+    });
   });
 });
 
@@ -103,7 +154,7 @@ function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid,
     'pbLg': '5.00',
     'pbMg': '5.00',
     'pbHg': '5.00',
-    'pbAg': '5.00',
+    'pbAg': `${cpm}.00`,
     'pbDg': '5.00',
     'pbCg': '',
     'size': '640x360',

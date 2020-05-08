@@ -6,7 +6,7 @@ import events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getHook } from '../src/hook.js';
 import { createBid } from '../src/bidfactory.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 /**

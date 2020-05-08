@@ -1,5 +1,5 @@
 import eplAnalyticsAdapter from 'modules/eplanningAnalyticsAdapter.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { expect } from 'chai';
 import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
