@@ -26,7 +26,7 @@ let assert = require('chai').assert;
 let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 
-describe.only('User ID', function() {
+describe('User ID', function() {
   function getConfigMock(configArr1, configArr2, configArr3, configArr4, configArr5, configArr6) {
     return {
       userSync: {
@@ -626,12 +626,11 @@ describe.only('User ID', function() {
       mockIdCallback.calledOnce.should.equal(true);
     });
 
-    it.only('does not delay auction if there are no ids to fetch', function() {
-      coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
+    it('does not delay auction if there are no ids to fetch', function() {
       coreStorage.getCookie.withArgs('MOCKID').returns('123456778');
       config.setConfig({
         usersync: {
-          auctionDelay: 200,
+          auctionDelay: 33,
           syncDelay: 77,
           userIds: [{
             name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
