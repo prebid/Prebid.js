@@ -26,7 +26,7 @@ let assert = require('chai').assert;
 let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 
-describe('User ID', function() {
+describe.only('User ID', function() {
   function getConfigMock(configArr1, configArr2, configArr3, configArr4, configArr5, configArr6) {
     return {
       userSync: {
