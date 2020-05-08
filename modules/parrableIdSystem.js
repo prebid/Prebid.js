@@ -40,17 +40,19 @@ function deserializeParrableId(parrableIdStr) {
 }
 
 function serializeParrableId(parrableId) {
-  let str = '';
+  let components = [];
+
   if (parrableId.eid) {
-    str += 'eid:' + parrableId.eid;
+    components.push('eid:' + parrableId.eid);
   }
   if (parrableId.ibaOptout) {
-    str += ',ibaOptout:1';
+    components.push('ibaOptout:1');
   }
   if (parrableId.ccpaOptout) {
-    str += ',ccpaOptout:1';
+    components.push('ccpaOptout:1');
   }
-  return str;
+
+  return components.join(',');
 }
 
 function isValidConfig(configParams) {
