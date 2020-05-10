@@ -55,15 +55,15 @@ export const spec = {
         '&referer=' + encodeURIComponent(referer);
 
       if (bidderRequest.gdprConsent) {
-        if (bidderRequest.gdprConsent.consentString != undefined) {
+        if (bidderRequest.gdprConsent.consentString != null) {
           url += '&gdpr_consent=' + bidderRequest.gdprConsent.consentString;
         }
-        if (bidderRequest.gdprConsent.gdprApplies != undefined) {
+        if (bidderRequest.gdprConsent.gdprApplies != null) {
           url += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
         }
       }
 
-      if (bidderRequest.uspConsent != undefined) {
+      if (bidderRequest.uspConsent != null) {
         url += '&us_privacy=' + bidderRequest.uspConsent;
       }
 
