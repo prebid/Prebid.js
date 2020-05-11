@@ -4,8 +4,8 @@ import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'adpartner';
 export const ENDPOINT_PROTOCOL = 'https';
-export const ENDPOINT_DOMAIN = 'news.adpartner.pro';
-export const ENDPOINT_PATH = '/kirill/hbendpoint.php';
+export const ENDPOINT_DOMAIN = 'a4p.adpartner.pro';
+export const ENDPOINT_PATH = '/hb/bid';
 
 export const spec = {
   code: BIDDER_CODE,
