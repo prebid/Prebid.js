@@ -221,7 +221,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
           const currBidder = bid.bidder;
           const gvlId = getGvlid(currBidder);
           if (includes(disabledBidders, currBidder)) return false;
-          const isAllowed = validateRules(purpose2Rule, consentData, PURPOSE_2.id, currBidder, gvlId);
+          const isAllowed = gvlId && validateRules(purpose2Rule, consentData, PURPOSE_2.id, currBidder, gvlId);
           if (!isAllowed) {
             utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
             events.emit(EVENTS.BIDDER_BLOCKED, currBidder);

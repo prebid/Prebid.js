@@ -5,6 +5,7 @@ import * as utils from 'src/utils.js';
 import { validateStorageEnforcement } from 'src/storageManager.js';
 import { executeStorageCallbacks } from 'src/prebid.js';
 import events from 'src/events.js';
+import { EVENTS } from 'src/constants.json';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
@@ -438,6 +439,8 @@ describe('gdpr enforcement', function () {
       mediaTypes: {},
       bids: [{
         bidder: 'bidder_2'
+      }, {
+        bidder: 'bidder_3'
       }]
     }];
     beforeEach(function () {
@@ -480,6 +483,11 @@ describe('gdpr enforcement', function () {
           return { 'gvlid': 5 }
         }
       });
+      adapterManagerStub.withArgs('bidder_3').returns({
+        getSpec: function () {
+          return { 'gvlid': undefined }
+        }
+      });
       makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
 
       // Assertions
@@ -495,8 +503,10 @@ describe('gdpr enforcement', function () {
         mediaTypes: {},
         bids: []
       }], []);
-      expect(emitEventSpy.calledOnce).to.equal(true);
-      expect(logWarnSpy.calledOnce).to.equal(true);
+      expect(emitEventSpy.calledTwice).to.equal(true);
+      expect(logWarnSpy.calledTwice).to.equal(true);
+      sinon.assert.calledWith(emitEventSpy.firstCall, EVENTS.BIDDER_BLOCKED, 'bidder_2');
+      sinon.assert.calledWith(emitEventSpy.secondCall, EVENTS.BIDDER_BLOCKED, 'bidder_3');
     });
 
     it('should skip validation checks if GDPR version is not equal to "2"', function () {
