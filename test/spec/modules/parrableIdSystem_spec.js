@@ -6,7 +6,7 @@ import { getRefererInfo } from 'src/refererDetection.js';
 import { uspDataHandler } from 'src/adapterManager.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
-import { server } from 'test/mocks/xhr';
+import { server } from 'test/mocks/xhr.js';
 
 const storage = newStorageManager();
 
