@@ -5,7 +5,6 @@ const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
-const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
 const SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 const localWindow = utils.getWindowTop();
 
@@ -39,18 +38,23 @@ export const spec = {
       title: localWindow.document.title || '',
       w: localWindow.innerWidth,
       h: localWindow.innerHeight,
-      userConsent: JSON.stringify({
-        // case of undefined, stringify will remove param
-        gdprApplies:
-          bidderRequest && bidderRequest.gdprConsent
-            ? bidderRequest.gdprConsent.gdprApplies
-            : undefined,
-        cmp:
-          bidderRequest && bidderRequest.gdprConsent
-            ? bidderRequest.gdprConsent.consentString
-            : undefined
-      }),
-      us_privacy: bidderRequest && bidderRequest.us_privacy
+      userConsent: encodeURIComponent(
+        JSON.stringify({
+          // case of undefined, stringify will remove param
+          gdprApplies:
+            bidderRequest && bidderRequest.gdprConsent
+              ? bidderRequest.gdprConsent.gdprApplies
+              : '',
+          cmp:
+            bidderRequest && bidderRequest.gdprConsent
+              ? bidderRequest.gdprConsent.consentString
+              : '',
+        })
+      ),
+      us_privacy:
+        bidderRequest && bidderRequest.uspConsent
+          ? encodeURIComponent(bidderRequest.uspConsent)
+          : '',
     };
 
     bidRequests.forEach(request => {
@@ -72,10 +76,12 @@ export const spec = {
         serverRequest.cri_prebid = criteoId;
       }
       if (request.schain) {
-        serverRequest.schain = JSON.stringify(request.schain);
+        serverRequest.schain = encodeURIComponent(
+          JSON.stringify(request.schain)
+        );
       }
     });
-    serverRequest.p = '[' + serverRequest.p.toString() + ']';
+    serverRequest.p = encodeURIComponent('[' + serverRequest.p.toString() + ']');
     return {
       method: 'GET',
       url: SERVER_ENDPOINT,
@@ -99,17 +105,8 @@ export const spec = {
     }
     return bids;
   },
-  getUserSync: function(syncOptions) {
-    if (trackingEnabled(syncOptions)) {
-      return [
-        {
-          type: 'iframe',
-          url: SYNC_ENDPOINT + utils.getOrigin()
-        }
-      ];
-    } else {
-      return [];
-    }
+  getUserSyncs: function() {
+    return [];
   }
 };
 registerBidder(spec);
@@ -153,24 +150,8 @@ function createNewBid(response) {
     currency: CURRENCY,
     netRevenue: NET_REVENUE,
     ttl: TIME_TO_LIVE,
-    ad: response.ad
+    ad: response.ad,
   };
-}
-
-/**
- * Detects if tracking is allowed
- * @returns false if dnt or if not iframe/pixel enabled
- */
-function trackingEnabled(options) {
-  return isIOS() && !getDNT() && options.iframeEnabled;
-}
-
-/**
- * Detects whether we're in iOS
- * @returns true if in iOS
- */
-function isIOS() {
-  return /iPhone|iPad|iPod/i.test(window.navigator.userAgent);
 }
 
 /**
