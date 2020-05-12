@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO, BANNER} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const URL = 'https://ghb.adtelligent.com/auction/';
 const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
