@@ -28,7 +28,8 @@ Dailyhunt bid adapter supports Banner, Native and Video.
                     bidder: 'dailyhunt',
                     params: {
                         placement_id: 1,
-                        publisher_id: 1
+                        publisher_id: 1,
+                        partner_name: 'dailyhunt'
                     }
                 }
             ]
@@ -57,7 +58,8 @@ Dailyhunt bid adapter supports Banner, Native and Video.
                     bidder: 'dailyhunt',
                     params: {
                         placement_id: 1,
-                        publisher_id: 1
+                        publisher_id: 1,
+                        partner_name: 'dailyhunt'
                     }
                 }
             ]
@@ -76,6 +78,7 @@ Dailyhunt bid adapter supports Banner, Native and Video.
                     params: {
                         placement_id: 1,
                         publisher_id: 1,
+                        partner_name: 'dailyhunt',
                         video: {
                             mimes: [
                                 'video/mp4'

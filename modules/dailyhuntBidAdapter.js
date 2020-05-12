@@ -8,8 +8,8 @@ const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
 const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE, mediaTypes.VIDEO];
 
-const PROD_PREBID_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction';
-const PROD_PREBID_TEST_ENDPOINT_URL = 'http://dh2-van-qa-n1.dailyhunt.in:8000/openrtb2/auction';
+const PROD_PREBID_ENDPOINT_URL = 'https://pbs.dailyhunt.in/openrtb2/auction?partner=';
+const PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner=';
 
 const ORTB_NATIVE_TYPE_MAPPING = {
   img: {
@@ -140,6 +140,7 @@ const createOrtbImpObj = (bid) => {
       dailyhunt: {
         placement_id: params.placement_id,
         publisher_id: params.publisher_id,
+        partner: params.partner_name
       }
     }
   };
@@ -213,7 +214,6 @@ const createOrtbImpNativeObj = (bid, nativeObj) => {
 const createOrtbImpVideoObj = (bid, videoObj) => {
   let obj = {};
   let params = bid.params
-  console.log(bid.params.video !== {})
   if (!utils.isEmpty(bid.params.video)) {
     obj = {
       ...params.video,
@@ -231,7 +231,7 @@ const createOrtbImpVideoObj = (bid, videoObj) => {
 
 const createServerRequest = (ortbRequest, validBidRequests, isTestMode = 'false') => ({
   method: 'POST',
-  url: isTestMode === 'true' ? PROD_PREBID_TEST_ENDPOINT_URL : PROD_PREBID_ENDPOINT_URL,
+  url: isTestMode === 'true' ? PROD_PREBID_TEST_ENDPOINT_URL + validBidRequests[0].params.partner_name : PROD_PREBID_ENDPOINT_URL + validBidRequests[0].params.partner_name,
   data: JSON.stringify(ortbRequest),
   options: {
     contentType: 'application/json',
@@ -242,7 +242,7 @@ const createServerRequest = (ortbRequest, validBidRequests, isTestMode = 'false'
 
 const createPrebidBannerBid = (bid, bidResponse) => ({
   requestId: bid.bidId,
-  cpm: 1.4,
+  cpm: bidResponse.price.toFixed(2),
   creativeId: bidResponse.crid,
   width: bidResponse.w,
   height: bidResponse.h,
@@ -256,7 +256,7 @@ const createPrebidBannerBid = (bid, bidResponse) => ({
 
 const createPrebidNativeBid = (bid, bidResponse) => ({
   requestId: bid.bidId,
-  cpm: 1.4,
+  cpm: bidResponse.price.toFixed(2),
   creativeId: bidResponse.crid,
   currency: 'USD',
   ttl: 360,
@@ -297,10 +297,10 @@ const parseNative = (bid) => {
 const createPrebidVideoBid = (bid, bidResponse) => {
   let videoBid = {
     requestId: bid.bidId,
-    cpm: 1.4,
+    cpm: bidResponse.price.toFixed(2),
     creativeId: bidResponse.crid,
-    width: 300,
-    height: 250,
+    width: bidResponse.w,
+    height: bidResponse.h,
     ttl: 360,
     netRevenue: bid.netRevenue === 'net',
     currency: 'USD',
@@ -311,7 +311,7 @@ const createPrebidVideoBid = (bid, bidResponse) => {
   let videoContext = bid.mediaTypes.video.context;
   switch (videoContext) {
     case OUTSTREAM:
-      videoBid.vastXml = bidResponse.adm.replace('4.0', '2.0');
+      videoBid.vastXml = bidResponse.adm;
       break;
     case INSTREAM:
       videoBid.videoCacheKey = bidResponse.ext.bidder.cacheKey;
@@ -340,7 +340,7 @@ export const spec = {
 
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
-  isBidRequestValid: bid => !!bid.params.placement_id && !!bid.params.publisher_id,
+  isBidRequestValid: bid => !!bid.params.placement_id && !!bid.params.publisher_id && !!bid.params.partner_name,
 
   buildRequests: function (validBidRequests, bidderRequest) {
     let serverRequests = [];
@@ -386,9 +386,7 @@ export const spec = {
 
   onBidWon: function(bid) {
     ajax(bid.winUrl, null, null, {
-      withCredentials: true,
-      method: 'GET',
-      contentType: 'application/json'
+      method: 'GET'
     })
   }
 }

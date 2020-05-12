@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/dailyhuntBidAdapter.js';
 
-const PROD_PREBID_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction';
-const PROD_PREBID_TEST_ENDPOINT_URL = 'http://dh2-van-qa-n1.dailyhunt.in:8000/openrtb2/auction';
+const PROD_PREBID_ENDPOINT_URL = 'https://pbs.dailyhunt.in/openrtb2/auction?partner=dailyhunt';
+const PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner=dailyhunt';
 
 const _encodeURIComponent = function (a) {
   if (!a) { return }
@@ -17,7 +17,8 @@ describe('DailyhuntAdapter', function () {
       'bidder': 'dailyhunt',
       'params': {
         placement_id: 1,
-        publisher_id: 1
+        publisher_id: 1,
+        partner_name: 'dailyhunt'
       }
     };
 
@@ -39,6 +40,7 @@ describe('DailyhuntAdapter', function () {
         params: {
           placement_id: 1,
           publisher_id: 1,
+          partner_name: 'dailyhunt',
           bidfloor: 0.1,
           device: {
             ip: '47.9.247.217'
@@ -66,6 +68,7 @@ describe('DailyhuntAdapter', function () {
         params: {
           placement_id: 1,
           publisher_id: 1,
+          partner_name: 'dailyhunt',
         },
         nativeParams: {
           title: {
@@ -98,6 +101,7 @@ describe('DailyhuntAdapter', function () {
         params: {
           placement_id: 1,
           publisher_id: 1,
+          partner_name: 'dailyhunt'
         },
         nativeParams: {
           video: {
