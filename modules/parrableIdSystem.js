@@ -10,8 +10,50 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { uspDataHandler } from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
+const PARRABLE_COOKIE_NAME = '_parrable_id';
+const LEGACY_ID_COOKIE_NAME = '_parrable_eid';
+const LEGACY_OPTOUT_COOKIE_NAME = '_parrable_optout';
+const ONE_YEAR_MS = 364 * 24 * 60 * 60 * 1000;
+
+const storage = getStorageManager();
+const expiredCookieDate = new Date(0).toString();
+
+function getExpirationDate() {
+  const oneYearFromNow = new Date(utils.timestamp() + ONE_YEAR_MS);
+  return oneYearFromNow.toGMTString();
+}
+
+function deserializeParrableId(parrableIdStr) {
+  const parrableId = {};
+  const values = parrableIdStr.split(',');
+
+  values.forEach(function(value) {
+    const pair = value.split(':');
+    // unpack a value of 1 as true
+    parrableId[pair[0]] = +pair[1] === 1 ? true : pair[1];
+  });
+
+  return parrableId;
+}
+
+function serializeParrableId(parrableId) {
+  let components = [];
+
+  if (parrableId.eid) {
+    components.push('eid:' + parrableId.eid);
+  }
+  if (parrableId.ibaOptout) {
+    components.push('ibaOptout:1');
+  }
+  if (parrableId.ccpaOptout) {
+    components.push('ccpaOptout:1');
+  }
+
+  return components.join(',');
+}
 
 function isValidConfig(configParams) {
   if (!configParams) {
@@ -22,17 +64,62 @@ function isValidConfig(configParams) {
     utils.logError('User ID - parrableId submodule requires partner list');
     return false;
   }
+  if (configParams.storage) {
+    utils.logWarn('User ID - parrableId submodule does not require a storage config');
+  }
   return true;
 }
 
-function fetchId(configParams, currentStoredId) {
+function readCookie() {
+  const parrableIdStr = storage.getCookie(PARRABLE_COOKIE_NAME);
+  if (parrableIdStr) {
+    return deserializeParrableId(decodeURIComponent(parrableIdStr));
+  }
+  return undefined;
+}
+
+function writeCookie(parrableId) {
+  const parrableIdStr = encodeURIComponent(serializeParrableId(parrableId));
+  storage.setCookie(PARRABLE_COOKIE_NAME, parrableIdStr, getExpirationDate(), 'lax');
+}
+
+function readLegacyCookies() {
+  let legacyParrableId = {};
+  let legacyEid = storage.getCookie(LEGACY_ID_COOKIE_NAME);
+  if (legacyEid) {
+    legacyParrableId.eid = legacyEid;
+  }
+  let legacyOptout = storage.getCookie(LEGACY_OPTOUT_COOKIE_NAME);
+  if (legacyOptout === 'true') {
+    legacyParrableId.ibaOptout = true;
+  }
+  return legacyParrableId;
+}
+
+function migrateLegacyCookies(parrableId) {
+  writeCookie(parrableId);
+  if (parrableId.eid) {
+    storage.setCookie(LEGACY_ID_COOKIE_NAME, '', expiredCookieDate);
+  }
+  if (parrableId.ibaOptout) {
+    storage.setCookie(LEGACY_OPTOUT_COOKIE_NAME, '', expiredCookieDate);
+  }
+}
+
+function fetchId(configParams) {
   if (!isValidConfig(configParams)) return;
+
+  let parrableId = readCookie();
+  if (!parrableId) {
+    parrableId = readLegacyCookies();
+    migrateLegacyCookies(parrableId);
+  }
 
   const refererInfo = getRefererInfo();
   const uspString = uspDataHandler.getConsentData();
 
   const data = {
-    eid: currentStoredId || null,
+    eid: (parrableId && parrableId.eid) || null,
     trackers: configParams.partner.split(','),
     url: refererInfo.referer
   };
@@ -53,21 +140,34 @@ function fetchId(configParams, currentStoredId) {
 
   const callback = function (cb) {
     const onSuccess = (response) => {
-      let eid;
+      let parrableId = {};
       if (response) {
         try {
           let responseObj = JSON.parse(response);
-          eid = responseObj ? responseObj.eid : undefined;
+          if (responseObj) {
+            if (responseObj.ccpaOptout !== true) {
+              parrableId.eid = responseObj.eid;
+            } else {
+              parrableId.ccpaOptout = true;
+            }
+            if (responseObj.ibaOptout === true) {
+              parrableId.ibaOptout = true;
+            }
+            writeCookie(responseObj);
+          }
         } catch (error) {
           utils.logError(error);
         }
       }
-      cb(eid);
+      cb(parrableId);
     };
     ajax(PARRABLE_URL, onSuccess, searchParams, options);
   };
 
-  return { callback };
+  return {
+    callback,
+    id: parrableId
+  };
 };
 
 /** @type {Submodule} */
@@ -80,11 +180,14 @@ export const parrableIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {Object|string} value
+   * @param {ParrableId} parrableId
    * @return {(Object|undefined}
    */
-  decode(value) {
-    return (value && typeof value === 'string') ? { 'parrableid': value } : undefined;
+  decode(parrableId) {
+    if (parrableId && utils.isPlainObject(parrableId)) {
+      return { 'parrableid': parrableId.eid };
+    }
+    return undefined;
   },
 
   /**
@@ -92,10 +195,10 @@ export const parrableIdSubmodule = {
    * @function
    * @param {SubmoduleParams} [configParams]
    * @param {ConsentData} [consentData]
-   * @returns {function(callback:function)}
+   * @returns {function(callback:function), id:ParrableId}
    */
   getId(configParams, gdprConsentData, currentStoredId) {
-    return fetchId(configParams, currentStoredId);
+    return fetchId(configParams);
   }
 };
 
