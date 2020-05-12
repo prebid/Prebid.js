@@ -2,7 +2,6 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {parse} from '../src/url.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
@@ -24,6 +23,7 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 69,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
     const hasDelDomainOrPlatform = bidRequest.params.delDomain || bidRequest.params.platform;
@@ -423,7 +423,7 @@ function createVideoBidResponses(response, {bid, startTime}) {
   let bidResponses = [];
 
   if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
-    let vastQueryParams = parse(response.vastUrl).search || {};
+    let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
     // default 5 mins

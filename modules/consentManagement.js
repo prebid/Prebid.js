@@ -7,8 +7,8 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import strIncludes from 'core-js/library/fn/string/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -99,7 +99,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     if (success) {
       if (tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         cmpSuccess(tcfData, hookConfig);
-      } else if (tcfData.eventStatus === 'cmpuishown' && tcfData.tcString.length > 0 && tcfData.purposeOneTreatment === true) {
+      } else if (tcfData.eventStatus === 'cmpuishown' && tcfData.tcString && tcfData.purposeOneTreatment === true) {
         cmpSuccess(tcfData, hookConfig);
       }
     } else {

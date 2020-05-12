@@ -100,6 +100,7 @@ function resolveEndpointCode(bid) {
 
 export const spec = {
   code: AOL_BIDDERS_CODES.AOL,
+  gvlid: 25,
   aliases: [AOL_BIDDERS_CODES.ONEMOBILE, AOL_BIDDERS_CODES.ONEDISPLAY],
   supportedMediaTypes: [BANNER],
   isBidRequestValid(bid) {

@@ -1,5 +1,6 @@
 import { assert, expect } from 'chai';
 import { BANNER } from 'src/mediaTypes.js';
+import {config} from 'src/config.js';
 import { spec } from 'modules/synacormediaBidAdapter.js';
 
 describe('synacormediaBidAdapter ', function () {
@@ -778,6 +779,44 @@ describe('synacormediaBidAdapter ', function () {
     it('should not return a bid when there is no response body', function () {
       expect(spec.interpretResponse({ body: null })).to.not.exist;
       expect(spec.interpretResponse({ body: 'some error text' })).to.not.exist;
+    });
+
+    it('should not include videoCacheKey property on the returned response when cache url is present in the config', function () {
+      let sandbox = sinon.sandbox.create();
+      let serverRespVideo = {
+        body: {
+          id: 'abcd1234',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '11339128001692337~9999~0',
+                  impid: 'v2da7322b2df61f-640x480',
+                  price: 0.45,
+                  nurl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=${AUCTION_PRICE}',
+                  adm: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=${AUCTION_PRICE}</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
+                  adomain: [ 'psacentral.org' ],
+                  cid: 'bidder-crid',
+                  crid: 'bidder-cid',
+                  cat: []
+                }
+              ],
+              seat: '9999'
+            }
+          ]
+        }
+      };
+
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+          'cache.url': 'faKeCacheUrl'
+        };
+        return config[key];
+      });
+
+      let resp = spec.interpretResponse(serverRespVideo);
+	  sandbox.restore();
+	  expect(resp[0].videoCacheKey).to.not.exist;
     });
   });
   describe('getUserSyncs', function () {

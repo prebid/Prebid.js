@@ -1,8 +1,8 @@
 import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import find from 'core-js/library/fn/array/find.js';
-import isInteger from 'core-js/library/fn/number/is-integer.js';
+import find from 'core-js-pure/features/array/find.js';
+import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
@@ -329,6 +329,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 export const spec = {
 
   code: BIDDER_CODE,
+  gvlid: 10,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
