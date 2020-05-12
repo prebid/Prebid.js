@@ -5,7 +5,6 @@ import {
 } from 'modules/richaudienceBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { getGlobal } from 'src/prebidGlobal.js';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS = [{
@@ -37,6 +36,29 @@ describe('Richaudience adapter tests', function () {
       banner: {
         sizes: [
           [300, 250], [300, 600], [728, 90], [970, 250]]
+      }
+    },
+    bidder: 'richaudience',
+    params: {
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site'
+    },
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
+    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    user: {}
+  }];
+
+  var DEFAULT_PARAMS_VIDEO = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    mediaTypes: {
+      video: {
+        context: 'instream', // or 'outstream'
+        playerSize: [640, 480],
+        mimes: ['video/mp4']
       }
     },
     bidder: 'richaudience',
@@ -175,7 +197,7 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('referer').and.to.equal(null);
   })
 
-  it('Verify build request to prebid 3.0', function() {
+  it('Verify build request to prebid 3.0 display test', function() {
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
@@ -280,7 +302,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   describe('UID test', function () {
-    getGlobal().setConfig({
+    pbjs.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
@@ -640,7 +662,7 @@ describe('Richaudience adapter tests', function () {
     }, [], {consentString: '', gdprApplies: true});
     expect(syncs).to.have.lengthOf(0);
 
-    getGlobal().setConfig({
+    pbjs.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,

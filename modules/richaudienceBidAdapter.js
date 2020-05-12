@@ -45,7 +45,9 @@ export const spec = {
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
-        user: raiSetEids(bid)
+        user: raiSetEids(bid),
+        demand: raiGetDemandType(bid) ? 'video' : 'display',
+        videoData: raiGetVideoInfo(bid)
       };
 
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
@@ -150,6 +152,25 @@ function raiGetSizes(bid) {
       h: size[1]
     }));
   }
+}
+
+function raiGetDemandType(bid) {
+  if (bid.mediaTypes != undefined) {
+    if (bid.mediaTypes.video != undefined) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function raiGetVideoInfo(bid) {
+  let videoData = [];
+  if (raiGetDemandType(bid)) {
+    videoData.push({format: bid.mediaTypes.video.context});
+    videoData.push({playerSize: bid.mediaTypes.video.playerSize});
+    videoData.push({mimes: bid.mediaTypes.video.mimes});
+  }
+  return videoData;
 }
 
 function raiSetEids(bid) {
