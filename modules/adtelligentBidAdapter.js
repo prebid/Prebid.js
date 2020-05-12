@@ -79,7 +79,7 @@ export const spec = {
     const bidChunks = utils.chunk(bids, chunkSize);
     return utils._map(bidChunks, (bids) => {
       return {
-        data: Object.assign({},tag, { bids }),
+        data: Object.assign({}, tag, { bids }),
         adapterRequest,
         method: 'POST',
         url: getUri()
@@ -148,9 +148,14 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.gdpr = 1;
     tag.gdpr_consent = utils.deepAccess(adapterRequest, 'gdprConsent.consentString');
   }
-
   if (utils.deepAccess(adapterRequest, 'uspConsent')) {
-    tag.us_privacy = adapterRequest.uspConsent;
+    tag.usp = adapterRequest.uspConsent;
+  }
+  if (utils.deepAccess(bidRequests[0], 'schain')) {
+    tag.schain = bidRequests[0].schain;
+  }
+  if (utils.deepAccess(bidRequests[0], 'userId')) {
+    tag.userIds = Object.assign({}, $$PREBID_GLOBAL$$.getUserIds());
   }
 
   const bids = []
