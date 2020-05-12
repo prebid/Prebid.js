@@ -1,3 +1,5 @@
+/* eslint no-console: 0 */
+
 /**
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
@@ -13,14 +15,26 @@ import { getHook } from '../src/hook.js';
 import { validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
+// import { getGlobal } from '../src/prebidGlobal.js';
 
-const PURPOSE_1 = 'storage';
-const PURPOSE_2 = 'basicAds';
-const PURPOSE_4 = 'personalizedAds';
+const PURPOSE_1 = {
+  id: 1,
+  name: 'storage'
+}
 
-let hasDefinedPurpose1 = false;
-let hasDefinedPurpose2 = false;
-let hasDefinedPurpose4 = false;
+const PURPOSE_2 = {
+  id: 2,
+  name: 'basicAds'
+}
+
+const PURPOSE_4 = {
+  id: 4,
+  name: 'personalizedAds'
+}
+
+let purpose1Rule;
+let purpose2Rule;
+let purpose4Rule;
 let addedDeviceAccessHook = false;
 let enforcementRules;
 
@@ -115,8 +129,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
           gvlid = getGvlid();
         }
         const curModule = moduleName || config.getCurrentBidder();
-        const purpose1Rule = hasDefinedPurpose1;
-        let isAllowed = validateRules(purpose1Rule, consentData, 1, curModule, gvlid);
+        let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, curModule, gvlid);
         if (isAllowed) {
           result.valid = true;
           fn.call(this, gvlid, moduleName, result);
@@ -149,8 +162,7 @@ export function userSyncHook(fn, ...args) {
       const gvlid = getGvlid();
       const curBidder = config.getCurrentBidder();
       if (gvlid) {
-        const purpose1Rule = hasDefinedPurpose1;
-        let isAllowed = validateRules(purpose1Rule, consentData, 1, curBidder, gvlid);
+        let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, curBidder, gvlid);
         if (isAllowed) {
           fn.call(this, ...args);
         } else {
@@ -181,8 +193,7 @@ export function userIdHook(fn, submodules, consentData) {
         const gvlid = submodule.submodule.gvlid;
         const moduleName = submodule.submodule.name;
         if (gvlid) {
-          const purpose1Rule = hasDefinedPurpose1;
-          let isAllowed = validateRules(purpose1Rule, consentData, 1, moduleName, gvlid);
+          let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, moduleName, gvlid);
           if (isAllowed) {
             return submodule;
           } else {
@@ -210,34 +221,47 @@ export function userIdHook(fn, submodules, consentData) {
  * @param {Array<adUnits>} adUnits
  */
 export function makeBidRequestsHook(fn, adUnits, ...args) {
-  const purpose2Rule = hasDefinedPurpose2;
-  if (purpose2Rule) {
-    const consentData = gdprDataHandler.getConsentData();
-    const disabledBidders = [];
-    adUnits.forEach(adUnit => {
-      adUnit.bids = adUnit.bids.filter(bid => {
-        const currBidder = bid.bidder;
-        const gvlId = getGvlid(currBidder);
-        if (includes(disabledBidders, currBidder)) return false;
-        const isAllowed = validateRules(purpose2Rule, consentData, 2, currBidder, gvlId);
-        if (!isAllowed) {
-          utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
-          // Emit an event for the Analytics adapters to listen
-          events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
-          disabledBidders.push(currBidder);
-        }
-        return isAllowed;
+  const consentData = gdprDataHandler.getConsentData();
+  if (consentData && consentData.gdprApplies) {
+    if (consentData.apiVersion === 2) {
+      const disabledBidders = [];
+      adUnits.forEach(adUnit => {
+        adUnit.bids = adUnit.bids.filter(bid => {
+          const currBidder = bid.bidder;
+          const gvlId = getGvlid(currBidder);
+          if (includes(disabledBidders, currBidder)) return false;
+          const isAllowed = validateRules(purpose2Rule, consentData, PURPOSE_2.id, currBidder, gvlId);
+          if (!isAllowed) {
+            utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
+            events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
+            disabledBidders.push(currBidder);
+          }
+          return isAllowed;
+        });
       });
-    });
-    fn.call(this, adUnits, ...args);
+      fn.call(this, adUnits, ...args);
+    } else {
+      utils.logInfo('Enforcing TCF2 only');
+      fn.call(this, adUnits, ...args);
+    }
   } else {
     fn.call(this, adUnits, ...args);
   }
 }
 
-const hasPurpose1 = (rule) => { return rule.purpose === PURPOSE_1 }
-const hasPurpose2 = (rule) => { return rule.purpose === PURPOSE_2 }
-const hasPurpose4 = (rule) => { return rule.purpose === PURPOSE_4 }
+export function addIdDataToAdUnitBidsHook(fn, adUnits, ...args) {
+  const consentData = gdprDataHandler.getConsentData();
+  if (consentData && consentData.gdprApplies) {
+    if (consentData.apiVersion === 2) {
+
+    } else {
+      utils.logInfo('Enforcing TCF2 only');
+      fn.call(this, adUnits, ...args);
+    }
+  } else {
+    fn.call(this, adUnits, ...args);
+  }
+}
 
 /**
  * A configuration function that initializes some module variables, as well as add hooks
@@ -251,19 +275,31 @@ export function setEnforcementConfig(config) {
   }
 
   enforcementRules = rules;
-  hasDefinedPurpose1 = find(enforcementRules, hasPurpose1);
-  hasDefinedPurpose2 = find(enforcementRules, hasPurpose2);
-  hasDefinedPurpose4 = find(enforcementRules, hasPurpose4);
+  purpose1Rule = find(enforcementRules, rule => rule.purpose === PURPOSE_1.name);
+  purpose2Rule = find(enforcementRules, rule => rule.purpose === PURPOSE_2.name);
+  purpose4Rule = find(enforcementRules, rule => rule.purpose === PURPOSE_4.name);
 
-  if (hasDefinedPurpose1 && !addedDeviceAccessHook) {
+  if (purpose1Rule && !addedDeviceAccessHook) {
     addedDeviceAccessHook = true;
     validateStorageEnforcement.before(deviceAccessHook, 49);
     registerSyncInner.before(userSyncHook, 48);
     // Using getHook as user id and gdprEnforcement are both optional modules. Using import will auto include the file in build
     getHook('validateGdprEnforcement').before(userIdHook, 47);
   }
-  if (hasDefinedPurpose2) {
+  if (purpose2Rule) {
     adapterManager.makeBidRequests.before(makeBidRequestsHook);
+  }
+  if (purpose4Rule) {
+    // check if purpuse2Rule is present. If yes, check if the bidder passed purpose2 check. if purpose2Rule
+    // not present, continue ahead with purpose4 checks.
+
+    // check if purpose1Rule is present. If yes, check if the 'userId' module is given consent, if not, remove that userId from 'bidRequest.userId'
+    // array. If the 'bidder' is not given consent for purpose1, remove the bidRequest.usreId property for bidder A.
+
+    // place the purpose4 hook on pbjs.requestBids function. It should execute after consentManagement hook and userId hook.
+    // getGlobal().requestBids.before(requestBidsHook, 30);
+
+    getHook('addIdDataToAdUnitBids').before(addIdDataToAdUnitBidsHook); ;
   }
 }
 
