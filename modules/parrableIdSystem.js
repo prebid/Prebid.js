@@ -75,25 +75,30 @@ function readCookie() {
   if (parrableIdStr) {
     return deserializeParrableId(decodeURIComponent(parrableIdStr));
   }
-  return undefined;
+  return null;
 }
 
 function writeCookie(parrableId) {
-  const parrableIdStr = encodeURIComponent(serializeParrableId(parrableId));
-  storage.setCookie(PARRABLE_COOKIE_NAME, parrableIdStr, getExpirationDate(), 'lax');
+  if (parrableId) {
+    const parrableIdStr = encodeURIComponent(serializeParrableId(parrableId));
+    storage.setCookie(PARRABLE_COOKIE_NAME, parrableIdStr, getExpirationDate(), 'lax');
+  }
 }
 
 function readLegacyCookies() {
-  let legacyParrableId = {};
-  let legacyEid = storage.getCookie(LEGACY_ID_COOKIE_NAME);
-  if (legacyEid) {
-    legacyParrableId.eid = legacyEid;
+  const eid = storage.getCookie(LEGACY_ID_COOKIE_NAME);
+  const ibaOptout = (storage.getCookie(LEGACY_OPTOUT_COOKIE_NAME) === 'true');
+  if (eid || ibaOptout) {
+    const parrableId = {};
+    if (eid) {
+      parrableId.eid = eid;
+    }
+    if (ibaOptout) {
+      parrableId.ibaOptout = ibaOptout;
+    }
+    return parrableId;
   }
-  let legacyOptout = storage.getCookie(LEGACY_OPTOUT_COOKIE_NAME);
-  if (legacyOptout === 'true') {
-    legacyParrableId.ibaOptout = true;
-  }
-  return legacyParrableId;
+  return null;
 }
 
 function migrateLegacyCookies(parrableId) {
