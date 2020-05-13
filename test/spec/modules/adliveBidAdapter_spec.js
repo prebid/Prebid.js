@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adliveBidAdapter';
+import { spec } from 'modules/adliveBidAdapter.js';
 
 describe('adliveBidAdapterTests', function() {
   let bidRequestData = {
@@ -71,7 +71,7 @@ describe('adliveBidAdapterTests', function() {
         }
       ]
     };
-    let bids = spec.interpretResponse(serverResponse);
+    let bids = spec.interpretResponse(serverResponse, bidRequestData.bids[0]);
 
     expect(bids).to.have.lengthOf(0);
   });

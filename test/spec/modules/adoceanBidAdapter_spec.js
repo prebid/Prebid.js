@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adoceanBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/adoceanBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('AdoceanAdapter', function () {
   const adapter = newBidder(spec);
@@ -86,8 +86,8 @@ describe('AdoceanAdapter', function () {
     it('should add bidIdMap with correct slaveId => bidId mapping', () => {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (let i = 0; i < bidRequests.length; i++) {
-        expect(requests[i]).to.exists;
-        expect(requests[i].bidIdMap).to.exists;
+        expect(requests[i]).to.exist;
+        expect(requests[i].bidIdMap).to.exist;
         expect(requests[i].bidIdMap[bidRequests[i].params.slaveId]).to.equal(bidRequests[i].bidId);
       }
     });
@@ -95,7 +95,7 @@ describe('AdoceanAdapter', function () {
     it('sends bid request to url via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/ad.json`));
+      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/_[0-9]*/ad.json`));
     });
 
     it('should attach id to url', function () {

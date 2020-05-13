@@ -26,8 +26,9 @@ ZEDO has its own renderer and will render the video unit if not defined in the c
                 {
                     bidder: 'zedo',
                     params: {
-                        channelCode: 2264004118
-                        dimId: 9
+                        channelCode: 2264004118, // required
+                        dimId: 9,  // required
+                        pubId: 1   // optional
                     }
                 }
             ]
@@ -53,8 +54,9 @@ ZEDO has its own renderer and will render the video unit if not defined in the c
                 bidder: 'zedo', 
                 params: 
                 { 
-                    channelCode: 2264004593,
-                    dimId: 85 
+                    channelCode: 2264004593, // required
+                    dimId: 85, // required
+                    pubId: 1 // optional
                 } 
             }
         ]

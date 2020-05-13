@@ -3,7 +3,7 @@
 ```
 Module Name:  media.net Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: vedant.s@media.net
+Maintainer: prebid-support@media.net
 ```
 
 # Description
@@ -24,13 +24,13 @@ var adUnits = [{
         params: {
             cid: '<required-customerid-provided-by-media.net>',
             bidfloor: '<optional-float>',
-            crid: '<optional-pleacementid-provided-by-media.net>'
+            crid: '<required-pleacementid-provided-by-media.net>'
         }
     }]
 }];
 ```
 
-# Ad Unit and Setup: For Testing
+# Ad Unit and Setup: For Testing (Banner)
 
 ```html
  <!-- Prebid Config section -->
@@ -43,6 +43,7 @@ var adUnits = [{
              bidder: 'medianet',
              params: {
                  cid: '8CUX0H51C',
+                 crid: '451466393',
                  // Site member is to be used only for testing
                  site: {
                      page: 'http://smoketesting.net/prebidtest/',
@@ -57,3 +58,46 @@ var adUnits = [{
 </script>
 <!-- End Prebid Config section -->
 ```
+
+
+# Ad Unit and Setup: For Testing (Native)
+
+```html
+ <!-- Prebid Config section -->
+ <script>
+    var PREBID_TIMEOUT = 2000;
+    var adUnits = [
+        {
+            code: 'div-gpt-ad-1544091247692-0',
+            mediaTypes: {
+                native: {
+                    image: {
+                        required: true,
+                        sizes: [300, 250],
+                        wmin: 50,
+                    },
+                    title: {
+                        required: true,
+                        len: 80
+                    }
+                }
+            },
+            bids: [
+                {
+                    bidder: 'medianet',
+                    params: {
+                        cid: '8CUX0H51C',
+                        crid: '776755783',
+                        // Site member is to be used only for testing
+                        site: {
+                            page: 'http://smoketesting.net/prebidtest/',
+                            domain: 'smoketesting.net',
+                            ref: 'http://smoketesting.net/prebidtest/'
+                        }
+                    }
+                }
+            ]
+        }
+    ];        
+</script>
+<!-- End Prebid Config section -->

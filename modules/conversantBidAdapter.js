@@ -1,13 +1,17 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const GVLID = 24;
+export const storage = getStorageManager(GVLID);
 
 const BIDDER_CODE = 'conversant';
-const URL = '//web.hb.ad.cpe.dotomi.com/s2s/header/24';
-const VERSION = '2.2.3';
+const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['cnvr'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -24,7 +28,7 @@ export const spec = {
     }
 
     if (!utils.isStr(bid.params.site_id)) {
-      utils.logWarn(BIDDER_CODE + ': site_id must be specified as a string')
+      utils.logWarn(BIDDER_CODE + ': site_id must be specified as a string');
       return false;
     }
 
@@ -45,58 +49,69 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param bidderRequest
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const loc = utils.getTopWindowLocation();
-    const page = loc.href;
-    const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
+    const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
     let siteId = '';
     let requestId = '';
     let pubcid = null;
+    let pubcidName = '_pubcid';
+    let bidurl = URL;
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
-      const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
-      siteId = utils.getBidIdParameter('site_id', bid.params);
+      siteId = utils.getBidIdParameter('site_id', bid.params) || siteId;
+      pubcidName = utils.getBidIdParameter('pubcid_name', bid.params) || pubcidName;
+
       requestId = bid.auctionId;
-
-      const format = convertSizes(bid.sizes);
 
       const imp = {
         id: bid.bidId,
-        secure: secure,
+        secure: 1,
         bidfloor: bidfloor || 0,
         displaymanager: 'Prebid.js',
-        displaymanagerver: VERSION
+        displaymanagerver: '$prebid.version$'
       };
 
-      copyOptProperty(bid.params, 'tag_id', imp, 'tagid');
+      copyOptProperty(bid.params.tag_id, imp, 'tagid');
 
       if (isVideoRequest(bid)) {
-        const video = {
-          w: format[0].w,
-          h: format[0].h
-        };
+        const videoData = utils.deepAccess(bid, 'mediaTypes.video') || {};
+        const format = convertSizes(videoData.playerSize || bid.sizes);
+        const video = {};
 
-        copyOptProperty(bid.params, 'position', video, 'pos');
-        copyOptProperty(bid.params, 'mimes', video);
-        copyOptProperty(bid.params, 'maxduration', video);
-        copyOptProperty(bid.params, 'protocols', video);
-        copyOptProperty(bid.params, 'api', video);
+        if (format && format[0]) {
+          copyOptProperty(format[0].w, video, 'w');
+          copyOptProperty(format[0].h, video, 'h');
+        }
+
+        copyOptProperty(bid.params.position, video, 'pos');
+        copyOptProperty(bid.params.mimes || videoData.mimes, video, 'mimes');
+        copyOptProperty(bid.params.maxduration, video, 'maxduration');
+        copyOptProperty(bid.params.protocols || videoData.protocols, video, 'protocols');
+        copyOptProperty(bid.params.api || videoData.api, video, 'api');
 
         imp.video = video;
       } else {
+        const bannerData = utils.deepAccess(bid, 'mediaTypes.banner') || {};
+        const format = convertSizes(bannerData.sizes || bid.sizes);
         const banner = {format: format};
 
-        copyOptProperty(bid.params, 'position', banner, 'pos');
+        copyOptProperty(bid.params.position, banner, 'pos');
 
         imp.banner = banner;
       }
 
-      if (bid.crumbs && bid.crumbs.pubcid) {
+      if (bid.userId && bid.userId.pubcid) {
+        pubcid = bid.userId.pubcid;
+      } else if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
+      }
+      if (bid.params.white_label_url) {
+        bidurl = bid.params.white_label_url;
       }
 
       return imp;
@@ -116,22 +131,34 @@ export const spec = {
 
     let userExt = {};
 
-    // Add GDPR flag and consent string
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      userExt.consent = bidderRequest.gdprConsent.consentString;
+    if (bidderRequest) {
+      // Add GDPR flag and consent string
+      if (bidderRequest.gdprConsent) {
+        userExt.consent = bidderRequest.gdprConsent.consentString;
 
-      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-        payload.regs = {
-          ext: {
-            gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-          }
-        };
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          utils.deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+        }
       }
+
+      if (bidderRequest.uspConsent) {
+        utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+    }
+
+    if (!pubcid) {
+      pubcid = readStoredValue(pubcidName);
     }
 
     // Add common id if available
     if (pubcid) {
       userExt.fpc = pubcid;
+    }
+
+    // Add Eids if available
+    const eids = collectEids(validBidRequests);
+    if (eids.length > 0) {
+      userExt.eids = eids;
     }
 
     // Only add the user object if it's not empty
@@ -141,7 +168,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: URL,
+      url: bidurl,
       data: payload,
     };
   },
@@ -149,6 +176,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
+   * @param bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
@@ -179,7 +207,12 @@ export const spec = {
             };
 
             if (request.video) {
-              bid.vastUrl = responseAd;
+              if (responseAd.charAt(0) === '<') {
+                bid.vastXml = responseAd;
+              } else {
+                bid.vastUrl = responseAd;
+              }
+
               bid.mediaType = 'video';
               bid.width = request.video.w;
               bid.height = request.video.h;
@@ -244,16 +277,17 @@ function getDevice() {
  *
  * [[300, 250], [300, 600]] => [{w: 300, h: 250}, {w: 300, h: 600}]
  *
- * @param {number[2][]|number[2]} bidSizes - arrays of widths and heights
+ * @param {Array.<Array.<number>>} bidSizes - arrays of widths and heights
  * @returns {object[]} Array of objects with w and h
  */
 function convertSizes(bidSizes) {
   let format;
-
-  if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
-    format = [{w: bidSizes[0], h: bidSizes[1]}];
-  } else {
-    format = utils._map(bidSizes, d => { return {w: d[0], h: d[1]}; });
+  if (Array.isArray(bidSizes)) {
+    if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
+      format = [{w: bidSizes[0], h: bidSizes[1]}];
+    } else {
+      format = utils._map(bidSizes, d => { return {w: d[0], h: d[1]}; });
+    }
   }
 
   return format;
@@ -272,17 +306,72 @@ function isVideoRequest(bid) {
 /**
  * Copy property if exists from src to dst
  *
- * @param {object} src
- * @param {string} srcName
- * @param {object} dst
- * @param {string} [dstName] - Optional. If not specified then srcName is used.
+ * @param {object} src - source object
+ * @param {object} dst - destination object
+ * @param {string} dstName - destination property name
  */
-function copyOptProperty(src, srcName, dst, dstName) {
-  dstName = dstName || srcName;
-  const obj = utils.getBidIdParameter(srcName, src);
-  if (obj !== '') {
-    dst[dstName] = obj;
+function copyOptProperty(src, dst, dstName) {
+  if (src) {
+    dst[dstName] = src;
   }
+}
+
+/**
+ * Collect IDs from validBidRequests and store them as an extended id array
+ * @param bidRequests valid bid requests
+ */
+function collectEids(bidRequests) {
+  const request = bidRequests[0]; // bidRequests have the same userId object
+  const eids = [];
+  if (utils.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
+    // later following white-list can be converted to block-list if needed
+    const requiredSourceValues = {
+      'adserver.org': 1,
+      'liveramp.com': 1,
+      'criteo.com': 1,
+      'id5-sync.com': 1,
+      'parrable.com': 1,
+      'digitru.st': 1,
+      'liveintent.com': 1
+    };
+    request.userIdAsEids.forEach(function(eid) {
+      if (requiredSourceValues.hasOwnProperty(eid.source)) {
+        eids.push(eid);
+      }
+    });
+  }
+  return eids;
+}
+
+/**
+ * Look for a stored value from both cookie and local storage and return the first value found.
+ * @param key Key for the search
+ * @return {string} Stored value
+ */
+function readStoredValue(key) {
+  let storedValue;
+  try {
+    // check cookies first
+    storedValue = storage.getCookie(key);
+
+    if (!storedValue) {
+      // check expiration time before reading local storage
+      const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
+      if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
+        storedValue = storage.getDataFromLocalStorage(key);
+        storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
+      }
+    }
+
+    // deserialize JSON if needed
+    if (utils.isStr(storedValue) && storedValue.charAt(0) === '{') {
+      storedValue = JSON.parse(storedValue);
+    }
+  } catch (e) {
+    utils.logError(e);
+  }
+
+  return storedValue;
 }
 
 registerBidder(spec);

@@ -6,7 +6,7 @@
 
 ## Release Schedule
 
-We push a new release of Prebid.js every other week on Tuesday. During the adoption phase for 1.x, we are releasing updates for 1.x and 0.x at the same time.
+We aim to push a new release of Prebid.js every week on Tuesday.
 
 While the releases will be available immediately for those using direct Git access,
 it will be about a week before the Prebid Org [Download Page](http://prebid.org/download.html) will be updated.  
@@ -128,7 +128,7 @@ Characteristics of a `GA` release:
 
 ## FAQs
 
-**1. Is there flexibility in the 2-week schedule?**
+**1. Is there flexibility in the schedule?**
 
 If a major bug is found in the current release, a maintenance patch will be done as soon as possible.
 

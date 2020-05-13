@@ -1,9 +1,9 @@
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
-import { logInfo } from 'src/utils';
-import find from 'core-js/library/fn/array/find';
-import findIndex from 'core-js/library/fn/array/find-index';
+import adapter from '../src/AnalyticsAdapter.js';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager.js';
+import { logInfo } from '../src/utils.js';
+import find from 'core-js-pure/features/array/find.js';
+import findIndex from 'core-js-pure/features/array/find-index.js';
 
 // Events used in adomik analytics adapter
 const auctionInit = CONSTANTS.EVENTS.AUCTION_INIT;
@@ -207,7 +207,7 @@ adomikAdapter.enableAnalytics = function (config) {
   }
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: adomikAdapter,
   code: 'adomik'
 });

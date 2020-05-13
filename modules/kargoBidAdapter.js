@@ -1,10 +1,18 @@
-import * as utils from 'src/utils';
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
 const SYNC_COUNT = 5;
+
+let sessionId,
+  lastPageUrl,
+  requestCounter;
+
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
@@ -17,8 +25,18 @@ export const spec = {
     const currencyObj = config.getConfig('currency');
     const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
     const bidIds = {};
-    utils._each(validBidRequests, bid => bidIds[bid.bidId] = bid.params.placementId);
+    const bidSizes = {};
+    utils._each(validBidRequests, bid => {
+      bidIds[bid.bidId] = bid.params.placementId;
+      bidSizes[bid.bidId] = bid.sizes;
+    });
+    let tdid;
+    if (validBidRequests.length > 0 && validBidRequests[0].userId && validBidRequests[0].userId.tdid) {
+      tdid = validBidRequests[0].userId.tdid;
+    }
     const transformedParams = Object.assign({}, {
+      sessionId: spec._getSessionId(),
+      requestCount: spec._getRequestCount(),
       timeout: bidderRequest.timeout,
       currency: currency,
       cpmGranularity: 1,
@@ -27,8 +45,10 @@ export const spec = {
         floor: 0,
         ceil: 20
       },
-      bidIDs: bidIds
-    }, spec._getAllMetadata());
+      bidIDs: bidIds,
+      bidSizes: bidSizes,
+      prebidRawBidRequests: validBidRequests
+    }, spec._getAllMetadata(tdid, bidderRequest.uspConsent));
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
       method: 'GET',
@@ -42,6 +62,12 @@ export const spec = {
     const bidResponses = [];
     for (let bidId in bids) {
       let adUnit = bids[bidId];
+      let meta;
+      if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
+        meta = {
+          clickUrl: adUnit.metadata.landingPageDomain
+        };
+      }
       bidResponses.push({
         requestId: bidId,
         cpm: Number(adUnit.cpm),
@@ -50,8 +76,10 @@ export const spec = {
         ad: adUnit.adm,
         ttl: 300,
         creativeId: adUnit.id,
+        dealId: adUnit.targetingCustom,
         netRevenue: true,
-        currency: bidRequest.currency
+        currency: bidRequest.currency,
+        meta: meta
       });
     }
     return bidResponses;
@@ -73,6 +101,9 @@ export const spec = {
 
   // PRIVATE
   _readCookie(name) {
+    if (!storage.cookiesAreEnabled()) {
+      return null;
+    }
     let nameEquals = `${name}=`;
     let cookies = document.cookie.split(';');
 
@@ -90,38 +121,35 @@ export const spec = {
     return null;
   },
 
-  _getCrbIds() {
+  _getCrbFromCookie() {
     try {
       const crb = JSON.parse(decodeURIComponent(spec._readCookie('krg_crb')));
-      let syncIds = {};
-
       if (crb && crb.v) {
         let vParsed = JSON.parse(atob(crb.v));
-
-        if (vParsed && vParsed.syncIds) {
-          syncIds = vParsed.syncIds;
+        if (vParsed) {
+          return vParsed;
         }
       }
-
-      return syncIds;
+      return {};
     } catch (e) {
       return {};
     }
   },
 
-  _getUid() {
+  _getCrbFromLocalStorage() {
     try {
-      const uid = JSON.parse(decodeURIComponent(spec._readCookie('krg_uid')));
-      let vData = {};
-
-      if (uid && uid.v) {
-        vData = uid.v;
-      }
-
-      return vData;
+      return JSON.parse(atob(spec._getLocalStorageSafely('krg_crb')));
     } catch (e) {
       return {};
     }
+  },
+
+  _getCrb() {
+    let localStorageCrb = spec._getCrbFromLocalStorage();
+    if (Object.keys(localStorageCrb).length) {
+      return localStorageCrb;
+    }
+    return spec._getCrbFromCookie();
   },
 
   _getKruxUserId() {
@@ -148,36 +176,55 @@ export const spec = {
 
   _getLocalStorageSafely(key) {
     try {
-      return localStorage.getItem(key);
+      return storage.getDataFromLocalStorage(key);
     } catch (e) {
       return null;
     }
   },
 
-  _getUserIds() {
-    const uid = spec._getUid();
-    const crbIds = spec._getCrbIds();
-
-    return {
-      kargoID: uid.userId,
-      clientID: uid.clientId,
-      crbIDs: crbIds,
-      optOut: uid.optOut
+  _getUserIds(tdid, usp) {
+    const crb = spec._getCrb();
+    const userIds = {
+      kargoID: crb.userId,
+      clientID: crb.clientId,
+      crbIDs: crb.syncIds || {},
+      optOut: crb.optOut,
+      usp: usp
     };
+    if (tdid) {
+      userIds.tdID = tdid;
+    }
+    return userIds;
   },
 
   _getClientId() {
-    const uid = spec._getUid();
-    return uid.clientId;
+    const crb = spec._getCrb();
+    return crb.clientId;
   },
 
-  _getAllMetadata() {
+  _getAllMetadata(tdid, usp) {
     return {
-      userIDs: spec._getUserIds(),
+      userIDs: spec._getUserIds(tdid, usp),
       krux: spec._getKrux(),
       pageURL: window.location.href,
-      rawCRB: spec._readCookie('krg_crb')
+      rawCRB: spec._readCookie('krg_crb'),
+      rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
     };
+  },
+
+  _getSessionId() {
+    if (!sessionId) {
+      sessionId = spec._generateRandomUuid();
+    }
+    return sessionId;
+  },
+
+  _getRequestCount() {
+    if (lastPageUrl === window.location.pathname) {
+      return ++requestCounter;
+    }
+    lastPageUrl = window.location.pathname;
+    return requestCounter = 0;
   },
 
   _generateRandomUuid() {

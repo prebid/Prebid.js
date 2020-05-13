@@ -1,22 +1,23 @@
-const adloader = require('src/adloader');
 
-let sandbox;
+import * as adloader from 'src/adloader.js';
 
-export let loadScript;
-export let loadExternalScript;
-export let loadScriptStub;
-export let loadExternalScriptStub;
+// this export is for adloader's tests against actual implementation
+export let loadExternalScript = adloader.loadExternalScript;
+
+let stub = createStub();
+
+function createStub() {
+  return sinon.stub(adloader, 'loadExternalScript').callsFake((...args) => {
+    if (typeof args[2] === 'function') {
+      args[2]();
+    } else if (typeof args[3] === 'function') {
+      args[3]();
+    }
+    return document.createElement('script');
+  });
+}
 
 beforeEach(function() {
-  sandbox = sinon.sandbox.create();
-  loadScript = adloader.loadScript;
-  loadExternalScript = adloader.loadExternalScript;
-  loadScriptStub = sandbox.stub(adloader, 'loadScript').callsFake((...args) => {
-    args[1]();
-  });
-  loadExternalScriptStub = sandbox.stub(adloader, 'loadExternalScript');
-});
-
-afterEach(function() {
-  sandbox.restore();
+  stub.restore();
+  stub = createStub();
 });

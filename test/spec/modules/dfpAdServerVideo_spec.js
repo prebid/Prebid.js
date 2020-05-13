@@ -1,16 +1,21 @@
 import { expect } from 'chai';
 
 import parse from 'url-parse';
-import buildDfpVideoUrl from 'modules/dfpAdServerVideo';
-import { parseQS } from 'src/url';
-import adUnit from 'test/fixtures/video/adUnit';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { targeting } from 'src/targeting';
+import { buildDfpVideoUrl, buildAdpodVideoUrl } from 'modules/dfpAdServerVideo.js';
+import adUnit from 'test/fixtures/video/adUnit.json';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { targeting } from 'src/targeting.js';
+import { auctionManager } from 'src/auctionManager.js';
+import * as adpod from 'modules/adpod.js';
+import { server } from 'test/mocks/xhr.js';
 
 const bid = {
   videoCacheKey: 'abc',
-  adserverTargeting: { },
+  adserverTargeting: {
+    hb_uuid: 'abc',
+    hb_cache_id: 'abc',
+  },
 };
 
 describe('The DFP video support module', function () {
@@ -25,9 +30,9 @@ describe('The DFP video support module', function () {
     }));
 
     expect(url.protocol).to.equal('https:');
-    expect(url.host).to.equal('pubads.g.doubleclick.net');
+    expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
-    const queryParams = parseQS(url.query);
+    const queryParams = utils.parseQS(url.query);
     expect(queryParams).to.have.property('correlator');
     expect(queryParams).to.have.property('description_url', 'someUrl.com');
     expect(queryParams).to.have.property('env', 'vp');
@@ -40,7 +45,7 @@ describe('The DFP video support module', function () {
   });
 
   it('can take an adserver url as a parameter', function () {
-    const bidCopy = Object.assign({ }, bid);
+    const bidCopy = utils.deepClone(bid);
     bidCopy.vastUrl = 'vastUrl.example';
 
     const url = parse(buildDfpVideoUrl({
@@ -51,7 +56,7 @@ describe('The DFP video support module', function () {
 
     expect(url.host).to.equal('video.adserver.example');
 
-    const queryObject = parseQS(url.query);
+    const queryObject = utils.parseQS(url.query);
     expect(queryObject.description_url).to.equal('vastUrl.example');
   });
 
@@ -72,7 +77,7 @@ describe('The DFP video support module', function () {
       params: { iu: 'my/adUnit' }
     }));
 
-    const queryObject = parseQS(url.query);
+    const queryObject = utils.parseQS(url.query);
     expect(queryObject.iu).to.equal('my/adUnit');
   });
 
@@ -86,14 +91,14 @@ describe('The DFP video support module', function () {
       }
     }));
 
-    expect(parseQS(url.query)).to.have.property('output', 'vast');
+    expect(utils.parseQS(url.query)).to.have.property('output', 'vast');
   });
 
   it('should include the cache key and adserver targeting in cust_params', function () {
-    const bidCopy = Object.assign({ }, bid);
-    bidCopy.adserverTargeting = {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    };
+    });
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -102,8 +107,8 @@ describe('The DFP video support module', function () {
         'iu': 'my/adUnit'
       }
     }));
-    const queryObject = parseQS(url.query);
-    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
 
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
@@ -160,10 +165,10 @@ describe('The DFP video support module', function () {
         }
       });
 
-      const bidCopy = Object.assign({ }, bid);
-      bidCopy.adserverTargeting = {
+      const bidCopy = utils.deepClone(bid);
+      bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
         hb_adid: 'ad_id',
-      };
+      });
 
       const url = parse(buildDfpVideoUrl({
         adUnit: adUnitsCopy,
@@ -172,8 +177,8 @@ describe('The DFP video support module', function () {
           'iu': 'my/adUnit'
         }
       }));
-      const queryObject = parseQS(url.query);
-      const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+      const queryObject = utils.parseQS(url.query);
+      const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
 
       expect(customParams).to.have.property('hb_adid', 'ad_id');
       expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
@@ -184,10 +189,10 @@ describe('The DFP video support module', function () {
   });
 
   it('should merge the user-provided cust_params with the default ones', function () {
-    const bidCopy = Object.assign({ }, bid);
-    bidCopy.adserverTargeting = {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    };
+    });
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -199,18 +204,18 @@ describe('The DFP video support module', function () {
         },
       },
     }));
-    const queryObject = parseQS(url.query);
-    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
 
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('my_targeting', 'foo');
   });
 
   it('should merge the user-provided cust-params with the default ones when using url object', function () {
-    const bidCopy = Object.assign({ }, bid);
-    bidCopy.adserverTargeting = {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    };
+    });
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -218,8 +223,8 @@ describe('The DFP video support module', function () {
       url: 'https://video.adserver.example/ads?sz=640x480&iu=/123/aduniturl&impl=s&cust_params=section%3dblog%26mykey%3dmyvalue'
     }));
 
-    const queryObject = parseQS(url.query);
-    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
 
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('section', 'blog');
@@ -229,7 +234,7 @@ describe('The DFP video support module', function () {
   });
 
   it('should not overwrite an existing description_url for object input and cache disabled', function () {
-    const bidCopy = Object.assign({}, bid);
+    const bidCopy = utils.deepClone(bid);
     bidCopy.vastUrl = 'vastUrl.example';
 
     const url = parse(buildDfpVideoUrl({
@@ -241,7 +246,7 @@ describe('The DFP video support module', function () {
       }
     }));
 
-    const queryObject = parseQS(url.query);
+    const queryObject = utils.parseQS(url.query);
     expect(queryObject.description_url).to.equal('descriptionurl.example');
   });
 
@@ -253,4 +258,279 @@ describe('The DFP video support module', function () {
 
     expect(url).to.be.a('string');
   });
+
+  it('should include hb_uuid and hb_cache_id in cust_params when both keys are exluded from overwritten bidderSettings', function () {
+    const bidCopy = utils.deepClone(bid);
+    delete bidCopy.adserverTargeting.hb_uuid;
+    delete bidCopy.adserverTargeting.hb_cache_id;
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+    expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
+    expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
+  });
+
+  it('should include hb_uuid and hb_cache_id in cust params from overwritten standard bidderSettings', function () {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
+      hb_uuid: 'def',
+      hb_cache_id: 'def'
+    });
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = utils.parseQS(url.query);
+    const customParams = utils.parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+    expect(customParams).to.have.property('hb_uuid', 'def');
+    expect(customParams).to.have.property('hb_cache_id', 'def');
+  });
+
+  describe('adpod unit tests', function () {
+    let amStub;
+    let amGetAdUnitsStub;
+
+    before(function () {
+      let adUnits = [{
+        code: 'adUnitCode-1',
+        mediaTypes: {
+          video: {
+            context: 'adpod',
+            playerSize: [640, 480],
+            adPodDurationSec: 60,
+            durationRangeSec: [15, 30],
+            requireExactDuration: true
+          }
+        },
+        bids: [
+          {
+            bidder: 'appnexus',
+            params: {
+              placementId: 14542875,
+            }
+          }
+        ]
+      }];
+
+      amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits');
+      amGetAdUnitsStub.returns(adUnits);
+      amStub = sinon.stub(auctionManager, 'getBidsReceived');
+    });
+
+    beforeEach(function () {
+      config.setConfig({
+        adpod: {
+          brandCategoryExclusion: true,
+          deferCaching: false
+        }
+      });
+    })
+
+    afterEach(function() {
+      config.resetConfig();
+    });
+
+    after(function () {
+      amGetAdUnitsStub.restore();
+      amStub.restore();
+    });
+
+    it('should return masterTag url', function() {
+      amStub.returns(getBidsReceived());
+      let url;
+      parse(buildAdpodVideoUrl({
+        code: 'adUnitCode-1',
+        callback: handleResponse,
+        params: {
+          'iu': 'my/adUnit',
+          'description_url': 'someUrl.com',
+        }
+      }));
+
+      function handleResponse(err, masterTag) {
+        if (err) {
+          return;
+        }
+        url = parse(masterTag);
+
+        expect(url.protocol).to.equal('https:');
+        expect(url.host).to.equal('securepubads.g.doubleclick.net');
+
+        const queryParams = utils.parseQS(url.query);
+        expect(queryParams).to.have.property('correlator');
+        expect(queryParams).to.have.property('description_url', 'someUrl.com');
+        expect(queryParams).to.have.property('env', 'vp');
+        expect(queryParams).to.have.property('gdfp_req', '1');
+        expect(queryParams).to.have.property('iu', 'my/adUnit');
+        expect(queryParams).to.have.property('output', 'xml_vast3');
+        expect(queryParams).to.have.property('sz', '640x480');
+        expect(queryParams).to.have.property('unviewed_position_start', '1');
+        expect(queryParams).to.have.property('url');
+        expect(queryParams).to.have.property('cust_params');
+
+        const custParams = utils.parseQS(decodeURIComponent(queryParams.cust_params));
+        expect(custParams).to.have.property('hb_cache_id', '123');
+        expect(custParams).to.have.property('hb_pb_cat_dur', '15.00_395_15s,15.00_406_30s,10.00_395_15s');
+      }
+    });
+
+    it('should return masterTag url with correct custom params when brandCategoryExclusion is false', function() {
+      config.setConfig({
+        adpod: {
+          brandCategoryExclusion: false,
+        }
+      });
+      function getBids() {
+        let bids = [
+          createBid(10, 'adUnitCode-1', 15, '10.00_15s', '123', '395', '10.00'),
+          createBid(15, 'adUnitCode-1', 15, '15.00_15s', '123', '395', '15.00'),
+          createBid(25, 'adUnitCode-1', 30, '15.00_30s', '123', '406', '25.00'),
+        ];
+        bids.forEach((bid) => {
+          delete bid.meta;
+        });
+        return bids;
+      }
+      amStub.returns(getBids());
+      let url;
+      parse(buildAdpodVideoUrl({
+        code: 'adUnitCode-1',
+        callback: handleResponse,
+        params: {
+          'iu': 'my/adUnit',
+          'description_url': 'someUrl.com',
+        }
+      }));
+
+      function handleResponse(err, masterTag) {
+        if (err) {
+          return;
+        }
+        url = parse(masterTag);
+        expect(url.protocol).to.equal('https:');
+        expect(url.host).to.equal('securepubads.g.doubleclick.net');
+
+        const queryParams = utils.parseQS(url.query);
+        expect(queryParams).to.have.property('correlator');
+        expect(queryParams).to.have.property('description_url', 'someUrl.com');
+        expect(queryParams).to.have.property('env', 'vp');
+        expect(queryParams).to.have.property('gdfp_req', '1');
+        expect(queryParams).to.have.property('iu', 'my/adUnit');
+        expect(queryParams).to.have.property('output', 'xml_vast3');
+        expect(queryParams).to.have.property('sz', '640x480');
+        expect(queryParams).to.have.property('unviewed_position_start', '1');
+        expect(queryParams).to.have.property('url');
+        expect(queryParams).to.have.property('cust_params');
+
+        const custParams = utils.parseQS(decodeURIComponent(queryParams.cust_params));
+        expect(custParams).to.have.property('hb_cache_id', '123');
+        expect(custParams).to.have.property('hb_pb_cat_dur', '10.00_15s,15.00_15s,15.00_30s');
+      }
+    });
+
+    it('should handle error when cache fails', function() {
+      config.setConfig({
+        adpod: {
+          brandCategoryExclusion: true,
+          deferCaching: true
+        }
+      });
+      amStub.returns(getBidsReceived());
+
+      parse(buildAdpodVideoUrl({
+        code: 'adUnitCode-1',
+        callback: handleResponse,
+        params: {
+          'iu': 'my/adUnit',
+          'description_url': 'someUrl.com',
+        }
+      }));
+
+      server.requests[0].respond(503, {
+        'Content-Type': 'plain/text',
+      }, 'The server could not save anything at the moment.');
+
+      function handleResponse(err, masterTag) {
+        expect(masterTag).to.be.null;
+        expect(err).to.be.an('error');
+      }
+    });
+  })
 });
+
+function getBidsReceived() {
+  return [
+    createBid(10, 'adUnitCode-1', 15, '10.00_395_15s', '123', '395', '10.00'),
+    createBid(15, 'adUnitCode-1', 15, '15.00_395_15s', '123', '395', '15.00'),
+    createBid(25, 'adUnitCode-1', 30, '15.00_406_30s', '123', '406', '25.00'),
+  ]
+}
+
+function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid, label, hbpb) {
+  return {
+    'bidderCode': 'appnexus',
+    'width': 640,
+    'height': 360,
+    'statusMessage': 'Bid available',
+    'adId': '28f24ced14586c',
+    'mediaType': 'video',
+    'source': 'client',
+    'requestId': '28f24ced14586c',
+    'cpm': cpm,
+    'creativeId': 97517771,
+    'currency': 'USD',
+    'netRevenue': true,
+    'ttl': 3600,
+    'adUnitCode': adUnitCode,
+    'video': {
+      'context': 'adpod',
+      'durationBucket': durationBucket
+    },
+    'appnexus': {
+      'buyerMemberId': 9325
+    },
+    'vastUrl': 'http://some-vast-url.com',
+    'vastImpUrl': 'http://some-vast-imp-url.com',
+    'auctionId': 'ec266b31-d652-49c5-8295-e83fafe5532b',
+    'responseTimestamp': 1548442460888,
+    'requestTimestamp': 1548442460827,
+    'bidder': 'appnexus',
+    'timeToRespond': 61,
+    'pbLg': '5.00',
+    'pbMg': '5.00',
+    'pbHg': '5.00',
+    'pbAg': '5.00',
+    'pbDg': '5.00',
+    'pbCg': '',
+    'size': '640x360',
+    'adserverTargeting': {
+      'hb_bidder': 'appnexus',
+      'hb_adid': '28f24ced14586c',
+      'hb_pb': hbpb,
+      'hb_size': '640x360',
+      'hb_source': 'client',
+      'hb_format': 'video',
+      'hb_pb_cat_dur': priceIndustryDuration,
+      'hb_cache_id': uuid
+    },
+    'customCacheKey': `${priceIndustryDuration}_${uuid}`,
+    'meta': {
+      'iabSubCatId': 'iab-1',
+      'adServerCatId': label
+    },
+    'videoCacheKey': '4cf395af-8fee-4960-af0e-88d44e399f14'
+  }
+}

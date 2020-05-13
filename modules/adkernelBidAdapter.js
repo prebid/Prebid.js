@@ -1,14 +1,43 @@
-import * as utils from 'src/utils';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import {parse as parseUrl} from 'src/url'
+import * as utils from '../src/utils.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
+
+/*
+ * In case you're AdKernel whitelable platform's client who needs branded adapter to
+ * work with Adkernel platform - DO NOT COPY THIS ADAPTER UNDER NEW NAME
+ *
+ * Please contact prebid@adkernel.com and we'll add your adapter as an alias.
+ */
 
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
   'pos', 'api', 'ext'];
-const VERSION = '1.3';
+const VERSION = '1.4';
+
+const NATIVE_MODEL = [
+  {name: 'title', assetType: 'title'},
+  {name: 'icon', assetType: 'img', type: 1},
+  {name: 'image', assetType: 'img', type: 3},
+  {name: 'body', assetType: 'data', type: 2},
+  {name: 'body2', assetType: 'data', type: 10},
+  {name: 'sponsoredBy', assetType: 'data', type: 1},
+  {name: 'phone', assetType: 'data', type: 8},
+  {name: 'address', assetType: 'data', type: 9},
+  {name: 'price', assetType: 'data', type: 6},
+  {name: 'salePrice', assetType: 'data', type: 7},
+  {name: 'cta', assetType: 'data', type: 12},
+  {name: 'rating', assetType: 'data', type: 3},
+  {name: 'downloads', assetType: 'data', type: 5},
+  {name: 'likes', assetType: 'data', type: 4},
+  {name: 'displayUrl', assetType: 'data', type: 11}
+];
+
+const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
+  acc[val.name] = {id: idx, ...val};
+  return acc;
+}, {});
 
 /**
  * Adapter for requesting bids from AdKernel white-label display platform
@@ -16,29 +45,28 @@ const VERSION = '1.3';
 export const spec = {
 
   code: 'adkernel',
-  aliases: ['headbidding'],
-  supportedMediaTypes: [BANNER, VIDEO],
+  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon'],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid: function(bidRequest) {
-    return 'params' in bidRequest && typeof bidRequest.params.host !== 'undefined' &&
-      'zoneId' in bidRequest.params && !isNaN(Number(bidRequest.params.zoneId));
+    return 'params' in bidRequest &&
+      typeof bidRequest.params.host !== 'undefined' &&
+      'zoneId' in bidRequest.params &&
+      !isNaN(Number(bidRequest.params.zoneId)) &&
+      bidRequest.params.zoneId > 0 &&
+      bidRequest.mediaTypes &&
+      (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video || (bidRequest.mediaTypes.native && validateNativeAdUnit(bidRequest.mediaTypes.native)));
   },
   buildRequests: function(bidRequests, bidderRequest) {
     let impDispatch = dispatchImps(bidRequests, bidderRequest.refererInfo);
-    const gdprConsent = bidderRequest.gdprConsent;
-    const auctionId = bidderRequest.auctionId;
+    const {gdprConsent, auctionId, refererInfo, timeout, uspConsent} = bidderRequest;
     const requests = [];
     Object.keys(impDispatch).forEach(host => {
       Object.keys(impDispatch[host]).forEach(zoneId => {
-        const request = buildRtbRequest(impDispatch[host][zoneId], auctionId, gdprConsent, bidderRequest.refererInfo);
+        const request = buildRtbRequest(impDispatch[host][zoneId], auctionId, gdprConsent, uspConsent, refererInfo, timeout);
         requests.push({
-          method: 'GET',
-          url: `${window.location.protocol}//${host}/rtbg`,
-          data: {
-            zone: Number(zoneId),
-            ad_type: 'rtb',
-            v: VERSION,
-            r: JSON.stringify(request)
-          }
+          method: 'POST',
+          url: `https://${host}/hb?zone=${zoneId}&v=${VERSION}`,
+          data: JSON.stringify(request)
         });
       });
     });
@@ -50,14 +78,13 @@ export const spec = {
       return [];
     }
 
-    let rtbRequest = JSON.parse(request.data.r);
-    let rtbImps = rtbRequest.imp;
+    let rtbRequest = JSON.parse(request.data);
     let rtbBids = response.seatbid
       .map(seatbid => seatbid.bid)
       .reduce((a, b) => a.concat(b), []);
 
     return rtbBids.map(rtbBid => {
-      let imp = find(rtbImps, imp => imp.id === rtbBid.impid);
+      let imp = find(rtbRequest.imp, imp => imp.id === rtbBid.impid);
       let prBid = {
         requestId: rtbBid.impid,
         cpm: rtbBid.price,
@@ -71,12 +98,14 @@ export const spec = {
         prBid.width = rtbBid.w;
         prBid.height = rtbBid.h;
         prBid.ad = formatAdMarkup(rtbBid);
-      }
-      if ('video' in imp) {
+      } else if ('video' in imp) {
         prBid.mediaType = VIDEO;
         prBid.vastUrl = rtbBid.nurl;
         prBid.width = imp.video.w;
         prBid.height = imp.video.h;
+      } else if ('native' in imp) {
+        prBid.mediaType = NATIVE;
+        prBid.native = buildNativeAd(JSON.parse(rtbBid.adm));
       }
       return prBid;
     });
@@ -102,8 +131,7 @@ function dispatchImps(bidRequests, refererInfo) {
   return bidRequests.map(bidRequest => buildImp(bidRequest, secure))
     .reduce((acc, curr, index) => {
       let bidRequest = bidRequests[index];
-      let zoneId = bidRequest.params.zoneId;
-      let host = bidRequest.params.host;
+      let {zoneId, host} = bidRequest.params;
       acc[host] = acc[host] || {};
       acc[host][zoneId] = acc[host][zoneId] || [];
       acc[host][zoneId].push(curr);
@@ -120,23 +148,25 @@ function buildImp(bidRequest, secure) {
     'tagid': bidRequest.adUnitCode
   };
 
-  if (bidRequest.mediaType === BANNER || utils.deepAccess(bidRequest, `mediaTypes.banner`) ||
-    (bidRequest.mediaTypes === undefined && bidRequest.mediaType === undefined)) {
-    let sizes = canonicalizeSizesArray(bidRequest.sizes);
+  if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
+    let sizes = utils.getAdUnitSizes(bidRequest);
     imp.banner = {
-      format: sizes.map(s => ({'w': s[0], 'h': s[1]})),
+      format: sizes.map(wh => utils.parseGPTSingleSizeArrayToRtbSize(wh)),
       topframe: 0
     };
-  } else if (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, 'mediaTypes.video')) {
-    let size = canonicalizeSizesArray(bidRequest.sizes)[0];
-    imp.video = {
-      w: size[0],
-      h: size[1]
-    };
+  } else if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+    let sizes = bidRequest.mediaTypes.video.playerSize || [];
+    imp.video = utils.parseGPTSingleSizeArrayToRtbSize(sizes[0]) || {};
     if (bidRequest.params.video) {
       Object.keys(bidRequest.params.video)
-        .filter(param => includes(VIDEO_TARGETING, param))
-        .forEach(param => imp.video[param] = bidRequest.params.video[param]);
+        .filter(key => includes(VIDEO_TARGETING, key))
+        .forEach(key => imp.video[key] = bidRequest.params.video[key]);
+    }
+  } else if (utils.deepAccess(bidRequest, 'mediaTypes.native')) {
+    let nativeRequest = buildNativeRequest(bidRequest.mediaTypes.native);
+    imp.native = {
+      ver: '1.1',
+      request: JSON.stringify(nativeRequest)
     }
   }
   if (secure) {
@@ -146,26 +176,61 @@ function buildImp(bidRequest, secure) {
 }
 
 /**
- * Convert input array of sizes to canonical form Array[Array[Number]]
- * @param sizes
- * @return Array[Array[Number]]
+ * Builds native request from native adunit
  */
-function canonicalizeSizesArray(sizes) {
-  if (sizes.length === 2 && !utils.isArray(sizes[0])) {
-    return [sizes];
+function buildNativeRequest(nativeReq) {
+  let request = {ver: '1.1', assets: []};
+  for (let k of Object.keys(nativeReq)) {
+    let v = nativeReq[k];
+    let desc = NATIVE_INDEX[k];
+    if (desc === undefined) {
+      continue;
+    }
+    let assetRoot = {
+      id: desc.id,
+      required: ~~v.required,
+    };
+    if (desc.assetType === 'img') {
+      assetRoot[desc.assetType] = buildImageAsset(desc, v);
+    } else if (desc.assetType === 'data') {
+      assetRoot.data = utils.cleanObj({type: desc.type, len: v.len});
+    } else if (desc.assetType === 'title') {
+      assetRoot.title = {len: v.len || 90};
+    } else {
+      return;
+    }
+    request.assets.push(assetRoot);
   }
-  return sizes;
+  return request;
+}
+
+/**
+ *  Builds image asset request
+ */
+function buildImageAsset(desc, val) {
+  let img = {
+    type: desc.type
+  };
+  if (val.sizes) {
+    [img.w, img.h] = val.sizes;
+  } else if (val.aspect_ratios) {
+    img.wmin = val.aspect_ratios[0].min_width;
+    img.hmin = val.aspect_ratios[0].min_height;
+  }
+  return utils.cleanObj(img);
 }
 
 /**
  * Builds complete rtb request
  * @param imps collection of impressions
  * @param auctionId
- * @param gdprConsent
+ * @param gdprConsent {string=}
+ * @param uspConsent {string=}
  * @param refInfo
+ * @param timeout
  * @return Object complete rtb request
  */
-function buildRtbRequest(imps, auctionId, gdprConsent, refInfo) {
+function buildRtbRequest(imps, auctionId, gdprConsent, uspConsent, refInfo, timeout) {
   let req = {
     'id': auctionId,
     'imp': imps,
@@ -177,6 +242,7 @@ function buildRtbRequest(imps, auctionId, gdprConsent, refInfo) {
       'js': 1,
       'language': getLanguage()
     },
+    'tmax': parseInt(timeout),
     'ext': {
       'adk_usersync': 1
     }
@@ -184,11 +250,16 @@ function buildRtbRequest(imps, auctionId, gdprConsent, refInfo) {
   if (utils.getDNT()) {
     req.device.dnt = 1;
   }
-  if (gdprConsent && gdprConsent.gdprApplies !== undefined) {
-    req.regs = {ext: {gdpr: Number(gdprConsent.gdprApplies)}};
+  if (gdprConsent) {
+    if (gdprConsent.gdprApplies !== undefined) {
+      utils.deepSetValue(req, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
+    }
+    if (gdprConsent.consentString !== undefined) {
+      utils.deepSetValue(req, 'user.ext.consent', gdprConsent.consentString);
+    }
   }
-  if (gdprConsent && gdprConsent.consentString !== undefined) {
-    req.user = {ext: {consent: gdprConsent.consentString}};
+  if (uspConsent) {
+    utils.deepSetValue(req, 'regs.ext.us_privacy', uspConsent);
   }
   return req;
 }
@@ -202,19 +273,19 @@ function getLanguage() {
  * Creates site description object
  */
 function createSite(refInfo) {
-  let url = parseUrl(refInfo.referer);
-  let result = {
+  let url = utils.parseUrl(refInfo.referer);
+  let site = {
     'domain': url.hostname,
-    'page': url.protocol + '://' + url.hostname + url.pathname
+    'page': `${url.protocol}://${url.hostname}${url.pathname}`
   };
   if (self === top && document.referrer) {
-    result.ref = document.referrer;
+    site.ref = document.referrer;
   }
   let keywords = document.getElementsByTagName('meta')['keywords'];
   if (keywords && keywords.content) {
-    result.keywords = keywords.content;
+    site.keywords = keywords.content;
   }
-  return result;
+  return site;
 }
 
 /**
@@ -222,9 +293,57 @@ function createSite(refInfo) {
  *  @param bid rtb Bid object
  */
 function formatAdMarkup(bid) {
-  var adm = bid.adm;
+  let adm = bid.adm;
   if ('nurl' in bid) {
     adm += utils.createTrackPixelHtml(`${bid.nurl}&px=1`);
   }
-  return `<!DOCTYPE html><html><head><title></title><body style='margin:0px;padding:0px;'>${adm}</body></head>`;
+  return adm;
+}
+
+/**
+ * Basic validates to comply with platform requirements
+ */
+function validateNativeAdUnit(adUnit) {
+  return validateNativeImageSize(adUnit.image) && validateNativeImageSize(adUnit.icon) &&
+    !utils.deepAccess(adUnit, 'privacyLink.required') && // not supported yet
+    !utils.deepAccess(adUnit, 'privacyIcon.required'); // not supported yet
+}
+
+/**
+ * Validates image asset size definition
+ */
+function validateNativeImageSize(img) {
+  if (!img) {
+    return true;
+  }
+  if (img.sizes) {
+    return utils.isArrayOfNums(img.sizes, 2);
+  }
+  if (utils.isArray(img.aspect_ratios)) {
+    return img.aspect_ratios.length > 0 && img.aspect_ratios[0].min_height && img.aspect_ratios[0].min_width;
+  }
+  return true;
+}
+
+/**
+ * Creates native ad for native 1.1 response
+ */
+function buildNativeAd(nativeResp) {
+  const {assets, link, imptrackers, jstracker, privacy} = nativeResp.native;
+  let nativeAd = {
+    clickUrl: link.url,
+    impressionTrackers: imptrackers,
+    javascriptTrackers: jstracker ? [jstracker] : undefined,
+    privacyLink: privacy,
+  };
+  utils._each(assets, asset => {
+    let assetName = NATIVE_MODEL[asset.id].name;
+    let assetType = NATIVE_MODEL[asset.id].assetType;
+    nativeAd[assetName] = asset[assetType].text || asset[assetType].value || utils.cleanObj({
+      url: asset[assetType].url,
+      width: asset[assetType].w,
+      height: asset[assetType].h
+    });
+  });
+  return utils.cleanObj(nativeAd);
 }
