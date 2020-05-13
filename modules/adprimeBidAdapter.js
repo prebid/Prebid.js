@@ -77,7 +77,8 @@ export const spec = {
         wPlayer: sizes ? sizes[0] : 0,
         hPlayer: sizes ? sizes[1] : 0,
         traffic: bid.params.traffic || BANNER,
-        schain: bid.schain || {}
+        schain: bid.schain || {},
+        keywords: bid.params.keywords || []
       });
     }
     return {
