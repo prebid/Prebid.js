@@ -1,8 +1,7 @@
-import { Renderer } from '../src/Renderer.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER,  VIDEO } from '../src/mediaTypes.js';
 
 
 
@@ -87,8 +86,6 @@ export const spec = {
     let response = serverResponse.body;
     try {
       if (response) {
-        const bidRequest = JSON.parse(bidRequestString.data);
-
         let bidResponse = {
           requestId: response.requestId,
           cpm: response.cpm,
