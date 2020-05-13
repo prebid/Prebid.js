@@ -301,8 +301,6 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
   }
 }
 
-const addIdDataToAdUnitBidsHook = hook('sync', addIdDataToAdUnitBids, 'addIdDataToAdUnitBids');
-
 /**
  * This is a common function that will initalize subModules if not already done and it will also execute subModule callbacks
  */
@@ -368,7 +366,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   // initialize submodules only when undefined
   initializeSubmodulesAndExecuteCallbacks(function() {
     // pass available user id data to bid adapters
-    addIdDataToAdUnitBidsHook(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
+    addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
   });

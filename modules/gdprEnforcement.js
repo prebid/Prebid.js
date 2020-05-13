@@ -192,16 +192,16 @@ export function userIdHook(fn, submodules, consentData) {
       let userIdModules = submodules.map((submodule) => {
         const gvlid = submodule.submodule.gvlid;
         const moduleName = submodule.submodule.name;
-        if (gvlid) {
-          let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, moduleName, gvlid);
-          if (isAllowed) {
-            return submodule;
-          } else {
-            utils.logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
-          }
+        // if (gvlid) {
+        let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, moduleName, gvlid);
+        if (isAllowed) {
+          return submodule;
         } else {
           utils.logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
         }
+        // } else {
+        //   utils.logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
+        // }
         return undefined;
       }).filter(module => module)
       fn.call(this, userIdModules, consentData);
@@ -230,11 +230,22 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
           const currBidder = bid.bidder;
           const gvlId = getGvlid(currBidder);
           if (includes(disabledBidders, currBidder)) return false;
-          const isAllowed = validateRules(purpose2Rule, consentData, PURPOSE_2.id, currBidder, gvlId);
-          if (!isAllowed) {
-            utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
-            events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
-            disabledBidders.push(currBidder);
+          let isAllowed = true;
+          if (purpose2Rule) {
+            isAllowed = gvlId && validateRules(purpose2Rule, consentData, PURPOSE_2.id, currBidder, gvlId);
+            if (!isAllowed) {
+              utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
+              events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
+              disabledBidders.push(currBidder);
+            }
+          }
+          if (purpose4Rule) {
+            const hasPurpose4Consent = gvlId && validateRules(purpose4Rule, consentData, PURPOSE_4.id, currBidder, gvlId);
+            if (!hasPurpose4Consent) {
+              if (bid.userId) delete bid.userId;
+              if (bid.userIdAsEids) delete bid.userIdAsEids;
+              utils.logWarn(`User blocked personalized ads for bidder: ${currBidder}. Bidder won't have access to user ids.`);
+            }
           }
           return isAllowed;
         });
@@ -249,19 +260,24 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
   }
 }
 
-export function addIdDataToAdUnitBidsHook(fn, adUnits, ...args) {
-  const consentData = gdprDataHandler.getConsentData();
-  if (consentData && consentData.gdprApplies) {
-    if (consentData.apiVersion === 2) {
-
-    } else {
-      utils.logInfo('Enforcing TCF2 only');
-      fn.call(this, adUnits, ...args);
-    }
-  } else {
-    fn.call(this, adUnits, ...args);
-  }
-}
+// export function addIdDataToAdUnitBidsHook(fn, adUnits, ...args) {
+//   const consentData = gdprDataHandler.getConsentData();
+//   if (consentData && consentData.gdprApplies) {
+//     if (consentData.apiVersion === 2) {
+//       adUnits.forEach(adUnit => {
+//         adUnit.bids.forEach(bid => {
+//           const currBidder = bid.bidder;
+//           const glvId = getGvlid(currBidder);
+//         });
+//       });
+//     } else {
+//       utils.logInfo('Enforcing TCF2 only');
+//       fn.call(this, adUnits, ...args);
+//     }
+//   } else {
+//     fn.call(this, adUnits, ...args);
+//   }
+// }
 
 /**
  * A configuration function that initializes some module variables, as well as add hooks
@@ -286,7 +302,7 @@ export function setEnforcementConfig(config) {
     // Using getHook as user id and gdprEnforcement are both optional modules. Using import will auto include the file in build
     getHook('validateGdprEnforcement').before(userIdHook, 47);
   }
-  if (purpose2Rule) {
+  if (purpose2Rule || purpose4Rule) {
     adapterManager.makeBidRequests.before(makeBidRequestsHook);
   }
   if (purpose4Rule) {
@@ -299,7 +315,7 @@ export function setEnforcementConfig(config) {
     // place the purpose4 hook on pbjs.requestBids function. It should execute after consentManagement hook and userId hook.
     // getGlobal().requestBids.before(requestBidsHook, 30);
 
-    getHook('addIdDataToAdUnitBids').before(addIdDataToAdUnitBidsHook); ;
+    // getHook('addIdDataToAdUnitBids').after(addIdDataToAdUnitBidsHook); ;
   }
 }
 

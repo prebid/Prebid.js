@@ -5,6 +5,7 @@ import * as utils from 'src/utils.js';
 import { validateStorageEnforcement } from 'src/storageManager.js';
 import { executeStorageCallbacks } from 'src/prebid.js';
 import events from 'src/events.js';
+import { EVENTS } from 'src/constants.json';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
@@ -424,6 +425,7 @@ describe('gdpr enforcement', function () {
     let sandbox;
     let adapterManagerStub;
     let emitEventSpy;
+    let logInfoSpy;
     const MOCK_AD_UNITS = [{
       code: 'ad-unit-1',
       mediaTypes: {},
@@ -437,6 +439,8 @@ describe('gdpr enforcement', function () {
       mediaTypes: {},
       bids: [{
         bidder: 'bidder_2'
+      }, {
+        bidder: 'bidder_3'
       }]
     }];
     beforeEach(function () {
@@ -444,6 +448,7 @@ describe('gdpr enforcement', function () {
       gdprDataHandlerStub = sandbox.stub(gdprDataHandler, 'getConsentData');
       adapterManagerStub = sandbox.stub(adapterManager, 'getBidAdapter');
       logWarnSpy = sandbox.spy(utils, 'logWarn');
+      logInfoSpy = sandbox.spy(utils, 'logInfo');
       nextFnSpy = sandbox.spy();
       emitEventSpy = sandbox.spy(events, 'emit');
     });
@@ -478,6 +483,11 @@ describe('gdpr enforcement', function () {
           return { 'gvlid': 5 }
         }
       });
+      adapterManagerStub.withArgs('bidder_3').returns({
+        getSpec: function () {
+          return { 'gvlid': undefined }
+        }
+      });
       makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
 
       // Assertions
@@ -493,11 +503,13 @@ describe('gdpr enforcement', function () {
         mediaTypes: {},
         bids: []
       }], []);
-      expect(emitEventSpy.calledOnce).to.equal(true);
-      expect(logWarnSpy.calledOnce).to.equal(true);
+      expect(emitEventSpy.calledTwice).to.equal(true);
+      expect(logWarnSpy.calledTwice).to.equal(true);
+      sinon.assert.calledWith(emitEventSpy.firstCall, EVENTS.BIDDER_BLOCKED, 'bidder_2');
+      sinon.assert.calledWith(emitEventSpy.secondCall, EVENTS.BIDDER_BLOCKED, 'bidder_3');
     });
 
-    it('should skip TCF v2.0 validation checks if "Purpose 2" enforcment not present in gdpr config rules', function () {
+    it('should skip validation checks if GDPR version is not equal to "2"', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -508,6 +520,13 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
+
+      const consentData = {};
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.apiVersion = 1;
+      consentData.gdprApplies = true;
+      gdprDataHandlerStub.returns(consentData);
+
       makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
 
       // Assertions
@@ -515,6 +534,7 @@ describe('gdpr enforcement', function () {
       sinon.assert.calledWith(nextFnSpy, sinon.match.array.deepEquals(MOCK_AD_UNITS), []);
       expect(emitEventSpy.notCalled).to.equal(true);
       expect(logWarnSpy.notCalled).to.equal(true);
+      expect(logInfoSpy.calledOnce).to.equal(true);
     });
   });
 });
