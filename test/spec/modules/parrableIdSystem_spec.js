@@ -6,8 +6,7 @@ import { getRefererInfo } from 'src/refererDetection.js';
 import { uspDataHandler } from 'src/adapterManager.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
-import { newStorageManager } from 'src/storageManager.js';
-import {server} from 'test/mocks/xhr.js';
+import { server } from 'test/mocks/xhr.js';
 
 const storage = newStorageManager();
 
@@ -28,7 +27,6 @@ const P_CONFIG_MOCK = {
 };
 
 describe('Parrable ID System', function() {
-  let logErrorStub;
   function getConfigMock() {
     return {
       userSync: {
@@ -112,17 +110,10 @@ describe('Parrable ID System', function() {
 
   describe('Parrable ID in Bid Request', function() {
     let adUnits;
+    let logErrorStub;
 
     beforeEach(function() {
       adUnits = [getAdUnitMock()];
-      logErrorStub = sinon.stub(utils, 'logError');
-    });
-
-    this.afterEach(function() {
-      logErrorStub.restore();
-    });
-
-    it('should append parrableid to bid request', function(done) {
       // simulate existing browser local storage values
       storage.setCookie(
         P_COOKIE_NAME,
@@ -132,10 +123,12 @@ describe('Parrable ID System', function() {
       setSubmoduleRegistry([parrableIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock());
+      logErrorStub = sinon.stub(utils, 'logError');
     });
 
     afterEach(function() {
       storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
+      logErrorStub.restore();
     });
 
     it('provides the parrableid in the bid request', function(done) {
