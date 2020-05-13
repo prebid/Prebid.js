@@ -17,9 +17,9 @@ const PARRABLE_COOKIE_NAME = '_parrable_id';
 const LEGACY_ID_COOKIE_NAME = '_parrable_eid';
 const LEGACY_OPTOUT_COOKIE_NAME = '_parrable_optout';
 const ONE_YEAR_MS = 364 * 24 * 60 * 60 * 1000;
+const EXPIRE_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
 
 const storage = getStorageManager();
-const expiredCookieDate = new Date(0).toString();
 
 function getExpirationDate() {
   const oneYearFromNow = new Date(utils.timestamp() + ONE_YEAR_MS);
@@ -104,10 +104,10 @@ function readLegacyCookies() {
 function migrateLegacyCookies(parrableId) {
   writeCookie(parrableId);
   if (parrableId.eid) {
-    storage.setCookie(LEGACY_ID_COOKIE_NAME, '', expiredCookieDate);
+    storage.setCookie(LEGACY_ID_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
   }
   if (parrableId.ibaOptout) {
-    storage.setCookie(LEGACY_OPTOUT_COOKIE_NAME, '', expiredCookieDate);
+    storage.setCookie(LEGACY_OPTOUT_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
   }
 }
 
