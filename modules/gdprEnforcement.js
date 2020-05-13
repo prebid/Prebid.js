@@ -1,5 +1,3 @@
-/* eslint no-console: 0 */
-
 /**
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
@@ -215,8 +213,7 @@ export function userIdHook(fn, submodules, consentData) {
 }
 
 /**
- * Checks if the bidder is given consent. If yes, bid adapter is allowed to send ajax request to their endpoint, else, no request
- * is sent. Enforces "purpose 2 (basic ads)" of TCF v2.0 spec
+ * Enforces TCF Purpose 2 and Purpose 4 rules.
  * @param {Function} fn - Function reference to the original function.
  * @param {Array<adUnits>} adUnits
  */
@@ -237,6 +234,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
               utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
               events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
               disabledBidders.push(currBidder);
+              return isAllowed;
             }
           }
           if (purpose4Rule) {
@@ -259,25 +257,6 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
     fn.call(this, adUnits, ...args);
   }
 }
-
-// export function addIdDataToAdUnitBidsHook(fn, adUnits, ...args) {
-//   const consentData = gdprDataHandler.getConsentData();
-//   if (consentData && consentData.gdprApplies) {
-//     if (consentData.apiVersion === 2) {
-//       adUnits.forEach(adUnit => {
-//         adUnit.bids.forEach(bid => {
-//           const currBidder = bid.bidder;
-//           const glvId = getGvlid(currBidder);
-//         });
-//       });
-//     } else {
-//       utils.logInfo('Enforcing TCF2 only');
-//       fn.call(this, adUnits, ...args);
-//     }
-//   } else {
-//     fn.call(this, adUnits, ...args);
-//   }
-// }
 
 /**
  * A configuration function that initializes some module variables, as well as add hooks
@@ -304,18 +283,6 @@ export function setEnforcementConfig(config) {
   }
   if (purpose2Rule || purpose4Rule) {
     adapterManager.makeBidRequests.before(makeBidRequestsHook);
-  }
-  if (purpose4Rule) {
-    // check if purpuse2Rule is present. If yes, check if the bidder passed purpose2 check. if purpose2Rule
-    // not present, continue ahead with purpose4 checks.
-
-    // check if purpose1Rule is present. If yes, check if the 'userId' module is given consent, if not, remove that userId from 'bidRequest.userId'
-    // array. If the 'bidder' is not given consent for purpose1, remove the bidRequest.usreId property for bidder A.
-
-    // place the purpose4 hook on pbjs.requestBids function. It should execute after consentManagement hook and userId hook.
-    // getGlobal().requestBids.before(requestBidsHook, 30);
-
-    // getHook('addIdDataToAdUnitBids').after(addIdDataToAdUnitBidsHook); ;
   }
 }
 
