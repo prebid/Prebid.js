@@ -456,6 +456,7 @@ describe('gdpr enforcement', function () {
       config.resetConfig();
       sandbox.restore();
     });
+
     it('should block bidder which does not have consent and allow bidder which has consent', function () {
       setEnforcementConfig({
         gdpr: {
@@ -536,5 +537,9 @@ describe('gdpr enforcement', function () {
       expect(logWarnSpy.notCalled).to.equal(true);
       expect(logInfoSpy.calledOnce).to.equal(true);
     });
+
+    it('should remove userIds from a bid if Purpose 4 check fails', function() {});
+
+    it('should run Purpose2 and/or Purpose4 checks based on their presence in GDPR rules', function() {});
   });
 });
