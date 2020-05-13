@@ -3,9 +3,8 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER,  VIDEO } from '../src/mediaTypes.js';
 
-
-
 const BIDDER_CODE = 'edgequeryx';
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['eqx'], // short code
@@ -19,7 +18,6 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.accountId && bid.params.widgetId);
   },
-
 
   /**
    * Make a server request from the list of BidRequests.
