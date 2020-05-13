@@ -27,6 +27,7 @@ Module that connects to adprime demand sources
                                 placementId: 0,
                                 traffic: 'banner',
                                 keywords: ['cat_1', 'cat_2']
+
                             }
                         }
                     ]
@@ -47,6 +48,7 @@ Module that connects to adprime demand sources
                                 placementId: 0,
                                 traffic: 'video',
                                 keywords: ['cat_1', 'cat_2']
+
                             }
                         }
                     ]

@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "3.18.0-pre",
+  "version": "3.20.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -96,7 +96,7 @@
   },
   "dependencies": {
     "babel-plugin-transform-object-assign": "^6.22.0",
-    "core-js": "^2.4.1",
+    "core-js": "^3.0.0",
     "criteo-direct-rsa-validate": "^1.1.0",
     "crypto-js": "^3.3.0",
     "deep-equal": "^1.0.1",
@@ -106,6 +106,7 @@
     "fun-hooks": "^0.9.8",
     "jsencrypt": "^3.0.0-rc.1",
     "just-clone": "^1.0.2",
-    "live-connect-js": "1.1.1"
+    "live-connect-js": "1.1.1",
+    "core-js-pure": "^3.6.5"
   }
 }
