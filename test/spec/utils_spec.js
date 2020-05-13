@@ -68,7 +68,7 @@ describe('Utils', function () {
       };
 
       var output = utils.parseQueryStringParameters(obj);
-      var expectedResult = 'a=' + encodeURIComponent('http://example.com/?foo=bar&bar=foo') + '&b=' + encodeURIComponent('abc["def"]') + '&';
+      var expectedResult = 'a=' + encodeURIComponent('http://example.com/?foo=bar&bar=foo') + '&b=' + encodeURIComponent('abc["def"]');
       assert.equal(output, expectedResult);
     });
 

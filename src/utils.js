@@ -116,7 +116,7 @@ export function parseQueryStringParameters(queryObj) {
   for (var k in queryObj) {
     if (queryObj.hasOwnProperty(k)) { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
-
+  result = result.replace(/&$/, '');
   return result;
 }
 
