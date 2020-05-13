@@ -235,6 +235,9 @@ const createServerRequest = (ortbRequest, validBidRequests, isTestMode = 'false'
   data: JSON.stringify(ortbRequest),
   options: {
     contentType: 'application/json',
+    customHeaders: {
+      'Accept-Encoding': 'gzip',
+    },
     withCredentials: true
   },
   bids: validBidRequests
