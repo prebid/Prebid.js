@@ -70,6 +70,7 @@ export const spec = {
           sizes = bid.mediaTypes[VIDEO].playerSize
         }
       }
+      console.log(bid.params.keywords)
       placements.push({
         placementId: bid.params.placementId,
         bidId: bid.bidId,
