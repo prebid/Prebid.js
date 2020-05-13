@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER,  VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'edgequeryx';
 
@@ -37,7 +37,7 @@ export const spec = {
       let payload = {
         accountId: bid.params.accountId,
         widgetId: bid.params.widgetId,
-        currencyCode: "EUR",
+        currencyCode: 'EUR',
         appName: bid.params.appName && bid.params.appName !== '' ? bid.params.appName : undefined,
         tagId: bid.adUnitCode,
         pageDomain: bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer ? bidderRequest.refererInfo.referer : undefined,
@@ -47,20 +47,20 @@ export const spec = {
         prebidVersion: '$prebid.version$'
       };
 
-    const bannerMediaType = utils.deepAccess(bid, 'mediaTypes.banner');
-    payload.sizes = bannerMediaType.sizes.map(size => ({
+      const bannerMediaType = utils.deepAccess(bid, 'mediaTypes.banner');
+      payload.sizes = bannerMediaType.sizes.map(size => ({
         w: size[0],
         h: size[1]
-    }));
+      }));
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
       }
 
       if (bidderRequest && bidderRequest.uspConsent) {
         payload.us_privacy = bidderRequest.uspConsent;
-      }    
+      }
 
       var payloadString = JSON.stringify(payload);
 
@@ -103,7 +103,6 @@ export const spec = {
     }
     return bidResponses;
   },
-
 
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
