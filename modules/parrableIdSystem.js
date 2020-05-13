@@ -9,6 +9,7 @@ import * as utils from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import { uspDataHandler } from '../src/adapterManager.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
 
@@ -24,10 +25,11 @@ function isValidConfig(configParams) {
   return true;
 }
 
-function fetchId(configParams, consentData, currentStoredId) {
+function fetchId(configParams, currentStoredId) {
   if (!isValidConfig(configParams)) return;
 
   const refererInfo = getRefererInfo();
+  const uspString = uspDataHandler.getConsentData();
 
   const data = {
     eid: currentStoredId || null,
@@ -39,6 +41,10 @@ function fetchId(configParams, consentData, currentStoredId) {
     data: btoa(JSON.stringify(data)),
     _rand: Math.random()
   };
+
+  if (uspString) {
+    searchParams.us_privacy = uspString;
+  }
 
   const options = {
     method: 'GET',
@@ -88,8 +94,8 @@ export const parrableIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {function(callback:function)}
    */
-  getId(configParams, consentData, currentStoredId) {
-    return fetchId(configParams, consentData, currentStoredId);
+  getId(configParams, gdprConsentData, currentStoredId) {
+    return fetchId(configParams, currentStoredId);
   }
 };
 
