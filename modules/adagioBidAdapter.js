@@ -1,4 +1,4 @@
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { loadExternalScript } from '../src/adloader.js'
