@@ -115,11 +115,12 @@ function fetchId(configParams) {
     migrateLegacyCookies(parrableId);
   }
 
+  const eid = (parrableId) ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
   const uspString = uspDataHandler.getConsentData();
 
   const data = {
-    eid: (parrableId && parrableId.eid) || null,
+    eid,
     trackers: configParams.partner.split(','),
     url: refererInfo.referer
   };
