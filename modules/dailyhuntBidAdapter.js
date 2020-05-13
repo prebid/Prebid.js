@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as mediaTypes from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
+import find from 'core-js-pure/features/array/find.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'dailyhunt';
@@ -235,9 +236,6 @@ const createServerRequest = (ortbRequest, validBidRequests, isTestMode = 'false'
   data: JSON.stringify(ortbRequest),
   options: {
     contentType: 'application/json',
-    customHeaders: {
-      'Accept-Encoding': 'gzip',
-    },
     withCredentials: true
   },
   bids: validBidRequests
@@ -370,7 +368,7 @@ export const spec = {
 
     seatBids.forEach(ortbResponseBid => {
       let bidId = ortbResponseBid.impid;
-      let actualBid = bids.find((bid) => bid.bidId === bidId);
+      let actualBid = find(bids, (bid) => bid.bidId === bidId);
       let bidMediaType = ortbResponseBid.ext.prebid.type
       switch (bidMediaType) {
         case mediaTypes.BANNER:
