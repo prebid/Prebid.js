@@ -9,6 +9,9 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
+const KEY_LAST_UPDATE = '_lota_last';
+const KEY_ID = '_lota_pano';
+const KEY_EXPIRY = '_lota_pano_bundle';
 const PROFILE_ID_NAME = '_cc_id';
 const MODULE_NAME = 'lotameId';
 const NINE_MONTHS_IN_SECONDS = 23328000;
@@ -19,7 +22,9 @@ export const storage = getStorageManager(null, MODULE_NAME);
 
 function setFirstPartyId(profileId) {
   if (storage.cookiesAreEnabled()) {
-    let expirationDate = new Date(Date.now() + NINE_MONTHS_IN_SECONDS * 1000).toUTCString();
+    let expirationDate = new Date(
+      utils.timestamp() + NINE_MONTHS_IN_SECONDS * 1000
+    ).toUTCString();
     storage.setCookie(PROFILE_ID_NAME, profileId, expirationDate, 'Lax', undefined, undefined);
   }
   if (storage.hasLocalStorage()) {
@@ -44,7 +49,8 @@ function saveLotameCache(key, value) {
   if (key && value) {
     if (storage.cookiesAreEnabled()) {
       let expirationDate = new Date(
-        Date.now() + DAYS_TO_CACHE * DAYS_IN_MILLISECONDS).toUTCString();
+        utils.timestamp() + DAYS_TO_CACHE * DAYS_IN_MILLISECONDS
+      ).toUTCString();
       storage.setCookie(key, value, expirationDate, 'Lax', undefined, undefined);
     }
     if (storage.hasLocalStorage()) {
@@ -55,20 +61,26 @@ function saveLotameCache(key, value) {
 
 function getLotameLocalCache() {
   let cache = {
-    lastUpdate: new Date(),
-    data: getFromStorage('_lota_pano'),
+    lastUpdate: new Date(0),
+    data: getFromStorage(KEY_ID),
     bundle: {
-      refreshSeconds: 3600
-    }
+      refreshSeconds: 3600,
+    },
   };
 
   try {
-    cache.bundle = JSON.parse(getFromStorage('_lota_pano_bundle'));
+    const rawBundle = getFromStorage(KEY_EXPIRY);
+    if (utils.isStr(rawBundle)) {
+      cache.bundle = JSON.parse(rawBundle);
+    }
   } catch (error) {
     utils.logError(error);
   }
   try {
-    cache.lastUpdate = new Date(getFromStorage('_lota_last'));
+    const rawDate = getFromStorage(KEY_LAST_UPDATE);
+    if (utils.isStr(rawDate)) {
+      cache.lastUpdate = new Date(rawDate);
+    }
   } catch (error) {
     utils.logError(error);
   }
@@ -116,8 +128,8 @@ export const lotameIdSubmodule = {
   getId(configParams, consentData, cacheIdObj) {
     let localCache = getLotameLocalCache();
 
-    let refreshNeeded = true;
-    if (!localCache.data) {
+    let refreshNeeded = false;
+    if (!utils.isStr(localCache.data)) {
       const lastUpdate = localCache.lastUpdate;
       refreshNeeded = (Date.now() - lastUpdate.getTime()) > localCache.bundle.refreshSeconds * 1000;
     }
@@ -138,14 +150,14 @@ export const lotameIdSubmodule = {
             try {
               responseObj = JSON.parse(response);
               setFirstPartyId(responseObj.profile_id);
-              saveLotameCache('_lota_last', new Date().toUTCString());
+              saveLotameCache(KEY_LAST_UPDATE, new Date().toUTCString());
               if (utils.isStr(responseObj.panorama_id)) {
-                saveLotameCache('_lota_pano', response.panorama_id);
+                saveLotameCache(KEY_ID, responseObj.panorama_id);
               } else {
-                clearLotameCache('_lota_pano');
+                clearLotameCache(KEY_ID);
               }
               // TODO: Get this from the response
-              saveLotameCache('_lota_pano_bundle', JSON.stringify({
+              saveLotameCache(KEY_EXPIRY, JSON.stringify({
                 refreshSeconds: 10
               }));
             } catch (error) {
