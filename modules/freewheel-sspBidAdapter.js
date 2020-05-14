@@ -102,6 +102,24 @@ function getCreativeId(xmlNode) {
   return creaId;
 }
 
+function getDealId(xmlNode) {
+  var dealId = '';
+  var impNodes = xmlNode.querySelectorAll('Impression'); // Nodelist.forEach is not supported in IE and Edge
+  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
+
+  Array.prototype.forEach.call(impNodes, function (el) {
+    var queries = el.textContent.substring(el.textContent.indexOf('?') + 1).split('&');
+    Array.prototype.forEach.call(queries, function (item) {
+      var split = item.split('=');
+      if (split[0] == 'dealId') {
+        dealId = split[1];
+      }
+    });
+  });
+
+  return dealId;
+}
+
 /**
 * returns the top most accessible window
 */
@@ -353,6 +371,7 @@ export const spec = {
 
     const princingData = getPricing(xmlDoc);
     const creativeId = getCreativeId(xmlDoc);
+    const dealId = getDealId(xmlDoc);
 
     const topWin = getTopMostWindow();
     if (!topWin.freewheelssp_cache) {
@@ -371,7 +390,8 @@ export const spec = {
         creativeId: creativeId,
         currency: princingData.currency,
         netRevenue: true,
-        ttl: 360
+        ttl: 360,
+        dealId: dealId
       };
 
       if (bidrequest.mediaTypes.video) {
