@@ -20,12 +20,12 @@ import { setupBeforeHookFnOnce, module } from '../src/hook.js';
 import { store } from '../src/videoCache.js';
 import { config } from '../src/config.js';
 import { ADPOD } from '../src/mediaTypes.js';
-import Set from 'core-js/library/fn/set.js';
-import find from 'core-js/library/fn/array/find.js';
+import Set from 'core-js-pure/features/set';
+import find from 'core-js-pure/features/array/find.js';
 import { auctionManager } from '../src/auctionManager.js';
 import CONSTANTS from '../src/constants.json';
 
-const from = require('core-js/library/fn/array/from.js');
+const from = require('core-js-pure/features/array/from.js');
 
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
