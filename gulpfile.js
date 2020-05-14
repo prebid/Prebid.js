@@ -33,8 +33,6 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var port = 9999;
-// const mockServerPort = 4444;
-// const host = argv.host ? argv.host : 'localhost';
 const FAKE_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const FAKE_SERVER_PORT = 4444;
 const { spawn } = require('child_process');
@@ -252,13 +250,13 @@ function test(done) {
 
     execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
       .then(stdout => {
-        // kill mock server
+        // kill fake server
         fakeServer.kill('SIGINT');
         done();
         process.exit(0);
       })
       .catch(err => {
-        // kill mock server
+        // kill fake server
         fakeServer.kill('SIGINT');
         done(new Error(`Tests failed with error: ${err}`));
         process.exit(1);
@@ -341,7 +339,7 @@ function injectFakeServerEndpointDev() {
     .pipe(gulp.dest('build/dev'));
 }
 
-function startMockServer() {
+function startFakeServer() {
   const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${FAKE_SERVER_PORT}`]);
     fakeServer.stdout.on('data', (data) => {
       console.log(`stdout: ${data}`);
@@ -374,7 +372,7 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
-gulp.task('serve-mock', gulp.series(clean, gulp.parallel('build-bundle-dev', watch), injectFakeServerEndpointDev, test, startMockServer));
+gulp.task('serve-fake', gulp.series(clean, gulp.parallel('build-bundle-dev', watch), injectFakeServerEndpointDev, test, startFakeServer));
 
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 

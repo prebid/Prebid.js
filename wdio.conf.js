@@ -9,10 +9,6 @@ function getCapabilities() {
     return platformMap[os];
   }
 
-  // delete browsers['bs_firefox_73_windows_10'];
-  // delete browsers['bs_chrome_80_windows_10'];
-  // delete browsers['bs_ie_11_windows_10'];
-
   // only IE 11, Chrome 80 & Firefox 73 run as part of functional tests
   // rest of the browsers are discarded.
   delete browsers['bs_chrome_79_windows_10'];
@@ -31,8 +27,6 @@ function getCapabilities() {
       os: getPlatform(browser.os),
       os_version: browser.os_version,
       browser_version: browser.browser_version,
-      // platform: getPlatform(browser.os),
-      // version: browser.browser_version,
       acceptSslCerts: true,
       'browserstack.networkLogs': true,
       'browserstack.console': 'verbose',

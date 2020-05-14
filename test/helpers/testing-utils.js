@@ -8,7 +8,6 @@ module.exports = {
   },
   switchFrame: function(frameRef, frameName) {
     let iframe = $(frameRef);
-    // need workaround case for Edge:
     browser.switchToFrame(iframe);
   }
 }

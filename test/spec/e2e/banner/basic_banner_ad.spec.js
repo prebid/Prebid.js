@@ -17,11 +17,10 @@ const EXPECTED_TARGETING_KEYS = {
 };
 
 describe('Prebid.js Banner Ad Unit Test', function () {
-  // this.retries(3);
+  this.retries(3);
   before(function loadTestPage() {
     browser.url(TEST_PAGE_URL);
     browser.pause(3000);
-    // browser.pause(45000);
     try {
       waitForElement(CREATIVE_IFRAME_CSS_SELECTOR, 3000);
     } catch (e) {

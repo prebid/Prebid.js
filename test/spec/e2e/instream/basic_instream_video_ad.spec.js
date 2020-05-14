@@ -35,7 +35,7 @@ describe('Prebid.js Instream Video Ad Test', function () {
     const result = browser.execute(function () {
       return window.top.pbjs.getAdserverTargeting('video1');
     });
-    // console.log('result:::', result);
+
     const targetingKeys = result['video1'];
     expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
     expect(targetingKeys.hb_adid).to.be.a('string');

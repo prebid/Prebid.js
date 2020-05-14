@@ -1,26 +1,13 @@
 /* eslint no-console: 0 */
-const fs = require('fs');
+const deepEqual = require('deep-equal');
 const generateFixtures = require('./fixtures');
 const path = require('path');
-const deepEqual = require('deep-equal');
-
-// An object storing 'Request-Response' pairs.
-let REQ_RES_MAP = {};
-
-// path to the generated file `fixtures/request-response-pairs.json`
-const requestResponsePairFilePath = path.join(__dirname, 'fixtures/request-response-pairs.json');
 
 // path to the fixture directory
 const fixturesPath = path.join(__dirname, 'fixtures');
 
-if (fs.existsSync(requestResponsePairFilePath)) {
-  REQ_RES_MAP = JSON.parse(fs.readFileSync(requestResponsePairFilePath, { encoding: 'utf-8' }));
-} else {
-  REQ_RES_MAP = generateFixtures(fixturesPath);
-
-  // generate the file for future reference
-  // fs.writeFileSync(requestResponsePairFilePath, JSON.stringify(REQ_RES_MAP));
-}
+// An object storing 'Request-Response' pairs.
+let REQ_RES_MAP = generateFixtures(fixturesPath);
 
 /**
  * Matches 'req.body' with the responseBody pair
@@ -40,7 +27,6 @@ const matchResponse = function (requestBody) {
     // delete the 'uuid'
     delete body.uuid;
   });
-  // actualUuids = ['2af537ac59ba8b', '3ddabb16f85541']
 
   ['sdk', 'referrer_detection', 'gdpr_consent'].forEach(prop => {
     if (requestBody && requestBody[prop]) {
@@ -58,8 +44,6 @@ const matchResponse = function (requestBody) {
   // responseBody.tags.forEach((tag, index) => {
   //   console.log('value found for responseBody.tag[', index, ']:ads', tag.ads);
   // });
-
-  // const responseBody = requestResponsePairs.filter(reqRes => reqRes.request.httpRequest && console.log('reqRes.request.httpRequest.body.tags', reqRes.request.httpRequest.body.tags, 'requestBody.tags', requestBody.tags));
 
   // copy the actual uuids to the responseBody
   // TODO:: what if responseBody is 'undefined'
