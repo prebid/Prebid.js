@@ -120,20 +120,59 @@ describe('LotameId', function() {
   });
 
   describe('existing id found', function () {
-    let request;
     let submoduleCallback;
 
     this.beforeEach(function () {
-      getLocalStorageStub.withArgs('_lota_pano').returns(
-        'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a');
+      getCookieStub
+        .withArgs('_lota_pano')
+        .returns(
+          'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a'
+        );
 
       submoduleCallback = lotameIdSubmodule.getId({});
-
-      request = server.requests[0];
     });
 
     it('should not call the remote server when getId is called', function () {
-      expect(submoduleCallback).to.be.eql({});
+      expect(submoduleCallback).to.be.eql({
+        id: 'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a',
+      });
+    });
+  });
+
+  describe('expired id found', function () {
+    let request;
+    let callBackSpy = sinon.spy();
+
+    this.beforeEach(function () {
+      getLocalStorageStub
+        .withArgs('_lota_pano_exp')
+        .returns(new Date(
+          utils.timestamp() - (10 * 24 * 60 * 60 * 1000)
+        ).toUTCString());
+      getLocalStorageStub
+        .withArgs('_lota_pano')
+        .returns(
+          'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a'
+        );
+
+      let submoduleCallback = lotameIdSubmodule.getId({}).callback;
+      submoduleCallback(callBackSpy);
+
+      request = server.requests[0];
+
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({
+          profile_id: '4ec137245858469eb94a4e248f238694',
+          panorama_id:
+            'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a',
+        })
+      );
+    });
+
+    it('should call the remote server when getId is called', function () {
+      expect(callBackSpy.calledOnce).to.be.true;
     });
   });
 

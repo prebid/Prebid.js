@@ -14,17 +14,15 @@ const KEY_ID = '_lota_pano';
 const KEY_EXPIRY = '_lota_pano_bundle';
 const PROFILE_ID_NAME = '_cc_id';
 const MODULE_NAME = 'lotameId';
-const NINE_MONTHS_IN_SECONDS = 23328000;
+const NINE_MONTHS_MS = 23328000 * 1000;
 const DAYS_TO_CACHE = 7
-const DAYS_IN_MILLISECONDS = 60 * 60 * 24 * 1000;
+const DAY_MS = 60 * 60 * 24 * 1000;
 
 export const storage = getStorageManager(null, MODULE_NAME);
 
 function setFirstPartyId(profileId) {
   if (storage.cookiesAreEnabled()) {
-    let expirationDate = new Date(
-      utils.timestamp() + NINE_MONTHS_IN_SECONDS * 1000
-    ).toUTCString();
+    let expirationDate = new Date(utils.timestamp() + NINE_MONTHS_MS).toUTCString();
     storage.setCookie(PROFILE_ID_NAME, profileId, expirationDate, 'Lax', undefined, undefined);
   }
   if (storage.hasLocalStorage()) {
@@ -42,18 +40,35 @@ function getFirstPartyId() {
 }
 
 function getFromStorage(key) {
-  return storage.getCookie(key) || storage.getDataFromLocalStorage(key);
+  let value = null;
+  if (storage.cookiesAreEnabled()) {
+    value = storage.getCookie(key, undefined);
+  }
+  if (storage.hasLocalStorage() && value === null) {
+    const storedValueExp = storage.getDataFromLocalStorage(
+      `${key}_exp`, undefined
+    );
+    if (storedValueExp === '') {
+      value = storage.getDataFromLocalStorage(key, undefined);
+    } else if (storedValueExp) {
+      if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
+        value = storage.getDataFromLocalStorage(key, undefined);
+      }
+    }
+  }
+  return value;
 }
 
 function saveLotameCache(key, value) {
   if (key && value) {
+    let expirationDate = new Date(
+      utils.timestamp() + DAYS_TO_CACHE * DAY_MS
+    ).toUTCString();
     if (storage.cookiesAreEnabled()) {
-      let expirationDate = new Date(
-        utils.timestamp() + DAYS_TO_CACHE * DAYS_IN_MILLISECONDS
-      ).toUTCString();
       storage.setCookie(key, value, expirationDate, 'Lax', undefined, undefined);
     }
     if (storage.hasLocalStorage()) {
+      storage.setDataInLocalStorage(`${key}_exp`, expirationDate, undefined);
       storage.setDataInLocalStorage(key, value, undefined);
     }
   }
@@ -135,7 +150,9 @@ export const lotameIdSubmodule = {
     }
 
     if (!refreshNeeded) {
-      return {};
+      return {
+        id: localCache.data
+      };
     }
 
     const storedUserId = getFirstPartyId();
