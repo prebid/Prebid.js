@@ -361,6 +361,10 @@ describe('stroeerCore bid adapter', function () {
         win = setupSingleWindow(sandbox);
       });
 
+      afterEach(() => {
+        sandbox.restore();
+      });
+
       it('should use hardcoded url as default endpoint', () => {
         const bidReq = buildBidderRequest();
         let serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
@@ -404,10 +408,16 @@ describe('stroeerCore bid adapter', function () {
 
     describe('payload on server request info object', () => {
       let topWin;
+      let win;
+
       let placementElements;
       beforeEach(() => {
         placementElements = [createElement('div-1', 17), createElement('div-2', 54)];
-        ({topWin} = setupNestedWindows(sandbox, placementElements));
+        ({ topWin, win } = setupNestedWindows(sandbox, placementElements));
+      });
+
+      afterEach(() => {
+        sandbox.restore();
       });
 
       it('should have expected JSON structure', () => {
@@ -435,7 +445,10 @@ describe('stroeerCore bid adapter', function () {
           }]
         };
 
-        assert.deepEqual(serverRequestInfo.data, expectedJsonPayload);
+        // trim away fields with undefined
+        const actualJsonPayload = JSON.parse(JSON.stringify(serverRequestInfo.data));
+
+        assert.deepEqual(actualJsonPayload, expectedJsonPayload);
       });
 
       it('should handle banner sizes for pre version 3', () => {
@@ -568,6 +581,21 @@ describe('stroeerCore bid adapter', function () {
             assert.isUndefined(actualGdpr);
           });
         });
+
+        it('should send contents of yieldlove_ab global object if it is available', () => {
+          win.yieldlove_ab = {
+            foo: 'bar',
+            xyz: 123
+          }
+
+          const bidReq = buildBidderRequest();
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+          const abTestingKeyValues = serverRequestInfo.data.ab;
+
+          assert.lengthOf(Object.keys(abTestingKeyValues), 2);
+          assert.propertyVal(abTestingKeyValues, 'foo', 'bar');
+          assert.propertyVal(abTestingKeyValues, 'xyz', 123);
+        })
       });
     });
   });
