@@ -191,7 +191,7 @@ export const parrableIdSubmodule = {
    */
   decode(parrableId) {
     if (parrableId && utils.isPlainObject(parrableId)) {
-      return { 'parrableid': parrableId.eid };
+      return { parrableId };
     }
     return undefined;
   },

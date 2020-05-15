@@ -171,11 +171,11 @@ describe('Parrable ID System', function() {
       let eid = '01.123.4567890';
       let parrableId = {
         eid,
-        ccpaOptout: true
+        ibaOptout: true
       };
 
       expect(parrableIdSubmodule.decode(parrableId)).to.deep.equal({
-        parrableid: eid
+        parrableId
       });
     });
   });
@@ -199,8 +199,8 @@ describe('Parrable ID System', function() {
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.parrableid');
-            expect(bid.userId.parrableid).to.equal(P_COOKIE_EID);
+            expect(bid).to.have.deep.nested.property('userId.parrableId');
+            expect(bid.userId.parrableId.eid).to.equal(P_COOKIE_EID);
           });
         });
         done();
