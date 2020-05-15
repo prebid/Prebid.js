@@ -90,7 +90,7 @@ function _getBanner(bidRequest) {
 
 function _getNative(bidRequest) {
   let assets = _getNativeAssets(bidRequest)
-  if(assets === undefined || assets.length == 0) return undefined
+  if (assets === undefined || assets.length == 0) return undefined
   return {
     request: {
       native: {
@@ -108,12 +108,12 @@ function _getNative(bidRequest) {
   required: Overrides the asset required field configured, only overrides when is true.
 */
 const NATIVE_ASSET_MAP = [
-  {id: 1, kind: "title", key: "title", required: true},
-  {id: 2, kind: "img", key: "image", type: 3, required: true},
-  {id: 3, kind: "img", key: "icon", type: 1},
-  {id: 4, kind: "img", key: "logo", type: 2},
-  {id: 5, kind: "data", key: "sponsoredBy", type: 1},
-  {id: 6, kind: "data", key: "body", type: 2}
+  {id: 1, kind: 'title', key: 'title', required: true},
+  {id: 2, kind: 'img', key: 'image', type: 3, required: true},
+  {id: 3, kind: 'img', key: 'icon', type: 1},
+  {id: 4, kind: 'img', key: 'logo', type: 2},
+  {id: 5, kind: 'data', key: 'sponsoredBy', type: 1},
+  {id: 6, kind: 'data', key: 'body', type: 2}
 ]
 
 const ASSET_KIND_MAP = {
@@ -139,20 +139,20 @@ function _getTitleAsset(title, _assetMap) {
 
 function _getImageAsset(image, assetMap) {
   let sizes = image.sizes
-  let aspect_ratio = image.aspect_ratios ? image.aspect_ratios[0] : undefined
+  let aspectRatio = image.aspect_ratios ? image.aspect_ratios[0] : undefined
   return {
     type: assetMap.type,
     w: (sizes ? sizes[0] : undefined),
     h: (sizes ? sizes[1] : undefined),
-    wmin: (aspect_ratio ? aspect_ratio.min_width : 1),
-    hmin: (aspect_ratio ? aspect_ratio.min_height : 1)
+    wmin: (aspectRatio ? aspectRatio.min_width : 1),
+    hmin: (aspectRatio ? aspectRatio.min_height : 1)
   }
 }
 
 function _getDataAsset(data, assetMap) {
   return {
-      type: assetMap.type,
-      len: data.len
+    type: assetMap.type,
+    len: data.len
   }
 }
 
@@ -177,8 +177,7 @@ function _getUser(requests) {
 }
 
 function _buildResponse(bidResponse, bid) {
-  const adm = utils.replaceAuctionPrice(bid.adm, bid.price);
-  return {
+  let response = {
     requestId: bidResponse.id,
     cpm: bid.price,
     width: bid.w,
@@ -187,8 +186,46 @@ function _buildResponse(bidResponse, bid) {
     dealId: bidResponse.dealId,
     currency: 'USD',
     netRevenue: true,
-    ttl: 300,
-    ad: adm
+    ttl: 300
+  }
+  _getNativeResponse(bid)
+  if (utils.isStr(bid.adm)) {
+    response.adm = utils.replaceAuctionPrice(bid.adm, bid.price)
+  } else {
+    response.native = _getNativeResponse(bid.adm, bid.price)
+  }
+}
+
+function _getNativeResponse(adm, price) {
+  let baseResponse = {
+    clickUrl: utils.replaceAuctionPrice(adm.link.url, price),
+    impressionTrackers: adm.imptrackers.map(impTracker => utils.replaceAuctionPrice(impTracker, price)),
+    privacyLink: 'https://info.evidon.com/pub_info/573',
+    privacyIcon: 'https://c.betrad.com/pub/icon1.png'
+  }
+  return adm.assets.reduce((accResponse, asset) => {
+    let assetMaps = NATIVE_ASSET_MAP.filter(assetMap => assetMap.id == asset.id)
+    if (assetMaps.length === 0) return accResponse
+    let assetMap = assetMaps[0]
+    accResponse[assetMap.key] = _getAssetResponse(asset, assetMap)
+    return accResponse
+  }, baseResponse)
+}
+
+function _getAssetResponse(asset, assetMap) {
+  switch (assetMap.kind) {
+    case 'title':
+      return asset.title.text
+
+    case 'img':
+      return {
+        url: asset.img.url,
+        w: asset.img.w,
+        h: asset.img.h
+      }
+
+    case 'data':
+      return asset.data.value
   }
 }
 
