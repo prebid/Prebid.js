@@ -2,8 +2,8 @@
  * appnexus.js - AppNexus Prebid Analytics Adapter
  */
 
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 
 var appnexusAdapter = adapter({
   global: 'AppNexusPrebidAnalytics',

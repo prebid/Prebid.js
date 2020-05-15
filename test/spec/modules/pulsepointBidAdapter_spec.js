@@ -1,11 +1,16 @@
 /* eslint dot-notation:0, quote-props:0 */
 import {expect} from 'chai';
-import {spec} from 'modules/pulsepointBidAdapter';
-import {deepClone} from 'src/utils';
+import {spec} from 'modules/pulsepointBidAdapter.js';
+import {deepClone} from 'src/utils.js';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
     placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90], [160, 600]]
+      }
+    },
     bidId: 'bid12345',
     params: {
       cp: 'p10000',
@@ -654,5 +659,46 @@ describe('PulsePoint Adapter Tests', function () {
     userVerify(ortbRequest.user.ext.eids[3], 'id5-sync.com', 'id5id_234');
     userVerify(ortbRequest.user.ext.eids[4], 'parrable.com', 'parrable_id234');
     userVerify(ortbRequest.user.ext.eids[5], 'liveintent.com', 'liveintent_id123');
+  });
+  it('Verify multiple adsizes', function () {
+    const bidRequests = deepClone(slotConfigs);
+    const request = spec.buildRequests(bidRequests, bidderRequest);
+    expect(request).to.be.not.null;
+    expect(request.data).to.be.not.null;
+    const ortbRequest = request.data;
+    expect(ortbRequest.imp).to.have.lengthOf(2);
+    // first impression has multi sizes
+    expect(ortbRequest.imp[0].banner).to.not.be.null;
+    expect(ortbRequest.imp[0].banner.w).to.equal(300);
+    expect(ortbRequest.imp[0].banner.h).to.equal(250);
+    expect(ortbRequest.imp[0].banner.format).to.not.be.null;
+    expect(ortbRequest.imp[0].banner.format).to.have.lengthOf(2);
+    expect(ortbRequest.imp[0].banner.format[0].w).to.equal(728);
+    expect(ortbRequest.imp[0].banner.format[0].h).to.equal(90);
+    expect(ortbRequest.imp[0].banner.format[1].w).to.equal(160);
+    expect(ortbRequest.imp[0].banner.format[1].h).to.equal(600);
+    // slot 2
+    expect(ortbRequest.imp[1].banner).to.not.be.null;
+    expect(ortbRequest.imp[1].banner.w).to.equal(728);
+    expect(ortbRequest.imp[1].banner.h).to.equal(90);
+    expect(ortbRequest.imp[1].banner.format).to.be.null;
+    // adsize on response
+    const ortbResponse = {
+      seatbid: [{
+        bid: [{
+          impid: ortbRequest.imp[0].id,
+          price: 1.25,
+          adm: 'This is an Ad',
+          crid: 'Creative#123',
+          w: 728,
+          h: 90
+        }]
+      }]
+    };
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.width).to.equal(728);
+    expect(bid.height).to.equal(90);
   });
 });

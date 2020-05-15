@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'adfinity';
 const AD_URL = 'https://stat.adfinity.pro/?c=o&m=multi';
@@ -63,6 +63,13 @@ export const spec = {
       'page': location.pathname,
       'placements': placements
     };
+
+    if (bidderRequest) {
+      if (bidderRequest.gdprConsent) {
+        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL'
+        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+      }
+    }
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];

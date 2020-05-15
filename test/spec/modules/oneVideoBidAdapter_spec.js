@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/oneVideoBidAdapter';
-import * as utils from 'src/utils';
-import {config} from 'src/config';
+import { spec } from 'modules/oneVideoBidAdapter.js';
+import * as utils from 'src/utils.js';
+import {config} from 'src/config.js';
 
 describe('OneVideoBidAdapter', function () {
   let bidRequest;
@@ -136,12 +136,15 @@ describe('OneVideoBidAdapter', function () {
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
+      const VERSION = '3.0.1';
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       expect(data.imp[0].ext.rewarded).to.equal(rewarded);
       expect(data.imp[0].video.placement).to.equal(placement);
       expect(data.imp[0].ext.inventoryid).to.equal(inventoryid);
+      expect(data.imp[0].ext.prebidver).to.equal('$prebid.version$');
+      expect(data.imp[0].ext.adapterver).to.equal(VERSION);
     });
 
     it('must parse bid size from a nested array', function () {
@@ -289,7 +292,9 @@ describe('OneVideoBidAdapter', function () {
             placement: 1,
             inventoryid: 123,
             sid: 134,
-            display: 1
+            display: 1,
+            minduration: 10,
+            maxduration: 30
           },
           site: {
             id: 1,
@@ -311,6 +316,8 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].ext.inventoryid).to.equal(bidRequest.params.video.inventoryid);
       expect(data.imp[0].banner.mimes).to.equal(bidRequest.params.video.mimes);
       expect(data.imp[0].banner.placement).to.equal(bidRequest.params.video.placement);
+      expect(data.imp[0].banner.ext.minduration).to.equal(bidRequest.params.video.minduration);
+      expect(data.imp[0].banner.ext.maxduration).to.equal(bidRequest.params.video.maxduration);
       expect(data.site.id).to.equal(bidRequest.params.site.id);
     });
     it('should send video object when display is other than 1', function () {
@@ -381,7 +388,9 @@ describe('OneVideoBidAdapter', function () {
             delivery: [2],
             playbackmethod: [1, 5],
             placement: 123,
-            sid: 134
+            sid: 134,
+            minduration: 10,
+            maxduration: 30
           },
           site: {
             id: 1,
@@ -401,6 +410,10 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].video.pos).to.equal(position);
       expect(data.imp[0].video.mimes).to.equal(bidRequest.params.video.mimes);
+      expect(data.imp[0].video.protocols).to.equal(bidRequest.params.video.protocols);
+      expect(data.imp[0].video.linearity).to.equal(1);
+      expect(data.imp[0].video.maxduration).to.equal(bidRequest.params.video.maxduration);
+      expect(data.imp[0].video.minduration).to.equal(bidRequest.params.video.minduration);
     });
     describe('getUserSyncs', function () {
       const GDPR_CONSENT_STRING = 'GDPR_CONSENT_STRING';
@@ -409,6 +422,11 @@ describe('OneVideoBidAdapter', function () {
         let pixel = spec.getUserSyncs({pixelEnabled: true}, {}, {gdprApplies: true, consentString: GDPR_CONSENT_STRING})
         expect(pixel[2].type).to.equal('image');
         expect(pixel[2].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING + '&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=1&gdpr_consent=' + encodeURI(GDPR_CONSENT_STRING));
+      });
+
+      it('should default to gdprApplies=0 when consentData is undefined', function () {
+        let pixel = spec.getUserSyncs({pixelEnabled: true}, {}, undefined);
+        expect(pixel[2].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=0&gdpr_consent=&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=0&gdpr_consent=');
       });
     });
   });

@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { spec } from 'modules/appnexusBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as bidderFactory from 'src/adapters/bidderFactory';
-import { auctionManager } from 'src/auctionManager';
-import { deepClone } from 'src/utils';
-import { config } from 'src/config';
+import { spec } from 'modules/appnexusBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as bidderFactory from 'src/adapters/bidderFactory.js';
+import { auctionManager } from 'src/auctionManager.js';
+import { deepClone } from 'src/utils.js';
+import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 
@@ -164,6 +164,7 @@ describe('AppNexusAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].ad_types).to.deep.equal(['video']);
+      expect(payload.tags[0].hb_source).to.deep.equal(1);
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -193,6 +194,7 @@ describe('AppNexusAdapter', function () {
         id: 123,
         minduration: 100
       });
+      expect(payload.tags[0].hb_source).to.deep.equal(1);
     });
 
     it('should add video property when adUnit includes a renderer', function () {
@@ -256,7 +258,7 @@ describe('AppNexusAdapter', function () {
 
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
-        externalUid: '123',
+        external_uid: '123',
       });
     });
 
@@ -417,6 +419,44 @@ describe('AppNexusAdapter', function () {
       expect(payload3.tags.length).to.equal(15);
     });
 
+    it('should contain hb_source value for adpod', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: { placementId: '14542875' }
+        },
+        {
+          mediaTypes: {
+            video: {
+              context: 'adpod',
+              playerSize: [640, 480],
+              adPodDurationSec: 300,
+              durationRangeSec: [15, 30],
+            }
+          }
+        }
+      );
+      const request = spec.buildRequests([bidRequest])[0];
+      const payload = JSON.parse(request.data);
+      expect(payload.tags[0].hb_source).to.deep.equal(7);
+    });
+
+    it('should contain hb_source value for other media', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          mediaType: 'banner',
+          params: {
+            sizes: [[300, 250], [300, 600]],
+            placementId: 13144370
+          }
+        }
+      );
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.tags[0].hb_source).to.deep.equal(1);
+    });
+
     it('adds brand_category_exclusion to request when set', function() {
       let bidRequest = Object.assign({}, bidRequests[0]);
       sinon
@@ -480,6 +520,7 @@ describe('AppNexusAdapter', function () {
         saleprice: {required: true},
         privacy_supported: true
       });
+      expect(payload.tags[0].hb_source).to.equal(1);
     });
 
     it('should always populated tags[].sizes with 1,1 for native if otherwise not defined', function () {
@@ -583,6 +624,7 @@ describe('AppNexusAdapter', function () {
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.options).to.be.empty;
       const payload = JSON.parse(request.data);
 
       expect(payload.gdpr_consent).to.exist;
@@ -681,11 +723,7 @@ describe('AppNexusAdapter', function () {
     it('should populate tpids array when userId is available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
-          criteortus: {
-            appnexus: {
-              userid: 'sample-userid'
-            }
-          }
+          criteoId: 'sample-userid'
         }
       });
 
@@ -736,6 +774,32 @@ describe('AppNexusAdapter', function () {
       expect(payload.user.coppa).to.equal(true);
 
       config.getConfig.restore();
+    });
+
+    it('should set withCredentials to false if purpose 1 consent is not given', function () {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true,
+          apiVersion: 2,
+          vendorData: {
+            purpose: {
+              consents: {
+                1: false
+              }
+            }
+          }
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.options).to.deep.equal({withCredentials: false});
     });
   })
 
@@ -1032,17 +1096,29 @@ describe('AppNexusAdapter', function () {
 
     it('should add deal_priority and deal_code', function() {
       let responseWithDeal = deepClone(response);
-      responseWithDeal.tags[0].ads[0].deal_priority = 'high';
+      responseWithDeal.tags[0].ads[0].ad_type = 'video';
+      responseWithDeal.tags[0].ads[0].deal_priority = 5;
       responseWithDeal.tags[0].ads[0].deal_code = '123';
+      responseWithDeal.tags[0].ads[0].rtb.video = {
+        duration_ms: 1500,
+        player_width: 640,
+        player_height: 340,
+      };
 
       let bidderRequest = {
         bids: [{
           bidId: '3db3773286ee59',
-          adUnitCode: 'code'
+          adUnitCode: 'code',
+          mediaTypes: {
+            video: {
+              context: 'adpod'
+            }
+          }
         }]
       }
       let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
       expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
+      expect(result[0].video.dealTier).to.equal(5);
     });
 
     it('should add advertiser id', function() {

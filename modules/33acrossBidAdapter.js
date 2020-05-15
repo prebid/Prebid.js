@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
@@ -65,7 +65,7 @@ function _getAdSlotHTMLElement(adUnitCode) {
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
-function _createServerRequest(bidRequest, gdprConsent = {}) {
+function _createServerRequest(bidRequest, gdprConsent = {}, pageUrl) {
   const ttxRequest = {};
   const params = bidRequest.params;
   const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
@@ -94,6 +94,9 @@ function _createServerRequest(bidRequest, gdprConsent = {}) {
   };
   ttxRequest.site = { id: params.siteId };
 
+  if (pageUrl) {
+    ttxRequest.site.page = pageUrl;
+  }
   // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
   // therefore in ad targetting process
   ttxRequest.id = bidRequest.bidId;
@@ -298,9 +301,11 @@ function buildRequests(bidRequests, bidderRequest) {
     gdprApplies: false
   }, bidderRequest && bidderRequest.gdprConsent);
 
+  const pageUrl = (bidderRequest && bidderRequest.refererInfo) ? (bidderRequest.refererInfo.referer) : (undefined);
+
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
 
-  return bidRequests.map(req => _createServerRequest(req, gdprConsent));
+  return bidRequests.map(req => _createServerRequest(req, gdprConsent, pageUrl));
 }
 
 // NOTE: At this point, the response from 33exchange will only ever contain one bid i.e. the highest bid

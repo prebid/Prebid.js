@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {getPriceBucketString, isValidPriceConfig} from 'src/cpmBucketManager';
+import {getPriceBucketString, isValidPriceConfig} from 'src/cpmBucketManager.js';
 let cpmFixtures = require('test/fixtures/cpmInputsOutputs.json');
 
 describe('cpmBucketManager', function () {

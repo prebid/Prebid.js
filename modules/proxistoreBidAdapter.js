@@ -1,18 +1,17 @@
-const { registerBidder } = require('../src/adapters/bidderFactory');
+const { registerBidder } = require('../src/adapters/bidderFactory.js');
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
 
-function _mapSizes(sizes) {
-  const flatSize = sizes.reduce((acc, val) => acc.concat(val), []); ;
-  return flatSize.map(array1d => { return { width: array1d[0], height: array1d[1] } });
-}
-
 function _createServerRequest(bidRequests, bidderRequest) {
+  const sizeIds = [];
+  bidRequests.forEach(bid => {
+    const sizeId = {id: bid.bidId, sizes: bid.sizes.map(size => { return { width: size[0], height: size[1] } })};
+    sizeIds.push(sizeId);
+  });
   const payload = {
-    bidId: bidRequests.map(req => req.bidId)[0],
     auctionId: bidRequests[0].auctionId,
-    transactionId: bidRequests[0].transactionId,
-    sizes: _mapSizes(bidRequests.map(x => x.sizes)),
+    transactionId: bidRequests[0].auctionId,
+    bids: sizeIds,
     website: bidRequests[0].params.website,
     language: bidRequests[0].params.language,
     gdpr: {
@@ -40,7 +39,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
 
   return {
     method: 'POST',
-    url: bidRequests[0].params.url || 'https://abs.proxistore.com/' + payload.language + '/v3/rtb/prebid',
+    url: bidRequests[0].params.url || 'https://abs.proxistore.com/' + payload.language + '/v3/rtb/prebid/multi',
     data: JSON.stringify(payload),
     options: options
   };

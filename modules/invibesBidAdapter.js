@@ -1,5 +1,7 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+const storage = getStorageManager();
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -276,14 +278,14 @@ function getCappedCampaignsAsString() {
 
   let loadData = function () {
     try {
-      return JSON.parse(localStorage.getItem(key)) || {};
+      return JSON.parse(storage.getDataFromLocalStorage(key)) || {};
     } catch (e) {
       return {};
     }
   };
 
   let saveData = function (data) {
-    localStorage.setItem(key, JSON.stringify(data));
+    storage.setDataInLocalStorage(key, JSON.stringify(data));
   };
 
   let clearExpired = function () {
@@ -319,7 +321,7 @@ function getCappedCampaignsAsString() {
 const noop = function () { };
 
 function initLogger() {
-  if (localStorage && localStorage.InvibesDEBUG) {
+  if (storage.hasLocalStorage() && localStorage.InvibesDEBUG) {
     return window.console;
   }
 
@@ -384,6 +386,7 @@ invibes.Uid = {
 
 let cookieDomain;
 invibes.getCookie = function (name) {
+  if (!storage.cookiesAreEnabled()) { return; }
   let i, x, y;
   let cookies = document.cookie.split(';');
   for (i = 0; i < cookies.length; i++) {
@@ -397,6 +400,7 @@ invibes.getCookie = function (name) {
 };
 
 invibes.setCookie = function (name, value, exdays, domain) {
+  if (!storage.cookiesAreEnabled()) { return; }
   let whiteListed = name == 'ivNoCookie' || name == 'IvbsCampIdsLocal';
   if (invibes.noCookies && !whiteListed && (exdays || 0) >= 0) { return; }
   if (exdays > 365) { exdays = 365; }
@@ -404,9 +408,7 @@ invibes.setCookie = function (name, value, exdays, domain) {
   let exdate = new Date();
   let exms = exdays * 24 * 60 * 60 * 1000;
   exdate.setTime(exdate.getTime() + exms);
-  let cookieValue = value + ((!exdays) ? '' : '; expires=' + exdate.toUTCString());
-  cookieValue += ';domain=' + domain + ';path=/';
-  document.cookie = name + '=' + cookieValue;
+  storage.setCookie(name, value, exdate.toUTCString(), undefined, domain);
 };
 
 let detectTopmostCookieDomain = function () {

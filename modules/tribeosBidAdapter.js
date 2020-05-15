@@ -49,7 +49,7 @@ export const spec = {
     var adWidth = bidReq.mediaTypes.banner.sizes[0][0];
     var adHeight = bidReq.mediaTypes.banner.sizes[0][1];
 
-    // build bid request with impressions 
+    // build bid request with impressions
     var bidRequest = {
       id: utils.getUniqueIdentifierStr(),
       imp: [{

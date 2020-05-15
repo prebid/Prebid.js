@@ -1,6 +1,6 @@
-import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter';
+import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter.js';
 import {expect} from 'chai';
-import {server} from 'test/mocks/xhr';
+import {server} from 'test/mocks/xhr.js';
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -99,6 +99,40 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
       sinon.assert.callCount(prebidmanagerAnalytics.track, 6);
+    });
+  });
+
+  describe('build utm tag data', function () {
+    beforeEach(function () {
+      localStorage.setItem('pm_utm_source', 'utm_source');
+      localStorage.setItem('pm_utm_medium', 'utm_medium');
+      localStorage.setItem('pm_utm_campaign', 'utm_camp');
+      localStorage.setItem('pm_utm_term', '');
+      localStorage.setItem('pm_utm_content', '');
+    });
+    afterEach(function () {
+      localStorage.removeItem('pm_utm_source');
+      localStorage.removeItem('pm_utm_medium');
+      localStorage.removeItem('pm_utm_campaign');
+      localStorage.removeItem('pm_utm_term');
+      localStorage.removeItem('pm_utm_content');
+      prebidmanagerAnalytics.disableAnalytics()
+    });
+    it('should build utm data from local storage', function () {
+      prebidmanagerAnalytics.enableAnalytics({
+        provider: 'prebidmanager',
+        options: {
+          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        }
+      });
+
+      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
+
+      expect(pmEvents.utmTags.utm_source).to.equal('utm_source');
+      expect(pmEvents.utmTags.utm_medium).to.equal('utm_medium');
+      expect(pmEvents.utmTags.utm_campaign).to.equal('utm_camp');
+      expect(pmEvents.utmTags.utm_term).to.equal('');
+      expect(pmEvents.utmTags.utm_content).to.equal('');
     });
   });
 });

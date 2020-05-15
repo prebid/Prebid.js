@@ -1,7 +1,7 @@
-import { getAdServerTargeting } from 'test/fixtures/fixtures';
+import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
 import CONSTANTS from 'src/constants.json';
-import * as utils from 'src/utils';
+import * as utils from 'src/utils.js';
 
 var assert = require('assert');
 
@@ -17,24 +17,6 @@ describe('Utils', function () {
     type_object = 'Object',
     type_array = 'Array',
     type_function = 'Function';
-
-  describe('replaceTokenInString', function () {
-    it('should replace all given tokens in a String', function () {
-      var tokensToReplace = {
-        foo: 'bar',
-        zap: 'quux'
-      };
-
-      var output = utils.replaceTokenInString('hello %FOO%, I am %ZAP%', tokensToReplace, '%');
-      assert.equal(output, 'hello bar, I am quux');
-    });
-
-    it('should ignore tokens it does not see', function () {
-      var output = utils.replaceTokenInString('hello %FOO%', {}, '%');
-
-      assert.equal(output, 'hello %FOO%');
-    });
-  });
 
   describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
@@ -86,7 +68,7 @@ describe('Utils', function () {
       };
 
       var output = utils.parseQueryStringParameters(obj);
-      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2') + '&';
+      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2');
       assert.equal(output, expectedResult);
     });
 
@@ -699,20 +681,6 @@ describe('Utils', function () {
     });
   });
 
-  describe('createContentToExecuteExtScriptInFriendlyFrame', function () {
-    it('should return empty string if url is not passed', function () {
-      var output = utils.createContentToExecuteExtScriptInFriendlyFrame();
-      assert.equal(output, '');
-    });
-
-    it('should have URL in returned value if url is passed', function () {
-      var url = 'https://abcd.com/service?a=1&b=2&c=3';
-      var output = utils.createContentToExecuteExtScriptInFriendlyFrame(url);
-      var expected = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><script>inDapIF=true;</script></head><body><!--PRE_SCRIPT_TAG_MACRO--><script src="${url}"></script><!--POST_SCRIPT_TAG_MACRO--></body></html>`;
-      assert.equal(output, expected);
-    });
-  });
-
   describe('getDefinedParams', function () {
     it('builds an object consisting of defined params', function () {
       const adUnit = {
@@ -833,6 +801,98 @@ describe('Utils', function () {
     });
   });
 
+  describe('URL helpers', function () {
+    describe('parseUrl()', function () {
+      let parsed;
+
+      beforeEach(function () {
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash');
+      });
+
+      it('extracts the protocol', function () {
+        expect(parsed).to.have.property('protocol', 'http');
+      });
+
+      it('extracts the hostname', function () {
+        expect(parsed).to.have.property('hostname', 'example.com');
+      });
+
+      it('extracts the port', function () {
+        expect(parsed).to.have.property('port', 3000);
+      });
+
+      it('extracts the pathname', function () {
+        expect(parsed).to.have.property('pathname', '/pathname/');
+      });
+
+      it('extracts the search query', function () {
+        expect(parsed).to.have.property('search');
+        expect(parsed.search).to.eql({
+          foo: 'xxx',
+          search: 'test',
+          bar: 'foo',
+        });
+      });
+
+      it('extracts the hash', function () {
+        expect(parsed).to.have.property('hash', 'hash');
+      });
+
+      it('extracts the host', function () {
+        expect(parsed).to.have.property('host', 'example.com:3000');
+      });
+    });
+
+    describe('parseUrl(url, {noDecodeWholeURL: true})', function () {
+      let parsed;
+
+      beforeEach(function () {
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {noDecodeWholeURL: true});
+      });
+
+      it('extracts the search query', function () {
+        expect(parsed).to.have.property('search');
+        expect(parsed.search).to.eql({
+          foo: 'bar',
+          search: 'test',
+          bar: 'foo%26foo%3Dxxx',
+        });
+      });
+    });
+
+    describe('buildUrl()', function () {
+      it('formats an object in to a URL', function () {
+        expect(utils.buildUrl({
+          protocol: 'http',
+          hostname: 'example.com',
+          port: 3000,
+          pathname: '/pathname/',
+          search: {foo: 'bar', search: 'test', bar: 'foo%26foo%3Dxxx'},
+          hash: 'hash'
+        })).to.equal('http://example.com:3000/pathname/?foo=bar&search=test&bar=foo%26foo%3Dxxx#hash');
+      });
+
+      it('will use defaults for missing properties', function () {
+        expect(utils.buildUrl({
+          hostname: 'example.com'
+        })).to.equal('http://example.com');
+      });
+    });
+
+    describe('parseUrl(url, {decodeSearchAsString: true})', function () {
+      let parsed;
+
+      beforeEach(function () {
+        parsed = utils.parseUrl('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {decodeSearchAsString: true});
+      });
+
+      it('extracts the search query', function () {
+        expect(parsed).to.have.property('search');
+        expect(parsed.search).to.equal('?search=test&foo=bar&bar=foo&foo=xxx');
+      });
+    });
+  });
+
   describe('transformBidderParamKeywords', function () {
     it('returns an array of objects when keyvalue is an array', function () {
       let keywords = {
@@ -919,6 +979,139 @@ describe('Utils', function () {
         const target = document.getElementsByTagName('head')[0];
         const inserted = utils.insertElement(toInsert);
         expect(inserted).to.equal(target.firstChild);
+      });
+    });
+  });
+
+  describe('isSafariBrowser', function () {
+    let userAgentStub;
+    let userAgent;
+
+    before(function () {
+      userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+        return userAgent;
+      });
+    });
+
+    after(function () {
+      userAgentStub.restore();
+    });
+
+    it('properly detects safari', function () {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25';
+      expect(utils.isSafariBrowser()).to.equal(true);
+    });
+    it('does not flag Chrome on MacOS', function () {
+      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36';
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
+    it('does not flag Chrome iOS', function () {
+      userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1';
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
+    it('does not flag Firefox iOS', function () {
+      userAgent = 'Mozilla/5.0 (iPhone; CPU OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/23.0  Mobile/15E148 Safari/605.1.15';
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
+    it('does not flag Windows Edge', function () {
+      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43';
+      expect(utils.isSafariBrowser()).to.equal(false);
+    });
+  });
+
+  describe('mergeDeep', function() {
+    it('properly merge objects that share same property names', function() {
+      const object1 = {
+        propA: {
+          subPropA: 'abc'
+        }
+      };
+      const object2 = {
+        propA: {
+          subPropB: 'def'
+        }
+      };
+
+      const resultWithoutMergeDeep = Object.assign({}, object1, object2);
+      expect(resultWithoutMergeDeep).to.deep.equal({
+        propA: {
+          subPropB: 'def'
+        }
+      });
+
+      const resultWithMergeDeep = utils.mergeDeep({}, object1, object2);
+      expect(resultWithMergeDeep).to.deep.equal({
+        propA: {
+          subPropA: 'abc',
+          subPropB: 'def'
+        }
+      });
+    });
+
+    it('properly merge objects that have different depths', function() {
+      const object1 = {
+        depth0_A: {
+          depth1_A: {
+            depth2_A: 123
+          }
+        }
+      };
+      const object2 = {
+        depth0_A: {
+          depth1_A: {
+            depth2_B: {
+              depth3_A: {
+                depth4_A: 'def'
+              }
+            }
+          },
+          depth1_B: 'abc'
+        }
+      };
+      const object3 = {
+        depth0_B: 456
+      };
+
+      const result = utils.mergeDeep({}, object1, object2, object3);
+      expect(result).to.deep.equal({
+        depth0_A: {
+          depth1_A: {
+            depth2_A: 123,
+            depth2_B: {
+              depth3_A: {
+                depth4_A: 'def'
+              }
+            }
+          },
+          depth1_B: 'abc'
+        },
+        depth0_B: 456
+      });
+    });
+
+    it('properly merge objects with various property types', function() {
+      const object1 = {
+        depth0_A: {
+          depth1_A: ['a', 'b', 'c'],
+          depth1_B: 'abc',
+          depth1_C: 123
+        }
+      };
+      const object2 = {
+        depth0_A: {
+          depth1_A: ['d', 'e', 'f'],
+          depth1_D: true,
+        }
+      };
+
+      const result = utils.mergeDeep({}, object1, object2);
+      expect(result).to.deep.equal({
+        depth0_A: {
+          depth1_A: ['a', 'b', 'c', 'd', 'e', 'f'],
+          depth1_B: 'abc',
+          depth1_C: 123,
+          depth1_D: true,
+        }
       });
     });
   });
