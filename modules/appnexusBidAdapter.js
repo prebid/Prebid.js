@@ -286,7 +286,8 @@ export const spec = {
       'member': 'string',
       'invCode': 'string',
       'placementId': 'number',
-      'keywords': utils.transformBidderParamKeywords
+      'keywords': utils.transformBidderParamKeywords,
+      'publisherId': 'number'
     }, params);
 
     if (isOpenRtb) {
