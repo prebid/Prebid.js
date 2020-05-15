@@ -90,7 +90,7 @@ describe('YieldmoAdapter', function () {
     it('should place bid information into the p parameter of data', function () {
       let placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
       expect(placementInfo).to.equal(
-        '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1}]'
+        encodeURIComponent('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1}]')
       );
       bidArray.push({
         bidder: 'yieldmo',
@@ -117,20 +117,20 @@ describe('YieldmoAdapter', function () {
       // multiple placements
       placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
       expect(placementInfo).to.equal(
-        '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1},{"placement_id":"adunit-code-1","callback_id":"123456789","sizes":[[300,250],[300,600]],"bidFloor":0.2}]'
+        encodeURIComponent('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1},{"placement_id":"adunit-code-1","callback_id":"123456789","sizes":[[300,250],[300,600]],"bidFloor":0.2}]')
       );
     });
 
     it('should add placement id if given', function () {
       bidArray[0].params.placementId = 'ym_1293871298';
       let placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
-      expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"');
-      expect(placementInfo).not.to.include('"ym_placement_id":"ym_0987654321"');
+      expect(placementInfo).to.include(encodeURIComponent('"ym_placement_id":"ym_1293871298"'));
+      expect(placementInfo).not.to.include(encodeURIComponent('"ym_placement_id":"ym_0987654321"'));
 
       bidArray[1].params.placementId = 'ym_0987654321';
       placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
-      expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"');
-      expect(placementInfo).to.include('"ym_placement_id":"ym_0987654321"');
+      expect(placementInfo).to.include(encodeURIComponent('"ym_placement_id":"ym_1293871298"'));
+      expect(placementInfo).to.include(encodeURIComponent('"ym_placement_id":"ym_0987654321"'));
     });
 
     it('should add additional information to data parameter of request', function () {
@@ -230,16 +230,16 @@ describe('YieldmoAdapter', function () {
       };
       const data = spec.buildRequests(bidArray, bidderRequest).data;
       expect(data.userConsent).equal(
-        JSON.stringify({
+        encodeURIComponent(JSON.stringify({
           gdprApplies: true,
           cmp: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-        })
+        }))
       );
     });
 
     it('should add ccpa information to request if available', () => {
       const privacy = '1YNY';
-      bidderRequest.us_privacy = privacy;
+      bidderRequest.uspConsent = privacy;
       const data = spec.buildRequests(bidArray, bidderRequest).data;
       expect(data.us_privacy).equal(privacy);
     });
@@ -252,7 +252,7 @@ describe('YieldmoAdapter', function () {
       };
       bidArray[0].schain = schain;
       const request = spec.buildRequests([bidArray[0]], bidderRequest);
-      expect(request.data.schain).equal(JSON.stringify(schain));
+      expect(request.data.schain).equal(encodeURIComponent(JSON.stringify(schain)));
     });
   });
 
@@ -305,27 +305,8 @@ describe('YieldmoAdapter', function () {
   });
 
   describe('getUserSync', function () {
-    const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
-    let options = {
-      iframeEnabled: true,
-      pixelEnabled: true,
-    };
-
     it('should return a tracker with type and url as parameters', function () {
-      if (/iPhone|iPad|iPod/i.test(window.navigator.userAgent)) {
-        expect(spec.getUserSync(options)).to.deep.equal([
-          {
-            type: 'iframe',
-            url: SYNC_ENDPOINT + utils.getOrigin(),
-          },
-        ]);
-
-        options.iframeEnabled = false;
-        expect(spec.getUserSync(options)).to.deep.equal([]);
-      } else {
-        // not ios, so tracker will fail
-        expect(spec.getUserSync(options)).to.deep.equal([]);
-      }
+      expect(spec.getUserSyncs()).to.deep.equal([]);
     });
   });
 });

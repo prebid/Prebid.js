@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -84,6 +84,11 @@ export const spec = {
       adRequests: [...adRequests],
       rtbData: handleEids(bidRequests)
     };
+
+    if (config.getConfig().debug) {
+      payload.dbg = true;
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -100,6 +105,10 @@ export const spec = {
    */
   interpretResponse: function(serverResponse) {
     const bidResponses = [];
+
+    if (serverResponse.body.dbg && window.livewrapped && window.livewrapped.s2sDebug) {
+      window.livewrapped.s2sDebug(serverResponse.body.dbg);
+    }
 
     serverResponse.body.ads.forEach(function(ad) {
       var bidResponse = {
