@@ -404,6 +404,9 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
 
     bidderRequest.bids.forEach(bid => {
       if (!bidResponseMap[bid.bidId]) {
+        bid.requestTimestamp = bidderRequest.start;
+        bid.responseTimestamp = timestamp();
+        bid.timeToRespond = bid.responseTimestamp - bid.requestTimestamp;
         auctionInstance.addNoBid(bid);
         events.emit(CONSTANTS.EVENTS.NO_BID, bid);
       }
