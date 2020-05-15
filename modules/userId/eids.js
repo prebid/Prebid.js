@@ -29,9 +29,12 @@ const USER_IDS_CONFIG = {
   },
 
   // parrableId
-  'parrableid': {
+  'parrableId': {
     source: 'parrable.com',
-    atype: 1
+    atype: 1,
+    getValue: function(parrableId) {
+      return parrableId.eid;
+    }
   },
 
   // identityLink
