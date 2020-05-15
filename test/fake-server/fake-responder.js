@@ -40,6 +40,8 @@ const matchResponse = function (requestBody) {
 
   // match the 'actual' requestBody with the 'expected' requestBody and find the 'responseBody'
   const responseBody = requestResponsePairs.filter(reqRes => reqRes.request.httpRequest && deepEqual(reqRes.request.httpRequest.body.tags, requestBody.tags))[0].response.httpResponse.body;
+  
+  // ENABLE THE FOLLOWING CODE FOR TROUBLE-SHOOTING FAKED REQUESTS; COMMENT AGAIN WHEN DONE
   // console.log('value found for responseBody:', responseBody);
   // responseBody.tags.forEach((tag, index) => {
   //   console.log('value found for responseBody.tag[', index, ']:ads', tag.ads);
