@@ -34,6 +34,15 @@ const USER_IDS_CONFIG = {
     atype: 1,
     getValue: function(parrableId) {
       return parrableId.eid;
+    },
+    getUidExt: function(parrableId) {
+      const extendedData = utils.pick(parrableId, [
+        'ibaOptout',
+        'ccpaOptout'
+      ]);
+      if (Object.keys(extendedData).length) {
+        return extendedData;
+      }
     }
   },
 

@@ -185,7 +185,7 @@ describe('Parrable ID System', function() {
 
     beforeEach(function() {
       adUnits = [getAdUnitMock()];
-      writeParrableCookie({ eid: P_COOKIE_EID });
+      writeParrableCookie({ eid: P_COOKIE_EID, ibaOptout: true });
       setSubmoduleRegistry([parrableIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock());
@@ -201,6 +201,18 @@ describe('Parrable ID System', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.parrableId');
             expect(bid.userId.parrableId.eid).to.equal(P_COOKIE_EID);
+            expect(bid.userId.parrableId.ibaOptout).to.equal(true);
+            const [ parrableIdAsEid ] = bid.userIdAsEids.filter(e => e.source == 'parrable.com');
+            expect(parrableIdAsEid).to.deep.equal({
+              source: 'parrable.com',
+              uids: [{
+                id: P_COOKIE_EID,
+                atype: 1,
+                ext: {
+                  ibaOptout: true
+                }
+              }]
+            });
           });
         });
         done();
