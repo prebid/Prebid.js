@@ -442,7 +442,7 @@ export const spec = {
    */
   findAllUserIds(bidRequest) {
     var ret = {};
-    let searchKeysSingle = ['pubcid', 'tdid', 'id5id', 'parrableid', 'idl_env', 'digitrustid', 'criteortus'];
+    let searchKeysSingle = ['pubcid', 'tdid', 'id5id', 'parrableId', 'idl_env', 'digitrustid', 'criteortus'];
     utils.logInfo('OZONE: debug iterating keys');
     utils.logInfo('OZONE: debug bidRequest=', bidRequest);
     if (bidRequest.hasOwnProperty('userId')) {
@@ -585,7 +585,7 @@ export const spec = {
       this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteortus.${BIDDER_CODE}.userid`), 'criteortus', 1);
       this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
       this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.lipb.lipbid`), 'liveintent.com', 1);
-      this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.parrableid`), 'parrable.com', 1);
+      this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.parrableId.eid`), 'parrable.com', 1);
     }
     return eids;
   },
