@@ -236,6 +236,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   }
 }
 
+let resetHook = function() {};
 /**
  * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
@@ -276,6 +277,9 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     } else {
       hookConfig.timer = setTimeout(cmpTimedOut.bind(null, hookConfig), consentTimeout);
     }
+  }
+  resetHook = function() {
+    hookConfig.haveExited = false;
   }
 }
 
@@ -430,6 +434,7 @@ export function resetConsentData() {
   userCMP = undefined;
   cmpVersion = 0;
   gdprDataHandler.setConsentData(null);
+  resetHook();
 }
 
 /**
