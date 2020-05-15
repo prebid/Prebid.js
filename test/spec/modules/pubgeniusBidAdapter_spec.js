@@ -127,7 +127,6 @@ describe('pubGENIUS adapter', () => {
       expectedRequest = {
         method: 'POST',
         url: 'https://ortb.adpearl.io/prebid/auction',
-        options: { contentType: 'application/json' },
         data: {
           id: 'fake-auction-id',
           imp: [
@@ -434,7 +433,6 @@ describe('pubGENIUS adapter', () => {
 
       expect(server.requests[0].method).to.equal('POST');
       expect(server.requests[0].url).to.equal('https://ortb.adpearl.io/prebid/events?type=timeout');
-      expect(server.requests[0].requestHeaders['Content-Type']).to.equal('application/json;charset=utf-8');
       expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(timeoutData);
     });
   });

@@ -87,7 +87,6 @@ export const spec = {
       method: 'POST',
       url: AUCTION_URL,
       data,
-      options: { contentType: 'application/json' },
     };
   },
 
@@ -139,7 +138,6 @@ export const spec = {
   onTimeout(data) {
     ajax(`${BASE_URL}/prebid/events?type=timeout`, null, JSON.stringify(data), {
       method: 'POST',
-      contentType: 'application/json',
     });
   },
 };
