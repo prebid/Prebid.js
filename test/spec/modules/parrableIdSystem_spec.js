@@ -218,5 +218,32 @@ describe('Parrable ID System', function() {
         done();
       }, { adUnits });
     });
+
+    it('supplies an optout reason when the EID is missing due to CCPA non-consent', function(done) {
+      // the ID system itself will not write a cookie with an EID when CCPA=true
+      writeParrableCookie({ ccpaOptout: true });
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.parrableId');
+            expect(bid.userId.parrableId).to.not.have.property('eid');
+            expect(bid.userId.parrableId.ccpaOptout).to.equal(true);
+            const parrableIdAsEid = bid.userIdAsEids.find(e => e.source == 'parrable.com');
+            expect(parrableIdAsEid).to.deep.equal({
+              source: 'parrable.com',
+              uids: [{
+                id: '',
+                atype: 1,
+                ext: {
+                  ccpaOptout: true
+                }
+              }]
+            });
+          });
+        });
+        done();
+      }, { adUnits });
+    });
   });
 });
