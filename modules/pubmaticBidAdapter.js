@@ -6,7 +6,8 @@ import {config} from '../src/config.js';
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
 const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=prebid-client';
-const USYNCURL = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
+const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
+const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
@@ -942,6 +943,11 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
+    // merge the device from config.getConfig('device')
+    if (typeof config.getConfig('device') === 'object') {
+      payload.device = Object.assign(payload.device, config.getConfig('device'));
+    }
+
     // passing transactionId in source.tid
     utils.deepSetValue(payload, 'source.tid', conf.transactionId);
 
@@ -974,6 +980,16 @@ export const spec = {
     _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+
+    // Note: Do not move this block up
+    // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
+    if (typeof config.getConfig('app') === 'object') {
+      payload.app = config.getConfig('app');
+      // not copying domain from site as it is a derived value from page
+      payload.app.publisher = payload.site.publisher;
+      payload.app.ext = payload.site.ext || UNDEFINED;
+      delete payload.site;
+    }
 
     return {
       method: 'POST',
@@ -1065,6 +1081,12 @@ export const spec = {
                   if (bid.adomain && bid.adomain.length > 0) {
                     br.meta.clickUrl = bid.adomain[0];
                   }
+                  // adserverTargeting
+                  if (seatbidder.ext && seatbidder.ext.buyid) {
+                    br.adserverTargeting = {
+                      'hb_buyid_pubmatic': seatbidder.ext.buyid
+                    };
+                  }
                 }
               });
             });
@@ -1080,7 +1102,7 @@ export const spec = {
    * Register User Sync.
    */
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
-    let syncurl = USYNCURL + publisherId;
+    let syncurl = '' + publisherId;
 
     // Attaching GDPR Consent Params in UserSync url
     if (gdprConsent) {
@@ -1101,10 +1123,13 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: syncurl
+        url: USER_SYNC_URL_IFRAME + syncurl
       }];
     } else {
-      utils.logWarn(LOG_WARN_PREFIX + 'Please enable iframe based user sync.');
+      return [{
+        type: 'image',
+        url: USER_SYNC_URL_IMAGE + syncurl
+      }];
     }
   },
 

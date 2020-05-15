@@ -321,6 +321,12 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.not.have.property('user'); // there should be no user by default
   });
 
+  it('Verify override url', function() {
+    const testUrl = 'https://someurl?name=value';
+    const request = spec.buildRequests([{params: {white_label_url: testUrl}}]);
+    expect(request.url).to.equal(testUrl);
+  });
+
   it('Verify interpretResponse', function() {
     const request = spec.buildRequests(bidRequests);
     const response = spec.interpretResponse(bidResponses, request);
@@ -470,14 +476,14 @@ describe('Conversant adapter tests', function() {
 
       // add pubcid to every entry
       requests.forEach((unit) => {
-        Object.assign(unit, {userId: {pubcid: 112233, tdid: 223344, idl_env: 334455}});
+        Object.assign(unit, {userId: {pubcid: '112233', tdid: '223344', idl_env: '334455'}});
         Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
       });
       //  construct http post payload
       const payload = spec.buildRequests(requests).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
-        {source: 'adserver.org', uids: [{id: 223344, atype: 1, ext: {rtiPartner: 'TDID'}}]},
-        {source: 'liveramp.com', uids: [{id: 334455, atype: 1}]}
+        {source: 'adserver.org', uids: [{id: '223344', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'liveramp.com', uids: [{id: '334455', atype: 1}]}
       ]);
     });
   });

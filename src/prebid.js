@@ -278,7 +278,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching
   let targetingSet = targeting.getAllTargeting(adUnit);
 
   // first reset any old targeting
-  targeting.resetPresetTargeting(adUnit);
+  targeting.resetPresetTargeting(adUnit, customSlotMatching);
 
   // now set new targeting keys
   targeting.setTargetingForGPT(targetingSet, customSlotMatching);
@@ -521,7 +521,6 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
-  return auction;
 });
 
 export function executeStorageCallbacks(fn, reqBidsConfigObj) {

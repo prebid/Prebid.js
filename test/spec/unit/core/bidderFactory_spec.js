@@ -247,7 +247,7 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2&`);
+      expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2`);
       expect(ajaxStub.firstCall.args[2]).to.be.undefined;
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({
         method: 'GET',
@@ -271,7 +271,7 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2&`);
+      expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2`);
       expect(ajaxStub.firstCall.args[2]).to.be.undefined;
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({
         method: 'GET',

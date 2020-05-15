@@ -145,6 +145,9 @@ let configRegistry = [];
 let submoduleRegistry = [];
 
 /** @type {(number|undefined)} */
+let timeoutID;
+
+/** @type {(number|undefined)} */
 export let syncDelay;
 
 /** @type {(number|undefined)} */
@@ -256,6 +259,7 @@ function processSubmoduleCallbacks(submodules, cb) {
     // clear callback, this prop is used to test if all submodule callbacks are complete below
     submodule.callback = undefined;
   });
+  clearTimeout(timeoutID);
 }
 
 /**
@@ -322,9 +326,9 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
             }
           }
           utils.logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay} at most to fetch ids`);
-          processSubmoduleCallbacks(submodulesWithCallbacks, continueCallback);
 
-          setTimeout(continueCallback, auctionDelay);
+          timeoutID = setTimeout(continueCallback, auctionDelay);
+          processSubmoduleCallbacks(submodulesWithCallbacks, continueCallback);
         } else {
           // wait for auction complete before processing submodule callbacks
           events.on(CONSTANTS.EVENTS.REQUEST_BIDS, function auctionEndHandler() {
@@ -376,6 +380,16 @@ function getUserIds() {
   // initialize submodules only when undefined
   initializeSubmodulesAndExecuteCallbacks();
   return getCombinedSubmoduleIds(initializedSubmodules);
+}
+
+/**
+ * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
+ * Simple use case will be passing these UserIds to A9 wrapper solution
+ */
+function getUserIdsAsEids() {
+  // initialize submodules only when undefined
+  initializeSubmodulesAndExecuteCallbacks();
+  return createEidsArray(getCombinedSubmoduleIds(initializedSubmodules));
 }
 
 /**
@@ -572,6 +586,7 @@ export function init(config) {
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
+  (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
 }
 
 // init config update listener to start the application

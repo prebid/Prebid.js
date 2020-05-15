@@ -60,7 +60,7 @@ function _getBrowserParams(topWindowUrl) {
     pu: topUrl,
     ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: JSON.stringify({ t: 0, rq: 8 }),
+    jcsi: encodeURIComponent(JSON.stringify({ t: 0, rq: 8 })),
     ogu: getOgURL()
   }
 

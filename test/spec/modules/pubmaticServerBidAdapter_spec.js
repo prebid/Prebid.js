@@ -96,7 +96,14 @@ describe('PubMaticServer adapter', () => {
                 'bid': 1.3,
                 'width': 300,
                 'height': 250
-              }]
+              }],
+              'prebid': {
+                'targeting': {
+                  'pwtbuyid_pubmatic': '15',
+                  'pwtpb': '6.60'
+                },
+                'type': ''
+              }
             }
           }],
           'seat': 'pubmatic'
@@ -441,6 +448,7 @@ describe('PubMaticServer adapter', () => {
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
         expect(response[0].originalBidder).to.equal(bidResponses.body.seatbid[0].bid[0].ext.summary[0].bidder);
         expect(response[0].bidderCode).to.equal(spec.code);
+        expect(response[0].adserverTargeting.pwtbuyid_pubmatic).to.equal('15');
       });
     });
 
