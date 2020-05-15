@@ -54,6 +54,7 @@ Konduit module contains a single function that accepts an `options` parameter.
 
 The `options` parameter can include:
 * `bid` - prebid object with VAST url that should be cached (if not passed first winning bid from `auctionManager.getWinningBids()` will be used)
+* `bids` - array of prebid objects with VAST url that should be cached (if not passed and `enableSendAllBids: true` bids from `auctionManager.getBidsReceived()` will be used)
 * `adUnitCode` - adUnitCode where a winner bid can be found
 * `timeout` - max time to wait for Konduit response with cache key and kCpm data
 * `callback` - callback function is called once Konduit cache data for the bid. Arguments of this function are - `error` and `bids` (error should be `null` if Konduit request is successful)
