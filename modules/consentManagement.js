@@ -246,6 +246,9 @@ let resetHook = function() {};
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
 export function requestBidsHook(fn, reqBidsConfigObj) {
+  if (!utils.isStr(userCMP)) {
+    userCMP = DEFAULT_CMP;
+  }
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
   const hookConfig = {
     context: this,
