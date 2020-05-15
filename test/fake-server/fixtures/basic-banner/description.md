@@ -1,5 +1,5 @@
 Test Page - 'test/pages/banner.html'
-Test Spec File - 'test/spec/e2e/native/basic_banner_ad.spec.js'
+Test Spec File - 'test/spec/e2e/banner/basic_banner_ad.spec.js'
 
 Ad Unit that generates given 'Request' - 'Response' pairs.
 
@@ -14,7 +14,7 @@ Ad Unit that generates given 'Request' - 'Response' pairs.
 		bids: [{
 			bidder: 'appnexus',
 			params: {
-			    placementId: 13144370
+			  placementId: 13144370
 			}
 		}]
 }, {
