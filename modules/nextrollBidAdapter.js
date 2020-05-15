@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { parse as parseUrl } from '../src/url.js';
 
 import find from 'core-js/library/fn/array/find.js';
@@ -11,7 +11,7 @@ const ADAPTER_VERSION = 4;
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -44,9 +44,8 @@ export const spec = {
           imp: {
             id: bidRequest.bidId,
             bidfloor: utils.getBidIdParameter('bidfloor', bidRequest.params),
-            banner: {
-              format: _getSizes(bidRequest)
-            },
+            banner: _getBanner(bidRequest),
+            native: _getNative(bidRequest),
             ext: {
               zone: {
                 id: utils.getBidIdParameter('zoneId', bidRequest.params)
@@ -81,6 +80,84 @@ export const spec = {
       return bids.map((bid) => _buildResponse(response, bid));
     }
   }
+}
+
+function _getBanner(bidRequest) {
+  let sizes = _getSizes(bidRequest)
+  if (sizes === undefined) return undefined
+  return {format: sizes}
+}
+
+function _getNative(bidRequest) {
+  let assets = _getNativeAssets(bidRequest)
+  if(assets === undefined || assets.length == 0) return undefined
+  return {
+    request: {
+      native: {
+        assets: assets
+      }
+    }
+  }
+}
+
+/*
+  id: Unique numeric id for the asset
+  kind: OpenRTB kind of asset. Supported: title, img and data.
+  key: Name of property that comes in the mediaType.native object.
+  type: OpenRTB type for that spefic kind of asset.
+  required: Overrides the asset required field configured, only overrides when is true.
+*/
+const NATIVE_ASSET_MAP = [
+  {id: 1, kind: "title", key: "title", required: true},
+  {id: 2, kind: "img", key: "image", type: 3, required: true},
+  {id: 3, kind: "img", key: "icon", type: 1},
+  {id: 4, kind: "img", key: "logo", type: 2},
+  {id: 5, kind: "data", key: "sponsoredBy", type: 1},
+  {id: 6, kind: "data", key: "body", type: 2}
+]
+
+const ASSET_KIND_MAP = {
+  title: _getTitleAsset,
+  img: _getImageAsset,
+  data: _getDataAsset,
+}
+
+function _getAsset(bidRequest, assetMap) {
+  let asset = bidRequest[assetMap.key]
+  if (asset === undefined) return undefined
+  let assetFunc = ASSET_KIND_MAP[assetMap.kind]
+  return {
+    id: assetMap.id,
+    required: assetMap.required || !!asset.required,
+    [assetMap.kind]: assetFunc(asset, assetMap)
+  }
+}
+
+function _getTitleAsset(title, _assetMap) {
+  return {len: title.len}
+}
+
+function _getImageAsset(image, assetMap) {
+  let sizes = image.sizes
+  let aspect_ratio = image.aspect_ratios ? image.aspect_ratios[0] : undefined
+  return {
+    type: assetMap.type,
+    w: (sizes ? sizes[0] : undefined),
+    h: (sizes ? sizes[1] : undefined),
+    wmin: (aspect_ratio ? aspect_ratio.min_width : 1),
+    hmin: (aspect_ratio ? aspect_ratio.min_height : 1)
+  }
+}
+
+function _getDataAsset(data, assetMap) {
+  return {
+      type: assetMap.type,
+      len: data.len
+  }
+}
+
+function _getNativeAssets(bidRequest) {
+  return NATIVE_ASSET_MAP.map(assetMap => _getAsset(bidRequest, assetMap)).filter(asset => asset !== undefined)
 }
 
 function _getUser(requests) {
@@ -132,6 +209,9 @@ function _getSeller(bidRequest) {
 }
 
 function _getSizes(bidRequest) {
+  if (!utils.isArray(bidRequest.sizes)) {
+    return undefined
+  }
   return bidRequest.sizes.filter(_isValidSize).map(size => {
     return {
       w: size[0],
