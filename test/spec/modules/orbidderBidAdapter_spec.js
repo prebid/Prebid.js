@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/orbidderBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import openxAdapter from '../../../modules/openxAnalyticsAdapter';
-import {detectReferer} from 'src/refererDetection';
+import {spec} from 'modules/orbidderBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import openxAdapter from '../../../modules/openxAnalyticsAdapter.js';
+import {detectReferer} from 'src/refererDetection.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -96,9 +96,13 @@ describe('orbidderBidAdapter', () => {
       expect(request.url).to.equal(`${spec.orbidderHost}/bid`);
     });
 
+    it('contains prebid version parameter', () => {
+      expect(request.data.v).to.equal($$PREBID_GLOBAL$$.version);
+    });
+
     it('sends correct bid parameters', () => {
-      // we add one, because we add referer information from bidderRequest object
-      expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequest).length + 1);
+      // we add two, because we add referer information and version from bidderRequest object
+      expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequest).length + 2);
       expect(request.data.pageUrl).to.equal('https://localhost:9876/');
       // expect(request.data.referrer).to.equal('');
       Object.keys(defaultBidRequest).forEach((key) => {
@@ -162,6 +166,7 @@ describe('orbidderBidAdapter', () => {
     spec.bidParams['123req456'] = {'accountId': '123acc456'};
 
     let bidObjClone = deepClone(bidObj);
+    bidObjClone.v = $$PREBID_GLOBAL$$.version;
     bidObjClone.pageUrl = detectReferer(window)().referer;
     bidObjClone.params = [{'accountId': '123acc456'}];
 

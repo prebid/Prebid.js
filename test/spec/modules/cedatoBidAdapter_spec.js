@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/cedatoBidAdapter';
+import {spec} from 'modules/cedatoBidAdapter.js';
 
 describe('the cedato adapter', function () {
   function getValidBidObject() {
@@ -33,17 +33,34 @@ describe('the cedato adapter', function () {
       expect(result).to.equal(false);
     });
   });
+
   describe('buildRequests', function() {
     var bid, bidRequestObj;
 
     beforeEach(function() {
       bid = getValidBidObject();
-      bidRequestObj = {refererInfo: {referer: 'prebid.js'}};
+      bidRequestObj = {
+        refererInfo: {referer: 'prebid.js'},
+        gdprConsent: {
+          consentString: 'test-string',
+          gdprApplies: true
+        },
+        uspConsent: '1NYN'
+      };
     });
 
     it('should build a very basic request', function() {
-      var request = spec.buildRequests([bid], bidRequestObj);
+      var [request] = spec.buildRequests([bid], bidRequestObj);
       expect(request.method).to.equal('POST');
+    });
+
+    it('should pass gdpr and usp strings to server', function() {
+      var [request] = spec.buildRequests([bid], bidRequestObj);
+      var payload = JSON.parse(request.data);
+      expect(payload.gdpr_consent).to.not.be.undefined;
+      expect(payload.gdpr_consent.consent_string).to.equal(bidRequestObj.gdprConsent.consentString);
+      expect(payload.gdpr_consent.consent_required).to.equal(bidRequestObj.gdprConsent.gdprApplies);
+      expect(payload.us_privacy).to.equal(bidRequestObj.uspConsent);
     });
   });
 
@@ -86,6 +103,31 @@ describe('the cedato adapter', function () {
     it('should return an array of bid responses', function() {
       var responses = spec.interpretResponse(serverResponse, {bidderRequest});
       expect(responses).to.be.an('array').with.length(1);
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    var bid;
+
+    beforeEach(function() {
+      bid = getValidBidObject();
+    });
+
+    it('should sync with iframe', function() {
+      var syncs = spec.getUserSyncs({ iframeEnabled: true }, null, {
+        consentString: '',
+        gdprApplies: true
+      });
+
+      expect(syncs).to.be.an('array').with.length(1);
+      expect(syncs[0].type).to.equal('iframe');
+    });
+
+    it('should sync with image', function() {
+      var syncs = spec.getUserSyncs({ pixelEnabled: true });
+
+      expect(syncs).to.be.an('array').with.length(1);
+      expect(syncs[0].type).to.equal('image');
     });
   });
 });

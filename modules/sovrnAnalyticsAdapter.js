@@ -1,11 +1,11 @@
-import adapter from '../src/AnalyticsAdapter'
-import adaptermanager from '../src/adapterManager'
+import adapter from '../src/AnalyticsAdapter.js'
+import adaptermanager from '../src/adapterManager.js'
 import CONSTANTS from '../src/constants.json'
-import {ajaxBuilder} from '../src/ajax'
-import * as utils from '../src/utils'
-import {config} from '../src/config'
-import find from 'core-js/library/fn/array/find'
-import includes from 'core-js/library/fn/array/includes'
+import {ajaxBuilder} from '../src/ajax.js'
+import * as utils from '../src/utils.js'
+import {config} from '../src/config.js'
+import find from 'core-js-pure/features/array/find.js'
+import includes from 'core-js-pure/features/array/includes.js'
 
 const ajax = ajaxBuilder(0)
 
@@ -35,7 +35,7 @@ const getClosestTop = () => {
       }
     }
   } catch (e) {
-    bException = true;
+    // bException = true;
   }
 
   return {
@@ -136,6 +136,7 @@ class BidWinner {
    */
   constructor(sovrnId, event) {
     this.body = {}
+    // eslint-disable-next-line no-undef
     this.body.prebidVersion = $$REPO_AND_VERSION$$
     this.body.sovrnId = sovrnId
     this.body.winningBid = JSON.parse(JSON.stringify(event))
@@ -170,6 +171,7 @@ class AuctionData {
    */
   constructor(sovrnId, auctionId) {
     this.auction = {}
+    // eslint-disable-next-line no-undef
     this.auction.prebidVersion = $$REPO_AND_VERSION$$
     this.auction.sovrnId = sovrnId
     this.auction.auctionId = auctionId
@@ -288,6 +290,7 @@ class LogError {
     this.error.message = e.message
     this.error.stack = e.stack
     this.error.data = data
+    // eslint-disable-next-line no-undef
     this.error.prebidVersion = $$REPO_AND_VERSION$$
     this.error.sovrnId = sovrnId
     this.error.url = rootURL
@@ -305,8 +308,8 @@ class LogError {
         }
       })
     }
-    if (ErrorEvent.data && error.data.ad) {
-      delete error.data.ad
+    if (ErrorEvent.data && this.error.data.ad) {
+      delete this.error.data.ad
     }
     this.error.ts = utils.timestamp()
     ajax(

@@ -1,9 +1,9 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage } from '../src/utils';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { config } from '../src/config';
-import { Renderer } from '../src/Renderer';
-import { userSync } from '../src/userSync';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage } from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { userSync } from '../src/userSync.js';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
@@ -100,14 +100,6 @@ export const spec = {
 
     if (deepAccess(validBidRequests[0], 'params.hfa')) {
       payload.hfa = deepAccess(validBidRequests[0], 'params.hfa');
-    } else if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
-      payload.hfa = `PRE-${validBidRequests[0].userId.pubcid}`;
-    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
-      payload.hfa = `PRE-${validBidRequests[0].crumbs.pubcid}`;
-    }
-
-    if (deepAccess(validBidRequests[0], 'userId.tdid')) {
-      payload.tdid = validBidRequests[0].userId.tdid;
     }
 
     if (validBidRequests[0].params.referrer) {
@@ -151,9 +143,15 @@ export const spec = {
       return null;
     }
 
+    let url = STR_ENDPOINT;
+
+    if (deepAccess(validBidRequests[0], 'params.bid_request_url')) {
+      url = deepAccess(validBidRequests[0], 'params.bid_request_url');
+    }
+
     return {
       method: 'GET',
-      url: STR_ENDPOINT,
+      url: url,
       withCredentials: true,
       data: payload,
       bidderRequests: validBidRequests

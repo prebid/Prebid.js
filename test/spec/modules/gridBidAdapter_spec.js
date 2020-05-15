@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec, resetUserSync, getSyncUrl } from 'modules/gridBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec, resetUserSync, getSyncUrl } from 'modules/gridBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('TheMediaGrid Adapter', function () {
   const adapter = newBidder(spec);

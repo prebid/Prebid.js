@@ -1,15 +1,15 @@
-import {ajax} from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
+import {ajax} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import { targeting } from '../src/targeting';
-import { auctionManager } from '../src/auctionManager';
-import * as utils from '../src/utils';
+import adapterManager from '../src/adapterManager.js';
+import { targeting } from '../src/targeting.js';
+import { auctionManager } from '../src/auctionManager.js';
+import * as utils from '../src/utils.js';
 
 const ANALYTICS_CODE = 'yieldone';
 const analyticsType = 'endpoint';
 // const VERSION = '1.0.0';
-const defaultUrl = '//pool.tsukiji.iponweb.net/hba';
+const defaultUrl = 'https://pool.tsukiji.iponweb.net/hba';
 const requestedBidders = {};
 const requestedBids = {};
 const referrers = {};
@@ -20,6 +20,7 @@ let pubId = '';
 
 function makeAdUnitNameMap() {
   if (window.googletag && window.googletag.pubads) {
+    // eslint-disable-next-line no-undef
     const p = googletag.pubads();
     if (p && p.getSlots) {
       const slots = p.getSlots();

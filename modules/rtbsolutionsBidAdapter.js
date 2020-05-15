@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'rtbsolutions';
 const ENDPOINT_URL = 'https://dsp-eu-lb.rtbsolutions.pro/bid/hb';
