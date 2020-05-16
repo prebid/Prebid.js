@@ -26,8 +26,8 @@ describe('Edge Query X bid adapter tests', function () {
     },
     bidder: 'edgequeryx',
     params: {
-      accountId: "test",
-      widgetId: "test"
+      accountId: 'test',
+      widgetId: 'test'
     },
     requestId: 'efgh5678',
     transactionId: 'zsfgzzg'
