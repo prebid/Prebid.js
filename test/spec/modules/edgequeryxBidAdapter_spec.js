@@ -34,6 +34,7 @@ describe('Edge Query X bid adapter tests', function () {
   }];
   var BID_RESPONSE = {
     body: {
+      requestId: 'abcd1234',
       cpm: 22,
       width: 1,
       height: 1,
