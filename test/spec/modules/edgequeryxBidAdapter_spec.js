@@ -52,7 +52,7 @@ describe('Edge Query X bid adapter tests', function () {
       }
     });
     const request = spec.buildRequests(DEFAULT_PARAMS);
-    expect(request[0]).to.have.property('url').and.to.equal('https://deep.edgequery.io/prebix/x');
+    expect(request[0]).to.have.property('url').and.to.equal('https://deep.edgequery.io/prebid/x');
     expect(request[0]).to.have.property('method').and.to.equal('POST');
     const requestContent = JSON.parse(request[0].data);
 
@@ -75,7 +75,7 @@ describe('Edge Query X bid adapter tests', function () {
     expect(bid.creativeId).to.equal('EQXTest');
     expect(bid.currency).to.equal('EUR');
     expect(bid.netRevenue).to.equal(true);
-    expect(bid.ttl).to.equal(300);
+    expect(bid.ttl).to.equal(360);
     expect(bid.requestId).to.equal(DEFAULT_PARAMS[0].bidId);
 
     expect(function () {
