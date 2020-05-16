@@ -32,7 +32,7 @@ export const spec = {
       }
     }
     // Banner DAP validation
-    if (bid.mediaTypes.banner && (typeof bid.params.video.display === 'undefined' || !bid.params.video.display)) {
+    if (bid.mediaTypes.banner && (!bid.params.video.display)) {
       return false;
     }
 
