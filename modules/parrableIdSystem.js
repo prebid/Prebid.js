@@ -102,12 +102,14 @@ function readLegacyCookies() {
 }
 
 function migrateLegacyCookies(parrableId) {
-  writeCookie(parrableId);
-  if (parrableId.eid) {
-    storage.setCookie(LEGACY_ID_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
-  }
-  if (parrableId.ibaOptout) {
-    storage.setCookie(LEGACY_OPTOUT_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
+  if (parrableId) {
+    writeCookie(parrableId);
+    if (parrableId.eid) {
+      storage.setCookie(LEGACY_ID_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
+    }
+    if (parrableId.ibaOptout) {
+      storage.setCookie(LEGACY_OPTOUT_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
+    }
   }
 }
 
@@ -145,29 +147,36 @@ function fetchId(configParams) {
   };
 
   const callback = function (cb) {
-    const onSuccess = (response) => {
-      let parrableId = {};
-      if (response) {
-        try {
-          let responseObj = JSON.parse(response);
-          if (responseObj) {
-            if (responseObj.ccpaOptout !== true) {
-              parrableId.eid = responseObj.eid;
-            } else {
-              parrableId.ccpaOptout = true;
+    const callbacks = {
+      success: response => {
+        let parrableId = {};
+        if (response) {
+          try {
+            let responseObj = JSON.parse(response);
+            if (responseObj) {
+              if (responseObj.ccpaOptout !== true) {
+                parrableId.eid = responseObj.eid;
+              } else {
+                parrableId.ccpaOptout = true;
+              }
+              if (responseObj.ibaOptout === true) {
+                parrableId.ibaOptout = true;
+              }
+              writeCookie(responseObj);
+              cb(parrableId);
             }
-            if (responseObj.ibaOptout === true) {
-              parrableId.ibaOptout = true;
-            }
-            writeCookie(responseObj);
+          } catch (error) {
+            utils.logError(error);
+            cb();
           }
-        } catch (error) {
-          utils.logError(error);
         }
+      },
+      error: error => {
+        utils.logError(`parrableId: ID fetch encountered an error`, error);
+        cb();
       }
-      cb(parrableId);
     };
-    ajax(PARRABLE_URL, onSuccess, searchParams, options);
+    ajax(PARRABLE_URL, callbacks, searchParams, options);
   };
 
   return {

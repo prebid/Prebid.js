@@ -75,15 +75,18 @@ function removeParrableCookie() {
 
 describe('Parrable ID System', function() {
   describe('parrableIdSystem.getId() callback', function() {
+    let logErrorStub;
     let callbackSpy = sinon.spy();
 
     beforeEach(function() {
+      logErrorStub = sinon.stub(utils, 'logError');
       callbackSpy.resetHistory();
       writeParrableCookie({ eid: P_COOKIE_EID });
     });
 
     afterEach(function() {
       removeParrableCookie();
+      logErrorStub.restore();
     })
 
     it('creates xhr to Parrable that synchronizes the ID', function() {
@@ -129,6 +132,21 @@ describe('Parrable ID System', function() {
       ).callback(callbackSpy);
       uspDataHandler.setConsentData(null);
       expect(server.requests[0].url).to.contain('us_privacy=' + uspString);
+    });
+
+    it('should log an error and continue to callback if ajax request errors', function () {
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = parrableIdSubmodule.getId({partner: 'prebid'}).callback;
+      submoduleCallback(callBackSpy);
+      let request = server.requests[0];
+      expect(request.url).to.contain('h.parrable.com');
+      request.respond(
+        503,
+        null,
+        'Unavailable'
+      );
+      expect(logErrorStub.calledOnce).to.be.true;
+      expect(callBackSpy.calledOnce).to.be.true;
     });
   });
 
@@ -193,6 +211,7 @@ describe('Parrable ID System', function() {
 
     afterEach(function() {
       removeParrableCookie();
+      storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
     });
 
     it('when a stored Parrable ID exists it is added to bids', function(done) {
