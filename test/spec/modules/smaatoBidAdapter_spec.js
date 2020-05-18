@@ -1,6 +1,7 @@
 // import { assert, expect } from 'chai';
 import { spec } from 'modules/smaatoBidAdapter.js';
 // import * as _ from 'lodash';
+import { config } from 'src/config.js';
 
 const bidRequests = [
   {
@@ -15,11 +16,11 @@ const bidRequests = [
       }
     },
     adUnitCode: '/19968336/header-bid-tag-0',
-    transactionId: 'ea0aa332-a6e1-4474-8180-83720e6b87bc',
+    transactionId: 'transactionId',
     sizes: [[300, 50]],
-    bidId: '226416e6e6bf41',
-    bidderRequestId: '1f41cbdcbe58d5',
-    auctionId: '77987c3a-9be9-4e43-985a-26fc91d84724',
+    bidId: 'bidId',
+    bidderRequestId: 'bidderRequestId',
+    auctionId: 'auctionId',
     src: 'client',
     bidRequestsCount: 1,
     bidderRequestsCount: 1,
@@ -31,8 +32,8 @@ const validBidRequests = bidRequests
 
 const bidderRequest = {
   bidderCode: 'smaato',
-  auctionId: 'c594a888-6744-46c6-8b0e-d188e40e83ef',
-  bidderRequestId: '123ae4cc3eeb7e',
+  auctionId: 'auctionId',
+  bidderRequestId: 'bidderRequestId',
   bids: [
     {
       bidder: 'smaato',
@@ -46,17 +47,21 @@ const bidderRequest = {
         }
       },
       adUnitCode: '/19968336/header-bid-tag-0',
-      transactionId: 'ea0aa332-a6e1-4474-8180-83720e6b87bc',
+      transactionId: 'transactionId',
       sizes: [[300, 50]],
-      bidId: '226416e6e6bf41',
-      bidderRequestId: '1f41cbdcbe58d5',
-      auctionId: '77987c3a-9be9-4e43-985a-26fc91d84724',
+      bidId: 'bidId',
+      bidderRequestId: 'bidderRequestId',
+      auctionId: 'auctionId',
       src: 'client',
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
       bidderWinsCount: 0
     }
   ],
+  coppa: true,
+  gdprConsent: {
+    gdprApplies: true
+  },
   auctionStart: 1581064124172,
   timeout: 1000,
   refererInfo: {
@@ -69,11 +74,11 @@ const bidderRequest = {
 };
 
 const openRTBRequest = {
-  id: '5ebea288-f13a-4754-be6d-4ade66c68877',
+  id: 'auctionId',
   at: 1,
   imp: [
     {
-      id: '226416e6e6bf41',
+      id: 'bidId',
       banner: {
         w: '300',
         h: '50'
@@ -95,6 +100,12 @@ const openRTBRequest = {
     language: 'ja',
     ua:
       'Mozilla/5.0 (Linux; Android 8.0.0; ONEPLUS A5000) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.93 Mobile Safari/537.36'
+  },
+  regs: {
+    coppa: 1,
+    ext: {
+      gdpr: 1
+    }
   }
 };
 
@@ -162,14 +173,16 @@ describe('smaatoBidAdapterTest', () => {
   });
 
   describe('buildBidRequest', () => {
-    it('buildBidRequest', () => {
+    it.only('buildBidRequest', () => {
+      config.setConfig({'coppa': true});
+
       const req = spec.buildRequests(validBidRequests, bidderRequest);
       const removeUntestableAttrs = data => {
         delete data['device'];
         delete data['site']['domain'];
         delete data['site']['id'];
         delete data['site']['page'];
-        delete data['id'];
+        // delete data['id'];
         data['imp'].forEach(imp => {
           delete imp['id'];
         })

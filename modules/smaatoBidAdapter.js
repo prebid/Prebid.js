@@ -1,8 +1,11 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {ajax} from '../src/ajax.js'
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'smaato';
-const SMAATO_ENDPOINT = 'https://unifiedbidding.ad.smaato.net/oapi/unifiedbidding';
+// const SMAATO_ENDPOINT = 'https://unifiedbidding.ad.smaato.net/oapi/unifiedbidding';
+const SMAATO_ENDPOINT = 'http://localhost:3000/bidder';
 
 /**
 * Transform BidRequest to OpenRTB-formatted BidRequest Object
@@ -43,8 +46,12 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
       language: navigator.language,
       ua: navigator.userAgent
     },
-    // blocked advertiser categories
-    // bcat: utils.deepAccess(validBidRequests[0], 'params.bcat') || [],
+    regs: {
+      coppa: config.getConfig('coppa') === true ? 1 : 0,
+      ext: {
+        gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+      }
+    }
   };
 
   return JSON.stringify(request);
@@ -134,7 +141,8 @@ export const spec = {
       * @param {Bid} The bid that won the auction
       */
   onBidWon: function(bid) {
-    // Bidder specific code
+    if (!bid.nurl) { return }
+    ajax(bid.nurl, null)
   },
 
   /**
