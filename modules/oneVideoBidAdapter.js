@@ -223,16 +223,8 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.imp[0].banner.ext.minduration = bid.params.video.minduration
     }
   }
-<<<<<<< HEAD
-  if (bid.params.video.rewarded) {
-    bidData.imp[0].ext.rewarded = bid.params.video.rewarded
-  }
-  if (bid.params.site && bid.params.site.id) {
-    bidData.site.id = bid.params.site.id
-=======
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
->>>>>>> ae6b818b3e8a99420ce22641e51b2163ac485128
   }
   if (bid.params.video.sid) {
     bidData.source = {
@@ -245,6 +237,9 @@ function getRequestData(bid, consentData, bidRequest) {
           }]
         }
       }
+    }
+    if (bid.params.video.hp == 1) {
+      bidData.source.ext.schain.nodes[0].hp = bid.params.video.hp;
     }
   }
   if (bid.params.site && bid.params.site.id) {
