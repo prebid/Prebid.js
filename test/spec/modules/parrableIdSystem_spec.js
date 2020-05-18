@@ -110,6 +110,7 @@ describe('Parrable ID System', function() {
 
   describe('Parrable ID in Bid Request', function() {
     let adUnits;
+    let logErrorStub;
 
     beforeEach(function() {
       adUnits = [getAdUnitMock()];
@@ -122,10 +123,12 @@ describe('Parrable ID System', function() {
       setSubmoduleRegistry([parrableIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock());
+      logErrorStub = sinon.stub(utils, 'logError');
     });
 
     afterEach(function() {
       storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
+      logErrorStub.restore();
     });
 
     it('provides the parrableid in the bid request', function(done) {
@@ -138,6 +141,21 @@ describe('Parrable ID System', function() {
         });
         done();
       }, { adUnits });
+    });
+
+    it('should log an error and continue to callback if ajax request errors', function () {
+      let callBackSpy = sinon.spy();
+      let submoduleCallback = parrableIdSubmodule.getId({partner: 'prebid'}).callback;
+      submoduleCallback(callBackSpy);
+      let request = server.requests[0];
+      expect(request.url).to.contain('h.parrable.com');
+      request.respond(
+        503,
+        null,
+        'Unavailable'
+      );
+      expect(logErrorStub.calledOnce).to.be.true;
+      expect(callBackSpy.calledOnce).to.be.true;
     });
   });
 });
