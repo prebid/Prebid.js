@@ -219,6 +219,11 @@ function clearSlot(elementId) {
   }
 }
 
+export function testSend() {
+  sendEvent(completeObject);
+  utils.logInfo('AdxPremium Analytics - Sending without any conditions, used for testing');
+}
+
 function sendEventFallback() {
   setTimeout(function () {
     if (!requestSent) { requestSent = true; sendEvent(completeObject); utils.logInfo('AdxPremium Analytics - Sending event using fallback method.'); }
