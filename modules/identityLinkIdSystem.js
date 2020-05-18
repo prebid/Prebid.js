@@ -63,17 +63,24 @@ export const identityLinkSubmodule = {
 };
 // return envelope from third party endpoint
 function getEnvelope(url, callback) {
-  ajax(url, response => {
-    let responseObj;
-    if (response) {
-      try {
-        responseObj = JSON.parse(response);
-      } catch (error) {
-        utils.logError(error);
+  const callbacks = {
+    success: response => {
+      let responseObj;
+      if (response) {
+        try {
+          responseObj = JSON.parse(response);
+        } catch (error) {
+          utils.logError(error);
+        }
       }
+      callback(responseObj.envelope);
+    },
+    error: error => {
+      utils.logError(`identityLink: ID fetch encountered an error`, error);
+      callback();
     }
-    callback(responseObj.envelope);
-  }, undefined, {method: 'GET', withCredentials: true});
+  };
+  ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
 }
 
 submodule('userId', identityLinkSubmodule);
