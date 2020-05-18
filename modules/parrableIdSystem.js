@@ -102,12 +102,14 @@ function readLegacyCookies() {
 }
 
 function migrateLegacyCookies(parrableId) {
-  writeCookie(parrableId);
-  if (parrableId.eid) {
-    storage.setCookie(LEGACY_ID_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
-  }
-  if (parrableId.ibaOptout) {
-    storage.setCookie(LEGACY_OPTOUT_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
+  if (parrableId) {
+    writeCookie(parrableId);
+    if (parrableId.eid) {
+      storage.setCookie(LEGACY_ID_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
+    }
+    if (parrableId.ibaOptout) {
+      storage.setCookie(LEGACY_OPTOUT_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
+    }
   }
 }
 
@@ -161,10 +163,11 @@ function fetchId(configParams) {
                 parrableId.ibaOptout = true;
               }
               writeCookie(responseObj);
+              cb(parrableId);
             }
           } catch (error) {
             utils.logError(error);
-            cb(eid);
+            cb();
           }
         }
       },
