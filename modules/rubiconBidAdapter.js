@@ -114,6 +114,7 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
   code: 'rubicon',
+  aliases: ['rubicon2'],
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
@@ -575,7 +576,7 @@ export const spec = {
     const keywords = (params.keywords || []).concat(
       utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
       utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
-    data.kw = keywords.length ? keywords.join(',') : '';
+    data.kw = Array.isArray(keywords) && keywords.length ? keywords.join(',') : '';
 
     /**
      * Prebid AdSlot

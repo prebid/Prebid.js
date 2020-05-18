@@ -1,7 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import * as url from '../src/url.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
@@ -22,7 +21,7 @@ let refererInfo = getRefererInfo();
 
 let mnData = {};
 mnData.urlData = {
-  domain: url.parse(refererInfo.referer).host,
+  domain: utils.parseUrl(refererInfo.referer).host,
   page: refererInfo.referer,
   isTop: refererInfo.reachedTop
 }
@@ -287,7 +286,7 @@ function logEvent (event, data) {
     hostname: EVENT_PIXEL_URL,
     search: getLoggingData(event, data)
   };
-  utils.triggerPixel(url.format(getParams));
+  utils.triggerPixel(utils.buildUrl(getParams));
 }
 
 function clearMnData() {

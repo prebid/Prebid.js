@@ -517,6 +517,9 @@ export const spec = {
                         mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : UNDEFINED,
                         regexPattern: summary.regex || undefined
                       }
+                      if (bid.ext.prebid && bid.ext.prebid.targeting) {
+                        newBid.adserverTargeting = bid.ext.prebid.targeting
+                      }
                       break;
                     default:
                       requestData.imp.forEach(function(impObj) {

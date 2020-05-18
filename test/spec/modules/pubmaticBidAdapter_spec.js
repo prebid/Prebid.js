@@ -90,6 +90,9 @@ describe('PubMatic adapter', function () {
 
     firstResponse = {
       'seat': 'seat-id',
+      'ext': {
+        'buyid': 'BUYER-ID-987'
+      },
       'bid': [{
         'id': '74858439-49D7-4169-BA5D-44A046315B2F',
         'impid': '23acc48ad47af5',
@@ -106,6 +109,9 @@ describe('PubMatic adapter', function () {
       }]
     };
     secoundResponse = {
+      'ext': {
+        'buyid': 'BUYER-ID-789'
+      },
       'bid': [{
         'id': '74858439-49D7-4169-BA5D-44A046315BEF',
         'impid': '22bddb28db77e',
@@ -780,6 +786,70 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
+
+      it('Merge the device info from config', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            device: {
+              'newkey': 'new-device-data'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.device.js).to.equal(1);
+        expect(data.device.dnt).to.equal((navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0);
+        expect(data.device.h).to.equal(screen.height);
+        expect(data.device.w).to.equal(screen.width);
+        expect(data.device.language).to.equal(navigator.language);
+        expect(data.device.newkey).to.equal('new-device-data');// additional data from config
+        sandbox.restore();
+      });
+
+      it('Merge the device info from config; data from config overrides the info we have gathered', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            device: {
+              newkey: 'new-device-data',
+              language: 'MARATHI'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.device.js).to.equal(1);
+        expect(data.device.dnt).to.equal((navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0);
+        expect(data.device.h).to.equal(screen.height);
+        expect(data.device.w).to.equal(screen.width);
+        expect(data.device.language).to.equal('MARATHI');// // data overriding from config
+        expect(data.device.newkey).to.equal('new-device-data');// additional data from config
+        sandbox.restore();
+      });
+
+      it('Set app from config, copy publisher and ext from site, unset site', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            app: {
+              bundle: 'org.prebid.mobile.demoapp',
+              domain: 'prebid.org'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.app.bundle).to.equal('org.prebid.mobile.demoapp');
+        expect(data.app.domain).to.equal('prebid.org');
+        expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
+        expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+        expect(data.site).to.not.exist;
+        sandbox.restore();
+      });
 
       it('Request params check: without adSlot', function () {
         delete bidRequests[0].params.adSlot;
@@ -2631,202 +2701,277 @@ describe('PubMatic adapter', function () {
       let request = spec.buildRequests(bidRequests);
       let updateBiResponse = bidResponses;
       updateBiResponse.body.seatbid[0].bid[0].ext.deal_channel = 11;
-
       let response = spec.interpretResponse(updateBiResponse, request);
-
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].dealChannel).to.equal(null);
     });
 
-    it('should add a dummy bid when, empty bid is returned by hbopenbid', () => {
-      let request = spec.buildRequests(bidRequests);
-      let response = spec.interpretResponse(emptyBidResponse, request);
-
-      request = JSON.parse(request.data);
-      expect(response).to.exist.and.be.an('array').with.length.above(0);
-      expect(response[0].requestId).to.equal(request.imp[0].id);
-      expect(response[0].width).to.equal(0);
-      expect(response[0].height).to.equal(0);
-      expect(response[0].ttl).to.equal(300);
-      expect(response[0].ad).to.equal('');
-      expect(response[0].creativeId).to.equal(0);
-      expect(response[0].netRevenue).to.equal(false);
-      expect(response[0].cpm).to.equal(0);
-      expect(response[0].currency).to.equal('USD');
-      expect(response[0].referrer).to.equal(request.site && request.site.ref ? request.site.ref : '');
-    });
-
-    it('should add one dummy & one original bid if partial response come from hbopenbid', () => {
-      let request = spec.buildRequests([firstBid, secoundBid]);
-      let response = spec.interpretResponse({
-        'body': {
-          'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
-          'seatbid': [firstResponse]
+    describe('Response checking', function () {
+      it('should check for valid response values', function () {
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        let response = spec.interpretResponse(bidResponses, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
+        expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
+        expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
+        expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
+        if (bidResponses.body.seatbid[0].bid[0].crid) {
+          expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].crid);
+        } else {
+          expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
         }
-      }, request);
+        expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
+        expect(response[0].currency).to.equal('USD');
+        expect(response[0].netRevenue).to.equal(false);
+        expect(response[0].ttl).to.equal(300);
+        expect(response[0].meta.networkId).to.equal(123);
+        expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
+        expect(response[0].meta.buyerId).to.equal(976);
+        expect(response[0].meta.clickUrl).to.equal('blackrock.com');
+        expect(response[0].referrer).to.include(data.site.ref);
+        expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
+        expect(response[0].pm_seat).to.equal(bidResponses.body.seatbid[0].seat);
+        expect(response[0].pm_dspid).to.equal(bidResponses.body.seatbid[0].bid[0].ext.dspid);
 
-      request = JSON.parse(request.data);
-      expect(response).to.exist.and.be.an('array').with.length.above(0);
-      expect(response.length).to.equal(2);
-      expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
-      expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
-      expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
-      expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
-      if (bidResponses.body.seatbid[0].bid[0].crid) {
-        expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].crid);
-      } else {
-        expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
-      }
-      expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
-      expect(response[0].currency).to.equal('USD');
-      expect(response[0].netRevenue).to.equal(false);
-      expect(response[0].ttl).to.equal(300);
-      expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
-      expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
-
-      expect(response[1].requestId).to.equal(request.imp[1].id);
-      expect(response[1].width).to.equal(0);
-      expect(response[1].height).to.equal(0);
-      expect(response[1].ttl).to.equal(300);
-      expect(response[1].ad).to.equal('');
-      expect(response[1].creativeId).to.equal(0);
-      expect(response[1].netRevenue).to.equal(false);
-      expect(response[1].cpm).to.equal(0);
-      expect(response[1].currency).to.equal('USD');
-      expect(response[1].referrer).to.equal(request.site && request.site.ref ? request.site.ref : '');
-    });
-
-    it('should responsed bid if partial response come from hbopenbid', () => {
-      let request = spec.buildRequests([firstBid]);
-      let response = spec.interpretResponse(bidResponses, request);
-
-      request = JSON.parse(request.data);
-      expect(response.length).to.equal(1);
-      expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
-      expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
-      expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
-      expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
-      if (bidResponses.body.seatbid[0].bid[0].crid) {
-        expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].crid);
-      } else {
-        expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
-      }
-      expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
-      expect(response[0].currency).to.equal('USD');
-      expect(response[0].netRevenue).to.equal(false);
-      expect(response[0].ttl).to.equal(300);
-      expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
-      expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
-    });
-
-    it('should have a valid native bid response', function() {
-      let request = spec.buildRequests(nativeBidRequests);
-      let data = JSON.parse(request.data);
-      data.imp[0].id = '2a5571261281d4';
-      request.data = JSON.stringify(data);
-      let response = spec.interpretResponse(nativeBidResponse, request);
-      expect(response).to.be.an('array').with.length.above(0);
-      expect(response[0].native).to.exist.and.to.be.an('object');
-      expect(response[0].mediaType).to.exist.and.to.equal('native');
-      expect(response[0].native.title).to.exist.and.to.be.an('string');
-      expect(response[0].native.image).to.exist.and.to.be.an('object');
-      expect(response[0].native.image.url).to.exist.and.to.be.an('string');
-      expect(response[0].native.image.height).to.exist;
-      expect(response[0].native.image.width).to.exist;
-      expect(response[0].native.sponsoredBy).to.exist.and.to.be.an('string');
-      expect(response[0].native.clickUrl).to.exist.and.to.be.an('string');
-    });
-
-    it('should check for valid banner mediaType in case of multiformat request', function() {
-      let request = spec.buildRequests(bidRequests);
-      let response = spec.interpretResponse(bannerBidResponse, request);
-
-      expect(response[0].mediaType).to.equal('banner');
-    });
-
-    it('should check for valid video mediaType in case of multiformat request', function() {
-      let request = spec.buildRequests(videoBidRequests);
-      let response = spec.interpretResponse(videoBidResponse, request);
-
-      expect(response[0].mediaType).to.equal('video');
-    });
-
-    it('should check for valid native mediaType in case of multiformat request', function() {
-      let request = spec.buildRequests(nativeBidRequests);
-      let response = spec.interpretResponse(nativeBidResponse, request);
-
-      expect(response[0].mediaType).to.equal('native');
-    });
-
-    describe('getUserSyncs', function() {
-      const syncurl = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=5670';
-      let sandbox;
-      beforeEach(function () {
-        sandbox = sinon.sandbox.create();
-      });
-      afterEach(function() {
-        sandbox.restore();
-      })
-
-      it('execute only if iframeEnabled', function() {
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
-          type: 'iframe', url: syncurl
-        }]);
-        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.equal(undefined);
+        expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
+        expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
+        expect(response[1].width).to.equal(bidResponses.body.seatbid[1].bid[0].w);
+        expect(response[1].height).to.equal(bidResponses.body.seatbid[1].bid[0].h);
+        if (bidResponses.body.seatbid[1].bid[0].crid) {
+          expect(response[1].creativeId).to.equal(bidResponses.body.seatbid[1].bid[0].crid);
+        } else {
+          expect(response[1].creativeId).to.equal(bidResponses.body.seatbid[1].bid[0].id);
+        }
+        expect(response[1].dealId).to.equal(bidResponses.body.seatbid[1].bid[0].dealid);
+        expect(response[1].currency).to.equal('USD');
+        expect(response[1].netRevenue).to.equal(false);
+        expect(response[1].ttl).to.equal(300);
+        expect(response[1].meta.networkId).to.equal(422);
+        expect(response[1].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-789');
+        expect(response[1].meta.buyerId).to.equal(832);
+        expect(response[1].meta.clickUrl).to.equal('hivehome.com');
+        expect(response[1].referrer).to.include(data.site.ref);
+        expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
+        expect(response[1].pm_seat).to.equal(bidResponses.body.seatbid[1].seat || null);
+        expect(response[1].pm_dspid).to.equal(bidResponses.body.seatbid[1].bid[0].ext.dspid);
       });
 
-      it('CCPA/USP', function() {
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&us_privacy=1NYN`
-        }]);
+      it('should add a dummy bid when, empty bid is returned by hbopenbid', () => {
+        let request = spec.buildRequests(bidRequests);
+        let response = spec.interpretResponse(emptyBidResponse, request);
+
+        request = JSON.parse(request.data);
+        expect(response).to.exist.and.be.an('array').with.length.above(0);
+        expect(response[0].requestId).to.equal(request.imp[0].id);
+        expect(response[0].width).to.equal(0);
+        expect(response[0].height).to.equal(0);
+        expect(response[0].ttl).to.equal(300);
+        expect(response[0].ad).to.equal('');
+        expect(response[0].creativeId).to.equal(0);
+        expect(response[0].netRevenue).to.equal(false);
+        expect(response[0].cpm).to.equal(0);
+        expect(response[0].currency).to.equal('USD');
+        expect(response[0].referrer).to.equal(request.site && request.site.ref ? request.site.ref : '');
       });
 
-      it('GDPR', function() {
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&gdpr=1&gdpr_consent=foo`
-        }]);
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&gdpr=0&gdpr_consent=foo`
-        }]);
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&gdpr=1&gdpr_consent=`
-        }]);
+      it('should add one dummy & one original bid if partial response come from hbopenbid', () => {
+        let request = spec.buildRequests([firstBid, secoundBid]);
+        let response = spec.interpretResponse({
+          'body': {
+            'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+            'seatbid': [firstResponse]
+          }
+        }, request);
+
+        request = JSON.parse(request.data);
+        expect(response).to.exist.and.be.an('array').with.length.above(0);
+        expect(response.length).to.equal(2);
+        expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
+        expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
+        expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
+        expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
+        if (bidResponses.body.seatbid[0].bid[0].crid) {
+          expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].crid);
+        } else {
+          expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
+        }
+        expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
+        expect(response[0].currency).to.equal('USD');
+        expect(response[0].netRevenue).to.equal(false);
+        expect(response[0].ttl).to.equal(300);
+        expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
+        expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
+
+        expect(response[1].requestId).to.equal(request.imp[1].id);
+        expect(response[1].width).to.equal(0);
+        expect(response[1].height).to.equal(0);
+        expect(response[1].ttl).to.equal(300);
+        expect(response[1].ad).to.equal('');
+        expect(response[1].creativeId).to.equal(0);
+        expect(response[1].netRevenue).to.equal(false);
+        expect(response[1].cpm).to.equal(0);
+        expect(response[1].currency).to.equal('USD');
+        expect(response[1].referrer).to.equal(request.site && request.site.ref ? request.site.ref : '');
       });
 
-      it('COPPA: true', function() {
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'coppa': true
-          };
-          return config[key];
+      it('should responsed bid if partial response come from hbopenbid', () => {
+        let request = spec.buildRequests([firstBid]);
+        let response = spec.interpretResponse(bidResponses, request);
+
+        request = JSON.parse(request.data);
+        expect(response.length).to.equal(1);
+        expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
+        expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
+        expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
+        expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
+        if (bidResponses.body.seatbid[0].bid[0].crid) {
+          expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].crid);
+        } else {
+          expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
+        }
+        expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
+        expect(response[0].currency).to.equal('USD');
+        expect(response[0].netRevenue).to.equal(false);
+        expect(response[0].ttl).to.equal(300);
+        expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
+        expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
+      });
+
+      it('should have a valid native bid response', function() {
+        let request = spec.buildRequests(nativeBidRequests);
+        let data = JSON.parse(request.data);
+        data.imp[0].id = '2a5571261281d4';
+        request.data = JSON.stringify(data);
+        let response = spec.interpretResponse(nativeBidResponse, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].native).to.exist.and.to.be.an('object');
+        expect(response[0].mediaType).to.exist.and.to.equal('native');
+        expect(response[0].native.title).to.exist.and.to.be.an('string');
+        expect(response[0].native.image).to.exist.and.to.be.an('object');
+        expect(response[0].native.image.url).to.exist.and.to.be.an('string');
+        expect(response[0].native.image.height).to.exist;
+        expect(response[0].native.image.width).to.exist;
+        expect(response[0].native.sponsoredBy).to.exist.and.to.be.an('string');
+        expect(response[0].native.clickUrl).to.exist.and.to.be.an('string');
+      });
+
+      it('should check for valid banner mediaType in case of multiformat request', function() {
+        let request = spec.buildRequests(bidRequests);
+        let response = spec.interpretResponse(bannerBidResponse, request);
+
+        expect(response[0].mediaType).to.equal('banner');
+      });
+
+      it('should check for valid video mediaType in case of multiformat request', function() {
+        let request = spec.buildRequests(videoBidRequests);
+        let response = spec.interpretResponse(videoBidResponse, request);
+
+        expect(response[0].mediaType).to.equal('video');
+      });
+
+      it('should check for valid native mediaType in case of multiformat request', function() {
+        let request = spec.buildRequests(nativeBidRequests);
+        let response = spec.interpretResponse(nativeBidResponse, request);
+
+        expect(response[0].mediaType).to.equal('native');
+      });
+
+      describe('getUserSyncs', function() {
+        const syncurl_iframe = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=5670';
+        const syncurl_image = 'https://image8.pubmatic.com/AdServer/ImgSync?p=5670';
+        let sandbox;
+        beforeEach(function () {
+          sandbox = sinon.sandbox.create();
         });
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&coppa=1`
-        }]);
-      });
-
-      it('COPPA: false', function() {
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'coppa': false
-          };
-          return config[key];
+        afterEach(function() {
+          sandbox.restore();
         });
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}`
-        }]);
-      });
 
-      it('GDPR + COPPA:true + CCPA/USP', function() {
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'coppa': true
-          };
-          return config[key];
+        it('execute as per config', function() {
+          expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
+            type: 'iframe', url: syncurl_iframe
+          }]);
+          expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+            type: 'image', url: syncurl_image
+          }]);
         });
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
-          type: 'iframe', url: `${syncurl}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
-        }]);
+
+        it('CCPA/USP', function() {
+          expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&us_privacy=1NYN`
+          }]);
+          expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, '1NYN')).to.deep.equal([{
+            type: 'image', url: `${syncurl_image}&us_privacy=1NYN`
+          }]);
+        });
+
+        it('GDPR', function() {
+          expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo`
+          }]);
+          expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&gdpr=0&gdpr_consent=foo`
+          }]);
+          expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=`
+          }]);
+
+          expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+            type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo`
+          }]);
+          expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+            type: 'image', url: `${syncurl_image}&gdpr=0&gdpr_consent=foo`
+          }]);
+          expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+            type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=`
+          }]);
+        });
+
+        it('COPPA: true', function() {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': true
+            };
+            return config[key];
+          });
+          expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&coppa=1`
+          }]);
+          expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+            type: 'image', url: `${syncurl_image}&coppa=1`
+          }]);
+        });
+
+        it('COPPA: false', function() {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': false
+            };
+            return config[key];
+          });
+          expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+          expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+            type: 'image', url: `${syncurl_image}`
+          }]);
+        });
+
+        it('GDPR + COPPA:true + CCPA/USP', function() {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': true
+            };
+            return config[key];
+          });
+          expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
+          }]);
+          expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
+            type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
+          }]);
+        });
       });
     });
   });
