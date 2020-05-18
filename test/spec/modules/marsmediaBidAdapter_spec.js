@@ -38,7 +38,7 @@ describe('marsmedia adapter tests', function () {
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('https://hb.azeriondigital.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
+      expect(bidRequest.url).to.have.string('https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);
@@ -61,7 +61,8 @@ describe('marsmedia adapter tests', function () {
             'h': 250,
             'adm': '<div>My Compelling Ad</div>',
             'price': 1,
-            'crid': 'cr-cfy24'
+            'crid': 'cr-cfy24',
+            'nurl': '<!-- NURL -->'
           }
         ]
       };
@@ -108,7 +109,7 @@ describe('marsmedia adapter tests', function () {
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('https://hb.azeriondigital.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
+      expect(bidRequest.url).to.have.string('https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);
@@ -140,7 +141,8 @@ describe('marsmedia adapter tests', function () {
             'cid': '467415',
             'crid': 'cr-vid',
             'w': 800,
-            'h': 600
+            'h': 600,
+            'nurl': '<!-- NURL -->'
           }
         ]
       };
@@ -173,7 +175,8 @@ describe('marsmedia adapter tests', function () {
             'cid': '467415',
             'crid': 'cr-vid',
             'w': 800,
-            'h': 600
+            'h': 600,
+            'nurl': '<!-- NURL -->'
           }
         ]
       };
@@ -602,6 +605,23 @@ describe('marsmedia adapter tests', function () {
   describe('getUserSyncs', function () {
     it('returns an empty string', function () {
       expect(r1adapter.getUserSyncs()).to.deep.equal([]);
+    });
+  });
+
+  describe('on bidWon', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onBidWon({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
     });
   });
 });
