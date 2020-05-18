@@ -164,6 +164,64 @@ const interpretedBids = [
 ];
 
 describe('smaatoBidAdapterTest', () => {
+  describe('buildRequests1', function () {
+    const bidRequests = [{
+      bidder: 'smaato',
+      params: {
+        publisherId: '1100042525',
+        adspaceId: '130563103'
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 50]]
+        }
+      },
+      adUnitCode: '/19968336/header-bid-tag-0',
+      transactionId: 'transactionId',
+      sizes: [[300, 50]],
+      bidId: 'bidId',
+      bidderRequestId: 'bidderRequestId',
+      auctionId: 'auctionId',
+      src: 'client',
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0
+    }];
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com/page.html',
+      }
+    };
+    const request = spec.buildRequests(bidRequests, bidderRequest);
+
+    it('sends bid request to our endpoint via POST', function () {
+      expect(request.method).to.equal('POST');
+    });
+
+    it('sends gdpr info if exists', function () {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'smaato',
+        'auctionId': 'auctionId',
+        'bidderRequestId': 'bidderRequestId',
+        'timeout': 3000,
+        gdprConsent: {
+          consentString: consentString,
+          gdprApplies: true
+        },
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+      expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number');
+      expect(data.regs.ext.gdpr).to.equal(1);
+    });
+  });
+
   describe('isBidRequestValid', () => {
     it('isBidRequestValid', () => {
       expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
@@ -173,7 +231,7 @@ describe('smaatoBidAdapterTest', () => {
   });
 
   describe('buildBidRequest', () => {
-    it.only('buildBidRequest', () => {
+    it('buildBidRequest', () => {
       config.setConfig({'coppa': true});
 
       const req = spec.buildRequests(validBidRequests, bidderRequest);
