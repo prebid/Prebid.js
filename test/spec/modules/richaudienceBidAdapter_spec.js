@@ -7,28 +7,6 @@ import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 
 describe('Richaudience adapter tests', function () {
-  var DEFAULT_PARAMS = [{
-    adUnitCode: 'test-div',
-    bidId: '2c7c8e9c900244',
-    sizes: [
-      [300, 250],
-      [300, 600],
-      [728, 90],
-      [970, 250]
-    ],
-    bidder: 'richaudience',
-    params: {
-      bidfloor: 0.5,
-      pid: 'ADb1f40rmi',
-      supplyType: 'site'
-    },
-    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
-    bidRequestsCount: 1,
-    bidderRequestId: '1858b7382993ca',
-    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
-    user: {}
-  }];
-
   var DEFAULT_PARAMS_NEW_SIZES = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
@@ -158,34 +136,12 @@ describe('Richaudience adapter tests', function () {
     }
   }
 
-  it('Verify build request', function () {
-    config.setConfig({
-      'currency': {
-        'adServerCurrency': 'USD'
-      }
-    });
-
-    const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_PARAMS_GDPR);
-
-    expect(request[0]).to.have.property('method').and.to.equal('POST');
-    const requestContent = JSON.parse(request[0].data);
-    expect(requestContent).to.have.property('sizes');
-    expect(requestContent.sizes[0]).to.have.property('w').and.to.equal(300);
-    expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(250);
-    expect(requestContent.sizes[1]).to.have.property('w').and.to.equal(300);
-    expect(requestContent.sizes[1]).to.have.property('h').and.to.equal(600);
-    expect(requestContent.sizes[2]).to.have.property('w').and.to.equal(728);
-    expect(requestContent.sizes[2]).to.have.property('h').and.to.equal(90);
-    expect(requestContent.sizes[3]).to.have.property('w').and.to.equal(970);
-    expect(requestContent.sizes[3]).to.have.property('h').and.to.equal(250);
-  });
-
   it('Referer undefined', function() {
     config.setConfig({
       'currency': {'adServerCurrency': 'USD'}
     })
 
-    const request = spec.buildRequests(DEFAULT_PARAMS, {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
         gdprApplies: true
@@ -520,7 +476,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   it('Verify interprete response', function () {
-    const request = spec.buildRequests(DEFAULT_PARAMS, {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
         gdprApplies: true
@@ -547,7 +503,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   it('no banner media response', function () {
-    const request = spec.buildRequests(DEFAULT_PARAMS, {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
         gdprApplies: true
@@ -573,7 +529,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   it('Verifies if bid request is valid', function () {
-    expect(spec.isBidRequestValid(DEFAULT_PARAMS[0])).to.equal(true);
+    expect(spec.isBidRequestValid(DEFAULT_PARAMS_NEW_SIZES[0])).to.equal(true);
     expect(spec.isBidRequestValid(DEFAULT_PARAMS_WO_OPTIONAL[0])).to.equal(true);
     expect(spec.isBidRequestValid({})).to.equal(false);
     expect(spec.isBidRequestValid({
@@ -635,13 +591,14 @@ describe('Richaudience adapter tests', function () {
     })).to.equal(true);
   });
 
-  it('Verifies user sync', function () {
+  it('Verifies user syncs iframe', function () {
     var syncs = spec.getUserSyncs({
       iframeEnabled: true
     }, [BID_RESPONSE], {
       consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
       gdprApplies: true
     });
+
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
     syncs = spec.getUserSyncs({
@@ -670,10 +627,13 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: true
       }
     });
+  });
 
-    syncs = spec.getUserSyncs({
+  it('Verifies user syncs image', function () {
+    var syncs = spec.getUserSyncs({
+      iframeEnabled: false,
       pixelEnabled: true
-    }, [], {
+    }, [BID_RESPONSE], {
       consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
       referer: 'http://domain.com',
       gdprApplies: true
@@ -682,8 +642,9 @@ describe('Richaudience adapter tests', function () {
     expect(syncs[0].type).to.equal('image');
 
     syncs = spec.getUserSyncs({
+      iframeEnabled: false,
       pixelEnabled: true
-    }, [], {
+    }, [BID_RESPONSE], {
       consentString: '',
       referer: 'http://domain.com',
       gdprApplies: true
@@ -692,6 +653,7 @@ describe('Richaudience adapter tests', function () {
     expect(syncs[0].type).to.equal('image');
 
     syncs = spec.getUserSyncs({
+      iframeEnabled: false,
       pixelEnabled: true
     }, [], {
       consentString: null,
