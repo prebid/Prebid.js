@@ -381,8 +381,9 @@ export function preloadBidderMappingFile(fn, adUnits) {
       let info = bidderSpec.getSpec().getMappingFileInfo();
       let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
       let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
-      let mappingData = storage.getDataFromLocalStorage(key);
-      if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+      let mappingDataStr = storage.getDataFromLocalStorage(key);
+      let mappingData = mappingDataStr ? JSON.parse(mappingDataStr) : undefined;
+      if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
         ajax(info.url,
           {
             success: (response) => {

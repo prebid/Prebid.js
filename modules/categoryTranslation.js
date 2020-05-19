@@ -67,8 +67,9 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
 
 export function initTranslation(url, localStorageKey) {
   setupBeforeHookFnOnce(addBidResponse, getAdserverCategoryHook, 50);
-  let mappingData = storage.getDataFromLocalStorage(localStorageKey);
-  if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+  let mappingDataStr = storage.getDataFromLocalStorage(localStorageKey);
+  let mappingData = mappingDataStr ? JSON.parse(mappingDataStr) : undefined;
+  if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
     ajax(url,
       {
         success: (response) => {
