@@ -68,6 +68,9 @@ describe('Avocet adapter', function () {
             params: {
               placement: '012345678901234567890123',
             },
+            userId: {
+              id5id: 'test'
+            }
           },
           {
             bidder: 'avct',
@@ -100,6 +103,7 @@ describe('Avocet adapter', function () {
           ],
         },
       });
+      expect(requestData.ext.id5id).to.equal('test');
       expect(requestData.bids).to.be.an('array');
       expect(requestData.bids.length).to.equal(2);
     });
@@ -142,20 +146,6 @@ describe('Avocet adapter', function () {
     });
   });
 });
-
-const exampleVideoBidRequest = {
-  bidder: 'avct',
-  params: {
-    placement: '012345678901234567890123',
-  },
-};
-
-const exampleBannerBidRequest = {
-  bidder: 'avct',
-  params: {
-    placement: '012345678901234567890123',
-  },
-};
 
 const exampleBidderRequest = {
   schain: {

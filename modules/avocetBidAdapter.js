@@ -75,6 +75,12 @@ export const spec = {
       schain = bidderRequest.schain;
     }
 
+    // ID5 identifier
+    let id5id;
+    if (bidRequests[0].userId && bidRequests[0].userId.id5id) {
+      id5id = bidRequests[0].userId.id5id;
+    }
+
     // Build the avocet ext object
     const ext = {
       currency,
@@ -84,11 +90,27 @@ export const spec = {
       schain,
       publisherDomain,
       fpd,
+      id5id,
     };
+
+    // Extract properties from bidderRequest
+    const {
+      auctionId,
+      auctionStart,
+      bidderCode,
+      bidderRequestId,
+      refererInfo,
+      timeout,
+    } = bidderRequest;
 
     // Construct payload
     const payload = JSON.stringify({
-      ...bidderRequest,
+      auctionId,
+      auctionStart,
+      bidderCode,
+      bidderRequestId,
+      refererInfo,
+      timeout,
       bids: bidRequests,
       ext,
     });
@@ -100,7 +122,11 @@ export const spec = {
     };
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    if (!serverResponse || !serverResponse.body || typeof serverResponse.body !== 'object') {
+    if (
+      !serverResponse ||
+      !serverResponse.body ||
+      typeof serverResponse.body !== 'object'
+    ) {
       return [];
     }
     if (Array.isArray(serverResponse.body)) {
