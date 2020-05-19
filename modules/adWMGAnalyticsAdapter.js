@@ -1,6 +1,6 @@
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
-import CONSTANTS from '../src/constants';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+import CONSTANTS from '../src/constants.json';
 const analyticsType = 'endpoint';
 const url = 'https://analytics.wmgroup.us/analytic/collection';
 const {
