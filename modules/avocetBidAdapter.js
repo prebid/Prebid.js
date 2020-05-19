@@ -1,22 +1,22 @@
-import { config } from "../src/config";
-import { registerBidder } from "../src/adapters/bidderFactory";
-import { BANNER, VIDEO } from "../src/mediaTypes";
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = "avct";
-const DEFAULT_BASE_URL = "https://ads.avct.cloud";
-const DEFAULT_PREBID_PATH = "/prebid";
+const BIDDER_CODE = 'avct';
+const DEFAULT_BASE_URL = 'https://ads.avct.cloud';
+const DEFAULT_PREBID_PATH = '/prebid';
 
 function getPrebidURL() {
-  let host = config.getConfig("avct.baseUrl");
-  if (host && typeof host === "string") {
+  let host = config.getConfig('avct.baseUrl');
+  if (host && typeof host === 'string') {
     return `${host}${getPrebidPath()}`;
   }
   return `${DEFAULT_BASE_URL}${getPrebidPath()}`;
 }
 
 function getPrebidPath() {
-  let prebidPath = config.getConfig("avct.prebidPath");
-  if (prebidPath && typeof prebidPath === "string") {
+  let prebidPath = config.getConfig('avct.prebidPath');
+  if (prebidPath && typeof prebidPath === 'string') {
     return prebidPath;
   }
   return DEFAULT_PREBID_PATH;
@@ -35,7 +35,7 @@ export const spec = {
     return (
       !!bid.params &&
       !!bid.params.placement &&
-      typeof bid.params.placement === "string" &&
+      typeof bid.params.placement === 'string' &&
       bid.params.placement.length === 24
     );
   },
@@ -47,13 +47,13 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     // Get currency from config
-    const currency = config.getConfig("currency.adServerCurrency");
+    const currency = config.getConfig('currency.adServerCurrency');
 
     // Publisher domain from config
-    const publisherDomain = config.getConfig("publisherDomain");
+    const publisherDomain = config.getConfig('publisherDomain');
 
     // First-party data from config
-    const fpd = config.getConfig("fpd");
+    const fpd = config.getConfig('fpd');
 
     // GDPR status and TCF consent string
     let tcfConsentString;
@@ -94,13 +94,13 @@ export const spec = {
     });
 
     return {
-      method: "POST",
+      method: 'POST',
       url: getPrebidURL(),
       data: payload,
     };
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    if (!serverResponse || !serverResponse.body || typeof serverResponse.body !== "object") {
+    if (!serverResponse || !serverResponse.body || typeof serverResponse.body !== 'object') {
       return [];
     }
     if (Array.isArray(serverResponse.body)) {
