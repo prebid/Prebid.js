@@ -51,7 +51,6 @@ export const spec = {
         h: size[1]
       }));
 
-
       var payloadString = JSON.stringify(payload);
 
       return {
@@ -93,7 +92,6 @@ export const spec = {
     }
     return bidResponses;
   }
-
 
 };
 
