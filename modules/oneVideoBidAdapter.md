@@ -35,6 +35,7 @@ Connects to One Video demand source to fetch bids.
                 delivery: [2],
                 playbackmethod: [1,5],
                 sid: <scpid>,
+                hp:1,
                 rewarded: 1,
                 placement: 1,
                 inventoryid: 123,
