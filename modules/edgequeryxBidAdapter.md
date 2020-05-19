@@ -1,7 +1,7 @@
 # Overview
 
 ```
-Module Name: Edge, Query X Bidder Adapter
+Module Name: Edge Query X Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: contact@edgequery.com
 ```
