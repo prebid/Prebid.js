@@ -47,6 +47,7 @@ describe('OneVideoBidAdapter', function () {
           sid: 134,
           rewarded: 1,
           placement: 1,
+          hp: 1,
           inventoryid: 123
         },
         site: {
@@ -264,6 +265,7 @@ describe('OneVideoBidAdapter', function () {
       const data = requests[0].data;
       expect(data.source.ext.schain.nodes[0].sid).to.equal(bidRequest.params.video.sid);
       expect(data.source.ext.schain.nodes[0].rid).to.equal(data.id);
+      expect(data.source.ext.schain.nodes[0].hp).to.equal(bidRequest.params.video.hp);
     });
   });
   describe('should send banner object', function () {
