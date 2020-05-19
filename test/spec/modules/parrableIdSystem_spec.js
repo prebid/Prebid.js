@@ -202,6 +202,181 @@ describe.only('Parrable ID System', function() {
     });
   });
 
+  describe('timezone filtering', function() {
+    before(function() {
+      sinon.stub(Intl, 'DateTimeFormat');
+    });
+
+    after(function() {
+      Intl.DateTimeFormat.restore();
+    });
+
+    it('permits an impression when no timezoneFilter is configured', function() {
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+      })).to.have.property('callback');
+    });
+
+    it('permits an impression from a blocked timezone when a cookie exists', function() {
+      const blockedZone = 'Antarctica/South_Pole';
+      const resolvedOptions = sinon.stub().returns({ timeZone: blockedZone });
+      Intl.DateTimeFormat.returns({ resolvedOptions });
+
+      writeParrableCookie({ eid: P_COOKIE_EID });
+
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+        timezoneFilter: {
+          blockedZones: [ blockedZone ]
+        }
+      })).to.have.property('callback');
+      expect(resolvedOptions.called).to.equal(false);
+
+      removeParrableCookie();
+    })
+
+    it('permits an impression from an allowed timezone', function() {
+      const allowedZone = 'America/New_York';
+      const resolvedOptions = sinon.stub().returns({ timeZone: allowedZone });
+      Intl.DateTimeFormat.returns({ resolvedOptions });
+
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+        timezoneFilter: {
+          allowedZones: [ allowedZone ]
+        }
+      })).to.have.property('callback');
+      expect(resolvedOptions.called).to.equal(true);
+    });
+
+    it('permits an impression from a timezone that is not blocked', function() {
+      const blockedZone = 'America/New_York';
+      const resolvedOptions = sinon.stub().returns({ timeZone: 'Iceland' });
+      Intl.DateTimeFormat.returns({ resolvedOptions });
+
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+        timezoneFilter: {
+          blockedZones: [ blockedZone ]
+        }
+      })).to.have.property('callback');
+      expect(resolvedOptions.called).to.equal(true);
+    });
+
+    it('does not permit an impression from a blocked timezone', function() {
+      const blockedZone = 'America/New_York';
+      const resolvedOptions = sinon.stub().returns({ timeZone: blockedZone });
+      Intl.DateTimeFormat.returns({ resolvedOptions });
+
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+        timezoneFilter: {
+          blockedZones: [ blockedZone ]
+        }
+      })).to.equal(null);
+      expect(resolvedOptions.called).to.equal(true);
+    });
+
+    it('does not permit an impression from a blocked timezone even when also allowed', function() {
+      const timezone = 'America/New_York';
+      const resolvedOptions = sinon.stub().returns({ timeZone: timezone });
+      Intl.DateTimeFormat.returns({ resolvedOptions });
+
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+        timezoneFilter: {
+          allowedZones: [ timezone ],
+          blockedZones: [ timezone ]
+        }
+      })).to.equal(null);
+      expect(resolvedOptions.called).to.equal(true);
+    });
+  });
+
+  describe('timezone offset filtering', function() {
+    before(function() {
+      sinon.stub(Date.prototype, 'getTimezoneOffset');
+    });
+
+    afterEach(function() {
+      Date.prototype.getTimezoneOffset.reset();
+    })
+
+    after(function() {
+      Date.prototype.getTimezoneOffset.restore();
+    });
+
+    it('permits an impression from a blocked offset when a cookie exists', function() {
+      const blockedOffset = -4;
+      Date.prototype.getTimezoneOffset.returns(blockedOffset * 60);
+
+      writeParrableCookie({ eid: P_COOKIE_EID });
+
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+        timezoneFilter: {
+          blockedOffsets: [ blockedOffset ]
+        }
+      })).to.have.property('callback');
+
+      removeParrableCookie();
+    });
+
+    it('permits an impression from an allowed offset', function() {
+      const allowedOffset = -5;
+      Date.prototype.getTimezoneOffset.returns(allowedOffset * 60);
+
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+        timezoneFilter: {
+          allowedOffsets: [ allowedOffset ]
+        }
+      })).to.have.property('callback');
+      expect(Date.prototype.getTimezoneOffset.called).to.equal(true);
+    });
+
+    it('permits an impression from an offset that is not blocked', function() {
+      const allowedOffset = -5;
+      const blockedOffset = 5;
+      Date.prototype.getTimezoneOffset.returns(allowedOffset * 60);
+
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+        timezoneFilter: {
+          blockedOffsets: [ blockedOffset ]
+        }
+      })).to.have.property('callback');
+      expect(Date.prototype.getTimezoneOffset.called).to.equal(true);
+    });
+
+    it('does not permit an impression from a blocked offset', function() {
+      const blockedOffset = -5;
+      Date.prototype.getTimezoneOffset.returns(blockedOffset * 60);
+
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+        timezoneFilter: {
+          blockedOffsets: [ blockedOffset ]
+        }
+      })).to.equal(null);
+      expect(Date.prototype.getTimezoneOffset.called).to.equal(true);
+    });
+
+    it('does not permit an impression from a blocked offset even when also allowed', function() {
+      const offset = -5;
+      Date.prototype.getTimezoneOffset.returns(offset * 60);
+
+      expect(parrableIdSubmodule.getId({
+        partner: 'prebid-test',
+        timezoneFilter: {
+          allowedOffset: [ offset ],
+          blockedOffsets: [ offset ]
+        }
+      })).to.equal(null);
+      expect(Date.prototype.getTimezoneOffset.called).to.equal(true);
+    });
+  });
+
   describe('userId requestBids hook', function() {
     let adUnits;
 
