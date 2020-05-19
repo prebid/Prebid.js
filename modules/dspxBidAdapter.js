@@ -37,9 +37,25 @@ export const spec = {
         ref: referrer,
         bid_id: bidId,
       };
+
       if (params.pfilter !== undefined) {
         payload.pfilter = params.pfilter;
       }
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        if (payload.pfilter !== undefined) {
+          if (!payload.pfilter.gdpr_consent) {
+            payload.pfilter.gdpr_consent = bidderRequest.gdprConsent.consentString;
+            payload.pfilter.gdpr = bidderRequest.gdprConsent.gdprApplies;
+          }
+        } else {
+          payload.pfilter = {
+            'gdpr_consent': bidderRequest.gdprConsent.consentString,
+            'gdpr': bidderRequest.gdprConsent.gdprApplies
+          };
+        }
+      }
+
       if (params.bcat !== undefined) {
         payload.bcat = params.bcat;
       }
