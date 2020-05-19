@@ -27,6 +27,39 @@ describe('nextrollBidAdapter', function() {
   let bidWithoutValidId = { id: '' };
   let bidWithoutId = { params: { zoneId: 'zone1' } };
 
+  describe('nativeBidRequest', () => {
+    it('validates native spec', () => {
+      let nativeAdUnit = [{
+        bidder: 'nextroll',
+        adUnitCode: 'adunit-code',
+        bidId: 'bid_id',
+        mediaTypes: {
+          native: {
+            title: {required: true, len: 80},
+            image: {required: true, sizes: [728, 90]},
+            sponsoredBy: {required: false, len: 20}
+          }
+        },
+        params: {
+          bidfloor: 1,
+          zoneId: 'zone1',
+          publisherId: 'publisher_id'
+        }
+      }];
+
+      let request = spec.buildRequests(nativeAdUnit)
+      console.log(JSON.stringify(request))
+      let assets = request[0].data.imp.native.request.native.assets
+
+      let excptedAssets = [
+        {id: 1, required: true, title: {len: 80}},
+        {id: 2, required: true, img: {w: 728, h: 90, wmin: 1, hmin: 1, type: 3}},
+        {id: 5, required: false, data: {len: 20, type: 1}}
+      ]
+      expect(assets).to.be.deep.equal(excptedAssets)
+    })
+  })
+
   describe('isBidRequestValid', function() {
     it('validates the bids correctly when the bid has an id', function() {
       expect(spec.isBidRequestValid(validBid)).to.be.true;
