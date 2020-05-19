@@ -320,7 +320,7 @@ function interpretResponse (serverResponse, bidRequest) {
     bidResponses.push({
       // dealId: DEAL_ID,
       // referrer: REFERER,
-      ...(product === 7 && { vastXml: markup }),
+      ...(product === 7 && { vastXml: markup, mediaType: 'video' }),
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
