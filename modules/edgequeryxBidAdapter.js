@@ -38,9 +38,7 @@ export const spec = {
         accountId: bid.params.accountId,
         widgetId: bid.params.widgetId,
         currencyCode: 'EUR',
-        appName: bid.params.appName && bid.params.appName !== '' ? bid.params.appName : undefined,
         tagId: bid.adUnitCode,
-        pageDomain: bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer ? bidderRequest.refererInfo.referer : undefined,
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
@@ -53,14 +51,6 @@ export const spec = {
         h: size[1]
       }));
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-        payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
-      }
-
-      if (bidderRequest && bidderRequest.uspConsent) {
-        payload.us_privacy = bidderRequest.uspConsent;
-      }
 
       var payloadString = JSON.stringify(payload);
 
@@ -102,18 +92,9 @@ export const spec = {
       utils.logError('Error while parsing Edge Query X response', error);
     }
     return bidResponses;
-  },
-
-  getUserSyncs: function (syncOptions, serverResponses) {
-    const syncs = [];
-    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
-      syncs.push({
-        type: 'iframe',
-        url: serverResponses[0].body.cSyncUrl
-      });
-    }
-    return syncs;
   }
+
+
 };
 
 registerBidder(spec);
