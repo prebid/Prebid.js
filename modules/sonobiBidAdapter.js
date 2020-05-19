@@ -143,9 +143,15 @@ export const spec = {
       return null;
     }
 
+    let url = STR_ENDPOINT;
+
+    if (deepAccess(validBidRequests[0], 'params.bid_request_url')) {
+      url = deepAccess(validBidRequests[0], 'params.bid_request_url');
+    }
+
     return {
       method: 'GET',
-      url: STR_ENDPOINT,
+      url: url,
       withCredentials: true,
       data: payload,
       bidderRequests: validBidRequests

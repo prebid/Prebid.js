@@ -2,20 +2,18 @@ import {expect} from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {userSync} from 'src/userSync.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import find from 'core-js/library/fn/array/find.js';
-
-var CONSTANTS = require('src/constants.json');
+import find from 'core-js-pure/features/array/find.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
+const PBS_INTEGRATION = 'pbjs';
 
 describe('the rubicon adapter', function () {
   let sandbox,
     bidderRequest,
-    sizeMap;
+    sizeMap,
+    getFloorResponse;
 
   /**
    * @typedef {Object} sizeMapConverted
@@ -274,7 +272,7 @@ describe('the rubicon adapter', function () {
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
-
+    getFloorResponse = {};
     bidderRequest = {
       bidderCode: 'rubicon',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
@@ -411,6 +409,43 @@ describe('the rubicon adapter', function () {
           });
         });
 
+        it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
+          // default getFloor response is empty object so should not break and not send hard_floor
+          bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // not an object should work and not send
+          getFloorResponse = undefined;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR', floor: 1.0};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // make it respond with USD floor and string floor
+          getFloorResponse = {currency: 'USD', floor: '1.23'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.equal('1.23');
+
+          // make it respond with USD floor and num floor
+          getFloorResponse = {currency: 'USD', floor: 1.23};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.equal('1.23');
+        });
         it('should not send p_pos to AE if not params.position specified', function() {
 	      var noposRequest = utils.deepClone(bidderRequest);
 	      delete noposRequest.bids[0].params.position;
@@ -1444,12 +1479,46 @@ describe('the rubicon adapter', function () {
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
-          expect(post.ext.prebid).to.have.property('cache').that.is.an('object')
-          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object')
-          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean')
-          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
+          expect(post.ext.prebid).to.have.property('cache').that.is.an('object');
+          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object');
+          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
+          expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
         });
 
+        it('should correctly set bidfloor on imp when getfloor in scope', function () {
+          createVideoBidderRequest();
+          // default getFloor response is empty object so should not break and not send hard_floor
+          bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // not an object should work and not send
+          expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR', floor: 1.0};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+          // make it respond with USD floor and string floor
+          getFloorResponse = {currency: 'USD', floor: '1.23'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(1.23);
+
+          // make it respond with USD floor and num floor
+          getFloorResponse = {currency: 'USD', floor: 1.23};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(1.23);
+        });
         it('should add alias name to PBS Request', function() {
           createVideoBidderRequest();
 
@@ -1772,6 +1841,18 @@ describe('the rubicon adapter', function () {
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
         });
+
+        it('should use the integration type provided in the config instead of the default', () => {
+          createVideoBidderRequest();
+          sandbox.stub(config, 'getConfig').callsFake(function (key) {
+            const config = {
+              'rubicon.int_type': 'testType'
+            };
+            return config[key];
+          });
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
+        });
       });
 
       it('should include pbAdSlot in bid request', function () {
@@ -1852,6 +1933,12 @@ describe('the rubicon adapter', function () {
               expect(slotParams[key]).to.equal(value);
             }
           });
+        });
+
+        it('should not fail if keywords param is not an array', function () {
+          bidderRequest.bids[0].params.keywords = 'a,b,c';
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], bidderRequest);
+          expect(slotParams.kw).to.equal('');
         });
       });
 

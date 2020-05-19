@@ -9,8 +9,10 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
 import { uspDataHandler } from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'liveIntentId';
+export const storage = getStorageManager(null, MODULE_NAME);
 
 let eventFired = false;
 let liveConnect = null;
@@ -83,7 +85,7 @@ function initializeLiveConnect(configParams) {
   }
 
   // The second param is the storage object, which means that all LS & Cookie manipulation will go through PBJS utils.
-  liveConnect = LiveConnect(liveConnectConfig, utils);
+  liveConnect = LiveConnect(liveConnectConfig, storage);
   return liveConnect;
 }
 
@@ -141,17 +143,24 @@ export const liveIntentIdSubmodule = {
     // Don't do the internal ajax call, but use the composed url and fire it via PBJS ajax module
     const url = liveConnect.resolutionCallUrl();
     const result = function (callback) {
-      ajax(url, response => {
-        let responseObj = {};
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            utils.logError(error);
+      const callbacks = {
+        success: response => {
+          let responseObj = {};
+          if (response) {
+            try {
+              responseObj = JSON.parse(response);
+            } catch (error) {
+              utils.logError(error);
+            }
           }
+          callback(responseObj);
+        },
+        error: error => {
+          utils.logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
+          callback();
         }
-        callback(responseObj);
-      }, undefined, { method: 'GET', withCredentials: true });
+      };
+      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
     };
     return {callback: result};
   }

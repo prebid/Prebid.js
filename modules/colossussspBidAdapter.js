@@ -23,6 +23,19 @@ function isBidResponseValid(bid) {
   }
 }
 
+function getUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+    eids.push({
+      source,
+      uids: [ uid ]
+    });
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -60,12 +73,16 @@ export const spec = {
       'secure': location.protocol === 'https:' ? 1 : 0,
       'host': location.host,
       'page': location.pathname,
-      'placements': placements
+      'placements': placements,
     };
 
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
+      }
+      if (bidderRequest.gdprConsent) {
+        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL'
+        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
       }
     }
 
@@ -76,10 +93,19 @@ export const spec = {
         placementId: bid.params.placement_id,
         bidId: bid.bidId,
         sizes: bid.mediaTypes[traff].sizes,
-        traffic: traff
+        traffic: traff,
+        eids: []
       };
       if (bid.schain) {
         placement.schain = bid.schain;
+      }
+      if (bid.userId) {
+        getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
+        getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
+        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com')
+        getUserId(placement.eids, bid.userId.tdid, 'adserver.org', {
+          rtiPartner: 'TDID'
+        });
       }
       placements.push(placement);
     }

@@ -4,8 +4,7 @@
 
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { targeting } from '../src/targeting.js';
-import { formatQS, format as buildUrl, parse } from '../src/url.js';
-import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils.js';
+import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, buildUrl } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getHook, submodule } from '../src/hook.js';
 import { auctionManager } from '../src/auctionManager.js';
@@ -74,7 +73,7 @@ export function buildDfpVideoUrl(options) {
   if (options.url) {
     // when both `url` and `params` are given, parsed url will be overwriten
     // with any matching param components
-    urlComponents = parse(options.url, {noDecodeWholeURL: true});
+    urlComponents = parseUrl(options.url, {noDecodeWholeURL: true});
 
     if (isEmpty(options.params)) {
       return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
