@@ -265,30 +265,36 @@ getHook('getBids').before(function (fn, bidderInfo) {
 
 /**
  * Given an Ad Unit or a Bid as an input, returns a boolean telling if the Ad Unit/ Bid is active based on label checks
- * @param {Object<BidOrAdUnit>} bidOrAdUnit Either the Ad Unit object or the Bid object
- * @param {Array<string>} activeLabels List of active labels passed as an argument to pbjs.requestBids function
- * @param {string} adUnitCode Unique string identifier for an Ad Unit.
+ * @param {Object<BidOrAdUnit>} bidOrAdUnit - Either the Ad Unit object or the Bid object
+ * @param {Array<string>} activeLabels - List of active labels passed as an argument to pbjs.requestBids function
+ * @param {string} adUnitCode - Unique string identifier for an Ad Unit.
+ * @param {number} adUnitInstance - Instance count of an 'Identical' ad unit.
  * @returns {boolean} Represents if the Ad Unit or the Bid is active or not
  */
-export function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode) {
+export function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode, adUnitInstance) {
   let labelOperator;
   const labelsFound = Object.keys(bidOrAdUnit).filter(prop => prop === 'labelAny' || prop === 'labelAll');
   if (labelsFound && labelsFound.length > 1) {
     utils.logWarn(`Size Mapping V2:: ${(bidOrAdUnit.code)
-      ? (`Ad Unit: ${bidOrAdUnit.code} => Ad unit has multiple label operators. Using the first declared operator: ${labelsFound[0]}`)
-      : (`Ad Unit: ${adUnitCode}, Bidder: ${bidOrAdUnit.bidder} => Bidder has multiple label operators. Using the first declared operator: ${labelsFound[0]}`)}`);
+      ? (`Ad Unit: ${bidOrAdUnit.code}(${adUnitInstance}) => Ad unit has multiple label operators. Using the first declared operator: ${labelsFound[0]}`)
+      : (`Ad Unit: ${adUnitCode}(${adUnitInstance}), Bidder: ${bidOrAdUnit.bidder} => Bidder has multiple label operators. Using the first declared operator: ${labelsFound[0]}`)}`);
   }
   labelOperator = labelsFound[0];
 
+  if (labelOperator && !activeLabels) {
+    utils.logWarn(`Size Mapping V2:: Ad Unit: ${adUnitCode}(${adUnitInstance}) => Found '${labelOperator}' on ad unit, but 'labels' is not set. Did you pass 'labels' to pbjs.requestBids() ?`);
+    return true;
+  }
+
   if (labelOperator === 'labelAll' && Array.isArray(bidOrAdUnit[labelOperator])) {
     if (bidOrAdUnit.labelAll.length === 0) {
-      utils.logWarn(`Size Mapping V2:: Ad Unit: ${bidOrAdUnit.code} => Ad unit has declared property 'labelAll' with an empty array. Ad Unit is still enabled!`);
+      utils.logWarn(`Size Mapping V2:: Ad Unit: ${bidOrAdUnit.code}(${adUnitInstance}) => Ad unit has declared property 'labelAll' with an empty array.`);
       return true;
     }
     return bidOrAdUnit.labelAll.every(label => includes(activeLabels, label));
   } else if (labelOperator === 'labelAny' && Array.isArray(bidOrAdUnit[labelOperator])) {
     if (bidOrAdUnit.labelAny.length === 0) {
-      utils.logWarn(`Size Mapping V2:: Ad Unit: ${bidOrAdUnit.code} => Ad unit has declared property 'labelAny' with an empty array. Ad Unit is still enabled!`);
+      utils.logWarn(`Size Mapping V2:: Ad Unit: ${bidOrAdUnit.code}(${adUnitInstance}) => Ad unit has declared property 'labelAny' with an empty array.`);
       return true;
     }
     return bidOrAdUnit.labelAny.some(label => includes(activeLabels, label));
@@ -448,7 +454,7 @@ export function getAdUnitDetail(auctionId, adUnit) {
       sizeBucketToSizeMap,
       activeViewport,
       transformedMediaTypes,
-      instance: identicalAdUnit.length > 0 ? typeof identicalAdUnit[0].instance === 'number' ? ++identicalAdUnit[0].instance : 0 : 0
+      instance: identicalAdUnit.length > 0 ? typeof identicalAdUnit[0].instance === 'number' ? identicalAdUnit[identicalAdUnit.length - 1].instance + 1 : 1 : 1
     };
 
     // set adUnitDetail in sizeMappingInternalStore against the correct 'auctionId'.
@@ -469,10 +475,10 @@ export function getAdUnitDetail(auctionId, adUnit) {
 
 export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src }) {
   return adUnits.reduce((result, adUnit) => {
-    if (internal.isLabelActivated(adUnit, labels, adUnit.code)) {
-      if (adUnit.mediaTypes && utils.isValidMediaTypes(adUnit.mediaTypes)) {
-        const { activeViewport, transformedMediaTypes, instance: adUnitInstance } = internal.getAdUnitDetail(auctionId, adUnit);
+    if (adUnit.mediaTypes && utils.isValidMediaTypes(adUnit.mediaTypes)) {
+      const { activeViewport, transformedMediaTypes, instance: adUnitInstance } = internal.getAdUnitDetail(auctionId, adUnit);
 
+      if (internal.isLabelActivated(adUnit, labels, adUnit.code, adUnitInstance)) {
         // check if adUnit has any active media types remaining, if not drop the adUnit from auction,
         // else proceed to evaluate the bids object.
         if (Object.keys(transformedMediaTypes).length === 0) {
@@ -538,10 +544,10 @@ export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, label
               }
             }, []));
       } else {
-        utils.logWarn(`Size Mapping V2:: Ad Unit: ${adUnit.code} => Ad unit has declared invalid 'mediaTypes' or has not declared a 'mediaTypes' property`);
+        utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}(${adUnitInstance}) => Ad unit is disabled due to failing label check.`);
       }
     } else {
-      utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code} => Ad unit is disabled due to failing label check.`);
+      utils.logWarn(`Size Mapping V2:: Ad Unit: ${adUnit.code} => Ad unit has declared invalid 'mediaTypes' or has not declared a 'mediaTypes' property`);
       return result;
     }
     return result;
