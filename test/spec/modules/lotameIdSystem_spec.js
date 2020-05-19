@@ -53,7 +53,8 @@ describe('LotameId', function() {
         responseHeader,
         JSON.stringify({
           profile_id: '4ec137245858469eb94a4e248f238694',
-          panorama_id:
+          expiry_ms: 10,
+          core_id:
             'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a',
         })
       );
@@ -61,7 +62,7 @@ describe('LotameId', function() {
 
     it('should call the remote server when getId is called', function () {
       expect(request.url).to.be.eq(
-        'https://mconrad.dev.lotame.com:5555/panorama/id'
+        'https://mconrad.dev.lotame.com:5555/id'
       );
 
       expect(callBackSpy.calledOnce).to.be.true;
@@ -86,21 +87,14 @@ describe('LotameId', function() {
       );
     });
 
-    it('should save the expiry bundle', function () {
+    it('should save the expiry', function () {
       sinon.assert.calledWith(
         setLocalStorageStub,
-        '_lota_pano_bundle',
-        JSON.stringify({
-          refreshSeconds: 10,
-        })
-      );
+        '_lota_expiry', 10);
 
       sinon.assert.calledWith(
         setCookieStub,
-        '_lota_pano_bundle',
-        JSON.stringify({
-          refreshSeconds: 10,
-        })
+        '_lota_expiry', 10
       );
     });
 
@@ -119,10 +113,11 @@ describe('LotameId', function() {
     });
   });
 
-  describe('existing id found', function () {
+  describe('a non-expired id found', function () {
     let submoduleCallback;
 
     this.beforeEach(function () {
+      getLocalStorageStub.withArgs('_lota_expiry').returns(Date.now() + 100000);
       getCookieStub
         .withArgs('_lota_pano')
         .returns(
@@ -139,16 +134,14 @@ describe('LotameId', function() {
     });
   });
 
-  describe('expired id found', function () {
+  describe('an expired id found', function () {
     let request;
     let callBackSpy = sinon.spy();
 
     this.beforeEach(function () {
       getLocalStorageStub
-        .withArgs('_lota_pano_exp')
-        .returns(new Date(
-          utils.timestamp() - (10 * 24 * 60 * 60 * 1000)
-        ).toUTCString());
+        .withArgs('_lota_expiry')
+        .returns(1000);
       getLocalStorageStub
         .withArgs('_lota_pano')
         .returns(
@@ -165,8 +158,9 @@ describe('LotameId', function() {
         responseHeader,
         JSON.stringify({
           profile_id: '4ec137245858469eb94a4e248f238694',
-          panorama_id:
+          core_id:
             'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a',
+          expiry_ms: 3600000
         })
       );
     });
@@ -176,8 +170,44 @@ describe('LotameId', function() {
     });
   });
 
-  it('should retrieve the panorama id when decode is called', function() {
-    var panoramaId = lotameIdSubmodule.decode('1234');
-    expect(panoramaId).to.be.eql('1234');
+  describe('gdpr applies', function () {
+    let request;
+    let callBackSpy = sinon.spy();
+
+    this.beforeEach(function () {
+      let submoduleCallback = lotameIdSubmodule.getId({}, {
+        gdprApplies: true,
+        consentString: 'consentGiven'
+      }).callback;
+      submoduleCallback(callBackSpy);
+
+      request = server.requests[0];
+
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({
+          profile_id: '4ec137245858469eb94a4e248f238694',
+          core_id:
+            'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a',
+          expiry_ms: 3600000,
+        })
+      );
+    });
+
+    it('should call the remote server when getId is called', function () {
+      expect(callBackSpy.calledOnce).to.be.true;
+    });
+
+    it('should pass the gdpr consent string back', function() {
+      expect(request.url).to.be.eq(
+        'https://mconrad.dev.lotame.com:5555/id?gdpr_consent=consentGiven'
+      );
+    });
+  });
+
+  it('should retrieve the id when decode is called', function() {
+    var id = lotameIdSubmodule.decode('1234');
+    expect(id).to.be.eql('1234');
   });
 });
