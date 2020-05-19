@@ -149,26 +149,30 @@ function fetchId(configParams) {
   const callback = function (cb) {
     const callbacks = {
       success: response => {
-        let parrableId = {};
+        let newParrableId = parrableId ? utils.deepClone(parrableId) : {};
         if (response) {
           try {
             let responseObj = JSON.parse(response);
             if (responseObj) {
               if (responseObj.ccpaOptout !== true) {
-                parrableId.eid = responseObj.eid;
+                newParrableId.eid = responseObj.eid;
               } else {
-                parrableId.ccpaOptout = true;
+                newParrableId.eid = null;
+                newParrableId.ccpaOptout = true;
               }
               if (responseObj.ibaOptout === true) {
-                parrableId.ibaOptout = true;
+                newParrableId.ibaOptout = true;
               }
-              writeCookie(responseObj);
-              cb(parrableId);
             }
           } catch (error) {
             utils.logError(error);
             cb();
           }
+          writeCookie(newParrableId);
+          cb(newParrableId);
+        } else {
+          utils.logError('parrableId: ID fetch returned an empty result');
+          cb();
         }
       },
       error: error => {
