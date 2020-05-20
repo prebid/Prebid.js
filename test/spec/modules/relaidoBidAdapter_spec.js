@@ -1,9 +1,5 @@
 import { expect } from 'chai';
 import { spec } from 'modules/relaidoBidAdapter.js';
-<<<<<<< HEAD
-import * as url from 'src/url.js';
-=======
->>>>>>> root_branch/master
 import * as utils from 'src/utils.js';
 
 const UUID_KEY = 'relaido_uuid';
