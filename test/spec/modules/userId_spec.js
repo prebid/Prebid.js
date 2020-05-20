@@ -7,10 +7,12 @@ import {
   syncDelay,
   coreStorage
 } from 'modules/userId/index.js';
+import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
+import {getGlobal} from 'src/prebidGlobal.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
 import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem.js';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
@@ -232,6 +234,36 @@ describe('User ID', function() {
         });
       });
       expect(coreStorage.setCookie.callCount).to.equal(0);
+    });
+
+    it('pbjs.getUserIds', function() {
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'pubCommonId', value: {'pubcid': '11111'}
+          }]
+        }
+      });
+      expect(typeof (getGlobal()).getUserIds).to.equal('function');
+      expect((getGlobal()).getUserIds()).to.deep.equal({pubcid: '11111'});
+    });
+
+    it('pbjs.getUserIdsAsEids', function() {
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'pubCommonId', value: {'pubcid': '11111'}
+          }]
+        }
+      });
+      expect(typeof (getGlobal()).getUserIdsAsEids).to.equal('function');
+      expect((getGlobal()).getUserIdsAsEids()).to.deep.equal(createEidsArray((getGlobal()).getUserIds()));
     });
   });
 

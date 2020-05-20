@@ -899,6 +899,15 @@ describe('S2S Adapter', function () {
 
       const _config = {
         s2sConfig: s2sConfig,
+        site: {
+          publisher: {
+            id: '1234',
+            domain: 'test.com'
+          },
+          content: {
+            language: 'en'
+          }
+        }
       };
 
       config.setConfig(_config);
@@ -906,7 +915,21 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.site).to.exist.and.to.be.a('object');
       expect(requestBid.site.publisher).to.exist.and.to.be.a('object');
+      expect(requestBid.site.publisher.id).to.exist.and.to.be.a('string');
+      expect(requestBid.site.publisher.domain).to.exist.and.to.be.a('string');
       expect(requestBid.site.page).to.exist.and.to.be.a('string');
+      expect(requestBid.site.content).to.exist.and.to.be.a('object');
+      expect(requestBid.site.content.language).to.exist.and.to.be.a('string');
+      expect(requestBid.site).to.deep.equal({
+        publisher: {
+          id: '1',
+          domain: 'test.com'
+        },
+        content: {
+          language: 'en'
+        },
+        page: 'http://mytestpage.com'
+      });
     });
 
     it('adds appnexus aliases to request', function () {
