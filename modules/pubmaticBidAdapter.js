@@ -586,9 +586,45 @@ function _createImpressionObject(bid, conf) {
     impObj.banner = bannerObj;
   }
 
+  _addFloorFromFloorModule(impObj, bid);
+
   return impObj.hasOwnProperty(BANNER) ||
           impObj.hasOwnProperty(NATIVE) ||
             impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
+}
+
+// returns highest of the current and the floorInfo
+function _getHighestBidFloor(currency, currentBidFloor, floorInfo) {
+  if (typeof floorInfo === 'object' && floorInfo.currency === currency && !isNaN(parseInt(floorInfo.floor))) {
+    floorInfo.floor = parseFloat(floorInfo.floor);
+    if (currentBidFloor < floorInfo.floor) {
+      return floorInfo.floor;
+    }
+  }
+  return currentBidFloor;
+}
+
+function _addFloorFromFloorModule(impObj, bid) {
+  let bidFloor = impObj.bidfloor || 0;
+  let currency = impObj.bidfloorcur;
+
+  if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
+    [BANNER, VIDEO, NATIVE].forEach(mediaType => {
+      if (impObj.hasOwnProperty(mediaType)) {
+        bidFloor = _getHighestBidFloor(currency, bidFloor, bid.getFloor({
+          currency: currency,
+          mediaType: mediaType,
+          size: '*'
+        }));
+      }
+    });
+  }
+
+  if (!isNaN(bidFloor) && bidFloor > 0) {
+    impObj.bidfloor = bidFloor;
+  } else {
+    impObj.bidfloor = UNDEFINED;
+  }
 }
 
 function _getDigiTrustObject(key) {
