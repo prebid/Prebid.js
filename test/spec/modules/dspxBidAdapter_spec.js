@@ -108,6 +108,22 @@ describe('dspxAdapter', function () {
       'bidId': '30b31c1838de1e4',
       'bidderRequestId': '22edbae2733bf67',
       'auctionId': '1d1a030790a478'
+    },
+    {
+      'bidder': 'dspx',
+      'params': {
+        'placement': '101',
+        'devMode': true
+      },
+      'mediaTypes': {
+        'video': {
+          'playerSize': [640, 480],
+          'context': 'instream'
+        }
+      },
+      'bidId': '30b31c1838de1e41',
+      'bidderRequestId': '22edbae2733bf67',
+      'auctionId': '1d1a030790a478'
     }
 
     ];
@@ -161,6 +177,13 @@ describe('dspxAdapter', function () {
       let data = request4.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
       expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&prebidDevMode=1');
     });
+
+    var request5 = spec.buildRequests([bidRequests[4]], bidderRequestWithoutGdpr)[0];
+    it('sends bid video request to our rads endpoint via GET', function () {
+      expect(request5.method).to.equal('GET');
+      let data = request5.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
+      expect(data).to.equal('_f=vast2&alternative=prebid_js&inventory_item_id=101&srw=640&srh=480&idt=100&bid_id=30b31c1838de1e41&prebidDevMode=1');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -173,6 +196,21 @@ describe('dspxAdapter', function () {
         'type': 'sspHTML',
         'tag': '<!-- test creative -->',
         'requestId': '220ed41385952a',
+        'currency': 'EUR',
+        'ttl': 60,
+        'netRevenue': true,
+        'zone': '6682'
+      }
+    };
+    let serverVideoResponse = {
+      'body': {
+        'cpm': 5000000,
+        'crid': 100500,
+        'width': '300',
+        'height': '250',
+        'vastXml': '{"reason":7001,"status":"accepted"}',
+        'requestId': '220ed41385952a',
+        'type': 'vast2',
         'currency': 'EUR',
         'ttl': 60,
         'netRevenue': true,
@@ -192,6 +230,19 @@ describe('dspxAdapter', function () {
       ttl: 300,
       type: 'sspHTML',
       ad: '<!-- test creative -->'
+    }, {
+      requestId: '23beaa6af6cdde',
+      cpm: 0.5,
+      width: 0,
+      height: 0,
+      creativeId: 100500,
+      dealId: '',
+      currency: 'EUR',
+      netRevenue: true,
+      ttl: 300,
+      type: 'vast2',
+      vastXml: '{"reason":7001,"status":"accepted"}',
+      mediaType: 'video'
     }];
 
     it('should get the correct bid response by display ad', function () {
@@ -204,6 +255,24 @@ describe('dspxAdapter', function () {
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+    });
+
+    it('should get the correct dspx video bid response by display ad', function () {
+      let bidRequest = [{
+        'method': 'GET',
+        'url': ENDPOINT_URL,
+        'mediaTypes': {
+          'video': {
+            'playerSize': [640, 480],
+            'context': 'instream'
+          }
+        },
+        'data': {
+          'bid_id': '30b31c1838de1e'
+        }
+      }];
+      let result = spec.interpretResponse(serverVideoResponse, bidRequest[0]);
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[1]));
     });
 
     it('handles empty bid response', function () {
