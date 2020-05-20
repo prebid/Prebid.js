@@ -11,6 +11,7 @@
 		const adUnits = [{
 			code: 'div-gpt-ad-1460505748561-0',
 			mediaTypes: {
+				// definition of ad unit level size config for banner, video and native.
 				banner: {
 					sizeConfig: [
 						{ minViewPort: [0, 0], sizes: [] },		// remove if < 750px
@@ -40,12 +41,14 @@
 			},
 			bids: [{
 				bidder: 'appnexus',
+				labelAny: ['tablet', 'desktop'], // labels can also be used at the bidder level apart from the ad unit level.
 				params: {
 					placementId: 13144370
 				},
+				// bidder level size config
 				sizeConfig: [
 					{ minViewPort: [0, 0], relevantMediaTypes: ['none'] },
-					{ minViewPort: [850, 0], relevantMediaTypes: ['banner'] }
+					{ minViewPort: [960, 0], relevantMediaTypes: ['banner'] }
 				]
 			}, {
 				bidder: 'rubicon',
@@ -59,6 +62,45 @@
 					{ minViewPort: [850, 0], relevantMediaTypes: ['native'] },
 					{ minViewPort: [1200, 0], relevantMediaTypes: ['none'] }
 				]
+			}]
+		}, {
+			// An 'Identical Ad Unit' - Ad unit with the same 'code' but different mediaTypes configuration.
+			code: 'div-gpt-ad-1460505748561-0',
+			mediaTypes: {
+				banner: {
+					sizeConfig: [
+						{ minViewPort: [800, 0], sizes: [[600, 300], [500, 400]]},
+						{ minViewPort: [1000, 0], sizes: [[500, 500]] }
+					]
+				}
+			},
+			labelAll:['tablet'],
+			bids: [{
+				bidder: 'appnexus',
+				params: { placementId: 13144370 },
+				sizeConfig: [
+					{ minViewPort: [0, 0], relevantMediaTypes: ['none'] }
+				]
+			}, {
+				bidder: 'rubicon',
+				params: 1234,
+				labelAll: ['phone']
+			}]
+		}, {
+			// An 'Identical Ad Unit' - Ad unit with the same 'code' but different mediaTypes configuration.
+			code: 'div-gpt-ad-1460505748561-0',
+			mediaTypes: {
+				banner: {
+					sizeConfig: [
+						{ minViewPort: [800, 0], sizes: [[600, 300]]},
+						{ minViewPort: [1000, 0], sizes: [] }
+					]
+				}
+			},
+			labelAll:['phone'],
+			bids: [{
+				bidder: 'appnexus',
+				params: { placementId: 13144370 }
 			}]
 		}];
 		var pbjs = pbjs || {};
@@ -75,9 +117,13 @@
 
 		pbjs.que.push(function () {
 			pbjs.addAdUnits(adUnits);
+			pbjs.setConfig({
+				debug: true
+			});
 			pbjs.requestBids({
 				bidsBackHandler: sendAdserverRequest,
-				timeout: PREBID_TIMEOUT
+				timeout: PREBID_TIMEOUT,
+				labels: ['tablet']
 			});
 		});
 

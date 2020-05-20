@@ -231,7 +231,7 @@ export function checkBidderSizeConfigFormat(sizeConfig) {
         Array.isArray(config.relevantMediaTypes) &&
         config.relevantMediaTypes.length > 0 &&
         (config.relevantMediaTypes.length > 1 ? (config.relevantMediaTypes.every(mt => (includes(['banner', 'video', 'native'], mt))))
-          : (['none', 'banner', 'video', 'native'].indexOf(config.relevantMediaTypes[0] > -1)))) {
+          : (['none', 'banner', 'video', 'native'].indexOf(config.relevantMediaTypes[0]) > -1))) {
         didCheckPass = didCheckPass && true;
       } else {
         didCheckPass = false;
@@ -436,7 +436,7 @@ export function getRelevantMediaTypesForBidder(sizeConfig, activeViewport) {
 
 // sets sizeMappingInternalStore for a given auctionId with relevant adUnit information returned from the call to 'getFilteredMediaTypes' function
 // returns adUnit details object.
-export function getAdUnitDetail(auctionId, adUnit) {
+export function getAdUnitDetail(auctionId, adUnit, labels) {
   // fetch all adUnits for an auction from the sizeMappingInternalStore
   const adUnitsForAuction = sizeMappingInternalStore.getAuctionDetail(auctionId).adUnits;
 
@@ -444,30 +444,28 @@ export function getAdUnitDetail(auctionId, adUnit) {
   const adUnitDetail = adUnitsForAuction.filter(adUnitDetail => adUnitDetail.adUnitCode === adUnit.code && utils.deepEqual(adUnitDetail.mediaTypes, adUnit.mediaTypes));
 
   if (adUnitDetail.length > 0) {
+    adUnitDetail[0].cacheHits++;
     return adUnitDetail[0];
   } else {
     const identicalAdUnit = adUnitsForAuction.filter(adUnitDetail => adUnitDetail.adUnitCode === adUnit.code);
-    const { mediaTypes, sizeBucketToSizeMap, activeViewport, transformedMediaTypes } = internal.getFilteredMediaTypes(adUnit.mediaTypes);
+    const adUnitInstance = identicalAdUnit.length > 0 ? typeof identicalAdUnit[0].instance === 'number' ? identicalAdUnit[identicalAdUnit.length - 1].instance + 1 : 1 : 1;
+    const isLabelActivated = internal.isLabelActivated(adUnit, labels, adUnit.code, adUnitInstance);
+    const { mediaTypes = adUnit.mediaTypes, sizeBucketToSizeMap, activeViewport, transformedMediaTypes } = isLabelActivated && internal.getFilteredMediaTypes(adUnit.mediaTypes);
+
     const adUnitDetail = {
       adUnitCode: adUnit.code,
       mediaTypes,
       sizeBucketToSizeMap,
       activeViewport,
       transformedMediaTypes,
-      instance: identicalAdUnit.length > 0 ? typeof identicalAdUnit[0].instance === 'number' ? identicalAdUnit[identicalAdUnit.length - 1].instance + 1 : 1 : 1
+      instance: adUnitInstance,
+      isLabelActivated,
+      cacheHits: 0
     };
 
     // set adUnitDetail in sizeMappingInternalStore against the correct 'auctionId'.
     sizeMappingInternalStore.setAuctionDetail(auctionId, adUnitDetail);
-
-    // 'filteredMediaTypes' are the mediaTypes that got removed/filtered-out from adUnit.mediaTypes after sizeConfig filtration.
-    const filteredMediaTypes = Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1);
-    const adUnitInstance = adUnitDetail.instance;
-
-    utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}(${adUnitInstance}) => Active size buckets after filtration: `, sizeBucketToSizeMap);
-    if (filteredMediaTypes.length > 0) {
-      utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}(${adUnitInstance}) => Media types that got filtered out: ${filteredMediaTypes}`);
-    }
+    isLabelActivated && utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}(${adUnitInstance}) => Active size buckets after filtration: `, sizeBucketToSizeMap);
 
     return adUnitDetail;
   }
@@ -476,13 +474,12 @@ export function getAdUnitDetail(auctionId, adUnit) {
 export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src }) {
   return adUnits.reduce((result, adUnit) => {
     if (adUnit.mediaTypes && utils.isValidMediaTypes(adUnit.mediaTypes)) {
-      const { activeViewport, transformedMediaTypes, instance: adUnitInstance } = internal.getAdUnitDetail(auctionId, adUnit);
-
-      if (internal.isLabelActivated(adUnit, labels, adUnit.code, adUnitInstance)) {
+      const { activeViewport, transformedMediaTypes, instance: adUnitInstance, isLabelActivated, cacheHits } = internal.getAdUnitDetail(auctionId, adUnit, labels);
+      if (isLabelActivated) {
         // check if adUnit has any active media types remaining, if not drop the adUnit from auction,
         // else proceed to evaluate the bids object.
         if (Object.keys(transformedMediaTypes).length === 0) {
-          utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}(${adUnitInstance}) => Ad unit disabled since there are no active media types after sizeConfig filtration.`);
+          cacheHits === 0 && utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}(${adUnitInstance}) => Ad unit disabled since there are no active media types after sizeConfig filtration.`);
           return result;
         }
         result
@@ -544,7 +541,7 @@ export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, label
               }
             }, []));
       } else {
-        utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}(${adUnitInstance}) => Ad unit is disabled due to failing label check.`);
+        cacheHits === 0 && utils.logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}(${adUnitInstance}) => Ad unit is disabled due to failing label check.`);
       }
     } else {
       utils.logWarn(`Size Mapping V2:: Ad Unit: ${adUnit.code} => Ad unit has declared invalid 'mediaTypes' or has not declared a 'mediaTypes' property`);
