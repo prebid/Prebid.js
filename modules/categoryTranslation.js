@@ -67,8 +67,14 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
 
 export function initTranslation(url, localStorageKey) {
   setupBeforeHookFnOnce(addBidResponse, getAdserverCategoryHook, 50);
-  let mappingDataStr = storage.getDataFromLocalStorage(localStorageKey);
-  let mappingData = mappingDataStr ? JSON.parse(mappingDataStr) : undefined;
+  let mappingData = storage.getDataFromLocalStorage(localStorageKey);
+  if (mappingData) {
+    try {
+      mappingData = JSON.parse(mappingData);
+    } catch (error) {
+      logError('Failed to parse translation mapping file');
+    }
+  }
   if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
     ajax(url,
       {

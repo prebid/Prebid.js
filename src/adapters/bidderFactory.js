@@ -381,8 +381,14 @@ export function preloadBidderMappingFile(fn, adUnits) {
       let info = bidderSpec.getSpec().getMappingFileInfo();
       let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
       let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
-      let mappingDataStr = storage.getDataFromLocalStorage(key);
-      let mappingData = mappingDataStr ? JSON.parse(mappingDataStr) : undefined;
+      let mappingData = storage.getDataFromLocalStorage(key);
+      if (mappingData) {
+        try {
+          mappingData = JSON.parse(mappingData);
+        } catch (error) {
+          logError(`Failed to parse ${bidder} bidder translation mapping file`);
+        }
+      }
       if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
         ajax(info.url,
           {
