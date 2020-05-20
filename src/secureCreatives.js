@@ -33,7 +33,7 @@ function receiveMessage(ev) {
     });
 
     if (adObject && data.message === 'Prebid Request') {
-      _sendAdToCreative(adObject, ev.source);
+      _sendAdToCreative(adObject, ev);
 
       // save winning bids
       auctionManager.addWinningBid(adObject);
@@ -62,21 +62,21 @@ function receiveMessage(ev) {
   }
 }
 
-export function _sendAdToCreative(adObject, source) {
+export function _sendAdToCreative(adObject, ev) {
   const { adId, ad, adUrl, width, height, renderer, cpm } = adObject;
   // rendering for outstream safeframe
   if (isRendererRequired(renderer)) {
     executeRenderer(renderer, adObject);
   } else if (adId) {
     resizeRemoteCreative(adObject);
-    source.postMessage(JSON.stringify({
+    ev.source.postMessage(JSON.stringify({
       message: 'Prebid Response',
       ad: replaceAuctionPrice(ad, cpm),
       adUrl: replaceAuctionPrice(adUrl, cpm),
       adId,
       width,
       height
-    }), source.origin);
+    }), ev.origin);
   }
 }
 

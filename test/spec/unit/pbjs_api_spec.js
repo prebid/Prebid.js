@@ -959,11 +959,12 @@ describe('Unit: Prebid Module', function () {
         adUnitCode: config.adUnitCodes[0],
       };
 
-      const source = {
-        postMessage: sinon.stub()
+      const event = {
+        source: { postMessage: sinon.stub() },
+        origin: 'origin.sf.com'
       };
 
-      _sendAdToCreative(mockAdObject, source);
+      _sendAdToCreative(mockAdObject, event);
 
       expect(slots[0].spyGetSlotElementId.called).to.equal(false);
       expect(slots[1].spyGetSlotElementId.called).to.equal(true);
