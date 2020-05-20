@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import find from 'core-js/library/fn/array/find';
+import find from 'core-js-pure/features/array/find';
 import { Renderer } from '../src/Renderer.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
