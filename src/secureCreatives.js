@@ -33,7 +33,7 @@ function receiveMessage(ev) {
     });
 
     if (adObject && data.message === 'Prebid Request') {
-      _sendAdToCreative(adObject, data.adServerDomain, ev.source);
+      _sendAdToCreative(adObject, ev.source);
 
       // save winning bids
       auctionManager.addWinningBid(adObject);
@@ -62,7 +62,7 @@ function receiveMessage(ev) {
   }
 }
 
-export function _sendAdToCreative(adObject, remoteDomain, source) {
+export function _sendAdToCreative(adObject, source) {
   const { adId, ad, adUrl, width, height, renderer, cpm } = adObject;
   // rendering for outstream safeframe
   if (isRendererRequired(renderer)) {
@@ -76,7 +76,7 @@ export function _sendAdToCreative(adObject, remoteDomain, source) {
       adId,
       width,
       height
-    }), remoteDomain);
+    }), source.origin);
   }
 }
 

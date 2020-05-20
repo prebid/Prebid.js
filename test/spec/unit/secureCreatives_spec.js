@@ -30,12 +30,11 @@ describe('secureCreatives', () => {
         cpm: '1.00',
         adUnitCode: 'some_dom_id'
       };
-      const remoteDomain = '*';
       const source = {
         postMessage: sinon.stub()
       };
 
-      _sendAdToCreative(mockAdObject, remoteDomain, source);
+      _sendAdToCreative(mockAdObject, source);
       expect(JSON.parse(source.postMessage.args[0][0]).ad).to.equal('<script src="http://prebid.org/creative/1.00"></script>');
       expect(JSON.parse(source.postMessage.args[0][0]).adUrl).to.equal('http://creative.prebid.org/1.00');
       window.googletag = oldVal;
