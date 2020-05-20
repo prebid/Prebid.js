@@ -3,7 +3,6 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'revcontent';
 const NATIVE_PARAMS = {
@@ -223,8 +222,7 @@ export const spec = {
     return bidResponses;
   },
   onBidWon: function (bid) {
-    var winUrl = bid.nurl;
-    ajax(winUrl);
+    utils.triggerPixel(bid.nurl);
     return true;
   }
 };
