@@ -175,33 +175,33 @@ describe('nextrollBidAdapter', function() {
   });
 
   describe('interpret native response', () => {
-    let clickUrl = "https://clickurl.com/with/some/path"
-    let titleText = "Some title"
+    let clickUrl = 'https://clickurl.com/with/some/path'
+    let titleText = 'Some title'
     let imgW = 300
     let imgH = 250
-    let imgUrl = "https://clickurl.com/img.png"
-    let brandText = "Some Brand"
-    let impUrl = "https://clickurl.com/imptracker"
+    let imgUrl = 'https://clickurl.com/img.png'
+    let brandText = 'Some Brand'
+    let impUrl = 'https://clickurl.com/imptracker'
 
     let responseBody = {
       body: {
         id: 'bidresponse_id',
         seatbid: [{
-            bid: [{
-                price: 1.2,
-                crid: 'crid1',
-                adm: {
-                  link: {url: clickUrl},
-                  assets: [
-                    {id: 1, title: {text: titleText}},
-                    {id: 2, img: {w: imgW, h: imgH, url: imgUrl}},
-                    {id: 5, data: {value: brandText}}
-                  ],
-                  imptrackers: [impUrl]
-                }
-              }
-            ]
+          bid: [{
+            price: 1.2,
+            crid: 'crid1',
+            adm: {
+              link: {url: clickUrl},
+              assets: [
+                {id: 1, title: {text: titleText}},
+                {id: 2, img: {w: imgW, h: imgH, url: imgUrl}},
+                {id: 5, data: {value: brandText}}
+              ],
+              imptrackers: [impUrl]
+            }
           }
+          ]
+        }
         ]
       }
     };
@@ -219,7 +219,6 @@ describe('nextrollBidAdapter', function() {
       }
       expect(response[0].native).to.be.deep.equal(expectedResponse)
     })
-
   })
 
   describe('hasCCPAConsent', function() {
