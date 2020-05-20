@@ -47,6 +47,7 @@ describe('OneVideoBidAdapter', function () {
           sid: 134,
           rewarded: 1,
           placement: 1,
+          hp: 1,
           inventoryid: 123
         },
         site: {
@@ -90,7 +91,7 @@ describe('OneVideoBidAdapter', function () {
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
-    it('should return true when the "pubId" param is missing', function () {
+    it('should return true when the "pubId" param exists', function () {
       bidRequest.params = {
         video: {
           playerWidth: 480,
@@ -115,6 +116,72 @@ describe('OneVideoBidAdapter', function () {
       bidRequest.params = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
+
+    it('should return false when the mediaType is "banner" and display="undefined" (DAP 3P)', function () {
+      bidRequest = {
+        mediaTypes: {
+          banner: {
+            sizes: [640, 480]
+          }
+        }
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    })
+
+    it('should return true when the mediaType is "banner" and display=1 (DAP 3P)', function () {
+      bidRequest = {
+        mediaTypes: {
+          banner: {
+            sizes: [640, 480]
+          }
+        },
+        bidder: 'oneVideo',
+        sizes: [640, 480],
+        bidId: '30b3efwfwe1e',
+        adUnitCode: 'video1',
+        params: {
+          video: {
+            playerWidth: 640,
+            playerHeight: 480,
+            mimes: ['video/mp4', 'application/javascript'],
+            protocols: [2, 5],
+            api: [2],
+            position: 1,
+            delivery: [2],
+            playbackmethod: [1, 5],
+            sid: 134,
+            rewarded: 1,
+            placement: 1,
+            inventoryid: 123,
+            display: 1
+          },
+          site: {
+            id: 1,
+            page: 'https://news.yahoo.com/portfolios',
+            referrer: 'http://www.yahoo.com'
+          },
+          pubId: 'brxd'
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    })
+
+    it('should return false when the mediaType is "video" and context="outstream" and display=1 (DAP 3P)', function () {
+      bidRequest = {
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [640, 480]
+          }
+        },
+        params: {
+          video: {
+            display: 1
+          }
+        }
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    })
   });
 
   describe('spec.buildRequests', function () {
@@ -136,7 +203,7 @@ describe('OneVideoBidAdapter', function () {
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
-      const VERSION = '3.0.1';
+      const VERSION = '3.0.3';
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
@@ -176,7 +243,7 @@ describe('OneVideoBidAdapter', function () {
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return a valid bid response with just "adm"', function () {
+    it('should return a valid video bid response with just "adm"', function () {
       const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       let o = {
@@ -196,6 +263,26 @@ describe('OneVideoBidAdapter', function () {
         renderer: (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined,
       };
       expect(bidResponse).to.deep.equal(o);
+    });
+    // @abrowning14 check that banner DAP response is appended to o.ad + mediaType: 'banner'
+    it('should return a valid DAP banner bid-response', function () {
+      bidRequest = {
+        mediaTypes: {
+          banner: {
+            sizes: [640, 480]
+          }
+        },
+        params: {
+          video: {
+            display: 1
+          }
+        }
+      }
+      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<div>DAP UNIT HERE</div>'}]}], cur: 'USD'};
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+      expect(bidResponse.ad).to.equal('<div>DAP UNIT HERE</div>');
+      expect(bidResponse.mediaType).to.equal('banner');
+      expect(bidResponse.renderer).to.be.undefined;
     });
   });
 
@@ -264,10 +351,11 @@ describe('OneVideoBidAdapter', function () {
       const data = requests[0].data;
       expect(data.source.ext.schain.nodes[0].sid).to.equal(bidRequest.params.video.sid);
       expect(data.source.ext.schain.nodes[0].rid).to.equal(data.id);
+      expect(data.source.ext.schain.nodes[0].hp).to.equal(bidRequest.params.video.hp);
     });
   });
   describe('should send banner object', function () {
-    it('should send banner object when display is 1', function () {
+    it('should send banner object when display is 1 and context="instream" (DAP O&O)', function () {
       bidRequest = {
         mediaTypes: {
           video: {
@@ -320,7 +408,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].banner.ext.maxduration).to.equal(bidRequest.params.video.maxduration);
       expect(data.site.id).to.equal(bidRequest.params.site.id);
     });
-    it('should send video object when display is other than 1', function () {
+    it('should send video object when display is other than 1 (VAST for All)', function () {
       bidRequest = {
         mediaTypes: {
           video: {
@@ -365,7 +453,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.pos).to.equal(position);
       expect(data.imp[0].video.mimes).to.equal(bidRequest.params.video.mimes);
     });
-    it('should send video object when display is not passed', function () {
+    it('should send video object when display is not passed (VAST for All)', function () {
       bidRequest = {
         mediaTypes: {
           video: {
