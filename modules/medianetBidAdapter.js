@@ -1,7 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import * as url from '../src/url.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
@@ -22,7 +21,7 @@ let refererInfo = getRefererInfo();
 
 let mnData = {};
 mnData.urlData = {
-  domain: url.parse(refererInfo.referer).host,
+  domain: utils.parseUrl(refererInfo.referer).host,
   page: refererInfo.referer,
   isTop: refererInfo.reachedTop
 }
@@ -136,6 +135,7 @@ function extParams(params, gdpr, uspConsent, userId) {
   let windowSize = spec.getWindowSize();
   let gdprApplies = !!(gdpr && gdpr.gdprApplies);
   let uspApplies = !!(uspConsent);
+  let coppaApplies = !!(config.getConfig('coppa'));
   return Object.assign({},
     { customer_id: params.cid },
     { prebid_version: $$PREBID_GLOBAL$$.version },
@@ -143,6 +143,7 @@ function extParams(params, gdpr, uspConsent, userId) {
     (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
     { usp_applies: uspApplies },
     uspApplies && { usp_consent_string: uspConsent || '' },
+    {coppa_applies: coppaApplies},
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId }
   );
@@ -287,7 +288,7 @@ function logEvent (event, data) {
     hostname: EVENT_PIXEL_URL,
     search: getLoggingData(event, data)
   };
-  utils.triggerPixel(url.format(getParams));
+  utils.triggerPixel(utils.buildUrl(getParams));
 }
 
 function clearMnData() {

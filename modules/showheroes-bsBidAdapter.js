@@ -5,7 +5,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { loadExternalScript } from '../src/adloader.js';
 
-const PROD_ENDPOINT = 'https://bs1.showheroes.com/api/v1/bid';
+const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
 const STAGE_ENDPOINT = 'https://bid-service.stage.showheroes.com/api/v1/bid';
 const PROD_PUBLISHER_TAG = 'https://static.showheroes.com/publishertag.js';
 const STAGE_PUBLISHER_TAG = 'https://pubtag.stage.showheroes.com/publishertag.js';
@@ -29,6 +29,7 @@ export const spec = {
     return !!bid.params.playerId;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
+    let adUnits = [];
     const pageURL = validBidRequests[0].params.contentPageUrl || bidderRequest.refererInfo.referer;
     const isStage = !!validBidRequests[0].params.stage;
     const isOutstream = utils.deepAccess(validBidRequests[0], 'mediaTypes.video.context') === 'outstream';
@@ -37,54 +38,56 @@ export const spec = {
     const isNativeRender = utils.deepAccess(validBidRequests[0], 'renderer');
     const outstreamOptions = utils.deepAccess(validBidRequests[0], 'params.outstreamOptions');
     const isBanner = !!validBidRequests[0].mediaTypes.banner || (isOutstream && !(isCustomRender || isNativeRender || isNodeRender));
+    const defaultSchain = validBidRequests[0].schain || {};
 
-    let adUnits = validBidRequests.map((bid) => {
+    validBidRequests.forEach((bid) => {
+      const videoSizes = getVideoSizes(bid);
+      const bannerSizes = getBannerSizes(bid);
       const vpaidMode = utils.getBidIdParameter('vpaidMode', bid.params);
 
-      let sizes = bid.sizes.length === 1 ? bid.sizes[0] : bid.sizes;
-      if (sizes && !sizes.length) {
-        let mediaSize;
-        let mediaVideoSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-        if (utils.isArray(mediaVideoSize)) {
-          mediaSize = mediaVideoSize;
+      const makeBids = (type, size) => {
+        let context = '';
+        let streamType = 2;
+
+        if (type === BANNER) {
+          streamType = 5;
         } else {
-          mediaSize = bid.mediaTypes.banner.sizes;
+          context = utils.deepAccess(bid, 'mediaTypes.video.context');
+          if (vpaidMode && context === 'instream') {
+            streamType = 1;
+          }
+          if (context === 'outstream') {
+            streamType = 5;
+          }
         }
-        if (utils.isArray(mediaSize[0])) {
-          sizes = mediaSize[0];
-        } else if (utils.isNumber(mediaSize[0])) {
-          sizes = mediaSize;
-        }
-      }
 
-      const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-
-      let streamType = 2;
-
-      if (vpaidMode && context === 'instream') {
-        streamType = 1;
-      }
-      if (isBanner || context === 'outstream') {
-        streamType = 5;
-      }
-
-      return {
-        type: streamType,
-        bidId: bid.bidId,
-        mediaType: isBanner ? BANNER : VIDEO,
-        context: context,
-        playerId: utils.getBidIdParameter('playerId', bid.params),
-        auctionId: bidderRequest.auctionId,
-        bidderCode: BIDDER_CODE,
-        gdprConsent: bidderRequest.gdprConsent,
-        start: +new Date(),
-        timeout: 3000,
-        video: {
-          width: sizes[0],
-          height: sizes[1]
-        },
-        params: bid.params,
+        return {
+          type: streamType,
+          bidId: bid.bidId,
+          mediaType: type,
+          context: context,
+          playerId: utils.getBidIdParameter('playerId', bid.params),
+          auctionId: bidderRequest.auctionId,
+          bidderCode: BIDDER_CODE,
+          gdprConsent: bidderRequest.gdprConsent,
+          start: +new Date(),
+          timeout: 3000,
+          size: {
+            width: size[0],
+            height: size[1]
+          },
+          params: bid.params,
+          schain: bid.schain || defaultSchain,
+        };
       };
+
+      videoSizes.forEach((size) => {
+        adUnits.push(makeBids(VIDEO, size));
+      });
+
+      bannerSizes.forEach((size) => {
+        adUnits.push(makeBids(BANNER, size));
+      });
     });
 
     return {
@@ -94,6 +97,7 @@ export const spec = {
       data: {
         'user': [],
         'meta': {
+          'adapterVersion': 2,
           'pageURL': encodeURIComponent(pageURL),
           'vastCacheEnabled': (!!config.getConfig('cache') && !isBanner && !outstreamOptions) || false,
           'isDesktop': utils.getWindowTop().document.documentElement.clientWidth > 700,
@@ -156,12 +160,12 @@ function createBids(bidRes, reqData) {
     bidUnit.cpm = bid.cpm;
     bidUnit.requestId = bid.bidId;
     bidUnit.currency = bid.currency;
-    bidUnit.mediaType = reqBid.mediaType || VIDEO;
+    bidUnit.mediaType = bid.mediaType || VIDEO;
     bidUnit.ttl = TTL;
     bidUnit.creativeId = 'c_' + bid.bidId;
     bidUnit.netRevenue = true;
-    bidUnit.width = bid.video.width;
-    bidUnit.height = bid.video.height;
+    bidUnit.width = bid.size.width;
+    bidUnit.height = bid.size.height;
     if (bid.vastXml) {
       bidUnit.vastXml = bid.vastXml;
       bidUnit.adResponse = {
@@ -171,16 +175,16 @@ function createBids(bidRes, reqData) {
     if (bid.vastTag) {
       bidUnit.vastUrl = bid.vastTag;
     }
-    if (reqBid.mediaType === BANNER) {
+    if (bid.mediaType === BANNER) {
       bidUnit.ad = getBannerHtml(bid, reqBid, reqData);
-    } else if (reqBid.context === 'outstream') {
+    } else if (bid.context === 'outstream') {
       const renderer = Renderer.install({
         id: bid.bidId,
         url: '//',
         config: {
           playerId: reqBid.playerId,
-          width: bid.video.width,
-          height: bid.video.height,
+          width: bid.size.width,
+          height: bid.size.height,
           vastUrl: bid.vastTag,
           vastXml: bid.vastXml,
           debug: reqData.debug,
@@ -213,7 +217,7 @@ function outstreamRender(bid) {
         return;
       }
 
-      const slot = utils.getBidIdParameter('slot', bid.renderer.config);
+      const slot = utils.getBidIdParameter('slot', bid.renderer.config) || bid.adUnitCode;
       if (slot && window.document.getElementById(slot)) {
         window.document.getElementById(slot).appendChild(embedCode);
       } else if (slot) {
@@ -265,6 +269,21 @@ function getBannerHtml (bid, reqBid, reqData) {
             data-ad-vast-tag="${bid.vastTag}"></div>
     </body>
   </html>`;
+}
+
+function getVideoSizes(bidRequest) {
+  return formatSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || []);
+}
+
+function getBannerSizes(bidRequest) {
+  return formatSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || []);
+}
+
+function formatSizes(sizes) {
+  if (!sizes || !sizes.length) {
+    return []
+  }
+  return Array.isArray(sizes[0]) ? sizes : [sizes];
 }
 
 registerBidder(spec);

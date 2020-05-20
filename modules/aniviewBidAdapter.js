@@ -43,7 +43,7 @@ function isBidRequestValid(bid) {
 
   return true;
 }
-
+let irc = 0;
 function buildRequests(validBidRequests, bidderRequest) {
   let bidRequests = [];
 
@@ -66,6 +66,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       let size = sizes[j];
       let playerWidth;
       let playerHeight;
+
       if (size && size.length == 2) {
         playerWidth = size[0];
         playerHeight = size[1];
@@ -102,6 +103,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       s2sParams.pbjs = 1;
       s2sParams.tgt = 10;
       s2sParams.s2s = '1';
+      s2sParams.irc = irc;
+      irc++;
+      s2sParams.wpm = 1;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.gdprApplies) {
@@ -191,12 +195,68 @@ function interpretResponse(serverResponse, bidRequest) {
   return bidResponses;
 }
 
+function getSyncData(xml, options) {
+  let ret = [];
+  if (xml) {
+    let ext = xml.getElementsByTagName('Extensions');
+    if (ext && ext.length > 0) {
+      ext = ext[0].getElementsByTagName('Extension');
+      if (ext && ext.length > 0) {
+        for (var i = 0; i < ext.length; i++) {
+          if (ext[i].getAttribute('type') == 'ANIVIEW') {
+            let syncs = ext[i].getElementsByTagName('AdServingSync');
+            if (syncs && syncs.length == 1) {
+              try {
+                let data = JSON.parse(syncs[0].textContent);
+                if (data && data.trackers && data.trackers.length) {
+                  data = data.trackers;
+                  for (var j = 0; j < data.length; j++) {
+                    if (typeof data[j] === 'object' && typeof data[j].url === 'string' && data[j].e === 'inventory') {
+                      if (data[j].t == 1 && options.pixelEnabled) {
+                        ret.push({url: data[j].url, type: 'image'});
+                      } else {
+                        if (data[j].t == 3 && options.iframeEnabled) {
+                          ret.push({url: data[j].url, type: 'iframe'});
+                        }
+                      }
+                    }
+                  }
+                }
+              } catch (e) {}
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+function getUserSyncs(syncOptions, serverResponses) {
+  if (serverResponses && serverResponses[0] && serverResponses[0].body) {
+    if (serverResponses.error) {
+      return [];
+    } else {
+      try {
+        let xmlStr = serverResponses[0].body;
+        let xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
+        if (xml && xml.getElementsByTagName('parsererror').length == 0) {
+          let syncData = getSyncData(xml, syncOptions);
+          return syncData;
+        }
+      } catch (e) {}
+    }
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO],
   isBidRequestValid,
   buildRequests,
-  interpretResponse
-}
+  interpretResponse,
+  getUserSyncs
+};
 
 registerBidder(spec);

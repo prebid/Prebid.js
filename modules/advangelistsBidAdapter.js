@@ -1,10 +1,9 @@
 import * as utils from '../src/utils.js';
-import { parse as parseUrl } from '../src/url.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'advangelists';
@@ -293,7 +292,7 @@ function createVideoRequestData(bid, bidderRequest) {
 
 function getTopWindowLocation(bidderRequest) {
   let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+  return utils.parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
 }
 
 function createBannerRequestData(bid, bidderRequest) {

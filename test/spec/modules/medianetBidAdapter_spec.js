@@ -309,6 +309,7 @@ let VALID_BID_REQUEST = [{
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
       'usp_applies': false,
+      'coppa_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -393,6 +394,7 @@ let VALID_BID_REQUEST = [{
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
       'usp_applies': false,
+      'coppa_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -478,6 +480,7 @@ let VALID_BID_REQUEST = [{
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
       'usp_applies': false,
+      'coppa_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -564,6 +567,7 @@ let VALID_BID_REQUEST = [{
         britepoolid: '82efd5e1-816b-4f87-97f8-044f407e2911'
       },
       'usp_applies': false,
+      'coppa_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -651,6 +655,7 @@ let VALID_BID_REQUEST = [{
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
       'usp_applies': false,
+      'coppa_applies': true,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -992,6 +997,7 @@ let VALID_BID_REQUEST = [{
       'gdpr_consent_string': 'consentString',
       'gdpr_applies': true,
       'usp_applies': true,
+      'coppa_applies': false,
       'usp_consent_string': '1NYN',
       'screen': {
         'w': 1000,
@@ -1149,6 +1155,12 @@ describe('Media.net bid adapter', function () {
     });
 
     it('should have valid crid present in bid request', function() {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        const config = {
+          'coppa': true
+        };
+        return config[key];
+      });
       let bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_CRID, VALID_AUCTIONDATA);
       expect(JSON.parse(bidreq.data)).to.deep.equal(VALID_PAYLOAD_WITH_CRID);
     });

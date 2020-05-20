@@ -1,6 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/relaidoBidAdapter.js';
+<<<<<<< HEAD
 import * as url from 'src/url.js';
+=======
+>>>>>>> root_branch/master
 import * as utils from 'src/utils.js';
 
 const UUID_KEY = 'relaido_uuid';
@@ -275,7 +278,7 @@ describe('RelaidoAdapter', function () {
         ref: window.location.href,
       }
       spec.onBidWon(bid);
-      const parser = url.parse(stub.getCall(0).args[0]);
+      const parser = utils.parseUrl(stub.getCall(0).args[0]);
       const query = parser.search;
       expect(parser.hostname).to.equal('api.relaido.jp');
       expect(parser.pathname).to.equal('/tr/v1/prebid/win.gif');
@@ -309,7 +312,7 @@ describe('RelaidoAdapter', function () {
         timeout: bidderRequest.timeout,
       }];
       spec.onTimeout(data);
-      const parser = url.parse(stub.getCall(0).args[0]);
+      const parser = utils.parseUrl(stub.getCall(0).args[0]);
       const query = parser.search;
       expect(parser.hostname).to.equal('api.relaido.jp');
       expect(parser.pathname).to.equal('/tr/v1/prebid/timeout.gif');
