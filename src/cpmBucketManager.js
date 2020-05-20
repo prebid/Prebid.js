@@ -1,4 +1,4 @@
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 const utils = require('./utils.js');
 
 const _defaultPrecision = 2;

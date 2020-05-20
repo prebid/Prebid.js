@@ -51,9 +51,22 @@ export const spec = {
 
     bids.forEach(bid => {
       reqId = bid.bidderRequestId;
-      const {params: {uid}, adUnitCode} = bid;
+      const {params: {uid}, adUnitCode, mediaTypes} = bid;
       auids.push(uid);
       const sizesId = utils.parseSizesInput(bid.sizes);
+
+      const addedSizes = {};
+      sizesId.forEach((sizeId) => {
+        addedSizes[sizeId] = true;
+      });
+      const bannerSizesId = utils.parseSizesInput(utils.deepAccess(mediaTypes, 'banner.sizes'));
+      const videoSizesId = utils.parseSizesInput(utils.deepAccess(mediaTypes, 'video.playerSize'));
+      bannerSizesId.concat(videoSizesId).forEach((sizeId) => {
+        if (!addedSizes[sizeId]) {
+          addedSizes[sizeId] = true;
+          sizesId.push(sizeId);
+        }
+      });
 
       if (!slotsMapByUid[uid]) {
         slotsMapByUid[uid] = {};

@@ -75,7 +75,9 @@ const validBidRequests = [
     params: {
       placementId: 'rectangle-ad-1',
       bidfloorCpm: 0,
-      accountId: 12345
+      accountId: 12345,
+      publisherId: 99999,
+      mediaId: 'example'
     },
     mediaTypes: {
       banner: {
@@ -261,10 +263,13 @@ const openRTBRequest = {
     }
   ],
   cur: 'JPY',
+  ext: {
+    accountId: 12345
+  },
   site: {
-    id: 'uni-corn.net',
+    id: 'example',
     publisher: {
-      id: 12345
+      id: 99999
     },
     domain: 'uni-corn.net',
     page: 'https://uni-corn.net/',
@@ -427,7 +432,6 @@ describe('unicornBidAdapterTest', () => {
       const removeUntestableAttrs = data => {
         delete data['device'];
         delete data['site']['domain'];
-        delete data['site']['id'];
         delete data['site']['page'];
         delete data['id'];
         data['imp'].forEach(imp => {

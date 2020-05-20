@@ -50,6 +50,95 @@ describe('Nobid Adapter', function () {
     });
   });
 
+  describe('isVideoBidRequestValid', function () {
+    let bid = {
+      bidder: 'nobid',
+      params: {
+        siteId: 2,
+        video: {
+          skippable: true,
+          playback_methods: ['auto_play_sound_off'],
+          position: 'atf',
+          mimes: ['video/x-flv', 'video/mp4', 'video/x-ms-wmv', 'application/x-shockwave-flash', 'application/javascript'],
+          minduration: 1,
+          maxduration: 30,
+          frameworks: [1, 2, 3, 4, 5, 6]
+        }
+      },
+      adUnitCode: 'adunit-code',
+      sizes: [[640, 480]],
+      bidId: '30b31c1838de1e',
+      bidderRequestId: '22edbae2733bf6',
+      auctionId: '1d1a030790a475',
+      mediaTypes: {
+        video: {
+          context: 'instream'
+        }
+      }
+    };
+    const SITE_ID = 2;
+    const REFERER = 'https://www.examplereferer.com';
+    let bidRequests = [
+      {
+        bidder: 'nobid',
+        params: {
+          siteId: SITE_ID,
+          video: {
+            skippable: true,
+            playback_methods: ['auto_play_sound_off'],
+            position: 'atf',
+            mimes: ['video/x-flv', 'video/mp4', 'video/x-ms-wmv', 'application/x-shockwave-flash', 'application/javascript'],
+            minduration: 1,
+            maxduration: 30,
+            frameworks: [1, 2, 3, 4, 5, 6]
+          }
+        },
+        adUnitCode: 'adunit-code',
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        mediaTypes: {
+          video: {
+        	playerSize: [640, 480],
+            context: 'instream'
+          }
+        }
+      }
+    ];
+
+    let bidderRequest = {
+      refererInfo: {referer: REFERER}
+    }
+
+    it('should add source and version to the tag', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.sid).to.equal(SITE_ID);
+      expect(payload.l).to.exist.and.to.equal(encodeURIComponent(REFERER));
+      expect(payload.a).to.exist;
+      expect(payload.t).to.exist;
+      expect(payload.tz).to.exist;
+      expect(payload.r).to.exist;
+      expect(payload.lang).to.exist;
+      expect(payload.ref).to.exist;
+      expect(payload.a[0].d).to.exist.and.to.equal('adunit-code');
+      expect(payload.a[0].at).to.exist.and.to.equal('video');
+      expect(payload.a[0].params.video).to.exist;
+      expect(payload.a[0].params.video.skippable).to.exist.and.to.equal(true);
+      expect(payload.a[0].params.video.playback_methods).to.exist.and.to.contain('auto_play_sound_off');
+      expect(payload.a[0].params.video.position).to.exist.and.to.equal('atf');
+      expect(payload.a[0].params.video.mimes).to.exist.and.to.contain('video/x-flv');
+      expect(payload.a[0].params.video.minduration).to.exist.and.to.equal(1);
+      expect(payload.a[0].params.video.maxduration).to.exist.and.to.equal(30);
+      expect(payload.a[0].params.video.frameworks[0]).to.exist.and.to.equal(1);
+      expect(payload.a[0].params.video.frameworks[1]).to.exist.and.to.equal(2);
+      expect(payload.a[0].params.video.frameworks[2]).to.exist.and.to.equal(3);
+      expect(payload.a[0].params.video.frameworks[3]).to.exist.and.to.equal(4);
+      expect(payload.a[0].params.video.frameworks[4]).to.exist.and.to.equal(5);
+      expect(payload.a[0].params.video.frameworks[5]).to.exist.and.to.equal(6);
+    });
+  });
+
   describe('buildRequests', function () {
     const SITE_ID = 2;
     const REFERER = 'https://www.examplereferer.com';
