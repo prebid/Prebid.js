@@ -48,7 +48,6 @@ describe('nextrollBidAdapter', function() {
       }];
 
       let request = spec.buildRequests(nativeAdUnit)
-      console.log(JSON.stringify(request))
       let assets = request[0].data.imp.native.request.native.assets
 
       let excptedAssets = [
@@ -174,6 +173,54 @@ describe('nextrollBidAdapter', function() {
       expect(response.ad).to.be.equal('adm1');
     });
   });
+
+  describe('interpret native response', () => {
+    let clickUrl = "https://clickurl.com/with/some/path"
+    let titleText = "Some title"
+    let imgW = 300
+    let imgH = 250
+    let imgUrl = "https://clickurl.com/img.png"
+    let brandText = "Some Brand"
+    let impUrl = "https://clickurl.com/imptracker"
+
+    let responseBody = {
+      body: {
+        id: 'bidresponse_id',
+        seatbid: [{
+            bid: [{
+                price: 1.2,
+                crid: 'crid1',
+                adm: {
+                  link: {url: clickUrl},
+                  assets: [
+                    {id: 1, title: {text: titleText}},
+                    {id: 2, img: {w: imgW, h: imgH, url: imgUrl}},
+                    {id: 5, data: {value: brandText}}
+                  ],
+                  imptrackers: [impUrl]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    it('Should interpret response', () => {
+      let response = spec.interpretResponse(responseBody)
+      let expectedResponse = {
+        clickUrl: clickUrl,
+        impressionTrackers: [impUrl],
+        privacyLink: 'https://info.evidon.com/pub_info/573',
+        privacyIcon: 'https://c.betrad.com/pub/icon1.png',
+        title: titleText,
+        image: {url: imgUrl, w: imgW, h: imgH},
+        sponsoredBy: brandText
+      }
+      expect(response[0].native).to.be.deep.equal(expectedResponse)
+    })
+
+  })
 
   describe('hasCCPAConsent', function() {
     function ccpaRequest(consentString) {

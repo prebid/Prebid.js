@@ -204,7 +204,7 @@ function _getNativeResponse(adm, price) {
     privacyIcon: 'https://c.betrad.com/pub/icon1.png'
   }
   return adm.assets.reduce((accResponse, asset) => {
-    let assetMaps = NATIVE_ASSET_MAP.filter(assetMap => assetMap.id == asset.id)
+    let assetMaps = NATIVE_ASSET_MAP.filter(assetMap => assetMap.id === asset.id && asset[assetMap.kind] !== undefined)
     if (assetMaps.length === 0) return accResponse
     let assetMap = assetMaps[0]
     accResponse[assetMap.key] = _getAssetResponse(asset, assetMap)
