@@ -68,30 +68,28 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
 export function initTranslation(url, localStorageKey) {
   setupBeforeHookFnOnce(addBidResponse, getAdserverCategoryHook, 50);
   let mappingData = storage.getDataFromLocalStorage(localStorageKey);
-  if (mappingData) {
-    try {
-      mappingData = JSON.parse(mappingData);
-    } catch (error) {
-      logError('Failed to parse translation mapping file');
-    }
-  }
-  if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-    ajax(url,
-      {
-        success: (response) => {
-          try {
-            response = JSON.parse(response);
-            response['lastUpdated'] = timestamp();
-            storage.setDataInLocalStorage(localStorageKey, JSON.stringify(response));
-          } catch (error) {
-            logError('Failed to parse translation mapping file');
+  try {
+    mappingData = mappingData ? JSON.parse(mappingData) : undefined;
+    if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+      ajax(url,
+        {
+          success: (response) => {
+            try {
+              response = JSON.parse(response);
+              response['lastUpdated'] = timestamp();
+              storage.setDataInLocalStorage(localStorageKey, JSON.stringify(response));
+            } catch (error) {
+              logError('Failed to parse translation mapping file');
+            }
+          },
+          error: () => {
+            logError('Failed to load brand category translation file.')
           }
         },
-        error: () => {
-          logError('Failed to load brand category translation file.')
-        }
-      },
-    );
+      );
+    }
+  } catch (error) {
+    logError('Failed to parse translation mapping file');
   }
 }
 
