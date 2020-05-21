@@ -593,38 +593,35 @@ function _createImpressionObject(bid, conf) {
             impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
 }
 
-// returns highest of the current and the floorInfo
-function _getHighestBidFloor(currency, currentBidFloor, floorInfo) {
-  if (typeof floorInfo === 'object' && floorInfo.currency === currency && !isNaN(parseInt(floorInfo.floor))) {
-    floorInfo.floor = parseFloat(floorInfo.floor);
-    if (currentBidFloor < floorInfo.floor) {
-      return floorInfo.floor;
-    }
-  }
-  return currentBidFloor;
-}
-
 function _addFloorFromFloorModule(impObj, bid) {
-  let bidFloor = impObj.bidfloor || 0;
-  let currency = impObj.bidfloorcur;
-
+  // console.log('in _addFloorFromFloorModule');
+  // console.log('impObj.bidfloor: ', impObj.bidfloor);
+  let bidFloor = -1;
+  // get lowest floor from floorModule
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (impObj.hasOwnProperty(mediaType)) {
-        bidFloor = _getHighestBidFloor(currency, bidFloor, bid.getFloor({
-          currency: currency,
-          mediaType: mediaType,
-          size: '*'
-        }));
+        let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
+        // console.log('For mediaType:', mediaType, " got floorInfo: ", floorInfo);
+        if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+          let mediaTypeFloor = parseFloat(floorInfo.floor);
+          bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
+        }
       }
     });
+  } else {
+    // console.log('bid.getFloor not found')
   }
 
-  if (!isNaN(bidFloor) && bidFloor > 0) {
-    impObj.bidfloor = bidFloor;
-  } else {
-    impObj.bidfloor = UNDEFINED;
+  // console.log('bidFloor', bidFloor, 'impObj.bidFloor', impObj.bidfloor)
+  // get highest from impObj.bidfllor and floor from floor module
+  // as we are using Math.max, it is ok if we have not got any floor from floorModule, then value of bidFloor will be -1
+  if (impObj.bidfloor) {
+    bidFloor = Math.max(bidFloor, impObj.bidfloor)
   }
+
+  // assign value only if bidFloor is > 0
+  impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
 function _getDigiTrustObject(key) {
