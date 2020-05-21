@@ -297,7 +297,7 @@ function handleAuctionInit(eventType, args) {
 
 function parseBidType(mediaTypes, mediaType) {
   if (!mediaTypes) {
-    return [mediaType] || [''];
+    return [mediaType];
   } else {
     return Object.keys(mediaTypes) || [''];
   }
@@ -388,7 +388,7 @@ function sendRequest(...objects) {
     os: initOptions.os || '',
     browser: initOptions.browser || '',
     c_timeout: initOptions.c_timeout || 0,
-    events: objects || []
+    events: Object.keys(objects).length ? objects : []
   };
   postAjax(url, JSON.stringify(obj));
 }
@@ -425,7 +425,7 @@ let adWMGAnalyticsAdapter = Object.assign(adapter({
         handleBidWon(eventType, args);
         break;
       case AUCTION_END:
-        handleAuctionEnd(args);
+        handleAuctionEnd();
     }
   }
 });

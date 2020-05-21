@@ -1,11 +1,12 @@
 import adWMGAnalyticsAdapter from 'modules/adWMGAnalyticsAdapter.js';
 import { expect } from 'chai';
+const sinon = require('sinon');
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('adWMG Analytics', function () {
-  let xhr;
+  let xhr = sinon.useFakeXMLHttpRequest();
   let requests = [];
 
   let timestamp = new Date() - 256;
@@ -114,7 +115,6 @@ describe('adWMG Analytics', function () {
   }];
 
   before(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
     xhr.onCreate = function (request) {
       requests.push(request);
     };
@@ -127,6 +127,7 @@ describe('adWMG Analytics', function () {
 
   describe('main test flow', function () {
     beforeEach(function () {
+      global.XMLHttpRequest = sinon.useFakeXMLHttpRequest();
       sinon.stub(events, 'getEvents').returns([]);
     });
 
@@ -157,7 +158,6 @@ describe('adWMG Analytics', function () {
       events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgs);
       events.emit(constants.EVENTS.AUCTION_END, {});
       events.emit(constants.EVENTS.BID_WON, wonRequest);
-
       sinon.assert.callCount(adWMGAnalyticsAdapter.track, 7);
     });
 
