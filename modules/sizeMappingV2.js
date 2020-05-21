@@ -282,7 +282,9 @@ export function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode, adUnitIn
   labelOperator = labelsFound[0];
 
   if (labelOperator && !activeLabels) {
-    utils.logWarn(`Size Mapping V2:: Ad Unit: ${adUnitCode}(${adUnitInstance}) => Found '${labelOperator}' on ad unit, but 'labels' is not set. Did you pass 'labels' to pbjs.requestBids() ?`);
+    utils.logWarn(`Size Mapping V2:: ${(bidOrAdUnit.code)
+      ? (`Ad Unit: ${bidOrAdUnit.code}(${adUnitInstance}) => Found '${labelOperator}' on ad unit, but 'labels' is not set. Did you pass 'labels' to pbjs.requestBids() ?`)
+      : (`Ad Unit: ${adUnitCode}(${adUnitInstance}), Bidder: ${bidOrAdUnit.bidder} => Found '${labelOperator}' on bidder, but 'labels' is not set. Did you pass 'labels' to pbjs.requestBids() ?`)}`);
     return true;
   }
 
@@ -485,7 +487,7 @@ export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, label
         result
           .push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
             .reduce((bids, bid) => {
-              if (internal.isLabelActivated(bid, labels, adUnit.code)) {
+              if (internal.isLabelActivated(bid, labels, adUnit.code, adUnitInstance)) {
                 // handle native params
                 const nativeParams = adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
                 if (nativeParams) {
