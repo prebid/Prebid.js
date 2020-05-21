@@ -1,9 +1,8 @@
 // jshint esversion: 6, es3: false, node: true
 import {assert, expect} from 'chai';
-import * as url from 'src/url';
-import {spec} from 'modules/seedingAllianceBidAdapter';
-import { NATIVE } from 'src/mediaTypes';
-import { config } from 'src/config';
+import {spec} from 'modules/seedingAllianceBidAdapter.js';
+import { NATIVE } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 
 describe('SeedingAlliance adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -88,6 +87,12 @@ describe('SeedingAlliance adapter', function () {
           },
           sponsoredBy: {
             required: true
+          },
+          cta: {
+            required: true
+          },
+          icon: {
+            required: true
           }
         }
       }];
@@ -98,6 +103,8 @@ describe('SeedingAlliance adapter', function () {
       assert.equal(assets[1].id, 3);
       assert.equal(assets[2].id, 0);
       assert.equal(assets[3].id, 2);
+      assert.equal(assets[4].id, 4);
+      assert.equal(assets[5].id, 5);
     });
   });
 

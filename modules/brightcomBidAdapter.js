@@ -1,8 +1,7 @@
-import * as utils from '../src/utils';
-import * as url from '../src/url';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
-import { config } from '../src/config';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'brightcom';
 const URL = 'https://brightcombid.marphezis.com/hb';
@@ -57,7 +56,7 @@ function buildRequests(bidReqs, bidderRequest) {
       id: utils.getUniqueIdentifierStr(),
       imp: brightcomImps,
       site: {
-        domain: url.parse(referrer).host,
+        domain: utils.parseUrl(referrer).host,
         page: referrer,
         publisher: {
           id: publisherId

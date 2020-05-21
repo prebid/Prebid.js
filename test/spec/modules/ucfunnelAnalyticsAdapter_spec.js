@@ -1,7 +1,7 @@
 import {
   ucfunnelAnalyticsAdapter, parseBidderCode, parseAdUnitCode,
   ANALYTICS_VERSION, BIDDER_STATUS
-} from 'modules/ucfunnelAnalyticsAdapter';
+} from 'modules/ucfunnelAnalyticsAdapter.js';
 
 import {expect} from 'chai';
 

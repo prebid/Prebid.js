@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { adpodUtils } from 'modules/freeWheelAdserverVideo';
-import { auctionManager } from 'src/auctionManager';
-import { config } from 'src/config';
-import { server } from 'test/mocks/xhr';
+import { adpodUtils } from 'modules/freeWheelAdserverVideo.js';
+import { auctionManager } from 'src/auctionManager.js';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 
 describe('freeWheel adserver module', function() {
   let amStub;

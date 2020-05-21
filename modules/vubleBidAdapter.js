@@ -1,8 +1,8 @@
 // Vuble Adapter
 
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'vuble';
 
@@ -107,6 +107,13 @@ export const spec = {
         bid_id: bidRequest.bidId,
         adUnitCode: bidRequest.adUnitCode
       };
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        data.gdpr_consent = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          gdpr_applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        }
+      }
 
       return {
         method: 'POST',

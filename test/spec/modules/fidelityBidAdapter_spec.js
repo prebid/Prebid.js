@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/fidelityBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/fidelityBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('FidelityAdapter', function () {
   const adapter = newBidder(spec);
@@ -67,7 +67,19 @@ describe('FidelityAdapter', function () {
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
           requestId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
-          transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+          transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [{
+              asi: 'exchange1.com',
+              sid: '1234',
+              hp: 1,
+              rid: 'bid-request-1',
+              name: 'publisher',
+              domain: 'publisher.com'
+            }]
+          }
         }
       ],
       start: 1472239426002,
@@ -78,7 +90,8 @@ describe('FidelityAdapter', function () {
       }
     };
 
-    it('should add source and verison to the tag', function () {
+    it('should add params to the request', function () {
+      let schainString = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com';
       const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const payload = request.data;
       expect(payload.from).to.exist;
@@ -92,9 +105,11 @@ describe('FidelityAdapter', function () {
       expect(payload.flashver).to.exist;
       expect(payload.tmax).to.exist;
       expect(payload.defloc).to.exist;
+      expect(payload.schain).to.exist.and.to.be.a('string');
+      expect(payload.schain).to.equal(schainString);
     });
 
-    it('should add gdpr consent information to the request', function () {
+    it('should add consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let uspConsentString = '1YN-';
       bidderRequest.gdprConsent = {
