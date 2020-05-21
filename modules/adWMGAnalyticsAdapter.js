@@ -1,6 +1,7 @@
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
+import { ajax } from '../src/ajax.js';
 const analyticsType = 'endpoint';
 const url = 'https://analytics.wmgroup.us/analytic/collection';
 const {
@@ -32,10 +33,7 @@ let bidWonObject = {};
 let initOptions = {};
 
 function postAjax(url, data) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', url);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.send(data);
+  ajax(url, function () {}, data, {contentType: 'application/json', method: 'POST'});
 }
 
 function handleInitSizes(adUnits) {
