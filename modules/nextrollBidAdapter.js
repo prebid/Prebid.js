@@ -128,31 +128,44 @@ function _getAsset(mediaTypeNative, assetMap) {
   let assetFunc = ASSET_KIND_MAP[assetMap.kind]
   return {
     id: assetMap.id,
-    required: assetMap.required || !!asset.required,
+    required: (assetMap.required || !!asset.required) ? 1 : 0,
     [assetMap.kind]: assetFunc(asset, assetMap)
   }
 }
 
 function _getTitleAsset(title, _assetMap) {
-  return {len: title.len}
+  return {len: title.len || 0}
+}
+
+function _getMinAspectRatio(aspectRatio, property) {
+  if (!utils.isPlainObject(aspectRatio)) return 1
+
+  let ratio = aspectRatio['ratio_' + property]
+  let min = aspectRatio['min_' + property]
+
+  if (utils.isNumber(ratio)) return ratio
+  if (utils.isNumber(min)) return min
+
+  return 1
 }
 
 function _getImageAsset(image, assetMap) {
   let sizes = image.sizes
   let aspectRatio = image.aspect_ratios ? image.aspect_ratios[0] : undefined
+
   return {
     type: assetMap.type,
     w: (sizes ? sizes[0] : undefined),
     h: (sizes ? sizes[1] : undefined),
-    wmin: (aspectRatio ? aspectRatio.min_width : 1),
-    hmin: (aspectRatio ? aspectRatio.min_height : 1)
+    wmin: _getMinAspectRatio(aspectRatio, 'width'),
+    hmin: _getMinAspectRatio(aspectRatio, 'height'),
   }
 }
 
 function _getDataAsset(data, assetMap) {
   return {
     type: assetMap.type,
-    len: data.len
+    len: data.len || 0
   }
 }
 
