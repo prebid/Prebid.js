@@ -2,8 +2,11 @@ import * as utils from '../src/utils.js'
 
 import { config } from '../src/config.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
@@ -55,9 +58,9 @@ function _getBrowserParams(topWindowUrl) {
     sw: topScreen.width,
     sh: topScreen.height,
     pu: topUrl,
-    ce: utils.cookiesAreEnabled(),
+    ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: JSON.stringify({ t: 0, rq: 8 }),
+    jcsi: encodeURIComponent(JSON.stringify({ t: 0, rq: 8 })),
     ogu: getOgURL()
   }
 

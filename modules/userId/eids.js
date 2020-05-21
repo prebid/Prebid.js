@@ -91,7 +91,7 @@ function createEidObject(userIdData, subModuleKey) {
     let eid = {};
     eid.source = conf['source'];
     const value = utils.isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
-    if (value) {
+    if (utils.isStr(value)) {
       const uid = { id: value, atype: conf['atype'] };
       // getUidExt
       if (utils.isFn(conf['getUidExt'])) {

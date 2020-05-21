@@ -1,6 +1,9 @@
 import {detectReferer} from '../src/refererDetection.js';
 import {ajax} from '../src/ajax.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 export const spec = {
   code: 'orbidder',
@@ -8,7 +11,7 @@ export const spec = {
   orbidderHost: (() => {
     let ret = 'https://orbidder.otto.de';
     try {
-      ret = localStorage.getItem('ov_orbidder_host') || ret;
+      ret = storage.getDataFromLocalStorage('ov_orbidder_host') || ret;
     } catch (e) {
     }
     return ret;
