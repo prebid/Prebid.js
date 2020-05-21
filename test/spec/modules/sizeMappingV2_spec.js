@@ -722,10 +722,15 @@ describe('sizeMappingV2', function () {
         { minViewPort: [1600, 0], relevantMediaTypes: ['native', 'video'] }
 
       ];
+      // relevantMediaTypes can only include one or more of these values: 'none', 'banner', 'video', 'native'
+      const sizeConfig_5 = [
+        { minViewPort: [0, 0], relevantMediaTypes: ['wrong'] }
+      ]
       expect(checkBidderSizeConfigFormat(sizeConfig_1)).to.equal(false);
       expect(checkBidderSizeConfigFormat(sizeConfig_2)).to.equal(false);
       expect(checkBidderSizeConfigFormat(sizeConfig_3)).to.equal(false);
       expect(checkBidderSizeConfigFormat(sizeConfig_4)).to.equal(false);
+      expect(checkBidderSizeConfigFormat(sizeConfig_5)).to.equal(false);
     });
 
     it('should return "true" if the sizeConfig object is being configured properly at the Bidder level', function () {
@@ -738,7 +743,7 @@ describe('sizeMappingV2', function () {
     });
   });
 
-  describe('isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode)', function () {
+  describe('isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode, adUnitInstance)', function () {
     const labelAny = ['mobile', 'tablet'];
     const labelAll = ['mobile', 'tablet', 'desktop', 'HD-Tv'];
     const activeLabels = ['mobile', 'tablet', 'desktop'];
@@ -879,6 +884,38 @@ describe('sizeMappingV2', function () {
 
       const activeBidder = isLabelActivated(adUnit.bids[0], activeLabels, adUnitCode, adUnitInstance);
       expect(activeBidder).to.equal(true);
+    });
+
+    it('should throw a warning message if labelAny/labelAll operator found on adunit/bidder when "label" is not passed to pbjs.requestBids', function() {
+      const adUnit = {
+        code: 'ad-unit-1',
+        mediaTypes: {
+          banner: {
+            sizeConfig: [{ minViewPort: [0, 0], sizes: [[300, 300], [400, 400]] }]
+          }
+        },
+        labelAny: ['mobile'],
+        bids: [{
+          bidder: 'appnexus',
+          params: 27,
+          labelAll: ['tablet', 'desktop']
+        }]
+      }
+      const labels = undefined;
+
+      // adUnit level check
+      isLabelActivated(adUnit, labels, adUnit.code, adUnitInstance);
+
+      sinon.assert.callCount(utils.logWarn, 1);
+      sinon.assert.calledWith(utils.logWarn, `Size Mapping V2:: Ad Unit: ad-unit-1(1) => Found 'labelAny' on ad unit, but 'labels' is not set. Did you pass 'labels' to pbjs.requestBids() ?`);
+      utils.logWarn.restore();
+
+      sinon.spy(utils, 'logWarn');
+
+      // bidder level check
+      isLabelActivated(adUnit.bids[0], labels, adUnit.code, adUnitInstance);
+      sinon.assert.callCount(utils.logWarn, 1);
+      sinon.assert.calledWith(utils.logWarn, `Size Mapping V2:: Ad Unit: ad-unit-1(1), Bidder: appnexus => Found 'labelAll' on bidder, but 'labels' is not set. Did you pass 'labels' to pbjs.requestBids() ?`);
     });
   });
 
@@ -1136,6 +1173,7 @@ describe('sizeMappingV2', function () {
       sinon.assert.callCount(sizeMappingInternalStore.getAuctionDetail, 1);
       sinon.assert.callCount(utils.deepEqual, 1);
       sinon.assert.callCount(internal.getFilteredMediaTypes, 0);
+      expect(adUnitDetail.cacheHits).to.equal(1);
       expect(adUnitDetail).to.deep.equal(adUnitDetailFixture_1);
     });
 
@@ -1169,6 +1207,42 @@ describe('sizeMappingV2', function () {
       getAdUnitDetail('a1b2c3', adUnit, labels);
       sinon.assert.callCount(utils.logInfo, 1);
       sinon.assert.calledWith(utils.logInfo, `Size Mapping V2:: Ad Unit: div-gpt-ad-1460505748561-1(1) => Active size buckets after filtration: `, adUnitDetailFixture_2.sizeBucketToSizeMap);
+    });
+
+    it('should increment "instance" count if presence of "Identical ad units" is detected', function() {
+      const adUnit = {
+        code: 'div-gpt-ad-1460505748561-0',
+        mediaTypes: {
+          banner: {
+            sizeConfig: [{ minViewPort: [0, 0], sizes: [[300, 300]] }]
+          }
+        },
+        bids: [{
+          bidder: 'appnexus',
+          params: 12
+        }]
+      };
+
+      internal.getFilteredMediaTypes.restore();
+
+      sinon.stub(internal, 'getFilteredMediaTypes')
+        .withArgs(adUnit.mediaTypes)
+        .returns({ mediaTypes: {}, sizeBucketToSizeMap: {}, activeViewPort: [], transformedMediaTypes: {} });
+
+      const adUnitDetail = getAdUnitDetail('a1b2c3', adUnit, labels);
+      sinon.assert.callCount(sizeMappingInternalStore.setAuctionDetail, 1);
+      sinon.assert.callCount(internal.getFilteredMediaTypes, 1);
+      expect(adUnitDetail.instance).to.equal(2);
+    });
+
+    it('should not execute "getFilteredMediaTypes" function if label is not activated on the ad unit', function() {
+      const [adUnit] = utils.deepClone(AD_UNITS);
+      adUnit.labelAny = ['tablet'];
+      getAdUnitDetail('a1b2c3', adUnit, labels);
+
+      // assertions
+      sinon.assert.callCount(internal.getFilteredMediaTypes, 0);
+      sinon.assert.callCount(utils.logInfo, 0);
     });
   });
 
