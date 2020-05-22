@@ -139,7 +139,7 @@ function isBidRequestValid (bid) {
     case !!(params.ICV): break;
     case !!(params.video): break;
     case !!(params.inVideo): break;
-
+    case !!(params.videoPubID): break;
     default:
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
@@ -233,6 +233,11 @@ function buildRequests (validBidRequests, bidderRequest) {
     if (params.ICV) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
+    }
+    if (params.videoPubID) {
+      data = Object.assign(data, _getVidParams(mediaTypes.video));
+      data.pubId = params.videoPubID;
+      data.pi = 7;
     }
     if (params.video) {
       data = Object.assign(data, _getVidParams(mediaTypes.video));
