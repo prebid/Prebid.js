@@ -274,10 +274,10 @@ export function getFloorDataFromAdUnits(adUnits) {
 /**
  * @summary This function takes the adUnits for the auction and update them accordingly as well as returns the rules hashmap for the auction
  */
-export function updateAdUnitsForAuction(adUnits, floorData, skipped, auctionId) {
+export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
   adUnits.forEach((adUnit) => {
     adUnit.bids.forEach(bid => {
-      if (skipped) {
+      if (floorData.skipped) {
         delete bid.getFloor;
       } else {
         bid.getFloor = getFloor;
@@ -285,10 +285,11 @@ export function updateAdUnitsForAuction(adUnits, floorData, skipped, auctionId) 
       // information for bid and analytics adapters
       bid.auctionId = auctionId;
       bid.floorData = {
-        skipped,
-        modelVersion: utils.deepAccess(floorData, 'data.modelVersion') || '',
-        location: floorData.data.location,
-        skipRate: floorData.skipRate
+        skipped: floorData.skipped,
+        modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
+        location: utils.deepAccess(floorData, 'data.location'),
+        skipRate: floorData.skipRate,
+        fetchFailed: _floorsConfig.fetchFailed
       }
     });
   });
@@ -307,15 +308,17 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
   } else {
     resolvedFloorsData.data = getFloorsDataForAuction(resolvedFloorsData.data);
   }
-  // if we still do not have a valid floor data then floors is not on for this auction
+  // if we still do not have a valid floor data then floors is not on for this auction, so skip
   if (Object.keys(utils.deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0) {
-    return;
+    resolvedFloorsData.skipped = true;
+  } else {
+    // determine the skip rate now
+    const auctionSkipRate = utils.getParameterByName('pbjs_skipRate') || resolvedFloorsData.skipRate;
+    const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
+    resolvedFloorsData.skipped = isSkipped;
   }
-  // determine the skip rate now
-  const auctionSkipRate = utils.getParameterByName('pbjs_skipRate') || resolvedFloorsData.skipRate;
-  const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
-  resolvedFloorsData.skipped = isSkipped;
-  updateAdUnitsForAuction(adUnits, resolvedFloorsData, isSkipped, auctionId);
+  // add floorData to bids
+  updateAdUnitsForAuction(adUnits, resolvedFloorsData, auctionId);
   return resolvedFloorsData;
 }
 
@@ -446,6 +449,7 @@ function resumeDelayedAuctions() {
  */
 export function handleFetchResponse(fetchResponse) {
   fetching = false;
+  _floorsConfig.fetchFailed = false;
   let floorResponse;
   try {
     floorResponse = JSON.parse(fetchResponse);
@@ -461,7 +465,8 @@ export function handleFetchResponse(fetchResponse) {
 
 function handleFetchError(status) {
   fetching = false;
-  utils.logError(`${MODULE_NAME}: Fetch errored with: ${status}`);
+  _floorsConfig.fetchFailed = true;
+  utils.logError(`${MODULE_NAME}: Fetch errored with: `, status);
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
   resumeDelayedAuctions();
