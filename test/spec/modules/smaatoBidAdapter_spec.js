@@ -8,11 +8,11 @@ const bidRequests = [
     bidder: 'smaato',
     params: {
       publisherId: '1100042525',
-      adspaceId: '130563103'
+      adspaceId: 'adspaceId'
     },
     mediaTypes: {
       banner: {
-        sizes: [[300, 50]]
+        sizes: [[300, 50], [200, 80]]
       }
     },
     adUnitCode: '/19968336/header-bid-tag-0',
@@ -39,16 +39,16 @@ const bidderRequest = {
       bidder: 'smaato',
       params: {
         publisherId: '1100042525',
-        adspaceId: '130563103'
+        adspaceId: 'adspaceId'
       },
       mediaTypes: {
         banner: {
-          sizes: [[300, 50]]
+          sizes: [[300, 50], [200, 80]]
         }
       },
       adUnitCode: '/19968336/header-bid-tag-0',
       transactionId: 'transactionId',
-      sizes: [[300, 50]],
+      sizes: [[300, 50], [200, 80]],
       bidId: 'bidId',
       bidderRequestId: 'bidderRequestId',
       auctionId: 'auctionId',
@@ -80,10 +80,16 @@ const openRTBRequest = {
     {
       id: 'bidId',
       banner: {
-        w: '300',
-        h: '50'
+        w: 300,
+        h: 50
       },
-      tagid: '130563103'
+      format: [
+        {
+          h: 50,
+          w: 300
+        }
+      ],
+      tagid: 'adspaceId'
     }
   ],
   cur: 'USD',
@@ -109,7 +115,7 @@ const openRTBRequest = {
   }
 };
 
-const serverResponse = {
+const openRtbBidResponse = {
   body: {
     bidid: '04db8629-179d-4bcd-acce-e54722969006',
     cur: 'USD',
@@ -163,99 +169,107 @@ const interpretedBids = [
   }
 ];
 
-describe('smaatoBidAdapterTest', () => {
-  describe('buildRequests1', function () {
-    const bidRequests = [{
-      bidder: 'smaato',
-      params: {
-        publisherId: '1100042525',
-        adspaceId: '130563103'
-      },
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 50]]
-        }
-      },
-      adUnitCode: '/19968336/header-bid-tag-0',
-      transactionId: 'transactionId',
-      sizes: [[300, 50]],
-      bidId: 'bidId',
-      bidderRequestId: 'bidderRequestId',
-      auctionId: 'auctionId',
-      src: 'client',
-      bidRequestsCount: 1,
-      bidderRequestsCount: 1,
-      bidderWinsCount: 0
-    }];
-    const bidderRequest = {
-      refererInfo: {
-        referer: 'http://example.com/page.html',
-      }
-    };
-    const request = spec.buildRequests(bidRequests, bidderRequest);
+const defaultBidderRequest = {
+  gdprConsent: {
+    consentString: 'gdprConsentStr',
+    gdprApplies: true
+  },
+  uspConsent: 'uspConsentString',
+  refererInfo: {
+    referer: 'http://example.com/page.html',
+  }
+};
 
-    it('sends bid request to our endpoint via POST', function () {
-      expect(request.method).to.equal('POST');
-    });
+const minimalBidderRequest = {
+  refererInfo: {
+    referer: 'http://example.com/page.html',
+  }
+};
 
-    it('sends gdpr info if exists', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let bidderRequest = {
-        'bidderCode': 'smaato',
-        'auctionId': 'auctionId',
-        'bidderRequestId': 'bidderRequestId',
-        'timeout': 3000,
-        gdprConsent: {
-          consentString: consentString,
-          gdprApplies: true
-        },
-        refererInfo: {
-          referer: 'http://example.com/page.html',
-        }
-      };
-      bidderRequest.bids = bidRequests;
+const singleBannerBidRequest = {
+  bidder: 'smaato',
+  params: {
+    publisherId: 'publisherId',
+    adspaceId: 'adspaceId'
+  },
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 50]]
+    }
+  },
+  adUnitCode: '/19968336/header-bid-tag-0',
+  transactionId: 'transactionId',
+  sizes: [[300, 50]],
+  bidId: 'bidId',
+  bidderRequestId: 'bidderRequestId',
+  auctionId: 'auctionId',
+  src: 'client',
+  bidRequestsCount: 1,
+  bidderRequestsCount: 1,
+  bidderWinsCount: 0
+};
 
-      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
-
-      expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number');
-      expect(data.regs.ext.gdpr).to.equal(1);
-    });
-  });
-
+describe('smaatoBidAdapterTestOld', () => {
   describe('isBidRequestValid', () => {
     it('isBidRequestValid', () => {
-      expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
-      expect(spec.isBidRequestValid(bidRequests[1])).to.equal(true);
-      expect(spec.isBidRequestValid(bidRequests[2])).to.equal(true);
+      expect(spec.isBidRequestValid(singleBannerBidRequest)).to.equal(true);
     });
   });
 
-  describe('buildBidRequest', () => {
-    it('buildBidRequest', () => {
-      config.setConfig({'coppa': true});
+  describe('buildRequests', () => {
+    beforeEach(() => {
+      this.req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+    });
 
-      const req = spec.buildRequests(validBidRequests, bidderRequest);
-      const removeUntestableAttrs = data => {
-        delete data['device'];
-        delete data['site']['domain'];
-        delete data['site']['id'];
-        delete data['site']['page'];
-        // delete data['id'];
-        data['imp'].forEach(imp => {
-          delete imp['id'];
-        })
-        return data;
-      };
+    it('sends correct imps', () => {
+      expect(this.req.imp).to.deep.equal([
+        {
+          id: 'bidId',
+          banner: {
+            w: 300,
+            h: 50,
+            format: [
+              {
+                h: 50,
+                w: 300
+              }
+            ]
+          },
+          tagid: 'adspaceId'
+        }
+      ])
+    });
 
-      const reqData = removeUntestableAttrs(JSON.parse(req.data));
-      const openRTBRequestData = removeUntestableAttrs(openRTBRequest);
-      assert.deepStrictEqual(reqData, openRTBRequestData);
+    it('sends correct site', () => {
+      expect(this.req.site.id).to.exist.and.to.be.a('string');
+      expect(this.req.site.domain).to.exist.and.to.be.a('string');
+      expect(this.req.site.page).to.exist.and.to.be.a('string');
+      expect(this.req.site.ref).to.equal('http://example.com/page.html');
+      expect(this.req.site.publisher.id).to.equal('publisherId');
+    })
+
+    it('sends gdpr if exists', () => {
+      expect(this.req.regs.ext.gdpr).to.equal(1);
+    });
+
+    it('sends no gdpr if no gdpr exists', () => {
+      let req = JSON.parse(spec.buildRequests([singleBannerBidRequest], minimalBidderRequest).data);
+      expect(req.regs.ext.gdpr).to.equal(0);
+    });
+
+    it('sends usp if exists', () => {
+      expect(this.req.regs.ext.us_privacy).to.equal('uspConsentString');
+    });
+
+    it('sends no usp if no usp exists', () => {
+      let req = JSON.parse(spec.buildRequests([singleBannerBidRequest], minimalBidderRequest).data);
+      expect(req.regs.ext.us_privacy).to.not.exist;
     });
   });
 
   describe('interpretResponse', () => {
     it('interpretResponse', () => {
-      const bids = spec.interpretResponse(serverResponse, request);
+      const bids = spec.interpretResponse(openRtbBidResponse, request);
       assert.deepStrictEqual(bids, interpretedBids);
     });
   });

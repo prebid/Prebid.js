@@ -14,13 +14,25 @@ const SMAATO_ENDPOINT = 'http://localhost:3000/bidder';
 * @returns {string}
 */
 const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
+  /**
+   * Turn incoming prebid sizes into openRtb format mapping.
+   * @param {*} sizes in format [[10, 10], [20, 20]]
+   * @returns array of openRtb format mappings [{w: 10, h: 10}, {w: 20, h: 20}]
+   */
+  const parseSizes = (sizes) => {
+    return sizes.map((size) => {
+      return {w: size[0], h: size[1]};
+    })
+  }
+
   const imp = validBidRequests.map(br => {
-    const sizes = utils.parseSizesInput(br.sizes)[0];
+    const sizes = parseSizes(br.sizes);
     return {
       id: br.bidId,
       banner: {
-        w: sizes.split('x')[0],
-        h: sizes.split('x')[1]
+        w: sizes[0].w,
+        h: sizes[0].h,
+        format: sizes
       },
       tagid: utils.deepAccess(br, 'params.adspaceId'),
       // secure: 1,
@@ -32,7 +44,7 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     id: bidderRequest.auctionId,
     at: 1,
     imp,
-    cur: 'USD',
+    cur: ['USD'],
     site: {
       id: window.location.hostname,
       publisher: {
@@ -49,10 +61,14 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     regs: {
       coppa: config.getConfig('coppa') === true ? 1 : 0,
       ext: {
-        gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+        gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
       }
     }
   };
+
+  if (bidderRequest.uspConsent !== undefined) {
+    utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+  }
 
   return JSON.stringify(request);
 }
