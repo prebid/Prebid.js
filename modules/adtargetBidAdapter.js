@@ -154,12 +154,6 @@ function prepareBidRequests(bidReq) {
     'AdType': mediaType,
     'Sizes': utils.parseSizesInput(sizes).join(',')
   };
-  if (mediaType === VIDEO) {
-    const context = utils.deepAccess(bidReq, 'mediaTypes.video.context');
-    if (context === ADPOD) {
-      bidReqParams.Adpod = utils.deepAccess(bidReq, 'mediaTypes.video');
-    }
-  }
   return bidReqParams;
 }
 
