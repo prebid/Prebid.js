@@ -69,7 +69,9 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
             'fpd',
             'mediaType',
             'renderer',
-            'storedAuctionResponse'
+            'storedAuctionResponse',
+            'seatBidId',
+            'pbsBidId'
           ]));
 
           let {

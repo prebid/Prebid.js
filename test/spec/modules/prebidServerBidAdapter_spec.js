@@ -261,7 +261,12 @@ const RESPONSE_OPENRTB = {
           'w': 300,
           'h': 250,
           'ext': {
-            'prebid': { 'type': 'banner' },
+            'prebid': {
+              'type': 'banner',
+              'event': {
+                'win': 'http://wurl.org?id=333'
+              }
+            },
             'bidder': {
               'appnexus': {
                 'brand_id': 1,
@@ -304,6 +309,7 @@ const RESPONSE_OPENRTB_VIDEO = {
           ext: {
             prebid: {
               type: 'video',
+              bidid: '654321'
             },
             bidder: {
               appnexus: {
@@ -955,6 +961,7 @@ describe('S2S Adapter', function () {
           aliases: {
             brealtime: 'appnexus'
           },
+          auctiontimestamp: 1510852447530,
           targeting: {
             includebidderkeys: false,
             includewinners: true
@@ -989,6 +996,7 @@ describe('S2S Adapter', function () {
           aliases: {
             [alias]: 'appnexus'
           },
+          auctiontimestamp: 1510852447530,
           targeting: {
             includebidderkeys: false,
             includewinners: true
@@ -1240,6 +1248,7 @@ describe('S2S Adapter', function () {
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.equal({
+        auctiontimestamp: 1510852447530,
         foo: 'bar',
         targeting: {
           includewinners: true,
@@ -1271,6 +1280,7 @@ describe('S2S Adapter', function () {
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.equal({
+        auctiontimestamp: 1510852447530,
         targeting: {
           includewinners: false,
           includebidderkeys: true
@@ -1304,6 +1314,7 @@ describe('S2S Adapter', function () {
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.equal({
+        auctiontimestamp: 1510852447530,
         cache: {
           vastxml: 'vastxml-set-though-extPrebid.cache.vastXml'
         },
@@ -1768,6 +1779,80 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
     });
 
+    it('handles response cache from ext.prebid.targeting with wurl', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({ s2sConfig });
+      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+      cacheResponse.seatbid.forEach(item => {
+        item.bid[0].ext.prebid.event = {
+          win: 'https://wurl.com?a=1&b=2'
+        };
+        item.bid[0].ext.prebid.targeting = {
+          hb_uuid: 'a5ad3993',
+          hb_cache_host: 'prebid-cache.net',
+          hb_cache_path: '/cache'
+        }
+      });
+      server.respondWith(JSON.stringify(cacheResponse));
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('pbsBidId', '654321');
+    });
+
+    it('handles response cache from ext.prebid.targeting with wurl and removes invalid targeting', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({ s2sConfig });
+      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+      cacheResponse.seatbid.forEach(item => {
+        item.bid[0].ext.prebid.event = {
+          win: 'https://wurl.com?a=1&b=2'
+        };
+        item.bid[0].ext.prebid.targeting = {
+          hb_uuid: 'a5ad3993',
+          hb_cache_host: 'prebid-cache.net',
+          hb_cache_path: '/cache',
+          hb_winurl: 'https://hbwinurl.com?a=1&b=2',
+          hb_bidid: '1234567890',
+        }
+      });
+      server.respondWith(JSON.stringify(cacheResponse));
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+
+      expect(response.adserverTargeting).to.deep.equal({
+        hb_uuid: 'a5ad3993',
+        hb_cache_host: 'prebid-cache.net',
+        hb_cache_path: '/cache'
+      });
+    });
+
+    it('add request property pbsBidId with ext.prebid.bidid value', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({ s2sConfig });
+      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+
+      server.respondWith(JSON.stringify(cacheResponse));
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+
+      expect(response).to.have.property('pbsBidId', '654321');
+    });
+
     it('handles OpenRTB native responses', function () {
       sinon.stub(utils, 'getBidRequest').returns({
         adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -1795,6 +1880,59 @@ describe('S2S Adapter', function () {
       utils.getBidRequest.restore();
     });
   });
+
+  describe('bid won events', function () {
+    let server;
+    let logWarnSpy;
+    let getUniqueIdentifierStrStub;
+
+    beforeEach(function () {
+      server = sinon.fakeServer.create();
+      sinon.stub(utils, 'triggerPixel');
+      sinon.stub(utils, 'insertUserSyncIframe');
+      sinon.stub(utils, 'logError');
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+      getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => '101010101010');
+    });
+
+    afterEach(function () {
+      server.restore();
+      utils.triggerPixel.restore();
+      utils.insertUserSyncIframe.restore();
+      utils.logError.restore();
+      logWarnSpy.restore();
+      getUniqueIdentifierStrStub.restore();
+    });
+
+    it('should call triggerPixel on bid won event when wurl is defined', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({ s2sConfig });
+
+      const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
+      clonedResponse.seatbid[0].bid[0].ext.prebid.event = {
+        win: 'https://wurl.org'
+      };
+      server.respondWith(JSON.stringify(clonedResponse));
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      events.emit(CONSTANTS.EVENTS.BID_WON, {
+        auctionId: '173afb6d132ba3',
+        adId: '101010101010'
+      });
+
+      sinon.assert.calledOnce(addBidResponse);
+
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('bidderCode', 'appnexus');
+      expect(response).to.have.property('requestId', '123');
+
+      expect(utils.triggerPixel.called).to.be.true;
+      expect(utils.triggerPixel.getCall(0).args[0]).to.include('https://wurl.org');
+    });
+  })
 
   describe('s2sConfig', function () {
     let logErrorSpy;
