@@ -119,7 +119,9 @@ function bidToTag(bidRequests, adapterRequest) {
   const tag = {
     Domain: utils.deepAccess(adapterRequest, 'refererInfo.referer')
   };
-
+  if (config.getConfig('coppa') === true) {
+    tag.coppa = 1;
+  }
   if (utils.deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
     tag.GDPR = 1;
     tag.GDPRConsent = utils.deepAccess(adapterRequest, 'gdprConsent.consentString');
