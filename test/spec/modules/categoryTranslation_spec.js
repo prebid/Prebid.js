@@ -34,7 +34,7 @@ describe('category translation', function () {
     }));
     let bid = {
       meta: {
-        iabSubCatId: 'iab-1'
+        primaryCatId: 'iab-1'
       }
     }
     getAdserverCategoryHook(sinon.spy(), 'code', bid);
@@ -57,7 +57,7 @@ describe('category translation', function () {
     }));
     let bid = {
       meta: {
-        iabSubCatId: 'iab-2'
+        primaryCatId: 'iab-2'
       }
     }
     getAdserverCategoryHook(sinon.spy(), 'code', bid);

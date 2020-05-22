@@ -52,8 +52,8 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
       } catch (error) {
         logError('Failed to parse translation mapping file');
       }
-      if (bid.meta.iabSubCatId && mapping['mapping'] && mapping['mapping'][bid.meta.iabSubCatId]) {
-        bid.meta.adServerCatId = mapping['mapping'][bid.meta.iabSubCatId]['id'];
+      if (bid.meta.primaryCatId && mapping['mapping'] && mapping['mapping'][bid.meta.primaryCatId]) {
+        bid.meta.adServerCatId = mapping['mapping'][bid.meta.primaryCatId]['id'];
       } else {
         // This bid will be automatically ignored by adpod module as adServerCatId was not found
         bid.meta.adServerCatId = undefined;
