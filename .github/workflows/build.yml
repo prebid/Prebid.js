@@ -1,8 +1,9 @@
-name: Build
+name: Build and publish
 on: 
+  pull_request:
   push: 
-  branches:
-    - marfeel-master
+    branches:
+      - master
 
 jobs:
   build:
