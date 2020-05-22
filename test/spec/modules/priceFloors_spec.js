@@ -344,6 +344,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'adUnit Model Version',
         location: 'adUnit',
+        skipRate: 0
       });
     });
     it('bidRequests should have getFloor function and flooring meta data when setConfig occurs', function () {
@@ -353,6 +354,49 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0
+      });
+    });
+    it('should take the right skipRate depending on input', function () {
+      // first priority is data object
+      sandbox.stub(Math, 'random').callsFake(() => 0.99);
+      let inputFloors = {
+        ...basicFloorConfig,
+        skipRate: 10,
+        data: {
+          ...basicFloorData,
+          skipRate: 50
+        }
+      };
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 50
+      });
+
+      // if that does not exist uses topLevel skipRate setting
+      delete inputFloors.data.skipRate;
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 10
+      });
+
+      // if that is not there defaults to zero
+      delete inputFloors.skipRate;
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 0
       });
     });
     it('should not overwrite previous data object if the new one is bad', function () {
@@ -378,6 +422,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0
       });
     });
     it('should dynamically add new schema fileds and functions if added via setConfig', function () {
@@ -453,6 +498,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0
       });
       fakeFloorProvider.respond();
     });
@@ -486,6 +532,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'fetch model name',
         location: 'fetch',
+        skipRate: 0
       });
     });
     it('Should not break if floor provider returns non json', function () {
@@ -503,6 +550,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0
       });
     });
     it('should handle not using fetch correctly', function () {

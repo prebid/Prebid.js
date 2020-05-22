@@ -288,6 +288,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, skipped, auctionId) 
         skipped,
         modelVersion: utils.deepAccess(floorData, 'data.modelVersion') || '',
         location: floorData.data.location,
+        skipRate: floorData.skipRate
       }
     });
   });
@@ -311,7 +312,8 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
     return;
   }
   // determine the skip rate now
-  const isSkipped = Math.random() * 100 < parseFloat(utils.deepAccess(resolvedFloorsData, 'data.skipRate') || 0);
+  const auctionSkipRate = utils.getParameterByName('pbjs_skipRate') || resolvedFloorsData.skipRate;
+  const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
   resolvedFloorsData.skipped = isSkipped;
   updateAdUnitsForAuction(adUnits, resolvedFloorsData, isSkipped, auctionId);
   return resolvedFloorsData;
@@ -389,6 +391,7 @@ export function isFloorsDataValid(floorsData) {
  */
 export function parseFloorData(floorsData, location) {
   if (floorsData && typeof floorsData === 'object' && isFloorsDataValid(floorsData)) {
+    utils.logInfo(`${MODULE_NAME}: A ${location} set the auction floor data set to `, floorsData);
     return {
       ...floorsData,
       location
@@ -505,6 +508,7 @@ export function handleSetFloorsConfig(config) {
     'enabled', enabled => enabled !== false, // defaults to true
     'auctionDelay', auctionDelay => auctionDelay || 0,
     'endpoint', endpoint => endpoint || {},
+    'skipRate', () => !isNaN(utils.deepAccess(config, 'data.skipRate')) ? config.data.skipRate : config.skipRate || 0,
     'enforcement', enforcement => utils.pick(enforcement || {}, [
       'enforceJS', enforceJS => enforceJS !== false, // defaults to true
       'enforcePBS', enforcePBS => enforcePBS === true, // defaults to false
