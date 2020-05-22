@@ -13,6 +13,11 @@ jobs:
     - name: ⬇ Checkout
       uses: actions/checkout@v2
 
+    - name: Configure access
+      run: |
+        git config --local user.email 'tech@marfeel.com'
+        git config --local user.name 'GitHub Action'
+
     - name: 🔧 Setup node
       uses: actions/setup-node@v1
       with:
@@ -35,9 +40,5 @@ jobs:
       run: sed -i 's/location/originalLocation/g' ./build/dist/prebid.ww.js
 
     - name: 🚀 Publish
-      run: |
-        git config --local user.email 'tech@marfeel.com'
-        git config --local user.name 'GitHub Action'
-        
-        npm publish 
+      run: npm publish 
 
