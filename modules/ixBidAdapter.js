@@ -287,7 +287,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   const payload = {};
 
   // Parse additional runtime configs.
-  const bidderCode = bidderRequest.bidderCode || 'ix';
+  const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
   const otherIxConfig = config.getConfig(bidderCode);
   if (otherIxConfig) {
     // Append firstPartyData to r.site.page if firstPartyData exists.
