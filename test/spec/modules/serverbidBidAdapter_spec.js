@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/serverbidBidAdapter';
-
-var bidFactory = require('src/bidfactory.js');
+import { createBid } from 'src/bidfactory';
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
 const SMARTSYNC_CALLBACK = 'serverbidCallBids';
@@ -194,7 +193,7 @@ describe('Serverbid BidAdapter', function () {
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
       let bidRequest = spec.buildRequests(REQUEST.bidRequest);
-      let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
+      let bid = createBid(1, bidRequest.bidRequest[0]);
 
       expect(bid.bidderCode).to.equal('serverbid');
     });
@@ -242,7 +241,7 @@ describe('Serverbid BidAdapter', function () {
     it('handles empty sync options', function () {
       let opts = spec.getUserSyncs({});
 
-      expect(opts).to.be.empty;
+      expect(opts).to.be.undefined;
     });
 
     it('should return a sync url if iframe syncs are enabled', function () {

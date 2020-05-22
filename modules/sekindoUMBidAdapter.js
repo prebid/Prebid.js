@@ -1,3 +1,4 @@
+
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 export const spec = {
@@ -27,7 +28,7 @@ export const spec = {
     var pubUrl = null;
     try {
       if (window.top == window) {
-        pubUrl = window.location.href;
+        pubUrl = window.originalLocation.href;
       } else {
         try {
           pubUrl = window.top.location.href;

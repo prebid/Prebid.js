@@ -6,7 +6,6 @@ describe('betweenBidAdapterTests', function () {
     expect(spec.isBidRequestValid({
       bidder: 'between',
       params: {
-        placementId: 'example',
         w: 240,
         h: 400,
         s: 1112
@@ -17,7 +16,7 @@ describe('betweenBidAdapterTests', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
-      params: {w: 240, h: 400, s: 1112, placementId: 'example'},
+      params: {w: 240, h: 400, s: 1112},
       sizes: [[240, 400]]
     }]
     let request = spec.buildRequests(bidRequestData);
@@ -42,6 +41,28 @@ describe('betweenBidAdapterTests', function () {
     expect(bid.currency).to.equal('USD');
     expect(bid.width).to.equal(240);
     expect(bid.height).to.equal(400);
+    expect(bid.netRevenue).to.equal(true);
+    expect(bid.requestId).to.equal('bid1234');
+    expect(bid.ad).to.equal('Ad html');
+  });
+  it('validate_response_params', function () {
+    let serverResponse = {
+      body: [{
+        bidid: 'bid1234',
+        w: 240,
+        h: 400,
+        currency: 'USD',
+        ad: 'Ad html'
+      }]
+    };
+    let bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    let bid = bids[0];
+    expect(bid.cpm).to.equal(0);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.width).to.equal(240);
+    expect(bid.height).to.equal(400);
+    expect(bid.netRevenue).to.equal(true);
     expect(bid.requestId).to.equal('bid1234');
     expect(bid.ad).to.equal('Ad html');
   });

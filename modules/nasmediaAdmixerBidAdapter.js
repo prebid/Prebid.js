@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
 
 const ADMIXER_ENDPOINT = 'https://adn.admixer.co.kr:10443/prebid';

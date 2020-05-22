@@ -1,7 +1,7 @@
 
-import { config } from 'src/config';
-import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from 'src/utils';
-import { addBidResponse } from 'src/auction';
+import { config } from './config';
+import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from './utils';
+import { addBidResponse } from './auction';
 
 const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
 
@@ -15,26 +15,27 @@ function logWarn(msg) {
   utilsLogWarn('DEBUG: ' + msg);
 }
 
+function removeHook() {
+  addBidResponse.getHooks({hook: boundHook}).remove()
+}
+
 function enableOverrides(overrides, fromSession = false) {
   config.setConfig({'debug': true});
   logMessage(`bidder overrides enabled${fromSession ? ' from session' : ''}`);
 
-  if (boundHook) {
-    addBidResponse.removeHook(boundHook);
-  }
+  removeHook();
 
-  boundHook = addBidResponseHook.bind(null, overrides);
-  addBidResponse.addHook(boundHook, 5);
+  boundHook = addBidResponseHook.bind(overrides);
+  addBidResponse.before(boundHook, 5);
 }
 
 export function disableOverrides() {
-  if (boundHook) {
-    addBidResponse.removeHook(boundHook);
-    logMessage('bidder overrides disabled');
-  }
+  removeHook();
+  logMessage('bidder overrides disabled');
 }
 
-export function addBidResponseHook(overrides, adUnitCode, bid, next) {
+export function addBidResponseHook(next, adUnitCode, bid) {
+  let overrides = this;
   if (Array.isArray(overrides.bidders) && overrides.bidders.indexOf(bid.bidderCode) === -1) {
     logWarn(`bidder '${bid.bidderCode}' excluded from auction by bidder overrides`);
     return;

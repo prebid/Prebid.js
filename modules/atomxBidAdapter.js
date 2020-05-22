@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'atomx';
 
@@ -8,7 +8,7 @@ function getDomain() {
 
   try {
     if ((domain === '') && (window.top == window)) {
-      domain = window.location.href;
+      domain = window.originalLocation.href;
     }
 
     if ((domain === '') && (window.top == window.parent)) {
@@ -18,20 +18,20 @@ function getDomain() {
     if (domain == '') {
       var atomxt = 'atomxtest';
 
-      // It should be impossible to change the window.location.ancestorOrigins.
-      window.location.ancestorOrigins[0] = atomxt;
-      if (window.location.ancestorOrigins[0] != atomxt) {
-        var ancestorOrigins = window.location.ancestorOrigins;
+      // It should be impossible to change the window.originalLocation.ancestorOrigins.
+      window.originalLocation.ancestorOrigins[0] = atomxt;
+      if (window.originalLocation.ancestorOrigins[0] != atomxt) {
+        var ancestorOrigins = window.originalLocation.ancestorOrigins;
 
         // If the length is 0 we are a javascript tag running in the main domain.
-        // But window.top != window or window.location.hostname is empty.
+        // But window.top != window or window.originalLocation.hostname is empty.
         if (ancestorOrigins.length == 0) {
           // This browser is so fucked up, just return an empty string.
           return '';
         }
 
-        // ancestorOrigins is an array where [0] is our own window.location
-        // and [length-1] is the top window.location.
+        // ancestorOrigins is an array where [0] is our own window.originalLocation
+        // and [length-1] is the top window.originalLocation.
         domain = ancestorOrigins[ancestorOrigins.length - 1];
       }
     }
@@ -43,7 +43,7 @@ function getDomain() {
   }
 
   if (domain === '') {
-    domain = window.location.href;
+    domain = window.originalLocation.href;
   }
 
   return domain.substr(0, 512);

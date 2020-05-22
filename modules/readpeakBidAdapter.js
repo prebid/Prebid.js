@@ -1,7 +1,7 @@
-import { logError, getTopWindowLocation, replaceAuctionPrice, getTopWindowReferrer } from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import { NATIVE } from 'src/mediaTypes';
+import { logError, getTopWindowLocation, replaceAuctionPrice, getTopWindowReferrer } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { NATIVE } from '../src/mediaTypes';
 
 export const ENDPOINT = '//app.readpeak.com/header/prebid';
 
@@ -27,13 +27,16 @@ export const spec = {
   ),
 
   buildRequests: bidRequests => {
+    const currencyObj = config.getConfig('currency');
+    const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
+
     const request = {
       id: bidRequests[0].bidderRequestId,
       imp: bidRequests.map(slot => impression(slot)).filter(imp => imp.native != null),
       site: site(bidRequests),
       app: app(bidRequests),
       device: device(),
-      cur: config.getConfig('currency') || ['USD'],
+      cur: [currency],
       source: {
         fd: 1,
         tid: bidRequests[0].transactionId,
@@ -191,11 +194,19 @@ function app(bidderRequest) {
   return undefined;
 }
 
+function isMobile() {
+  return (/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent);
+}
+
+function isConnectedTV() {
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent);
+}
+
 function device() {
   return {
     ua: navigator.userAgent,
     language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
-    devicetype: 1
+    devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2
   };
 }
 

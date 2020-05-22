@@ -1,6 +1,6 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
-import * as utils from 'src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'smartyads';
 const URL = '//ssp-nj.webtradehub.com/?c=o&m=multi';

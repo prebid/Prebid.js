@@ -1,7 +1,7 @@
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
-import { logInfo } from 'src/utils';
+import adapter from '../src/AnalyticsAdapter';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager';
+import { logInfo } from '../src/utils';
 import find from 'core-js/library/fn/array/find';
 import findIndex from 'core-js/library/fn/array/find-index';
 
@@ -73,7 +73,7 @@ adomikAdapter.sendTypedEvent = function() {
   const bulkEvents = {
     uid: adomikAdapter.currentContext.uid,
     ahbaid: adomikAdapter.currentContext.id,
-    hostname: window.location.hostname,
+    hostname: window.originalLocation.hostname,
     eventsByPlacementCode: groupedTypedEvents.map(function(typedEventsByType) {
       let sizes = [];
       const eventKeys = ['request', 'response', 'winner'];
@@ -207,7 +207,7 @@ adomikAdapter.enableAnalytics = function (config) {
   }
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: adomikAdapter,
   code: 'adomik'
 });

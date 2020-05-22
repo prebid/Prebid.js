@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER, VIDEO } from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -40,7 +40,7 @@ export const spec = {
         const request = buildRtbRequest(dispatch[host][zoneId], auctionId);
         requests.push({
           method: 'GET',
-          url: `${window.location.protocol}//${host}/rtbg`,
+          url: `${window.originalLocation.protocol}//${host}/rtbg`,
           data: {
             zone: Number(zoneId),
             ad_type: 'rtb',

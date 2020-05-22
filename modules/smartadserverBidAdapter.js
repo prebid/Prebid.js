@@ -1,10 +1,10 @@
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 import {
   config
-} from 'src/config';
+} from '../src/config';
 import {
   registerBidder
-} from 'src/adapters/bidderFactory';
+} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'smartadserver';
 export const spec = {
   code: BIDDER_CODE,
@@ -16,7 +16,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.siteId && bid.params.pageId && bid.params.formatId && bid.params.domain);
+    return !!(bid.params && bid.params.siteId && bid.params.pageId && bid.params.formatId);
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -48,7 +48,7 @@ export const spec = {
           w: size[0],
           h: size[1]
         })),
-        pageDomain: utils.getTopWindowUrl(),
+        pageDomain: bid.params.referrer || utils.getTopWindowUrl(),
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
@@ -63,7 +63,8 @@ export const spec = {
       var payloadString = JSON.stringify(payload);
       return {
         method: 'POST',
-        url: bid.params.domain + '/prebid/v1',
+        url: 'https://prg.smartadserver.com/prebid/v1',
+        // url: (bid.params.domain !== undefined ? bid.params.domain : 'https://prg.smartadserver.com') + '/prebid/v1',
         data: payloadString,
       };
     });

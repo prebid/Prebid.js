@@ -192,8 +192,8 @@ describe('Kumma Adapter Tests', function () {
           { id: 1, title: { text: 'Ad Title' } },
           { id: 2, data: { value: 'Test description' } },
           { id: 3, data: { value: 'Brand' } },
-          { id: 4, img: { url: 'https://s3.amazonaws.com/adx1public/creatives_icon.png', w: 100, h: 100 } },
-          { id: 5, img: { url: 'https://s3.amazonaws.com/adx1public/creatives_image.png', w: 300, h: 300 } }
+          { id: 4, img: { url: 'https://adx1public.s3.amazonaws.com/creatives_icon.png', w: 100, h: 100 } },
+          { id: 5, img: { url: 'https://adx1public.s3.amazonaws.com/creatives_image.png', w: 300, h: 300 } }
         ],
         link: { url: 'http://brand.com/' }
       }
@@ -220,8 +220,8 @@ describe('Kumma Adapter Tests', function () {
     expect(nativeBid).to.not.equal(null);
     expect(nativeBid.title).to.equal('Ad Title');
     expect(nativeBid.sponsoredBy).to.equal('Brand');
-    expect(nativeBid.icon.url).to.equal('https://s3.amazonaws.com/adx1public/creatives_icon.png');
-    expect(nativeBid.image.url).to.equal('https://s3.amazonaws.com/adx1public/creatives_image.png');
+    expect(nativeBid.icon.url).to.equal('https://adx1public.s3.amazonaws.com/creatives_icon.png');
+    expect(nativeBid.image.url).to.equal('https://adx1public.s3.amazonaws.com/creatives_image.png');
     expect(nativeBid.image.width).to.equal(300);
     expect(nativeBid.image.height).to.equal(300);
     expect(nativeBid.icon.width).to.equal(100);

@@ -11,7 +11,7 @@ const AdServer = function(attr) {
 };
 
 // DFP ad server
-exports.dfpAdserver = function (options, urlComponents) {
+export function dfpAdserver(options, urlComponents) {
   var adserver = new AdServer(options);
   adserver.urlComponents = urlComponents;
 

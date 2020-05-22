@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'fidelity';
 const BIDDER_SERVER = 'x.fidelity-media.com';

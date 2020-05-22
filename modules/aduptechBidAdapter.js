@@ -1,10 +1,10 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes'
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes'
 
 export const BIDDER_CODE = 'aduptech';
 export const PUBLISHER_PLACEHOLDER = '{PUBLISHER}';
-export const ENDPOINT_URL = window.location.protocol + '//rtb.d.adup-tech.com/prebid/' + PUBLISHER_PLACEHOLDER + '_bid';
+export const ENDPOINT_URL = window.originalLocation.protocol + '//rtb.d.adup-tech.com/prebid/' + PUBLISHER_PLACEHOLDER + '_bid';
 export const ENDPOINT_METHOD = 'POST';
 
 export const spec = {

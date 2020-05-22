@@ -193,7 +193,7 @@ function renderOutstream(bid) {
     const unitId = bid.adUnitCode + '/' + bid.adId;
     window['GamoshiPlayer'].renderAd({
       id: unitId,
-      debug: window.location.href.indexOf('pbjsDebug') >= 0,
+      debug: window.originalLocation.href.indexOf('pbjsDebug') >= 0,
       placement: document.getElementById(bid.adUnitCode),
       width: bid.width,
       height: bid.height,

@@ -1,11 +1,12 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils';
-import {spec} from 'modules/dgadsBidAdapter';
+import {spec, getCookieUid} from 'modules/dgadsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import { BANNER, NATIVE } from 'src/mediaTypes';
 
 describe('dgadsBidAdapter', function () {
   const adapter = newBidder(spec);
+  const UID_NAME = 'dgads_uid';
   const VALID_ENDPOINT = 'https://ads-tr.bigmining.com/ad/p/bid';
 
   describe('inherited functions', function () {
@@ -101,23 +102,30 @@ describe('dgadsBidAdapter', function () {
       const noBidRequests = [];
       expect(Object.keys(spec.buildRequests(noBidRequests)).length).to.equal(0);
     });
+    it('getCookieUid return empty if cookie not found', function () {
+      expect(getCookieUid(UID_NAME)).to.equal('');
+    });
     const data = {
       location_id: '1',
       site_id: '1',
       transaction_id: 'c1f1eff6-23c6-4844-a321-575212939e37',
-      bid_id: '2db3101abaec66'
+      bid_id: '2db3101abaec66',
+      referer: utils.getTopWindowUrl(),
+      _uid: ''
     };
-    it('sends bid request to VALID_ENDPOINT via POST', function () {
+    it('sends bid request to VALID_ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.url).to.equal(VALID_ENDPOINT);
-      expect(request.method).to.equal('POST');
+      expect(request.method).to.equal('GET');
     });
     it('should attache params to the request', function () {
       const request = spec.buildRequests(bidRequests)[0];
-      expect(request.data['location_id']).to.equal(data['location_id']);
-      expect(request.data['site_id']).to.equal(data['site_id']);
+      expect(request.data['_loc']).to.equal(data['location_id']);
+      expect(request.data['_medium']).to.equal(data['site_id']);
       expect(request.data['transaction_id']).to.equal(data['transaction_id']);
       expect(request.data['bid_id']).to.equal(data['bid_id']);
+      expect(request.data['referer']).to.equal(data['referer']);
+      expect(request.data['_uid']).to.equal(data['_uid']);
     });
   });
 

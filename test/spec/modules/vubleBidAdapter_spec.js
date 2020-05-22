@@ -280,4 +280,56 @@ describe('VubleAdapter', function () {
       expect(adapter.getUserSyncs(syncOptions, [response])).to.deep.equal([result]);
     })
   });
+
+  describe('Check outstream scenario with renderer', function () {
+    // bid Request
+    let bid = {
+      data: {
+        context: 'outstream',
+        env: 'net',
+        width: '640',
+        height: '360',
+        pub_id: '3',
+        zone_id: '12345',
+        bid_id: 'abdc',
+        floor_price: 5.50, // optional
+        adUnitCode: 'code'
+      },
+      method: 'POST',
+      url: '//player.mediabong.net/prebid/request'
+    };
+    // Server's response
+    let response = {
+      body: {
+        status: 'ok',
+        cpm: 5.00,
+        creativeId: '2468',
+        url: 'https//player.mediabong.net/prebid/ad/a1b2c3d4',
+        dealId: 'MDB-TEST-1357',
+        renderer_id: 0,
+        renderer_url: 'vuble_renderer.js',
+        content: 'test'
+      }
+    };
+
+    let adResponse = {
+      ad: {
+        video: {
+          content: 'test'
+        }
+      }
+    };
+    let adUnitCode = 'code';
+    let rendererUrl = 'vuble_renderer.js';
+    let rendererId = 0;
+
+    let formattedResponses = adapter.interpretResponse(response, bid);
+    it('should equal to the expected format result', function () {
+      expect(formattedResponses[0].adResponse).to.deep.equal(adResponse);
+      expect(formattedResponses[0].adUnitCode).to.deep.equal(adUnitCode);
+      expect(formattedResponses[0].renderer.url).to.equal(rendererUrl);
+      expect(formattedResponses[0].renderer.id).to.equal(rendererId);
+      expect(formattedResponses[0].renderer.render).to.exist.and.to.be.a('function');
+    });
+  });
 });

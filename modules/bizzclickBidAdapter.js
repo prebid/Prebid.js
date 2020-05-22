@@ -1,6 +1,6 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
-import * as utils from 'src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'bizzclick';
 const URL = '//supply.bizzclick.com/?c=o&m=multi';

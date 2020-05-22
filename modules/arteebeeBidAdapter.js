@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {BANNER} from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
+import * as utils from '../src/utils';
+import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config';
 
 const BIDDER_CODE = 'arteebee';
 
@@ -69,7 +69,7 @@ function makePrebidRequest(req, bidderRequest) {
   var host = req.params.host || DEFAULT_HOST;
   var ssp = req.params.ssp || DEFAULT_SSP;
 
-  var url = window.location.protocol + '//' + host + '/rtb/bid/' + ssp + '?type=json&register=0';
+  var url = window.originalLocation.protocol + '//' + host + '/rtb/bid/' + ssp + '?type=json&register=0';
 
   const payload = makeRtbRequest(req, bidderRequest);
   const payloadString = JSON.stringify(payload);
@@ -96,7 +96,7 @@ function makeRtbRequest(req, bidderRequest) {
     'tmax': config.getConfig('bidderTimeout')
   };
 
-  if (req.params.coppa) {
+  if (config.getConfig('coppa') === true || req.params.coppa) {
     rtbReq.regs = {coppa: 1};
   }
 
@@ -125,7 +125,7 @@ function makeImp(req) {
     'tagid': req.placementCode
   };
 
-  if (window.location.protocol === 'https:') {
+  if (window.originalLocation.protocol === 'https:') {
     imp.secure = 1;
   }
 

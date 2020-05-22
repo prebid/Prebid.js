@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/sovrnBidAdapter';
+import { spec, LogError } from 'modules/sovrnBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
-import { REPO_AND_VERSION } from 'src/constants';
+import { SSL_OP_SINGLE_ECDH_USE } from 'constants';
 
-const ENDPOINT = `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`;
+const ENDPOINT = `//ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
 
 describe('sovrnBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -16,7 +16,8 @@ describe('sovrnBidAdapter', function() {
       },
       'adUnitCode': 'adunit-code',
       'sizes': [
-        [300, 250]
+        [300, 250],
+        [300, 600]
       ],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
@@ -47,7 +48,8 @@ describe('sovrnBidAdapter', function() {
       },
       'adUnitCode': 'adunit-code',
       'sizes': [
-        [300, 250]
+        [300, 250],
+        [300, 600]
       ],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
@@ -64,6 +66,33 @@ describe('sovrnBidAdapter', function() {
       expect(request.url).to.equal(ENDPOINT)
     });
 
+    it('sets the proper banner object', function() {
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
+      expect(payload.imp[0].banner.w).to.equal(1)
+      expect(payload.imp[0].banner.h).to.equal(1)
+    })
+
+    it('accepts a single array as a size', function() {
+      const singleSize = [{
+        'bidder': 'sovrn',
+        'params': {
+          'tagid': '403370',
+          'iv': 'vet'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [300, 250],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }];
+      const request = spec.buildRequests(singleSize)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}])
+      expect(payload.imp[0].banner.w).to.equal(1)
+      expect(payload.imp[0].banner.h).to.equal(1)
+    })
+
     it('sends \'iv\' as query param if present', function () {
       const ivBidRequests = [{
         'bidder': 'sovrn',
@@ -73,7 +102,8 @@ describe('sovrnBidAdapter', function() {
         },
         'adUnitCode': 'adunit-code',
         'sizes': [
-          [300, 250]
+          [300, 250],
+          [300, 600]
         ],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
@@ -116,7 +146,8 @@ describe('sovrnBidAdapter', function() {
         },
         'adUnitCode': 'adunit-code',
         'sizes': [
-          [300, 250]
+          [300, 250],
+          [300, 600]
         ],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
@@ -268,19 +299,99 @@ describe('sovrnBidAdapter', function() {
           'type': 'iframe',
           'url': '//ap.lijit.com/beacon?informer=13487408&gdpr_consent=',
         }
-      ];
+      ]
       let returnStatement = spec.getUserSyncs(syncOptions, serverResponse);
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
-    });
+    })
 
     it('should not return if iid missing on server response', () => {
-      let returnStatement = spec.getUserSyncs(syncOptions, []);
+      let returnStatement = spec.getUserSyncs(syncOptions, [])
       expect(returnStatement).to.be.empty;
-    });
+    })
 
     it('should not return if iframe syncs disabled', () => {
-      let returnStatement = spec.getUserSyncs(iframeDisabledSyncOptions, serverResponse);
-      expect(returnStatement).to.be.empty;
-    });
-  });
-});
+      let returnStatement = spec.getUserSyncs(iframeDisabledSyncOptions, serverResponse)
+      expect(returnStatement).to.be.empty
+    })
+  })
+  describe('LogError', () => {
+    it('should build and append an error object', () => {
+      const thrown = {
+        message: 'message',
+        stack: 'stack'
+      }
+      const data = {name: 'Oscar Hathenswiotch'}
+      const err = new LogError(thrown, data)
+      err.append()
+      const errList = LogError.getErrPxls()
+      expect(errList.length).to.equal(1)
+      const errdata = JSON.parse(atob(errList[0].url.split('=')[1]))
+      expect(errdata.d.name).to.equal('Oscar Hathenswiotch')
+    })
+    it('should drop data when there is too much', () => {
+      const thrown = {
+        message: 'message',
+        stack: 'stack'
+      }
+      const tooLong = () => {
+        let str = ''
+        for (let i = 0; i < 10000; i++) {
+          str = str + String.fromCharCode(i % 100)
+        }
+        return str
+      }
+      const data = {name: 'Oscar Hathenswiotch', tooLong: tooLong()}
+      const err = new LogError(thrown, data)
+      err.append()
+      const errList = LogError.getErrPxls()
+      expect(errList.length).to.equal(2)
+      const errdata = JSON.parse(atob(errList[1].url.split('=')[1]))
+      expect(errdata.d).to.be.an('undefined')
+    })
+    it('should drop data and stack when there is too much', () => {
+      const thrown = {
+        message: 'message',
+        stack: 'stack'
+      }
+      const tooLong = () => {
+        let str = ''
+        for (let i = 0; i < 10000; i++) {
+          str = str + String.fromCharCode(i % 100)
+        }
+        return str
+      }
+      const data = {name: 'Oscar Hathenswiotch'}
+      thrown.stack = tooLong()
+      const err = new LogError(thrown, data)
+      err.append()
+      const errList = LogError.getErrPxls()
+      expect(errList.length).to.equal(3)
+      const errdata = JSON.parse(atob(errList[2].url.split('=')[1]))
+      expect(errdata.d).to.be.an('undefined')
+      expect(errdata.s).to.be.an('undefined')
+    })
+    it('should drop send a reduced message when other reduction methods fail', () => {
+      const thrown = {
+        message: 'message',
+        stack: 'stack'
+      }
+      const tooLong = () => {
+        let str = ''
+        for (let i = 0; i < 10000; i++) {
+          str = str + String.fromCharCode(i % 100)
+        }
+        return str
+      }
+      const data = {name: 'Oscar Hathenswiotch'}
+      thrown.message = tooLong()
+      const err = new LogError(thrown, data)
+      err.append()
+      const errList = LogError.getErrPxls()
+      expect(errList.length).to.equal(4)
+      const errdata = JSON.parse(atob(errList[3].url.split('=')[1]))
+      expect(errdata.d).to.be.an('undefined')
+      expect(errdata.s).to.be.an('undefined')
+      expect(errdata.m).to.equal('unknown error message')
+    })
+  })
+})

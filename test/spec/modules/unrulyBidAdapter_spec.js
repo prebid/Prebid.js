@@ -18,7 +18,10 @@ describe('UnrulyAdapter', function () {
         'statusCode': statusCode,
         'renderer': {
           'id': 'unruly_inarticle',
-          'config': {},
+          'config': {
+            'siteId': 123456,
+            'targetingUUID': 'xxx-yyy-zzz'
+          },
           'url': 'https://video.unrulymedia.com/native/prebid-loader.js'
         },
         'adUnitCode': adUnitCode
@@ -107,10 +110,10 @@ describe('UnrulyAdapter', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).method).to.equal('POST');
     });
-    it('should ensure contentType is `application/json`', function () {
+    it('should ensure contentType is `text/plain`', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).options).to.deep.equal({
-        contentType: 'application/json'
+        contentType: 'text/plain'
       });
     });
     it('should return a server request with valid payload', function () {
@@ -125,10 +128,10 @@ describe('UnrulyAdapter', function () {
     it('should be a function', function () {
       expect(typeof adapter.interpretResponse).to.equal('function');
     });
-    it('should return empty array when serverResponse is undefined', function () {
+    it('should return [] when serverResponse is undefined', function () {
       expect(adapter.interpretResponse()).to.deep.equal([]);
     });
-    it('should return empty array when  serverResponse has no bids', function () {
+    it('should return [] when  serverResponse has no bids', function () {
       const mockServerResponse = { body: { bids: [] } };
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([])
     });
@@ -146,23 +149,30 @@ describe('UnrulyAdapter', function () {
           creativeId: 'mockBidId',
           ttl: 360,
           currency: 'USD',
-          renderer: fakeRenderer
+          renderer: fakeRenderer,
+          mediaType: 'video'
         }
       ])
     });
 
     it('should initialize and set the renderer', function () {
-      expect(Renderer.install).not.to.have.been.called;
-      expect(fakeRenderer.setRender).not.to.have.been.called;
+      expect(Renderer.install.called).to.be.false;
+      expect(fakeRenderer.setRender.called).to.be.false;
 
       const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
-      const mockRenderer = { url: 'value: mockRendererURL' };
+      const mockRenderer = {
+        url: 'value: mockRendererURL',
+        config: {
+          siteId: 123456,
+          targetingUUID: 'xxx-yyy-zzz'
+        }
+      };
       mockReturnedBid.ext.renderer = mockRenderer;
       const mockServerResponse = createExchangeResponse(mockReturnedBid);
 
       adapter.interpretResponse(mockServerResponse);
 
-      expect(Renderer.install).to.have.been.calledOnce;
+      expect(Renderer.install.calledOnce).to.be.true;
       sinon.assert.calledWithExactly(
         Renderer.install,
         Object.assign({}, mockRenderer, {callback: sinon.match.func})
@@ -170,6 +180,58 @@ describe('UnrulyAdapter', function () {
 
       sinon.assert.calledOnce(fakeRenderer.setRender);
       sinon.assert.calledWithExactly(fakeRenderer.setRender, sinon.match.func)
+    });
+
+    it('should return [] and log if bidResponse renderer config is not available', function () {
+      sinon.assert.notCalled(utils.logError)
+
+      expect(Renderer.install.called).to.be.false;
+      expect(fakeRenderer.setRender.called).to.be.false;
+
+      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockRenderer = {
+        url: 'value: mockRendererURL'
+      };
+      mockReturnedBid.ext.renderer = mockRenderer;
+      const mockServerResponse = createExchangeResponse(mockReturnedBid);
+
+      expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([]);
+
+      const logErrorCalls = utils.logError.getCalls();
+      expect(logErrorCalls.length).to.equal(2);
+
+      const [ configErrorCall, siteIdErrorCall ] = logErrorCalls;
+
+      expect(configErrorCall.args.length).to.equal(1);
+      expect(configErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer config.');
+
+      expect(siteIdErrorCall.args.length).to.equal(1);
+      expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer siteId.');
+    });
+
+    it('should return [] and log if siteId is not available', function () {
+      sinon.assert.notCalled(utils.logError)
+
+      expect(Renderer.install.called).to.be.false;
+      expect(fakeRenderer.setRender.called).to.be.false;
+
+      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockRenderer = {
+        url: 'value: mockRendererURL',
+        config: {}
+      };
+      mockReturnedBid.ext.renderer = mockRenderer;
+      const mockServerResponse = createExchangeResponse(mockReturnedBid);
+
+      expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([]);
+
+      const logErrorCalls = utils.logError.getCalls();
+      expect(logErrorCalls.length).to.equal(1);
+
+      const [ siteIdErrorCall ] = logErrorCalls;
+
+      expect(siteIdErrorCall.args.length).to.equal(1);
+      expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer siteId.');
     });
 
     it('bid is placed on the bid queue when render is called', function () {
@@ -181,7 +243,7 @@ describe('UnrulyAdapter', function () {
       sinon.assert.calledOnce(fakeRenderer.setRender);
       fakeRenderer.setRender.firstCall.args[0]();
 
-      expect(window.top).to.have.deep.property('unruly.native.prebid.uq');
+      expect(window.top).to.have.deep.nested.property('unruly.native.prebid.uq');
 
       const uq = window.top.unruly.native.prebid.uq;
       const sentRendererConfig = uq[0][1];
@@ -190,7 +252,7 @@ describe('UnrulyAdapter', function () {
       expect(sentRendererConfig.vastUrl).to.equal('value: vastUrl');
       expect(sentRendererConfig.renderer).to.equal(fakeRenderer);
       expect(sentRendererConfig.adUnitCode).to.equal('video')
-    })
+    });
 
     it('should ensure that renderer is placed in Prebid supply mode', function () {
       const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
@@ -205,4 +267,64 @@ describe('UnrulyAdapter', function () {
       expect(supplyMode).to.equal('prebid');
     });
   });
+
+  describe('getUserSyncs', () => {
+    it('should push user sync iframe if enabled', () => {
+      const mockConsent = {}
+      const response = {}
+      const syncOptions = { iframeEnabled: true }
+      const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+      expect(syncs[0]).to.deep.equal({
+        type: 'iframe',
+        url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
+      });
+    })
+
+    it('should not push user sync iframe if not enabled', () => {
+      const mockConsent = {}
+      const response = {}
+      const syncOptions = { iframeEnabled: false }
+      const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent);
+      expect(syncs).to.be.empty;
+    });
+  });
+
+  it('should not append consent params if gdpr does not apply', () => {
+    const mockConsent = {}
+    const response = {}
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
+    })
+  });
+
+  it('should append consent params if gdpr does apply and consent is given', () => {
+    const mockConsent = {
+      gdprApplies: true,
+      consentString: 'hello'
+    };
+    const response = {}
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=1&gdpr_consent=hello'
+    })
+  });
+
+  it('should append consent param if gdpr applies and no consent is given', () => {
+    const mockConsent = {
+      gdprApplies: true,
+      consentString: {}
+    };
+    const response = {};
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=0'
+    })
+  })
 });

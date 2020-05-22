@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import { Renderer } from 'src/Renderer';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { Renderer } from '../src/Renderer';
+import { BANNER, VIDEO } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'rockyou';
 

@@ -1,9 +1,17 @@
 {
-  "bs_ie_14_windows_10": {
+  "bs_edge_17_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "edge",
-    "browser_version": "14.0",
+    "browser_version": "17.0",
+    "device": null,
+    "os": "Windows"
+  },
+  "bs_edge_16_windows_10": {
+    "base": "BrowserStack",
+    "os_version": "10",
+    "browser": "edge",
+    "browser_version": "16.0",
     "device": null,
     "os": "Windows"
   },
@@ -15,51 +23,51 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_62_windows_10": {
+  "bs_chrome_74_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
-    "browser_version": "62.0",
+    "browser_version": "74.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_61_windows_10": {
+  "bs_chrome_75_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
-    "browser_version": "61.0",
+    "browser_version": "75.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_58_windows_10": {
+  "bs_firefox_66_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "firefox",
-    "browser_version": "58.0",
+    "browser_version": "66.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_57_windows_10": {
+  "bs_firefox_67_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "firefox",
-    "browser_version": "57.0",
+    "browser_version": "67.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_safari_9.1_mac_elcapitan": {
+  "bs_safari_11_mac_high_sierra": {
     "base": "BrowserStack",
-    "os_version": "El Capitan",
+    "os_version": "High Sierra",
     "browser": "safari",
-    "browser_version": "9.1",
+    "browser_version": "11.1",
     "device": null,
     "os": "OS X"
   },
-  "bs_safari_8_mac_yosemite": {
+  "bs_safari_12_mac_mojave": {
     "base": "BrowserStack",
-    "os_version": "Yosemite",
+    "os_version": "Mojave",
     "browser": "safari",
-    "browser_version": "8.0",
+    "browser_version": "12.0",
     "device": null,
     "os": "OS X"
   }

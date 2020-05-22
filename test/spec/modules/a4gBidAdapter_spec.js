@@ -70,7 +70,7 @@ describe('a4gAdapterTests', function () {
 
     it('bidRequest data', function () {
       const request = spec.buildRequests(bidRequests);
-      expect(request.data).to.exists;
+      expect(request.data).to.exist;
     });
 
     it('bidRequest zoneIds', function () {

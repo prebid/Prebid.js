@@ -1,10 +1,10 @@
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import adapter from '../src/AnalyticsAdapter';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
-import {ajaxBuilder} from 'src/ajax';
+import {ajaxBuilder} from '../src/ajax';
 
-const utils = require('src/utils');
+const utils = require('../src/utils');
 let ajax = ajaxBuilder(0);
 
 const DEFAULT_EVENT_URL = 'pa.rxthdr.com/v3';
@@ -384,7 +384,7 @@ roxotAdapter.initConfig = function (config) {
   initOptions.server = initOptions.options.server || DEFAULT_EVENT_URL;
   initOptions.configServer = initOptions.options.configServer || (initOptions.options.server || DEFAULT_SERVER_CONFIG_URL);
   initOptions.utmTagData = this.buildUtmTagData();
-  initOptions.host = initOptions.options.host || window.location.hostname;
+  initOptions.host = initOptions.options.host || window.originalLocation.hostname;
   initOptions.device = detectDevice();
 
   loadServerConfig();
@@ -499,7 +499,7 @@ function buildLogMessage(message) {
   return 'Roxot Prebid Analytics: ' + message;
 }
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: roxotAdapter,
   code: 'roxot'
 });

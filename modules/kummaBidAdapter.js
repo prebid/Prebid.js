@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
 
 const NATIVE_DEFAULTS = {
@@ -102,7 +102,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
 function impression(slot) {
   return {
     id: slot.bidId,
-    secure: window.location.protocol === 'https:' ? 1 : 0,
+    secure: window.originalLocation.protocol === 'https:' ? 1 : 0,
     'banner': banner(slot),
     'native': nativeImpression(slot),
     'video': videoImpression(slot),

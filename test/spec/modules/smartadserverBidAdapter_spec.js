@@ -103,7 +103,7 @@ describe('Smart bid adapter tests', function () {
   describe('gdpr tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     it('Verify build request with GDPR', function () {

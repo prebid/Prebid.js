@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'eplanning';
 const rnd = Math.random();
@@ -112,7 +112,7 @@ export const spec = {
 }
 
 function cleanName(name) {
-  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)/g, '_').replace(/^_+|_+$/g, '');
+  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
 }
 function getUrlConfig(bidRequests) {
   if (isTestRequest(bidRequests)) {

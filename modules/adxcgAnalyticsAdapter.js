@@ -1,9 +1,9 @@
-import { ajax } from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
-import * as url from 'src/url';
-import * as utils from 'src/utils';
+import { ajax } from '../src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
+import * as url from '../src/url';
+import * as utils from '../src/utils';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -158,7 +158,7 @@ adxcgAnalyticsAdapter.enableAnalytics = function (config) {
   adxcgAnalyticsAdapter.originEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: adxcgAnalyticsAdapter,
   code: 'adxcg'
 });

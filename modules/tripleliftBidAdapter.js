@@ -1,9 +1,9 @@
-import { BANNER } from 'src/mediaTypes';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { BANNER } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'triplelift';
-const STR_ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
+const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 let gdprApplies = true;
 let consentString = null;
 
@@ -17,12 +17,15 @@ export const tripleliftAdapterSpec = {
 
   buildRequests: function(bidRequests, bidderRequest) {
     let tlCall = STR_ENDPOINT;
-    let referrer = utils.getTopWindowUrl();
     let data = _buildPostBody(bidRequests);
 
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
     tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
-    tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
+
+    if (bidderRequest && bidderRequest.refererInfo) {
+      let referrer = bidderRequest.refererInfo.referer;
+      tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
+    }
 
     if (bidderRequest && bidderRequest.timeout) {
       tlCall = utils.tryAppendQueryString(tlCall, 'tmax', bidderRequest.timeout);
@@ -77,6 +80,7 @@ export const tripleliftAdapterSpec = {
 
 function _buildPostBody(bidRequests) {
   let data = {};
+  let { schain } = bidRequests[0];
   data.imp = bidRequests.map(function(bid, index) {
     return {
       id: index,
@@ -85,10 +89,55 @@ function _buildPostBody(bidRequests) {
       banner: {
         format: _sizes(bid.sizes)
       }
-    }
+    };
   });
 
+  let eids = [
+    ...getUnifiedIdEids(bidRequests),
+    ...getIdentityLinkEids(bidRequests)
+  ];
+
+  if (eids.length > 0) {
+    data.user = {
+      ext: {eids}
+    };
+  }
+
+  if (schain) {
+    data.ext = {
+      schain
+    }
+  }
   return data;
+}
+
+function getUnifiedIdEids(bidRequests) {
+  return getEids(bidRequests, 'tdid', 'adserver.org', 'TDID');
+}
+
+function getIdentityLinkEids(bidRequests) {
+  return getEids(bidRequests, 'idl_env', 'liveramp.com', 'idl');
+}
+
+function getEids(bidRequests, type, source, rtiPartner) {
+  return bidRequests
+    .map(getUserId(type)) // bids -> userIds of a certain type
+    .filter((x) => !!x) // filter out null userIds
+    .map(formatEid(source, rtiPartner)); // userIds -> eid objects
+}
+
+function getUserId(type) {
+  return (bid) => (bid && bid.userId && bid.userId[type]);
+}
+
+function formatEid(source, rtiPartner) {
+  return (id) => ({
+    source,
+    uids: [{
+      id,
+      ext: { rtiPartner }
+    }]
+  });
 }
 
 function _sizes(sizeArray) {
@@ -110,11 +159,11 @@ function _buildResponseObject(bidderRequest, bid) {
   let width = bid.width || 1;
   let height = bid.height || 1;
   let dealId = bid.deal_id || '';
-  let creativeId = bid.imp_id;
+  let creativeId = bid.crid || '';
 
   if (bid.cpm != 0 && bid.ad) {
     bidResponse = {
-      requestId: bidderRequest.bids[creativeId].bidId,
+      requestId: bidderRequest.bids[bid.imp_id].bidId,
       cpm: bid.cpm,
       width: width,
       height: height,

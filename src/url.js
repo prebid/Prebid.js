@@ -31,7 +31,7 @@ export function parse(url, options) {
   } else {
     parsed.href = decodeURIComponent(url);
   }
-  // in window.location 'search' is string, not object
+  // in window.originalLocation 'search' is string, not object
   let qsAsString = (options && 'decodeSearchAsString' in options && options.decodeSearchAsString);
   return {
     href: parsed.href,
@@ -41,7 +41,7 @@ export function parse(url, options) {
     pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
     search: (qsAsString) ? parsed.search : parseQS(parsed.search || ''),
     hash: (parsed.hash || '').replace(/^#/, ''),
-    host: parsed.host || window.location.host
+    host: parsed.host || window.originalLocation.host
   };
 }
 

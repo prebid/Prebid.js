@@ -21,7 +21,7 @@ export const spec = {
         bid_floor: parseFloat(bidRequest.params.floor) > 0 ? bidRequest.params.floor : 0,
         charset: document.charSet || document.characterSet,
         site_domain: document.location.hostname,
-        site_page: window.location.href,
+        site_page: window.originalLocation.href,
         subid: 'hb',
         flashver: getFlashVersion(),
         tmax: bidderRequest.timeout,

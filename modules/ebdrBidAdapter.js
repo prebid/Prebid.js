@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { VIDEO, BANNER } from 'src/mediaTypes';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { VIDEO, BANNER } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'ebdr';
 export const spec = {
   code: BIDDER_CODE,
@@ -10,8 +10,8 @@ export const spec = {
   },
   buildRequests: function(bids) {
     const rtbServerDomain = 'dsp.bnmla.com';
-    let domain = window.location.host;
-    let page = window.location.pathname + location.search + location.hash;
+    let domain = window.originalLocation.host;
+    let page = window.originalLocation.pathname + location.search + location.hash;
     let ebdrImps = [];
     const ebdrReq = {};
     let ebdrParams = {};

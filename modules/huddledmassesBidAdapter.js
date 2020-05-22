@@ -1,5 +1,5 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'huddledmasses';
 const URL = '//huddledmassessupply.com/?c=o&m=multi';

@@ -18,7 +18,7 @@ Module that connects to Freewheel ssp's demand sources
                    {
                        bidder: "freewheel-ssp",
                        params: {
-                           zoneId : '277225'
+                           zoneId : '41852'
                        }
                    }
                ]
