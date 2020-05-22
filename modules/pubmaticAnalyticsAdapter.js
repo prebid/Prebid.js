@@ -175,7 +175,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
       'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
       'kgpsv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
       'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
-      'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM, precision
+      'eg': bid.bidResponse ? bid.bidResponse.originalCpm : 0, // todo: later we will need to consider grossECPM and netECPM, precision
       'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM, precision
       'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
       'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
