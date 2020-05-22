@@ -79,7 +79,7 @@ export const spec = {
     const bidChunks = utils.chunk(bids, chunkSize);
     return utils._map(bidChunks, (bids) => {
       return {
-        data: Object.assign({}, tag, { bids }),
+        data: Object.assign({}, tag, { BidRequests: bids }),
         adapterRequest,
         method: 'POST',
         url: getUri()
@@ -141,21 +141,21 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 
 function bidToTag(bidRequests, adapterRequest) {
   const tag = {
-    domain: utils.deepAccess(adapterRequest, 'refererInfo.referer')
+    Domain: utils.deepAccess(adapterRequest, 'refererInfo.referer')
   };
 
   if (utils.deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
-    tag.gdpr = 1;
-    tag.gdpr_consent = utils.deepAccess(adapterRequest, 'gdprConsent.consentString');
+    tag.GDPR = 1;
+    tag.GDPRConsent = utils.deepAccess(adapterRequest, 'gdprConsent.consentString');
   }
   if (utils.deepAccess(adapterRequest, 'uspConsent')) {
-    tag.usp = adapterRequest.uspConsent;
+    tag.USP = adapterRequest.uspConsent;
   }
   if (utils.deepAccess(bidRequests[0], 'schain')) {
-    tag.schain = bidRequests[0].schain;
+    tag.Schain = bidRequests[0].schain;
   }
   if (utils.deepAccess(bidRequests[0], 'userId')) {
-    tag.userIds = Object.assign({}, $$PREBID_GLOBAL$$.getUserIds());
+    tag.UserIds = Object.assign({}, $$PREBID_GLOBAL$$.getUserIds());
   }
 
   const bids = []
@@ -177,15 +177,15 @@ function prepareBidRequests(bidReq) {
   const mediaType = utils.deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const sizes = mediaType === VIDEO ? utils.deepAccess(bidReq, 'mediaTypes.video.playerSize') : utils.deepAccess(bidReq, 'mediaTypes.banner.sizes');
   const bidReqParams = {
-    'callbackId': bidReq.bidId,
-    'aid': bidReq.params.aid,
-    'ad_type': mediaType,
-    'sizes': utils.parseSizesInput(sizes).join(',')
+    'CallbackId': bidReq.bidId,
+    'Aid': bidReq.params.aid,
+    'AdType': mediaType,
+    'Sizes': utils.parseSizesInput(sizes).join(',')
   };
   if (mediaType === VIDEO) {
     const context = utils.deepAccess(bidReq, 'mediaTypes.video.context');
     if (context === ADPOD) {
-      bidReqParams.adpod = utils.deepAccess(bidReq, 'mediaTypes.video');
+      bidReqParams.Adpod = utils.deepAccess(bidReq, 'mediaTypes.video');
     }
   }
   return bidReqParams;
@@ -233,8 +233,7 @@ function createBid(bidResponse, bidRequest) {
       },
       video: {
         context: ADPOD,
-        durationSeconds: bidResponse.durationSeconds,
-        durationBucket: bidResponse.durationBucket
+        durationSeconds: bidResponse.durationSeconds
       }
     });
   }
