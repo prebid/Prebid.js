@@ -129,6 +129,27 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.pubId).to.equal(request.params.inScreenPubID);
       expect(bidRequest.data).to.not.include.any.keys('t');
     });
+    it('should send pubId if videoPubID param is specified', function () {
+      const mediaTypes = {
+        video: {
+          playerSize: [640, 480],
+          context: 'instream',
+          minduration: 1,
+          maxduration: 2,
+          linearity: 1,
+          startdelay: 1,
+          placement: 123456,
+          protocols: [1, 2]
+        }
+      };
+      const request = Object.assign({}, bidRequests[0]);
+      request.mediaTypes = mediaTypes
+      request.params = { 'videoPubID': 123 };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.include.any.keys('pubId');
+      expect(bidRequest.data.pubId).to.equal(request.params.videoPubID);
+      expect(bidRequest.data).to.not.include.any.keys('t');
+    });
     it('should set a ni parameter in bid request if ICV request param is found', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
