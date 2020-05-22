@@ -13,7 +13,10 @@ const defaultUrl = 'https://pool.tsukiji.iponweb.net/hba';
 const requestedBidders = {};
 const requestedBids = {};
 const referrers = {};
-const ignoredEvents = {'bidAdjustment': true, 'bidderDone': true, 'auctionEnd': true};
+const ignoredEvents = {};
+ignoredEvents[CONSTANTS.EVENTS.BID_ADJUSTMENT] = true;
+ignoredEvents[CONSTANTS.EVENTS.BIDDER_DONE] = true;
+ignoredEvents[CONSTANTS.EVENTS.AUCTION_END] = true;
 
 let currentAuctionId = '';
 let url = defaultUrl;
