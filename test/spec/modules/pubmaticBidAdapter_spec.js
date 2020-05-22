@@ -534,6 +534,9 @@ describe('PubMatic adapter', function () {
         'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
         'seatbid': [{
           'seat': 'seat-id',
+          'ext': {
+            'buyid': 'BUYER-ID-987'
+          },
           'bid': [{
             'id': '74858439-49D7-4169-BA5D-44A046315B2F',
             'impid': '22bddb28db77d',
@@ -549,6 +552,9 @@ describe('PubMatic adapter', function () {
             }
           }]
         }, {
+          'ext': {
+            'buyid': 'BUYER-ID-789'
+          },
           'bid': [{
             'id': '74858439-49D7-4169-BA5D-44A046315BEF',
             'impid': '22bddb28db77e',
@@ -2622,6 +2628,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].netRevenue).to.equal(false);
         expect(response[0].ttl).to.equal(300);
         expect(response[0].meta.networkId).to.equal(123);
+        expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
         expect(response[0].meta.buyerId).to.equal(976);
         expect(response[0].meta.clickUrl).to.equal('blackrock.com');
         expect(response[0].referrer).to.include(data.site.ref);
@@ -2643,6 +2650,7 @@ describe('PubMatic adapter', function () {
         expect(response[1].netRevenue).to.equal(false);
         expect(response[1].ttl).to.equal(300);
         expect(response[1].meta.networkId).to.equal(422);
+        expect(response[1].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-789');
         expect(response[1].meta.buyerId).to.equal(832);
         expect(response[1].meta.clickUrl).to.equal('hivehome.com');
         expect(response[1].referrer).to.include(data.site.ref);
