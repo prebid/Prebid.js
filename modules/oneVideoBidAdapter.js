@@ -3,12 +3,12 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  VERSION: '3.0.1',
+  VERSION: '3.0.3',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
   SYNC_ENDPOINT3: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['video', 'banner'],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -22,6 +22,17 @@ export const spec = {
 
     // Video validations
     if (typeof bid.params.video === 'undefined' || typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight == 'undefined' || typeof bid.params.video.mimes == 'undefined') {
+      return false;
+    }
+
+    // Prevend DAP Outstream validation
+    if (bid.mediaTypes.video) {
+      if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
+        return false;
+      }
+    }
+    // Banner DAP validation
+    if (bid.mediaTypes.banner && (!bid.params.video.display)) {
       return false;
     }
 
@@ -82,18 +93,26 @@ export const spec = {
       creativeId: bid.crid,
       width: size.width,
       height: size.height,
-      mediaType: 'video',
       currency: response.cur,
       ttl: 100,
       netRevenue: true,
       adUnitCode: bidRequest.adUnitCode
     };
+
+    bidResponse.mediaType = (bidRequest.mediaTypes.banner) ? 'banner' : 'video'
+
     if (bid.nurl) {
       bidResponse.vastUrl = bid.nurl;
+    } else if (bid.adm && bidRequest.params.video.display === 1) {
+      bidResponse.ad = bid.adm
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
-    bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
+
+    if (bidRequest.mediaTypes.video) {
+      bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
+    }
+
     return bidResponse;
   },
   /**
@@ -237,6 +256,9 @@ function getRequestData(bid, consentData, bidRequest) {
           }]
         }
       }
+    }
+    if (bid.params.video.hp == 1) {
+      bidData.source.ext.schain.nodes[0].hp = bid.params.video.hp;
     }
   }
   if (bid.params.site && bid.params.site.id) {

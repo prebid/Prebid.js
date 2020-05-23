@@ -11,6 +11,8 @@ describe('Livewrapped adapter tests', function () {
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
 
+    window.livewrapped = undefined;
+
     bidderRequest = {
       bidderCode: 'livewrapped',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
@@ -786,6 +788,31 @@ describe('Livewrapped adapter tests', function () {
     }]);
   });
 
+  it('should send schain object if available', function() {
+    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+    let testbidRequest = clone(bidderRequest);
+    let schain = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'directseller.com',
+          'sid': '00001',
+          'rid': 'BidRequest1',
+          'hp': 1
+        }
+      ]
+    };
+
+    testbidRequest.bids[0].schain = schain;
+
+    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+    let data = JSON.parse(result.data);
+
+    expect(data.schain).to.deep.equal(schain);
+  });
+
   describe('interpretResponse', function () {
     it('should handle single success response', function() {
       let lwResponse = {
@@ -969,6 +996,39 @@ describe('Livewrapped adapter tests', function () {
       let bids = spec.interpretResponse({body: lwResponse});
 
       expect(bids).to.deep.equal(expectedResponse);
+    })
+
+    it('should send debug-data to external debugger', function() {
+      let lwResponse = {
+        ads: [
+          {
+            id: '28e5ddf4-3c01-11e8-86a7-0a44794250d4',
+            callerId: 'site_outsider_0',
+            tag: '<span>ad</span>',
+            width: 300,
+            height: 250,
+            cpmBid: 2.565917,
+            bidId: '32e50fad901ae89',
+            auctionId: '13e674db-d4d8-4e19-9d28-ff38177db8bf',
+            creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
+            ttl: 120
+          }
+        ],
+        currency: 'USD',
+        dbg: 'debugdata'
+      };
+
+      let debugData;
+
+      window.livewrapped = {
+        s2sDebug: function(dbg) {
+          debugData = dbg;
+        }
+      };
+
+      spec.interpretResponse({body: lwResponse});
+
+      expect(debugData).to.equal(lwResponse.dbg);
     })
   });
 

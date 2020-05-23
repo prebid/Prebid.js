@@ -16,7 +16,7 @@ function MarsmediaAdapter() {
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
   let that = this;
-  let version = '2.2';
+  let version = '2.3';
 
   this.isBidRequestValid = function (bid) {
     return !!(bid.params && bid.params.zoneId);
@@ -221,6 +221,20 @@ function MarsmediaAdapter() {
     };
   };
 
+  this.onBidWon = function (bid) {
+    const cpm = bid.pbMg;
+    if (typeof bid.nurl !== 'undefined') {
+      bid.nurl = bid.nurl.replace(
+        /\$\{AUCTION_PRICE\}/,
+        cpm
+      );
+      utils.triggerPixel(bid.nurl, null);
+    };
+    const bidString = JSON.stringify(bid);
+    const encodedBuf = window.btoa(bidString);
+    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=17&hb_j=' + encodedBuf, null);
+  };
+
   this.interpretResponse = function (serverResponse) {
     let responses = serverResponse.body || [];
     let bids = [];
@@ -248,7 +262,8 @@ function MarsmediaAdapter() {
         creativeId: bid.crid,
         currency: 'USD',
         netRevenue: true,
-        ttl: 350
+        ttl: 350,
+        nurl: bid.nurl
       };
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {

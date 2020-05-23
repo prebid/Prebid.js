@@ -36,7 +36,8 @@ exports.getRequest = function() {
           'allow_smaller_sizes': false,
           'use_pmt_rule': false,
           'prebid': true,
-          'disable_psa': true
+          'disable_psa': true,
+          'hb_source': 1
         }],
         'user': {}
       }

@@ -7,7 +7,7 @@ import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
 import events from '../events.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
@@ -382,26 +382,31 @@ export function preloadBidderMappingFile(fn, adUnits) {
       let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
       let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
       let mappingData = storage.getDataFromLocalStorage(key);
-      if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-        ajax(info.url,
-          {
-            success: (response) => {
-              try {
-                response = JSON.parse(response);
-                let mapping = {
-                  lastUpdated: timestamp(),
-                  mapping: response.mapping
+      try {
+        mappingData = mappingData ? JSON.parse(mappingData) : undefined;
+        if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+          ajax(info.url,
+            {
+              success: (response) => {
+                try {
+                  response = JSON.parse(response);
+                  let mapping = {
+                    lastUpdated: timestamp(),
+                    mapping: response.mapping
+                  }
+                  storage.setDataInLocalStorage(key, JSON.stringify(mapping));
+                } catch (error) {
+                  logError(`Failed to parse ${bidder} bidder translation mapping file`);
                 }
-                storage.setDataInLocalStorage(key, JSON.stringify(mapping));
-              } catch (error) {
-                logError(`Failed to parse ${bidder} bidder translation mapping file`);
+              },
+              error: () => {
+                logError(`Failed to load ${bidder} bidder translation file`)
               }
             },
-            error: () => {
-              logError(`Failed to load ${bidder} bidder translation file`)
-            }
-          },
-        );
+          );
+        }
+      } catch (error) {
+        logError(`Failed to parse ${bidder} bidder translation mapping file`);
       }
     }
   });
