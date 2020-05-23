@@ -199,11 +199,14 @@ function _buildResponse(bidResponse, bid) {
     dealId: bidResponse.dealId,
     currency: 'USD',
     netRevenue: true,
+    meta: {},
     ttl: 300
   }
   if (utils.isStr(bid.adm)) {
+    response.meta.mediaType = BANNER
     response.ad = utils.replaceAuctionPrice(bid.adm, bid.price)
   } else {
+    response.meta.mediaType = NATIVE
     response.native = _getNativeResponse(bid.adm, bid.price)
   }
   return response
