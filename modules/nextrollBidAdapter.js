@@ -214,8 +214,8 @@ function _buildResponse(bidResponse, bid) {
 
 function _getNativeResponse(adm, price) {
   let baseResponse = {
-    clickTrackers: (adm.native.link && adm.native.link.clicktrackers) || [],
-    jstracker: adm.native.jstracker || [],
+    clickTrackers: (adm.link && adm.link.clicktrackers) || [],
+    jstracker: adm.jstracker || [],
     clickUrl: utils.replaceAuctionPrice(adm.link.url, price),
     impressionTrackers: adm.imptrackers.map(impTracker => utils.replaceAuctionPrice(impTracker, price)),
     privacyLink: 'https://info.evidon.com/pub_info/573',
