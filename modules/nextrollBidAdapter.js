@@ -199,7 +199,6 @@ function _buildResponse(bidResponse, bid) {
     dealId: bidResponse.dealId,
     currency: 'USD',
     netRevenue: true,
-    ad: bid.adm,
     ttl: 300
   }
   if (utils.isStr(bid.adm)) {
