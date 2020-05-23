@@ -199,14 +199,14 @@ function _buildResponse(bidResponse, bid) {
     dealId: bidResponse.dealId,
     currency: 'USD',
     netRevenue: true,
-    meta: {},
+    ad: bid.adm,
     ttl: 300
   }
   if (utils.isStr(bid.adm)) {
-    response.meta.mediaType = BANNER
+    response.mediaType = BANNER
     response.ad = utils.replaceAuctionPrice(bid.adm, bid.price)
   } else {
-    response.meta.mediaType = NATIVE
+    response.mediaType = NATIVE
     response.native = _getNativeResponse(bid.adm, bid.price)
   }
   return response
@@ -214,6 +214,8 @@ function _buildResponse(bidResponse, bid) {
 
 function _getNativeResponse(adm, price) {
   let baseResponse = {
+    clickTrackers: (adm.native.link && adm.native.link.clicktrackers) || [],
+    jstracker: adm.native.jstracker || [],
     clickUrl: utils.replaceAuctionPrice(adm.link.url, price),
     impressionTrackers: adm.imptrackers.map(impTracker => utils.replaceAuctionPrice(impTracker, price)),
     privacyLink: 'https://info.evidon.com/pub_info/573',
@@ -236,8 +238,8 @@ function _getAssetResponse(asset, assetMap) {
     case 'img':
       return {
         url: asset.img.url,
-        w: asset.img.w,
-        h: asset.img.h
+        width: asset.img.w,
+        height: asset.img.h
       }
 
     case 'data':
