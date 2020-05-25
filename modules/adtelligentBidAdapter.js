@@ -6,12 +6,12 @@ import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const subdomainSuffixes = ['', 1, 2];
-const getUri = function () {
+const getUri = (function () {
   let num = 0;
   return function () {
     return 'https://ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com/v2/auction/'
   }
-}()
+}())
 const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
 const BIDDER_CODE = 'adtelligent';
 const OUTSTREAM = 'outstream';
@@ -110,16 +110,10 @@ export const spec = {
 };
 
 function parseRTBResponse(serverResponse, adapterRequest) {
-  const isInvalidValidResp = !serverResponse || !utils.isArray(serverResponse.bids);
-
+  const isEmptyResponse = !serverResponse || !utils.isArray(serverResponse.bids);
   const bids = [];
 
-  if (isInvalidValidResp) {
-    const extMessage = serverResponse && serverResponse.ext && serverResponse.ext.message ? `: ${serverResponse.ext.message}` : '';
-    const errorMessage = `in response for ${adapterRequest.bidderCode} adapter ${extMessage}`;
-
-    utils.logError(errorMessage);
-
+  if (isEmptyResponse) {
     return bids;
   }
 
@@ -139,26 +133,27 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 }
 
 function bidToTag(bidRequests, adapterRequest) {
+  // start publisher env
   const tag = {
     Domain: utils.deepAccess(adapterRequest, 'refererInfo.referer')
   };
   if (config.getConfig('coppa') === true) {
-    tag.coppa = 1;
+    tag.Coppa = 1;
   }
   if (utils.deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
     tag.GDPR = 1;
     tag.GDPRConsent = utils.deepAccess(adapterRequest, 'gdprConsent.consentString');
   }
   if (utils.deepAccess(adapterRequest, 'uspConsent')) {
-    tag.USP = adapterRequest.uspConsent;
+    tag.USP = utils.deepAccess(adapterRequest, 'uspConsent');
   }
   if (utils.deepAccess(bidRequests[0], 'schain')) {
-    tag.Schain = bidRequests[0].schain;
+    tag.Schain = utils.deepAccess(bidRequests[0], 'schain');
   }
   if (utils.deepAccess(bidRequests[0], 'userId')) {
-    tag.UserIds = Object.assign({}, $$PREBID_GLOBAL$$.getUserIds());
+    tag.UserIds = utils.deepAccess(bidRequests[0], 'userId');
   }
-
+  // end publisher env
   const bids = []
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
@@ -246,7 +241,7 @@ function createBid(bidResponse, bidRequest) {
   if (context === OUTSTREAM) {
     Object.assign(bid, {
       adResponse: bidResponse,
-      renderer: newRenderer(bidResponse.requestId)
+      renderer: newRenderer(bidResponse.requestId, bidRequest.params)
     });
   }
 
@@ -258,10 +253,11 @@ function createBid(bidResponse, bidRequest) {
  * @param requestId
  * @returns {*}
  */
-function newRenderer(requestId) {
+function newRenderer(requestId, bidderParams) {
   const renderer = Renderer.install({
     id: requestId,
     url: OUTSTREAM_SRC,
+    config: bidderParams.outstream || {},
     loaded: false
   });
 
@@ -276,12 +272,13 @@ function newRenderer(requestId) {
  */
 function outstreamRender(bid) {
   bid.renderer.push(() => {
-    window.VOutstreamAPI.initOutstreams([{
+    const opts = Object.assign({}, bid.renderer.getConfig(), {
       width: bid.width,
       height: bid.height,
       vastUrl: bid.vastUrl,
       elId: bid.adUnitCode
-    }]);
+    });
+    window.VOutstreamAPI.initOutstreams([opts]);
   });
 }
 
