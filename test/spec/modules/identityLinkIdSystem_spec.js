@@ -6,7 +6,7 @@ const pid = '14';
 const defaultConfigParams = {pid: pid};
 const responseHeader = {'Content-Type': 'application/json'}
 
-describe('LiveIntentId', function () {
+describe('IdentityLinkId tests', function () {
   let logErrorStub;
 
   beforeEach(function () {
