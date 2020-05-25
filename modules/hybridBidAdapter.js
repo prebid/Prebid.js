@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { auctionManager } from '../src/auctionManager.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js'
 import {Renderer} from '../src/Renderer.js';
-import find from 'core-js/library/fn/array/find';
+import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'hybrid';
 const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb';
