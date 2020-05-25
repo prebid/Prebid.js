@@ -120,20 +120,20 @@ function bidToTag(bidRequests, adapterRequest) {
     Domain: utils.deepAccess(adapterRequest, 'refererInfo.referer')
   };
   if (config.getConfig('coppa') === true) {
-    tag.coppa = 1;
+    tag.Coppa = 1;
   }
   if (utils.deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
     tag.GDPR = 1;
     tag.GDPRConsent = utils.deepAccess(adapterRequest, 'gdprConsent.consentString');
   }
   if (utils.deepAccess(adapterRequest, 'uspConsent')) {
-    tag.USP = adapterRequest.uspConsent;
+    tag.USP = utils.deepAccess(adapterRequest, 'uspConsent');
   }
   if (utils.deepAccess(bidRequests[0], 'schain')) {
-    tag.Schain = bidRequests[0].schain;
+    tag.Schain = utils.deepAccess(bidRequests[0], 'schain');
   }
   if (utils.deepAccess(bidRequests[0], 'userId')) {
-    tag.UserIds = Object.assign({}, $$PREBID_GLOBAL$$.getUserIds());
+    tag.UserIds = utils.deepAccess(bidRequests[0], 'userId');
   }
 
   const bids = []
