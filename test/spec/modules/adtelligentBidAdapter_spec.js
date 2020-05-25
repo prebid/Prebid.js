@@ -123,7 +123,7 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe('adtelligentBidAdapter', function () {
+describe.only('adtelligentBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('user syncs as image', function () {
