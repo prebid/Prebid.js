@@ -2,10 +2,11 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {ajax} from '../src/ajax.js'
 import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 // const SMAATO_ENDPOINT = 'https://unifiedbidding.ad.smaato.net/oapi/unifiedbidding';
-const SMAATO_ENDPOINT = 'http://localhost:3000/bidder';
+const SMAATO_ENDPOINT = 'https://prebid-test.smaatolabs.net/bidder';
 
 /**
 * Transform BidRequest to OpenRTB-formatted BidRequest Object
@@ -63,6 +64,9 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
       ext: {
         gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
       }
+    },
+    ext: {
+      client: 'prebidjs_$prebid.version$'
     }
   };
 
@@ -75,7 +79,8 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['ex'], // short code
+  aliases: [BIDDER_CODE], // short code
+  supportedMediaTypes: [BANNER],
 
   /**
       * Determines whether or not the given bid request is valid.
