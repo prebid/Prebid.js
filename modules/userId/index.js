@@ -108,7 +108,7 @@
  * @property {(function|undefined)} callback - function that will return an id
  */
 
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import {config} from '../../src/config.js';
 import events from '../../src/events.js';
 import * as utils from '../../src/utils.js';
@@ -383,6 +383,16 @@ function getUserIds() {
 }
 
 /**
+ * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
+ * Simple use case will be passing these UserIds to A9 wrapper solution
+ */
+function getUserIdsAsEids() {
+  // initialize submodules only when undefined
+  initializeSubmodulesAndExecuteCallbacks();
+  return createEidsArray(getCombinedSubmoduleIds(initializedSubmodules));
+}
+
+/**
  * This hook returns updated list of submodules which are allowed to do get user id based on TCF 2 enforcement rules configured
  */
 export const validateGdprEnforcement = hook('sync', function (submodules, consentData) {
@@ -576,6 +586,7 @@ export function init(config) {
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
+  (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
 }
 
 // init config update listener to start the application
