@@ -453,7 +453,9 @@ describe('stroeerCore bid adapter', function () {
           }, {
             'sid': 'ODA=', 'bid': 'bid2', 'siz': [[728, 90]], 'viz': true
           }],
-          'uids': userIds
+          'user': {
+            'euids': userIds
+          }
         };
 
         assert.deepEqual(serverRequestInfo.data, expectedJsonPayload);

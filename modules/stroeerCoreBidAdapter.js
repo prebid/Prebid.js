@@ -175,7 +175,9 @@ export const spec = {
     const userIds = anyBid.userId;
 
     if (!utils.isEmpty(userIds)) {
-      payload.uids = userIds;
+      payload.user = {
+        euids: userIds
+      };
     }
 
     const gdprConsent = bidderRequest.gdprConsent;
