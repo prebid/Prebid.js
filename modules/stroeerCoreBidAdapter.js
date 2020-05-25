@@ -169,7 +169,8 @@ export const spec = {
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : 2,
-      yl2: bidRequestWithYl2 ? bidRequestWithYl2.params.yl2 : (localStorage.sdgYieldtest === '1')
+      yl2: bidRequestWithYl2 ? bidRequestWithYl2.params.yl2 : (localStorage.sdgYieldtest === '1'),
+      ab: utils.getWindowSelf()['yieldlove_ab']
     };
 
     const userIds = anyBid.userId;
