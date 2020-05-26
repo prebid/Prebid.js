@@ -5,7 +5,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hb';
-const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=iow_labs';
+const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
