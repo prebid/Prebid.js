@@ -31,8 +31,8 @@ export const spec = {
         return false;
       }
     }
-    // Banner DAP validation
-    if (bid.mediaTypes.banner && (!bid.params.video.display)) {
+    // Banner DAP validation & Multi-Format adUnit Support
+    if (!bid.mediaTypes.video && (bid.mediaTypes.banner && !bid.params.video.display)) {
       return false;
     }
 

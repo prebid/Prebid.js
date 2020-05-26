@@ -182,6 +182,21 @@ describe('OneVideoBidAdapter', function () {
       }
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     })
+
+    it('should return true for Multi-Format AdUnits, when the mediaTypes are both "banner" and "video" (Multi-Format Support)', function () {
+      bidRequest = {
+        mediaTypes: {
+          banner: {
+            sizes: [640, 480]
+          },
+          video: {
+            context: 'outstream',
+            playerSize: [640, 480]
+          }
+        }
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    })
   });
 
   describe('spec.buildRequests', function () {
