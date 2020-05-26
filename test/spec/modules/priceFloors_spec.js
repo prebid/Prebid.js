@@ -319,7 +319,7 @@ describe('the price floors module', function () {
         modelVersion: undefined,
         location: undefined,
         skipRate: 0,
-        fetchFailed: undefined
+        fetchStatus: undefined
       });
     });
     it('should use adUnit level data if not setConfig or fetch has occured', function () {
@@ -351,7 +351,7 @@ describe('the price floors module', function () {
         modelVersion: 'adUnit Model Version',
         location: 'adUnit',
         skipRate: 0,
-        fetchFailed: undefined
+        fetchStatus: undefined
       });
     });
     it('bidRequests should have getFloor function and flooring meta data when setConfig occurs', function () {
@@ -362,7 +362,7 @@ describe('the price floors module', function () {
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
-        fetchFailed: undefined
+        fetchStatus: undefined
       });
     });
     it('should take the right skipRate depending on input', function () {
@@ -383,7 +383,7 @@ describe('the price floors module', function () {
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 50,
-        fetchFailed: undefined
+        fetchStatus: undefined
       });
 
       // if that does not exist uses topLevel skipRate setting
@@ -395,7 +395,7 @@ describe('the price floors module', function () {
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 10,
-        fetchFailed: undefined
+        fetchStatus: undefined
       });
 
       // if that is not there defaults to zero
@@ -407,7 +407,7 @@ describe('the price floors module', function () {
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
-        fetchFailed: undefined
+        fetchStatus: undefined
       });
     });
     it('should not overwrite previous data object if the new one is bad', function () {
@@ -434,7 +434,7 @@ describe('the price floors module', function () {
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
-        fetchFailed: undefined
+        fetchStatus: undefined
       });
     });
     it('should dynamically add new schema fileds and functions if added via setConfig', function () {
@@ -511,7 +511,7 @@ describe('the price floors module', function () {
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
-        fetchFailed: undefined
+        fetchStatus: 'timeout'
       });
       fakeFloorProvider.respond();
     });
@@ -541,13 +541,13 @@ describe('the price floors module', function () {
       expect(exposedAdUnits).to.not.be.undefined;
 
       // the exposedAdUnits should be from the fetch not setConfig level data
-      // and fetch failed is false since fetch worked
+      // and fetchStatus is success since fetch worked
       validateBidRequests(true, {
         skipped: false,
         modelVersion: 'fetch model name',
         location: 'fetch',
         skipRate: 0,
-        fetchFailed: false
+        fetchStatus: 'success'
       });
     });
     it('Should not break if floor provider returns 404', function () {
@@ -567,7 +567,7 @@ describe('the price floors module', function () {
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
-        fetchFailed: true
+        fetchStatus: 'error'
       });
     });
     it('Should not break if floor provider returns non json', function () {
@@ -583,13 +583,13 @@ describe('the price floors module', function () {
       // error should have been called for response floor data not being valid
       expect(logErrorSpy.calledOnce).to.equal(true);
       // should have caught the response error and still used setConfig data
-      // and fetch failed is true
+      // and fetchStatus is 'success' but location is setConfig since it had bad data
       validateBidRequests(true, {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
-        fetchFailed: false
+        fetchStatus: 'success'
       });
     });
     it('should handle not using fetch correctly', function () {

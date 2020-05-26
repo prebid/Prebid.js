@@ -289,7 +289,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
         modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
         location: utils.deepAccess(floorData, 'data.location'),
         skipRate: floorData.skipRate,
-        fetchFailed: _floorsConfig.fetchFailed
+        fetchStatus: _floorsConfig.fetchStatus
       }
     });
   });
@@ -422,6 +422,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   if (_floorsConfig.auctionDelay > 0 && fetching) {
     hookConfig.timer = setTimeout(() => {
       utils.logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction`);
+      _floorsConfig.fetchStatus = 'timeout';
       continueAuction(hookConfig);
     }, _floorsConfig.auctionDelay);
     _delayedAuctions.push(hookConfig);
@@ -449,7 +450,7 @@ function resumeDelayedAuctions() {
  */
 export function handleFetchResponse(fetchResponse) {
   fetching = false;
-  _floorsConfig.fetchFailed = false;
+  _floorsConfig.fetchStatus = 'success';
   let floorResponse;
   try {
     floorResponse = JSON.parse(fetchResponse);
@@ -465,7 +466,7 @@ export function handleFetchResponse(fetchResponse) {
 
 function handleFetchError(status) {
   fetching = false;
-  _floorsConfig.fetchFailed = true;
+  _floorsConfig.fetchStatus = 'error';
   utils.logError(`${MODULE_NAME}: Fetch errored with: `, status);
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
