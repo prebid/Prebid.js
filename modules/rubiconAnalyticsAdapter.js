@@ -202,7 +202,7 @@ function sendMessage(auctionId, bidWonId) {
         'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
         'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),
         'skipRate', skipRate => !isNaN(skipRate) ? skipRate : 0,
-        'fetchFailed'
+        'fetchStatus'
       ]);
     }
 

@@ -665,7 +665,8 @@ describe('rubicon analytics adapter', function () {
         skipped: false,
         modelVersion: 'someModelName',
         location: 'setConfig',
-        skipRate: 15
+        skipRate: 15,
+        fetchStatus: 'error'
       };
       let flooredResponse = {
         ...BID,
@@ -735,7 +736,8 @@ describe('rubicon analytics adapter', function () {
         skipped: false,
         enforcement: true,
         dealsEnforced: false,
-        skipRate: 15
+        skipRate: 15,
+        fetchStatus: 'error'
       });
       // first adUnit's adSlot
       expect(message.auctions[0].adUnits[0].adSlot).to.equal('12345/sports');
