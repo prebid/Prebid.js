@@ -108,8 +108,8 @@ export const spec = {
     return bids;
   },
 
-  transformBidParams(params){
-    return  utils.convertTypes({
+  transformBidParams(params) {
+    return utils.convertTypes({
       'aid': 'number',
     }, params);
   }
