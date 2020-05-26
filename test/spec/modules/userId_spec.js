@@ -453,6 +453,7 @@ describe('User ID', function() {
       sandbox = sinon.createSandbox();
       sandbox.stub(global, 'setTimeout').returns(2);
       sandbox.stub(events, 'on');
+      sandbox.stub(coreStorage, 'getCookie');
 
       // remove cookie
       coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
@@ -626,11 +627,10 @@ describe('User ID', function() {
     });
 
     it('does not delay auction if there are no ids to fetch', function() {
-      coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
-
+      coreStorage.getCookie.withArgs('MOCKID').returns('123456778');
       config.setConfig({
         usersync: {
-          auctionDelay: 200,
+          auctionDelay: 33,
           syncDelay: 77,
           userIds: [{
             name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
