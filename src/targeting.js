@@ -4,7 +4,7 @@ import { NATIVE_TARGETING_KEYS } from './native.js';
 import { auctionManager } from './auctionManager.js';
 import { sizeSupported } from './sizeMapping.js';
 import { ADPOD } from './mediaTypes.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');

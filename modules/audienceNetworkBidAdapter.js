@@ -3,8 +3,8 @@
  */
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { generateUUID, deepAccess, convertTypes, formatQS } from '../src/utils.js';
-import findIndex from 'core-js/library/fn/array/find-index.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import findIndex from 'core-js-pure/features/array/find-index.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const code = 'audienceNetwork';
 const currency = 'USD';
