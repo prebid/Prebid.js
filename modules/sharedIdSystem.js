@@ -12,6 +12,8 @@ import * as sharedIdGenerator from '../src/sharedIdGenerator.js';
 
 const MODULE_NAME = 'sharedId';
 const ID_SVC = 'https://id.sharedid.org/id';
+const DEFAULT_SYNC_TIME_IN_HOURS = 24;
+const OPT_OUT_VALUE = '00000000000000000000000000';
 
 /**
  * Constructs cookie value
@@ -22,11 +24,36 @@ const ID_SVC = 'https://id.sharedid.org/id';
 function constructCookieValue(value, needSync) {
   let cookieValue = {};
   cookieValue.id = value;
+  cookieValue.ts = utils.timestamp();
   if (needSync) {
     cookieValue.ns = true;
   }
   utils.logInfo('SharedId: cookie Value: ' + JSON.stringify(cookieValue));
   return cookieValue;
+}
+
+/**
+ * Checks if id needs to be synced
+ * @param configParams
+ * @param storedId
+ * @returns {boolean}
+ */
+function isIdSynced(configParams, storedId) {
+  var needSync = storedId.ns;
+  if (needSync) {
+    return true;
+  }
+  if (!configParams || typeof configParams.sycTime !== 'number') {
+    utils.logInfo('SharedId: Sync time is not configured or is not a number');
+  }
+  var syncTime = (!configParams || typeof configParams.sycTime !== 'number') ? DEFAULT_SYNC_TIME_IN_HOURS : configParams.sycTime;
+  var timestamp = storedId.ts;
+  if (timestamp) {
+    var date = new Date(timestamp);
+    var hoursago = Date.now() - syncTime * 1000 * 60 * 60;
+    return date < hoursago;
+  }
+  return false;
 }
 
 /**
@@ -99,6 +126,9 @@ function encodeId(value) {
   try {
     let result = {};
     let sharedId = (value && typeof value['id'] === 'string') ? value['id'] : undefined;
+    if (sharedId == OPT_OUT_VALUE) {
+      return undefined;
+    }
     if (sharedId) {
       var bidIds = {
         first: sharedId,
@@ -158,7 +188,7 @@ export const sharedIdSubmodule = {
   extendId(configParams, storedId) {
     utils.logInfo('SharedId: Existing shared id ' + storedId.id);
     const resp = function (callback) {
-      let needSync = storedId.ns;
+      let needSync = isIdSynced(configParams, storedId);
       if (needSync) {
         utils.logInfo('SharedId: Existing shared id ' + storedId + ' is not synced');
         let sharedIdPayload = {};
