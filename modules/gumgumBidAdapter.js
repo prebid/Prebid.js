@@ -4,7 +4,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 import { config } from '../src/config.js'
 import { getStorageManager } from '../src/storageManager.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 
 const storage = getStorageManager();
