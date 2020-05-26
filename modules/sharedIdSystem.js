@@ -43,10 +43,10 @@ function isIdSynced(configParams, storedId) {
   if (needSync) {
     return true;
   }
-  if (!configParams || typeof configParams.sycTime !== 'number') {
+  if (!configParams || typeof configParams.syncTime !== 'number') {
     utils.logInfo('SharedId: Sync time is not configured or is not a number');
   }
-  var syncTime = (!configParams || typeof configParams.sycTime !== 'number') ? DEFAULT_SYNC_TIME_IN_HOURS : configParams.sycTime;
+  var syncTime = (!configParams || typeof configParams.syncTime !== 'number') ? DEFAULT_SYNC_TIME_IN_HOURS : configParams.syncTime;
   var timestamp = storedId.ts;
   if (timestamp) {
     var date = new Date(timestamp);
