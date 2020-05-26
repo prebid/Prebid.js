@@ -10,6 +10,7 @@ import { auctionManager } from '../src/auctionManager.js';
 const SERVER_PROTOCOL = 'https';
 const SERVER_HOST = 'p.konduit.me';
 
+const KONDUIT_PREBID_MODULE_VERSION = '1.0.0';
 const MODULE_NAME = 'Konduit';
 
 const KONDUIT_ID_CONFIG = 'konduit.konduitId';
@@ -207,6 +208,7 @@ export function processBids(options = {}) {
     timeout: options.timeout || 1000,
     payload: {
       clientId: konduitId,
+      konduitPrebidModuleVersion: KONDUIT_PREBID_MODULE_VERSION,
       enableSendAllBids: config.getConfig(SEND_ALL_BIDS_CONFIG),
       bids: bidsToProcess,
       bidResponsesCount: auctionManager.getBidsReceived().length,
