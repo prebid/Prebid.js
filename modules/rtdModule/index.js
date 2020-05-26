@@ -223,11 +223,15 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  */
 function setDataForPrimaryAdServer(data) {
   data = validateProviderDataForGPT(data);
-  utils.isGptPubadsDefined()
-    ? targeting.setTargetingForGPT(data, null)
-    : window.googletag.cmd.push(() => {
+  if (utils.isGptPubadsDefined()) {
+    targeting.setTargetingForGPT(data, null)
+  } else {
+    window.googletag = window.googletag || {};
+    window.googletag.cmd = window.googletag.cmd || [];
+    window.googletag.cmd.push(() => {
       targeting.setTargetingForGPT(data, null);
     });
+  }
 }
 
 /**
