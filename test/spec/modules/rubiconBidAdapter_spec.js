@@ -7,6 +7,7 @@ import * as utils from 'src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
+const PBS_INTEGRATION = 'pbjs';
 
 describe('the rubicon adapter', function () {
   let sandbox,
@@ -1478,10 +1479,11 @@ describe('the rubicon adapter', function () {
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
-          expect(post.ext.prebid).to.have.property('cache').that.is.an('object')
-          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object')
-          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean')
-          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
+          expect(post.ext.prebid).to.have.property('cache').that.is.an('object');
+          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object');
+          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
+          expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
         });
 
         it('should correctly set bidfloor on imp when getfloor in scope', function () {
@@ -1838,6 +1840,18 @@ describe('the rubicon adapter', function () {
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
+        });
+
+        it('should use the integration type provided in the config instead of the default', () => {
+          createVideoBidderRequest();
+          sandbox.stub(config, 'getConfig').callsFake(function (key) {
+            const config = {
+              'rubicon.int_type': 'testType'
+            };
+            return config[key];
+          });
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
         });
       });
 

@@ -2,8 +2,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 
-const BIDDER_CODE = 'adprime';
-const AD_URL = 'https://delta.adprime.com/?c=o&m=multi';
+const BIDDER_CODE = 'trendqube';
+const AD_URL = 'https://ads.trendqube.com/?c=o&m=multi';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -70,7 +70,6 @@ export const spec = {
           sizes = bid.mediaTypes[VIDEO].playerSize
         }
       }
-
       placements.push({
         placementId: bid.params.placementId,
         bidId: bid.bidId,
@@ -78,8 +77,7 @@ export const spec = {
         wPlayer: sizes ? sizes[0] : 0,
         hPlayer: sizes ? sizes[1] : 0,
         traffic: bid.params.traffic || BANNER,
-        schain: bid.schain || {},
-        keywords: bid.params.keywords || []
+        schain: bid.schain || {}
       });
     }
     return {

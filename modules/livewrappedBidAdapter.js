@@ -58,6 +58,7 @@ export const spec = {
     const ifa = find(bidRequests, hasIfaParam);
     const bundle = find(bidRequests, hasBundleParam);
     const tid = find(bidRequests, hasTidParam);
+    const schain = bidRequests[0].schain;
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
@@ -82,7 +83,8 @@ export const spec = {
       cookieSupport: !utils.isSafariBrowser() && storage.cookiesAreEnabled(),
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
-      rtbData: handleEids(bidRequests)
+      rtbData: handleEids(bidRequests),
+      schain: schain
     };
 
     if (config.getConfig().debug) {

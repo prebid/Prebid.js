@@ -1,13 +1,13 @@
 # Overview
 
 ```
-Module Name: adprime Bidder Adapter
-Module Type: adprime Bidder Adapter
+Module Name: trendqube Bidder Adapter
+Module Type: trendqube Bidder Adapter
 ```
 
 # Description
 
-Module that connects to adprime demand sources
+Module that connects to trendqube demand sources
 
 # Test Parameters
 ```
@@ -22,12 +22,10 @@ Module that connects to adprime demand sources
                     },
                     bids: [
                         {
-                            bidder: 'adprime',
+                            bidder: 'trendqube',
                             params: {
                                 placementId: 0,
-                                traffic: 'banner',
-                                keywords: ['cat_1', 'cat_2']
-
+                                traffic: 'banner'
                             }
                         }
                     ]
@@ -43,12 +41,10 @@ Module that connects to adprime demand sources
                     },
                     bids: [
                         {
-                            bidder: 'adprime',
+                            bidder: 'trendqube',
                             params: {
                                 placementId: 0,
-                                traffic: 'video',
-                                keywords: ['cat_1', 'cat_2']
-
+                                traffic: 'video'
                             }
                         }
                     ]

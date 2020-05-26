@@ -1,11 +1,11 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/adprimeBidAdapter.js';
+import {spec} from '../../../modules/trendqubeBidAdapter.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
-describe('AdprimebBidAdapter', function () {
+describe('TrendqubebBidAdapter', function () {
   const bid = {
     bidId: '23fhj33i987f',
-    bidder: 'adprime',
+    bidder: 'trendqube',
     params: {
       placementId: 0,
       traffic: BANNER
@@ -40,7 +40,7 @@ describe('AdprimebBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://delta.adprime.com/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://ads.trendqube.com/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -55,7 +55,7 @@ describe('AdprimebBidAdapter', function () {
       expect(data.gdpr).to.not.exist;
       expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer', 'schain', 'keywords');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer', 'schain');
       expect(placement.placementId).to.equal(0);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal(BANNER);

@@ -158,6 +158,22 @@ describe('LiveIntentId', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
+  it('should log an error and continue to callback if ajax request errors', function () {
+    getCookieStub.returns(null);
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899');
+    request.respond(
+      503,
+      responseHeader,
+      'Unavailable'
+    );
+    expect(logErrorStub.calledOnce).to.be.true;
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
   it('should include the LiveConnect identifier when calling the LiveIntent Identity Exchange endpoint', function () {
     const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000'
     getDataFromLocalStorageStub.withArgs('_li_duid').returns(oldCookie);
