@@ -30,7 +30,7 @@ export const spec = {
       if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
         return false;
       }
-    } else if (!bid.mediaTypes.video && (bid.mediaTypes.banner && !bid.params.video.display)) {
+    } else if (bid.mediaTypes.banner && !bid.params.video.display) {
       return false;
     }
 
