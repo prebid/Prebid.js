@@ -126,6 +126,18 @@ function parseBidResponse(bid) {
       }
       utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
     },
+    'bidGrossCpmUSD', () => {
+      // todo: check whether currency cases are handled here
+      if (typeof bid.originalCurrency === 'string' && bid.originalCurrency.toUpperCase() === CURRENCY_USD) {
+        return window.parseFloat(Number(bid.originalCpm).toFixed(BID_PRECISION));
+      }
+      // some new function was used in floor module, we need to check it
+      // use currency conversion function if present
+      if (typeof getGlobal().convertCurrency === 'function') {
+        return window.parseFloat(Number(getGlobal().convertCurrency( bid.originalCpm, bid.originalCurrency, CURRENCY_USD)).toFixed(BID_PRECISION));
+      }
+      utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
+    },
     'dealId',
     'currency',
     'cpm', () => window.parseFloat(Number(bid.cpm).toFixed(BID_PRECISION)),
@@ -175,8 +187,8 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
       'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
       'kgpsv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
       'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
-      'eg': bid.bidResponse ? bid.bidResponse.originalCpm : 0, // todo: later we will need to consider grossECPM and netECPM, precision
-      'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM, precision
+      'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
+      'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0,
       'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
       'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
       'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
@@ -263,8 +275,8 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&pdvid=' + enc(profileVersionId);
   pixelURL += '&slot=' + enc(adUnitId);
   pixelURL += '&pn=' + enc(winningBid.bidder);
-  pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD); // todo: later we will need to consider grossECPM and netECPM
-  pixelURL += '&eg=' + enc(winningBid.bidResponse.bidPriceUSD); // todo: later we will need to consider grossECPM and netECPM
+  pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
+  pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(winningBid.params.kgpv || adUnitId);
   ajax(
     pixelURL,
