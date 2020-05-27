@@ -221,7 +221,7 @@ describe('Parrable ID System', function() {
             expect(bid).to.have.deep.nested.property('userId.parrableId');
             expect(bid.userId.parrableId.eid).to.equal(P_COOKIE_EID);
             expect(bid.userId.parrableId.ibaOptout).to.equal(true);
-            const [ parrableIdAsEid ] = bid.userIdAsEids.filter(e => e.source == 'parrable.com');
+            const parrableIdAsEid = bid.userIdAsEids.find(e => e.source == 'parrable.com');
             expect(parrableIdAsEid).to.deep.equal({
               source: 'parrable.com',
               uids: [{
