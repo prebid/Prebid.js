@@ -382,7 +382,7 @@ describe('gumgumAdapter', function () {
 
     it('updates jcsi object when the server response jcsi prop is found', function () {
       const response = Object.assign({cw: 'AD_JSON'}, serverResponse);
-      const bidResponse = spec.interpretResponse({ body: response }, bidRequest )[0].ad;
+      const bidResponse = spec.interpretResponse({ body: response }, bidRequest)[0].ad;
       const decodedResponse = JSON.parse(atob(bidResponse));
       expect(decodedResponse.jcsi).to.eql(JCSI);
     });
