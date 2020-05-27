@@ -438,6 +438,7 @@ describe('S2S Adapter', function () {
     done = sinon.spy();
 
   beforeEach(function () {
+    config.resetConfig();
     adapter = new Adapter();
     BID_REQUESTS = [
       {
@@ -487,14 +488,13 @@ describe('S2S Adapter', function () {
     done.resetHistory();
   });
 
+  after(function () {
+    config.resetConfig();
+  });
+
   describe('request function', function () {
     beforeEach(function () {
-      config.resetConfig();
       resetSyncedStatus();
-    });
-
-    afterEach(function () {
-      config.resetConfig();
     });
 
     it('should not add outstrean without renderer', function () {
@@ -515,7 +515,6 @@ describe('S2S Adapter', function () {
 
     describe('gdpr tests', function () {
       afterEach(function () {
-        config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
 
@@ -614,7 +613,6 @@ describe('S2S Adapter', function () {
 
     describe('us_privacy (ccpa) consent data', function () {
       afterEach(function () {
-        config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
 
@@ -659,7 +657,6 @@ describe('S2S Adapter', function () {
 
     describe('gdpr and us_privacy (ccpa) consent data', function () {
       afterEach(function () {
-        config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
 
@@ -1470,67 +1467,52 @@ describe('S2S Adapter', function () {
   });
 
   describe('response handler', function () {
-    let server;
-    let logWarnSpy;
-
     beforeEach(function () {
-      server = sinon.fakeServer.create();
       sinon.stub(utils, 'triggerPixel');
       sinon.stub(utils, 'insertUserSyncIframe');
       sinon.stub(utils, 'logError');
       sinon.stub(events, 'emit');
-      logWarnSpy = sinon.spy(utils, 'logWarn');
     });
 
     afterEach(function () {
-      server.restore();
       utils.triggerPixel.restore();
       utils.insertUserSyncIframe.restore();
       utils.logError.restore();
       events.emit.restore();
-      logWarnSpy.restore();
     });
 
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
     it('does not call addBidResponse and calls done when ad unit not set', function () {
-      server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
-
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
       sinon.assert.notCalled(addBidResponse);
       sinon.assert.calledOnce(done);
     });
 
     it('does not call addBidResponse and calls done when server requests cookie sync', function () {
-      server.respondWith(JSON.stringify(RESPONSE_NO_COOKIE));
-
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_NO_COOKIE));
 
       sinon.assert.notCalled(addBidResponse);
       sinon.assert.calledOnce(done);
     });
 
     it('does not call addBidResponse and calls done  when ad unit is set', function () {
-      server.respondWith(JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
-
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
 
       sinon.assert.notCalled(addBidResponse);
       sinon.assert.calledOnce(done);
     });
 
     it('registers successful bids and calls done when there are less bids than requests', function () {
-      server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
-
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
       sinon.assert.calledOnce(addBidResponse);
       sinon.assert.calledOnce(done);
@@ -1544,11 +1526,9 @@ describe('S2S Adapter', function () {
     });
 
     it('should have dealId in bidObject', function () {
-      server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
-
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('dealId', 'test-dealid');
     });
@@ -1564,9 +1544,8 @@ describe('S2S Adapter', function () {
       cacheResponse.seatbid.forEach(item => {
         item.bid[0].ext.prebid.targeting = targetingTestData
       });
-      server.respondWith(JSON.stringify(cacheResponse));
       adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
@@ -1578,9 +1557,8 @@ describe('S2S Adapter', function () {
     });
 
     it('should set the bidResponse currency to whats in the PBS response', function() {
-      server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
       sinon.assert.calledOnce(addBidResponse);
       const pbjsResponse = addBidResponse.firstCall.args[1];
       expect(pbjsResponse).to.have.property('currency', 'EUR');
@@ -1589,9 +1567,8 @@ describe('S2S Adapter', function () {
     it('should set the default bidResponse currency when not specified in OpenRTB', function() {
       let modifiedResponse = utils.deepClone(RESPONSE_OPENRTB);
       modifiedResponse.cur = '';
-      server.respondWith(JSON.stringify(modifiedResponse));
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(modifiedResponse));
       sinon.assert.calledOnce(addBidResponse);
       const pbjsResponse = addBidResponse.firstCall.args[1];
       expect(pbjsResponse).to.have.property('currency', 'USD');
@@ -1608,11 +1585,9 @@ describe('S2S Adapter', function () {
         item.bid[0].ext.prebid.targeting = targetingTestData
       });
 
-      server.respondWith(JSON.stringify(cacheResponse));
-
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('adserverTargeting').that.deep.equals({ 'foo': 'bar' });
@@ -1624,11 +1599,9 @@ describe('S2S Adapter', function () {
       };
       sinon.stub(adapterManager, 'getBidAdapter').callsFake(() => rubiconAdapter);
 
-      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
-
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
       sinon.assert.calledOnce(rubiconAdapter.registerSyncs);
 
@@ -1646,9 +1619,8 @@ describe('S2S Adapter', function () {
       });
       config.setConfig({ s2sConfig });
 
-      server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
       sinon.assert.calledOnce(rubiconAdapter.registerSyncs);
 
@@ -1661,9 +1633,8 @@ describe('S2S Adapter', function () {
       });
       config.setConfig({ s2sConfig });
 
-      server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
       sinon.assert.calledOnce(events.emit);
       const event = events.emit.firstCall.args;
@@ -1686,9 +1657,8 @@ describe('S2S Adapter', function () {
       });
       config.setConfig({ s2sConfig });
 
-      server.respondWith(JSON.stringify(RESPONSE_OPENRTB_VIDEO));
       adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB_VIDEO));
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
@@ -1714,9 +1684,9 @@ describe('S2S Adapter', function () {
           }
         }
       });
-      server.respondWith(JSON.stringify(cacheResponse));
+
       adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
@@ -1740,9 +1710,8 @@ describe('S2S Adapter', function () {
       cacheResponse.seatbid.forEach(item => {
         item.bid[0].ext.prebid.targeting = targetingTestData
       });
-      server.respondWith(JSON.stringify(cacheResponse));
       adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
@@ -1767,9 +1736,8 @@ describe('S2S Adapter', function () {
           hb_cache_path: '/cache'
         }
       });
-      server.respondWith(JSON.stringify(cacheResponse));
       adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
@@ -1795,9 +1763,8 @@ describe('S2S Adapter', function () {
           hb_cache_path: '/cache'
         }
       });
-      server.respondWith(JSON.stringify(cacheResponse));
       adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
@@ -1822,9 +1789,8 @@ describe('S2S Adapter', function () {
           hb_bidid: '1234567890',
         }
       });
-      server.respondWith(JSON.stringify(cacheResponse));
       adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
@@ -1843,9 +1809,8 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig });
       const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
 
-      server.respondWith(JSON.stringify(cacheResponse));
       adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
@@ -1864,9 +1829,8 @@ describe('S2S Adapter', function () {
       });
       config.setConfig({ s2sConfig });
 
-      server.respondWith(JSON.stringify(RESPONSE_OPENRTB_NATIVE));
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB_NATIVE));
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
@@ -1882,55 +1846,90 @@ describe('S2S Adapter', function () {
   });
 
   describe('bid won events', function () {
-    let server;
-    let logWarnSpy;
-    let getUniqueIdentifierStrStub;
+    let uniqueIdCount = 0;
+
+    const staticUniqueIds = ['1000', '1001', '1002', '1003', '1004', '1005'];
 
     beforeEach(function () {
-      server = sinon.fakeServer.create();
       sinon.stub(utils, 'triggerPixel');
       sinon.stub(utils, 'insertUserSyncIframe');
       sinon.stub(utils, 'logError');
-      logWarnSpy = sinon.spy(utils, 'logWarn');
-      getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => '101010101010');
+      sinon.stub(utils, 'getUniqueIdentifierStr').callsFake(() => {
+        uniqueIdCount++;
+        return staticUniqueIds[uniqueIdCount - 1];
+      });
+
+      config.setConfig({
+        s2sConfig: Object.assign({}, CONFIG, {
+          endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        })
+      });
     });
 
     afterEach(function () {
-      server.restore();
       utils.triggerPixel.restore();
       utils.insertUserSyncIframe.restore();
       utils.logError.restore();
-      logWarnSpy.restore();
-      getUniqueIdentifierStrStub.restore();
+      utils.getUniqueIdentifierStr.restore();
+      uniqueIdCount = 0;
     });
 
-    it('should call triggerPixel on bid won event when wurl is defined', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-      });
-      config.setConfig({ s2sConfig });
-
+    it('should call triggerPixel if wurl is defined', function () {
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
       clonedResponse.seatbid[0].bid[0].ext.prebid.event = {
         win: 'https://wurl.org'
       };
-      server.respondWith(JSON.stringify(clonedResponse));
+
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
+      server.requests[0].respond(200, {}, JSON.stringify(clonedResponse));
 
       events.emit(CONSTANTS.EVENTS.BID_WON, {
         auctionId: '173afb6d132ba3',
-        adId: '101010101010'
+        adId: '1000'
       });
 
       sinon.assert.calledOnce(addBidResponse);
 
-      const response = addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('bidderCode', 'appnexus');
-      expect(response).to.have.property('requestId', '123');
-
       expect(utils.triggerPixel.called).to.be.true;
       expect(utils.triggerPixel.getCall(0).args[0]).to.include('https://wurl.org');
+    });
+
+    it('should not call triggerPixel if the wurl cache does not contain the winning', function () {
+      const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
+      clonedResponse.seatbid[0].bid[0].ext.prebid.event = {
+        win: 'https://wurl.org'
+      };
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(clonedResponse));
+
+      events.emit(CONSTANTS.EVENTS.BID_WON, {
+        auctionId: '173afb6d132ba3',
+        adId: 'missingAdId'
+      });
+
+      sinon.assert.calledOnce(addBidResponse)
+
+      expect(utils.triggerPixel.called).to.be.true;
+      expect(utils.triggerPixel.getCall(0).args[0]).to.not.exist;
+    });
+
+    it('should not call triggerPixel if wurl is undefined', function () {
+      const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
+      clonedResponse.seatbid[0].bid[0].ext.prebid.event = undefined;
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(clonedResponse));
+
+      events.emit(CONSTANTS.EVENTS.BID_WON, {
+        auctionId: '173afb6d132ba3',
+        adId: '1000'
+      });
+
+      sinon.assert.calledOnce(addBidResponse)
+
+      expect(utils.triggerPixel.called).to.be.true;
+      expect(utils.triggerPixel.getCall(0).args[0]).to.not.exist;
     });
   })
 
@@ -2039,6 +2038,14 @@ describe('S2S Adapter', function () {
     });
 
     it('should return proper defaults', function () {
+      const options = {
+        accountId: 'abc',
+        bidders: ['rubicon'],
+        defaultVendor: 'rubicon',
+        timeout: 750
+      };
+
+      config.setConfig({ s2sConfig: options });
       expect(config.getConfig('s2sConfig')).to.deep.equal({
         'accountId': 'abc',
         'adapter': 'prebidServer',
