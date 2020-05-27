@@ -788,6 +788,31 @@ describe('Livewrapped adapter tests', function () {
     }]);
   });
 
+  it('should send schain object if available', function() {
+    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+    let testbidRequest = clone(bidderRequest);
+    let schain = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'directseller.com',
+          'sid': '00001',
+          'rid': 'BidRequest1',
+          'hp': 1
+        }
+      ]
+    };
+
+    testbidRequest.bids[0].schain = schain;
+
+    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+    let data = JSON.parse(result.data);
+
+    expect(data.schain).to.deep.equal(schain);
+  });
+
   describe('interpretResponse', function () {
     it('should handle single success response', function() {
       let lwResponse = {

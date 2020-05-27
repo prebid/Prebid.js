@@ -55,7 +55,7 @@ describe('AdprimebBidAdapter', function () {
       expect(data.gdpr).to.not.exist;
       expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer', 'schain');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer', 'schain', 'keywords');
       expect(placement.placementId).to.equal(0);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal(BANNER);
