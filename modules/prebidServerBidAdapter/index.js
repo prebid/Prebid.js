@@ -378,7 +378,7 @@ const wurlMap = {};
  * @param {string} wurl events.winurl passed from prebidServer as wurl
  */
 function addWurl(auctionId, adId, wurl) {
-  if (![auctionId, adId].some(utils.isEmptyStr)) {
+  if ([auctionId, adId].every(utils.isStr)) {
     wurlMap[`${auctionId}${adId}`] = wurl;
   }
 }
@@ -388,7 +388,7 @@ function addWurl(auctionId, adId, wurl) {
  * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
  */
 function removeWurl(auctionId, adId) {
-  if (![auctionId, adId].some(utils.isEmptyStr)) {
+  if ([auctionId, adId].every(utils.isStr)) {
     wurlMap[`${auctionId}${adId}`] = undefined;
   }
 }
@@ -398,7 +398,7 @@ function removeWurl(auctionId, adId) {
  * @return {(string|undefined)} events.winurl which was passed as wurl
  */
 function getWurl(auctionId, adId) {
-  if (![auctionId, adId].some(utils.isEmptyStr)) {
+  if ([auctionId, adId].every(utils.isStr)) {
     return wurlMap[`${auctionId}${adId}`];
   }
 }
@@ -700,12 +700,12 @@ const OPEN_RTB_PROTOCOL = {
 
           // Look for seatbid[].bid[].ext.prebid.bidid and place it in the bidResponse object for use in analytics adapters as 'pbsBidId'
           const bidId = utils.deepAccess(bid, 'ext.prebid.bidid');
-          if (!utils.isEmptyStr(bidId)) {
+          if (utils.isStr(bidId)) {
             bidObject.pbsBidId = bidId;
           }
 
           // store wurl by auctionId and adId so it can be access from the BID_WON event handler
-          if (!utils.isEmptyStr(utils.deepAccess(bid, 'ext.prebid.event.win'))) {
+          if (utils.isStr(utils.deepAccess(bid, 'ext.prebid.event.win'))) {
             addWurl(bidRequest.auctionId, bidObject.adId, utils.deepAccess(bid, 'ext.prebid.event.win'));
           }
 
@@ -714,7 +714,7 @@ const OPEN_RTB_PROTOCOL = {
           // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
           // The removal of hb_winurl and hb_bidid targeting values is temporary
           // once we get through the transition, this block will be removed.
-          if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
+          if (utils.isPlainObject(extPrebidTargeting)) {
             // If wurl exists, remove hb_winurl and hb_bidid targeting attributes
             if (!utils.isEmptyStr(utils.deepAccess(bid, 'ext.prebid.event.win'))) {
               extPrebidTargeting = utils.getDefinedParams(extPrebidTargeting, Object.keys(extPrebidTargeting)
@@ -837,7 +837,7 @@ const OPEN_RTB_PROTOCOL = {
  */
 function bidWonHandler(bid) {
   const wurl = getWurl(bid.auctionId, bid.adId);
-  if (!utils.isEmptyStr(wurl)) {
+  if (utils.isStr(wurl)) {
     utils.logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
     utils.triggerPixel(wurl);
 

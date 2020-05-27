@@ -1848,7 +1848,7 @@ describe('S2S Adapter', function () {
   describe('bid won events', function () {
     let uniqueIdCount = 0;
 
-    const staticUniqueIds = ['1000', '1001', '1002', '1003', '1004', '1005'];
+    const staticUniqueIds = ['1000', '1001', '1002', '1003'];
 
     beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
@@ -1889,7 +1889,6 @@ describe('S2S Adapter', function () {
       });
 
       sinon.assert.calledOnce(addBidResponse);
-
       expect(utils.triggerPixel.called).to.be.true;
       expect(utils.triggerPixel.getCall(0).args[0]).to.include('https://wurl.org');
     });
@@ -1909,9 +1908,7 @@ describe('S2S Adapter', function () {
       });
 
       sinon.assert.calledOnce(addBidResponse)
-
-      expect(utils.triggerPixel.called).to.be.true;
-      expect(utils.triggerPixel.getCall(0).args[0]).to.not.exist;
+      expect(utils.triggerPixel.called).to.be.false;
     });
 
     it('should not call triggerPixel if wurl is undefined', function () {
@@ -1927,9 +1924,7 @@ describe('S2S Adapter', function () {
       });
 
       sinon.assert.calledOnce(addBidResponse)
-
       expect(utils.triggerPixel.called).to.be.true;
-      expect(utils.triggerPixel.getCall(0).args[0]).to.not.exist;
     });
   })
 
