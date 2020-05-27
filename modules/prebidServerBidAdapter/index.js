@@ -712,6 +712,8 @@ const OPEN_RTB_PROTOCOL = {
           let extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
 
           // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
+          // The removal of hb_winurl and hb_bidid targeting values is temporary
+          // once we get through the transition, this block will be removed.
           if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
             // If wurl exists, remove hb_winurl and hb_bidid targeting attributes
             if (!utils.isEmptyStr(utils.deepAccess(bid, 'ext.prebid.event.win'))) {
