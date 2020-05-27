@@ -87,7 +87,7 @@ Dailyhunt bid adapter supports Banner, Native and Video.
                         partner_name: 'dailyhunt',
                         device: {
                             ip: "182.23.143.212"
-                        }
+                        },
                         video: {
                             mimes: [
                                 'video/mp4'
