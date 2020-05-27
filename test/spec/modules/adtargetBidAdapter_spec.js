@@ -36,7 +36,7 @@ const VIDEO_REQUEST = {
 const SERVER_VIDEO_RESPONSE = {
   'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
-    'vastUrl': 'http://rtb.adtarget.com/vast/?adid=44F2AEB9BFC881B3',
+    'vastUrl': 'https://rtb.adtarget.com/vast/?adid=44F2AEB9BFC881B3',
     'requestId': '2e41f65424c87c',
     'url': '44F2AEB9BFC881B3',
     'creative_id': 342516,
@@ -98,7 +98,7 @@ const displayBidderRequestWithConsents = {
 };
 
 const videoEqResponse = [{
-  vastUrl: 'http://rtb.adtarget.com/vast/?adid=44F2AEB9BFC881B3',
+  vastUrl: 'https://rtb.adtarget.com/vast/?adid=44F2AEB9BFC881B3',
   requestId: '2e41f65424c87c',
   creativeId: 342516,
   mediaType: 'video',
