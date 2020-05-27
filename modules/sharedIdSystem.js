@@ -12,7 +12,7 @@ import * as sharedIdGenerator from '../src/sharedIdGenerator.js';
 
 const MODULE_NAME = 'sharedId';
 const ID_SVC = 'https://id.sharedid.org/id';
-const DEFAULT_SYNC_TIME_IN_HOURS = 24;
+const DEFAULT_24_HOURS = 86400;
 const OPT_OUT_VALUE = '00000000000000000000000000';
 
 /**
@@ -46,13 +46,27 @@ function isIdSynced(configParams, storedId) {
   if (!configParams || typeof configParams.syncTime !== 'number') {
     utils.logInfo('SharedId: Sync time is not configured or is not a number');
   }
-  var syncTime = (!configParams || typeof configParams.syncTime !== 'number') ? DEFAULT_SYNC_TIME_IN_HOURS : configParams.syncTime;
-  var timestamp = storedId.ts;
-  if (timestamp) {
-    var hoursago = utils.timestamp() - syncTime * 1000 * 60 * 60;
-    return timestamp < hoursago;
+  var syncTime = (!configParams || typeof configParams.syncTime !== 'number') ? DEFAULT_24_HOURS : configParams.syncTime;
+  if (syncTime > DEFAULT_24_HOURS) {
+    syncTime = DEFAULT_24_HOURS;
+  }
+  var cookieTimestamp = storedId.ts;
+  if (cookieTimestamp) {
+    var secondBetweenTwoDate = timeDifferenceInSeconds(utils.timestamp(), cookieTimestamp);
+    return secondBetweenTwoDate >= syncTime;
   }
   return false;
+}
+
+/**
+ * Gets time difference in secounds
+ * @param date1
+ * @param date2
+ * @returns {number}
+ */
+function timeDifferenceInSeconds(date1, date2) {
+  var diff = (date1 - date2) / 1000;
+  return Math.abs(Math.round(diff));
 }
 
 /**
