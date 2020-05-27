@@ -120,6 +120,7 @@ describe('AdheseAdapter', function () {
             origin: 'APPNEXUS',
             originInstance: '',
             ext: 'js',
+            slotID: '10',
             slotName: '_main_page_-leaderboard',
             adType: 'leaderboard',
             originData: {
@@ -155,12 +156,15 @@ describe('AdheseAdapter', function () {
         ttl: TTL,
         adhese: {
           originData: {
+            adType: 'leaderboard',
             seatbid: [
               {
                 bid: [ { crid: '60613369', dealid: null } ],
                 seat: '958'
               }
-            ]
+            ],
+            slotId: '10',
+            slotName: '_main_page_-leaderboard'
           }
         }
       }];
@@ -249,12 +253,16 @@ describe('AdheseAdapter', function () {
         adhese: {
           originData: {
             adFormat: 'largeleaderboard',
+            adId: '742898',
             adType: 'largeleaderboard',
             adspaceId: '162363',
             libId: '90511',
             orderProperty: undefined,
             priority: undefined,
-            viewableImpressionCounter: undefined
+            viewableImpressionCounter: undefined,
+            slotId: '29306',
+            slotName: '_main_page_-leaderboard',
+            advertiserId: '2081'
           }
         },
         cpm: 5.96,
@@ -304,12 +312,16 @@ describe('AdheseAdapter', function () {
         adhese: {
           originData: {
             adFormat: '',
+            adId: '742470',
             adType: 'preroll',
             adspaceId: '164196',
             libId: '89860',
             orderProperty: undefined,
             priority: undefined,
-            viewableImpressionCounter: undefined
+            viewableImpressionCounter: undefined,
+            slotId: '41711',
+            slotName: '_main_page_-leaderboard',
+            advertiserId: '2263',
           }
         },
         cpm: 0,

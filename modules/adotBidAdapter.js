@@ -2,7 +2,7 @@ import {Renderer} from '../src/Renderer.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {isStr, isArray, isNumber, isPlainObject, isBoolean, logError} from '../src/utils.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const ADAPTER_VERSION = 'v1.0.0';
 const BID_METHOD = 'POST';
