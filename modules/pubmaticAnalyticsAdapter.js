@@ -4,6 +4,7 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
@@ -134,7 +135,7 @@ function parseBidResponse(bid) {
       // some new function was used in floor module, we need to check it
       // use currency conversion function if present
       if (typeof getGlobal().convertCurrency === 'function') {
-        return window.parseFloat(Number(getGlobal().convertCurrency( bid.originalCpm, bid.originalCurrency, CURRENCY_USD)).toFixed(BID_PRECISION));
+        return window.parseFloat(Number(getGlobal().convertCurrency(bid.originalCpm, bid.originalCurrency, CURRENCY_USD)).toFixed(BID_PRECISION));
       }
       utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
     },
