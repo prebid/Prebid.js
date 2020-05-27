@@ -139,7 +139,7 @@ function isBidRequestValid (bid) {
     params,
     adUnitCode
   } = bid;
-  const id = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video;
+  const id = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo;
 
   if (invalidRequestIds[id]) {
     utils.logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
