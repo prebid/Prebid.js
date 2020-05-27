@@ -403,6 +403,15 @@ function getWurl(auctionId, adId) {
   }
 }
 
+/**
+ * remove all wurl wurl items
+ */
+export function resetWurlMap() {
+  Object.keys(bidIdMap).forEach(function (key) {
+    wurlMap[key] = undefined;
+  })
+}
+
 const OPEN_RTB_PROTOCOL = {
   buildRequest(s2sBidRequest, bidRequests, adUnits) {
     let imps = [];
