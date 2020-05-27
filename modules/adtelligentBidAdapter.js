@@ -231,7 +231,7 @@ function createBid(bidResponse, bidRequest) {
   if (context === ADPOD) {
     Object.assign(bid, {
       meta: {
-        iabSubCatId: bidResponse.iabSubCatId,
+        primaryCatId: bidResponse.primaryCatId,
       },
       video: {
         context: ADPOD,
