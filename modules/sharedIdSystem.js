@@ -49,9 +49,8 @@ function isIdSynced(configParams, storedId) {
   var syncTime = (!configParams || typeof configParams.syncTime !== 'number') ? DEFAULT_SYNC_TIME_IN_HOURS : configParams.syncTime;
   var timestamp = storedId.ts;
   if (timestamp) {
-    var date = new Date(timestamp);
-    var hoursago = Date.now() - syncTime * 1000 * 60 * 60;
-    return date < hoursago;
+    var hoursago = utils.timestamp() - syncTime * 1000 * 60 * 60;
+    return timestamp < hoursago;
   }
   return false;
 }
