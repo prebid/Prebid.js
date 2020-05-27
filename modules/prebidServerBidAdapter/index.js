@@ -404,12 +404,12 @@ function getWurl(auctionId, adId) {
 }
 
 /**
- * remove all wurl wurl items
+ * remove all cached wurls
  */
 export function resetWurlMap() {
-  Object.keys(bidIdMap).forEach(function (key) {
+  Object.keys(wurlMap).forEach(key => {
     wurlMap[key] = undefined;
-  })
+  });
 }
 
 const OPEN_RTB_PROTOCOL = {
