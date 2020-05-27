@@ -538,7 +538,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
       expect(data.s[1].ps[0].kgpsv).to.equal('this-is-a-kgpv');
       expect(data.s[1].ps[0].psz).to.equal('728x90');
-      expect(data.s[1].ps[0].eg).to.equal(undefined); // bidPriceUSD is not getting set as currency module is not added
+      expect(data.s[1].ps[0].eg).to.equal(1);
       expect(data.s[1].ps[0].en).to.equal(undefined); // bidPriceUSD is not getting set as currency module is not added
       expect(data.s[1].ps[0].di).to.equal('the-deal-id');
       expect(data.s[1].ps[0].dc).to.equal('PMP');
@@ -552,5 +552,5 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocpm).to.equal(100);
       expect(data.s[1].ps[0].ocry).to.equal('JPY');
     });
-  })
+  });
 });
