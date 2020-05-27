@@ -52,19 +52,25 @@ function fetchId(configParams, currentStoredId) {
   };
 
   const callback = function (cb) {
-    const onSuccess = (response) => {
-      let eid;
-      if (response) {
-        try {
-          let responseObj = JSON.parse(response);
-          eid = responseObj ? responseObj.eid : undefined;
-        } catch (error) {
-          utils.logError(error);
+    const callbacks = {
+      success: response => {
+        let eid;
+        if (response) {
+          try {
+            let responseObj = JSON.parse(response);
+            eid = responseObj ? responseObj.eid : undefined;
+          } catch (error) {
+            utils.logError(error);
+          }
         }
+        cb(eid);
+      },
+      error: error => {
+        utils.logError(`parrableId: ID fetch encountered an error`, error);
+        cb();
       }
-      cb(eid);
     };
-    ajax(PARRABLE_URL, onSuccess, searchParams, options);
+    ajax(PARRABLE_URL, callbacks, searchParams, options);
   };
 
   return { callback };

@@ -160,6 +160,14 @@ export const spec = {
         spotxReq.video.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params));
       }
 
+      if (utils.getBidIdParameter('min_duration', bid.params) != '') {
+        spotxReq.video.minduration = utils.getBidIdParameter('min_duration', bid.params);
+      }
+
+      if (utils.getBidIdParameter('max_duration', bid.params) != '') {
+        spotxReq.video.maxduration = utils.getBidIdParameter('max_duration', bid.params);
+      }
+
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
       }
