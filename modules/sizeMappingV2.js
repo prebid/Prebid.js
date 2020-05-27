@@ -450,7 +450,7 @@ export function getAdUnitDetail(auctionId, adUnit, labels) {
     return adUnitDetail[0];
   } else {
     const identicalAdUnit = adUnitsForAuction.filter(adUnitDetail => adUnitDetail.adUnitCode === adUnit.code);
-    const adUnitInstance = identicalAdUnit.length > 0 ? typeof identicalAdUnit[0].instance === 'number' ? identicalAdUnit[identicalAdUnit.length - 1].instance + 1 : 1 : 1;
+    const adUnitInstance = identicalAdUnit.length > 0 && typeof identicalAdUnit[0].instance === 'number' ? identicalAdUnit[identicalAdUnit.length - 1].instance + 1 : 1;
     const isLabelActivated = internal.isLabelActivated(adUnit, labels, adUnit.code, adUnitInstance);
     const { mediaTypes = adUnit.mediaTypes, sizeBucketToSizeMap, activeViewport, transformedMediaTypes } = isLabelActivated && internal.getFilteredMediaTypes(adUnit.mediaTypes);
 
