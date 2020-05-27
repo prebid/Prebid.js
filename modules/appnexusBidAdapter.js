@@ -264,7 +264,7 @@ export const spec = {
   getMappingFileInfo: function() {
     return {
       url: mappingFileUrl,
-      refreshInDays: 7
+      refreshInDays: 2
     }
   },
 
@@ -525,8 +525,8 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
     switch (videoContext) {
       case ADPOD:
-        const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
-        bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
+        const primaryCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+        bid.meta = Object.assign({}, bid.meta, { primaryCatId });
         const dealTier = rtbBid.deal_priority;
         bid.video = {
           context: ADPOD,
