@@ -18,14 +18,14 @@ const OPT_OUT_VALUE = '00000000000000000000000000';
 /**
  * Constructs cookie value
  * @param value
- * @param needSync
+ * @param needsSync
  * @returns {string}
  */
-function constructCookieValue(value, needSync) {
+function constructCookieValue(value, needsSync) {
   let cookieValue = {};
   cookieValue.id = value;
   cookieValue.ts = utils.timestamp();
-  if (needSync) {
+  if (needsSync) {
     cookieValue.ns = true;
   }
   utils.logInfo('SharedId: cookie Value: ' + JSON.stringify(cookieValue));
