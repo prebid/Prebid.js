@@ -231,7 +231,7 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
         }
       }
 
-      // CUSTOM -  Emetriq Targeting	  
+      // CUSTOM -  Emetriq Targeting
 
       return {
         method: 'POST',
