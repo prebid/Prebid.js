@@ -6,8 +6,8 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { hasDeviceAccess } from '../src/utils.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { registerSyncInner } from '../src/adapters/bidderFactory.js';
 import { getHook } from '../src/hook.js';
 import { validateStorageEnforcement } from '../src/storageManager.js';
@@ -47,55 +47,21 @@ function getGvlid(bidderCode) {
  * This function takes in rules and consentData as input and validates against the consentData provided. If it returns true Prebid will allow the next call else it will log a warning
  * @param {Object} rule - enforcement rules set in config
  * @param {Object} consentData - gdpr consent data
- * @param {number} purpose - Defines which purpose (1, 2, 4, 7) is under check
+ * @param {number} purposeId - Defines which purpose (1, 2, 7) is under check
  * @param {string=} currentModule - Bidder code of the current module
  * @param {number=} gvlid - GVL ID for the module
  * @returns {boolean}
  */
-function validateRules(rule, consentData, purpose, currentModule, gvlid) {
-  let isAllowed = false;
-  if (!rule.vendorExceptions) rule.vendorExceptions = [];
-  if (rule.enforcePurpose === true && rule.enforceVendor === true) {
-    if (
-      includes(rule.vendorExceptions, currentModule) ||
-      (
-        utils.deepAccess(consentData, `vendorData.purpose.consents.${purpose}`) === true &&
-        utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true
-      )
-    ) {
-      isAllowed = true;
-    }
-  } else if (rule.enforcePurpose === false && rule.enforceVendor === true) {
-    if (
-      includes(rule.vendorExceptions, currentModule) ||
-      (
-        utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true
-      )
-    ) {
-      isAllowed = true;
-    }
-  } else if (rule.enforcePurpose === false && rule.enforceVendor === false) {
-    if (
-      !includes(rule.vendorExceptions, currentModule) ||
-      (
-        (utils.deepAccess(consentData, `vendorData.purpose.consents.${purpose}`) === true) &&
-        (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
-      )
-    ) {
-      isAllowed = true;
-    }
-  } else if (rule.enforcePurpose === true && rule.enforceVendor === false) {
-    if (
-      (utils.deepAccess(consentData, `vendorData.purpose.consents.${purpose}`) === true) &&
-      (
-        !includes(rule.vendorExceptions, currentModule) ||
-        (utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true)
-      )
-    ) {
-      isAllowed = true;
-    }
+function validateRules(rule, consentData, purposeId, currentModule, gvlid) {
+  // if vendor has exception => always true
+  if (includes(rule.vendorExceptions || [], currentModule)) {
+    return true;
   }
-  return isAllowed;
+  // if enforcePurpose is false or purpose was granted isAllowed is true, otherwise false
+  const purposeAllowed = rule.enforcePurpose === false || utils.deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`) === true;
+  // if enforceVendor is false or vendor was granted isAllowed is true, otherwise false
+  const vendorAllowed = rule.enforceVendor === false || utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true;
+  return purposeAllowed && vendorAllowed;
 }
 
 /**
