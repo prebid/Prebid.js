@@ -89,7 +89,7 @@ const USER_IDS_CONFIG = {
     getValue: function(data) {
       return data.first;
     },
-    getUidExt: function (data) {
+    getUidExt: function(data) {
       return (data && data.third) ? {
         third: data.third
       } : undefined;
