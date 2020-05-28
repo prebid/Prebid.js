@@ -2,13 +2,15 @@ import {
   init,
   requestBidsHook,
   setTargetsAfterRequestBids,
-  deepMerge
+  deepMerge,
+  validateProviderDataForGPT
 } from 'modules/rtdModule/index.js';
 import {
   init as browsiInit,
   addBrowsiTag,
   isIdMatchingAdUnit,
-  setData
+  setData,
+  getMacroId
 } from 'modules/browsiRtdProvider.js';
 import {
   init as audigentInit,
@@ -78,7 +80,8 @@ describe('Real time module', function () {
 
   function createSlots() {
     const slot1 = makeSlot({ code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1' });
-    return [slot1];
+    const slot2 = makeSlot({ code: '/57778053/Browsi', divId: 'browsiAd_1' });
+    return [slot1, slot2];
   }
 
   describe('Real time module with browsi provider', function () {
@@ -181,6 +184,28 @@ describe('Real time module', function () {
       assert.deepEqual(expected, merged);
     });
 
+    it('check data validation for GPT targeting', function () {
+      // non strings values should be removed
+      const obj = {
+        valid: {'key': 'value'},
+        invalid: {'key': ['value']},
+        combine: {
+          'a': 'value',
+          'b': []
+        }
+      };
+
+      const expected = {
+        valid: {'key': 'value'},
+        invalid: {},
+        combine: {
+          'a': 'value',
+        }
+      };
+      const validationResult = validateProviderDataForGPT(obj);
+      assert.deepEqual(expected, validationResult);
+    });
+
     it('check browsi sub module', function () {
       const script = addBrowsiTag('scriptUrl.com');
       expect(script.getAttribute('data-sitekey')).to.equal('testKey');
@@ -188,15 +213,27 @@ describe('Real time module', function () {
       expect(script.async).to.equal(true);
 
       const slots = createSlots();
-      const test1 = isIdMatchingAdUnit('browsiAd_1', slots[0], ['/57778053/Browsi_Demo_300x250']); // true
-      const test2 = isIdMatchingAdUnit('browsiAd_1', slots[0], ['/57778053/Browsi_Demo_300x250', '/57778053/Browsi']); // true
-      const test3 = isIdMatchingAdUnit('browsiAd_1', slots[0], ['/57778053/Browsi_Demo_Low']); // false
-      const test4 = isIdMatchingAdUnit('browsiAd_1', slots[0], []); // true
+      const test1 = isIdMatchingAdUnit(slots[0], ['/57778053/Browsi_Demo_300x250']); // true
+      const test2 = isIdMatchingAdUnit(slots[0], ['/57778053/Browsi_Demo_300x250', '/57778053/Browsi']); // true
+      const test3 = isIdMatchingAdUnit(slots[0], ['/57778053/Browsi_Demo_Low']); // false
+      const test4 = isIdMatchingAdUnit(slots[0], []); // true
 
       expect(test1).to.equal(true);
       expect(test2).to.equal(true);
       expect(test3).to.equal(false);
       expect(test4).to.equal(true);
+
+      // macro results
+      slots[0].setTargeting('test', ['test', 'value']);
+      // slot getTargeting doesn't act like GPT so we can't expect real value
+      const macroResult = getMacroId({p: '<AD_UNIT>/<KEY_test>'}, slots[0]);
+      expect(macroResult).to.equal('/57778053/Browsi_Demo_300x250/NA');
+
+      const macroResultB = getMacroId({}, slots[0]);
+      expect(macroResultB).to.equal('browsiAd_1');
+
+      const macroResultC = getMacroId({p: '<AD_UNIT>', s: {s: 0, e: 1}}, slots[0]);
+      expect(macroResultC).to.equal('/');
     })
   });
 
