@@ -66,11 +66,14 @@ pbjs.setConfig({
             }
         }, {
              name: 'sharedId',
+              params: {
+                    syncTime: 3600 // in seconds, default is 24 hours
+               },
              storage: {
                  type: 'cookie',
                  name: 'sharedid',
                  expires: 28
-                 }
+              }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
