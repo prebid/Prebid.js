@@ -1863,6 +1863,12 @@ describe('S2S Adapter', function () {
         return staticUniqueIds[uniqueIdCount - 1];
       });
       triggerPixelStub.resetHistory();
+
+      config.setConfig({
+        s2sConfig: Object.assign({}, CONFIG, {
+          endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        })
+      });
     });
 
     afterEach(function () {
@@ -1875,15 +1881,9 @@ describe('S2S Adapter', function () {
 
     after(function () {
       triggerPixelStub.restore();
-    })
+    });
 
     it('should call triggerPixel if wurl is defined', function () {
-      config.setConfig({
-        s2sConfig: Object.assign({}, CONFIG, {
-          endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-        })
-      });
-
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
       clonedResponse.seatbid[0].bid[0].ext.prebid.event = {
         win: 'https://wurl.org'
@@ -1903,12 +1903,6 @@ describe('S2S Adapter', function () {
     });
 
     it('should not call triggerPixel if the wurl cache does not contain the winning bid', function () {
-      config.setConfig({
-        s2sConfig: Object.assign({}, CONFIG, {
-          endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-        })
-      });
-
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
       clonedResponse.seatbid[0].bid[0].ext.prebid.event = {
         win: 'https://wurl.org'
@@ -1927,12 +1921,6 @@ describe('S2S Adapter', function () {
     });
 
     it('should not call triggerPixel if wurl is undefined', function () {
-      config.setConfig({
-        s2sConfig: Object.assign({}, CONFIG, {
-          endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-        })
-      });
-
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
       clonedResponse.seatbid[0].bid[0].ext.prebid.event = {};
 
