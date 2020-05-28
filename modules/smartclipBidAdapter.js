@@ -55,7 +55,7 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
       utils.logError(BIDDER_CODE + ': domain is not present in bidder params');
       return false;
     }
-	*/
+    */
 
     if (utils.deepAccess(bid, 'mediaTypes.video.context') == 'outstream' || utils.deepAccess(bid, 'params.ad_unit') == 'outstream') {
       if (!utils.getBidIdParameter('outstream_function', bid.params)) {
@@ -83,14 +83,14 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
   buildRequests: function(bidRequests, bidderRequest) {
     const page = bidderRequest.refererInfo.referer;
     const isPageSecure = !!page.match(/^https:/)
-    //const domain = page.match(/:\/\/(.[^/]+)/)[1];
+  //const domain = page.match(/:\/\/(.[^/]+)/)[1];
 
     const smartxRequests = bidRequests.map(function(bid) {
       const tagId = utils.getBidIdParameter('tagId', bid.params);
       const publisherId = utils.getBidIdParameter('publisherId', bid.params);
       const siteId = utils.getBidIdParameter('siteId', bid.params);
       const domain = utils.getBidIdParameter('domain', bid.params);
-	  const cat = utils.getBidIdParameter('cat', bid.params);
+    const cat = utils.getBidIdParameter('cat', bid.params);
 
       let pubcid = null;
 
@@ -115,11 +115,11 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
       const pos = utils.getBidIdParameter('pos', bid.params) || 1;
       const api = utils.getBidIdParameter('api', bid.params) || [2];
       const protocols = utils.getBidIdParameter('protocols', bid.params) || [2, 3, 5, 6];
-	  var contextcustom = utils.deepAccess(bid, 'mediaTypes.video.context');
-	  var placement = 1;
-	  if (contextcustom == 'outstream') {
-			placement = 3;
-	  }
+    var contextcustom = utils.deepAccess(bid, 'mediaTypes.video.context');
+    var placement = 1;
+    if (contextcustom == 'outstream') {
+      placement = 3;
+    }
 
       let smartxReq = {
         id: bid.bidId,
@@ -137,7 +137,7 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
           maxbitrate: maxbitrate,
           delivery: delivery,
           pos: pos,
-		  placement: placement,
+      placement: placement,
           api: api,
           ext: ext
         },
@@ -177,7 +177,7 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
         site: {
           id: siteId,
           page: page,
-		  cat: cat,
+      cat: cat,
           content: 'content',
           domain: domain,
           publisher: {
@@ -213,26 +213,25 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
       if (!utils.isEmpty(userExt)) {
         requestPayload.user = { ext: userExt };
       }
-	  
-		//CUSTOM -  Emetriq Targeting
-		var isemq = (bid.params.user[0].data.name) || 'empty';
-		if(isemq!=='empty'){
-			var emqstring = (bid.params.user[0].data.segment[0].value) || 'empty';
-			requestPayload.user = {	
-				ext: userExt,
-				data: [{
-					id: 'emq',
-					name:'emq',
-					segment: {
-						name : "emq",
-						value: emqstring,
-					}
-				}]
-			}
-		}
-		//CUSTOM -  Emetriq Targeting	  
-	  
-	  
+    
+    // CUSTOM - Emetriq Targeting
+    var isemq = (bid.params.user[0].data.name) || 'empty';
+    if (isemq!=='empty') {
+      var emqstring = (bid.params.user[0].data.segment[0].value) || 'empty';
+      requestPayload.user = {	
+        ext: userExt,
+        data: [{
+          id: 'emq',
+          name:'emq',
+          segment: {
+            name : "emq",
+            value: emqstring,
+          }
+        }]
+      }
+    }
+    //CUSTOM -  Emetriq Targeting	  
+
       return {
         method: 'POST',
         url: URL,
