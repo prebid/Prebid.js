@@ -106,7 +106,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  * @property {object} [native] Object for storing native creative assets
  * @property {object} [video] Object for storing video response data
  * @property {object} [meta] Object for storing bid meta data
- * @property {string} [meta.iabSubCatId] The IAB subcategory ID
+ * @property {string} [meta.primaryCatId] The IAB primary category ID
  * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
  *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
  */
