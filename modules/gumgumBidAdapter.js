@@ -12,7 +12,6 @@ const storage = getStorageManager();
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
-const DT_CREDENTIALS = { member: 'YcXr87z2lpbB' }
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const TIME_TO_LIVE = 60
 
@@ -91,10 +90,6 @@ function _getTradeDeskIDParam(userId) {
 
 function _getDigiTrustQueryParams(userId) {
   let digiTrustId = userId.digitrustid && userId.digitrustid.data;
-  if (!digiTrustId) {
-    const digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
-    digiTrustId = (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
-  }
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return {};
