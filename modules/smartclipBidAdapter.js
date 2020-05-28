@@ -51,7 +51,7 @@ export const spec = {
     }
 
     /*
-	if (!utils.getBidIdParameter('domain', bid.params)) {
+if (!utils.getBidIdParameter('domain', bid.params)) {
       utils.logError(BIDDER_CODE + ': domain is not present in bidder params');
       return false;
     }
