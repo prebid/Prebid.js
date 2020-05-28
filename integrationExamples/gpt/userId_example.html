@@ -184,9 +184,19 @@
                         name: 'idl_env',
                         expires: 30
                       }
+                    }, {
+                      name: "sharedId",
+                      params: {
+                        syncTime: 60 // in seconds, default is 24 hours
+                      },
+                      storage: {
+                        type: "cookie",
+                        name: "sharedid",
+                        expires: 28
+                      },
                     }],
                     syncDelay: 5000,
-                    auctionDelay: 1000 
+                    auctionDelay: 1000
                 }
             });
             pbjs.addAdUnits(adUnits);

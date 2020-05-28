@@ -64,6 +64,16 @@ pbjs.setConfig({
                 name: '_li_pbid',
                 expires: 60
             }
+        }, {
+             name: 'sharedId',
+              params: {
+                    syncTime: 60 // in seconds, default is 24 hours
+               },
+             storage: {
+                 type: 'cookie',
+                 name: 'sharedid',
+                 expires: 28
+              }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -112,6 +122,16 @@ pbjs.setConfig({
                  type: 'html5',
                  name: '_li_pbid',
                  expires: 60
+             }
+        }, {
+             name: 'sharedId',
+            params: {
+                  syncTime: 60 // in seconds, default is 24 hours
+               },
+             storage: {
+                type: 'cookie',
+                name: 'sharedid',
+                expires: 28
              }
         }],
         syncDelay: 5000
