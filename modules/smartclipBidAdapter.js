@@ -347,11 +347,10 @@ function createOutstreamScript(bid) {
   utils.logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
 
   const elementId = bid.adUnitCode;
-  const sc_smartIntxtStart = [];
-  const sc_smartIntxtNoad = [];
-  const sc_smartIntxtEnd = [];
-  const SmartPlay = [];
-  
+  var sc_smartIntxtStart;
+  var sc_smartIntxtNoad;
+  var sc_smartIntxtEnd;
+  var SmartPlay;
   let smartPlayObj = {
     minAdWidth: 290,
     maxAdWidth: 900,
