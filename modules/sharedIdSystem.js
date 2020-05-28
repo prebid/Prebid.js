@@ -39,7 +39,7 @@ function constructCookieValue(value, needsSync) {
  * @returns {boolean}
  */
 function isIdSynced(configParams, storedId) {
-  var needSync = storedId.ns;
+  const needSync = storedId.ns;
   if (needSync) {
     return true;
   }
@@ -107,19 +107,15 @@ function idGenerationCallback(callback) {
 function existingIdCallback(storedId, callback) {
   return {
     success: function (responseBody) {
-      try {
-        utils.logInfo('SharedId: id to be synced: ' + storedId.id);
-        if (responseBody) {
-          try {
-            let responseObj = JSON.parse(responseBody);
-            storedId = constructCookieValue(responseObj.sharedId, false);
-            utils.logInfo('SharedId: Older SharedId: ' + storedId.id);
-          } catch (error) {
-            utils.logError(error);
-          }
+      utils.logInfo('SharedId: id to be synced: ' + storedId.id);
+      if (responseBody) {
+        try {
+          let responseObj = JSON.parse(responseBody);
+          storedId = constructCookieValue(responseObj.sharedId, false);
+          utils.logInfo('SharedId: Older SharedId: ' + storedId.id);
+        } catch (error) {
+          utils.logError(error);
         }
-      } catch (error) {
-        utils.logError(error);
       }
       callback(storedId);
     },
@@ -136,28 +132,24 @@ function existingIdCallback(storedId, callback) {
  * @returns {string|*}
  */
 function encodeId(value) {
-  try {
-    let result = {};
-    let sharedId = (value && typeof value['id'] === 'string') ? value['id'] : undefined;
-    if (sharedId == OPT_OUT_VALUE) {
-      return undefined;
-    }
-    if (sharedId) {
-      var bidIds = {
-        first: sharedId,
-      }
-      let ns = (value && typeof value['ns'] === 'boolean') ? value['ns'] : undefined;
-      if (ns == undefined) {
-        bidIds.third = sharedId;
-      }
-      result.sharedid = bidIds;
-      utils.logInfo('SharedId: Decoded value ' + JSON.stringify(result));
-      return result;
-    }
-    return sharedId;
-  } catch (ex) {
-    return value;
+  let result = {};
+  let sharedId = (value && typeof value['id'] === 'string') ? value['id'] : undefined;
+  if (sharedId == OPT_OUT_VALUE) {
+    return undefined;
   }
+  if (sharedId) {
+    var bidIds = {
+      first: sharedId,
+    }
+    let ns = (value && typeof value['ns'] === 'boolean') ? value['ns'] : undefined;
+    if (ns == undefined) {
+      bidIds.third = sharedId;
+    }
+    result.sharedid = bidIds;
+    utils.logInfo('SharedId: Decoded value ' + JSON.stringify(result));
+    return result;
+  }
+  return sharedId;
 }
 
 /** @type {Submodule} */
@@ -175,7 +167,7 @@ export const sharedIdSubmodule = {
    * @returns {{sharedid:{ 1: string, 3:string}} or undefined if value doesn't exists
    */
   decode(value) {
-    return ((value) ? encodeId(value) : undefined);
+    return (value) ? encodeId(value) : undefined;
   },
 
   /**
