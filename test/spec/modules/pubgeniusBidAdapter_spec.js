@@ -200,6 +200,14 @@ describe('pubGENIUS adapter', () => {
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
     });
 
+    it('should use canonical URL over referer in refererInfo', () => {
+      bidderRequest.refererInfo.canonicalUrl = 'http://pageurl.org';
+      bidderRequest.refererInfo.referer = 'http://referer.org';
+      expectedRequest.data.site = { page: 'http://pageurl.org' };
+
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
+    });
+
     it('should take gdprConsent when GDPR does not apply', () => {
       bidderRequest.gdprConsent = {
         gdprApplies: false,
