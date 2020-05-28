@@ -347,6 +347,11 @@ function createOutstreamScript(bid) {
   utils.logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
 
   const elementId = bid.adUnitCode;
+  const sc_smartIntxtStart = [];
+  const sc_smartIntxtNoad = [];
+  const sc_smartIntxtEnd = [];
+  const SmartPlay = [];
+  
   let smartPlayObj = {
     minAdWidth: 290,
     maxAdWidth: 900,
@@ -367,7 +372,7 @@ function createOutstreamScript(bid) {
     if (rs && rs != 'complete' && rs != 'loaded') return;
     try {
       SmartPlay(elementId, smartPlayObj);
-    } catch (e) { console.warn('error caught : ' + e); }
+    } catch (e) { utils.logError('error caught : ' + e); }
   };
 
   return script;
