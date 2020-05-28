@@ -15,7 +15,7 @@ const USER_IDS_CONFIG = {
   'tdid': {
     source: 'adserver.org',
     atype: 1,
-    getUidExt: function () {
+    getUidExt: function() {
       return {
         rtiPartner: 'TDID'
       };
@@ -42,12 +42,12 @@ const USER_IDS_CONFIG = {
 
   // liveIntentId
   'lipb': {
-    getValue: function (data) {
+    getValue: function(data) {
       return data.lipbid;
     },
     source: 'liveintent.com',
     atype: 1,
-    getEidExt: function (data) {
+    getEidExt: function(data) {
       if (Array.isArray(data.segments) && data.segments.length) {
         return {
           segments: data.segments
@@ -64,7 +64,7 @@ const USER_IDS_CONFIG = {
 
   // DigiTrust
   'digitrustid': {
-    getValue: function (data) {
+    getValue: function(data) {
       return data.data.id;
     },
     source: 'digitru.st',
@@ -86,7 +86,7 @@ const USER_IDS_CONFIG = {
   'sharedid': {
     source: 'sharedid.org',
     atype: 1,
-    getValue: function (data) {
+    getValue: function(data) {
       return data.first;
     },
     getUidExt: function (data) {
@@ -105,7 +105,7 @@ function createEidObject(userIdData, subModuleKey) {
     eid.source = conf['source'];
     const value = utils.isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
     if (utils.isStr(value)) {
-      const uid = {id: value, atype: conf['atype']};
+      const uid = { id: value, atype: conf['atype'] };
       // getUidExt
       if (utils.isFn(conf['getUidExt'])) {
         const uidExt = conf['getUidExt'](userIdData);
