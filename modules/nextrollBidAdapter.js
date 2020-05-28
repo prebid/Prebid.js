@@ -211,14 +211,17 @@ function _buildResponse(bidResponse, bid) {
   return response
 }
 
+const privacyLink = 'https://info.evidon.com/pub_info/573';
+const privacyIcon = 'https://c.betrad.com/pub/icon1.png';
+
 function _getNativeResponse(adm, price) {
   let baseResponse = {
     clickTrackers: (adm.link && adm.link.clicktrackers) || [],
     jstracker: adm.jstracker || [],
     clickUrl: utils.replaceAuctionPrice(adm.link.url, price),
     impressionTrackers: adm.imptrackers.map(impTracker => utils.replaceAuctionPrice(impTracker, price)),
-    privacyLink: 'https://info.evidon.com/pub_info/573',
-    privacyIcon: 'https://c.betrad.com/pub/icon1.png'
+    privacyLink: privacyLink,
+    privacyIcon: privacyIcon
   }
   return adm.assets.reduce((accResponse, asset) => {
     let assetMaps = NATIVE_ASSET_MAP.filter(assetMap => assetMap.id === asset.id && asset[assetMap.kind] !== undefined)
