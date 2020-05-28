@@ -216,7 +216,7 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
 
       // CUSTOM - Emetriq Targeting
       var isemq = (bid.params.user[0].data.name) || 'empty';
-      if (isemq!=='empty') {
+      if (isemq !== 'empty') {
         var emqstring = (bid.params.user[0].data.segment[0].value) || 'empty';
         requestPayload.user = {
           ext: userExt,
@@ -230,6 +230,7 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
           }]
         }
       }
+
       // CUSTOM -  Emetriq Targeting	  
 
       return {
