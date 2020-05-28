@@ -218,8 +218,10 @@ describe('nextrollBidAdapter', function() {
         privacyLink: 'https://info.evidon.com/pub_info/573',
         privacyIcon: 'https://c.betrad.com/pub/icon1.png',
         title: titleText,
-        image: {url: imgUrl, w: imgW, h: imgH},
-        sponsoredBy: brandText
+        image: {url: imgUrl, width: imgW, height: imgH},
+        sponsoredBy: brandText,
+        clickTrackers: [],
+        jstracker: []
       }
 
       expect(response[0].native).to.be.deep.equal(expectedResponse)
@@ -241,12 +243,14 @@ describe('nextrollBidAdapter', function() {
       let expectedResponse = {
         clickUrl: clickUrl,
         impressionTrackers: [impUrl],
+        jstracker: [],
+        clickTrackers: [],
         privacyLink: 'https://info.evidon.com/pub_info/573',
         privacyIcon: 'https://c.betrad.com/pub/icon1.png',
         title: titleText,
-        image: {url: imgUrl, w: imgW, h: imgH},
-        icon: {url: iconUrl, w: iconW, h: iconH},
-        logo: {url: logoUrl, w: logoW, h: logoH},
+        image: {url: imgUrl, width: imgW, height: imgH},
+        icon: {url: iconUrl, width: iconW, height: iconH},
+        logo: {url: logoUrl, width: logoW, height: logoH},
         body: bodyText,
         sponsoredBy: brandText
       }
