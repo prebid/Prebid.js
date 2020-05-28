@@ -1902,7 +1902,7 @@ describe('S2S Adapter', function () {
       expect(utils.triggerPixel.getCall(0).args[0]).to.include('https://wurl.org');
     });
 
-    it('should not call triggerPixel if the wurl cache does not contain the winning', function () {
+    it('should not call triggerPixel if the wurl cache does not contain the winning bid', function () {
       config.setConfig({
         s2sConfig: Object.assign({}, CONFIG, {
           endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
