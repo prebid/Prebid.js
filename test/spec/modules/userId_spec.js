@@ -824,10 +824,10 @@ describe('User ID', function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.have.deep.nested.property('first');
+            expect(bid.userId.sharedid).to.have.deep.nested.property('id');
             expect(bid.userId.sharedid).to.have.deep.nested.property('third');
             expect(bid.userId.sharedid).to.deep.equal({
-              first: 'test_sharedId',
+              id: 'test_sharedId',
               third: 'test_sharedId'
             });
             expect(bid.userIdAsEids[0]).to.deep.equal({
@@ -860,9 +860,9 @@ describe('User ID', function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.have.deep.nested.property('first');
+            expect(bid.userId.sharedid).to.have.deep.nested.property('id');
             expect(bid.userId.sharedid).to.deep.equal({
-              first: 'test_sharedId'
+              id: 'test_sharedId'
             });
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'sharedid.org',
@@ -889,10 +889,10 @@ describe('User ID', function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.have.deep.nested.property('first');
+            expect(bid.userId.sharedid).to.have.deep.nested.property('id');
             expect(bid.userId.sharedid).to.have.deep.nested.property('third');
             expect(bid.userId.sharedid).to.deep.equal({
-              first: 'test_sharedId',
+              id: 'test_sharedId',
               third: 'test_sharedId'
             });
             expect(bid.userIdAsEids[0]).to.deep.equal({
@@ -922,9 +922,9 @@ describe('User ID', function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid).to.have.deep.nested.property('first');
+            expect(bid.userId.sharedid).to.have.deep.nested.property('id');
             expect(bid.userId.sharedid).to.deep.equal({
-              first: 'test_sharedId'
+              id: 'test_sharedId'
             });
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'sharedid.org',
@@ -1133,7 +1133,7 @@ describe('User ID', function() {
             expect(bid.userId.netId).to.equal('testnetId');
             expect(bid).to.have.deep.nested.property('userId.sharedid');
             expect(bid.userId.sharedid).to.deep.equal({
-              first: 'test_sharedId',
+              id: 'test_sharedId',
               third: 'test_sharedId'
             });
             expect(bid.userIdAsEids.length).to.equal(7);
@@ -1259,7 +1259,7 @@ describe('User ID', function() {
             expect(bid.userId.netId).to.equal('testnetId');
             expect(bid).to.have.deep.nested.property('userId.sharedid');
             expect(bid.userId.sharedid).to.deep.equal({
-              first: 'test_sharedId',
+              id: 'test_sharedId',
               third: 'test_sharedId'
             });
             expect(bid.userIdAsEids.length).to.equal(7);
@@ -1418,7 +1418,7 @@ describe('User ID', function() {
             // also check that sharedId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.sharedid');
             expect(bid.userId.sharedid).to.deep.equal({
-              first: 'test_sharedId',
+              id: 'test_sharedId',
               third: 'test_sharedId'
             });
             // check MockId data was copied to bid

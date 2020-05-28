@@ -149,7 +149,7 @@ describe('eids array generation for known sub-modules', function() {
   it('Sharedid', function() {
     const userId = {
       sharedid: {
-        first: 'test_sharedId',
+        id: 'test_sharedId',
         third: 'test_sharedId'
       }
     };
@@ -169,7 +169,7 @@ describe('eids array generation for known sub-modules', function() {
   it('Sharedid: Not Synched', function() {
     const userId = {
       sharedid: {
-        first: 'test_sharedId'
+        id: 'test_sharedId'
       }
     };
     const newEids = createEidsArray(userId);

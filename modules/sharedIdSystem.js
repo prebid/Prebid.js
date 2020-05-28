@@ -22,7 +22,7 @@ const OPT_OUT_VALUE = '00000000000000000000000000';
  * @returns {string}
  */
 function constructCookieValue(value, needsSync) {
-  let cookieValue = {};
+  const cookieValue = {};
   cookieValue.id = value;
   cookieValue.ts = utils.timestamp();
   if (needsSync) {
@@ -46,11 +46,11 @@ function isIdSynced(configParams, storedId) {
   if (!configParams || typeof configParams.syncTime !== 'number') {
     utils.logInfo('SharedId: Sync time is not configured or is not a number');
   }
-  var syncTime = (!configParams || typeof configParams.syncTime !== 'number') ? DEFAULT_24_HOURS : configParams.syncTime;
+  let syncTime = (!configParams || typeof configParams.syncTime !== 'number') ? DEFAULT_24_HOURS : configParams.syncTime;
   if (syncTime > DEFAULT_24_HOURS) {
     syncTime = DEFAULT_24_HOURS;
   }
-  var cookieTimestamp = storedId.ts;
+  const cookieTimestamp = storedId.ts;
   if (cookieTimestamp) {
     var secondBetweenTwoDate = timeDifferenceInSeconds(utils.timestamp(), cookieTimestamp);
     return secondBetweenTwoDate >= syncTime;
@@ -65,7 +65,7 @@ function isIdSynced(configParams, storedId) {
  * @returns {number}
  */
 function timeDifferenceInSeconds(date1, date2) {
-  var diff = (date1 - date2) / 1000;
+  const diff = (date1 - date2) / 1000;
   return Math.abs(Math.round(diff));
 }
 
@@ -78,7 +78,7 @@ function timeDifferenceInSeconds(date1, date2) {
 function idGenerationCallback(callback) {
   return {
     success: function (responseBody) {
-      var value = {};
+      let value = {};
       if (responseBody) {
         try {
           let responseObj = JSON.parse(responseBody);
@@ -91,7 +91,7 @@ function idGenerationCallback(callback) {
       callback(value);
     },
     error: function (statusText, responseBody) {
-      var value = constructCookieValue(sharedIdGenerator.id(), true);
+      const value = constructCookieValue(sharedIdGenerator.id(), true);
       utils.logInfo('SharedId: Ulid Generated SharedId: ' + value.id);
       callback(value);
     }
@@ -132,16 +132,16 @@ function existingIdCallback(storedId, callback) {
  * @returns {string|*}
  */
 function encodeId(value) {
-  let result = {};
-  let sharedId = (value && typeof value['id'] === 'string') ? value['id'] : undefined;
+  const result = {};
+  const sharedId = (value && typeof value['id'] === 'string') ? value['id'] : undefined;
   if (sharedId == OPT_OUT_VALUE) {
     return undefined;
   }
   if (sharedId) {
-    var bidIds = {
-      first: sharedId,
+    const bidIds = {
+      id: sharedId,
     }
-    let ns = (value && typeof value['ns'] === 'boolean') ? value['ns'] : undefined;
+    const ns = (value && typeof value['ns'] === 'boolean') ? value['ns'] : undefined;
     if (ns == undefined) {
       bidIds.third = sharedId;
     }
@@ -164,7 +164,7 @@ export const sharedIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{sharedid:{ 1: string, 3:string}} or undefined if value doesn't exists
+   * @returns {{sharedid:{ id: string, third:string}} or undefined if value doesn't exists
    */
   decode(value) {
     return (value) ? encodeId(value) : undefined;
@@ -193,12 +193,12 @@ export const sharedIdSubmodule = {
   extendId(configParams, storedId) {
     utils.logInfo('SharedId: Existing shared id ' + storedId.id);
     const resp = function (callback) {
-      let needSync = isIdSynced(configParams, storedId);
+      const needSync = isIdSynced(configParams, storedId);
       if (needSync) {
         utils.logInfo('SharedId: Existing shared id ' + storedId + ' is not synced');
-        let sharedIdPayload = {};
+        const sharedIdPayload = {};
         sharedIdPayload.sharedId = storedId.id;
-        let payloadString = JSON.stringify(sharedIdPayload);
+        const payloadString = JSON.stringify(sharedIdPayload);
         ajax(ID_SVC, existingIdCallback(storedId, callback), payloadString, {method: 'POST', withCredentials: true});
       }
     };

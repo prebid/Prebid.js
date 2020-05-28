@@ -87,7 +87,7 @@ const USER_IDS_CONFIG = {
     source: 'sharedid.org',
     atype: 1,
     getValue: function(data) {
-      return data.first;
+      return data.id;
     },
     getUidExt: function(data) {
       return (data && data.third) ? {
