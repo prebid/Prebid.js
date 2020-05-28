@@ -67,7 +67,7 @@ pbjs.setConfig({
         }, {
              name: 'sharedId',
               params: {
-                    syncTime: 3600 // in seconds, default is 24 hours
+                    syncTime: 60 // in seconds, default is 24 hours
                },
              storage: {
                  type: 'cookie',
@@ -125,6 +125,9 @@ pbjs.setConfig({
              }
         }, {
              name: 'sharedId',
+            params: {
+                  syncTime: 60 // in seconds, default is 24 hours
+               },
              storage: {
                 type: 'cookie',
                 name: 'sharedid',
