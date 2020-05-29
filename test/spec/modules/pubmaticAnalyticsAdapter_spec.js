@@ -1,7 +1,6 @@
 import pubmaticAnalyticsAdapter from 'modules/pubmaticAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
-import * as prebidGlobal from 'src/prebidGlobal.js';
 import {
   setConfig,
   addBidResponseHook,
@@ -291,7 +290,6 @@ describe('pubmatic analytics adapter', function () {
 
     afterEach(function () {
       pubmaticAnalyticsAdapter.disableAnalytics();
-      // pbjs.bidderSettings = {};
     });
 
     it('Logger: best case + win tracker', function() {
@@ -395,7 +393,6 @@ describe('pubmatic analytics adapter', function () {
 
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-      // events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
       events.emit(BID_RESPONSE, bidCopy);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
       events.emit(BID_RESPONSE, bidCopy);
