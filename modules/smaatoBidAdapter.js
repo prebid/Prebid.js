@@ -1,11 +1,9 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {ajax} from '../src/ajax.js'
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
-// const SMAATO_ENDPOINT = 'https://unifiedbidding.ad.smaato.net/oapi/unifiedbidding';
 const SMAATO_ENDPOINT = 'https://prebid-test.smaatolabs.net/bidder';
 
 /**
@@ -89,7 +87,9 @@ export const spec = {
       * @return boolean True if this is a valid bid, and false otherwise.
       */
   isBidRequestValid: function(bid) {
-    return true;
+    return typeof bid.params === 'object' &&
+           typeof bid.params.publisherId === 'string' &&
+           typeof bid.params.adspaceId === 'string';
   },
 
   /**
@@ -101,7 +101,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     return {
       method: 'POST',
-      url: SMAATO_ENDPOINT,
+      url: validBidRequests[0].params.endpoint || SMAATO_ENDPOINT,
       data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest)
     };
   },
@@ -113,18 +113,34 @@ export const spec = {
       */
   interpretResponse: function(serverResponse, bidRequest) {
     // const serverBody  = serverResponse.body;
-    // const headerValue = serverResponse.headers.get('some-response-header');
+    let serverResponseHeaders = serverResponse.headers;
+    const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
+
     const res = serverResponse.body;
     var bids = []
     if (res) {
       res.seatbid.forEach(sb => {
         sb.bid.forEach(b => {
+          let ad = '';
+          switch (smtAdType) {
+            case 'Img':
+              ad = createImgAd(b.adm);
+              break;
+            case 'Richmedia':
+              ad = createRichmediaAd(b.adm);
+              break;
+            case 'Video':
+              break;
+            default:
+              ad = '';
+          }
+
           bids.push({
             requestId: b.impid,
             cpm: b.price || 0,
             width: b.w,
             height: b.h,
-            ad: b.adm,
+            ad: ad,
             ttl: 1000,
             creativeId: b.crid,
             netRevenue: false,
@@ -147,31 +163,22 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = []
     return syncs;
-  },
-
-  /**
-      * Register bidder specific code, which will execute if bidder timed out after an auction
-      * @param {data} Containing timeout specific data
-      */
-  onTimeout: function(data) {
-    // Bidder specifc code
-  },
-
-  /**
-      * Register bidder specific code, which will execute if a bid from this bidder won the auction
-      * @param {Bid} The bid that won the auction
-      */
-  onBidWon: function(bid) {
-    if (!bid.nurl) { return }
-    ajax(bid.nurl, null)
-  },
-
-  /**
-      * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
-      * @param {Bid} The bid of which the targeting has been set
-      */
-  onSetTargeting: function(bid) {
-    // Bidder specific code
   }
 }
 registerBidder(spec);
+
+function createImgAd(adm) {
+  const image = JSON.parse(adm).image;
+  let markup = `<div><img src="${image.img.url}"/></div>`;
+
+  image.impressiontrackers.map(src => {
+    markup += `<img src="${src}" alt="" width="1" height="1"/>`;
+  });
+
+  return markup;
+}
+
+function createRichmediaAd(adm) {
+  const rich = JSON.parse(adm).richmedia.mediadata;
+  return rich.content;
+}
