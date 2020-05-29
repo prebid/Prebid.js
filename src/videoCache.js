@@ -10,8 +10,8 @@
  */
 
 import { ajax } from './ajax.js';
-import * as utils from './utils.js';
 import { config } from './config.js';
+import * as utils from './utils.js';
 
 /**
  * @typedef {object} CacheableUrlBid
