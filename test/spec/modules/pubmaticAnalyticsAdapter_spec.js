@@ -482,7 +482,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].bidid).to.equal('2ecff0db240757');
       expect(data.s[0].ps[0].kgpv).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].ps[0].eg).to.equal(1);
-      expect(data.s[0].ps[0].en).to.equal(undefined); // bidPriceUSD is not getting set as currency module is not added
+      expect(data.s[0].ps[0].en).to.equal(200);
       expect(data.s[0].ps[0].wb).to.equal(0); // bidPriceUSD is not getting set as currency module is not added, so unable to set wb to 1
       expect(data.s[0].ps[0].af).to.equal('video');
       expect(data.s[0].ps[0].ocpm).to.equal(100);
@@ -496,7 +496,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tst).to.equal('1519767014');
       expect(data.iid).to.equal('25c6d7f5-699a-4bfc-87c9-996f915341fa');
       expect(data.eg).to.equal('1');
-      expect(data.en).to.equal('undefined'); // bidPriceUSD is not getting set as currency module is not added
+      expect(data.en).to.equal('200'); // bidPriceUSD is not getting set as currency module is not added
     });
 
     it('Logger: when bid is not submitted, default bid status 1 check: pubmatic set as s2s', function() {
@@ -651,7 +651,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].kgpsv).to.equal('this-is-a-kgpv');
       expect(data.s[1].ps[0].psz).to.equal('728x90');
       expect(data.s[1].ps[0].eg).to.equal(1);
-      expect(data.s[1].ps[0].en).to.equal(undefined); // bidPriceUSD is not getting set as currency module is not added
+      expect(data.s[1].ps[0].en).to.equal(100);
       expect(data.s[1].ps[0].di).to.equal('the-deal-id');
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
