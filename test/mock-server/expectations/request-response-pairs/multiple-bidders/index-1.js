@@ -41,7 +41,8 @@ exports.getRequest = function() {
                 'required': true
               }
             }]
-          }
+          },
+          'hb_source': 1
         }],
         'user': {}
       }

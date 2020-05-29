@@ -2,7 +2,6 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {parse} from '../src/url.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
@@ -423,8 +422,8 @@ function generateVideoParameters(bid, bidderRequest) {
 function createVideoBidResponses(response, {bid, startTime}) {
   let bidResponses = [];
 
-  if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
-    let vastQueryParams = parse(response.vastUrl).search || {};
+  if (response !== undefined && response.vastUrl !== '' && response.pub_rev > 0) {
+    let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
     // default 5 mins
@@ -432,9 +431,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     // true is net, false is gross
     bidResponse.netRevenue = true;
     bidResponse.currency = response.currency;
-    bidResponse.cpm = Number(response.pub_rev) / 1000;
-    bidResponse.width = response.width;
-    bidResponse.height = response.height;
+    bidResponse.cpm = parseInt(response.pub_rev, 10) / 1000;
+    bidResponse.width = parseInt(response.width, 10);
+    bidResponse.height = parseInt(response.height, 10);
     bidResponse.creativeId = response.adid;
     bidResponse.vastUrl = response.vastUrl;
     bidResponse.mediaType = VIDEO;

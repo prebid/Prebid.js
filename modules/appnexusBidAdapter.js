@@ -4,8 +4,8 @@ import { config } from '../src/config.js';
 import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
 import { auctionManager } from '../src/auctionManager.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -45,7 +45,7 @@ const storage = getStorageManager(GVLID, BIDDER_CODE);
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'adasta'],
+  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'adasta', 'beintoo'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -74,7 +74,10 @@ export const spec = {
     if (userObjBid) {
       Object.keys(userObjBid.params.user)
         .filter(param => includes(USER_PARAMS, param))
-        .forEach(param => userObj[param] = userObjBid.params.user[param]);
+        .forEach((param) => {
+          let uparam = utils.convertCamelToUnderscore(param);
+          userObj[uparam] = userObjBid.params.user[param]
+        });
     }
 
     const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
@@ -196,6 +199,10 @@ export const spec = {
       payload.tpuids = tpuids;
     }
 
+    if (tags[0].publisher_id) {
+      payload.publisher_id = tags[0].publisher_id;
+    }
+
     const request = formatRequest(payload, bidderRequest);
     return request;
   },
@@ -261,7 +268,7 @@ export const spec = {
   getMappingFileInfo: function() {
     return {
       url: mappingFileUrl,
-      refreshInDays: 7
+      refreshInDays: 2
     }
   },
 
@@ -279,7 +286,8 @@ export const spec = {
       'member': 'string',
       'invCode': 'string',
       'placementId': 'number',
-      'keywords': utils.transformBidderParamKeywords
+      'keywords': utils.transformBidderParamKeywords,
+      'publisherId': 'number'
     }, params);
 
     if (isOpenRtb) {
@@ -522,8 +530,8 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
     switch (videoContext) {
       case ADPOD:
-        const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
-        bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
+        const primaryCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+        bid.meta = Object.assign({}, bid.meta, { primaryCatId });
         const dealTier = rtbBid.deal_priority;
         bid.video = {
           context: ADPOD,
@@ -653,6 +661,9 @@ function bidToTag(bid) {
   }
   if (bid.params.extInvCode) {
     tag.ext_inv_code = bid.params.extInvCode;
+  }
+  if (bid.params.publisherId) {
+    tag.publisher_id = parseInt(bid.params.publisherId, 10);
   }
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;

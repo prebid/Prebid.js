@@ -4,8 +4,8 @@ import CONSTANTS from '../src/constants.json'
 import {ajaxBuilder} from '../src/ajax.js'
 import * as utils from '../src/utils.js'
 import {config} from '../src/config.js'
-import find from 'core-js/library/fn/array/find.js'
-import includes from 'core-js/library/fn/array/includes.js'
+import find from 'core-js-pure/features/array/find.js'
+import includes from 'core-js-pure/features/array/includes.js'
 
 const ajax = ajaxBuilder(0)
 

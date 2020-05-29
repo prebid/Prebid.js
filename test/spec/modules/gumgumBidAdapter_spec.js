@@ -159,6 +159,7 @@ describe('gumgumAdapter', function () {
         'video': '10433395'
       };
       const bidRequest = spec.buildRequests([request])[0];
+      // 7 is video product line
       expect(bidRequest.data.pi).to.eq(7);
       expect(bidRequest.data.mind).to.eq(videoVals.minduration);
       expect(bidRequest.data.maxd).to.eq(videoVals.maxduration);
@@ -168,6 +169,37 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.pr).to.eq(videoVals.protocols.join(','));
       expect(bidRequest.data.viw).to.eq(videoVals.playerSize[0].toString());
       expect(bidRequest.data.vih).to.eq(videoVals.playerSize[1].toString());
+    });
+    it('should add parameters associated with invideo if invideo request param is found', function () {
+      const inVideoVals = {
+        playerSize: [640, 480],
+        context: 'instream',
+        minduration: 1,
+        maxduration: 2,
+        linearity: 1,
+        startdelay: 1,
+        placement: 123456,
+        protocols: [1, 2]
+      };
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.mediaTypes = {
+        video: inVideoVals
+      };
+      request.params = {
+        'inVideo': '10433395'
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      // 6 is invideo product line
+      expect(bidRequest.data.pi).to.eq(6);
+      expect(bidRequest.data.mind).to.eq(inVideoVals.minduration);
+      expect(bidRequest.data.maxd).to.eq(inVideoVals.maxduration);
+      expect(bidRequest.data.li).to.eq(inVideoVals.linearity);
+      expect(bidRequest.data.sd).to.eq(inVideoVals.startdelay);
+      expect(bidRequest.data.pt).to.eq(inVideoVals.placement);
+      expect(bidRequest.data.pr).to.eq(inVideoVals.protocols.join(','));
+      expect(bidRequest.data.viw).to.eq(inVideoVals.playerSize[0].toString());
+      expect(bidRequest.data.vih).to.eq(inVideoVals.playerSize[1].toString());
     });
     it('should not add additional parameters depending on params field', function () {
       const request = spec.buildRequests(bidRequests)[0];
@@ -227,6 +259,13 @@ describe('gumgumAdapter', function () {
       } else {
         expect(bidRequest.data).to.not.include.any.keys('ns');
       }
+    });
+    it('has jcsi param correctly encoded', function () {
+      const jcsi = JSON.stringify({ t: 0, rq: 8 });
+      const encodedJCSI = encodeURIComponent(jcsi);
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.jcsi).to.not.contain(/\{.*\}/);
+      expect(bidRequest.data.jcsi).to.eq(encodedJCSI);
     });
   })
 

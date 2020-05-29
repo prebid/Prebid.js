@@ -49,7 +49,6 @@ import {
   WALLPAPER,
   storage
 } from 'modules/emoteevBidAdapter.js';
-import * as url from '../../../src/url.js';
 import * as utils from '../../../src/utils.js';
 import {config} from '../../../src/config.js';
 
@@ -330,108 +329,108 @@ describe('emoteevBidAdapter', function () {
   });
 
   describe('eventsUrl', function () {
-    expect(eventsUrl(null)).to.deep.equal(url.format({
+    expect(eventsUrl(null)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: EVENTS_PATH
     }));
-    expect(eventsUrl('anything')).to.deep.equal(url.format({
+    expect(eventsUrl('anything')).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: EVENTS_PATH
     }));
-    expect(eventsUrl(PRODUCTION)).to.deep.equal(url.format({
+    expect(eventsUrl(PRODUCTION)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(PRODUCTION),
       pathname: EVENTS_PATH
     }));
-    expect(eventsUrl(STAGING)).to.deep.equal(url.format({
+    expect(eventsUrl(STAGING)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(STAGING),
       pathname: EVENTS_PATH
     }));
-    expect(eventsUrl(DEVELOPMENT)).to.deep.equal(url.format({
+    expect(eventsUrl(DEVELOPMENT)).to.deep.equal(utils.buildUrl({
       hostname: domain(DEVELOPMENT),
       pathname: EVENTS_PATH
     }));
   });
 
   describe('bidderUrl', function () {
-    expect(bidderUrl(null)).to.deep.equal(url.format({
+    expect(bidderUrl(null)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: BIDDER_PATH
     }));
-    expect(bidderUrl('anything')).to.deep.equal(url.format({
+    expect(bidderUrl('anything')).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: BIDDER_PATH
     }));
-    expect(bidderUrl(PRODUCTION)).to.deep.equal(url.format({
+    expect(bidderUrl(PRODUCTION)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(PRODUCTION),
       pathname: BIDDER_PATH
     }));
-    expect(bidderUrl(STAGING)).to.deep.equal(url.format({
+    expect(bidderUrl(STAGING)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(STAGING),
       pathname: BIDDER_PATH
     }));
-    expect(bidderUrl(DEVELOPMENT)).to.deep.equal(url.format({
+    expect(bidderUrl(DEVELOPMENT)).to.deep.equal(utils.buildUrl({
       hostname: domain(DEVELOPMENT),
       pathname: BIDDER_PATH
     }));
   });
 
   describe('userSyncIframeUrl', function () {
-    expect(userSyncIframeUrl(null)).to.deep.equal(url.format({
+    expect(userSyncIframeUrl(null)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: USER_SYNC_IFRAME_PATH
     }));
-    expect(userSyncIframeUrl('anything')).to.deep.equal(url.format({
+    expect(userSyncIframeUrl('anything')).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: USER_SYNC_IFRAME_PATH
     }));
-    expect(userSyncIframeUrl(PRODUCTION)).to.deep.equal(url.format({
+    expect(userSyncIframeUrl(PRODUCTION)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(PRODUCTION),
       pathname: USER_SYNC_IFRAME_PATH
     }));
-    expect(userSyncIframeUrl(STAGING)).to.deep.equal(url.format({
+    expect(userSyncIframeUrl(STAGING)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(STAGING),
       pathname: USER_SYNC_IFRAME_PATH
     }));
-    expect(userSyncIframeUrl(DEVELOPMENT)).to.deep.equal(url.format({
+    expect(userSyncIframeUrl(DEVELOPMENT)).to.deep.equal(utils.buildUrl({
       hostname: domain(DEVELOPMENT),
       pathname: USER_SYNC_IFRAME_PATH
     }));
   });
 
   describe('userSyncImageUrl', function () {
-    expect(userSyncImageUrl(null)).to.deep.equal(url.format({
+    expect(userSyncImageUrl(null)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: USER_SYNC_IMAGE_PATH
     }));
-    expect(userSyncImageUrl('anything')).to.deep.equal(url.format({
+    expect(userSyncImageUrl('anything')).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(DEFAULT_ENV),
       pathname: USER_SYNC_IMAGE_PATH
     }));
-    expect(userSyncImageUrl(PRODUCTION)).to.deep.equal(url.format({
+    expect(userSyncImageUrl(PRODUCTION)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(PRODUCTION),
       pathname: USER_SYNC_IMAGE_PATH
     }));
-    expect(userSyncImageUrl(STAGING)).to.deep.equal(url.format({
+    expect(userSyncImageUrl(STAGING)).to.deep.equal(utils.buildUrl({
       protocol: 'https',
       hostname: domain(STAGING),
       pathname: USER_SYNC_IMAGE_PATH
     }));
-    expect(userSyncImageUrl(DEVELOPMENT)).to.deep.equal(url.format({
+    expect(userSyncImageUrl(DEVELOPMENT)).to.deep.equal(utils.buildUrl({
       hostname: domain(DEVELOPMENT),
       pathname: USER_SYNC_IMAGE_PATH
     }));

@@ -7,8 +7,8 @@ import { newBidder } from './adapters/bidderFactory.js';
 import { ajaxBuilder } from './ajax.js';
 import { config, RANDOM } from './config.js';
 import { hook } from './hook.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
 
@@ -368,19 +368,25 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    config.runWithBidder(
-      bidRequest.bidderCode,
-      bind.call(
-        adapter.callBids,
-        adapter,
-        bidRequest,
-        addBidResponse.bind(bidRequest),
-        doneCb.bind(bidRequest),
-        ajax,
-        onTimelyResponse,
-        config.callbackWithBidder(bidRequest.bidderCode)
-      )
-    );
+    const adapterDone = doneCb.bind(bidRequest);
+    try {
+      config.runWithBidder(
+        bidRequest.bidderCode,
+        bind.call(
+          adapter.callBids,
+          adapter,
+          bidRequest,
+          addBidResponse.bind(bidRequest),
+          adapterDone,
+          ajax,
+          onTimelyResponse,
+          config.callbackWithBidder(bidRequest.bidderCode)
+        )
+      );
+    } catch (e) {
+      utils.logError(`${bidRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, {e, bidRequest});
+      adapterDone();
+    }
   });
 };
 

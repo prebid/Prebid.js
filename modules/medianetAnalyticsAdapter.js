@@ -4,7 +4,6 @@ import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import * as url from '../src/url.js';
 import { getPriceGranularity, AUCTION_IN_PROGRESS, AUCTION_COMPLETED } from '../src/auction.js'
 
 const analyticsType = 'endpoint';
@@ -12,6 +11,7 @@ const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics
 const CONFIG_URL = 'https://prebid.media.net/rtb/prebid/analytics/config';
 const EVENT_PIXEL_URL = 'https://qsearch-a.akamaihd.net/log';
 const DEFAULT_LOGGING_PERCENT = 50;
+
 const PRICE_GRANULARITY = {
   'auto': 'pbAg',
   'custom': 'pbCg',
@@ -120,7 +120,7 @@ class Configure {
 
   init() {
     // Forces Logging % to 100%
-    let urlObj = url.parse(pageDetails.page);
+    let urlObj = URL.parseUrl(pageDetails.page);
     if (utils.deepAccess(urlObj, 'search.medianet_test') || urlObj.hostname === 'localhost') {
       this.loggingPercent = 100;
       this.ajaxState = CONFIG_PASS;
@@ -144,7 +144,7 @@ class PageDetail {
     const twitterUrl = this._getUrlFromSelector('meta[name="twitter:url"]', 'content');
     const refererInfo = getRefererInfo();
 
-    this.domain = url.parse(refererInfo.referer).host;
+    this.domain = URL.parseUrl(refererInfo.referer).host;
     this.page = refererInfo.referer;
     this.is_top = refererInfo.reachedTop;
     this.referrer = this._getTopWindowReferrer();
@@ -209,6 +209,17 @@ class AdSlot {
     this.adext = adext;
     this.logged = false;
     this.targeting = undefined;
+    this.medianetPresent = 0;
+    // shouldBeLogged is assigned when requested,
+    // since we are waiting for logging percent response
+    this.shouldBeLogged = undefined;
+  }
+
+  getShouldBeLogged() {
+    if (this.shouldBeLogged === undefined) {
+      this.shouldBeLogged = isSampled();
+    }
+    return this.shouldBeLogged;
   }
 
   getLoggingData() {
@@ -217,7 +228,8 @@ class AdSlot {
       mediaTypes: this.mediaTypes && this.mediaTypes.join('|'),
       szs: this.bannerSizes.join('|'),
       tmax: this.tmax,
-      targ: JSON.stringify(this.targeting)
+      targ: JSON.stringify(this.targeting),
+      ismn: this.medianetPresent
     },
     this.adext && {'adext': JSON.stringify(this.adext)},
     );
@@ -260,6 +272,7 @@ class Bid {
 
   getLoggingData() {
     return {
+      adid: this.adId,
       pvnm: this.bidder,
       src: this.src,
       ogbdp: this.originalCpm,
@@ -305,7 +318,8 @@ class Auction {
       ets: this.auctionEndTime - this.auctionInitTime,
       tts: this.setTargetingTime - this.auctionInitTime,
       wts: this.bidWonTime - this.auctionInitTime,
-      aucstatus: this.status
+      aucstatus: this.status,
+      acid: this.acid
     }
   }
 
@@ -346,11 +360,15 @@ function auctionInitHandler({auctionId, timestamp}) {
   }
 }
 
-function bidRequestedHandler({ auctionId, auctionStart, bids, start, timeout, uspConsent, gdprConsent }) {
+function bidRequestedHandler({ auctionId, auctionStart, bids, start, timeout, uspConsent, gdpr }) {
   if (!(auctions[auctionId] instanceof Auction)) {
     return;
   }
-  config.gdprConsent = config.gdprConsent || gdprConsent;
+
+  if (gdpr && gdpr.gdprApplies) {
+    config.gdprConsent = gdpr.consentString || '';
+  }
+
   config.uspConsent = config.uspConsent || uspConsent;
 
   bids.forEach(bid => {
@@ -372,6 +390,7 @@ function bidRequestedHandler({ auctionId, auctionStart, bids, start, timeout, us
     if (bidder === MEDIANET_BIDDER_CODE) {
       bidObj.crid = utils.deepAccess(bid, 'params.crid');
       bidObj.pubcrid = utils.deepAccess(bid, 'params.crid');
+      auctions[auctionId].adSlots[adUnitCode].medianetPresent = 1;
     }
   });
 }
@@ -390,8 +409,9 @@ function bidResponseHandler(bid) {
   Object.assign(
     bidObj,
     { cpm, width, height, mediaType, timeToRespond, dealId, creativeId },
-    { adId, currency, originalCpm }
+    { adId, currency }
   );
+  bidObj.originalCpm = originalCpm || cpm;
   let dfpbd = utils.deepAccess(bid, 'adserverTargeting.hb_pb');
   if (!dfpbd) {
     let priceGranularity = getPriceGranularity(mediaType, bid);
@@ -499,7 +519,7 @@ function sendEvent(id, adunit, isBidWonEvent) {
   }
   if (isBidWonEvent) {
     fireAuctionLog(id, adunit, isBidWonEvent);
-  } else if (isSampled() && !auctions[id].adSlots[adunit].logged) {
+  } else if (auctions[id].adSlots[adunit].getShouldBeLogged() && !auctions[id].adSlots[adunit].logged) {
     auctions[id].adSlots[adunit].logged = true;
     fireAuctionLog(id, adunit, isBidWonEvent);
   }
@@ -542,12 +562,48 @@ function fireAuctionLog(acid, adtag, isBidWonEvent) {
 }
 
 function formatQS(data) {
-  return utils._map(data, (value, key) => value === undefined ? key + '=' : key + '=' + encodeURIComponent(value)).join('&');
+  return utils._map(data, (value, key) => {
+    if (value === undefined) {
+      return key + '=';
+    }
+    if (utils.isPlainObject(value)) {
+      value = JSON.stringify(value);
+    }
+    return key + '=' + encodeURIComponent(value);
+  }).join('&');
 }
 
 function firePixel(qs) {
   logsQueue.push(ENDPOINT + '&' + qs);
   utils.triggerPixel(ENDPOINT + '&' + qs);
+}
+
+class URL {
+  static parseUrl(url) {
+    let parsed = document.createElement('a');
+    parsed.href = decodeURIComponent(url);
+    return {
+      hostname: parsed.hostname,
+      search: URL.parseQS(parsed.search || ''),
+      host: parsed.host || window.location.host
+    };
+  }
+  static parseQS(query) {
+    return !query ? {} : query
+      .replace(/^\?/, '')
+      .split('&')
+      .reduce((acc, criteria) => {
+        let [k, v] = criteria.split('=');
+        if (/\[\]$/.test(k)) {
+          k = k.replace('[]', '');
+          acc[k] = acc[k] || [];
+          acc[k].push(v);
+        } else {
+          acc[k] = v || '';
+        }
+        return acc;
+      }, {});
+  }
 }
 
 let medianetAnalytics = Object.assign(adapter({URL, analyticsType}), {
@@ -605,6 +661,9 @@ medianetAnalytics.enableAnalytics = function (configuration) {
     utils.logError('Media.net Analytics adapter: cid is required.');
     return;
   }
+  $$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
+  $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled = true;
+
   pageDetails = new PageDetail();
 
   config = new Configure(configuration.options.cid);
