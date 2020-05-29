@@ -128,11 +128,9 @@ function parseBidResponse(bid) {
       utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
     },
     'bidGrossCpmUSD', () => {
-      // todo: check whether currency cases are handled here
       if (typeof bid.originalCurrency === 'string' && bid.originalCurrency.toUpperCase() === CURRENCY_USD) {
         return window.parseFloat(Number(bid.originalCpm).toFixed(BID_PRECISION));
       }
-      // some new function was used in floor module, we need to check it
       // use currency conversion function if present
       if (typeof getGlobal().convertCurrency === 'function') {
         return window.parseFloat(Number(getGlobal().convertCurrency(bid.originalCpm, bid.originalCurrency, CURRENCY_USD)).toFixed(BID_PRECISION));
