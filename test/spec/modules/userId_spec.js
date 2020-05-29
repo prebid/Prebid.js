@@ -22,8 +22,6 @@ import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem.js';
 import {netIdSubmodule} from 'modules/netIdSystem.js';
 import {server} from 'test/mocks/xhr.js';
 
-let assert = require('chai').assert;
-let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 
 describe('User ID', function() {
@@ -270,9 +268,6 @@ describe('User ID', function() {
   describe('Opt out', function () {
     before(function () {
       coreStorage.setCookie('_pbjs_id_optout', '1', (new Date(Date.now() + 5000).toUTCString()));
-    });
-
-    beforeEach(function () {
       sinon.stub(utils, 'logInfo');
     });
 
@@ -280,11 +275,12 @@ describe('User ID', function() {
       // removed cookie
       coreStorage.setCookie('_pbjs_id_optout', '', EXPIRED_COOKIE_DATE);
       $$PREBID_GLOBAL$$.requestBids.removeAll();
-      utils.logInfo.restore();
+      utils.logInfo.resetHistory();
       config.resetConfig();
     });
 
     after(function () {
+      utils.logInfo.restore();
       coreStorage.setCookie('_pbjs_id_optout', '', EXPIRED_COOKIE_DATE);
     });
 
@@ -304,15 +300,19 @@ describe('User ID', function() {
   });
 
   describe('Handle variations of config values', function () {
-    beforeEach(function () {
+    before(function() {
       sinon.stub(utils, 'logInfo');
-    });
+    })
 
     afterEach(function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
-      utils.logInfo.restore();
+      utils.logInfo.resetHistory();
       config.resetConfig();
     });
+
+    after(function () {
+      utils.logInfo.restore();
+    })
 
     it('handles config with no usersync object', function () {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule]);
@@ -449,19 +449,21 @@ describe('User ID', function() {
     let mockIdCallback;
     let auctionSpy;
 
-    beforeEach(function() {
+    before(function () {
       sandbox = sinon.createSandbox();
       sandbox.stub(global, 'setTimeout').returns(2);
       sandbox.stub(events, 'on');
       sandbox.stub(coreStorage, 'getCookie');
+      auctionSpy = sandbox.spy();
+      mockIdCallback = sandbox.stub();
+    })
 
+    beforeEach(function() {
       // remove cookie
       coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
 
       adUnits = [getAdUnitMock()];
 
-      auctionSpy = sandbox.spy();
-      mockIdCallback = sandbox.stub();
       const mockIdSystem = {
         name: 'mockId',
         decode: function(value) {
@@ -486,8 +488,12 @@ describe('User ID', function() {
     afterEach(function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       config.resetConfig();
-      sandbox.restore();
+      sandbox.resetHistory();
     });
+
+    after(function () {
+      sandbox.restore();
+    })
 
     it('delays auction if auctionDelay is set, timing out at auction delay', function() {
       config.setConfig({
@@ -1168,21 +1174,28 @@ describe('User ID', function() {
   });
 
   describe('callbacks at the end of auction', function() {
-    beforeEach(function() {
+    before(function () {
       sinon.stub(events, 'getEvents').returns([]);
       sinon.stub(utils, 'triggerPixel');
+    })
+    beforeEach(function() {
       coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
     });
 
     afterEach(function() {
+      events.getEvents.resetHistory();
+      utils.triggerPixel.resetHistory();
+    });
+
+    after(function() {
       events.getEvents.restore();
       utils.triggerPixel.restore();
       coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
-    });
+    })
 
     it('pubcid callback with url', function () {
       let adUnits = [getAdUnitMock()];
