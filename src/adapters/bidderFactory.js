@@ -106,7 +106,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  * @property {object} [native] Object for storing native creative assets
  * @property {object} [video] Object for storing video response data
  * @property {object} [meta] Object for storing bid meta data
- * @property {string} [meta.iabSubCatId] The IAB subcategory ID
+ * @property {string} [meta.primaryCatId] The IAB primary category ID
  * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
  *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
  */
@@ -382,26 +382,31 @@ export function preloadBidderMappingFile(fn, adUnits) {
       let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
       let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
       let mappingData = storage.getDataFromLocalStorage(key);
-      if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-        ajax(info.url,
-          {
-            success: (response) => {
-              try {
-                response = JSON.parse(response);
-                let mapping = {
-                  lastUpdated: timestamp(),
-                  mapping: response.mapping
+      try {
+        mappingData = mappingData ? JSON.parse(mappingData) : undefined;
+        if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+          ajax(info.url,
+            {
+              success: (response) => {
+                try {
+                  response = JSON.parse(response);
+                  let mapping = {
+                    lastUpdated: timestamp(),
+                    mapping: response.mapping
+                  }
+                  storage.setDataInLocalStorage(key, JSON.stringify(mapping));
+                } catch (error) {
+                  logError(`Failed to parse ${bidder} bidder translation mapping file`);
                 }
-                storage.setDataInLocalStorage(key, JSON.stringify(mapping));
-              } catch (error) {
-                logError(`Failed to parse ${bidder} bidder translation mapping file`);
+              },
+              error: () => {
+                logError(`Failed to load ${bidder} bidder translation file`)
               }
             },
-            error: () => {
-              logError(`Failed to load ${bidder} bidder translation file`)
-            }
-          },
-        );
+          );
+        }
+      } catch (error) {
+        logError(`Failed to parse ${bidder} bidder translation mapping file`);
       }
     }
   });
