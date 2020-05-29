@@ -86,7 +86,7 @@ export const spec = {
       * @param {BidRequest} bid The bid params to validate.
       * @return boolean True if this is a valid bid, and false otherwise.
       */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: (bid) => {
     return typeof bid.params === 'object' &&
            typeof bid.params.publisherId === 'string' &&
            typeof bid.params.adspaceId === 'string';
@@ -98,7 +98,7 @@ export const spec = {
       * @param {validBidRequests[]} - an array of bids
       * @return ServerRequest Info describing the request to the server.
       */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: (validBidRequests, bidderRequest) => {
     return {
       method: 'POST',
       url: validBidRequests[0].params.endpoint || SMAATO_ENDPOINT,
@@ -111,7 +111,7 @@ export const spec = {
       * @param {ServerResponse} serverResponse A successful response from the server.
       * @return {Bid[]} An array of bids which were nested inside the server.
       */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: (serverResponse, bidRequest) => {
     // const serverBody  = serverResponse.body;
     let serverResponseHeaders = serverResponse.headers;
     const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
@@ -130,7 +130,6 @@ export const spec = {
               ad = createRichmediaAd(b.adm);
               break;
             case 'Video':
-              break;
             default:
               ad = '';
           }
@@ -160,16 +159,16 @@ export const spec = {
       * @param {ServerResponse[]} serverResponses List of server's responses.
       * @return {UserSync[]} The user syncs which should be dropped.
       */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     const syncs = []
     return syncs;
   }
 }
 registerBidder(spec);
 
-function createImgAd(adm) {
+const createImgAd = (adm) => {
   const image = JSON.parse(adm).image;
-  let markup = `<div><img src="${image.img.url}"/></div>`;
+  let markup = `<div><a href="${image.img.ctaurl}"><img src="${image.img.url}" width="${image.img.w}" height="${image.img.h}"/></a></div>`;
 
   image.impressiontrackers.map(src => {
     markup += `<img src="${src}" alt="" width="1" height="1"/>`;
@@ -178,7 +177,7 @@ function createImgAd(adm) {
   return markup;
 }
 
-function createRichmediaAd(adm) {
+const createRichmediaAd = (adm) => {
   const rich = JSON.parse(adm).richmedia.mediadata;
   return rich.content;
 }
