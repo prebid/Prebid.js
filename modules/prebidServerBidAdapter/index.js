@@ -713,7 +713,7 @@ const OPEN_RTB_PROTOCOL = {
             bidObject.pbsBidId = bidId;
           }
 
-          // store wurl by auctionId and adId so it can be access from the BID_WON event handler
+          // store wurl by auctionId and adId so it can be accessed from the BID_WON event handler
           if (utils.isStr(utils.deepAccess(bid, 'ext.prebid.event.win'))) {
             addWurl(bidRequest.auctionId, bidObject.adId, utils.deepAccess(bid, 'ext.prebid.event.win'));
           }
