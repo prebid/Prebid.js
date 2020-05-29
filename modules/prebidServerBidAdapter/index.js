@@ -562,7 +562,7 @@ const OPEN_RTB_PROTOCOL = {
        * @type {(string|undefined)}
        */
       const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
-      if (!utils.isEmptyStr(pbAdSlot)) {
+      if (typeof pbAdSlot === 'string' && pbAdSlot) {
         utils.deepSetValue(imp, 'ext.context.data.adslot', pbAdSlot);
       }
 
@@ -725,7 +725,7 @@ const OPEN_RTB_PROTOCOL = {
           // once we get through the transition, this block will be removed.
           if (utils.isPlainObject(extPrebidTargeting)) {
             // If wurl exists, remove hb_winurl and hb_bidid targeting attributes
-            if (!utils.isEmptyStr(utils.deepAccess(bid, 'ext.prebid.event.win'))) {
+            if (utils.isStr(utils.deepAccess(bid, 'ext.prebid.event.win'))) {
               extPrebidTargeting = utils.getDefinedParams(extPrebidTargeting, Object.keys(extPrebidTargeting)
                 .filter(i => (i.indexOf('hb_winurl') === -1 && i.indexOf('hb_bidid') === -1)));
             }
