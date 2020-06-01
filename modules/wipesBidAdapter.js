@@ -21,6 +21,7 @@ function isBidRequestValid(bid) {
 
 function buildRequests(validBidRequests, bidderRequest) {
   return validBidRequests.map(bidRequest => {
+    const bidId = bidRequest.bidId
     const params = bidRequest.params;
     const asid = params.asid;
     return {
@@ -28,6 +29,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       url: ENDPOINT_URL,
       data: {
         asid: asid,
+        bid_id: bidId,
       }
     }
   });
@@ -40,7 +42,7 @@ function interpretResponse(serverResponse, bidRequest) {
   if (cpm !== 0) {
     const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
     const bidResponse = {
-      requestId: response.uuid,
+      requestId: response.bid_id,
       cpm: cpm,
       width: response.width,
       height: response.height,

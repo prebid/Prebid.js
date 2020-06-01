@@ -1155,7 +1155,7 @@ describe('OpenxAdapter', function () {
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
           'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
-        }
+        };
         mockBidderRequest = {refererInfo: {}};
       });
 
@@ -1587,32 +1587,31 @@ describe('OpenxAdapter', function () {
       payload: {'bid': bidsWithMediaType[0], 'startTime': new Date()}
     };
     const bidResponse = {
-      'pub_rev': '1',
+      'pub_rev': '1000',
       'width': '640',
       'height': '480',
       'adid': '5678',
-      'vastUrl': 'https://testvast.com/vastpath?colo=https://test-colo.com&ph=test-ph&ts=test-ts',
+      'currency': 'AUD',
+      'vastUrl': 'https://testvast.com',
       'pixels': 'https://testpixels.net'
     };
 
     it('should return correct bid response with MediaTypes', function () {
-      const expectedResponse = [
-        {
-          'requestId': '30b31c1838de1e',
-          'cpm': 1,
-          'width': '640',
-          'height': '480',
-          'mediaType': 'video',
-          'creativeId': '5678',
-          'vastUrl': 'https://testvast.com',
-          'ttl': 300,
-          'netRevenue': true,
-          'currency': 'USD'
-        }
-      ];
+      const expectedResponse = {
+        'requestId': '30b31c1838de1e',
+        'cpm': 1,
+        'width': 640,
+        'height': 480,
+        'mediaType': 'video',
+        'creativeId': '5678',
+        'vastUrl': 'https://testvast.com',
+        'ttl': 300,
+        'netRevenue': true,
+        'currency': 'AUD'
+      };
 
       const result = spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
-      expect(JSON.stringify(Object.keys(result[0]).sort())).to.eql(JSON.stringify(Object.keys(expectedResponse[0]).sort()));
+      expect(result[0]).to.eql(expectedResponse);
     });
 
     it('should return correct bid response with MediaType', function () {

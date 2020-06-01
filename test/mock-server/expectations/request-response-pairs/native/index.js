@@ -41,7 +41,8 @@ exports.getRequest = function() {
                 'required': true
               }
             }]
-          }
+          },
+          'hb_source': 1
         }, {
           'sizes': [{
             'width': 1,
@@ -71,7 +72,8 @@ exports.getRequest = function() {
                 'required': false
               }
             }]
-          }
+          },
+          'hb_source': 1
         }],
         'user': {}
       }

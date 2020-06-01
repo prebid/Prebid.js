@@ -1,6 +1,6 @@
 /* Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
 Updated : 2018-03-28 */
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';

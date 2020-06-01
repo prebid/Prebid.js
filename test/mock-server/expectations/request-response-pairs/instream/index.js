@@ -34,7 +34,8 @@ exports.getRequest = function() {
           'prebid': true,
           'disable_psa': true,
           'require_asset_url': true,
-          'video': {}
+          'video': {},
+          'hb_source': 1
         }],
         'user': {}
       }

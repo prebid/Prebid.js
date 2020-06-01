@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getAdagioScript, spec } from 'modules/adagioBidAdapter.js';
+import { adagioScriptFromLocalStorageCb, spec } from 'modules/adagioBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
@@ -7,7 +7,7 @@ describe('adagioAdapter', () => {
   let utilsMock;
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
-  const VERSION = '2.2.0';
+  const VERSION = '2.2.1';
 
   beforeEach(function() {
     localStorage.removeItem('adagioScript');
@@ -738,7 +738,7 @@ describe('adagioAdapter', () => {
     });
   });
 
-  describe('getAdagioScript', () => {
+  describe('adagioScriptFromLocalStorageCb', () => {
     const VALID_HASH = 'Lddcw3AADdQDrPtbRJkKxvA+o1CtScGDIMNRpHB3NnlC/FYmy/9RKXelKrYj/sjuWusl5YcOpo+lbGSkk655i8EKuDiOvK6ae/imxSrmdziIp+S/TA6hTFJXcB8k1Q9OIp4CMCT52jjXgHwX6G0rp+uYoCR25B1jHaHnpH26A6I=';
     const INVALID_HASH = 'invalid';
     const VALID_SCRIPT_CONTENT = 'var _ADAGIO=function(){};(_ADAGIO)();\n';
@@ -752,7 +752,7 @@ describe('adagioAdapter', () => {
       utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
       utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').never();
 
-      getAdagioScript();
+      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
       expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.equals('// hash: ' + VALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
       utilsMock.verify();
@@ -765,7 +765,7 @@ describe('adagioAdapter', () => {
       utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
       utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').once();
 
-      getAdagioScript();
+      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
       expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
       utilsMock.verify();
@@ -778,7 +778,7 @@ describe('adagioAdapter', () => {
       utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
       utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').once();
 
-      getAdagioScript();
+      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
       expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
       utilsMock.verify();
@@ -791,7 +791,7 @@ describe('adagioAdapter', () => {
       utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').once();
       utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').never();
 
-      getAdagioScript();
+      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
       expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
       utilsMock.verify();
