@@ -1754,7 +1754,7 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig });
       const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
       cacheResponse.seatbid.forEach(item => {
-        item.bid[0].ext.prebid.event = {
+        item.bid[0].ext.prebid.events = {
           win: 'https://wurl.com?a=1&b=2'
         };
         item.bid[0].ext.prebid.targeting = {

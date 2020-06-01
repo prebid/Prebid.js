@@ -370,7 +370,7 @@ let nativeAssetCache = {}; // store processed native params to preserve
 /**
  * map wurl to auction id and adId for use in the BID_WON event
  */
-const wurlMap = {};
+let wurlMap = {};
 
 /**
  * @param {string} auctionId
@@ -407,9 +407,7 @@ function getWurl(auctionId, adId) {
  * remove all cached wurls
  */
 export function resetWurlMap() {
-  Object.keys(wurlMap).forEach(key => {
-    wurlMap[key] = undefined;
-  });
+  wurlMap = {};
 }
 
 const OPEN_RTB_PROTOCOL = {
