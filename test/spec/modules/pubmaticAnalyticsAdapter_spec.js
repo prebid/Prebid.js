@@ -293,6 +293,13 @@ describe('pubmatic analytics adapter', function () {
     });
 
     it('Logger: best case + win tracker', function() {
+      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+        var config = {};
+        config[MOCK.BID_RESPONSE[0].adUnitCode] = [MOCK.BID_RESPONSE[0]];
+        config[MOCK.BID_RESPONSE[1].adUnitCode] = [MOCK.BID_RESPONSE[1]];
+        return config[key];
+      });
+
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
@@ -390,6 +397,13 @@ describe('pubmatic analytics adapter', function () {
     it('bidCpmAdjustment: USD: Logger: best case + win tracker', function() {
       const bidCopy = utils.deepClone(BID);
       bidCopy.cpm = bidCopy.originalCpm * 2; //  bidCpmAdjustment => bidCpm * 2
+
+      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+        var config = {};
+        config[MOCK.BID_RESPONSE[0].adUnitCode] = [bidCopy];
+        config[MOCK.BID_RESPONSE[1].adUnitCode] = [MOCK.BID_RESPONSE[1]];
+        return config[key];
+      });
 
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
@@ -575,6 +589,13 @@ describe('pubmatic analytics adapter', function () {
 
     it('Logger: post-timeout check with bid response', function() {
       // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
+
+      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+        var config = {};
+        config[MOCK.BID_RESPONSE[1].adUnitCode] = [MOCK.BID_RESPONSE[1]];
+        return config[key];
+      });
+
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
@@ -604,7 +625,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(1);
-      expect(data.s[1].ps[0].wb).to.equal(1);
+      expect(data.s[1].ps[0].wb).to.equal(1); // todo
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');

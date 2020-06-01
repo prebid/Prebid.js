@@ -125,7 +125,8 @@ function parseBidResponse(bid) {
       if (typeof bid.getCpmInNewCurrency === 'function') {
         return window.parseFloat(Number(bid.getCpmInNewCurrency(CURRENCY_USD)).toFixed(BID_PRECISION));
       }
-      utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
+      utils.logWarn(LOG_PRE_FIX + 'Could not determine the Net cpm in USD for the bid thus using bid.cpm', bid);
+      return bid.cpm
     },
     'bidGrossCpmUSD', () => {
       if (typeof bid.originalCurrency === 'string' && bid.originalCurrency.toUpperCase() === CURRENCY_USD) {
@@ -135,7 +136,8 @@ function parseBidResponse(bid) {
       if (typeof getGlobal().convertCurrency === 'function') {
         return window.parseFloat(Number(getGlobal().convertCurrency(bid.originalCpm, bid.originalCurrency, CURRENCY_USD)).toFixed(BID_PRECISION));
       }
-      utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
+      utils.logWarn(LOG_PRE_FIX + 'Could not determine the Gross cpm in USD for the bid, thus using bid.originalCpm', bid);
+      return bid.originalCpm
     },
     'dealId',
     'currency',
@@ -163,20 +165,9 @@ function getDomainFromUrl(url) {
   return a.hostname;
 }
 
-function getHighestBidForAdUnit(adUnit) {
-  return Object.keys(adUnit.bids).reduce(function(currentHighestBid, bidId) {
-    // todo: later we will need to consider grossECPM and netECPM
-    let bid = adUnit.bids[bidId];
-    if (bid.bidResponse && bid.bidResponse.bidPriceUSD > currentHighestBid.bidPriceUSD) {
-      currentHighestBid.bidPriceUSD = bid.bidResponse.bidPriceUSD;
-      currentHighestBid.bidId = bidId;
-    }
-    return currentHighestBid;
-  }, {bidId: '', bidPriceUSD: 0});
-}
-
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
-  const highestsBid = getHighestBidForAdUnit(adUnit);
+  let highestBid = $$PREBID_GLOBAL$$.getHighestCpmBids([adUnitId]);
+  highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
     let bid = adUnit.bids[bidId];
     partnerBids.push({
@@ -192,10 +183,9 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
       'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
       'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
       'l2': 0,
-      // 'ss': (bid.source === 'server' ? 1 : 0), // todo: is there any special handling required as per OW?
       'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
       't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
-      'wb': highestsBid.bidId === bid.bidId ? 1 : 0,
+      'wb': (highestBid && highestBid.requestId === bid.bidId ? 1 : 0),
       'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
       'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
       'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
