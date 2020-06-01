@@ -1,5 +1,11 @@
 # PubMatic Analytics Adapter
 
+```
+Module Name:  PubMatic Analytics Adapter
+Module Type:  Analytics Adapter
+Maintainer: header-bidding@pubmatic.com
+```
+
 ## How to configure?
 Following is an example:
 ```
