@@ -169,6 +169,15 @@ describe('RelaidoAdapter', function () {
       const request = bidRequests[0];
       expect(request.mediaType).to.equal('banner');
     });
+
+    it('The referrer should be the last', function () {
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      expect(bidRequests).to.have.lengthOf(1);
+      const request = bidRequests[0];
+      const keys = Object.keys(request.data);
+      expect(keys[0]).to.equal('version');
+      expect(keys[keys.length - 1]).to.equal('ref');
+    });
   });
 
   describe('spec.interpretResponse', function () {
