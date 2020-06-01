@@ -107,7 +107,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
       expect(payload.playerSize).to.equal('300x600');
     });
 
@@ -126,7 +126,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_us_privacy).to.exist.and.to.be.a('string');
       expect(payload._fw_us_privacy).to.equal(uspConsentString);
@@ -145,7 +145,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
@@ -178,7 +178,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
       expect(payload.playerSize).to.equal('300x600');
     });
 
@@ -197,7 +197,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_us_privacy).to.exist.and.to.be.a('string');
       expect(payload._fw_us_privacy).to.equal(uspConsentString);
@@ -216,7 +216,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);

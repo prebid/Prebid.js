@@ -261,7 +261,7 @@ export const spec = {
         reqType: 'AdsSetup',
         protocolVersion: '2.0',
         zoneId: zone,
-        componentId: getComponentId(currentBidRequest.params.format),
+        componentId: 'prebid',
         timestamp: timeInMillis,
         pKey: keyCode
       };
