@@ -1778,7 +1778,7 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig });
       const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
       cacheResponse.seatbid.forEach(item => {
-        item.bid[0].ext.prebid.event = {
+        item.bid[0].ext.prebid.events = {
           win: 'https://wurl.com?a=1&b=2'
         };
         item.bid[0].ext.prebid.targeting = {
@@ -1885,7 +1885,7 @@ describe('S2S Adapter', function () {
 
     it('should call triggerPixel if wurl is defined', function () {
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
-      clonedResponse.seatbid[0].bid[0].ext.prebid.event = {
+      clonedResponse.seatbid[0].bid[0].ext.prebid.events = {
         win: 'https://wurl.org'
       };
 
@@ -1904,7 +1904,7 @@ describe('S2S Adapter', function () {
 
     it('should not call triggerPixel if the wurl cache does not contain the winning bid', function () {
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
-      clonedResponse.seatbid[0].bid[0].ext.prebid.event = {
+      clonedResponse.seatbid[0].bid[0].ext.prebid.events = {
         win: 'https://wurl.org'
       };
 
@@ -1922,7 +1922,7 @@ describe('S2S Adapter', function () {
 
     it('should not call triggerPixel if wurl is undefined', function () {
       const clonedResponse = utils.deepClone(RESPONSE_OPENRTB);
-      clonedResponse.seatbid[0].bid[0].ext.prebid.event = {};
+      clonedResponse.seatbid[0].bid[0].ext.prebid.events = {};
 
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(clonedResponse));

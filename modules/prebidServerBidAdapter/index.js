@@ -714,8 +714,8 @@ const OPEN_RTB_PROTOCOL = {
           }
 
           // store wurl by auctionId and adId so it can be accessed from the BID_WON event handler
-          if (utils.isStr(utils.deepAccess(bid, 'ext.prebid.event.win'))) {
-            addWurl(bidRequest.auctionId, bidObject.adId, utils.deepAccess(bid, 'ext.prebid.event.win'));
+          if (utils.isStr(utils.deepAccess(bid, 'ext.prebid.events.win'))) {
+            addWurl(bidRequest.auctionId, bidObject.adId, utils.deepAccess(bid, 'ext.prebid.events.win'));
           }
 
           let extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
@@ -725,7 +725,7 @@ const OPEN_RTB_PROTOCOL = {
           // once we get through the transition, this block will be removed.
           if (utils.isPlainObject(extPrebidTargeting)) {
             // If wurl exists, remove hb_winurl and hb_bidid targeting attributes
-            if (utils.isStr(utils.deepAccess(bid, 'ext.prebid.event.win'))) {
+            if (utils.isStr(utils.deepAccess(bid, 'ext.prebid.events.win'))) {
               extPrebidTargeting = utils.getDefinedParams(extPrebidTargeting, Object.keys(extPrebidTargeting)
                 .filter(i => (i.indexOf('hb_winurl') === -1 && i.indexOf('hb_bidid') === -1)));
             }
