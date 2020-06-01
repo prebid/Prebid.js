@@ -7,7 +7,6 @@ Maintainer: header-bidding@pubmatic.com
 ```
 
 ## How to configure?
-Following is an example:
 ```
 pbjs.enableAnalytics({
     provider: 'pubmatic',
