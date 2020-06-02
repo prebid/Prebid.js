@@ -147,11 +147,11 @@ function _getFloor (bid) {
       size: _sizes(bid.sizes)
     });
     if (typeof floorInfo === 'object' &&
-    floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor))) {
+    floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }
   }
-  return floor || bid.params.floor;
+  return floor !== null ? floor : bid.params.floor;
 }
 
 function getUnifiedIdEids(bidRequests) {
