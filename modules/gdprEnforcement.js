@@ -14,15 +14,18 @@ import { validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
 
-const PURPOSE_1 = {
-  id: 1,
-  name: 'storage'
+const TCF2 = {
+  'purpose1': { id: 1, name: 'storage' },
+  'purpose2': { id: 2, name: 'basicAds' }
 }
 
-const PURPOSE_2 = {
-  id: 2,
-  name: 'basicAds'
-}
+const defaultRules = [{
+  purpose: 'storage',
+  enforcePurpose: true
+}, {
+  purpose: 'basicAds',
+  enforcePurpose: true
+}];
 
 let purpose1Rule;
 let purpose2Rule;
@@ -47,20 +50,29 @@ function getGvlid(bidderCode) {
  * This function takes in rules and consentData as input and validates against the consentData provided. If it returns true Prebid will allow the next call else it will log a warning
  * @param {Object} rule - enforcement rules set in config
  * @param {Object} consentData - gdpr consent data
- * @param {number} purposeId - Defines which purpose (1, 2, 7) is under check
  * @param {string=} currentModule - Bidder code of the current module
- * @param {number=} gvlid - GVL ID for the module
+ * @param {number=} gvlId - GVL ID for the module
  * @returns {boolean}
  */
-function validateRules(rule, consentData, purposeId, currentModule, gvlid) {
-  // if vendor has exception => always true
+export function validateRules(rule, consentData, currentModule, gvlId) {
+  const purposeId = TCF2[Object.keys(TCF2).filter(purposeName => TCF2[purposeName].name === rule.purpose)[0]].id;
+
+  // return 'true' if vendor present in 'vendorExceptions'
   if (includes(rule.vendorExceptions || [], currentModule)) {
     return true;
   }
-  // if enforcePurpose is false or purpose was granted isAllowed is true, otherwise false
-  const purposeAllowed = rule.enforcePurpose === false || utils.deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`) === true;
-  // if enforceVendor is false or vendor was granted isAllowed is true, otherwise false
-  const vendorAllowed = rule.enforceVendor === false || utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlid}`) === true;
+
+  const purposeConsent = utils.deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`);
+  const vendorConsent = utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
+  const liTransparency = utils.deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
+
+  const purposeAllowed = rule.enforcePurpose === false || purposeConsent === true;
+  const vendorAllowed = rule.enforceVendor === false || vendorConsent === true;
+
+  if (purposeId === 2) {
+    return (purposeAllowed && vendorAllowed) || (liTransparency === true);
+  }
+
   return purposeAllowed && vendorAllowed;
 }
 
@@ -86,12 +98,12 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
           gvlid = getGvlid();
         }
         const curModule = moduleName || config.getCurrentBidder();
-        let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, curModule, gvlid);
+        let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
         if (isAllowed) {
           result.valid = true;
           fn.call(this, gvlid, moduleName, result);
         } else {
-          utils.logWarn(`User denied Permission for Device access for ${curModule}`);
+          curModule && utils.logWarn(`User denied Permission for Device access for ${curModule}`);
           result.valid = false;
           fn.call(this, gvlid, moduleName, result);
         }
@@ -119,7 +131,7 @@ export function userSyncHook(fn, ...args) {
       const gvlid = getGvlid();
       const curBidder = config.getCurrentBidder();
       if (gvlid) {
-        let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, curBidder, gvlid);
+        let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
         if (isAllowed) {
           fn.call(this, ...args);
         } else {
@@ -150,7 +162,7 @@ export function userIdHook(fn, submodules, consentData) {
         const gvlid = submodule.submodule.gvlid;
         const moduleName = submodule.submodule.name;
         if (gvlid) {
-          let isAllowed = validateRules(purpose1Rule, consentData, PURPOSE_1.id, moduleName, gvlid);
+          let isAllowed = validateRules(purpose1Rule, consentData, moduleName, gvlid);
           if (isAllowed) {
             return submodule;
           } else {
@@ -187,7 +199,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
           const currBidder = bid.bidder;
           const gvlId = getGvlid(currBidder);
           if (includes(disabledBidders, currBidder)) return false;
-          const isAllowed = gvlId && validateRules(purpose2Rule, consentData, PURPOSE_2.id, currBidder, gvlId);
+          const isAllowed = gvlId && validateRules(purpose2Rule, consentData, currBidder, gvlId);
           if (!isAllowed) {
             utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
             events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
@@ -206,8 +218,8 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
   }
 }
 
-const hasPurpose1 = (rule) => { return rule.purpose === PURPOSE_1.name }
-const hasPurpose2 = (rule) => { return rule.purpose === PURPOSE_2.name }
+const hasPurpose1 = (rule) => { return rule.purpose === TCF2.purpose1.name }
+const hasPurpose2 = (rule) => { return rule.purpose === TCF2.purpose2.name }
 
 /**
  * A configuration function that initializes some module variables, as well as add hooks
@@ -216,11 +228,12 @@ const hasPurpose2 = (rule) => { return rule.purpose === PURPOSE_2.name }
 export function setEnforcementConfig(config) {
   const rules = utils.deepAccess(config, 'gdpr.rules');
   if (!rules) {
-    utils.logWarn('GDPR enforcement rules not defined, exiting enforcement module');
-    return;
+    utils.logWarn('GDPR enforcement rules not defined, enforcing purpose1 and purpose2 by default');
+    enforcementRules = defaultRules;
+  } else {
+    enforcementRules = rules;
   }
 
-  enforcementRules = rules;
   purpose1Rule = find(enforcementRules, hasPurpose1);
   purpose2Rule = find(enforcementRules, hasPurpose2);
 
