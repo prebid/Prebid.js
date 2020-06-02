@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.5';
+window.nobidVersion = '1.2.6';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -200,7 +200,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     var adType = 'banner';
     const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
     const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-    if (bid.mediaType === VIDEO || (videoMediaType && context === 'instream')) {
+    if (bid.mediaType === VIDEO || (videoMediaType && (context === 'instream' || context === 'outstream'))) {
       adType = 'video';
     }
 
@@ -287,6 +287,28 @@ window.nobid.renderTag = function(doc, id, win) {
   }
   log('nobid.renderTag() tag NOT FOUND *ERROR*', id);
 }
+window.addEventListener('message', function (event) {
+  let key = event.message ? 'message' : 'data';
+  let adObject = {};
+  try {
+    adObject = JSON.parse(event[key]);
+  } catch (e) {
+    return;
+  }
+  if (adObject.message === 'nbTagRenderer.requestAdMarkup') {
+    log('Prebid adapter received event nbTagRenderer.requestAdMarkup adId: ' + adObject.adId);
+    if (window.nobid && window.nobid.renderTag) {
+      log('Prebid send event to source');
+      var bid = window.nobid.bidResponses['' + adObject.adId];
+      if (bid && bid.adm2) {
+        event.source.postMessage(JSON.stringify({
+          message: 'nbTagRenderer.renderAdInSafeFrame',
+          ad: bid.adm2
+        }), '*');
+      }
+    }
+  }
+}, false);
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
