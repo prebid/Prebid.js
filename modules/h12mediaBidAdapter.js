@@ -161,14 +161,12 @@ function getIsHidden(elem) {
         getContext(elem).getComputedStyle(lastElem).getPropertyValue('display') === 'none' ||
         getContext(elem).getComputedStyle(lastElem).getPropertyValue('visibility') === 'hidden'
       ) {
-        elemHidden = true;
         return true;
       } else {
         elemHidden = false;
         lastElem = lastElem.parentElement;
       }
     } catch (o) {
-      elemHidden = false;
       return false;
     }
   } while ((m < 250) && (lastElem != null) && (elemHidden === false))
