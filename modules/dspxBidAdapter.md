@@ -8,7 +8,7 @@ Maintainer: prebid@dspx.tv
 
 # Description
 
-DSPx adapter for Prebid v3.
+DSPx adapter for Prebid.
 
 # Test Parameters
 ```
