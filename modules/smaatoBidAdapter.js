@@ -168,10 +168,16 @@ registerBidder(spec);
 
 const createImgAd = (adm) => {
   const image = JSON.parse(adm).image;
-  let markup = `<div><a href="${image.img.ctaurl}"><img src="${image.img.url}" width="${image.img.w}" height="${image.img.h}"/></a></div>`;
 
-  image.impressiontrackers.map(src => {
-    markup += `<img src="${src}" alt="" width="1" height="1"/>`;
+  let clickEvent = '';
+  image.clicktrackers.forEach(src => {
+    clickEvent += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
+  })
+
+  let markup = `<div onclick="${clickEvent}"><a href="${image.img.ctaurl}"><img src="${image.img.url}" width="${image.img.w}" height="${image.img.h}"/></a></div>`;
+
+  image.impressiontrackers.forEach(src => {
+    markup += `<img src="${src}" alt="" width="0" height="0"/>`;
   });
 
   return markup;

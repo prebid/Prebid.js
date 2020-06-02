@@ -109,7 +109,7 @@ const interpretedBidsImg = [
     cpm: 0.01,
     width: 350,
     height: 50,
-    ad: '<div><a href=\"http://localhost:3000/track/ctaurl\"><img src=\"http://localhost:3000/static/ad.jpg\" width=\"320\" height=\"50\"/></a></div><img src=\"http://localhost:3000/track/imp/1\" alt=\"\" width=\"1\" height=\"1\"/><img src=\"http://localhost:3000/track/imp/2\" alt=\"\" width=\"1\" height=\"1\"/>',
+    ad: '<div onclick=\"fetch(decodeURIComponent(\'http%3A%2F%2Flocalhost%3A3000%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});\"><a href=\"http://localhost:3000/track/ctaurl\"><img src=\"http://localhost:3000/static/ad.jpg\" width=\"320\" height=\"50\"/></a></div><img src=\"http://localhost:3000/track/imp/1\" alt=\"\" width=\"0\" height=\"0\"/><img src=\"http://localhost:3000/track/imp/2\" alt=\"\" width=\"0\" height=\"0\"/>',
     ttl: 1000,
     creativeId: 'CR69381',
     netRevenue: false,
