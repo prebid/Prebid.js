@@ -314,7 +314,13 @@ describe('the price floors module', function () {
         data: undefined
       });
       runStandardAuction();
-      validateBidRequests(false, undefined);
+      validateBidRequests(false, {
+        skipped: true,
+        modelVersion: undefined,
+        location: undefined,
+        skipRate: 0,
+        fetchStatus: undefined
+      });
     });
     it('should use adUnit level data if not setConfig or fetch has occured', function () {
       handleSetFloorsConfig({
@@ -344,6 +350,8 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'adUnit Model Version',
         location: 'adUnit',
+        skipRate: 0,
+        fetchStatus: undefined
       });
     });
     it('bidRequests should have getFloor function and flooring meta data when setConfig occurs', function () {
@@ -353,6 +361,53 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
+      });
+    });
+    it('should take the right skipRate depending on input', function () {
+      // first priority is data object
+      sandbox.stub(Math, 'random').callsFake(() => 0.99);
+      let inputFloors = {
+        ...basicFloorConfig,
+        skipRate: 10,
+        data: {
+          ...basicFloorData,
+          skipRate: 50
+        }
+      };
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 50,
+        fetchStatus: undefined
+      });
+
+      // if that does not exist uses topLevel skipRate setting
+      delete inputFloors.data.skipRate;
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 10,
+        fetchStatus: undefined
+      });
+
+      // if that is not there defaults to zero
+      delete inputFloors.skipRate;
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
       });
     });
     it('should not overwrite previous data object if the new one is bad', function () {
@@ -378,6 +433,8 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
       });
     });
     it('should dynamically add new schema fileds and functions if added via setConfig', function () {
@@ -453,6 +510,8 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: 'timeout'
       });
       fakeFloorProvider.respond();
     });
@@ -482,10 +541,33 @@ describe('the price floors module', function () {
       expect(exposedAdUnits).to.not.be.undefined;
 
       // the exposedAdUnits should be from the fetch not setConfig level data
+      // and fetchStatus is success since fetch worked
       validateBidRequests(true, {
         skipped: false,
         modelVersion: 'fetch model name',
         location: 'fetch',
+        skipRate: 0,
+        fetchStatus: 'success'
+      });
+    });
+    it('Should not break if floor provider returns 404', function () {
+      // run setConfig indicating fetch
+      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+
+      // run the auction and make server respond with 404
+      fakeFloorProvider.respond();
+      runStandardAuction();
+
+      // error should have been called for fetch error
+      expect(logErrorSpy.calledOnce).to.equal(true);
+      // should have caught the response error and still used setConfig data
+      // and fetch failed is true
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: 'error'
       });
     });
     it('Should not break if floor provider returns non json', function () {
@@ -498,11 +580,16 @@ describe('the price floors module', function () {
       fakeFloorProvider.respond();
       runStandardAuction();
 
+      // error should have been called for response floor data not being valid
+      expect(logErrorSpy.calledOnce).to.equal(true);
       // should have caught the response error and still used setConfig data
+      // and fetchStatus is 'success' but location is setConfig since it had bad data
       validateBidRequests(true, {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: 'success'
       });
     });
     it('should handle not using fetch correctly', function () {
