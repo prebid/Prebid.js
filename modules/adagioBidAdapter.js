@@ -1,17 +1,20 @@
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { loadExternalScript } from '../src/adloader.js'
 import JSEncrypt from 'jsencrypt/bin/jsencrypt.js';
 import sha256 from 'crypto-js/sha256.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adagio';
-const VERSION = '2.1.0';
+const VERSION = '2.2.1';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
 const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
+const GVLID = 617;
+const storage = getStorageManager(GVLID, 'adagio');
 
 export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9el0+OEn6fvEh1RdVHQu4cnT0
@@ -20,11 +23,8 @@ t0b0lsHN+W4n9kitS/DZ/xnxWK/9vxhv0ZtL1LL/rwR5Mup7rmJbNtDoNBw4TIGj
 pV6EP3MTLosuUEpLaQIDAQAB
 -----END PUBLIC KEY-----`;
 
-export function getAdagioScript() {
+export function adagioScriptFromLocalStorageCb(ls) {
   try {
-    const w = utils.getWindowTop();
-    const ls = w.localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY);
-
     if (!ls) {
       utils.logWarn('Adagio Script not found');
       return;
@@ -34,7 +34,7 @@ export function getAdagioScript() {
 
     if (!hashRgx.test(ls)) {
       utils.logWarn('No hash found in Adagio script');
-      w.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
+      storage.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
     } else {
       const r = ls.match(hashRgx);
       const hash = r[2];
@@ -48,12 +48,18 @@ export function getAdagioScript() {
         Function(ls)(); // eslint-disable-line no-new-func
       } else {
         utils.logWarn('Invalid Adagio script found');
-        w.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
+        storage.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
       }
     }
   } catch (err) {
     //
   }
+}
+
+export function getAdagioScript() {
+  storage.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY, (ls) => {
+    adagioScriptFromLocalStorageCb(ls)
+  });
 }
 
 function canAccessTopWindow() {
@@ -84,12 +90,12 @@ if (canAccessTopWindow()) {
 }
 
 const _features = {
-  getPrintNumber: function(adUnitCode) {
+  getPrintNumber: function (adUnitCode) {
     const adagioAdUnit = _getOrAddAdagioAdUnit(adUnitCode);
     return adagioAdUnit.printNumber || 1;
   },
 
-  getPageDimensions: function() {
+  getPageDimensions: function () {
     const viewportDims = _features.getViewPortDimensions().split('x');
     const w = utils.getWindowTop();
     const body = w.document.body;
@@ -102,7 +108,7 @@ const _features = {
     return viewportDims[0] + 'x' + pageHeight;
   },
 
-  getViewPortDimensions: function() {
+  getViewPortDimensions: function () {
     let viewPortWidth;
     let viewPortHeight;
     const w = utils.getWindowTop();
@@ -119,7 +125,7 @@ const _features = {
     return viewPortWidth + 'x' + viewPortHeight;
   },
 
-  isDomLoading: function() {
+  isDomLoading: function () {
     const w = utils.getWindowTop();
     let performance = w.performance || w.msPerformance || w.webkitPerformance || w.mozPerformance;
     let domLoading = -1;
@@ -131,7 +137,7 @@ const _features = {
     return domLoading;
   },
 
-  getSlotPosition: function(element) {
+  getSlotPosition: function (element) {
     if (!element) return '';
 
     const w = utils.getWindowTop();
@@ -165,11 +171,11 @@ const _features = {
     return position.x + 'x' + position.y;
   },
 
-  getTimestamp: function() {
+  getTimestamp: function () {
     return Math.floor(new Date().getTime() / 1000) - new Date().getTimezoneOffset() * 60;
   },
 
-  getDevice: function() {
+  getDevice: function () {
     if (!canAccessTopWindow()) return false;
     const w = utils.getWindowTop();
     const ua = w.navigator.userAgent;
@@ -183,14 +189,14 @@ const _features = {
     return 2; // personal computers
   },
 
-  getBrowser: function() {
+  getBrowser: function () {
     const w = utils.getWindowTop();
     const ua = w.navigator.userAgent;
     const uaLowerCase = ua.toLowerCase();
     return /Edge\/\d./i.test(ua) ? 'edge' : uaLowerCase.indexOf('chrome') > 0 ? 'chrome' : uaLowerCase.indexOf('firefox') > 0 ? 'firefox' : uaLowerCase.indexOf('safari') > 0 ? 'safari' : uaLowerCase.indexOf('opera') > 0 ? 'opera' : uaLowerCase.indexOf('msie') > 0 || w.MSStream ? 'ie' : 'unknow';
   },
 
-  getOS: function() {
+  getOS: function () {
     const w = window.top;
     const ua = w.navigator.userAgent;
     const uaLowerCase = ua.toLowerCase();
@@ -199,9 +205,11 @@ const _features = {
 }
 
 function _pushInAdagioQueue(ob) {
-  if (!canAccessTopWindow()) return;
-  const w = utils.getWindowTop();
-  w.ADAGIO.queue.push(ob);
+  try {
+    if (!canAccessTopWindow()) return;
+    const w = utils.getWindowTop();
+    w.ADAGIO.queue.push(ob);
+  } catch (e) {}
 };
 
 function _getOrAddAdagioAdUnit(adUnitCode) {
@@ -334,51 +342,63 @@ function _getGdprConsent(bidderRequest) {
     if (bidderRequest.gdprConsent.allowAuctionWithoutConsent !== undefined) {
       consent.allowAuctionWithoutConsent = bidderRequest.gdprConsent.allowAuctionWithoutConsent ? 1 : 0;
     }
+    if (bidderRequest.gdprConsent.apiVersion !== undefined) {
+      consent.apiVersion = bidderRequest.gdprConsent.apiVersion;
+    }
   }
   return consent;
 }
 
+function _getSchain(bidRequest) {
+  if (utils.deepAccess(bidRequest, 'schain')) {
+    return bidRequest.schain;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
-
+  gvlid: GVLID,
   supportedMediaType: SUPPORTED_MEDIA_TYPES,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     const { adUnitCode, auctionId, sizes, bidder, params, mediaTypes } = bid;
     const { organizationId, site, placement, adUnitElementId } = bid.params;
     let isValid = false;
 
-    if (canAccessTopWindow()) {
-      const w = utils.getWindowTop();
-      w.ADAGIO = w.ADAGIO || {};
-      w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
-      w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
-      isValid = !!(organizationId && site && placement && adUnitElementId);
-      const tempAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
-      tempAdUnits.push({
-        code: adUnitCode,
-        sizes: (mediaTypes && mediaTypes.banner && Array.isArray(mediaTypes.banner.sizes)) ? mediaTypes.banner.sizes : sizes,
-        bids: [{
-          bidder,
-          params
-        }]
-      });
-      w.ADAGIO.pbjsAdUnits = tempAdUnits;
+    try {
+      if (canAccessTopWindow()) {
+        const w = utils.getWindowTop();
+        w.ADAGIO = w.ADAGIO || {};
+        w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
+        w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
+        isValid = !!(organizationId && site && placement && adUnitElementId);
+        const tempAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
+        tempAdUnits.push({
+          code: adUnitCode,
+          sizes: (mediaTypes && mediaTypes.banner && Array.isArray(mediaTypes.banner.sizes)) ? mediaTypes.banner.sizes : sizes,
+          bids: [{
+            bidder,
+            params
+          }]
+        });
+        w.ADAGIO.pbjsAdUnits = tempAdUnits;
 
-      if (isValid === true) {
-        let printNumber = _computePrintNumber(adUnitCode);
-        w.ADAGIO.adUnits[adUnitCode] = {
-          auctionId: auctionId,
-          pageviewId: _getPageviewId(),
-          printNumber
-        };
+        if (isValid === true) {
+          let printNumber = _computePrintNumber(adUnitCode);
+          w.ADAGIO.adUnits[adUnitCode] = {
+            auctionId: auctionId,
+            pageviewId: _getPageviewId(),
+            printNumber
+          };
+        }
       }
+    } catch (e) {
+      return isValid;
     }
-
     return isValid;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     // AdagioBidAdapter works when window.top can be reached only
     if (!bidderRequest.refererInfo.reachedTop) return [];
 
@@ -387,6 +407,7 @@ export const spec = {
     const site = _getSite();
     const pageviewId = _getPageviewId();
     const gdprConsent = _getGdprConsent(bidderRequest);
+    const schain = _getSchain(validBidRequests[0]);
     const adUnits = utils._map(validBidRequests, (bidRequest) => {
       bidRequest.features = _getFeatures(bidRequest);
       return bidRequest;
@@ -415,6 +436,7 @@ export const spec = {
           pageviewId: pageviewId,
           adUnits: groupedAdUnits[organizationId],
           gdpr: gdprConsent,
+          schain: schain,
           prebidVersion: '$prebid.version$',
           adapterVersion: VERSION,
           featuresVersion: FEATURES_VERSION
@@ -428,7 +450,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     let bidResponses = [];
     try {
       const response = serverResponse.body;
@@ -461,7 +483,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     if (!serverResponses.length || serverResponses[0].body === '' || !serverResponses[0].body.userSyncs) {
       return false;
     }

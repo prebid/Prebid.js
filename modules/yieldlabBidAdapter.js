@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import find from 'core-js/library/fn/array/find.js'
+import find from 'core-js-pure/features/array/find.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
 import { Renderer } from '../src/Renderer.js'
 
@@ -38,6 +38,9 @@ export const spec = {
       adslotIds.push(bid.params.adslotId)
       if (bid.params.targeting) {
         query.t = createQueryString(bid.params.targeting)
+      }
+      if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
+        query.ids = createUserIdString(bid.userIdAsEids)
       }
     })
 
@@ -160,6 +163,19 @@ function getPlayerSize (format) {
  */
 function parseSize (size) {
   return size.split('x').map(Number)
+}
+
+/**
+ * Creates a string out of an array of eids with source and uid
+ * @param {Array} eids
+ * @returns {String}
+ */
+function createUserIdString (eids) {
+  let str = []
+  for (let i = 0; i < eids.length; i++) {
+    str.push(eids[i].source + ':' + eids[i].uids[0].id)
+  }
+  return str.join(',')
 }
 
 /**
