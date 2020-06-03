@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name:  Lotame Id System
+Module Name:  Lotame Panorama Id System
 Module Type:  Id System
 Maintainer:   prebid@lotame.com
 ```
 
 # Description
 
-Retrieve Lotame's Id
+Retrieve the Lotame Panorama Id
 
 # Usage
 
@@ -18,7 +18,7 @@ Retrieve Lotame's Id
         usersync: {
             userIds: [
             {
-                name: 'lotameId' // The only parameter that is needed
+                name: 'lotamePanoramaId' // The only parameter that is needed
             }],
         }
     });

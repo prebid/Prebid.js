@@ -1,7 +1,7 @@
 /**
- * This module adds LotameId to the User ID module
+ * This module adds LotamePanoramaId to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/lotameIdSystem
+ * @module modules/lotamePanoramaId
  * @requires module:modules/userId
  */
 import * as utils from '../src/utils.js';
@@ -9,36 +9,46 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const KEY_LAST_UPDATE = '_lota_last';
-const KEY_ID = '_lota_pano';
-const KEY_EXPIRY = '_lota_expiry';
-const PROFILE_ID_NAME = '_cc_id';
-const MODULE_NAME = 'lotameId';
+const KEY_ID = 'panoramaId';
+const KEY_EXPIRY = `${KEY_ID}_expiry`;
+const KEY_PROFILE = '_cc_id';
+const MODULE_NAME = 'lotamePanoramaId';
 const NINE_MONTHS_MS = 23328000 * 1000;
-const DAYS_TO_CACHE = 7
+const DAYS_TO_CACHE = 7;
 const DAY_MS = 60 * 60 * 24 * 1000;
 
 export const storage = getStorageManager(null, MODULE_NAME);
 
-function setFirstPartyId(profileId) {
+/**
+ * Set the Lotame First Party Profile ID in the first party namespace
+ * @param {String} profileId
+ */
+function setProfileId(profileId) {
   if (storage.cookiesAreEnabled()) {
     let expirationDate = new Date(utils.timestamp() + NINE_MONTHS_MS).toUTCString();
-    storage.setCookie(PROFILE_ID_NAME, profileId, expirationDate, 'Lax', undefined, undefined);
+    storage.setCookie(KEY_PROFILE, profileId, expirationDate, 'Lax', undefined, undefined);
   }
   if (storage.hasLocalStorage()) {
-    storage.setDataInLocalStorage(PROFILE_ID_NAME, profileId, undefined);
+    storage.setDataInLocalStorage(KEY_PROFILE, profileId, undefined);
   }
 }
 
-function getFirstPartyId() {
+/**
+ * Get the Lotame profile id by checking cookies first and then local storage
+ */
+function getProfileId() {
   if (storage.cookiesAreEnabled()) {
-    return storage.getCookie(PROFILE_ID_NAME, undefined);
+    return storage.getCookie(KEY_PROFILE, undefined);
   }
   if (storage.hasLocalStorage()) {
-    return storage.getDataFromLocalStorage(PROFILE_ID_NAME, undefined);
+    return storage.getDataFromLocalStorage(KEY_PROFILE, undefined);
   }
 }
 
+/**
+ * Get a value from browser storage by checking cookies first and then local storage
+ * @param {String} key
+ */
 function getFromStorage(key) {
   let value = null;
   if (storage.cookiesAreEnabled()) {
@@ -59,6 +69,12 @@ function getFromStorage(key) {
   return value;
 }
 
+/**
+ * Save a key/value pair to the browser cache (cookies and local storage)
+ * @param {String} key
+ * @param {String} value
+ * @param {Number} expirationTimestamp
+ */
 function saveLotameCache(
   key,
   value,
@@ -83,32 +99,31 @@ function saveLotameCache(
   }
 }
 
+/**
+ * Retrieve all the cached values from cookies and/or local storage
+ */
 function getLotameLocalCache() {
   let cache = {
-    lastUpdate: new Date(0),
     data: getFromStorage(KEY_ID),
-    expiryMs: 0,
+    expiryTimestampMs: 0,
   };
 
   try {
     const rawExpiry = getFromStorage(KEY_EXPIRY);
     if (utils.isStr(rawExpiry)) {
-      cache.expiryMs = parseInt(rawExpiry, 0);
+      cache.expiryTimestampMs = parseInt(rawExpiry, 0);
     }
   } catch (error) {
     utils.logError(error);
   }
-  try {
-    const rawDate = getFromStorage(KEY_LAST_UPDATE);
-    if (utils.isStr(rawDate)) {
-      cache.lastUpdate = new Date(rawDate);
-    }
-  } catch (error) {
-    utils.logError(error);
-  }
+
   return cache;
 }
 
+/**
+ * Clear a cached value from cookies and local storage
+ * @param {String} key
+ */
 function clearLotameCache(key) {
   if (key) {
     if (storage.cookiesAreEnabled()) {
@@ -121,7 +136,8 @@ function clearLotameCache(key) {
   }
 }
 /** @type {Submodule} */
-export const lotameIdSubmodule = {
+export const lotamePanoramaIdSubmodule = {
+
   /**
    * used to link submodule with config
    * @type {string}
@@ -135,11 +151,11 @@ export const lotameIdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, configParams) {
-    return value;
+    return utils.isStr(value) ? { 'lotamePanoramaId': value } : undefined;
   },
 
   /**
-   * Retrieve the Lotame id
+   * Retrieve the Lotame Panorama Id
    * @function
    * @param {SubmoduleParams} [configParams]
    * @param {ConsentData} [consentData]
@@ -151,7 +167,7 @@ export const lotameIdSubmodule = {
 
     let refreshNeeded = false;
     if (!utils.isStr(localCache.data)) {
-      refreshNeeded = Date.now() > localCache.expiryMs;
+      refreshNeeded = Date.now() > localCache.expiryTimestampMs;
     }
 
     if (!refreshNeeded) {
@@ -160,7 +176,7 @@ export const lotameIdSubmodule = {
       };
     }
 
-    const storedUserId = getFirstPartyId();
+    const storedUserId = getProfileId();
     const hasGdprData =
       consentData &&
       utils.isBoolean(consentData.gdprApplies) &&
@@ -176,9 +192,9 @@ export const lotameIdSubmodule = {
       }
       const url = utils.buildUrl({
         protocol: 'https',
-        host: `mconrad.dev.lotame.com:5555`,
+        host: `bcp.dev.lotame.com`,
         pathname: '/id',
-        search: utils.isEmpty(queryParams) ? undefined : queryParams
+        search: utils.isEmpty(queryParams) ? undefined : queryParams,
       });
       ajax(
         url,
@@ -187,13 +203,22 @@ export const lotameIdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
-              setFirstPartyId(responseObj.profile_id);
-              saveLotameCache(KEY_LAST_UPDATE, new Date().toUTCString());
-              saveLotameCache(KEY_EXPIRY, responseObj.expiry_ms);
+              saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts);
+
               if (utils.isStr(responseObj.core_id)) {
-                saveLotameCache(KEY_ID, responseObj.core_id, responseObj.expiry_ms);
+                saveLotameCache(
+                  KEY_ID,
+                  responseObj.core_id,
+                  responseObj.expiry_ts
+                );
               } else {
                 clearLotameCache(KEY_ID);
+              }
+
+              if (utils.isStr(responseObj.profile_id)) {
+                setProfileId(responseObj.profile_id);
+              } else {
+                clearLotameCache(KEY_PROFILE);
               }
             } catch (error) {
               utils.logError(error);
@@ -202,7 +227,10 @@ export const lotameIdSubmodule = {
           callback(responseObj);
         },
         undefined,
-        { method: 'GET', withCredentials: true }
+        {
+          method: 'GET',
+          withCredentials: true
+        }
       );
     };
 
@@ -210,4 +238,4 @@ export const lotameIdSubmodule = {
   },
 };
 
-submodule('userId', lotameIdSubmodule);
+submodule('userId', lotamePanoramaIdSubmodule);

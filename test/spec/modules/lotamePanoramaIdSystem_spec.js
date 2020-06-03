@@ -1,4 +1,7 @@
-import {lotameIdSubmodule, storage} from 'modules/lotameIdSystem.js';
+import {
+  lotamePanoramaIdSubmodule,
+  storage,
+} from 'modules/lotamePanoramaIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -43,7 +46,7 @@ describe('LotameId', function() {
     let callBackSpy = sinon.spy();
 
     this.beforeEach(function() {
-      let submoduleCallback = lotameIdSubmodule.getId({}).callback;
+      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
       submoduleCallback(callBackSpy);
 
       request = server.requests[0];
@@ -53,7 +56,7 @@ describe('LotameId', function() {
         responseHeader,
         JSON.stringify({
           profile_id: '4ec137245858469eb94a4e248f238694',
-          expiry_ms: 10,
+          expiry_ts: 10,
           core_id:
             'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a',
         })
@@ -61,17 +64,9 @@ describe('LotameId', function() {
     });
 
     it('should call the remote server when getId is called', function () {
-      expect(request.url).to.be.eq(
-        'https://mconrad.dev.lotame.com:5555/id'
-      );
+      expect(request.url).to.be.eq('https://bcp.dev.lotame.com/id');
 
       expect(callBackSpy.calledOnce).to.be.true;
-    });
-
-    it('should save the last update date', function () {
-      // Check the calls to storage
-      sinon.assert.calledWith(setLocalStorageStub, '_lota_last');
-      sinon.assert.calledWith(setCookieStub, '_lota_last');
     });
 
     it('should save the first party id', function () {
@@ -90,24 +85,24 @@ describe('LotameId', function() {
     it('should save the expiry', function () {
       sinon.assert.calledWith(
         setLocalStorageStub,
-        '_lota_expiry', 10);
+        'panoramaId_expiry', 10);
 
       sinon.assert.calledWith(
         setCookieStub,
-        '_lota_expiry', 10
+        'panoramaId_expiry', 10
       );
     });
 
     it('should save the id', function () {
       sinon.assert.calledWith(
         setLocalStorageStub,
-        '_lota_pano',
+        'panoramaId',
         'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a'
       );
 
       sinon.assert.calledWith(
         setCookieStub,
-        '_lota_pano',
+        'panoramaId',
         'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a'
       );
     });
@@ -117,14 +112,14 @@ describe('LotameId', function() {
     let submoduleCallback;
 
     this.beforeEach(function () {
-      getLocalStorageStub.withArgs('_lota_expiry').returns(Date.now() + 100000);
+      getLocalStorageStub.withArgs('panoramaId_expiry').returns(Date.now() + 100000);
       getCookieStub
-        .withArgs('_lota_pano')
+        .withArgs('panoramaId')
         .returns(
           'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a'
         );
 
-      submoduleCallback = lotameIdSubmodule.getId({});
+      submoduleCallback = lotamePanoramaIdSubmodule.getId({});
     });
 
     it('should not call the remote server when getId is called', function () {
@@ -140,15 +135,15 @@ describe('LotameId', function() {
 
     this.beforeEach(function () {
       getLocalStorageStub
-        .withArgs('_lota_expiry')
+        .withArgs('panoramaId_expiry')
         .returns(1000);
       getLocalStorageStub
-        .withArgs('_lota_pano')
+        .withArgs('panoramaId')
         .returns(
           'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a'
         );
 
-      let submoduleCallback = lotameIdSubmodule.getId({}).callback;
+      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
       submoduleCallback(callBackSpy);
 
       request = server.requests[0];
@@ -160,7 +155,7 @@ describe('LotameId', function() {
           profile_id: '4ec137245858469eb94a4e248f238694',
           core_id:
             'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a',
-          expiry_ms: 3600000
+          expiry_ts: 3600000
         })
       );
     });
@@ -175,7 +170,7 @@ describe('LotameId', function() {
     let callBackSpy = sinon.spy();
 
     this.beforeEach(function () {
-      let submoduleCallback = lotameIdSubmodule.getId({}, {
+      let submoduleCallback = lotamePanoramaIdSubmodule.getId({}, {
         gdprApplies: true,
         consentString: 'consentGiven'
       }).callback;
@@ -190,7 +185,7 @@ describe('LotameId', function() {
           profile_id: '4ec137245858469eb94a4e248f238694',
           core_id:
             'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87a',
-          expiry_ms: 3600000,
+          expiry_ts: 3600000,
         })
       );
     });
@@ -201,13 +196,15 @@ describe('LotameId', function() {
 
     it('should pass the gdpr consent string back', function() {
       expect(request.url).to.be.eq(
-        'https://mconrad.dev.lotame.com:5555/id?gdpr_consent=consentGiven'
+        'https://bcp.dev.lotame.com/id?gdpr_consent=consentGiven'
       );
     });
   });
 
   it('should retrieve the id when decode is called', function() {
-    var id = lotameIdSubmodule.decode('1234');
-    expect(id).to.be.eql('1234');
+    var id = lotamePanoramaIdSubmodule.decode('1234');
+    expect(id).to.be.eql({
+      'lotamePanoramaId': '1234'
+    });
   });
 });
