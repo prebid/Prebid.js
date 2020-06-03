@@ -289,22 +289,29 @@ window.nobid.renderTag = function(doc, id, win) {
 }
 window.addEventListener('message', function (event) {
   let key = event.message ? 'message' : 'data';
-  let adObject = {};
-  try {
-    adObject = JSON.parse(event[key]);
-  } catch (e) {
-    return;
-  }
-  if (adObject.message === 'nbTagRenderer.requestAdMarkup') {
-    log('Prebid adapter received event nbTagRenderer.requestAdMarkup adId: ' + adObject.adId);
-    if (window.nobid && window.nobid.renderTag) {
-      log('Prebid send event to source');
-      var bid = window.nobid.bidResponses['' + adObject.adId];
+  var msg = event[key];
+  if (msg.startsWith('nbTagRenderer.requestAdMarkup|')) {
+    log('Prebid received nbTagRenderer.requestAdMarkup event');
+    var adId = msg.substring(msg.indexOf('|') + 1);
+    if (window.nobid && window.nobid.bidResponses) {
+      var bid = window.nobid.bidResponses['' + adId];
       if (bid && bid.adm2) {
-        event.source.postMessage(JSON.stringify({
-          message: 'nbTagRenderer.renderAdInSafeFrame',
-          ad: bid.adm2
-        }), '*');
+        var markup = null;
+        if (bid.is_combo && bid.adm_combo) {
+          for (var i in bid.adm_combo) {
+            var combo = bid.adm_combo[i];
+            if (!combo.done) {
+              markup = combo.adm;
+              combo.done = true;
+              break;
+            }
+          }
+        } else {
+          markup = bid.adm2;
+        }
+        if (markup) {
+          event.source.postMessage('nbTagRenderer.renderAdInSafeFrame|' + markup, '*');
+        }
       }
     }
   }
