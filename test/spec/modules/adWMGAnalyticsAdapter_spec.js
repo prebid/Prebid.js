@@ -1,14 +1,11 @@
 import adWMGAnalyticsAdapter from 'modules/adWMGAnalyticsAdapter.js';
 import { expect } from 'chai';
-const sinon = require('sinon');
+import { server } from 'test/mocks/xhr.js';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('adWMG Analytics', function () {
-  let xhr = sinon.useFakeXMLHttpRequest();
-  let requests = [];
-
   let timestamp = new Date() - 256;
   let auctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
   let timeout = 1500;
@@ -114,20 +111,12 @@ describe('adWMG Analytics', function () {
     ]
   }];
 
-  before(function () {
-    xhr.onCreate = function (request) {
-      requests.push(request);
-    };
-  });
-
   after(function () {
-    xhr.restore();
     adWMGAnalyticsAdapter.disableAnalytics();
   });
 
   describe('main test flow', function () {
     beforeEach(function () {
-      global.XMLHttpRequest = sinon.useFakeXMLHttpRequest();
       sinon.stub(events, 'getEvents').returns([]);
     });
 
@@ -162,15 +151,21 @@ describe('adWMG Analytics', function () {
     });
 
     it('should be two xhr requests', function () {
-      expect(requests.length).to.equal(2);
+      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(constants.EVENTS.BID_WON, wonRequest);
+      expect(server.requests.length).to.equal(2);
     });
 
     it('second request should be bidWon', function () {
-      expect(JSON.parse(requests[1].requestBody).events[0].status).to.equal(expectedBidWonData.events[0].status);
+      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(constants.EVENTS.BID_WON, wonRequest);
+      expect(JSON.parse(server.requests[1].requestBody).events[0].status).to.equal(expectedBidWonData.events[0].status);
     });
 
     it('check bidWon data', function () {
-      let realBidWonData = JSON.parse(requests[1].requestBody);
+      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(constants.EVENTS.BID_WON, wonRequest);
+      let realBidWonData = JSON.parse(server.requests[1].requestBody);
       expect(realBidWonData.publisher_id).to.equal(expectedBidWonData.publisher_id);
       expect(realBidWonData.site).to.equal(expectedBidWonData.site);
       expect(realBidWonData.ad_unit_type[0]).to.equal(expectedBidWonData.ad_unit_type[0]);
