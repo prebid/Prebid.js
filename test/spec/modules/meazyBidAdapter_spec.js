@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
+import * as utils from 'src/utils.js';
 import { expect } from 'chai';
-import { spec } from 'modules/meazyBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/meazyBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const MEAZY_PID = '6910b7344ae566a1'
 const VALID_ENDPOINT = `https://rtb-filter.meazy.co/pbjs?host=${utils.getOrigin()}&api_key=${MEAZY_PID}`;

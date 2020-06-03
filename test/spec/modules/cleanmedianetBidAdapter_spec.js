@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {spec, helper} from 'modules/cleanmedianetBidAdapter';
-import * as utils from 'src/utils';
-import {newBidder} from '../../../src/adapters/bidderFactory';
+import {spec, helper} from 'modules/cleanmedianetBidAdapter.js';
+import * as utils from 'src/utils.js';
+import {newBidder} from '../../../src/adapters/bidderFactory.js';
 
 const supplyPartnerId = '123';
 const adapter = newBidder(spec);

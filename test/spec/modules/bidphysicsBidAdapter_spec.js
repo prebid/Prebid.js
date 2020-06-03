@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/bidphysicsBidAdapter';
+import {spec} from 'modules/bidphysicsBidAdapter.js';
 
 const REQUEST = {
   'bidderCode': 'bidphysics',

@@ -1,8 +1,7 @@
-import { logError, replaceAuctionPrice } from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import { NATIVE } from '../src/mediaTypes';
-import { parse as parseUrl } from '../src/url';
+import { logError, replaceAuctionPrice, parseUrl } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { NATIVE } from '../src/mediaTypes.js';
 
 export const ENDPOINT = 'https://app.readpeak.com/header/prebid';
 

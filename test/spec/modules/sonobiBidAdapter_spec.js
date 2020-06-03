@@ -1,7 +1,7 @@
 import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/sonobiBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
-import {userSync} from '../../../src/userSync';
+import { spec, _getPlatform } from 'modules/sonobiBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import {userSync} from '../../../src/userSync.js';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -497,6 +497,20 @@ describe('SonobiBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
     });
+
+    it('should make a request to the url defined in the bidder param', function() {
+      const bRequest = [
+        {
+          ...bidRequest[0],
+          params: {
+            ...bidRequest[0].params,
+            bid_request_url: 'https://iad-2-apex.go.sonobi.com/trinity.json'
+          }
+        }
+      ];
+      const bidRequests = spec.buildRequests(bRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://iad-2-apex.go.sonobi.com/trinity.json');
+    })
   });
 
   describe('.interpretResponse', function () {

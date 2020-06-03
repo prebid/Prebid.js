@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const AOL_BIDDERS_CODES = {
   AOL: 'aol',
@@ -100,6 +100,7 @@ function resolveEndpointCode(bid) {
 
 export const spec = {
   code: AOL_BIDDERS_CODES.AOL,
+  gvlid: 25,
   aliases: [AOL_BIDDERS_CODES.ONEMOBILE, AOL_BIDDERS_CODES.ONEDISPLAY],
   supportedMediaTypes: [BANNER],
   isBidRequestValid(bid) {

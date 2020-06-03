@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { isInteger } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { isInteger } from '../src/utils.js';
 
 const BIDDER_CODE = 'getintent';
 const IS_NET_REVENUE = true;

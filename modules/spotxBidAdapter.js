@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { Renderer } from '../src/Renderer';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'spotx';
 const URL = 'https://search.spotxchange.com/openrtb/2.3/dados/';
@@ -10,6 +10,7 @@ export const GOOGLE_CONSENT = { consented_providers: ['3', '7', '11', '12', '15'
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 165,
   aliases: ['spotx'],
   supportedMediaTypes: [VIDEO],
 
@@ -157,6 +158,14 @@ export const spec = {
 
       if (utils.getBidIdParameter('start_delay', bid.params) != '') {
         spotxReq.video.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params));
+      }
+
+      if (utils.getBidIdParameter('min_duration', bid.params) != '') {
+        spotxReq.video.minduration = utils.getBidIdParameter('min_duration', bid.params);
+      }
+
+      if (utils.getBidIdParameter('max_duration', bid.params) != '') {
+        spotxReq.video.maxduration = utils.getBidIdParameter('max_duration', bid.params);
       }
 
       if (bid.crumbs && bid.crumbs.pubcid) {

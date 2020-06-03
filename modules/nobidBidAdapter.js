@@ -1,8 +1,12 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.0';
+window.nobidVersion = '1.2.5';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -10,6 +14,15 @@ window.nobid.bidWonTotal = 0;
 window.nobid.refreshCount = 0;
 function log(msg, obj) {
   utils.logInfo('-NoBid- ' + msg, obj)
+}
+function nobidSetCookie(cname, cvalue, hours) {
+  var d = new Date();
+  d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
+  var expires = 'expires=' + d.toUTCString();
+  storage.setCookie(cname, cvalue, expires);
+}
+function nobidGetCookie(cname) {
+  return storage.getCookie(cname);
 }
 function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
@@ -48,6 +61,21 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return uspConsent;
     }
+    var schain = function(bids) {
+      if (bids && bids.length > 0) {
+        return bids[0].schain
+      }
+      return null;
+    }
+    var coppa = function() {
+      if (config.getConfig('coppa') === true) {
+        return {'coppa': true};
+      }
+      if (bids && bids.length > 0) {
+        return bids[0].coppa
+      }
+      return null;
+    }
     var topLocation = function(bidderRequest) {
       var ret = '';
       if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -74,7 +102,7 @@ function nobidBuildRequests(bids, bidderRequest) {
         var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
-        console.error(e);
+        utils.logWarn('Could not parse screen dimensions, error details:', e);
       }
     }
     var state = {};
@@ -90,6 +118,10 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['ref'] = document.referrer;
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
+    const sch = schain(bids);
+    if (sch) state['schain'] = sch;
+    const cop = coppa();
+    if (cop) state['coppa'] = cop;
     return state;
   }
   function newAdunit(adunitObject, adunits) {
@@ -124,9 +156,6 @@ function nobidBuildRequests(bids, bidderRequest) {
     } else {
       a.g = {};
     }
-    if (adunitObject.companion) {
-      a.c = adunitObject.companion;
-    }
     if (adunitObject.div) {
       removeByAttrValue(adunits, 'd', adunitObject.div);
     }
@@ -136,15 +165,25 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (adunitObject.siteId) {
       a.sid = adunitObject.siteId;
     }
-    /* {"BIDDER_ID":{"WxH":"TAG_ID", "WxH":"TAG_ID"}} */
-    if (adunitObject.rtb) {
-      a.rtb = adunitObject.rtb;
+    if (adunitObject.placementId) {
+      a.pid = adunitObject.placementId;
+    }
+    if (adunitObject.ad_type) {
+      a.at = adunitObject.ad_type;
+    }
+    if (adunitObject.params) {
+      a.params = adunitObject.params;
     }
     adunits.push(a);
     return adunits;
   }
   if (typeof window.nobid.refreshLimit !== 'undefined') {
     if (window.nobid.refreshLimit < window.nobid.refreshCount) return false;
+  }
+  let ublock = nobidGetCookie('_ublock');
+  if (ublock) {
+    log('Request blocked for user. hours: ', ublock);
+    return false;
   }
   /* DISCOVER SLOTS */
   var divids = [];
@@ -156,10 +195,25 @@ function nobidBuildRequests(bids, bidderRequest) {
     divids.push(divid);
     var sizes = bid.sizes;
     siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
-    if (siteId && bid.params && bid.params.tags) {
-      newAdunit({div: divid, sizes: sizes, rtb: bid.params.tags, siteId: siteId}, adunits);
-    } else if (siteId) {
-      newAdunit({div: divid, sizes: sizes, siteId: siteId}, adunits);
+    var placementId = bid.params['placementId'];
+
+    var adType = 'banner';
+    const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+    const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+    if (bid.mediaType === VIDEO || (videoMediaType && context === 'instream')) {
+      adType = 'video';
+    }
+
+    if (siteId) {
+      newAdunit({
+        div: divid,
+        sizes: sizes,
+        siteId: siteId,
+        placementId: placementId,
+        ad_type: adType,
+        params: bid.params
+      },
+      adunits);
     }
   }
   if (siteId) {
@@ -180,7 +234,13 @@ function nobidInterpretResponse(response, bidRequest) {
   var setRefreshLimit = function(response) {
     if (response && typeof response.rlimit !== 'undefined') window.nobid.refreshLimit = response.rlimit;
   }
+  var setUserBlock = function(response) {
+    if (response && typeof response.ublock !== 'undefined') {
+      nobidSetCookie('_ublock', '1', response.ublock);
+    }
+  }
   setRefreshLimit(response);
+  setUserBlock(response);
   var bidResponses = [];
   for (var i = 0; response.bids && i < response.bids.length; i++) {
     var bid = response.bids[i];
@@ -199,8 +259,18 @@ function nobidInterpretResponse(response, bidRequest) {
       netRevenue: true,
       ttl: 300,
       ad: bid.adm,
-      mediaType: BANNER
+      mediaType: bid.atype || BANNER,
     };
+    if (bid.vastUrl) {
+      bidResponse.vastUrl = bid.vastUrl;
+    }
+    if (bid.vastXml) {
+      bidResponse.vastXml = bid.vastXml;
+    }
+    if (bid.videoCacheKey) {
+      bidResponse.videoCacheKey = bid.videoCacheKey;
+    }
+
     bidResponses.push(bidResponse);
   }
   return bidResponses;
@@ -219,7 +289,7 @@ window.nobid.renderTag = function(doc, id, win) {
 }
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
  * Determines whether or not the given bid request is valid.
  *
@@ -249,7 +319,7 @@ export const spec = {
     var buildEndpoint = function() {
       return resolveEndpoint() + 'adreq?cb=' + Math.floor(Math.random() * 11000);
     }
-    log('buildRequests', validBidRequests);
+    log('validBidRequests', validBidRequests);
     if (!validBidRequests || validBidRequests.length <= 0) {
       log('Empty validBidRequests');
       return;
@@ -273,8 +343,8 @@ export const spec = {
      * @return {Bid[]} An array of bids which were nested inside the server.
      */
   interpretResponse: function(serverResponse, bidRequest) {
-    log('interpretResponse', serverResponse);
-    log('interpretResponse', bidRequest);
+    log('interpretResponse -> serverResponse', serverResponse);
+    log('interpretResponse -> bidRequest', bidRequest);
     return nobidInterpretResponse(serverResponse.body, bidRequest);
   },
 
@@ -305,6 +375,17 @@ export const spec = {
         type: 'iframe',
         url: 'https://public.servenobid.com/sync.html' + params
       }];
+    } else if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+      let syncs = [];
+      if (serverResponses[0].body.syncs && serverResponses[0].body.syncs.length > 0) {
+        serverResponses[0].body.syncs.forEach(element => {
+          syncs.push({
+            type: 'image',
+            url: element
+          });
+        })
+      }
+      return syncs;
     } else {
       utils.logWarn('-NoBid- Please enable iframe based user sync.', syncOptions);
       return [];
