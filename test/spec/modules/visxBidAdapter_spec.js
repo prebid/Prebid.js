@@ -46,6 +46,14 @@ describe('VisxAdapter', function () {
       }
     };
     const referrer = bidderRequest.refererInfo.referer;
+    const schainObject = {
+      ver: '1.0',
+      nodes: [
+        {asi: 'exchange2.com', sid: 'abcd', hp: 1},
+        {asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com'}
+      ]
+    };
+    const schainString = JSON.stringify(schainObject);
     let bidRequests = [
       {
         'bidder': 'visx',
@@ -200,6 +208,42 @@ describe('VisxAdapter', function () {
       expect(payload).to.have.property('gdpr_consent', 'AAA');
       expect(payload).to.have.property('gdpr_applies', 1);
     });
+
+    it('if schain is present payload must have schain param', function () {
+      const schainBidRequests = [
+        Object.assign({schain: schainObject}, bidRequests[0]),
+        bidRequests[1],
+        bidRequests[2]
+      ];
+      const request = spec.buildRequests(schainBidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('schain', schainString);
+      expect(payload).to.have.property('u', referrer);
+      expect(payload).to.have.property('pt', 'net');
+      expect(payload).to.have.property('auids', '903535,903535,903536');
+      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
+      expect(payload).to.have.property('cur', 'EUR');
+    });
+
+    it('if userId is available payload must have appropriate params', function () {
+      const schainBidRequests = [
+        Object.assign({userId: {
+          tdid: '111',
+          id5id: '222',
+          digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}}
+        }}, bidRequests[0]),
+        bidRequests[1],
+        bidRequests[2]
+      ];
+      const request = spec.buildRequests(schainBidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.be.an('object');
+      expect(payload).to.have.property('tdid', '111');
+      expect(payload).to.have.property('id5', '222');
+      expect(payload).to.have.property('dtid', 'DTID');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -238,7 +282,6 @@ describe('VisxAdapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
@@ -295,7 +338,6 @@ describe('VisxAdapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
@@ -308,7 +350,6 @@ describe('VisxAdapter', function () {
           'width': 300,
           'height': 600,
           'ad': '<div>test content 2</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
@@ -321,7 +362,6 @@ describe('VisxAdapter', function () {
           'width': 728,
           'height': 90,
           'ad': '<div>test content 3</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
@@ -357,7 +397,6 @@ describe('VisxAdapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'visx',
           'currency': 'PLN',
           'netRevenue': true,
           'ttl': 360,
@@ -487,7 +526,6 @@ describe('VisxAdapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
@@ -500,7 +538,6 @@ describe('VisxAdapter', function () {
           'width': 300,
           'height': 600,
           'ad': '<div>test content 2</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
@@ -513,7 +550,6 @@ describe('VisxAdapter', function () {
           'width': 728,
           'height': 90,
           'ad': '<div>test content 3</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
@@ -526,7 +562,6 @@ describe('VisxAdapter', function () {
           'width': 300,
           'height': 600,
           'ad': '<div>test content 4</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
@@ -539,7 +574,6 @@ describe('VisxAdapter', function () {
           'width': 350,
           'height': 600,
           'ad': '<div>test content 5</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
@@ -600,7 +634,6 @@ describe('VisxAdapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,
@@ -613,7 +646,6 @@ describe('VisxAdapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 2</div>',
-          'bidderCode': 'visx',
           'currency': 'EUR',
           'netRevenue': true,
           'ttl': 360,

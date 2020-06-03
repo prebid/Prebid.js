@@ -20,6 +20,9 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -33,12 +36,12 @@ let _moduleParams = {};
  */
 
 export function setData(data) {
-  utils.setDataInLocalStorage('__adgntseg', JSON.stringify(data));
+  storage.setDataInLocalStorage('__adgntseg', JSON.stringify(data));
 }
 
 function getSegments(adUnits, onDone) {
   try {
-    let jsonData = utils.getDataFromLocalStorage('__adgntseg');
+    let jsonData = storage.getDataFromLocalStorage('__adgntseg');
     if (jsonData) {
       let data = JSON.parse(jsonData);
       if (data.audigent_segments) {

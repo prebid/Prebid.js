@@ -1,5 +1,8 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 const BIDDER_CODE = 'eplanning';
 const rnd = Math.random();
@@ -43,7 +46,7 @@ export const spec = {
       url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
       const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? encodeURIComponent(window.top.document.referrer) : encodeURIComponent(bidderRequest.refererInfo.referer);
 
-      if (utils.hasLocalStorage()) {
+      if (storage.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);
       }
 
@@ -204,7 +207,7 @@ function getSpaces(bidRequests, ml) {
 function getVs(bid) {
   let s;
   let vs = '';
-  if (utils.hasLocalStorage()) {
+  if (storage.hasLocalStorage()) {
     s = getViewabilityData(bid);
     vs += s.render >= 4 ? s.ratio.toString(16) : 'F';
   } else {
@@ -214,8 +217,8 @@ function getVs(bid) {
 }
 
 function getViewabilityData(bid) {
-  let r = utils.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
-  let v = utils.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
+  let r = storage.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
+  let v = storage.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
   let ratio = r > 0 ? (v / r) : 0;
   return {
     render: r,
@@ -408,9 +411,9 @@ function visibilityHandler(obj) {
 function registerAuction(storageID) {
   let value;
   try {
-    value = utils.getDataFromLocalStorage(storageID);
+    value = storage.getDataFromLocalStorage(storageID);
     value = value ? window.parseInt(value, 10) + 1 : 1;
-    utils.setDataInLocalStorage(storageID, value);
+    storage.setDataInLocalStorage(storageID, value);
   } catch (exc) {
     return false;
   }

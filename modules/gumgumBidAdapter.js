@@ -1,14 +1,17 @@
 import * as utils from '../src/utils.js'
 
-import { config } from '../src/config.js'
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import includes from 'core-js/library/fn/array/includes.js';
+
+import { config } from '../src/config.js'
+import { getStorageManager } from '../src/storageManager.js';
+import includes from 'core-js-pure/features/array/includes';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
+
+const storage = getStorageManager();
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
-const DT_CREDENTIALS = { member: 'YcXr87z2lpbB' }
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const TIME_TO_LIVE = 60
 
@@ -55,9 +58,9 @@ function _getBrowserParams(topWindowUrl) {
     sw: topScreen.width,
     sh: topScreen.height,
     pu: topUrl,
-    ce: utils.cookiesAreEnabled(),
+    ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: JSON.stringify({ t: 0, rq: 8 }),
+    jcsi: encodeURIComponent(JSON.stringify({ t: 0, rq: 8 })),
     ogu: getOgURL()
   }
 
@@ -87,10 +90,6 @@ function _getTradeDeskIDParam(userId) {
 
 function _getDigiTrustQueryParams(userId) {
   let digiTrustId = userId.digitrustid && userId.digitrustid.data;
-  if (!digiTrustId) {
-    const digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
-    digiTrustId = (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
-  }
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return {};
@@ -139,6 +138,8 @@ function isBidRequestValid (bid) {
     case !!(params.inSlot): break;
     case !!(params.ICV): break;
     case !!(params.video): break;
+    case !!(params.inVideo): break;
+
     default:
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
@@ -238,7 +239,11 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.t = params.video;
       data.pi = 7;
     }
-
+    if (params.inVideo) {
+      data = Object.assign(data, _getVidParams(mediaTypes.video));
+      data.t = params.inVideo;
+      data.pi = 6;
+    }
     if (gdprConsent) {
       data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
     }
@@ -319,6 +324,7 @@ function interpretResponse (serverResponse, bidRequest) {
       // referrer: REFERER,
       ...(product === 7 && { vastXml: markup }),
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
+      ...(product === 6 && {ad: markup}),
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
       currency: cur || 'USD',
