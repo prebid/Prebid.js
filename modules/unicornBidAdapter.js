@@ -65,9 +65,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     imp,
     cur: UNICORN_DEFAULT_CURRENCY,
     site: {
-      id: window.location.hostname,
+      id: utils.deepAccess(validBidRequests[0], 'params.mediaId') || '',
       publisher: {
-        id: utils.deepAccess(validBidRequests[0], 'params.accountId')
+        id: utils.deepAccess(validBidRequests[0], 'params.publisherId') || 0
       },
       domain: window.location.hostname,
       page: window.location.href,
@@ -86,6 +86,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
         stype: 'prebid_uncn',
         bidder: BIDDER_CODE
       }
+    },
+    ext: {
+      accountId: utils.deepAccess(validBidRequests[0], 'params.accountId')
     }
   };
   utils.logInfo('[UNICORN] OpenRTB Formatted Request:', request);

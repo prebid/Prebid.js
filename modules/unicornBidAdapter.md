@@ -23,6 +23,8 @@ Module that connects to UNICORN.
             params: {
                 placementId: 'rectangle-ad-1', // OPTIONAL: If placementId is empty, adunit code will be used as placementId. 
                 bidfloorCpm: 0.2, // OPTIONAL: Floor CPM (JPY) defaults to 0
+                publisherId: 99999 // OPTIONAL: Account specific publisher id
+                mediaId: "uc" // OPTIONAL: Publisher specific media id
                 accountId: 12345, // REQUIRED: Account ID for charge request
                 bcat: ['IAB-1', 'IAB-2'] // OPTIONAL: blocked IAB categories
             }
