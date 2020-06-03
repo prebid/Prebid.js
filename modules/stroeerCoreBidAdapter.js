@@ -3,8 +3,7 @@ import includes from 'core-js/library/fn/array/includes.js';
 import find from 'core-js/library/fn/array/find.js';
 import {ajax} from '../src/ajax.js';
 import {BANNER} from '../src/mediaTypes.js';
-
-const utils = require('../src/utils.js');
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'stroeerCore';
 const DEFAULT_HOST = 'hb.adscale.de';
