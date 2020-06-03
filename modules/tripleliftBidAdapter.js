@@ -141,7 +141,7 @@ function _buildPostBody(bidRequests) {
 function _getFloor (bid) {
   let floor = null;
   if (typeof bid.getFloor === 'function') {
-    let floorInfo = bid.getFloor({
+    const floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: 'banner',
       size: _sizes(bid.sizes)
