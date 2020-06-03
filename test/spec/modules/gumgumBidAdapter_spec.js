@@ -261,12 +261,13 @@ describe('gumgumAdapter', function () {
         expect(bidRequest.data).to.not.include.any.keys('ns');
       }
     });
-    it('has jcsi param correctly encoded', function () {
+    it('adds jcsi param with correct keys', function () {
+      const expectedKeys = Object.keys(JCSI).sort();
       const jcsi = JSON.stringify(JCSI);
-      const encodedJCSI = encodeURIComponent(jcsi);
       const bidRequest = spec.buildRequests(bidRequests)[0];
-      expect(bidRequest.data.jcsi).to.not.contain(/\{.*\}/);
-      expect(bidRequest.data.jcsi).to.eq(encodedJCSI);
+      const actualKeys = Object.keys(JSON.parse(bidRequest.data.jcsi)).sort();
+      expect(actualKeys).to.eq(actualKeys);
+      expect(bidRequest.data.jcsi).to.eq(jcsi);
     });
   })
 
