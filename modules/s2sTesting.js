@@ -15,8 +15,11 @@ s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB s
 
 // load s2sConfig
 config.getConfig('s2sConfig', config => {
-  testing = config.s2sConfig && config.s2sConfig.testing;
-  s2sTesting.calculateBidSources(config.s2sConfig);
+  if (config && config.s2sConfig) {
+    const s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
+    testing = s2sConfigs.some(i => i.testing);
+    s2sTesting.calculateBidSources(s2sConfigs);
+  }
 });
 
 s2sTesting.getSourceBidderMap = function(adUnits = []) {
@@ -53,18 +56,16 @@ s2sTesting.getSourceBidderMap = function(adUnits = []) {
 
 /**
  * @function calculateBidSources determines the source for each s2s bidder based on bidderControl weightings.  these can be overridden at the adUnit level
- * @param s2sConfig server-to-server configuration
+ * @param s2sConfigs server-to-server configuration
  */
-s2sTesting.calculateBidSources = function(s2sConfig = {}) {
-  // bail if testing is not turned on
-  if (!testing) {
-    return;
-  }
+s2sTesting.calculateBidSources = function(s2sConfigs) {
   bidSource = {}; // reset bid sources
   // calculate bid source (server/client) for each s2s bidder
-  var bidderControl = s2sConfig.bidderControl || {};
-  (s2sConfig.bidders || []).forEach((bidder) => {
-    bidSource[bidder] = s2sTesting.getSource(bidderControl[bidder] && bidderControl[bidder].bidSource) || SERVER; // default to server
+  s2sConfigs.forEach(s2sConfig => {
+    var bidderControl = s2sConfig.bidderControl || {};
+    (s2sConfig.bidders || []).forEach((bidder) => {
+      bidSource[bidder] = s2sTesting.getSource(bidderControl[bidder] && bidderControl[bidder].bidSource) || SERVER; // default to server
+    });
   });
 };
 

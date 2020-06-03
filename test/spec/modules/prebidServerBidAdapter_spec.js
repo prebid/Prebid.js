@@ -2037,5 +2037,48 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
     });
+
+    it('allows array value', function () {
+      config.setConfig({
+        s2sConfig: [{
+          accountId: '1',
+          enabled: true,
+          bidders: ['appnexus'],
+          timeout: 1000,
+          cacheMarkup: 2,
+          endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        }]});
+      expect(config.getConfig('s2sConfig')).to.be.an('array').that.is.not.empty;
+    });
+
+    it('allows object value', function () {
+      config.setConfig({
+        s2sConfig: {
+          accountId: '2',
+          enabled: true,
+          bidders: ['appnexus'],
+          timeout: 2000,
+          cacheMarkup: 2,
+          endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        }});
+      expect(config.getConfig('s2sConfig')).to.be.an('object').that.is.not.empty;
+    });
+
+    it('updates s2sConfig bidders by filtering out if already associated with a previous s2sConfig', function () {
+      config.setConfig({
+        s2sConfig: [{
+          bidders: ['one', 'two', 'three']
+        }, {
+          bidders: ['zero', 'one', 'two', 'three', 'four']
+        }]});
+
+      const s2sConf = config.getConfig('s2sConfig');
+      expect(s2sConf).to.be.an('array').that.is.not.empty;
+      expect(s2sConf).to.deep.equal([{
+        bidders: ['one', 'two', 'three']
+      }, {
+        bidders: ['zero', 'four']
+      }]);
+    });
   });
 });

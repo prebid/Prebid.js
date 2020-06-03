@@ -283,7 +283,16 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 function auctionInitHandler(args) {
   s2sBidders = (function() {
     let s2sConf = config.getConfig('s2sConfig');
-    return (s2sConf && utils.isArray(s2sConf.bidders)) ? s2sConf.bidders : [];
+    if (Array.isArray(s2sConf) || utils.isPlainObject(s2sConf)) {
+      const s2sConfigs = Array.isArray(s2sConf) ? s2sConf : [s2sConf];
+      return s2sConfigs.reduce((bidders, s2sConfig) => {
+        if (s2sConfig && Array.isArray(s2sConfig.bidders)) {
+          return bidders.concat(s2sConfig.bidders.slice());
+        }
+        return bidders;
+      }, []);
+    }
+    return [];
   }());
   let cacheEntry = utils.pick(args, [
     'timestamp',
