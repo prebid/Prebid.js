@@ -24,9 +24,10 @@ export const spec = {
     const targets = validBidRequests.map(bid => bid.params.data).reduce(mergeTargets, {});
     const gdprParams = (gdprConsent && gdprConsent.consentString) ? [`xt${gdprConsent.consentString}`] : [];
     const refererParams = (refererInfo && refererInfo.referer) ? [`xf${base64urlEncode(refererInfo.referer)}`] : [];
+    const id5Params = (getId5Id(validBidRequests)) ? [`x5${getId5Id(validBidRequests)}`] : [];
     const targetsParams = Object.keys(targets).map(targetCode => targetCode + targets[targetCode].join(';'));
     const slotsParams = validBidRequests.map(bid => 'sl' + bidToSlotName(bid));
-    const params = [...slotsParams, ...targetsParams, ...gdprParams, ...refererParams].map(s => `/${s}`).join('');
+    const params = [...slotsParams, ...targetsParams, ...gdprParams, ...refererParams, ...id5Params].map(s => `/${s}`).join('');
     const cacheBuster = '?t=' + new Date().getTime();
     const uri = 'https://ads-' + account + '.adhese.com/json' + params + cacheBuster;
 
@@ -132,6 +133,12 @@ function bidToSlotName(bid) {
 
 function getAccount(validBidRequests) {
   return validBidRequests[0].params.account;
+}
+
+function getId5Id(validBidRequests) {
+  if(validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.id5id) {
+    return validBidRequests[0].userId.id5id;  
+  }
 }
 
 function getbaseAdResponse(response) {
