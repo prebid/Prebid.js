@@ -102,9 +102,8 @@ describe('MediaSquare bid adapter tests', function () {
     expect(spec.aliases[0]).to.equal('msq');
   });
   it('Verifies if bid request valid', function () {
-	expect(spec.isBidRequestValid(DEFAULT_PARAMS[0])).to.equal(true);
+  expect(spec.isBidRequestValid(DEFAULT_PARAMS[0])).to.equal(true);
   });
-  
   it('Verifies bid won', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
     const response = spec.interpretResponse(BID_RESPONSE, request);
@@ -126,7 +125,6 @@ describe('MediaSquare bid adapter tests', function () {
       iframeEnabled: false,
       pixelEnabled: false,
     }, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
-	expect(syncs).to.equal(false);
+  expect(syncs).to.equal(false);
   });
-
 });
