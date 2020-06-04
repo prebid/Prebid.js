@@ -33,7 +33,9 @@ export const spec = {
     let codes = [];
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     const test = config.getConfig('debug') ? 1 : 0;
-    Object.values(validBidRequests).forEach(adunitValue => {
+    let adunitValue = null;
+    Object.keys(validBidRequests).forEach(key => {
+      adunitValue = validBidRequests[key];
       codes.push({
         owner: adunitValue.params.owner,
         code: adunitValue.params.code,
@@ -74,8 +76,10 @@ export const spec = {
     // const headerValue = serverResponse.headers.get('some-response-header');
     const bidResponses = [];
     let bidResponse = null;
+    let value = null;
     if (serverBody.hasOwnProperty('responses')) {
-      Object.values(serverBody['responses']).forEach(value => {
+      Object.keys(serverBody['responses']).forEach(key => {
+        value = serverBody['responses'][key];
         bidResponse = {
           requestId: value['bid_id'],
           cpm: value['cpm'],
