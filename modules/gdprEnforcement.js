@@ -19,12 +19,16 @@ const TCF2 = {
   'purpose2': { id: 2, name: 'basicAds' }
 }
 
-const defaultRules = [{
+const DEFAULT_RULES = [{
   purpose: 'storage',
-  enforcePurpose: true
+  enforcePurpose: true,
+  enforceVendor: true,
+  vendorExceptions: []
 }, {
   purpose: 'basicAds',
-  enforcePurpose: true
+  enforcePurpose: true,
+  enforceVendor: true,
+  vendorExceptions: []
 }];
 
 let purpose1Rule;
@@ -47,7 +51,7 @@ function getGvlid(bidderCode) {
 }
 
 /**
- * This function takes in rules and consentData as input and validates against the consentData provided. If it returns true Prebid will allow the next call else it will log a warning
+ * This function takes in a rule and consentData and validates against the consentData provided. If it returns true Prebid will allow the next call else it will log a warning
  * @param {Object} rule - enforcement rules set in config
  * @param {Object} consentData - gdpr consent data
  * @param {string=} currentModule - Bidder code of the current module
@@ -173,7 +177,7 @@ export function userIdHook(fn, submodules, consentData) {
         }
         return undefined;
       }).filter(module => module)
-      fn.call(this, userIdModules, consentData);
+      fn.call(this, userIdModules, {...consentData, hasValidated: true});
     } else {
       utils.logInfo('Enforcing TCF2 only');
       fn.call(this, submodules, consentData);
@@ -184,8 +188,8 @@ export function userIdHook(fn, submodules, consentData) {
 }
 
 /**
- * Checks if the bidder is given consent. If yes, bid adapter is allowed to send ajax request to their endpoint, else, no request
- * is sent. Enforces "purpose 2 (basic ads)" of TCF v2.0 spec
+ * Checks if a bidder is allowed. If it's not allowed, the bidder adapter won't send request to the endpoint.
+ * Enforces "purpose 2 (basic ads)" of TCF v2.0 spec
  * @param {Function} fn - Function reference to the original function.
  * @param {Array<adUnits>} adUnits
  */
@@ -228,8 +232,8 @@ const hasPurpose2 = (rule) => { return rule.purpose === TCF2.purpose2.name }
 export function setEnforcementConfig(config) {
   const rules = utils.deepAccess(config, 'gdpr.rules');
   if (!rules) {
-    utils.logWarn('GDPR enforcement rules not defined, enforcing purpose1 and purpose2 by default');
-    enforcementRules = defaultRules;
+    utils.logWarn('GDPR enforcement rules not defined, enforcing TCF2 Purpose 1 and Purpose 2');
+    enforcementRules = DEFAULT_RULES;
   } else {
     enforcementRules = rules;
   }
@@ -245,7 +249,7 @@ export function setEnforcementConfig(config) {
     getHook('validateGdprEnforcement').before(userIdHook, 47);
   }
   if (purpose2Rule) {
-    adapterManager.makeBidRequests.before(makeBidRequestsHook);
+    getHook('makeBidRequests').before(makeBidRequestsHook);
   }
 }
 

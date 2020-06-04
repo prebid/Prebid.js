@@ -9,7 +9,7 @@ import { executeStorageCallbacks } from 'src/prebid.js';
 import events from 'src/events.js';
 import { EVENTS } from 'src/constants.json';
 
-describe.skip('gdpr enforcement', function () {
+describe('gdpr enforcement', function () {
   let nextFnSpy;
   let logWarnSpy;
   let gdprDataHandlerStub;
@@ -369,7 +369,11 @@ describe.skip('gdpr enforcement', function () {
         }
       }]
       userIdHook(nextFnSpy, submodules, consentData);
+      // Should pass back hasValidated flag since version 2
+      const args = nextFnSpy.getCalls()[0].args;
+      expect(args[1].hasValidated).to.be.true;
       expect(nextFnSpy.calledOnce).to.equal(true);
+      sinon.assert.calledWith(nextFnSpy, submodules, {...consentData, hasValidated: true});
     });
 
     it('should allow userId module if gdpr not in scope', function () {
@@ -381,6 +385,9 @@ describe.skip('gdpr enforcement', function () {
       }];
       let consentData = null;
       userIdHook(nextFnSpy, submodules, consentData);
+      // Should not pass back hasValidated flag since version 2
+      const args = nextFnSpy.getCalls()[0].args;
+      expect(args[1]).to.be.null;
       expect(nextFnSpy.calledOnce).to.equal(true);
       sinon.assert.calledWith(nextFnSpy, submodules, consentData);
     });
@@ -400,6 +407,7 @@ describe.skip('gdpr enforcement', function () {
       consentData.vendorData = staticConfig.consentData.getTCData;
       consentData.apiVersion = 2;
       consentData.gdprApplies = true;
+
       let submodules = [{
         submodule: {
           gvlid: 1,
@@ -419,7 +427,7 @@ describe.skip('gdpr enforcement', function () {
           name: 'sampleUserId'
         }
       }]
-      sinon.assert.calledWith(nextFnSpy, expectedSubmodules, consentData);
+      sinon.assert.calledWith(nextFnSpy, expectedSubmodules, {...consentData, hasValidated: true});
     });
   });
 
@@ -458,7 +466,7 @@ describe.skip('gdpr enforcement', function () {
       config.resetConfig();
       sandbox.restore();
     });
-    it.skip('should block bidder which does not have consent and allow bidder which has consent', function () {
+    it('should block bidder which does not have consent and allow bidder which has consent', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -708,7 +716,7 @@ describe.skip('gdpr enforcement', function () {
         expect(isAllowed).to.equal(false);
       });
 
-      it('should return true when (enforcePurpose=false AND enforceVendor[p,v]===true AND vendorConsent[v]===true) OR (purposesLITransparency[p]===true)', function() {
+      it('should return true when (enforcePurpose=false AND enforceVendor[p,v]===true AND vendorConsent[v]===true) OR (purposesLITransparency[p]===true)', function () {
         // 'enforcePurpose' is 'false' and 'enforceVendor' is 'true'
         const gdprRule = createGdprRule('basicAds', false, true, []);
 
