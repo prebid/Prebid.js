@@ -64,14 +64,6 @@ userIdAsEids = [
     },
 
     {
-        source: 'digitru.st',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
-        }]
-    },
-
-    {
         source: 'criteo.com',
         uids: [{
             id: 'some-random-id-value',

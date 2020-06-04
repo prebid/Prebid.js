@@ -62,15 +62,6 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // DigiTrust
-  'digitrustid': {
-    getValue: function(data) {
-      return data.data.id;
-    },
-    source: 'digitru.st',
-    atype: 1
-  },
-
   // criteo
   'criteoId': {
     source: 'criteo.com',
