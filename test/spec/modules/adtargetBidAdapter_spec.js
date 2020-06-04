@@ -1,17 +1,10 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adtelligentBidAdapter.js';
+import { spec } from 'modules/adtargetBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 
-const EXPECTED_ENDPOINTS = [
-  'https://ghb.adtelligent.com/v2/auction/',
-  'https://ghb1.adtelligent.com/v2/auction/',
-  'https://ghb2.adtelligent.com/v2/auction/',
-  'https://ghb.adtelligent.com/v2/auction/'
-];
-
 const DISPLAY_REQUEST = {
-  'bidder': 'adtelligent',
+  'bidder': 'adtarget',
   'params': {
     'aid': 12345
   },
@@ -25,7 +18,7 @@ const DISPLAY_REQUEST = {
 };
 
 const VIDEO_REQUEST = {
-  'bidder': 'adtelligent',
+  'bidder': 'adtarget',
   'mediaTypes': {
     'video': {
       'playerSize': [[480, 360], [640, 480]]
@@ -40,28 +33,10 @@ const VIDEO_REQUEST = {
   'bidId': '84ab500420319d'
 };
 
-const ADPOD_REQUEST = {
-  'bidder': 'adtelligent',
-  'mediaTypes': {
-    'video': {
-      'context': 'adpod',
-      'playerSize': [[640, 480]],
-      'anyField': 10
-    }
-  },
-  'params': {
-    'aid': 12345
-  },
-  'bidderRequestId': '7101db09af0db2',
-  'auctionId': '2e41f65424c87c',
-  'adUnitCode': 'adunit-code',
-  'bidId': '2e41f65424c87c'
-};
-
 const SERVER_VIDEO_RESPONSE = {
   'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
-    'vastUrl': 'http://rtb.adtelligent.com/vast/?adid=44F2AEB9BFC881B3',
+    'vastUrl': 'https://rtb.adtarget.com/vast/?adid=44F2AEB9BFC881B3',
     'requestId': '2e41f65424c87c',
     'url': '44F2AEB9BFC881B3',
     'creative_id': 342516,
@@ -71,10 +46,8 @@ const SERVER_VIDEO_RESPONSE = {
     'cur': 'USD',
     'width': 640,
     'cpm': 0.9
-  }
-  ]
+  }]
 };
-const SERVER_OUSTREAM_VIDEO_RESPONSE = SERVER_VIDEO_RESPONSE;
 const SERVER_DISPLAY_RESPONSE = {
   'source': { 'aid': 12345, 'pubId': 54321 },
   'bids': [{
@@ -104,24 +77,6 @@ const SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS = {
   'cookieURLs': ['link3', 'link4'],
   'cookieURLSTypes': ['image', 'iframe']
 };
-const outstreamVideoBidderRequest = {
-  bidderCode: 'bidderCode',
-  bids: [{
-    'params': {
-      'aid': 12345,
-      'outstream': {
-        'video_controls': 'show'
-      }
-    },
-    mediaTypes: {
-      video: {
-        context: 'outstream',
-        playerSize: [640, 480]
-      }
-    },
-    bidId: '2e41f65424c87c'
-  }]
-};
 const videoBidderRequest = {
   bidderCode: 'bidderCode',
   bids: [{ mediaTypes: { video: {} }, bidId: '2e41f65424c87c' }]
@@ -143,7 +98,7 @@ const displayBidderRequestWithConsents = {
 };
 
 const videoEqResponse = [{
-  vastUrl: 'http://rtb.adtelligent.com/vast/?adid=44F2AEB9BFC881B3',
+  vastUrl: 'https://rtb.adtarget.com/vast/?adid=44F2AEB9BFC881B3',
   requestId: '2e41f65424c87c',
   creativeId: 342516,
   mediaType: 'video',
@@ -168,7 +123,7 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe('adtelligentBidAdapter', () => {
+describe.only('adtargetBidAdapter', () => {
   const adapter = newBidder(spec);
   describe('inherited functions', () => {
     it('exists and is a function', () => {
@@ -244,11 +199,6 @@ describe('adtelligentBidAdapter', () => {
     const displayRequest = spec.buildRequests(displayBidRequests, {});
     const videoRequest = spec.buildRequests(videoBidRequests, {});
     const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, {});
-    const rotatingRequest = spec.buildRequests(displayBidRequests, {});
-    it('rotates endpoints', () => {
-      const bidReqUrls = [displayRequest[0], videoRequest[0], videoAndDisplayRequests[0], rotatingRequest[0]].map(br => br.url);
-      expect(bidReqUrls).to.deep.equal(EXPECTED_ENDPOINTS);
-    })
 
     it('building requests as arrays', () => {
       expect(videoRequest).to.be.a('array');
@@ -263,13 +213,7 @@ describe('adtelligentBidAdapter', () => {
       expect(displayRequest.every(comparator)).to.be.true;
       expect(videoAndDisplayRequests.every(comparator)).to.be.true;
     });
-    it('forms correct ADPOD request', () => {
-      const pbBidReqData = spec.buildRequests([ADPOD_REQUEST], {})[0].data;
-      const impRequest = pbBidReqData.BidRequests[0]
-      expect(impRequest.AdType).to.be.equal('video');
-      expect(impRequest.Adpod).to.be.a('object');
-      expect(impRequest.Adpod.anyField).to.be.equal(10);
-    })
+
     it('sends correct video bid parameters', () => {
       const data = videoRequest[0].data;
 
@@ -383,27 +327,12 @@ describe('adtelligentBidAdapter', () => {
 
     it('handles video nobid responses', () => {
       adapterRequest = videoBidderRequest;
-
       nobidServerResponseCheck();
     });
 
     it('handles display nobid responses', () => {
       adapterRequest = displayBidderRequest;
-
       nobidServerResponseCheck();
     });
-
-    it('forms correct ADPOD response', () => {
-      const videoBids = spec.interpretResponse({ body: SERVER_VIDEO_RESPONSE }, { adapterRequest: { bids: [ADPOD_REQUEST] } });
-      expect(videoBids[0].video.durationSeconds).to.be.equal(30);
-      expect(videoBids[0].video.context).to.be.equal('adpod');
-    })
-    describe('outstream setup', () => {
-      const videoBids = spec.interpretResponse({ body: SERVER_OUSTREAM_VIDEO_RESPONSE }, { adapterRequest: outstreamVideoBidderRequest });
-      it('should return renderer with expected outstream params config', () => {
-        expect(!!videoBids[0].renderer).to.be.true;
-        expect(videoBids[0].renderer.getConfig().video_controls).to.equal('show');
-      })
-    })
   });
 });
