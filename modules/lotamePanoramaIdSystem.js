@@ -177,18 +177,18 @@ export const lotamePanoramaIdSubmodule = {
     }
 
     const storedUserId = getProfileId();
-    const hasGdprData =
-      consentData &&
-      utils.isBoolean(consentData.gdprApplies) &&
-      consentData.gdprApplies;
+
     const resolveIdFunction = function (callback) {
       let queryParams = {};
       if (storedUserId) {
         queryParams.fp = storedUserId
       }
 
-      if (hasGdprData) {
-        queryParams.gdpr_consent = consentData.consentString;
+      if (consentData && utils.isBoolean(consentData.gdprApplies)) {
+        queryParams.gdpr_applies = consentData.gdprApplies;
+        if (consentData.gdprApplies) {
+          queryParams.gdpr_consent = consentData.consentString;
+        }
       }
       const url = utils.buildUrl({
         protocol: 'https',
@@ -205,7 +205,7 @@ export const lotamePanoramaIdSubmodule = {
               responseObj = JSON.parse(response);
               saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts);
 
-              if (utils.isStr(responseObj.core_id)) {
+              if (!utils.isEmptyStr(responseObj.core_id)) {
                 saveLotameCache(
                   KEY_ID,
                   responseObj.core_id,
@@ -215,7 +215,7 @@ export const lotamePanoramaIdSubmodule = {
                 clearLotameCache(KEY_ID);
               }
 
-              if (utils.isStr(responseObj.profile_id)) {
+              if (!utils.isEmptyStr(responseObj.profile_id)) {
                 setProfileId(responseObj.profile_id);
               } else {
                 clearLotameCache(KEY_PROFILE);
