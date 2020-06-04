@@ -1,11 +1,14 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 const BIDDER_CODE = 'eplanning';
 const rnd = Math.random();
 const DEFAULT_SV = 'ads.us.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
-const PARAMS = ['ci', 'sv', 't'];
+const PARAMS = ['ci', 'sv', 't', 'ml'];
 const DOLLARS = 'USD';
 const NET_REVENUE = true;
 const TTL = 120;
@@ -29,7 +32,7 @@ export const spec = {
     let params;
     const urlConfig = getUrlConfig(bidRequests);
     const pcrs = getCharset();
-    const spaces = getSpaces(bidRequests);
+    const spaces = getSpaces(bidRequests, urlConfig.ml);
     const pageUrl = bidderRequest.refererInfo.referer;
     const getDomain = (url) => {
       let anchor = document.createElement('a');
@@ -43,7 +46,7 @@ export const spec = {
       url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
       const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? encodeURIComponent(window.top.document.referrer) : encodeURIComponent(bidderRequest.refererInfo.referer);
 
-      if (utils.hasLocalStorage()) {
+      if (storage.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);
       }
 
@@ -185,12 +188,16 @@ function getSpacesStruct(bids) {
   return e;
 }
 
-function getSpaces(bidRequests) {
+function cleanName(name) {
+  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function getSpaces(bidRequests, ml) {
   let spacesStruct = getSpacesStruct(bidRequests);
   let es = {str: '', vs: '', map: {}};
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
-    let name = getSize(bid, true) + '_' + i;
+    let name = ml ? cleanName(bid.adUnitCode) : getSize(bid, true) + '_' + i;
     es.map[name] = bid.bidId;
     return name + ':' + getSize(bid);
   }).join('+')).join('+');
@@ -200,7 +207,7 @@ function getSpaces(bidRequests) {
 function getVs(bid) {
   let s;
   let vs = '';
-  if (utils.hasLocalStorage()) {
+  if (storage.hasLocalStorage()) {
     s = getViewabilityData(bid);
     vs += s.render >= 4 ? s.ratio.toString(16) : 'F';
   } else {
@@ -210,8 +217,8 @@ function getVs(bid) {
 }
 
 function getViewabilityData(bid) {
-  let r = utils.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
-  let v = utils.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
+  let r = storage.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
+  let v = storage.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
   let ratio = r > 0 ? (v / r) : 0;
   return {
     render: r,
@@ -404,9 +411,9 @@ function visibilityHandler(obj) {
 function registerAuction(storageID) {
   let value;
   try {
-    value = utils.getDataFromLocalStorage(storageID);
+    value = storage.getDataFromLocalStorage(storageID);
     value = value ? window.parseInt(value, 10) + 1 : 1;
-    utils.setDataInLocalStorage(storageID, value);
+    storage.setDataInLocalStorage(storageID, value);
   } catch (exc) {
     return false;
   }

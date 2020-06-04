@@ -53,7 +53,7 @@ module.exports = {
       // override the regular exclusion from above (for being inside node_modules).
       {
         test: /.js$/,
-        include: new RegExp(`\\${path.sep}prebid\.js`),
+        include: new RegExp(`\\${path.sep}prebid\\.js`),
         use: {
           loader: 'babel-loader',
           // presets and plugins for Prebid.js must be manually specified separate from your other babel rule.
@@ -112,7 +112,7 @@ prebid.requestBids({
     $ cd Prebid.js
     $ npm install
 
-*Note:* You need to have `NodeJS` 8.9.x or greater installed.
+*Note:* You need to have `NodeJS` 12.16.1 or greater installed.
 
 *Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To comply with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in its setup.
 

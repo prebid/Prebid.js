@@ -7,27 +7,22 @@ import {
   getTargetingKeysBidLandscape,
   getAdUnits,
   createBidReceived
-} from 'test/fixtures/fixtures';
-import { auctionManager, newAuctionManager } from 'src/auctionManager';
-import { targeting, newTargeting, filters } from 'src/targeting';
-import { config as configObj } from 'src/config';
-import * as ajaxLib from 'src/ajax';
-import * as auctionModule from 'src/auction';
-import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
-import find from 'core-js/library/fn/array/find';
+} from 'test/fixtures/fixtures.js';
+import { auctionManager, newAuctionManager } from 'src/auctionManager.js';
+import { targeting, newTargeting, filters } from 'src/targeting.js';
+import { config as configObj } from 'src/config.js';
+import * as ajaxLib from 'src/ajax.js';
+import * as auctionModule from 'src/auction.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { _sendAdToCreative } from 'src/secureCreatives.js';
+import find from 'core-js-pure/features/array/find.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
-var urlParse = require('url-parse');
-
-var prebid = require('src/prebid');
 var utils = require('src/utils');
-var bidfactory = require('src/bidfactory');
-var adloader = require('test/mocks/adloaderStub');
 var adapterManager = require('src/adapterManager').default;
 var events = require('src/events');
-var adserver = require('src/adserver');
 var CONSTANTS = require('src/constants.json');
 
 // These bid adapters are required to be loaded for the following tests to work
@@ -56,7 +51,7 @@ function resetAuction() {
 
 var Slot = function Slot(elementId, pathId) {
   var slot = {
-    targeting: [],
+    targeting: {},
     getSlotElementId: function getSlotElementId() {
       return elementId;
     },
@@ -66,24 +61,24 @@ var Slot = function Slot(elementId, pathId) {
     },
 
     setTargeting: function setTargeting(key, value) {
-      var obj = [];
-      obj[key] = value;
-      this.targeting.push(obj);
+      this.targeting[key] = Array.isArray(value) ? value : [value];
     },
 
-    getTargeting: function getTargeting() {
-      return this.targeting;
+    getTargeting: function getTargeting(key) {
+      return this.targeting[key] || [];
     },
 
     getTargetingKeys: function getTargetingKeys() {
-      return [];
+      return Object.getOwnPropertyNames(this.targeting);
     },
 
     clearTargeting: function clearTargeting() {
-      return googletag.pubads().getSlots();
+      this.targeting = {};
+      return this;
     }
   };
   slot.spySetTargeting = sinon.spy(slot, 'setTargeting');
+  slot.spyGetSlotElementId = sinon.spy(slot, 'getSlotElementId');
   return slot;
 };
 
@@ -121,11 +116,15 @@ window.googletag = {
       },
 
       setTargeting: function(key, arrayOfValues) {
-        self._targeting[key] = arrayOfValues;
+        self._targeting[key] = Array.isArray(arrayOfValues) ? arrayOfValues : [arrayOfValues];
       },
 
-      getTargeting: function() {
-        return self._targeting;
+      getTargeting: function(key) {
+        return self._targeting[key] || [];
+      },
+
+      getTargetingKeys: function() {
+        return Object.getOwnPropertyNames(self._targeting);
       },
 
       clearTargeting: function() {
@@ -856,17 +855,30 @@ describe('Unit: Prebid Module', function () {
     it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function () {
       var slots = createSlotArrayScenario2();
       window.googletag.pubads().setSlots(slots);
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
-      var targeting = [];
-      slots[1].getTargeting().map(function (value) {
-        var temp = [];
-        temp.push(Object.keys(value).toString());
-        temp.push(value[Object.keys(value)]);
-        targeting.push(temp);
+      // we need to transform the spySetTargeting into something that looks like
+      // googletag's targeting structure
+      // googletag setTargeting will override old value if invoked with same key
+
+      const targeting = [];
+      slots[1].getTargetingKeys().map(function (key) {
+        const value = slots[1].getTargeting(key);
+        targeting.push([key, value]);
       });
 
-      assert.deepEqual(slots[1].spySetTargeting.args, targeting, 'google tag targeting options not matching');
+      var invokedTargetingMap = {};
+      slots[1].spySetTargeting.args.map(function (entry) {
+        invokedTargetingMap[entry[0]] = entry[1];
+      });
+
+      var invokedTargeting = [];
+
+      Object.getOwnPropertyNames(invokedTargetingMap).map(function (key) {
+        const value = Array.isArray(invokedTargetingMap[key]) ? invokedTargetingMap[key] : [invokedTargetingMap[key]]; // values are always returned as array in googletag
+        invokedTargeting.push([key, value]);
+      });
+      assert.deepEqual(targeting, invokedTargeting, 'google tag targeting options not matching');
     });
 
     it('should set googletag targeting keys to specific slot with customSlotMatching', function () {
@@ -923,6 +935,40 @@ describe('Unit: Prebid Module', function () {
 
       var expected = getTargetingKeys();
       expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
+    });
+
+    it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
+      var slots = [
+        new Slot('div-not-matching-adunit-code-1', config.adUnitCodes[0]),
+        new Slot('div-not-matching-adunit-code-2', config.adUnitCodes[0]),
+        new Slot('div-not-matching-adunit-code-3', config.adUnitCodes[0])
+      ];
+
+      slots[1].setTargeting('hb_adid', ['someAdId']);
+      slots[1].spyGetSlotElementId.resetHistory();
+      window.googletag.pubads().setSlots(slots);
+
+      const mockAdObject = {
+        adId: 'someAdId',
+        ad: '<script src="http://prebid.org/creative/${AUCTION_PRICE}"></script>',
+        adUrl: 'http://creative.prebid.org/${AUCTION_PRICE}',
+        width: 300,
+        height: 250,
+        renderer: null,
+        cpm: '1.00',
+        adUnitCode: config.adUnitCodes[0],
+      };
+
+      const event = {
+        source: { postMessage: sinon.stub() },
+        origin: 'origin.sf.com'
+      };
+
+      _sendAdToCreative(mockAdObject, event);
+
+      expect(slots[0].spyGetSlotElementId.called).to.equal(false);
+      expect(slots[1].spyGetSlotElementId.called).to.equal(true);
+      expect(slots[2].spyGetSlotElementId.called).to.equal(false);
     });
 
     it('Calling enableSendAllBids should set targeting to include standard keys with bidder' +
@@ -1171,6 +1217,12 @@ describe('Unit: Prebid Module', function () {
     let makeRequestsStub;
     let adUnits;
     let clock;
+    before(function () {
+      clock = sinon.useFakeTimers();
+    });
+    after(function () {
+      clock.restore();
+    });
     let bidsBackHandlerStub = sinon.stub();
 
     const BIDDER_CODE = 'sampleBidder';
@@ -1257,7 +1309,6 @@ describe('Unit: Prebid Module', function () {
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
 
-      clock = sinon.useFakeTimers();
       let requestObj = {
         bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
         timeout: 2000,
@@ -1311,7 +1362,6 @@ describe('Unit: Prebid Module', function () {
       auction.getBidsReceived = function() { return [adResponse]; }
       auction.getAuctionId = () => auctionId;
 
-      clock = sinon.useFakeTimers();
       let requestObj = {
         bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
         timeout: 2000,
@@ -1404,7 +1454,7 @@ describe('Unit: Prebid Module', function () {
         try {
           $$PREBID_GLOBAL$$.requestBids({});
         } catch (e) {
-          console.log(e);
+          console.log(e); // eslint-disable-line
         }
         assert.ok(logMessageSpy.calledWith('No adUnits configured. No bids requested.'), 'expected message was logged');
       });
@@ -1513,6 +1563,7 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: fullAdUnit
             });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[640, 480]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
             expect(auctionArgs.adUnits[0].mediaTypes.native.image.sizes).to.deep.equal([150, 150]);
             expect(auctionArgs.adUnits[0].mediaTypes.native.icon.sizes).to.deep.equal([75, 75]);
@@ -1542,6 +1593,7 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: noOptnlFieldAdUnit
             });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
 
             let mixedAdUnit = [{
@@ -1564,6 +1616,7 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: mixedAdUnit
             });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[400, 350]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
 
             let altVideoPlayerSize = [{
@@ -1579,6 +1632,7 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: altVideoPlayerSize
             });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[640, 480]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
           });
@@ -1597,6 +1651,7 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: normalizeAdUnit
             });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250]]);
             expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
           });
         });
@@ -1616,6 +1671,7 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: badBanner
             });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250], [300, 600]]);
             expect(auctionArgs.adUnits[0].mediaTypes.banner).to.be.undefined;
             assert.ok(logErrorSpy.calledWith('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.'));
 
@@ -1632,6 +1688,7 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: badVideo1
             });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[600, 600]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.be.undefined;
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
             assert.ok(logErrorSpy.calledWith('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.'));
@@ -1649,6 +1706,7 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: badVideo2
             });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[600, 600]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.be.undefined;
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
             assert.ok(logErrorSpy.calledWith('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.'));

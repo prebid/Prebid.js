@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as mediaTypes from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as mediaTypes from '../src/mediaTypes.js';
 
 export function get(path, obj, notFound) {
   path = typeof path === 'string' ? path.split('.') : path;

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/nasmediaAdmixerBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/nasmediaAdmixerBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 describe('nasmediaAdmixerBidAdapter', function () {
   const adapter = newBidder(spec);

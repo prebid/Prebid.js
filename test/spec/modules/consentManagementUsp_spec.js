@@ -5,10 +5,10 @@ import {
   consentAPI,
   consentTimeout,
   staticConsentData
-} from 'modules/consentManagementUsp';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { uspDataHandler } from 'src/adapterManager';
+} from 'modules/consentManagementUsp.js';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { uspDataHandler } from 'src/adapterManager.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;

@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
+import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
+import { config } from 'src/config.js';
 import prebid from '../../../package.json';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
@@ -273,6 +274,20 @@ describe('triplelift adapter', function () {
       const url = request.url;
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
+    it('should return coppa param when COPPA config is set to true', function() {
+      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      config.getConfig.restore();
+      const url = request.url;
+      expect(url).to.match(/(\?|&)coppa=true/);
+    });
+    it('should not return coppa param when COPPA config is set to false', function() {
+      sinon.stub(config, 'getConfig').withArgs('coppa').returns(false);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      config.getConfig.restore();
+      const url = request.url;
+      expect(url).not.to.match(/(\?|&)coppa=/);
+    });
     it('should return schain when present', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
@@ -296,7 +311,8 @@ describe('triplelift adapter', function () {
             width: 300,
             height: 250,
             ad: 'ad-markup',
-            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+            tl_source: 'tlx',
           }
         ]
       }
@@ -312,7 +328,8 @@ describe('triplelift adapter', function () {
           width: 300,
           height: 250,
           ad: 'ad-markup',
-          iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+          iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+          tl_source: 'tlx',
         }
       ],
       refererInfo: {
@@ -337,6 +354,7 @@ describe('triplelift adapter', function () {
           dealId: '',
           currency: 'USD',
           ttl: 33,
+          tl_source: 'tlx',
         }
       ];
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
@@ -354,7 +372,8 @@ describe('triplelift adapter', function () {
               width: 300,
               height: 250,
               ad: 'ad-markup',
-              iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+              iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+              tl_source: 'tlx',
             },
             {
               imp_id: 0,
@@ -362,7 +381,8 @@ describe('triplelift adapter', function () {
               width: 300,
               height: 600,
               ad: 'ad-markup-2',
-              iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+              iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+              tl_source: 'tlx',
             }
           ]
         }
@@ -378,7 +398,8 @@ describe('triplelift adapter', function () {
             width: 300,
             height: 600,
             ad: 'ad-markup',
-            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+            tl_source: 'tlx',
           },
           {
             imp_id: 0,
@@ -386,7 +407,8 @@ describe('triplelift adapter', function () {
             width: 300,
             height: 250,
             ad: 'ad-markup-2',
-            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+            tl_source: 'tlx',
           }
         ],
         refererInfo: {

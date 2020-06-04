@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/byplayBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as bidderFactory from 'src/adapters/bidderFactory';
+import { spec } from 'modules/byplayBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as bidderFactory from 'src/adapters/bidderFactory.js';
 
 describe('byplayBidAdapter', () => {
   describe('isBidRequestValid', () => {

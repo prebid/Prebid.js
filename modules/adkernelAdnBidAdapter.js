@@ -1,7 +1,6 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import {parse as parseUrl} from '../src/url';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -71,7 +70,7 @@ function buildRequestParams(tags, auctionId, transactionId, gdprConsent, uspCons
 }
 
 function buildSite(refInfo) {
-  let loc = parseUrl(refInfo.referer);
+  let loc = utils.parseUrl(refInfo.referer);
   let result = {
     page: `${loc.protocol}://${loc.hostname}${loc.pathname}`,
     secure: ~~(loc.protocol === 'https')

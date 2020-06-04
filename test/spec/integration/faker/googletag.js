@@ -1,5 +1,5 @@
 import faker from 'faker';
-import { randomFive } from './fixtures';
+import { randomFive } from './fixtures.js';
 
 var Slot = function Slot({ code, divId }) {
   code = code || `ad-slot-code-${randomFive()}`;

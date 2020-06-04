@@ -1,8 +1,8 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { spec } from 'modules/ixBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec } from 'modules/ixBidAdapter.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://as-sec.casalemedia.com/cygnus';
@@ -197,6 +197,26 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
+  describe('getUserSync tests', function () {
+    it('UserSync test : check type = iframe, check usermatch URL', function () {
+      const syncOptions = {
+        'iframeEnabled': true
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync[0].type).to.equal('iframe');
+      const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL);
+    });
+
+    it('When iframeEnabled is false, no userSync should be returned', function () {
+      const syncOptions = {
+        'iframeEnabled': false
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync).to.be.an('array').that.is.empty;
+    });
+  });
+
   describe('isBidRequestValid', function () {
     it('should return true when required params found for a banner or video ad', function () {
       expect(spec.isBidRequestValid(DEFAULT_BANNER_VALID_BID[0])).to.equal(true);
@@ -337,19 +357,19 @@ describe('IndexexchangeAdapter', function () {
     let query;
     let testCopy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       window.headertag = {};
-      window.headertag.getIdentityInfo = function() {
+      window.headertag.getIdentityInfo = function () {
         return testCopy;
       };
       request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       query = request.data;
     });
-    afterEach(function() {
+    afterEach(function () {
       delete window.headertag;
     });
-    describe('buildRequestSingleRTI', function() {
-      before(function() {
+    describe('buildRequestSingleRTI', function () {
+      before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
       });
       it('payload should have correct format and value (single identity partner)', function () {
@@ -368,15 +388,17 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
-    describe('buildRequestMultipleIds', function() {
-      before(function() {
+    describe('buildRequestMultipleIds', function () {
+      before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
-        testCopy.IdentityIp.data.uids.push({
-          id: '1234567'
-        },
-        {
-          id: '2019-04-01TF2:34:41'
-        });
+        testCopy.IdentityIp.data.uids.push(
+          {
+            id: '1234567'
+          },
+          {
+            id: '2019-04-01TF2:34:41'
+          }
+        );
       });
       it('payload should have correct format and value (single identity w/ multi ids)', function () {
         const payload = JSON.parse(query.r);
@@ -395,8 +417,8 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
-    describe('buildRequestMultipleRTI', function() {
-      before(function() {
+    describe('buildRequestMultipleRTI', function () {
+      before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
         testCopy.JackIp = {
           responsePending: false,
@@ -444,13 +466,13 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
-    describe('buildRequestNoData', function() {
-      beforeEach(function() {
+    describe('buildRequestNoData', function () {
+      beforeEach(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
       });
 
       it('payload should not have any user eids with an undefined identity data response', function () {
-        window.headertag.getIdentityInfo = function() {
+        window.headertag.getIdentityInfo = function () {
           return undefined;
         };
         request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
@@ -807,7 +829,7 @@ describe('IndexexchangeAdapter', function () {
           mediaType: 'banner',
           ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
@@ -834,7 +856,7 @@ describe('IndexexchangeAdapter', function () {
           mediaType: 'banner',
           ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
@@ -860,7 +882,7 @@ describe('IndexexchangeAdapter', function () {
           mediaType: 'banner',
           ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'JPY',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
@@ -887,7 +909,7 @@ describe('IndexexchangeAdapter', function () {
           mediaType: 'banner',
           ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: 'deal',
           meta: {
@@ -960,7 +982,7 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
-  describe('bidrequest consent', function() {
+  describe('bidrequest consent', function () {
     it('should have consent info if gdprApplies and consentString exist', function () {
       const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
       const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
@@ -1006,7 +1028,7 @@ describe('IndexexchangeAdapter', function () {
       expect(requestWithConsent.user).to.be.undefined;
     });
 
-    it('should have us_privacy if uspConsent is defined', function() {
+    it('should have us_privacy if uspConsent is defined', function () {
       const options = {
         uspConsent: '1YYN'
       };
@@ -1016,7 +1038,7 @@ describe('IndexexchangeAdapter', function () {
       expect(requestWithUspConsent.regs.ext.us_privacy).to.equal('1YYN');
     });
 
-    it('should not have us_privacy if uspConsent undefined', function() {
+    it('should not have us_privacy if uspConsent undefined', function () {
       const options = {};
       const validBidWithUspConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
       const requestWithUspConsent = JSON.parse(validBidWithUspConsent[0].data.r);
@@ -1024,7 +1046,7 @@ describe('IndexexchangeAdapter', function () {
       expect(requestWithUspConsent.regs).to.be.undefined;
     });
 
-    it('should have both gdpr and us_privacy if both are defined', function() {
+    it('should have both gdpr and us_privacy if both are defined', function () {
       const options = {
         gdprConsent: {
           gdprApplies: true,
