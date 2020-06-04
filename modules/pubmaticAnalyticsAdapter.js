@@ -165,8 +165,7 @@ function getDomainFromUrl(url) {
   return a.hostname;
 }
 
-function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
-  let highestBid = $$PREBID_GLOBAL$$.getHighestCpmBids([adUnitId]);
+function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
     let bid = adUnit.bids[bidId];
@@ -195,7 +194,8 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
   }, [])
 }
 
-function executeBidsLoggerCall(auctionId) {
+function executeBidsLoggerCall(e, highestCpmBids) {
+  let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
   let outputObj = { s: [] };
@@ -231,7 +231,7 @@ function executeBidsLoggerCall(auctionId) {
     let slotObject = {
       'sn': adUnitId,
       'sz': adUnit.dimensions.map(e => e[0] + 'x' + e[1]),
-      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId)
+      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId))
     };
     slotsArray.push(slotObject);
     return slotsArray;
@@ -346,8 +346,9 @@ function bidWonHandler(args) {
 
 function auctionEndHandler(args) {
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
+  let highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids();
   setTimeout(() => {
-    executeBidsLoggerCall.call(this, args.auctionId);
+    executeBidsLoggerCall.call(this, args, highestCpmBids);
   }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
 }
 
