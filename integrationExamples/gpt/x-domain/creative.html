@@ -2,10 +2,10 @@
 // this script can be returned by an ad server delivering a cross domain iframe, into which the
 // creative will be rendered, e.g. DFP delivering a SafeFrame
 
+let windowLocation = window.location;
 var urlParser = document.createElement('a');
 urlParser.href = '%%PATTERN:url%%';
 var publisherDomain = urlParser.protocol + '//' + urlParser.hostname;
-var adServerDomain = urlParser.protocol + '//tpc.googlesyndication.com';
 
 function renderAd(ev) {
     var key = ev.message ? 'message' : 'data';
@@ -57,8 +57,7 @@ function renderAd(ev) {
 function requestAdFromPrebid() {
   var message = JSON.stringify({
     message: 'Prebid Request',
-    adId: '%%PATTERN:hb_adid%%',
-    adServerDomain: adServerDomain
+    adId: '%%PATTERN:hb_adid%%'
   });
   window.parent.postMessage(message, publisherDomain);
 }

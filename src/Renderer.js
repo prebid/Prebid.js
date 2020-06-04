@@ -1,6 +1,7 @@
-import { loadScript } from './adloader';
-import * as utils from './utils';
-import find from 'core-js/library/fn/array/find';
+import { loadExternalScript } from './adloader.js';
+import * as utils from './utils.js';
+import find from 'core-js-pure/features/array/find.js';
+const moduleCode = 'outstream';
 
 /**
  * @typedef {object} Renderer
@@ -18,7 +19,7 @@ export function Renderer(options) {
   this.id = id;
 
   // a renderer may push to the command queue to delay rendering until the
-  // render function is loaded by loadScript, at which point the the command
+  // render function is loaded by loadExternalScript, at which point the the command
   // queue will be processed
   this.loaded = loaded;
   this.cmd = [];
@@ -36,12 +37,21 @@ export function Renderer(options) {
     this.process();
   });
 
-  if (!isRendererDefinedOnAdUnit(adUnitCode)) {
-    // we expect to load a renderer url once only so cache the request to load script
-    loadScript(url, this.callback, true);
-  } else {
-    utils.logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
-  }
+  // use a function, not an arrow, in order to be able to pass "arguments" through
+  this.render = function () {
+    if (!isRendererDefinedOnAdUnit(adUnitCode)) {
+      // we expect to load a renderer url once only so cache the request to load script
+      loadExternalScript(url, moduleCode, this.callback);
+    } else {
+      utils.logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
+    }
+
+    if (this._render) {
+      this._render.apply(this, arguments) // _render is expected to use push as appropriate
+    } else {
+      utils.logWarn(`No render function was provided, please use .setRender on the renderer`);
+    }
+  }.bind(this) // bind the function to this object to avoid 'this' errors
 }
 
 Renderer.install = function({ url, config, id, callback, loaded, adUnitCode }) {
@@ -53,7 +63,7 @@ Renderer.prototype.getConfig = function() {
 };
 
 Renderer.prototype.setRender = function(fn) {
-  this.render = fn;
+  this._render = fn;
 };
 
 Renderer.prototype.setEventHandlers = function(handlers) {
@@ -70,7 +80,7 @@ Renderer.prototype.handleVideoEvent = function({ id, eventName }) {
 
 /*
  * Calls functions that were pushed to the command queue before the
- * renderer was loaded by `loadScript`
+ * renderer was loaded by `loadExternalScript`
  */
 Renderer.prototype.process = function() {
   while (this.cmd.length > 0) {

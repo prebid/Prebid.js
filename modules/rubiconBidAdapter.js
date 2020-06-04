@@ -1,18 +1,28 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {config} from '../src/config';
-import {BANNER, VIDEO} from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
-const INTEGRATION = 'pbjs_lite_v$prebid.version$';
+const DEFAULT_INTEGRATION = 'pbjs_lite';
+const DEFAULT_PBS_INTEGRATION = 'pbjs';
 
-function isSecure() {
-  return location.protocol === 'https:';
-}
-
-// use protocol relative urls for http or https
-export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb2/auction';
+// always use https, regardless of whether or not current page is secure
+export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
+export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
+
+const GVLID = 52;
+const DIGITRUST_PROP_NAMES = {
+  FASTLANE: {
+    id: 'dt.id',
+    keyv: 'dt.keyv',
+    pref: 'dt.pref'
+  },
+  PREBID_SERVER: {
+    id: 'id',
+    keyv: 'keyv'
+  }
+};
 
 var sizeMap = {
   1: '468x60',
@@ -25,6 +35,7 @@ var sizeMap = {
   14: '250x250',
   15: '300x250',
   16: '336x280',
+  17: '240x400',
   19: '300x100',
   31: '980x120',
   32: '250x360',
@@ -35,6 +46,7 @@ var sizeMap = {
   39: '750x100',
   40: '750x200',
   41: '750x300',
+  42: '2x4',
   43: '320x50',
   44: '300x50',
   48: '300x300',
@@ -57,7 +69,10 @@ var sizeMap = {
   79: '980x300',
   80: '980x400',
   83: '480x300',
+  85: '300x120',
+  90: '548x150',
   94: '970x310',
+  95: '970x100',
   96: '970x210',
   101: '480x320',
   102: '768x1024',
@@ -70,6 +85,8 @@ var sizeMap = {
   126: '200x600',
   144: '980x600',
   145: '980x150',
+  152: '1000x250',
+  156: '640x320',
   159: '320x250',
   179: '250x600',
   195: '600x300',
@@ -77,14 +94,28 @@ var sizeMap = {
   199: '640x200',
   213: '1030x590',
   214: '980x360',
+  221: '1x1',
   229: '320x180',
+  230: '2000x1400',
   232: '580x400',
-  257: '400x600'
+  234: '6x6',
+  251: '2x2',
+  256: '480x820',
+  257: '400x600',
+  258: '500x200',
+  259: '998x200',
+  264: '970x1000',
+  265: '1920x1080',
+  274: '1800x200',
+  278: '320x500',
+  282: '320x400',
+  288: '640x380'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
   code: 'rubicon',
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * @param {object} bid
@@ -98,7 +129,7 @@ export const spec = {
     for (let i = 0, props = ['accountId', 'siteId', 'zoneId']; i < props.length; i++) {
       bid.params[props[i]] = parseInt(bid.params[props[i]])
       if (isNaN(bid.params[props[i]])) {
-        utils.logError('Rubicon bid adapter Error: wrong format of accountId or siteId or zoneId.')
+        utils.logError('Rubicon: wrong format of accountId or siteId or zoneId.')
         return false
       }
     }
@@ -134,9 +165,9 @@ export const spec = {
         imp: [{
           exp: 300,
           id: bidRequest.adUnitCode,
-          secure: isSecure() || bidRequest.params.secure ? 1 : 0,
+          secure: 1,
           ext: {
-            rubicon: bidRequest.params
+            [bidRequest.bidder]: bidRequest.params
           },
           video: utils.deepAccess(bidRequest, 'mediaTypes.video') || {}
         }],
@@ -152,24 +183,47 @@ export const spec = {
               // includebidderkeys always false for openrtb
               includebidderkeys: false,
               pricegranularity: getPriceGranularity(config)
+            },
+            bidders: {
+              rubicon: {
+                integration: config.getConfig('rubicon.int_type') || DEFAULT_PBS_INTEGRATION
+              }
             }
           }
         }
       }
+
+      // Add alias if it is there
+      if (bidRequest.bidder !== 'rubicon') {
+        data.ext.prebid.aliases = {
+          [bidRequest.bidder]: 'rubicon'
+        }
+      }
+
+      let bidFloor;
+      if (typeof bidRequest.getFloor === 'function' && !config.getConfig('rubicon.disableFloors')) {
+        let floorInfo = bidRequest.getFloor({
+          currency: 'USD',
+          mediaType: 'video',
+          size: parseSizes(bidRequest, 'video')
+        });
+        bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
+      } else {
+        bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+      }
+      if (!isNaN(bidFloor)) {
+        data.imp[0].bidfloor = bidFloor;
+      }
       // if value is set, will overwrite with same value
-      data.imp[0].ext.rubicon.video.size_id = determineRubiconVideoSizeId(bidRequest)
+      data.imp[0].ext[bidRequest.bidder].video.size_id = determineRubiconVideoSizeId(bidRequest)
 
       appendSiteAppDevice(data, bidRequest, bidderRequest);
 
       addVideoParameters(data, bidRequest);
 
-      const digiTrust = getDigiTrustQueryParams();
+      const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
       if (digiTrust) {
-        data.user = {
-          ext: {
-            digitrust: digiTrust
-          }
-        };
+        utils.deepSetValue(data, 'user.ext.digitrust', digiTrust);
       }
 
       if (bidderRequest.gdprConsent) {
@@ -179,26 +233,110 @@ export const spec = {
           gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
         }
 
-        if (data.regs) {
-          if (data.regs.ext) {
-            data.regs.ext.gdpr = gdprApplies;
-          } else {
-            data.regs.ext = {gdpr: gdprApplies};
-          }
-        } else {
-          data.regs = {ext: {gdpr: gdprApplies}};
+        utils.deepSetValue(data, 'regs.ext.gdpr', gdprApplies);
+        utils.deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      }
+
+      if (bidderRequest.uspConsent) {
+        utils.deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+
+      if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
+        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env)) {
+        utils.deepSetValue(data, 'user.ext.eids', []);
+
+        if (bidRequest.userId.tdid) {
+          data.user.ext.eids.push({
+            source: 'adserver.org',
+            uids: [{
+              id: bidRequest.userId.tdid,
+              ext: {
+                rtiPartner: 'TDID'
+              }
+            }]
+          });
         }
 
-        const consentString = bidderRequest.gdprConsent.consentString;
-        if (data.user) {
-          if (data.user.ext) {
-            data.user.ext.consent = consentString;
-          } else {
-            data.user.ext = {consent: consentString};
-          }
-        } else {
-          data.user = {ext: {consent: consentString}};
+        if (bidRequest.userId.pubcid) {
+          data.user.ext.eids.push({
+            source: 'pubcommon',
+            uids: [{
+              id: bidRequest.userId.pubcid,
+            }]
+          });
         }
+
+        // support liveintent ID
+        if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+          data.user.ext.eids.push({
+            source: 'liveintent.com',
+            uids: [{
+              id: bidRequest.userId.lipb.lipbid
+            }]
+          });
+
+          data.user.ext.tpid = {
+            source: 'liveintent.com',
+            uid: bidRequest.userId.lipb.lipbid
+          };
+
+          if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
+            utils.deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
+          }
+        }
+
+        // support identityLink (aka LiveRamp)
+        if (bidRequest.userId.idl_env) {
+          data.user.ext.eids.push({
+            source: 'liveramp.com',
+            uids: [{
+              id: bidRequest.userId.idl_env
+            }]
+          });
+        }
+      }
+
+      if (config.getConfig('coppa') === true) {
+        utils.deepSetValue(data, 'regs.coppa', 1);
+      }
+
+      if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
+        utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+      }
+
+      const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
+      const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
+      if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
+        const bidderData = {
+          bidders: [ bidderRequest.bidderCode ],
+          config: {
+            fpd: {}
+          }
+        };
+
+        if (!utils.isEmpty(siteData)) {
+          bidderData.config.fpd.site = siteData;
+        }
+
+        if (!utils.isEmpty(userData)) {
+          bidderData.config.fpd.user = userData;
+        }
+
+        utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
+      }
+
+      /**
+       * Prebid AdSlot
+       * @type {(string|undefined)}
+       */
+      const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+      if (typeof pbAdSlot === 'string' && pbAdSlot) {
+        utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
+      }
+
+      // if storedAuctionResponse has been set, pass SRID
+      if (bidRequest.storedAuctionResponse) {
+        utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
       }
 
       return {
@@ -218,7 +356,7 @@ export const spec = {
           url: FASTLANE_ENDPOINT,
           data: spec.getOrderedParams(bidParams).reduce((paramString, key) => {
             const propValue = bidParams[key];
-            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
           }, '') + `slots=1&rand=${Math.random()}`,
           bidRequest
         };
@@ -249,7 +387,7 @@ export const spec = {
             url: FASTLANE_ENDPOINT,
             data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
               const propValue = combinedSlotParams[key];
-              return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+              return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
             }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
             bidRequest: bidsInGroup
           });
@@ -265,7 +403,6 @@ export const spec = {
     const containsTgI = /^tg_i/
 
     const orderedParams = [
-      'tpid_tdid',
       'account_id',
       'site_id',
       'zone_id',
@@ -274,10 +411,15 @@ export const spec = {
       'p_pos',
       'gdpr',
       'gdpr_consent',
-      'rf',
+      'us_privacy',
+      'rp_schain',
+      'tpid_tdid',
+      'tpid_liveintent.com',
+      'tg_v.LIseg',
       'dt.id',
       'dt.keyv',
       'dt.pref',
+      'rf',
       'p_geo.latitude',
       'p_geo.longitude',
       'kw'
@@ -286,6 +428,7 @@ export const spec = {
       .concat([
         'tk_flint',
         'x_source.tid',
+        'x_source.pchain',
         'p_screen_res',
         'rp_floor',
         'rp_secure',
@@ -348,19 +491,20 @@ export const spec = {
 
     const [latitude, longitude] = params.latLong || [];
 
+    const configIntType = config.getConfig('rubicon.int_type');
+
     const data = {
       'account_id': params.accountId,
       'site_id': params.siteId,
       'zone_id': params.zoneId,
       'size_id': parsedSizes[0],
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
-      'p_pos': params.position === 'atf' || params.position === 'btf' ? params.position : 'unknown',
       'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
-      'rp_secure': isSecure() ? '1' : '0',
-      'tk_flint': INTEGRATION,
+      'rp_secure': '1',
+      'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
+      'x_source.pchain': params.pchain,
       'p_screen_res': _getScreenResolution(),
-      'kw': Array.isArray(params.keywords) ? params.keywords.join(',') : '',
       'tk_user_key': params.userId,
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
       'p_geo.longitude': isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4),
@@ -368,8 +512,37 @@ export const spec = {
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
 
-    if ((bidRequest.userId || {}).tdid) {
-      data['tpid_tdid'] = bidRequest.userId.tdid;
+    // If floors module is enabled and we get USD floor back, send it in rp_hard_floor else undfined
+    if (typeof bidRequest.getFloor === 'function' && !config.getConfig('rubicon.disableFloors')) {
+      let floorInfo = bidRequest.getFloor({
+        currency: 'USD',
+        mediaType: 'banner',
+        size: '*'
+      });
+      data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
+    }
+
+    // add p_pos only if specified and valid
+    // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
+    data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
+
+    if (bidRequest.userId) {
+      if (bidRequest.userId.tdid) {
+        data['tpid_tdid'] = bidRequest.userId.tdid;
+      }
+
+      // support liveintent ID
+      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+        data['tpid_liveintent.com'] = bidRequest.userId.lipb.lipbid;
+        if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
+          data['tg_v.LIseg'] = bidRequest.userId.lipb.segments.join(',');
+        }
+      }
+
+      // support identityLink (aka LiveRamp)
+      if (bidRequest.userId.idl_env) {
+        data['tpid_liveramp.com'] = bidRequest.userId.idl_env;
+      }
     }
 
     if (bidderRequest.gdprConsent) {
@@ -380,31 +553,83 @@ export const spec = {
       data['gdpr_consent'] = bidderRequest.gdprConsent.consentString;
     }
 
-    // visitor properties
-    if (params.visitor !== null && typeof params.visitor === 'object') {
-      Object.keys(params.visitor).forEach((key) => {
-        if (params.visitor[key] != null) {
-          data[`tg_v.${key}`] = params.visitor[key].toString(); // initialize array;
-        }
-      });
+    if (bidderRequest.uspConsent) {
+      data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
+    // visitor properties
+    const visitorData = Object.assign({}, params.visitor, config.getConfig('fpd.user'));
+    Object.keys(visitorData).forEach((key) => {
+      if (visitorData[key] != null && key !== 'keywords') {
+        data[`tg_v.${key}`] = typeof visitorData[key] === 'object' && !Array.isArray(visitorData[key])
+          ? JSON.stringify(visitorData[key])
+          : visitorData[key].toString(); // initialize array;
+      }
+    });
+
     // inventory properties
-    if (params.inventory !== null && typeof params.inventory === 'object') {
-      Object.keys(params.inventory).forEach((key) => {
-        if (params.inventory[key] != null) {
-          data[`tg_i.${key}`] = params.inventory[key].toString();
-        }
-      });
+    const inventoryData = Object.assign({}, params.inventory, config.getConfig('fpd.context'));
+    Object.keys(inventoryData).forEach((key) => {
+      if (inventoryData[key] != null && key !== 'keywords') {
+        data[`tg_i.${key}`] = typeof inventoryData[key] === 'object' && !Array.isArray(inventoryData[key])
+          ? JSON.stringify(inventoryData[key])
+          : inventoryData[key].toString();
+      }
+    });
+
+    // keywords
+    const keywords = (params.keywords || []).concat(
+      utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
+      utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
+    data.kw = Array.isArray(keywords) && keywords.length ? keywords.join(',') : '';
+
+    /**
+     * Prebid AdSlot
+     * @type {(string|undefined)}
+     */
+    const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+    if (typeof pbAdSlot === 'string' && pbAdSlot) {
+      data['tg_i.dfp_ad_unit_code'] = pbAdSlot.replace(/^\/+/, '');
     }
 
     // digitrust properties
-    const digitrustParams = _getDigiTrustQueryParams();
-    Object.keys(digitrustParams).forEach(paramKey => {
-      data[paramKey] = digitrustParams[paramKey];
-    });
+    const digitrustParams = _getDigiTrustQueryParams(bidRequest, 'FASTLANE');
+    Object.assign(data, digitrustParams);
+
+    if (config.getConfig('coppa') === true) {
+      data['coppa'] = 1;
+    }
+
+    // if SupplyChain is supplied and contains all required fields
+    if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
+      data.rp_schain = spec.serializeSupplyChain(bidRequest.schain);
+    }
 
     return data;
+  },
+
+  /**
+   * Serializes schain params according to OpenRTB requirements
+   * @param {Object} supplyChain
+   * @returns {String}
+   */
+  serializeSupplyChain: function (supplyChain) {
+    const supplyChainIsValid = hasValidSupplyChainParams(supplyChain);
+    if (!supplyChainIsValid) return '';
+    const { ver, complete, nodes } = supplyChain;
+    return `${ver},${complete}!${spec.serializeSupplyChainNodes(nodes)}`;
+  },
+
+  /**
+   * Properly sorts schain object params
+   * @param {Array} nodes
+   * @returns {String}
+   */
+  serializeSupplyChainNodes: function (nodes) {
+    const nodePropOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    return nodes.map(node => {
+      return nodePropOrder.map(prop => encodeURIComponent(node[prop] || '')).join(',');
+    }).join('!');
   },
 
   /**
@@ -425,9 +650,7 @@ export const spec = {
     if (responseObj.seatbid) {
       const responseErrors = utils.deepAccess(responseObj, 'ext.errors.rubicon');
       if (Array.isArray(responseErrors) && responseErrors.length > 0) {
-        responseErrors.forEach(error => {
-          utils.logError('Got error from PBS Java openRTB: ' + error);
-        });
+        utils.logWarn('Rubicon: Error in video response');
       }
       const bids = [];
       responseObj.seatbid.forEach(seatbid => {
@@ -439,10 +662,14 @@ export const spec = {
             cpm: bid.price || 0,
             bidderCode: seatbid.seat,
             ttl: 300,
-            netRevenue: config.getConfig('rubicon.netRevenue') || false,
+            netRevenue: config.getConfig('rubicon.netRevenue') !== false, // If anything other than false, netRev is true
             width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
             height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
           };
+
+          if (bid.id) {
+            bidObject.seatBidId = bid.id;
+          }
 
           if (bid.dealid) {
             bidObject.dealId = bid.dealid;
@@ -462,7 +689,7 @@ export const spec = {
               bidObject.adserverTargeting = extPrebidTargeting;
             }
 
-            // try to get cache values from 'response.ext.prebid.cache'
+            // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
             if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
               bidObject.videoCacheKey = bid.ext.prebid.cache.vastXml.cacheId;
@@ -477,7 +704,7 @@ export const spec = {
             if (bid.nurl) { bidObject.vastUrl = bid.nurl; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
           } else {
-            utils.logError('Prebid Server Java openRTB returns response with media type other than video for video request.');
+            utils.logWarn('Rubicon: video response received non-video media type');
           }
 
           bids.push(bidObject);
@@ -515,8 +742,11 @@ export const spec = {
           cpm: ad.cpm || 0,
           dealId: ad.deal,
           ttl: 300, // 5 minutes
-          netRevenue: config.getConfig('rubicon.netRevenue') || false,
+          netRevenue: config.getConfig('rubicon.netRevenue') !== false, // If anything other than false, netRev is true
           rubicon: {
+            advertiserId: ad.advertiser, networkId: ad.network
+          },
+          meta: {
             advertiserId: ad.advertiser, networkId: ad.network
           }
         };
@@ -545,7 +775,7 @@ export const spec = {
 
         bids.push(bid);
       } else {
-        utils.logError(`Rubicon bid adapter Error: bidRequest undefined at index position:${i}`, bidRequest, responseObj);
+        utils.logError(`Rubicon: bidRequest undefined at index position:${i}`, bidRequest, responseObj);
       }
 
       return bids;
@@ -553,7 +783,7 @@ export const spec = {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to SYNC_ENDPOINT
       let params = '';
@@ -565,6 +795,10 @@ export const spec = {
         } else {
           params += `?gdpr_consent=${gdprConsent.consentString}`;
         }
+      }
+
+      if (uspConsent) {
+        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
       }
 
       hasSynced = true;
@@ -593,22 +827,36 @@ function _getScreenResolution() {
   return [window.screen.width, window.screen.height].join('x');
 }
 
-function _getDigiTrustQueryParams() {
+function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
+  if (!endpointName || !DIGITRUST_PROP_NAMES[endpointName]) {
+    return null;
+  }
+  const propNames = DIGITRUST_PROP_NAMES[endpointName];
+
   function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
+    if (bidRequestDigitrust) {
+      return bidRequestDigitrust;
+    }
+
+    let digiTrustUser = (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
 
   let digiTrustId = getDigiTrustId();
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return [];
+    return null;
   }
-  return {
-    'dt.id': digiTrustId.id,
-    'dt.keyv': digiTrustId.keyv,
-    'dt.pref': 0
+
+  const digiTrustQueryParams = {
+    [propNames.id]: digiTrustId.id,
+    [propNames.keyv]: digiTrustId.keyv
   };
+  if (propNames.pref) {
+    digiTrustQueryParams[propNames.pref] = 0;
+  }
+  return digiTrustQueryParams;
 }
 
 /**
@@ -664,28 +912,10 @@ function parseSizes(bid, mediaType) {
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     sizes = mapSizes(bid.sizes)
   } else {
-    utils.logWarn('Warning: no sizes are setup or found');
+    utils.logWarn('Rubicon: no sizes are setup or found');
   }
 
   return masSizeOrdering(sizes);
-}
-
-function getDigiTrustQueryParams() {
-  function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-  return {
-    id: digiTrustId.id,
-    keyv: digiTrustId.keyv,
-    pref: 0
-  };
 }
 
 /**
@@ -728,8 +958,14 @@ function addVideoParameters(data, bidRequest) {
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.skipafter === undefined) {
     data.imp[0].video.skipafter = bidRequest.params.video.skipdelay;
   }
+  // video.pos can already be specified by adunit.mediatypes.video.pos.
+  // but if not, it might be specified in the params
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.pos === undefined) {
-    data.imp[0].video.pos = bidRequest.params.position === 'atf' ? 1 : (bidRequest.params.position === 'btf' ? 3 : 0);
+    if (bidRequest.params.position === 'atf') {
+      data.imp[0].video.pos = 1;
+    } else if (bidRequest.params.position === 'btf') {
+      data.imp[0].video.pos = 3;
+    }
   }
 
   const size = parseSizes(bidRequest, 'video')
@@ -779,7 +1015,7 @@ function bidType(bid, log = false) {
     // We require either context as instream or outstream
     if (['outstream', 'instream'].indexOf(utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`)) === -1) {
       if (log) {
-        utils.logError('Rubicon bid adapter requires mediaTypes.video.context to be one of outstream or instream');
+        utils.logError('Rubicon: mediaTypes.video.context must be outstream or instream');
       }
       return;
     }
@@ -787,13 +1023,13 @@ function bidType(bid, log = false) {
     // we require playerWidth and playerHeight to come from one of params.playerWidth/playerHeight or mediaTypes.video.playerSize or adUnit.sizes
     if (parseSizes(bid, 'video').length < 2) {
       if (log) {
-        utils.logError('Rubicon bid adapter could not determine the playerSize of the video\nplayerWidth and playerHeight are inferred from one of params.playerWidth/playerHeight or mediaTypes.video.playerSize or adUnit.sizes, in that order');
+        utils.logError('Rubicon: could not determine the playerSize of the video');
       }
       return;
     }
 
     if (log) {
-      utils.logMessage('Rubicon bid adapter making video request for adUnit', bid.adUnitCode);
+      utils.logMessage('Rubicon: making video request for adUnit', bid.adUnitCode);
     }
     return 'video';
   } else {
@@ -801,14 +1037,14 @@ function bidType(bid, log = false) {
     // if we cannot determine them, we reject it!
     if (parseSizes(bid, 'banner').length === 0) {
       if (log) {
-        utils.logError('Rubicon bid adapter could not determine the sizes for a banner request\nThey are inferred from one of params.sizes or mediaTypes.banner.sizes or adUnit.sizes, in that order');
+        utils.logError('Rubicon: could not determine the sizes for banner request');
       }
       return;
     }
 
     // everything looks good for banner so lets do it
     if (log) {
-      utils.logMessage('Rubicon bid adapter making banner request for adUnit', bid.adUnitCode);
+      utils.logMessage('Rubicon: making banner request for adUnit', bid.adUnitCode);
     }
     return 'banner';
   }
@@ -891,10 +1127,39 @@ export function hasValidVideoParams(bid) {
   Object.keys(requiredParams).forEach(function(param) {
     if (Object.prototype.toString.call(utils.deepAccess(bid, 'mediaTypes.video.' + param)) !== requiredParams[param]) {
       isValid = false;
-      utils.logError('Rubicon Bid Adapter: mediaTypes.video.' + param + ' is required and must be of type: ' + requiredParams[param]);
+      utils.logError('Rubicon: mediaTypes.video.' + param + ' is required and must be of type: ' + requiredParams[param]);
     }
   })
   return isValid;
+}
+
+/**
+ * Make sure the required params are present
+ * @param {Object} schain
+ * @param {Bool}
+ */
+export function hasValidSupplyChainParams(schain) {
+  let isValid = false;
+  const requiredFields = ['asi', 'sid', 'hp'];
+  if (!schain.nodes) return isValid;
+  isValid = schain.nodes.reduce((status, node) => {
+    if (!status) return status;
+    return requiredFields.every(field => node[field]);
+  }, true);
+  if (!isValid) utils.logError('Rubicon: required schain params missing');
+  return isValid;
+}
+
+/**
+ * Creates a URL key value param, encoding the
+ * param unless the key is schain
+ * @param {String} key
+ * @param {String} param
+ * @returns {String}
+ */
+export function encodeParam(key, param) {
+  if (key === 'rp_schain') return `rp_schain=${param}`;
+  return `${key}=${encodeURIComponent(param)}`;
 }
 
 /**
