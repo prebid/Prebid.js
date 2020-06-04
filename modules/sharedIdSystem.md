@@ -1,7 +1,6 @@
 ## Shared ID User ID Submodule
 
-Shared ID User ID Module generates a simple UUID that can be utilized to improve user matching.
-This module does not require any registration.  
+Shared ID User ID Module generates a UUID that can be utilized to improve user matching.This module enables timely synchronization which handles sharedId.org optout. This module does not require any registration.  
 
 ### Building Prebid with Shared Id Support
 Your Prebid build must include the modules for both **userId** and **sharedId** submodule. Follow the build instructions for Prebid as
