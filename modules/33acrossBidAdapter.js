@@ -6,7 +6,9 @@ const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
 
-const adapterState = {};
+const adapterState = {
+  uniqueSiteIds: []
+};
 
 const NON_MEASURABLE = 'nm';
 
@@ -149,7 +151,7 @@ function _createServerRequest(bidRequest, gdprConsent = {}, uspConsent, pageUrl)
 }
 
 // Sync object will always be of type iframe for TTX
-function _createSync({siteId = 'zzz000000000003zzz', gdprConsent = {}}) {
+function _createSync({siteId = 'zzz000000000003zzz', gdprConsent = {}, usPrivacy}) {
   const ttxSettings = config.getConfig('ttxSettings');
   const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
 
@@ -157,7 +159,7 @@ function _createSync({siteId = 'zzz000000000003zzz', gdprConsent = {}}) {
 
   const sync = {
     type: 'iframe',
-    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}`
+    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(usPrivacy)}`
   };
 
   if (typeof gdprApplies === 'boolean') {
@@ -326,8 +328,8 @@ function interpretResponse(serverResponse, bidRequest) {
 // Else no syncs
 // For logic on how we handle gdpr data see _createSyncs and module's unit tests
 // '33acrossBidAdapter#getUserSyncs'
-function getUserSyncs(syncOptions, responses, gdprConsent) {
-  return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map((siteId) => _createSync({gdprConsent, siteId})) : ([]);
+function getUserSyncs(syncOptions, responses, gdprConsent, usPrivacy) {
+  return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map((siteId) => _createSync({gdprConsent, usPrivacy, siteId})) : ([]);
 }
 
 export const spec = {
