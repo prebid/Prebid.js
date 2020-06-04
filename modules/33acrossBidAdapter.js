@@ -335,6 +335,8 @@ function getUserSyncs(syncOptions, responses, gdprConsent, usPrivacy) {
 export const spec = {
   NON_MEASURABLE,
 
+  adapterState,
+  
   code: BIDDER_CODE,
 
   isBidRequestValid,

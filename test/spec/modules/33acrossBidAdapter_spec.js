@@ -219,6 +219,7 @@ describe('33acrossBidAdapter:', function () {
 
   afterEach(function() {
     sandbox.restore();
+    spec.adapterState.uniqueSiteIds = [];
   });
 
   describe('isBidRequestValid:', function() {
@@ -762,6 +763,7 @@ describe('33acrossBidAdapter:', function () {
           transactionId: 't2'
         }
       ];
+      console.log(spec.adapterState);
     });
 
     context('when iframe is not enabled', function() {
@@ -937,6 +939,15 @@ describe('33acrossBidAdapter:', function () {
 
           expect(syncResults).to.deep.equal(expectedSyncs);
         });
+      });
+
+      context('when user sync is invoked without a bid request phase', function() {
+        it('results in an empty syncs array', function() {
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {}, 'foo');
+
+          expect(syncResults).to.deep.equal([]);
+        });
+        
       });
     });
   });
