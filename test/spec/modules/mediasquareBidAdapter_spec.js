@@ -5,7 +5,6 @@ import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { requestBidsHook } from 'modules/consentManagement.js';
 
-// Default params with optional ones
 describe('MediaSquare bid adapter tests', function () {
   var DEFAULT_PARAMS = [{
     adUnitCode: 'banner-div',
@@ -54,13 +53,7 @@ describe('MediaSquare bid adapter tests', function () {
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
     }
   };
-
   it('Verify build request', function () {
-    config.setConfig({
-      'currency': {
-        'adServerCurrency': 'EUR'
-      }
-    });
     const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
     expect(request).to.have.property('url').and.to.equal('https://pbs-front.mediasquare.fr/msq_prebid');
     expect(request).to.have.property('method').and.to.equal('POST');
