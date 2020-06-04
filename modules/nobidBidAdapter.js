@@ -289,8 +289,8 @@ window.nobid.renderTag = function(doc, id, win) {
 }
 window.addEventListener('message', function (event) {
   let key = event.message ? 'message' : 'data';
-  var msg = '' + event[key];
-  if (msg.startsWith('nbTagRenderer.requestAdMarkup|')) {
+  var msg = event[key];
+  if (msg.indexOf('nbTagRenderer.requestAdMarkup|')===0) {
     log('Prebid received nbTagRenderer.requestAdMarkup event');
     var adId = msg.substring(msg.indexOf('|') + 1);
     if (window.nobid && window.nobid.bidResponses) {
