@@ -431,7 +431,7 @@ describe('gdpr enforcement', function () {
     });
   });
 
-  describe.skip('makeBidRequestsHook', function () {
+  describe('makeBidRequestsHook', function () {
     let sandbox;
     let adapterManagerStub;
     let emitEventSpy;
@@ -442,7 +442,7 @@ describe('gdpr enforcement', function () {
       bids: [{
         bidder: 'bidder_1' // has consent
       }, {
-        bidder: 'bidder_2' // doesn't have consent
+        bidder: 'bidder_2' // doesn't have consent, but liTransparency is true. Bidder remains active.
       }]
     }, {
       code: 'ad-unit-2',
@@ -506,17 +506,19 @@ describe('gdpr enforcement', function () {
         code: 'ad-unit-1',
         mediaTypes: {},
         bids: [
-          sinon.match({ bidder: 'bidder_1' })
+          sinon.match({ bidder: 'bidder_1' }),
+          sinon.match({ bidder: 'bidder_2' })
         ]
       }, {
         code: 'ad-unit-2',
         mediaTypes: {},
-        bids: []
+        bids: [
+          sinon.match({ bidder: 'bidder_2' })
+        ]
       }], []);
-      expect(emitEventSpy.calledTwice).to.equal(true);
-      expect(logWarnSpy.calledTwice).to.equal(true);
-      sinon.assert.calledWith(emitEventSpy.firstCall, EVENTS.BIDDER_BLOCKED, 'bidder_2');
-      sinon.assert.calledWith(emitEventSpy.secondCall, EVENTS.BIDDER_BLOCKED, 'bidder_3');
+      expect(emitEventSpy.calledOnce).to.equal(true);
+      expect(logWarnSpy.calledOnce).to.equal(true);
+      sinon.assert.calledWith(emitEventSpy, EVENTS.BIDDER_BLOCKED, 'bidder_3');
     });
 
     it('should skip validation checks if GDPR version is not equal to "2"', function () {
