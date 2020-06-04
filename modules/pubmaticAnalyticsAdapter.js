@@ -346,7 +346,7 @@ function bidWonHandler(args) {
 
 function auctionEndHandler(args) {
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
-  let highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids();
+  let highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids() || [];
   setTimeout(() => {
     executeBidsLoggerCall.call(this, args, highestCpmBids);
   }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));

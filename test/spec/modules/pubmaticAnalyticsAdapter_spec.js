@@ -294,10 +294,7 @@ describe('pubmatic analytics adapter', function () {
 
     it('Logger: best case + win tracker', function() {
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
-        var config = {};
-        config[MOCK.BID_RESPONSE[0].adUnitCode] = [MOCK.BID_RESPONSE[0]];
-        config[MOCK.BID_RESPONSE[1].adUnitCode] = [MOCK.BID_RESPONSE[1]];
-        return config[key];
+        return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
       });
 
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
@@ -399,10 +396,7 @@ describe('pubmatic analytics adapter', function () {
       bidCopy.cpm = bidCopy.originalCpm * 2; //  bidCpmAdjustment => bidCpm * 2
 
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
-        var config = {};
-        config[MOCK.BID_RESPONSE[0].adUnitCode] = [bidCopy];
-        config[MOCK.BID_RESPONSE[1].adUnitCode] = [MOCK.BID_RESPONSE[1]];
-        return config[key];
+        return [bidCopy, MOCK.BID_RESPONSE[1]]
       });
 
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
@@ -591,9 +585,7 @@ describe('pubmatic analytics adapter', function () {
       // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
 
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
-        var config = {};
-        config[MOCK.BID_RESPONSE[1].adUnitCode] = [MOCK.BID_RESPONSE[1]];
-        return config[key];
+        return [MOCK.BID_RESPONSE[1]]
       });
 
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
