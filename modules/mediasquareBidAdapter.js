@@ -4,7 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'mediasquare';
-const BIDDER_URL_PROD = 'https://bidder.mediasquare.fr/'
+const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
 const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/'
 const BIDDER_ENDPOINT_AUCTION = 'msq_prebid';
 const BIDDER_ENDPOINT_SYNC = 'cookie_sync';
@@ -123,14 +123,7 @@ export const spec = {
         url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=pixel' + params
       };
     }
-  },
-
-  /**
-     * Register bidder specific code, which will execute if bidder timed out after an auction
-     * @param {data} Containing timeout specific data
-     */
-  onTimeout: function(data) {
-    // Bidder specifc code
+    return false;
   },
 
   /**
@@ -151,6 +144,7 @@ export const spec = {
     }
     if (params.length > 0) { params = '?' + params.join('&'); }
     ajax(endpoint + BIDDER_ENDPOINT_WINNING + params, null);
+    return true;
   }
 
 }
