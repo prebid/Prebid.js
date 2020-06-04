@@ -199,14 +199,6 @@ export function newConfig() {
       set disableAjaxTimeout(val) {
         this._disableAjaxTimeout = val;
       },
-
-      _site: undefined,
-      get site() {
-        return this._site;
-      },
-      set site(val) {
-        this._site = val;
-      }
     };
 
     if (config) {

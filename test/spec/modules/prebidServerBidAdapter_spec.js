@@ -922,7 +922,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.site.content.language).to.exist.and.to.be.a('string');
       expect(requestBid.site).to.deep.equal({
         publisher: {
-          id: '1',
+          id: '1234',
           domain: 'test.com'
         },
         content: {

@@ -269,11 +269,17 @@ function _appendSiteAppDevice(request, pageUrl) {
     request.app.publisher = {id: _s2sConfig.accountId}
   } else {
     request.site = {};
-    if (typeof config.getConfig('site') === 'object') {
+    if (utils.isPlainObject(config.getConfig('site'))) {
       request.site = config.getConfig('site');
     }
-    utils.deepSetValue(request.site, 'publisher.id', _s2sConfig.accountId);
-    request.site.page = pageUrl;
+    // set publisher.id if not already defined
+    if (!utils.deepAccess(request.site, 'publisher.id')) {
+      utils.deepSetValue(request.site, 'publisher.id', _s2sConfig.accountId);
+    }
+    // set site.page if not already defined
+    if (!request.site.page) {
+      request.site.page = pageUrl;
+    }
   }
   if (typeof config.getConfig('device') === 'object') {
     request.device = config.getConfig('device');
