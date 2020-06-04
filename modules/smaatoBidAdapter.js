@@ -5,6 +5,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid-test.smaatolabs.net/bidder';
+const CLIENT = 'prebid/js/$prebid.version$_0.1'
 
 /**
 * Transform BidRequest to OpenRTB-formatted BidRequest Object
@@ -25,7 +26,7 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
   }
 
   const imp = validBidRequests.map(br => {
-    const sizes = parseSizes(br.sizes);
+    const sizes = parseSizes(utils.getAdUnitSizes(br));
     return {
       id: br.bidId,
       banner: {
@@ -33,9 +34,7 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
         h: sizes[0].h,
         format: sizes
       },
-      tagid: utils.deepAccess(br, 'params.adspaceId'),
-      // secure: 1,
-      // bidfloor: parseFloat(utils.deepAccess(br, 'params.bidfloorCpm') || 0)
+      tagid: utils.deepAccess(br, 'params.adspaceId')
     };
   });
 
@@ -54,8 +53,11 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
       ref: bidderRequest.refererInfo.referer
     },
     device: {
-      language: navigator.language,
-      ua: navigator.userAgent
+      language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
+      ua: navigator.userAgent,
+      dnt: utils.getDNT() ? 1 : 0,
+      h: screen.height,
+      w: screen.width
     },
     regs: {
       coppa: config.getConfig('coppa') === true ? 1 : 0,
@@ -64,7 +66,7 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
       }
     },
     ext: {
-      client: 'prebidjs_$prebid.version$'
+      client: CLIENT
     }
   };
 
@@ -72,12 +74,12 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
+  utils.logInfo('[SMAATO] OpenRTB Request:', request);
   return JSON.stringify(request);
 }
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [BIDDER_CODE], // short code
   supportedMediaTypes: [BANNER],
 
   /**
@@ -99,10 +101,17 @@ export const spec = {
       * @return ServerRequest Info describing the request to the server.
       */
   buildRequests: (validBidRequests, bidderRequest) => {
+    utils.logInfo('[SMAATO] Client version:', CLIENT);
     return {
       method: 'POST',
       url: validBidRequests[0].params.endpoint || SMAATO_ENDPOINT,
-      data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest)
+      data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest),
+      options: {
+        customHeaders: {
+          'X-SMT-Client': CLIENT,
+          'X-SMT-SessionId': bidderRequest.auctionId
+        }
+      }
     };
   },
   /**
@@ -115,8 +124,11 @@ export const spec = {
     // const serverBody  = serverResponse.body;
     let serverResponseHeaders = serverResponse.headers;
     const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
-
+    const smtExpires = serverResponseHeaders.get('X-SMT-Expires');
     const res = serverResponse.body;
+
+    utils.logInfo('[SMAATO] OpenRTB Response:', res);
+
     var bids = []
     if (res) {
       res.seatbid.forEach(sb => {
@@ -134,21 +146,25 @@ export const spec = {
               ad = '';
           }
 
-          bids.push({
-            requestId: b.impid,
-            cpm: b.price || 0,
-            width: b.w,
-            height: b.h,
-            ad: ad,
-            ttl: 1000,
-            creativeId: b.crid,
-            netRevenue: false,
-            currency: res.cur
-          })
+          if (ad !== '') {
+            bids.push({
+              requestId: b.impid,
+              cpm: b.price || 0,
+              width: b.w,
+              height: b.h,
+              ad: ad,
+              ttl: 1000,
+              creativeId: b.crid,
+              dealId: b.dealid || null,
+              netRevenue: false,
+              currency: res.cur
+            })
+          }
         })
       });
     }
 
+    utils.logInfo('[SMAATO] Prebid bids:', bids);
     return bids;
   },
 

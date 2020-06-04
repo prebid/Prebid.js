@@ -1,6 +1,5 @@
 // import { assert, expect } from 'chai';
 import { spec } from 'modules/smaatoBidAdapter.js';
-import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 
 const imageAd = {
@@ -73,6 +72,7 @@ const openRtbBidResponse = (adType) => {
               'bidderName': 'smaato',
               'cid': 'CM6523',
               'crid': 'CR69381',
+              'dealid': '12345',
               'id': '6906aae8-7f74-4edd-9a4f-f49379a3cadd',
               'impid': '226416e6e6bf41',
               'iurl': 'https://bidstalkcreatives.s3.amazonaws.com/1x1.png',
@@ -112,6 +112,7 @@ const interpretedBidsImg = [
     ad: '<div onclick=\"fetch(decodeURIComponent(\'http%3A%2F%2Flocalhost%3A3000%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});\"><a href=\"http://localhost:3000/track/ctaurl\"><img src=\"http://localhost:3000/static/ad.jpg\" width=\"320\" height=\"50\"/></a></div><img src=\"http://localhost:3000/track/imp/1\" alt=\"\" width=\"0\" height=\"0\"/><img src=\"http://localhost:3000/track/imp/2\" alt=\"\" width=\"0\" height=\"0\"/>',
     ttl: 1000,
     creativeId: 'CR69381',
+    dealId: '12345',
     netRevenue: false,
     currency: 'USD'
   }
@@ -126,6 +127,7 @@ const interpretedBidsRichmedia = [
     ad: '<div><h3>RICHMEDIA CONTENT</h3></div>',
     ttl: 1000,
     creativeId: 'CR69381',
+    dealId: '12345',
     netRevenue: false,
     currency: 'USD'
   }
