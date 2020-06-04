@@ -65,7 +65,7 @@ function _getAdSlotHTMLElement(adUnitCode) {
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
-function _createServerRequest(bidRequest, gdprConsent = {}, pageUrl) {
+function _createServerRequest(bidRequest, gdprConsent = {}, uspConsent, pageUrl) {
   const ttxRequest = {};
   const params = bidRequest.params;
   const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
@@ -109,7 +109,8 @@ function _createServerRequest(bidRequest, gdprConsent = {}, pageUrl) {
   };
   ttxRequest.regs = {
     ext: {
-      gdpr: (gdprConsent.gdprApplies === true) ? 1 : 0
+      gdpr: (gdprConsent.gdprApplies === true) ? 1 : 0,
+      us_privacy: uspConsent || null
     }
   };
   ttxRequest.ext = {
@@ -301,11 +302,12 @@ function buildRequests(bidRequests, bidderRequest) {
     gdprApplies: false
   }, bidderRequest && bidderRequest.gdprConsent);
 
+  const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const pageUrl = (bidderRequest && bidderRequest.refererInfo) ? (bidderRequest.refererInfo.referer) : (undefined);
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
 
-  return bidRequests.map(req => _createServerRequest(req, gdprConsent, pageUrl));
+  return bidRequests.map(req => _createServerRequest(req, gdprConsent, uspConsent, pageUrl));
 }
 
 // NOTE: At this point, the response from 33exchange will only ever contain one bid i.e. the highest bid

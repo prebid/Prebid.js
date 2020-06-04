@@ -56,7 +56,8 @@ describe('33acrossBidAdapter:', function () {
       },
       regs: {
         ext: {
-          gdpr: 0
+          gdpr: 0,
+          us_privacy: null
         }
       },
       ext: {
@@ -92,9 +93,27 @@ describe('33acrossBidAdapter:', function () {
       });
       Object.assign(ttxRequest, {
         regs: {
-          ext: { gdpr }
+          ext: Object.assign(
+            {}, 
+            ttxRequest.regs.ext, 
+            { gdpr }
+          )
         }
       });
+      return this;
+    };
+
+    this.withUspConsent = (consent) => {
+      Object.assign(ttxRequest, {
+        regs: {
+          ext: Object.assign(
+            {}, 
+            ttxRequest.regs.ext, 
+            { us_privacy: consent }
+          )
+        }
+      });
+
       return this;
     };
 
@@ -436,6 +455,84 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding test server requests with default gdpr consent data', function() {
+        sandbox.stub(config, 'getConfig').callsFake(() => {
+          return {
+            'url': 'https://foo.com/hb/'
+          }
+        });
+
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .withUrl('https://foo.com/hb/')
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when us_privacy consent data exists', function() {
+      let bidderRequest;
+
+      beforeEach(function() {
+        bidderRequest = {
+          uspConsent: 'foo'
+        }
+      });
+
+      it('returns corresponding server requests with us_privacy consent data', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withUspConsent('foo')
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('returns corresponding test server requests with us_privacy consent data', function() {
+        sandbox.stub(config, 'getConfig').callsFake(() => {
+          return {
+            'url': 'https://foo.com/hb/'
+          }
+        });
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withUspConsent('foo')
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .withUrl('https://foo.com/hb/')
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when us_privacy consent data does not exist', function() {
+      let bidderRequest;
+
+      beforeEach(function() {
+        bidderRequest = {};
+      });
+
+      it('returns corresponding server requests with default us_privacy data', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('returns corresponding test server requests with default us_privacy consent data', function() {
         sandbox.stub(config, 'getConfig').callsFake(() => {
           return {
             'url': 'https://foo.com/hb/'
