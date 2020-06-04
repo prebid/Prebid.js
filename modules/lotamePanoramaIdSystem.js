@@ -93,7 +93,11 @@ function saveLotameCache(
       );
     }
     if (storage.hasLocalStorage()) {
-      storage.setDataInLocalStorage(`${key}_exp`, expirationDate, undefined);
+      storage.setDataInLocalStorage(
+        `${key}_exp`,
+        String(expirationTimestamp),
+        undefined
+      );
       storage.setDataInLocalStorage(key, value, undefined);
     }
   }
@@ -165,10 +169,7 @@ export const lotamePanoramaIdSubmodule = {
   getId(configParams, consentData, cacheIdObj) {
     let localCache = getLotameLocalCache();
 
-    let refreshNeeded = false;
-    if (!utils.isStr(localCache.data)) {
-      refreshNeeded = Date.now() > localCache.expiryTimestampMs;
-    }
+    let refreshNeeded = Date.now() > localCache.expiryTimestampMs;
 
     if (!refreshNeeded) {
       return {

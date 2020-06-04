@@ -226,7 +226,9 @@ describe('LotameId', function() {
       let submoduleCallback;
 
       beforeEach(function () {
-        getLocalStorageStub.withArgs('panoramaId_expiry').returns(Date.now() + 100000 + '');
+        getCookieStub
+          .withArgs('panoramaId_expiry')
+          .returns(String(Date.now() + 100000));
         getCookieStub
           .withArgs('panoramaId')
           .returns(
@@ -291,7 +293,7 @@ describe('LotameId', function() {
       beforeEach(function () {
         getCookieStub
           .withArgs('panoramaId_expiry')
-          .returns(Date.now() + 100000 + '');
+          .returns(String(Date.now() + 100000));
 
         submoduleCallback = lotamePanoramaIdSubmodule.getId({});
       });
