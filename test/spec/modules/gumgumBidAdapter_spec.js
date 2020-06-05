@@ -63,6 +63,20 @@ describe('gumgumAdapter', function () {
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('should return false if invalid request id is found', function () {
+      const bidRequest = {
+        id: 12345,
+        sizes: [[300, 250], [1, 1]],
+        url: ENDPOINT,
+        method: 'GET',
+        pi: 3,
+        data: { t: '10433394' }
+      };
+      let body;
+      spec.interpretResponse({ body }, bidRequest); // empty response
+      expect(spec.isBidRequestValid(bid)).to.be.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -338,6 +352,12 @@ describe('gumgumAdapter', function () {
         'thms': 10000
       }
       let result = spec.interpretResponse({ body: response }, bidRequest);
+      expect(result.length).to.equal(0);
+    });
+
+    it('handles empty response', function () {
+      let body;
+      let result = spec.interpretResponse({ body }, bidRequest);
       expect(result.length).to.equal(0);
     });
 
