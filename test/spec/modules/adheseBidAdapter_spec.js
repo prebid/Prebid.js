@@ -155,6 +155,8 @@ describe('AdheseAdapter', function () {
         netRevenue: NET_REVENUE,
         ttl: TTL,
         adhese: {
+          origin: 'APPNEXUS',
+          originInstance: '',
           originData: {
             adType: 'leaderboard',
             seatbid: [
@@ -199,7 +201,10 @@ describe('AdheseAdapter', function () {
         mediaType: 'video',
         netRevenue: NET_REVENUE,
         ttl: TTL,
-        adhese: { originData: {} }
+        adhese: {
+          origin: 'RUBICON',
+          originInstance: '',
+          originData: {} }
       }];
       expect(spec.interpretResponse(sspVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
@@ -251,6 +256,8 @@ describe('AdheseAdapter', function () {
         requestId: BID_ID,
         ad: '<script id="body" type="text/javascript"></script><img src=\'https://hosts-demo.adhese.com/track/742898\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
         adhese: {
+          origin: '',
+          originInstance: '',
           originData: {
             adFormat: 'largeleaderboard',
             adId: '742898',
@@ -310,6 +317,8 @@ describe('AdheseAdapter', function () {
         requestId: BID_ID,
         vastXml: '<?xml version=\'1.0\' encoding=\'UTF-8\' standalone=\'no\'?><VAST version=\'2.0\' xmlns:xsi=\'http://www.w3.org/2001/XMLSchema-instance\' xsi:noNamespaceSchemaLocation=\'vast.xsd\'></VAST>',
         adhese: {
+          origin: '',
+          originInstance: '',
           originData: {
             adFormat: '',
             adId: '742470',

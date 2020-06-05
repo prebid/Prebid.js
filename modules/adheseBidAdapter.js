@@ -75,7 +75,7 @@ function adResponse(bid, ad) {
   const price = getPrice(ad);
   const adDetails = getAdDetails(ad);
   const markup = getAdMarkup(ad);
-  
+
   const bidResponse = getbaseAdResponse({
     requestId: bid.bidId,
     mediaType: getMediaType(markup),
@@ -138,8 +138,8 @@ function getAccount(validBidRequests) {
 }
 
 function getId5Id(validBidRequests) {
-  if(validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.id5id) {
-    return validBidRequests[0].userId.id5id;  
+  if (validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.id5id) {
+    return validBidRequests[0].userId.id5id;
   }
 }
 
