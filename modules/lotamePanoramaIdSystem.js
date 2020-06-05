@@ -206,7 +206,7 @@ export const lotamePanoramaIdSubmodule = {
               responseObj = JSON.parse(response);
               saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts);
 
-              if (!utils.isEmptyStr(responseObj.core_id)) {
+              if (utils.isStr(responseObj.core_id)) {
                 saveLotameCache(
                   KEY_ID,
                   responseObj.core_id,
@@ -216,10 +216,11 @@ export const lotamePanoramaIdSubmodule = {
                 clearLotameCache(KEY_ID);
               }
 
-              if (!utils.isEmptyStr(responseObj.profile_id)) {
+              if (utils.isStr(responseObj.profile_id)) {
                 setProfileId(responseObj.profile_id);
               } else {
                 clearLotameCache(KEY_PROFILE);
+                clearLotameCache(KEY_ID);
               }
             } catch (error) {
               utils.logError(error);

@@ -158,7 +158,18 @@ describe('LotameId', function() {
           sinon.match.any
         );
 
-        sinon.assert.neverCalledWith(setCookieStub, 'panoramaId', sinon.match.any);
+        sinon.assert.calledWith(
+          removeFromLocalStorageStub,
+          'panoramaId'
+        );
+
+        sinon.assert.calledWith(
+          setCookieStub,
+          'panoramaId',
+          '',
+          'Thu, 01 Jan 1970 00:00:00 GMT',
+          'Lax'
+        );
       });
     });
 
@@ -250,10 +261,8 @@ describe('LotameId', function() {
       let callBackSpy = sinon.spy();
 
       beforeEach(function () {
-        getLocalStorageStub
-          .withArgs('panoramaId_expiry')
-          .returns('1000');
-        getLocalStorageStub
+        getCookieStub.withArgs('panoramaId_expiry').returns('1000');
+        getCookieStub
           .withArgs('panoramaId')
           .returns(
             'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87d'
@@ -278,6 +287,64 @@ describe('LotameId', function() {
 
       it('should call the remote server when getId is called', function () {
         expect(callBackSpy.calledOnce).to.be.true;
+      });
+    });
+
+    describe('receives an optout request', function () {
+      let request;
+      let callBackSpy = sinon.spy();
+
+      beforeEach(function () {
+        getCookieStub.withArgs('panoramaId_expiry').returns('1000');
+        getCookieStub
+          .withArgs('panoramaId')
+          .returns(
+            'ca22992567e3cd4d116a5899b88a55d0d857a23610db939ae6ac13ba2335d87d'
+          );
+
+        let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
+        submoduleCallback(callBackSpy);
+
+        request = server.requests[0];
+
+        request.respond(
+          200,
+          responseHeader,
+          JSON.stringify({
+            expiry_ts: Date.now() + (30 * 24 * 60 * 60 * 1000),
+          })
+        );
+      });
+
+      it('should call the remote server when getId is called', function () {
+        expect(callBackSpy.calledOnce).to.be.true;
+      });
+
+      it('should clear the panorama id', function () {
+        sinon.assert.calledWith(
+          removeFromLocalStorageStub,
+          'panoramaId'
+        );
+
+        sinon.assert.calledWith(
+          setCookieStub,
+          'panoramaId',
+          '',
+          'Thu, 01 Jan 1970 00:00:00 GMT',
+          'Lax'
+        );
+      });
+
+      it('should clear the profile id', function () {
+        sinon.assert.calledWith(removeFromLocalStorageStub, '_cc_id');
+
+        sinon.assert.calledWith(
+          setCookieStub,
+          '_cc_id',
+          '',
+          'Thu, 01 Jan 1970 00:00:00 GMT',
+          'Lax'
+        );
       });
     });
   });
