@@ -123,7 +123,7 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe.only('adtargetBidAdapter', () => {
+describe('adtargetBidAdapter', () => {
   const adapter = newBidder(spec);
   describe('inherited functions', () => {
     it('exists and is a function', () => {
