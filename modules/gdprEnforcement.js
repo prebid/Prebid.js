@@ -188,7 +188,7 @@ export function userIdHook(fn, submodules, consentData) {
 }
 
 /**
- * Checks if a bidder is allowed. If it's not allowed, the bidder adapter won't send request to the endpoint.
+ * Checks if a bidder is allowed. If it's not allowed, the bidder adapter won't send request to their endpoint.
  * Enforces "purpose 2 (basic ads)" of TCF v2.0 spec
  * @param {Function} fn - Function reference to the original function.
  * @param {Array<adUnits>} adUnits
@@ -226,7 +226,7 @@ const hasPurpose1 = (rule) => { return rule.purpose === TCF2.purpose1.name }
 const hasPurpose2 = (rule) => { return rule.purpose === TCF2.purpose2.name }
 
 /**
- * A configuration function that initializes some module variables, as well as add hooks
+ * A configuration function that initializes some module variables, as well as adds hooks
  * @param {Object} config - GDPR enforcement config object
  */
 export function setEnforcementConfig(config) {
@@ -240,6 +240,14 @@ export function setEnforcementConfig(config) {
 
   purpose1Rule = find(enforcementRules, hasPurpose1);
   purpose2Rule = find(enforcementRules, hasPurpose2);
+
+  if (!purpose1Rule) {
+    purpose1Rule = DEFAULT_RULES[0];
+  }
+
+  if (!purpose2Rule) {
+    purpose2Rule = DEFAULT_RULES[1];
+  }
 
   if (purpose1Rule && !addedDeviceAccessHook) {
     addedDeviceAccessHook = true;
