@@ -12,6 +12,7 @@ const storage = getStorageManager();
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
+const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const TIME_TO_LIVE = 60
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
@@ -62,7 +63,7 @@ function _getBrowserParams(topWindowUrl) {
     pu: topUrl,
     ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: encodeURIComponent(JSON.stringify({ t: 0, rq: 8 })),
+    jcsi: JSON.stringify(JCSI),
     ogu: getOgURL()
   }
 
@@ -323,7 +324,8 @@ function interpretResponse (serverResponse, bidRequest) {
     cw: wrapper,
     pag: {
       pvid
-    }
+    },
+    jcsi
   } = Object.assign(defaultResponse, serverResponseBody)
   let data = bidRequest.data || {}
   let product = data.pi
@@ -335,6 +337,10 @@ function interpretResponse (serverResponse, bidRequest) {
   if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
     width = '1'
     height = '1'
+  }
+
+  if (jcsi) {
+    serverResponseBody.jcsi = JCSI
   }
 
   // update Page View ID from server response
