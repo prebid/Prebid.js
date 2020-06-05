@@ -3,7 +3,7 @@
 ```
 Module Name: Concert Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: 'TODO ADD EMAIL'
+Maintainer: support@concert.io
 ```
 
 # Description
