@@ -110,7 +110,7 @@ const interpretedBidsImg = [
     width: 350,
     height: 50,
     ad: '<div onclick=\"fetch(decodeURIComponent(\'http%3A%2F%2Flocalhost%3A3000%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});\"><a href=\"http://localhost:3000/track/ctaurl\"><img src=\"http://localhost:3000/static/ad.jpg\" width=\"320\" height=\"50\"/></a></div><img src=\"http://localhost:3000/track/imp/1\" alt=\"\" width=\"0\" height=\"0\"/><img src=\"http://localhost:3000/track/imp/2\" alt=\"\" width=\"0\" height=\"0\"/>',
-    ttl: 1000,
+    ttl: 300,
     creativeId: 'CR69381',
     dealId: '12345',
     netRevenue: false,
@@ -125,7 +125,7 @@ const interpretedBidsRichmedia = [
     width: 350,
     height: 50,
     ad: '<div><h3>RICHMEDIA CONTENT</h3></div>',
-    ttl: 1000,
+    ttl: 300,
     creativeId: 'CR69381',
     dealId: '12345',
     netRevenue: false,
@@ -254,6 +254,22 @@ describe('smaatoBidAdapterTestOld', () => {
     it('single richmedia reponse', () => {
       const bids = spec.interpretResponse(openRtbBidResponse(ADTYPE_RICHMEDIA), request);
       assert.deepStrictEqual(bids, interpretedBidsRichmedia);
+    });
+    it('uses correct TTL when expire header exists', () => {
+      const clock = sinon.useFakeTimers();
+      clock.tick(2000);
+      let resp = openRtbBidResponse(ADTYPE_IMG);
+      resp.headers.get = (header) => {
+        if (header === 'X-SMT-ADTYPE') {
+          return ADTYPE_IMG;
+        }
+        if (header === 'X-SMT-Expires') {
+          return 2000 + (400 * 1000);
+        }
+      }
+      const bids = spec.interpretResponse(resp, request);
+      expect(bids[0].ttl).to.equal(400);
+      clock.restore();
     });
   });
 });

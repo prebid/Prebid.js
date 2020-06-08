@@ -124,7 +124,14 @@ export const spec = {
     // const serverBody  = serverResponse.body;
     let serverResponseHeaders = serverResponse.headers;
     const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
+
     const smtExpires = serverResponseHeaders.get('X-SMT-Expires');
+    let ttlSec = 300;
+
+    if (smtExpires !== undefined) {
+      ttlSec = Math.floor((smtExpires - Date.now()) / 1000);
+    }
+
     const res = serverResponse.body;
 
     utils.logInfo('[SMAATO] OpenRTB Response:', res);
@@ -153,7 +160,7 @@ export const spec = {
               width: b.w,
               height: b.h,
               ad: ad,
-              ttl: 1000,
+              ttl: ttlSec,
               creativeId: b.crid,
               dealId: b.dealid || null,
               netRevenue: false,
