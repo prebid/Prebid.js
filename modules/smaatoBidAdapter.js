@@ -197,16 +197,27 @@ const createImgAd = (adm) => {
     clickEvent += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
   })
 
-  let markup = `<div onclick="${clickEvent}"><a href="${image.img.ctaurl}"><img src="${image.img.url}" width="${image.img.w}" height="${image.img.h}"/></a></div>`;
+  let markup = `<div onclick="${clickEvent}"><a href="${image.img.ctaurl}"><img src="${image.img.url}" width="${image.img.w}" height="${image.img.h}"/></a>`;
 
   image.impressiontrackers.forEach(src => {
     markup += `<img src="${src}" alt="" width="0" height="0"/>`;
   });
 
-  return markup;
+  return markup + '</div>';
 }
 
 const createRichmediaAd = (adm) => {
-  const rich = JSON.parse(adm).richmedia.mediadata;
-  return rich.content;
+  const rich = JSON.parse(adm).richmedia;
+  let clickEvent = '';
+  rich.clicktrackers.forEach(src => {
+    clickEvent += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
+  })
+
+  let markup = `<div onclick="${clickEvent}">${rich.mediadata.content}`;
+
+  rich.impressiontrackers.forEach(src => {
+    markup += `<img src="${src}" alt="" width="0" height="0"/>`;
+  });
+
+  return markup + '</div>';
 }

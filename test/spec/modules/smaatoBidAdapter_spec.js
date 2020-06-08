@@ -1,4 +1,3 @@
-// import { assert, expect } from 'chai';
 import { spec } from 'modules/smaatoBidAdapter.js';
 import * as utils from 'src/utils.js';
 
@@ -28,12 +27,11 @@ const richmediaAd = {
       h: 600
     },
     impressiontrackers: [
-      'http://www.mytracker.com/impressiontracker01',
-      'http://www.mytracker.com/impressiontracker02'
+      'http://localhost:3000/track/imp/1',
+      'http://localhost:3000/track/imp/2'
     ],
     clicktrackers: [
-      'http://www.mytracker.com/clicktracker01',
-      'http://www.mytracker.com/clicktracker02'
+      'http://localhost:3000/track/click/1'
     ]
   }
 }
@@ -109,7 +107,7 @@ const interpretedBidsImg = [
     cpm: 0.01,
     width: 350,
     height: 50,
-    ad: '<div onclick=\"fetch(decodeURIComponent(\'http%3A%2F%2Flocalhost%3A3000%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});\"><a href=\"http://localhost:3000/track/ctaurl\"><img src=\"http://localhost:3000/static/ad.jpg\" width=\"320\" height=\"50\"/></a></div><img src=\"http://localhost:3000/track/imp/1\" alt=\"\" width=\"0\" height=\"0\"/><img src=\"http://localhost:3000/track/imp/2\" alt=\"\" width=\"0\" height=\"0\"/>',
+    ad: '<div onclick=\"fetch(decodeURIComponent(\'http%3A%2F%2Flocalhost%3A3000%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});\"><a href=\"http://localhost:3000/track/ctaurl\"><img src=\"http://localhost:3000/static/ad.jpg\" width=\"320\" height=\"50\"/></a><img src=\"http://localhost:3000/track/imp/1\" alt=\"\" width=\"0\" height=\"0\"/><img src=\"http://localhost:3000/track/imp/2\" alt=\"\" width=\"0\" height=\"0\"/></div>',
     ttl: 300,
     creativeId: 'CR69381',
     dealId: '12345',
@@ -124,7 +122,7 @@ const interpretedBidsRichmedia = [
     cpm: 0.01,
     width: 350,
     height: 50,
-    ad: '<div><h3>RICHMEDIA CONTENT</h3></div>',
+    ad: '<div onclick=\"fetch(decodeURIComponent(\'http%3A%2F%2Flocalhost%3A3000%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});\"><div><h3>RICHMEDIA CONTENT</h3></div><img src=\"http://localhost:3000/track/imp/1\" alt=\"\" width=\"0\" height=\"0\"/><img src=\"http://localhost:3000/track/imp/2\" alt=\"\" width=\"0\" height=\"0\"/></div>',
     ttl: 300,
     creativeId: 'CR69381',
     dealId: '12345',
