@@ -287,7 +287,7 @@ function createVideoRequestData(bid, bidderRequest) {
       }, video),
       bidfloor: bidfloor,
       tagid: tagid,
-      secure: topLocation.protocol === 'https:' ? 1 : 0,
+      secure: topLocation.protocol.indexOf('https') === 0 ? 1 : 0,
       displaymanager: ADAPTER_NAME,
       displaymanagerver: ADAPTER_VERSION
     }],
