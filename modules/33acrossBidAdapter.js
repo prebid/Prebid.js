@@ -125,7 +125,11 @@ function _createServerRequest(bidRequest, gdprConsent = {}, uspConsent, pageUrl)
       } ]
     }
   };
-
+  
+  if(bidRequest.schain) {
+    ttxRequest.source = _getSchainInfo(bidRequest.schain);
+  }
+  
   // Finally, set the openRTB 'test' param if this is to be a test bid
   if (params.test === 1) {
     ttxRequest.test = 1;
@@ -150,6 +154,42 @@ function _createServerRequest(bidRequest, gdprConsent = {}, uspConsent, pageUrl)
     'data': JSON.stringify(contributeViewability(ttxRequest)),
     'options': options
   }
+}
+
+function _getSchainInfo(schain) {
+  if(_isValidSchain(schain)) {
+    return {
+      ext: { schain }
+    }
+  } else {
+    utils.logWarn('[33Across Adapter] Invalid schain info passed');
+    return null;
+  }
+}
+
+// We validate schain as follows:
+//  - Complete status must be 0|1
+//  - Nodes must be defined and non-empty array
+//  - Each node must contain all the required fields
+// The entire schain schain object is marked as invalid i.e. return false if any 
+// of the above conditions fail.
+function _isValidSchain(schain) {
+  //Check of nodes are valid
+  if(!schain.nodes || !schain.nodes.length > 0) {
+    return false;
+  }
+
+  //Check is complete status is valid
+  if(schain.complete !== 0 && schain.complete !== 1) {
+    return false;
+  }
+
+  // Check for required fields in nodes
+  const requiredFields = ['asi', 'sid', 'hp'];
+
+  return schain.nodes.every((node)=> {
+    return requiredFields.every((field)=> node[field]);
+  });
 }
 
 // Sync object will always be of type iframe for TTX
