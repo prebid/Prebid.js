@@ -1,45 +1,82 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'dspx';
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
+const DEFAULT_VAST_FORMAT = 'vast2';
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['dspx'],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     return !!(bid.params.placement);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
+
+      const videoData = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
+      const sizes = utils.parseSizesInput(videoData.playerSize || bidRequest.sizes)[0];
+      const [width, height] = sizes.split('x');
+
       const placementId = params.placement;
       const rnd = Math.floor(Math.random() * 99999999999);
-      const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      const referrer = bidderRequest.refererInfo.referer;
       const bidId = bidRequest.bidId;
       const isDev = params.devMode || false;
 
-      let bannerSizes = utils.parseSizesInput(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes);
-      let [width, height] = bannerSizes[0].split('x');
-
       let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
+      let payload = {};
 
-      const payload = {
-        _f: 'html',
-        alternative: 'prebid_js',
-        inventory_item_id: placementId,
-        srw: width,
-        srh: height,
-        idt: 100,
-        rnd: rnd,
-        ref: referrer,
-        bid_id: bidId,
-      };
+      if (isVideoRequest(bidRequest)) {
+        let vastFormat = params.vastFormat || DEFAULT_VAST_FORMAT;
+        payload = {
+          _f: vastFormat,
+          alternative: 'prebid_js',
+          inventory_item_id: placementId,
+          srw: width,
+          srh: height,
+          idt: 100,
+          rnd: rnd,
+          ref: referrer,
+          bid_id: bidId,
+        };
+      } else {
+        payload = {
+          _f: 'html',
+          alternative: 'prebid_js',
+          inventory_item_id: placementId,
+          srw: width,
+          srh: height,
+          idt: 100,
+          rnd: rnd,
+          ref: referrer,
+          bid_id: bidId,
+        };
+      }
+
       if (params.pfilter !== undefined) {
         payload.pfilter = params.pfilter;
       }
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        if (payload.pfilter !== undefined) {
+          if (!payload.pfilter.gdpr_consent) {
+            payload.pfilter.gdpr_consent = bidderRequest.gdprConsent.consentString;
+            payload.pfilter.gdpr = bidderRequest.gdprConsent.gdprApplies;
+          }
+        } else {
+          payload.pfilter = {
+            'gdpr_consent': bidderRequest.gdprConsent.consentString,
+            'gdpr': bidderRequest.gdprConsent.gdprApplies
+          };
+        }
+      }
+
       if (params.bcat !== undefined) {
         payload.bcat = params.bcat;
       }
@@ -75,9 +112,14 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         type: response.type,
-        ttl: config.getConfig('_bidderTimeout'),
-        ad: response.adTag
+        ttl: config.getConfig('_bidderTimeout')
       };
+      if (response.vastXml) {
+        bidResponse.vastXml = response.vastXml;
+        bidResponse.mediaType = 'video';
+      } else {
+        bidResponse.ad = response.adTag;
+      }
       bidResponses.push(bidResponse);
     }
     return bidResponses;
@@ -97,6 +139,16 @@ function objectToQueryString(obj, prefix) {
     }
   }
   return str.join('&');
+}
+
+/**
+ * Check if it's a video bid request
+ *
+ * @param {BidRequest} bid - Bid request generated from ad slots
+ * @returns {boolean} True if it's a video bid
+ */
+function isVideoRequest(bid) {
+  return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video');
 }
 
 registerBidder(spec);

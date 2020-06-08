@@ -58,6 +58,7 @@ export const spec = {
     let requestId = '';
     let pubcid = null;
     let pubcidName = '_pubcid';
+    let bidurl = URL;
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
@@ -108,6 +109,9 @@ export const spec = {
         pubcid = bid.userId.pubcid;
       } else if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
+      }
+      if (bid.params.white_label_url) {
+        bidurl = bid.params.white_label_url;
       }
 
       return imp;
@@ -164,7 +168,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: URL,
+      url: bidurl,
       data: payload,
     };
   },
