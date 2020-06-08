@@ -44,8 +44,6 @@ function getGvlid(bidderCode) {
     if (bidder && bidder.getSpec) {
       gvlid = bidder.getSpec().gvlid;
     }
-  } else {
-    utils.logWarn('Current module not found');
   }
   return gvlid;
 }
@@ -102,7 +100,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
           gvlid = getGvlid();
         }
         const curModule = moduleName || config.getCurrentBidder();
-        let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
+        let isAllowed = gvlid && validateRules(purpose1Rule, consentData, curModule, gvlid);
         if (isAllowed) {
           result.valid = true;
           fn.call(this, gvlid, moduleName, result);
