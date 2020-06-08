@@ -219,7 +219,6 @@ describe('33acrossBidAdapter:', function () {
 
   afterEach(function() {
     sandbox.restore();
-    spec.adapterState.uniqueSiteIds = [];
   });
 
   describe('isBidRequestValid:', function() {

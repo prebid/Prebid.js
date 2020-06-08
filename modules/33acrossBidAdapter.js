@@ -332,14 +332,21 @@ function interpretResponse(serverResponse, bidRequest) {
 // For logic on how we handle gdpr data see _createSyncs and module's unit tests
 // '33acrossBidAdapter#getUserSyncs'
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
-  return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, siteId })) : ([]);
+  const syncUrls = (
+    (syncOptions.iframeEnabled) 
+    ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, siteId })) 
+    : ([])
+  );
+
+  // Clear adapter state of siteID's since we don't need this info anymore.
+  adapterState.uniqueSiteIds = [];
+
+  return syncUrls;
 }
 
 export const spec = {
   NON_MEASURABLE,
-
-  adapterState,
-
+  
   code: BIDDER_CODE,
 
   isBidRequestValid,
