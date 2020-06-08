@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.0';
+const ADAPTER_VERSION = '1.0.1';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -51,7 +51,6 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     let payload = {
       version: ADAPTER_VERSION,
-      ref: bidderRequest.refererInfo.referer,
       timeout_ms: bidderRequest.timeout,
       ad_unit_code: bidRequest.adUnitCode,
       auction_id: bidRequest.auctionId,
@@ -73,6 +72,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       payload.width = sizes[0][0];
       payload.height = sizes[0][1];
     }
+
+    // It may not be encoded, so add it at the end of the payload
+    payload.ref = bidderRequest.refererInfo.referer;
 
     bidRequests.push({
       method: 'GET',
