@@ -3,6 +3,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
+const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
 
 describe('gumgumAdapter', function () {
   const adapter = newBidder(spec);
@@ -62,6 +63,20 @@ describe('gumgumAdapter', function () {
         'bidfloor': '0.50'
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false if invalid request id is found', function () {
+      const bidRequest = {
+        id: 12345,
+        sizes: [[300, 250], [1, 1]],
+        url: ENDPOINT,
+        method: 'GET',
+        pi: 3,
+        data: { t: '10433394' }
+      };
+      let body;
+      spec.interpretResponse({ body }, bidRequest); // empty response
+      expect(spec.isBidRequestValid(bid)).to.be.equal(false);
     });
   });
 
@@ -260,12 +275,13 @@ describe('gumgumAdapter', function () {
         expect(bidRequest.data).to.not.include.any.keys('ns');
       }
     });
-    it('has jcsi param correctly encoded', function () {
-      const jcsi = JSON.stringify({ t: 0, rq: 8 });
-      const encodedJCSI = encodeURIComponent(jcsi);
+    it('adds jcsi param with correct keys', function () {
+      const expectedKeys = Object.keys(JCSI).sort();
+      const jcsi = JSON.stringify(JCSI);
       const bidRequest = spec.buildRequests(bidRequests)[0];
-      expect(bidRequest.data.jcsi).to.not.contain(/\{.*\}/);
-      expect(bidRequest.data.jcsi).to.eq(encodedJCSI);
+      const actualKeys = Object.keys(JSON.parse(bidRequest.data.jcsi)).sort();
+      expect(actualKeys).to.eq(actualKeys);
+      expect(bidRequest.data.jcsi).to.eq(jcsi);
     });
   })
 
@@ -290,6 +306,7 @@ describe('gumgumAdapter', function () {
         'css': 'html { overflow-y: auto }',
         'js': 'console.log("environment", env);'
       },
+      'jcsi': { t: 0, rq: 8 },
       'thms': 10000
     }
     let bidRequest = {
@@ -341,6 +358,12 @@ describe('gumgumAdapter', function () {
       expect(result.length).to.equal(0);
     });
 
+    it('handles empty response', function () {
+      let body;
+      let result = spec.interpretResponse({ body }, bidRequest);
+      expect(result.length).to.equal(0);
+    });
+
     it('returns 1x1 when eligible product and size available', function () {
       let inscreenBidRequest = {
         id: 12346,
@@ -376,7 +399,14 @@ describe('gumgumAdapter', function () {
       let result = spec.interpretResponse({ body: inscreenServerResponse }, inscreenBidRequest);
       expect(result[0].width).to.equal('1');
       expect(result[0].height).to.equal('1');
-    })
+    });
+
+    it('updates jcsi object when the server response jcsi prop is found', function () {
+      const response = Object.assign({cw: 'AD_JSON'}, serverResponse);
+      const bidResponse = spec.interpretResponse({ body: response }, bidRequest)[0].ad;
+      const decodedResponse = JSON.parse(atob(bidResponse));
+      expect(decodedResponse.jcsi).to.eql(JCSI);
+    });
   })
   describe('getUserSyncs', function () {
     const syncOptions = {

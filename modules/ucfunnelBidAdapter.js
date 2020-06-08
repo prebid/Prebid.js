@@ -1,6 +1,9 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-
+import { getStorageManager } from '../src/storageManager.js';
+import * as utils from '../src/utils.js';
+const storage = getStorageManager();
+const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
 
@@ -183,9 +186,6 @@ function getSupplyChain(schain) {
 
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
-  const loc = window.location;
-  const host = loc.host;
-  const page = loc.href;
   const language = navigator.language;
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
@@ -197,13 +197,37 @@ function getRequestData(bid, bidderRequest) {
     bl: language,
     je: 1,
     dnt: dnt,
-    host: host,
-    u: page,
     adid: bid.params.adid,
     tdid: userIdTdid,
     schain: supplyChain,
     fp: bid.params.bidfloor
   };
+
+  try {
+    bidData.host = window.top.location.hostname;
+    bidData.u = window.top.location.href;
+    bidData.xr = 0;
+  } catch (e) {
+    bidData.host = window.location.hostname;
+    bidData.u = document.referrer || window.location.href;
+    bidData.xr = 1;
+  }
+
+  if (window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0) {
+    bidData.ao = window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1];
+  }
+
+  if (storage.cookiesAreEnabled()) {
+    let ucfUid = '';
+    if (storage.getCookie(COOKIE_NAME) != undefined) {
+      ucfUid = storage.getCookie(COOKIE_NAME);
+      bidData.ucfUid = ucfUid;
+    } else {
+      ucfUid = utils.generateUUID();
+      bidData.ucfUid = ucfUid;
+      storage.setCookie(COOKIE_NAME, ucfUid);
+    }
+  }
 
   if (size != undefined && size.length == 2) {
     bidData.w = size[0];

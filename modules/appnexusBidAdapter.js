@@ -199,6 +199,10 @@ export const spec = {
       payload.tpuids = tpuids;
     }
 
+    if (tags[0].publisher_id) {
+      payload.publisher_id = tags[0].publisher_id;
+    }
+
     const request = formatRequest(payload, bidderRequest);
     return request;
   },
@@ -282,7 +286,8 @@ export const spec = {
       'member': 'string',
       'invCode': 'string',
       'placementId': 'number',
-      'keywords': utils.transformBidderParamKeywords
+      'keywords': utils.transformBidderParamKeywords,
+      'publisherId': 'number'
     }, params);
 
     if (isOpenRtb) {
@@ -656,6 +661,9 @@ function bidToTag(bid) {
   }
   if (bid.params.extInvCode) {
     tag.ext_inv_code = bid.params.extInvCode;
+  }
+  if (bid.params.publisherId) {
+    tag.publisher_id = parseInt(bid.params.publisherId, 10);
   }
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
