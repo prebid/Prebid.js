@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec as adapter, URL} from 'modules/vidazooBidAdapter.js';
+import { expect } from 'chai';
+import { spec as adapter, URL } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const BID = {
@@ -137,6 +137,7 @@ describe('VidazooBidAdapter', function () {
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
           publisherId: '59ac17c192832d0011283fe3',
+          dealId: 1,
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }
@@ -149,7 +150,7 @@ describe('VidazooBidAdapter', function () {
   });
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -158,7 +159,7 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.com',
@@ -174,12 +175,12 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
