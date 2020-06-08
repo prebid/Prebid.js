@@ -12,9 +12,12 @@ const storage = getStorageManager();
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
+const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const TIME_TO_LIVE = 60
+const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 
+let invalidRequestIds = {};
 let browserParams = {};
 let pageViewId = null
 
@@ -60,7 +63,7 @@ function _getBrowserParams(topWindowUrl) {
     pu: topUrl,
     ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: encodeURIComponent(JSON.stringify({ t: 0, rq: 8 })),
+    jcsi: JSON.stringify(JCSI),
     ogu: getOgURL()
   }
 
@@ -132,9 +135,16 @@ function isBidRequestValid (bid) {
     params,
     adUnitCode
   } = bid;
+  const id = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo;
+
+  if (invalidRequestIds[id]) {
+    utils.logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
+    return false;
+  }
 
   switch (true) {
     case !!(params.inScreen): break;
+    case !!(params.inScreenPubID): break;
     case !!(params.inSlot): break;
     case !!(params.ICV): break;
     case !!(params.video): break;
@@ -281,6 +291,19 @@ function buildRequests (validBidRequests, bidderRequest) {
 function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = []
   const serverResponseBody = serverResponse.body
+
+  if (!serverResponseBody || serverResponseBody.err) {
+    const data = bidRequest.data || {}
+    const id = data.t || data.si || data.ni || data.pubId;
+    const delayTime = serverResponseBody ? serverResponseBody.err.drt : DELAY_REQUEST_TIME;
+    invalidRequestIds[id] = { productId: data.pi, timestamp: new Date().getTime() };
+
+    setTimeout(() => {
+      !!invalidRequestIds[id] && delete invalidRequestIds[id];
+    }, delayTime);
+    utils.logWarn(`[GumGum] Please check the implementation for ${id}`);
+  }
+
   const defaultResponse = {
     ad: {
       price: 0,
@@ -301,7 +324,8 @@ function interpretResponse (serverResponse, bidRequest) {
     cw: wrapper,
     pag: {
       pvid
-    }
+    },
+    jcsi
   } = Object.assign(defaultResponse, serverResponseBody)
   let data = bidRequest.data || {}
   let product = data.pi
@@ -313,6 +337,10 @@ function interpretResponse (serverResponse, bidRequest) {
   if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
     width = '1'
     height = '1'
+  }
+
+  if (jcsi) {
+    serverResponseBody.jcsi = JCSI
   }
 
   // update Page View ID from server response
