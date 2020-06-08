@@ -47,10 +47,10 @@ export const spec = {
       url: requestUrl,
       options: {withCredentials: false},
       data: {
-        gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : 0,
+        gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false,
         gdpr_cs: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? bidderRequest.gdprConsent.consentString : '',
         topLevelUrl: window.top.location.href,
-        refererUrl: bidderRequest.refererInfo.referer,
+        refererUrl: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer : '',
         isiframe,
         version: '$prebid.version$',
         visitorInfo: {
@@ -107,6 +107,9 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const serverBody = serverResponses[0].body;
     const syncs = [];
+    gdprConsent = gdprConsent || {
+      gdprApplies: false, consentString: '',
+    };
 
     if (serverBody) {
       if (serverBody.bids) {

@@ -209,6 +209,25 @@ describe('H12 Media Adapter', function () {
       expect(requestsData.bidrequests[1]).to.include({size: validBid2.params.size});
     });
 
+    it('should return GDPR info', function () {
+      createElementVisible(validBid.adUnitCode);
+      createElementVisible(validBid2.adUnitCode);
+      const requests = spec.buildRequests([validBid, validBid2], bidderRequest);
+      const requestsData = requests.data;
+
+      expect(requestsData).to.include({gdpr: true, gdpr_cs: bidderRequest.gdprConsent.consentString});
+    });
+
+    it('should not have error on empty GDPR', function () {
+      createElementVisible(validBid.adUnitCode);
+      createElementVisible(validBid2.adUnitCode);
+      const bidderRequestWithoutGDRP = {...bidderRequest, gdprConsent: null};
+      const requests = spec.buildRequests([validBid, validBid2], bidderRequestWithoutGDRP);
+      const requestsData = requests.data;
+
+      expect(requestsData).to.include({gdpr: false});
+    });
+
     it('should create single POST', function () {
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
@@ -347,6 +366,15 @@ describe('H12 Media Adapter', function () {
       const syncs = spec.getUserSyncs(syncOptions, [{body: serverResponse}], bidderRequest.gdprConsent);
 
       expect(syncs).to.deep.include(result);
+    });
+
+    it('should success without GDRP', function () {
+      const result = {
+        type: 'iframe',
+        url: `https://cookiesync.3rdpartypartner.com/?3rdparty_partner_user_id={user_id}&partner_id=h12media&gdpr_applies=false&gdpr_consent_string=`,
+      };
+
+      expect(spec.getUserSyncs(syncOptions, [{body: serverResponse}], null)).to.deep.include(result);
     });
 
     it('should success without usersync url', function () {
