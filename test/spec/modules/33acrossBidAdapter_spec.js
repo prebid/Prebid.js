@@ -22,13 +22,11 @@ describe('33acrossBidAdapter:', function () {
           format: [
             {
               w: 300,
-              h: 250,
-              ext: {}
+              h: 250
             },
             {
               w: 728,
-              h: 90,
-              ext: {}
+              h: 90
             }
           ],
           ext: {
@@ -339,7 +337,7 @@ describe('33acrossBidAdapter:', function () {
     context('when width or height of the element is zero', function() {
       it('try to use alternative values', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withSizes([{ w: 800, h: 2400, ext: {} }])
+          .withSizes([{ w: 800, h: 2400 }])
           .withViewability({amount: 25})
           .build();
         const serverRequest = new ServerRequestBuilder()

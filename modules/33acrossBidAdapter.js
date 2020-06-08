@@ -86,7 +86,7 @@ function _createServerRequest(bidRequest, gdprConsent = {}, uspConsent, pageUrl)
   ttxRequest.imp = [];
   ttxRequest.imp[0] = {
     banner: {
-      format: sizes.map(size => Object.assign(size, { ext: {} }))
+      format: sizes
     },
     ext: {
       ttx: {
