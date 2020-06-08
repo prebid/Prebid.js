@@ -819,6 +819,22 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.options).to.deep.equal({withCredentials: false});
     });
+
+    it('should populate eids array when ttd id is available', function () {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        userId: {
+          tdid: 'sample-userid'
+        }
+      });
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.eids).to.deep.equal([{
+        source: 'adserver.org',
+        id: 'sample-userid',
+        rti_partner: 'TDID'
+      }]);
+    });
   })
 
   describe('interpretResponse', function () {

@@ -199,6 +199,17 @@ export const spec = {
       payload.tpuids = tpuids;
     }
 
+    const tdid = utils.deepAccess(bidRequests[0], `userId.tdid`);
+    if (tdid) {
+      let eids = [];
+      eids.push({
+        source: 'adserver.org',
+        id: tdid,
+        rti_partner: 'TDID'
+      });
+      payload.eids = eids;
+    }
+
     if (tags[0].publisher_id) {
       payload.publisher_id = tags[0].publisher_id;
     }
