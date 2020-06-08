@@ -1,5 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import find from 'core-js-pure/features/array/find.js';
 const BIDDER_CODE = 'h12media';
 const DEFAULT_URL = 'https://bidder.h12-media.com/prebid/';
 const DEFAULT_CURRENCY = 'USD';
@@ -75,7 +76,7 @@ export const spec = {
       if (serverBody) {
         if (serverBody.bids) {
           serverBody.bids.forEach(bidBody => {
-            const bidRequest = bidRequests.data.bidrequests.find(bid => bid.bidId === bidBody.bidId);
+            const bidRequest = find(bidRequests.data.bidrequests, bid => bid.bidId === bidBody.bidId);
             const bidResponse = {
               currency: serverBody.currency || DEFAULT_CURRENCY,
               netRevenue: serverBody.netRevenue || DEFAULT_NET_REVENUE,
