@@ -762,7 +762,6 @@ describe('33acrossBidAdapter:', function () {
           transactionId: 't2'
         }
       ];
-      console.log(spec.adapterState);
     });
 
     context('when iframe is not enabled', function() {
