@@ -135,7 +135,7 @@ export const spec = {
 
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL + (params ? `?${params.join('&')}` : '')
+        url: USER_SYNC_URL + (params.length > 0 ? `?${params.join('&')}` : '')
       });
     }
     return syncs;
