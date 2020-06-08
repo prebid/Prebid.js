@@ -46,11 +46,16 @@ For modules and core platform updates, the initial reviewer should request an ad
 
 ## Ticket Coordinator
 
-Each week, Prebid Org assigns one person to keep an eye on incoming issues and PRs. That person should:
+Each week, Prebid Org assigns one person to keep an eye on incoming issues and PRs. Every Monday morning a reminder is
+sent to the prebid-js slack channel with a link to the spreadsheet. If you're on rotation, please check that list each
+Monday to see if you're on-duty.
+
+When on-duty:
 - Review issues and PRs at least once per weekday for new items. Encourage a 48 "SLA" on PRs/issues assigned. Aim for touchpoint once every 48/hours. 
-- For PRs: assign PRs to individuals on the PR review list. Try to be equitable -- not all PRs are created equally. Use the "Assigned" field and add the "Needs Review" label.
+- For PRs: assign PRs to individuals on the **PR review list**. Try to be equitable -- not all PRs are created equally. Use the "Assigned" field and add the "Needs Review" label.
 - For Issues: try to address questions and troubleshooting requests on your own, assigning them to others as needed. Please add labels as appropriate (I.E. bug, question, backlog etc).
 - Issues that are questions or troubleshooting requests may be closed if the originator doesn't respond within a week to requests for confirmation or details.
 - Issues that are bug reports should be left open and assigned to someone in PR rotation to confirm or deny the bug status.
-- It's polite to check with others before assigning them large tasks.
-- If possible, check in on older items and see if they can be unstuck.
+- It's polite to check with others before assigning them extra-large tasks.
+- If possible, check in on older PRs and Issues and see if they can be unstuck.
+- Perform the weekly Prebid.js release per instructions at https://github.com/prebid/Prebid.js/blob/master/RELEASE_SCHEDULE.md . This generally takes place on Tues or Weds.

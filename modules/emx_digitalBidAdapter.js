@@ -2,12 +2,13 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
 const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
-const ADAPTER_VERSION = '1.5.0';
+const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
@@ -41,11 +42,14 @@ export const emxAdapter = {
   },
   formatVideoResponse: (bidResponse, emxBid, bidRequest) => {
     bidResponse.vastXml = emxBid.adm;
-    if (bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === 'outstream') {
-      bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
-        id: emxBid.id,
-        url: RENDERER_URL
-      });
+    if (bidRequest.bidderRequest && bidRequest.bidderRequest.bids && bidRequest.bidderRequest.bids.length > 0) {
+      const matchingBid = find(bidRequest.bidderRequest.bids, bid => bidResponse.requestId && bid.bidId && bidResponse.requestId === bid.bidId && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream');
+      if (matchingBid) {
+        bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
+          id: emxBid.id,
+          url: RENDERER_URL
+        });
+      }
     }
     return bidResponse;
   },

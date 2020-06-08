@@ -38,7 +38,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = [];
   const response = serverResponse.body;
-  const cpm = response.cpm * 1000 || 0;
+  const cpm = response.cpm || 0;
   if (cpm !== 0) {
     const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
     const bidResponse = {
