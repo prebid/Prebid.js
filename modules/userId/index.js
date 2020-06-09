@@ -396,7 +396,7 @@ function getUserIdsAsEids() {
  * This hook returns updated list of submodules which are allowed to do get user id based on TCF 2 enforcement rules configured
  */
 export const validateGdprEnforcement = hook('sync', function (submodules, consentData) {
-  return submodules;
+  return {userIdModules: submodules, hasValidated: consentData && consentData.hasValidated};
 }, 'validateGdprEnforcement');
 
 /**
@@ -406,8 +406,8 @@ export const validateGdprEnforcement = hook('sync', function (submodules, consen
  */
 function initSubmodules(submodules, consentData) {
   // gdpr consent with purpose one is required, otherwise exit immediately
-  let userIdModules = validateGdprEnforcement(submodules, consentData);
-  if (!hasGDPRConsent(consentData)) {
+  let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
+  if (!hasValidated && !hasGDPRConsent(consentData)) {
     utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
     return [];
   }
@@ -424,10 +424,6 @@ function initSubmodules(submodules, consentData) {
       if (typeof submodule.config.storage.refreshInSeconds === 'number') {
         const storedDate = new Date(getStoredValue(submodule.config.storage, 'last'));
         refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
-      }
-
-      if (CONSTANTS.SUBMODULES_THAT_ALWAYS_REFRESH_ID[submodule.config.name] === true) {
-        refreshNeeded = true;
       }
 
       if (!storedId || refreshNeeded) {
