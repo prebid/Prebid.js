@@ -222,8 +222,8 @@ function MarsmediaAdapter() {
   };
 
   this.onBidWon = function (bid) {
-    const cpm = bid.pbMg;
     if (typeof bid.nurl !== 'undefined') {
+      const cpm = bid.pbMg;
       bid.nurl = bid.nurl.replace(
         /\$\{AUCTION_PRICE\}/,
         cpm
@@ -232,7 +232,19 @@ function MarsmediaAdapter() {
     };
     const bidString = JSON.stringify(bid);
     const encodedBuf = window.btoa(bidString);
-    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=17&hb_j=' + encodedBuf, null);
+    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=17&bid=3mhdom&hb_j=' + encodedBuf, null);
+  };
+
+  this.onTimeout = function (bid) {
+    const bidString = JSON.stringify(bid);
+    const encodedBuf = window.btoa(bidString);
+    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=19&bid=3mhdom&hb_j=' + encodedBuf, null);
+  };
+
+  this.onSetTargeting = function (bid) {
+    const bidString = JSON.stringify(bid);
+    const encodedBuf = window.btoa(bidString);
+    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=20&bid=3mhdom&hb_j=' + encodedBuf, null);
   };
 
   this.interpretResponse = function (serverResponse) {
