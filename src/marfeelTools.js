@@ -12,7 +12,7 @@
  * from Marfeel Solutions SL.
  */
 
-import utils from './utils.js';
+import { isArray } from './utils.js';
 import CONSTANTS from './constants.json';
 import { auctionManager } from './auctionManager.js';
 
@@ -38,7 +38,7 @@ const extractLastLocationFromObject = (adUnitArr) => (
   adUnitArr.bids[0].params.referrer) ? adUnitArr.bids[0].params.referrer : '';
 
 export const setLastLocationFromLastAdUnit = (adUnitArr) => {
-  if (utils.isArray(adUnitArr)) {
+  if (isArray(adUnitArr)) {
     lastLocation = extractLastLocationFromArray(adUnitArr);
   } else {
     lastLocation = extractLastLocationFromObject(adUnitArr);
