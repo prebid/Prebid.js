@@ -147,7 +147,7 @@ export function userIdHook(fn, submodules, consentData) {
         }
         return undefined;
       }).filter(module => module)
-      fn.call(this, userIdModules, consentData);
+      fn.call(this, userIdModules, {...consentData, hasValidated: true});
     } else {
       utils.logInfo('Enforcing TCF2 only');
       fn.call(this, submodules, consentData);

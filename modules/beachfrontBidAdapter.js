@@ -6,7 +6,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const ADAPTER_VERSION = '1.9';
+const ADAPTER_VERSION = '1.10';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -285,7 +285,7 @@ function createVideoRequestData(bid, bidderRequest) {
         mimes: DEFAULT_MIMES
       }, video),
       bidfloor: bidfloor,
-      secure: topLocation.protocol === 'https:' ? 1 : 0,
+      secure: topLocation.protocol.indexOf('https') === 0 ? 1 : 0,
       displaymanager: ADAPTER_NAME,
       displaymanagerver: ADAPTER_VERSION
     }],

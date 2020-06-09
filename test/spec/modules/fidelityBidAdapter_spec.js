@@ -109,7 +109,7 @@ describe('FidelityAdapter', function () {
       expect(payload.schain).to.equal(schainString);
     });
 
-    it('should add consent information to the request', function () {
+    it('should add consent information to the request - TCF v1', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let uspConsentString = '1YN-';
       bidderRequest.gdprConsent = {
@@ -118,9 +118,39 @@ describe('FidelityAdapter', function () {
         consentString: consentString,
         vendorData: {
           vendorConsents: {
-            '408': 1
+            '408': true
           },
         },
+        apiVersion: 1
+      };
+      bidderRequest.uspConsent = uspConsentString;
+      const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const payload = request.data;
+      expect(payload.gdpr).to.exist.and.to.be.a('number');
+      expect(payload.gdpr).to.equal(1);
+      expect(payload.consent_str).to.exist.and.to.be.a('string');
+      expect(payload.consent_str).to.equal(consentString);
+      expect(payload.consent_given).to.exist.and.to.be.a('number');
+      expect(payload.consent_given).to.equal(1);
+      expect(payload.us_privacy).to.exist.and.to.be.a('string');
+      expect(payload.us_privacy).to.equal(uspConsentString);
+    });
+
+    it('should add consent information to the request - TCF v2', function () {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let uspConsentString = '1YN-';
+      bidderRequest.gdprConsent = {
+        gdprApplies: true,
+        allowAuctionWithoutConsent: true,
+        consentString: consentString,
+        vendorData: {
+          vendor: {
+            consents: {
+              '408': true
+            }
+          },
+        },
+        apiVersion: 2
       };
       bidderRequest.uspConsent = uspConsentString;
       const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
