@@ -9,7 +9,7 @@ import { auctionManager } from './auctionManager.js';
 import { targeting } from './targeting.js';
 import { hook } from './hook.js';
 import { sessionLoader } from './debugging.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { adunitCounter } from './adUnits.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
 import { createBid } from './bidfactory.js';

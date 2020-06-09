@@ -52,8 +52,8 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
       } catch (error) {
         logError('Failed to parse translation mapping file');
       }
-      if (bid.meta.iabSubCatId && mapping['mapping'] && mapping['mapping'][bid.meta.iabSubCatId]) {
-        bid.meta.adServerCatId = mapping['mapping'][bid.meta.iabSubCatId]['id'];
+      if (bid.meta.primaryCatId && mapping['mapping'] && mapping['mapping'][bid.meta.primaryCatId]) {
+        bid.meta.adServerCatId = mapping['mapping'][bid.meta.primaryCatId]['id'];
       } else {
         // This bid will be automatically ignored by adpod module as adServerCatId was not found
         bid.meta.adServerCatId = undefined;
@@ -68,23 +68,28 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
 export function initTranslation(url, localStorageKey) {
   setupBeforeHookFnOnce(addBidResponse, getAdserverCategoryHook, 50);
   let mappingData = storage.getDataFromLocalStorage(localStorageKey);
-  if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-    ajax(url,
-      {
-        success: (response) => {
-          try {
-            response = JSON.parse(response);
-            response['lastUpdated'] = timestamp();
-            storage.setDataInLocalStorage(localStorageKey, JSON.stringify(response));
-          } catch (error) {
-            logError('Failed to parse translation mapping file');
+  try {
+    mappingData = mappingData ? JSON.parse(mappingData) : undefined;
+    if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+      ajax(url,
+        {
+          success: (response) => {
+            try {
+              response = JSON.parse(response);
+              response['lastUpdated'] = timestamp();
+              storage.setDataInLocalStorage(localStorageKey, JSON.stringify(response));
+            } catch (error) {
+              logError('Failed to parse translation mapping file');
+            }
+          },
+          error: () => {
+            logError('Failed to load brand category translation file.')
           }
         },
-        error: () => {
-          logError('Failed to load brand category translation file.')
-        }
-      },
-    );
+      );
+    }
+  } catch (error) {
+    logError('Failed to parse translation mapping file');
   }
 }
 

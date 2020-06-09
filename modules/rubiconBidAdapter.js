@@ -4,6 +4,7 @@ import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
+const DEFAULT_PBS_INTEGRATION = 'pbjs';
 
 // always use https, regardless of whether or not current page is secure
 export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
@@ -184,6 +185,11 @@ export const spec = {
               // includebidderkeys always false for openrtb
               includebidderkeys: false,
               pricegranularity: getPriceGranularity(config)
+            },
+            bidders: {
+              rubicon: {
+                integration: config.getConfig('rubicon.int_type') || DEFAULT_PBS_INTEGRATION
+              }
             }
           }
         }
@@ -334,6 +340,9 @@ export const spec = {
       if (bidRequest.storedAuctionResponse) {
         utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
       }
+
+      // set ext.prebid.auctiontimestamp using auction time
+      utils.deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
 
       return {
         method: 'POST',
