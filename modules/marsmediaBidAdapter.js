@@ -16,7 +16,7 @@ function MarsmediaAdapter() {
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
   let that = this;
-  let version = '2.1';
+  let version = '2.3';
 
   this.isBidRequestValid = function (bid) {
     return !!(bid.params && bid.params.zoneId);
@@ -172,7 +172,7 @@ function MarsmediaAdapter() {
         }
       },
       at: 1,
-      tmax: 1000,
+      tmax: 650,
       regs: {
         ext: {
           gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false
@@ -203,7 +203,7 @@ function MarsmediaAdapter() {
       return [];
     }
 
-    var uri = 'https://bid306.rtbsrv.com/bidder/?bid=3mhdom&zoneId=' + fallbackZoneId;
+    var uri = 'https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=' + fallbackZoneId;
 
     var fat = /(^v|(\.0)+$)/gi;
     var prebidVersion = '$prebid.version$';
@@ -219,6 +219,20 @@ function MarsmediaAdapter() {
       url: uri,
       data: JSON.stringify(bidRequest)
     };
+  };
+
+  this.onBidWon = function (bid) {
+    const cpm = bid.pbMg;
+    if (typeof bid.nurl !== 'undefined') {
+      bid.nurl = bid.nurl.replace(
+        /\$\{AUCTION_PRICE\}/,
+        cpm
+      );
+      utils.triggerPixel(bid.nurl, null);
+    };
+    const bidString = JSON.stringify(bid);
+    const encodedBuf = window.btoa(bidString);
+    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=17&hb_j=' + encodedBuf, null);
   };
 
   this.interpretResponse = function (serverResponse) {
@@ -240,7 +254,7 @@ function MarsmediaAdapter() {
       let bid = responses[i];
       let bidRequest = slotsToBids[bid.impid];
       let bidResponse = {
-        requestId: bidRequest.id,
+        requestId: bidRequest.bidId,
         bidderCode: that.code,
         cpm: parseFloat(bid.price),
         width: bid.w,
@@ -248,16 +262,22 @@ function MarsmediaAdapter() {
         creativeId: bid.crid,
         currency: 'USD',
         netRevenue: true,
-        ttl: 350
+        ttl: 350,
+        nurl: bid.nurl
       };
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
-        bidResponse.vastUrl = bid.adm;
+        if (bid.adm.charAt(0) === '<') {
+          bidResponse.vastXml = bid.adm;
+        } else {
+          bidResponse.vastUrl = bid.adm;
+        }
         bidResponse.mediaType = 'video';
         bidResponse.ttl = 600;
       } else {
         bidResponse.ad = bid.adm;
       }
+
       bids.push(bidResponse);
     }
 

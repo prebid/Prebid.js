@@ -13,22 +13,16 @@ import { targeting, newTargeting, filters } from 'src/targeting.js';
 import { config as configObj } from 'src/config.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
-import { newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { _sendAdToCreative } from 'src/secureCreatives.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
-var urlParse = require('url-parse');
-
-var prebid = require('src/prebid');
 var utils = require('src/utils');
-var bidfactory = require('src/bidfactory');
-var adloader = require('test/mocks/adloaderStub');
 var adapterManager = require('src/adapterManager').default;
 var events = require('src/events');
-var adserver = require('src/adserver');
 var CONSTANTS = require('src/constants.json');
 
 // These bid adapters are required to be loaded for the following tests to work
@@ -965,12 +959,12 @@ describe('Unit: Prebid Module', function () {
         adUnitCode: config.adUnitCodes[0],
       };
 
-      const remoteDomain = '*';
-      const source = {
-        postMessage: sinon.stub()
+      const event = {
+        source: { postMessage: sinon.stub() },
+        origin: 'origin.sf.com'
       };
 
-      _sendAdToCreative(mockAdObject, remoteDomain, source);
+      _sendAdToCreative(mockAdObject, event);
 
       expect(slots[0].spyGetSlotElementId.called).to.equal(false);
       expect(slots[1].spyGetSlotElementId.called).to.equal(true);
@@ -1223,6 +1217,12 @@ describe('Unit: Prebid Module', function () {
     let makeRequestsStub;
     let adUnits;
     let clock;
+    before(function () {
+      clock = sinon.useFakeTimers();
+    });
+    after(function () {
+      clock.restore();
+    });
     let bidsBackHandlerStub = sinon.stub();
 
     const BIDDER_CODE = 'sampleBidder';
@@ -1309,7 +1309,6 @@ describe('Unit: Prebid Module', function () {
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
 
-      clock = sinon.useFakeTimers();
       let requestObj = {
         bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
         timeout: 2000,
@@ -1363,7 +1362,6 @@ describe('Unit: Prebid Module', function () {
       auction.getBidsReceived = function() { return [adResponse]; }
       auction.getAuctionId = () => auctionId;
 
-      clock = sinon.useFakeTimers();
       let requestObj = {
         bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
         timeout: 2000,

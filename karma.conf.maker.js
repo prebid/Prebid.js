@@ -20,7 +20,7 @@ function newWebpackConfig(codeCoverage) {
       enforce: 'post',
       exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
       use: {
-        loader: 'istanbul-instrumenter-loader',
+        loader: '@jsdevtools/coverage-istanbul-loader',
         options: { esModules: true }
       },
       test: /\.js$/
@@ -88,7 +88,7 @@ function setBrowsers(karmaConf, browserstack) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
-    karmaConf.customLaunchers = require('./browsers.json')
+    karmaConf.customLaunchers = require('./browsers.json');
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
     var isDocker = require('is-docker')();
@@ -162,11 +162,11 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 10000, // default 2000
-    browserDisconnectTolerance: 1, // default 0
-    browserNoActivityTimeout: 4 * 60 * 1000, // default 10000
-    captureTimeout: 4 * 60 * 1000, // default 60000,
-    processKillTimeout: 10000, // default 2000
+    browserDisconnectTimeout: 3e5, // default 2000
+    browserNoActivityTimeout: 3e5, // default 10000
+    captureTimeout: 3e5, // default 60000,
+    browserDisconnectTolerance: 3,
+    concurrency: 5,
 
     plugins: plugins
   }

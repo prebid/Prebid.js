@@ -4,12 +4,14 @@ import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
+const DEFAULT_PBS_INTEGRATION = 'pbjs';
 
 // always use https, regardless of whether or not current page is secure
 export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
 export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
+const GVLID = 52;
 const DIGITRUST_PROP_NAMES = {
   FASTLANE: {
     id: 'dt.id',
@@ -67,7 +69,10 @@ var sizeMap = {
   79: '980x300',
   80: '980x400',
   83: '480x300',
+  85: '300x120',
+  90: '548x150',
   94: '970x310',
+  95: '970x100',
   96: '970x210',
   101: '480x320',
   102: '768x1024',
@@ -91,10 +96,14 @@ var sizeMap = {
   214: '980x360',
   221: '1x1',
   229: '320x180',
+  230: '2000x1400',
   232: '580x400',
   234: '6x6',
   251: '2x2',
+  256: '480x820',
   257: '400x600',
+  258: '500x200',
+  259: '998x200',
   264: '970x1000',
   265: '1920x1080',
   274: '1800x200',
@@ -106,6 +115,7 @@ utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const spec = {
   code: 'rubicon',
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * @param {object} bid
@@ -173,6 +183,11 @@ export const spec = {
               // includebidderkeys always false for openrtb
               includebidderkeys: false,
               pricegranularity: getPriceGranularity(config)
+            },
+            bidders: {
+              rubicon: {
+                integration: config.getConfig('rubicon.int_type') || DEFAULT_PBS_INTEGRATION
+              }
             }
           }
         }
@@ -185,7 +200,17 @@ export const spec = {
         }
       }
 
-      const bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+      let bidFloor;
+      if (typeof bidRequest.getFloor === 'function' && !config.getConfig('rubicon.disableFloors')) {
+        let floorInfo = bidRequest.getFloor({
+          currency: 'USD',
+          mediaType: 'video',
+          size: parseSizes(bidRequest, 'video')
+        });
+        bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
+      } else {
+        bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+      }
       if (!isNaN(bidFloor)) {
         data.imp[0].bidfloor = bidFloor;
       }
@@ -487,6 +512,16 @@ export const spec = {
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
 
+    // If floors module is enabled and we get USD floor back, send it in rp_hard_floor else undfined
+    if (typeof bidRequest.getFloor === 'function' && !config.getConfig('rubicon.disableFloors')) {
+      let floorInfo = bidRequest.getFloor({
+        currency: 'USD',
+        mediaType: 'banner',
+        size: '*'
+      });
+      data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
+    }
+
     // add p_pos only if specified and valid
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
@@ -546,7 +581,7 @@ export const spec = {
     const keywords = (params.keywords || []).concat(
       utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
       utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
-    data.kw = keywords.length ? keywords.join(',') : '';
+    data.kw = Array.isArray(keywords) && keywords.length ? keywords.join(',') : '';
 
     /**
      * Prebid AdSlot

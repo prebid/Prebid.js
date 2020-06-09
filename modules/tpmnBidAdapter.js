@@ -2,7 +2,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {parse as parseUrl} from '../src/url.js';
 
 export const ADAPTER_VERSION = '1';
 const SUPPORTED_AD_TYPES = [BANNER];
@@ -73,7 +72,7 @@ registerBidder(spec);
  * Creates site description object
  */
 function createSite(refInfo) {
-  let url = parseUrl(refInfo.referer);
+  let url = utils.parseUrl(refInfo.referer);
   let site = {
     'domain': url.hostname,
     'page': url.protocol + '://' + url.hostname + url.pathname

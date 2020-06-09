@@ -6,6 +6,8 @@ const BIDDER_SERVER = 'x.fidelity-media.com';
 const FIDELITY_VENDOR_ID = 408;
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['kubient'],
+  gvlid: 408,
   isBidRequestValid: function isBidRequestValid(bid) {
     return !!(bid && bid.params && bid.params.zoneid);
   },
@@ -26,6 +28,7 @@ export const spec = {
         tmax: bidderRequest.timeout,
         defloc: bidderRequest.refererInfo.referer,
         referrer: getTopWindowReferrer(),
+        schain: getSupplyChain(bidRequest.schain),
       };
       setConsentParams(bidderRequest.gdprConsent, bidderRequest.uspConsent, payload);
 
@@ -108,8 +111,11 @@ function setConsentParams(gdprConsent, uspConsent, payload) {
     if (typeof gdprConsent.consentString !== 'undefined') {
       payload.consent_str = gdprConsent.consentString;
     }
-    if (gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents && typeof gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
+    if (gdprConsent.apiVersion === 1 && gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents && typeof gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
       payload.consent_given = gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] ? 1 : 0;
+    }
+    if (gdprConsent.apiVersion === 2 && gdprConsent.vendorData && gdprConsent.vendorData.vendor && gdprConsent.vendorData.vendor.consents && typeof gdprConsent.vendorData.vendor.consents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
+      payload.consent_given = gdprConsent.vendorData.vendor.consents[FIDELITY_VENDOR_ID.toString(10)] ? 1 : 0;
     }
   }
   if (typeof uspConsent !== 'undefined') {
@@ -117,4 +123,25 @@ function setConsentParams(gdprConsent, uspConsent, payload) {
   }
 }
 
+function getSupplyChain(schain) {
+  var supplyChain = '';
+  if (schain != null && schain.nodes) {
+    supplyChain = schain.ver + ',' + schain.complete;
+    for (let i = 0; i < schain.nodes.length; i++) {
+      supplyChain += '!';
+      supplyChain += (schain.nodes[i].asi) ? encodeURIComponent(schain.nodes[i].asi) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].sid) ? encodeURIComponent(schain.nodes[i].sid) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].hp) ? encodeURIComponent(schain.nodes[i].hp) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].rid) ? encodeURIComponent(schain.nodes[i].rid) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].name) ? encodeURIComponent(schain.nodes[i].name) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].domain) ? encodeURIComponent(schain.nodes[i].domain) : '';
+    }
+  }
+  return supplyChain;
+}
 registerBidder(spec);
