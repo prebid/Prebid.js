@@ -7,10 +7,12 @@ import {
   syncDelay,
   coreStorage
 } from 'modules/userId/index.js';
+import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
+import {getGlobal} from 'src/prebidGlobal.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
 import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem.js';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
@@ -233,6 +235,36 @@ describe('User ID', function() {
       });
       expect(coreStorage.setCookie.callCount).to.equal(0);
     });
+
+    it('pbjs.getUserIds', function() {
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'pubCommonId', value: {'pubcid': '11111'}
+          }]
+        }
+      });
+      expect(typeof (getGlobal()).getUserIds).to.equal('function');
+      expect((getGlobal()).getUserIds()).to.deep.equal({pubcid: '11111'});
+    });
+
+    it('pbjs.getUserIdsAsEids', function() {
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'pubCommonId', value: {'pubcid': '11111'}
+          }]
+        }
+      });
+      expect(typeof (getGlobal()).getUserIdsAsEids).to.equal('function');
+      expect((getGlobal()).getUserIdsAsEids()).to.deep.equal(createEidsArray((getGlobal()).getUserIds()));
+    });
   });
 
   describe('Opt out', function () {
@@ -419,8 +451,9 @@ describe('User ID', function() {
 
     beforeEach(function() {
       sandbox = sinon.createSandbox();
-      sandbox.stub(global, 'setTimeout');
+      sandbox.stub(global, 'setTimeout').returns(2);
       sandbox.stub(events, 'on');
+      sandbox.stub(coreStorage, 'getCookie');
 
       // remove cookie
       coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
@@ -594,10 +627,9 @@ describe('User ID', function() {
     });
 
     it('does not delay auction if there are no ids to fetch', function() {
-      coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
-
+      coreStorage.getCookie.withArgs('MOCKID').returns('123456778');
       config.setConfig({
-        userSync: {
+        usersync: {
           auctionDelay: 33,
           syncDelay: 77,
           userIds: [{
@@ -1198,82 +1230,6 @@ describe('User ID', function() {
       expect(server.requests).to.be.empty;
       events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
       expect(server.requests[0].url).to.equal('https://match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
-    });
-
-    it('callback for submodules that always need to refresh stored id', function(done) {
-      let adUnits = [getAdUnitMock()];
-      let innerAdUnits;
-      const parrableStoredId = '01.1111111111.test-eid';
-      const parrableRefreshedId = '02.2222222222.test-eid';
-      coreStorage.setCookie('_parrable_eid', parrableStoredId, (new Date(Date.now() + 5000).toUTCString()));
-
-      const parrableIdSubmoduleMock = {
-        name: 'parrableId',
-        decode: function(value) {
-          return { 'parrableid': value };
-        },
-        getId: function() {
-          return {
-            callback: function(cb) {
-              cb(parrableRefreshedId);
-            }
-          };
-        }
-      };
-
-      const parrableConfigMock = {
-        userSync: {
-          syncDelay: 0,
-          userIds: [{
-            name: 'parrableId',
-            storage: {
-              type: 'cookie',
-              name: '_parrable_eid'
-            }
-          }]
-        }
-      };
-
-      setSubmoduleRegistry([parrableIdSubmoduleMock]);
-      attachIdSystem(parrableIdSubmoduleMock);
-      init(config);
-      config.setConfig(parrableConfigMock);
-
-      // make first bid request, should use stored id value
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
-      innerAdUnits.forEach(unit => {
-        unit.bids.forEach(bid => {
-          expect(bid).to.have.deep.nested.property('userId.parrableid');
-          expect(bid.userId.parrableid).to.equal(parrableStoredId);
-          expect(bid.userIdAsEids[0]).to.deep.equal({
-            source: 'parrable.com',
-            uids: [{id: parrableStoredId, atype: 1}]
-          });
-        });
-      });
-
-      // attach a handler for auction end event to run the second bid request
-      events.on(CONSTANTS.EVENTS.AUCTION_END, function handler(submodule) {
-        if (submodule === 'parrableIdSubmoduleMock') {
-          // make the second bid request, id should have been refreshed
-          requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
-          innerAdUnits.forEach(unit => {
-            unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.parrableid');
-              expect(bid.userId.parrableid).to.equal(parrableRefreshedId);
-              expect(bid.userIdAsEids[0]).to.deep.equal({
-                source: 'parrable.com',
-                uids: [{id: parrableRefreshedId, atype: 1}]
-              });
-            });
-          });
-          events.off(CONSTANTS.EVENTS.AUCTION_END, handler);
-          done();
-        }
-      });
-
-      // emit an auction end event to run the submodule callback
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, 'parrableIdSubmoduleMock');
     });
   });
 });

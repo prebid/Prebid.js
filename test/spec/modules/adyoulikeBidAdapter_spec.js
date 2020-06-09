@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { parse } from '../../../src/url.js';
 
 import { spec } from 'modules/adyoulikeBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';

@@ -148,6 +148,9 @@
                                 }
                                 else {
                                     console.error('Digitrust init failed');
+                                    if(digiTrustResult.err){
+                                        console.error(digiTrustResult.err);
+                                    }
                                 }
                             }
                         },
@@ -157,6 +160,12 @@
                             expires: 60
                         }
                     }]
+                },
+                userIdTargeting: {
+                    "GAM": true,
+                    "GAM_KEYS": {
+                        "tdid": "TTD_ID" // send tdid as TTD_ID
+                    }
                 }
             });
             pbjs.addAdUnits(adUnits);

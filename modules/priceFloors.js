@@ -6,8 +6,7 @@ import events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getHook } from '../src/hook.js';
 import { createBid } from '../src/bidfactory.js';
-import find from 'core-js/library/fn/array/find.js';
-import { parse as urlParse } from '../src/url.js';
+import find from 'core-js-pure/features/array/find.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 /**
@@ -61,7 +60,7 @@ function roundUp(number, precision) {
 
 let referrerHostname;
 function getHostNameFromReferer(referer) {
-  referrerHostname = urlParse(referer, {noDecodeWholeURL: true}).hostname;
+  referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
   return referrerHostname;
 }
 
@@ -275,10 +274,10 @@ export function getFloorDataFromAdUnits(adUnits) {
 /**
  * @summary This function takes the adUnits for the auction and update them accordingly as well as returns the rules hashmap for the auction
  */
-export function updateAdUnitsForAuction(adUnits, floorData, skipped, auctionId) {
+export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
   adUnits.forEach((adUnit) => {
     adUnit.bids.forEach(bid => {
-      if (skipped) {
+      if (floorData.skipped) {
         delete bid.getFloor;
       } else {
         bid.getFloor = getFloor;
@@ -286,9 +285,11 @@ export function updateAdUnitsForAuction(adUnits, floorData, skipped, auctionId) 
       // information for bid and analytics adapters
       bid.auctionId = auctionId;
       bid.floorData = {
-        skipped,
-        modelVersion: utils.deepAccess(floorData, 'data.modelVersion') || '',
-        location: floorData.data.location,
+        skipped: floorData.skipped,
+        modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
+        location: utils.deepAccess(floorData, 'data.location'),
+        skipRate: floorData.skipRate,
+        fetchStatus: _floorsConfig.fetchStatus
       }
     });
   });
@@ -307,14 +308,17 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
   } else {
     resolvedFloorsData.data = getFloorsDataForAuction(resolvedFloorsData.data);
   }
-  // if we still do not have a valid floor data then floors is not on for this auction
+  // if we still do not have a valid floor data then floors is not on for this auction, so skip
   if (Object.keys(utils.deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0) {
-    return;
+    resolvedFloorsData.skipped = true;
+  } else {
+    // determine the skip rate now
+    const auctionSkipRate = utils.getParameterByName('pbjs_skipRate') || resolvedFloorsData.skipRate;
+    const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
+    resolvedFloorsData.skipped = isSkipped;
   }
-  // determine the skip rate now
-  const isSkipped = Math.random() * 100 < parseFloat(utils.deepAccess(resolvedFloorsData, 'data.skipRate') || 0);
-  resolvedFloorsData.skipped = isSkipped;
-  updateAdUnitsForAuction(adUnits, resolvedFloorsData, isSkipped, auctionId);
+  // add floorData to bids
+  updateAdUnitsForAuction(adUnits, resolvedFloorsData, auctionId);
   return resolvedFloorsData;
 }
 
@@ -390,6 +394,7 @@ export function isFloorsDataValid(floorsData) {
  */
 export function parseFloorData(floorsData, location) {
   if (floorsData && typeof floorsData === 'object' && isFloorsDataValid(floorsData)) {
+    utils.logInfo(`${MODULE_NAME}: A ${location} set the auction floor data set to `, floorsData);
     return {
       ...floorsData,
       location
@@ -417,6 +422,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   if (_floorsConfig.auctionDelay > 0 && fetching) {
     hookConfig.timer = setTimeout(() => {
       utils.logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction`);
+      _floorsConfig.fetchStatus = 'timeout';
       continueAuction(hookConfig);
     }, _floorsConfig.auctionDelay);
     _delayedAuctions.push(hookConfig);
@@ -444,6 +450,7 @@ function resumeDelayedAuctions() {
  */
 export function handleFetchResponse(fetchResponse) {
   fetching = false;
+  _floorsConfig.fetchStatus = 'success';
   let floorResponse;
   try {
     floorResponse = JSON.parse(fetchResponse);
@@ -459,7 +466,8 @@ export function handleFetchResponse(fetchResponse) {
 
 function handleFetchError(status) {
   fetching = false;
-  utils.logError(`${MODULE_NAME}: Fetch errored with: ${status}`);
+  _floorsConfig.fetchStatus = 'error';
+  utils.logError(`${MODULE_NAME}: Fetch errored with: `, status);
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
   resumeDelayedAuctions();
@@ -506,6 +514,7 @@ export function handleSetFloorsConfig(config) {
     'enabled', enabled => enabled !== false, // defaults to true
     'auctionDelay', auctionDelay => auctionDelay || 0,
     'endpoint', endpoint => endpoint || {},
+    'skipRate', () => !isNaN(utils.deepAccess(config, 'data.skipRate')) ? config.data.skipRate : config.skipRate || 0,
     'enforcement', enforcement => utils.pick(enforcement || {}, [
       'enforceJS', enforceJS => enforceJS !== false, // defaults to true
       'enforcePBS', enforcePBS => enforcePBS === true, // defaults to false

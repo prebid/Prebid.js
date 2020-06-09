@@ -88,7 +88,7 @@ describe('ColossussspAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'bidId', 'traffic', 'sizes', 'schain');
+        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
@@ -102,6 +102,36 @@ describe('ColossussspAdapter', function () {
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
+
+  describe('buildRequests with user ids', function () {
+    bid.userId = {}
+    bid.userId.britepoolid = 'britepoolid123';
+    bid.userId.idl_env = 'idl_env123';
+    bid.userId.tdid = 'tdid123';
+    bid.userId.id5id = 'id5id123'
+    let serverRequest = spec.buildRequests([bid], bidderRequest);
+    it('Returns valid data if array of bids is valid', function () {
+      let data = serverRequest.data;
+      let placements = data['placements'];
+      expect(data).to.be.an('object');
+      for (let i = 0; i < placements.length; i++) {
+        let placement = placements[i];
+        expect(placement).to.have.property('eids')
+        expect(placement.eids).to.be.an('array')
+        expect(placement.eids.length).to.be.equal(4)
+        for (let index in placement.eids) {
+          let v = placement.eids[index];
+          expect(v).to.have.all.keys('source', 'uids')
+          expect(v.source).to.be.oneOf(['britepool.com', 'identityLink', 'adserver.org', 'id5-sync.com'])
+          expect(v.uids).to.be.an('array');
+          expect(v.uids.length).to.be.equal(1)
+          expect(v.uids[0]).to.have.property('id')
+          expect(v.uids[0].id).to.be.oneOf(['britepoolid123', 'idl_env123', 'tdid123', 'id5id123'])
+        }
+      }
+    });
+  });
+
   describe('interpretResponse', function () {
     let resObject = {
       body: [ {

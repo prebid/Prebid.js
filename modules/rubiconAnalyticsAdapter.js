@@ -4,7 +4,6 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
-import * as urlLib from '../src/url.js'
 import { getGlobal } from '../src/prebidGlobal.js';
 
 const {
@@ -43,7 +42,7 @@ const cache = {
 
 export function getHostNameFromReferer(referer) {
   try {
-    rubiconAdapter.referrerHostname = urlLib.parse(referer, {noDecodeWholeURL: true}).hostname;
+    rubiconAdapter.referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
   } catch (e) {
     utils.logError('Rubicon Analytics: Unable to parse hostname from supplied url: ', referer, e);
     rubiconAdapter.referrerHostname = '';
@@ -88,7 +87,7 @@ function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return utils.pick(bid, [
       'bidder',
-      'bidId', bidId => utils.deepAccess(bid, 'bidResponse.seatBidId') || bidId,
+      'bidId', bidId => utils.deepAccess(bid, 'bidResponse.pbsBidId') || utils.deepAccess(bid, 'bidResponse.seatBidId') || bidId,
       'status',
       'error',
       'source', (source, bid) => {
@@ -198,10 +197,12 @@ function sendMessage(auctionId, bidWonId) {
     if (auctionCache.floorData) {
       auction.floors = utils.pick(auctionCache.floorData, [
         'location',
-        'modelName', () => auctionCache.floorData.modelVersion || '',
+        'modelName', () => auctionCache.floorData.modelVersion,
         'skipped',
         'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
-        'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals')
+        'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),
+        'skipRate', skipRate => !isNaN(skipRate) ? skipRate : 0,
+        'fetchStatus'
       ]);
     }
 
