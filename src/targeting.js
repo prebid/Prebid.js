@@ -5,9 +5,12 @@ import { auctionManager } from './auctionManager.js';
 import { sizeSupported } from './sizeMapping.js';
 import { ADPOD } from './mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js';
+import { getLastLocation, isBidAllowed, getAllowedSizes, isBidSizeAllowed } from './marfeelTools.js';
 
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
+
+export const bidsByReferrer = {};
 
 var pbTargetingKeys = [];
 
@@ -352,21 +355,47 @@ export function newTargeting(auctionManager) {
     return auctionManager.getAdUnitCodes() || [];
   }
 
+  /**
+   * bid caching done with all bids specifically for Marfeel purposes due to its own configuration
+   */
+  const filterBidsByAdUnit = (bidsReceived) => bidsReceived.filter(bid => latestAuctionForAdUnit[bid.adUnitCode] === bid.auctionId);
+  const isBidAlreadyRecieved = (bid, lastLocation) => !!bidsByReferrer[lastLocation] && !!bidsByReferrer[lastLocation].find(bidCached => bidCached.adId === bid.adId);
+
   function getBidsReceived() {
     let bidsReceived = auctionManager.getBidsReceived();
+    let bidsToProcess;
 
     if (!config.getConfig('useBidCache')) {
-      bidsReceived = bidsReceived.filter(bid => latestAuctionForAdUnit[bid.adUnitCode] === bid.auctionId)
+      bidsReceived = filterBidsByAdUnit(bidsReceived);
+      bidsToProcess = bidsReceived;
+    } else {
+      const lastLocation = getLastLocation();
+
+      bidsByReferrer[lastLocation] = bidsReceived
+        .filter(bid => bid.referrer === lastLocation)
+        .map(bid => ({
+          ...bid,
+          [CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]: {
+            ...bid[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING],
+            [CONSTANTS.TARGETING_KEYS.CACHED]: isBidAlreadyRecieved(bid, lastLocation)}
+        }));
+
+      const bidsToFilter = bidsByReferrer[lastLocation] || filterBidsByAdUnit(bidsReceived);
+      const allowedSizes = getAllowedSizes();
+
+      bidsToProcess = bidsToFilter
+        .filter(bid => isBidAllowed(bid))
+        .filter(bid => isBidSizeAllowed(bid, allowedSizes));
     }
 
-    bidsReceived = bidsReceived
+    bidsToProcess = bidsToProcess
       .filter(bid => deepAccess(bid, 'video.context') !== ADPOD)
       .filter(bid => bid.mediaType !== 'banner' || sizeSupported([bid.width, bid.height]))
       .filter(filters.isUnusedBid)
       .filter(filters.isBidNotExpired)
     ;
 
-    return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);
+    return getHighestCpmBidsFromBidPool(bidsToProcess, getOldestHighestCpmBid);
   }
 
   /**
