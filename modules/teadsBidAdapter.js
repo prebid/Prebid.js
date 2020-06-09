@@ -99,6 +99,9 @@ export const spec = {
           creativeId: bid.creativeId,
           placementId: bid.placementId
         };
+        if (bid.dealId) {
+          bidResponse.dealId = bid.dealId
+        }
         bidResponses.push(bidResponse);
       });
     }
