@@ -189,11 +189,11 @@ describe('Parrable ID System', function() {
       let eid = '01.123.4567890';
       let parrableId = {
         eid,
-        ccpaOptout: true
+        ibaOptout: true
       };
 
       expect(parrableIdSubmodule.decode(parrableId)).to.deep.equal({
-        parrableid: eid
+        parrableId
       });
     });
   });
@@ -203,7 +203,7 @@ describe('Parrable ID System', function() {
 
     beforeEach(function() {
       adUnits = [getAdUnitMock()];
-      writeParrableCookie({ eid: P_COOKIE_EID });
+      writeParrableCookie({ eid: P_COOKIE_EID, ibaOptout: true });
       setSubmoduleRegistry([parrableIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock());
@@ -218,8 +218,47 @@ describe('Parrable ID System', function() {
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.parrableid');
-            expect(bid.userId.parrableid).to.equal(P_COOKIE_EID);
+            expect(bid).to.have.deep.nested.property('userId.parrableId');
+            expect(bid.userId.parrableId.eid).to.equal(P_COOKIE_EID);
+            expect(bid.userId.parrableId.ibaOptout).to.equal(true);
+            const parrableIdAsEid = bid.userIdAsEids.find(e => e.source == 'parrable.com');
+            expect(parrableIdAsEid).to.deep.equal({
+              source: 'parrable.com',
+              uids: [{
+                id: P_COOKIE_EID,
+                atype: 1,
+                ext: {
+                  ibaOptout: true
+                }
+              }]
+            });
+          });
+        });
+        done();
+      }, { adUnits });
+    });
+
+    it('supplies an optout reason when the EID is missing due to CCPA non-consent', function(done) {
+      // the ID system itself will not write a cookie with an EID when CCPA=true
+      writeParrableCookie({ ccpaOptout: true });
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.parrableId');
+            expect(bid.userId.parrableId).to.not.have.property('eid');
+            expect(bid.userId.parrableId.ccpaOptout).to.equal(true);
+            const parrableIdAsEid = bid.userIdAsEids.find(e => e.source == 'parrable.com');
+            expect(parrableIdAsEid).to.deep.equal({
+              source: 'parrable.com',
+              uids: [{
+                id: '',
+                atype: 1,
+                ext: {
+                  ccpaOptout: true
+                }
+              }]
+            });
           });
         });
         done();

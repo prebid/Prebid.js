@@ -43,7 +43,9 @@ describe('eids array generation for known sub-modules', function() {
 
   it('parrableId', function() {
     const userId = {
-      parrableid: 'some-random-id-value'
+      parrableId: {
+        eid: 'some-random-id-value'
+      }
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
