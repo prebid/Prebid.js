@@ -83,25 +83,8 @@ export const spec = {
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
       }
 	  
-	  if (bid && bid.userId) {
-        for (let source in bid.userId) {
-          let foundId = '';
-          let obj = bid.userId[source];
-          if (source === 'digitrustid' && obj && typeof obj === 'object' && obj.data && obj.data.id) {
-            foundId = obj.data.id;
-          } else if (obj && typeof obj === 'string') {
-            foundId = obj;
-          }
-          if (foundId !== '') {
-            if (payload.eids === undefined) {
-              payload.eids = [];
-            }
-            payload.eids.push({
-              source: source,
-              uids: [{ id: foundId }]
-            });
-          }
-        }
+      if (bid && bid.userId) {
+        payload.eids = createEidsArray(bid.userId);
       }
 
       var payloadString = JSON.stringify(payload);

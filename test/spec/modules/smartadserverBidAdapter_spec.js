@@ -457,7 +457,7 @@ describe('Smart bid adapter tests', function () {
 
     expect(requestContent).to.have.property('eids');
     expect(requestContent.eids).to.not.equal(null).and.to.not.be.undefined;
-    expect(requestContent.eids.length).to.equal(10);
+    expect(requestContent.eids.length).to.greaterThan(0);
     for (let index in requestContent.eids) {
       let eid = requestContent.eids[index];
       expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
