@@ -31,10 +31,10 @@ const DEFAULT_RULES = [{
   vendorExceptions: []
 }];
 
-let purpose1Rule;
-let purpose2Rule;
+export let purpose1Rule;
+export let purpose2Rule;
 let addedDeviceAccessHook = false;
-let enforcementRules;
+export let enforcementRules;
 
 function getGvlid(bidderCode) {
   let gvlid;

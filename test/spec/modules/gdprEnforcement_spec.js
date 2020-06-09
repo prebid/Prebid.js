@@ -1,6 +1,4 @@
-/* eslint no-console: 0 */
-
-import { deviceAccessHook, setEnforcementConfig, userSyncHook, userIdHook, makeBidRequestsHook, validateRules } from 'modules/gdprEnforcement.js';
+import { deviceAccessHook, setEnforcementConfig, userSyncHook, userIdHook, makeBidRequestsHook, validateRules, enforcementRules, purpose1Rule, purpose2Rule } from 'modules/gdprEnforcement.js';
 import { config } from 'src/config.js';
 import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
@@ -373,7 +371,7 @@ describe('gdpr enforcement', function () {
       const args = nextFnSpy.getCalls()[0].args;
       expect(args[1].hasValidated).to.be.true;
       expect(nextFnSpy.calledOnce).to.equal(true);
-      sinon.assert.calledWith(nextFnSpy, submodules, {...consentData, hasValidated: true});
+      sinon.assert.calledWith(nextFnSpy, submodules, { ...consentData, hasValidated: true });
     });
 
     it('should allow userId module if gdpr not in scope', function () {
@@ -427,7 +425,7 @@ describe('gdpr enforcement', function () {
           name: 'sampleUserId'
         }
       }]
-      sinon.assert.calledWith(nextFnSpy, expectedSubmodules, {...consentData, hasValidated: true});
+      sinon.assert.calledWith(nextFnSpy, expectedSubmodules, { ...consentData, hasValidated: true });
     });
   });
 
@@ -546,11 +544,10 @@ describe('gdpr enforcement', function () {
       sinon.assert.calledWith(nextFnSpy, sinon.match.array.deepEquals(MOCK_AD_UNITS), []);
       expect(emitEventSpy.notCalled).to.equal(true);
       expect(logWarnSpy.notCalled).to.equal(true);
-      expect(logInfoSpy.calledOnce).to.equal(true);
     });
   });
 
-  describe('validateRules(rule, consentData, currentModule, gvlId)', function () {
+  describe('validateRules', function () {
     const createGdprRule = (purposeName = 'storage', enforcePurpose = true, enforceVendor = true, vendorExceptions = []) => ({
       purpose: purposeName,
       enforcePurpose: enforcePurpose,
@@ -736,4 +733,89 @@ describe('gdpr enforcement', function () {
       });
     });
   })
+
+  describe('setEnforcementConfig', function () {
+    let sandbox;
+    const DEFAULT_RULES = [{
+      purpose: 'storage',
+      enforcePurpose: true,
+      enforceVendor: true,
+      vendorExceptions: []
+    }, {
+      purpose: 'basicAds',
+      enforcePurpose: true,
+      enforceVendor: true,
+      vendorExceptions: []
+    }];
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      logWarnSpy = sandbox.spy(utils, 'logWarn');
+    });
+    afterEach(function () {
+      config.resetConfig();
+      sandbox.restore();
+    });
+
+    it('should enforce TCF2 Purpose1 and Purpose 2 if no "rules" found in the config', function () {
+      setEnforcementConfig({
+        gdpr: {
+          cmpApi: 'iab',
+          allowAuctionWithoutConsent: true,
+          timeout: 5000
+        }
+      });
+
+      expect(logWarnSpy.calledOnce).to.equal(true);
+      expect(enforcementRules).to.deep.equal(DEFAULT_RULES);
+    });
+
+    it('should enforce TCF2 Purpose 2 also if only Purpose 1 is defined in "rules"', function () {
+      const purpose1RuleDefinedInConfig = {
+        purpose: 'storage',
+        enforcePurpose: false,
+        enforceVendor: true,
+        vendorExceptions: ['bidderA']
+      }
+      setEnforcementConfig({
+        gdpr: {
+          rules: [purpose1RuleDefinedInConfig]
+        }
+      });
+
+      expect(purpose1Rule).to.deep.equal(purpose1RuleDefinedInConfig);
+      expect(purpose2Rule).to.deep.equal(DEFAULT_RULES[1]);
+    });
+
+    it('should enforce TCF2 Purpose 1 also if only Purpose 2 is defined in "rules"', function () {
+      const purpose2RuleDefinedInConfig = {
+        purpose: 'basicAds',
+        enforcePurpose: false,
+        enforceVendor: true,
+        vendorExceptions: ['bidderA']
+      }
+      setEnforcementConfig({
+        gdpr: {
+          rules: [purpose2RuleDefinedInConfig]
+        }
+      });
+
+      expect(purpose1Rule).to.deep.equal(DEFAULT_RULES[0]);
+      expect(purpose2Rule).to.deep.equal(purpose2RuleDefinedInConfig);
+    });
+
+    it('should use the "rules" defined in config if a definition found', function() {
+      const rules = [{
+        purpose: 'storage',
+        enforcePurpose: false,
+        enforceVendor: false
+      }, {
+        purpose: 'basicAds',
+        enforcePurpose: false,
+        enforceVendor: false
+      }]
+      setEnforcementConfig({gdpr: { rules }});
+
+      expect(enforcementRules).to.deep.equal(rules);
+    });
+  });
 });
