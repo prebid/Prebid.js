@@ -327,9 +327,9 @@ function processCmpData(consentObject, hookConfig) {
 
   // Raise deprecation warning if 'allowAuctionWithoutConsent' is used with TCF 2.
   if (allowAuction.definedInConfig && cmpVersion === 2) {
-    utils.logWarn(`consentManagement config is using deprecated property 'allowAuctionWithoutConsent' with TCF 2 setup. This property only works with TCF 1.1`);
+    utils.logWarn(`'allowAuctionWithoutConsent' ignored for TCF 2`);
   } else if (!allowAuction.definedInConfig && cmpVersion === 1) {
-    utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
+    utils.logInfo(`'allowAuctionWithoutConsent' using system default: (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
   }
 
   if (utils.isFn(checkFn)) {
@@ -417,7 +417,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
 
     if (errMsg) {
       if (allowAuction.value && cmpVersion === 1) {
-        utils.logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.', extraArgs);
+        utils.logWarn(errMsg + ` 'allowAuctionWithoutConsent' activated.`, extraArgs);
         nextFn.apply(context, args);
       } else {
         utils.logError(errMsg + ' Canceling auction as per consentManagement config.', extraArgs);
