@@ -1,0 +1,44 @@
+name: Build and publish
+on: 
+  pull_request:
+  push: 
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - name: ⬇ Checkout
+      uses: actions/checkout@v2
+
+    - name: Configure access
+      run: |
+        git config --local user.email 'tech@marfeel.com'
+        git config --local user.name 'GitHub Action'
+
+    - name: 🔧 Setup node
+      uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@marfeel'
+
+    - name: 📦 Install
+      uses: Marfeel/github-actions/common/actions/initialize@master
+      with:
+        gh-token: ${{ secrets.BOB_GITHUB_TOKEN }}
+
+    - name: 🛠 Build
+      run: gulp build --modules=modules.json
+
+    - name: ➗ Create prebid.ww.js from prebid.js
+      run: cp ./build/dist/prebid.js ./build/dist/prebid.ww.js 
+
+    - name: ♻️ Adapt to web worker
+      run: sed -i 's/location/originalLocation/g' ./build/dist/prebid.ww.js
+
+    - name: 🚀 Publish
+      run: npm publish 
+
