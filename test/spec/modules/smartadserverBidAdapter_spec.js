@@ -404,4 +404,29 @@ describe('Smart bid adapter tests', function () {
       expect(request[1]).to.not.be.empty;
     });
   });
+  
+  it('Verify external ids in request and ids found', function () {
+    config.setConfig({
+      'currency': {
+        'adServerCurrency': 'EUR'
+      }
+    });
+    const request = spec.buildRequests(DEFAULT_PARAMS_WITH_EIDS);
+    expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+    expect(request[0]).to.have.property('method').and.to.equal('POST');
+    const requestContent = JSON.parse(request[0].data);
+
+    expect(requestContent).to.have.property('eids');
+    expect(requestContent.eids).to.not.equal(null).and.to.not.be.undefined;
+    expect(requestContent.eids.length).to.equal(10);
+    for (let index in requestContent.eids) {
+      let eid = requestContent.eids[index];
+      expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
+      expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
+      for (let uidsIndex in eid.uids) {
+        let uid = eid.uids[uidsIndex];
+        expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
+      }
+    }
+  });
 });
