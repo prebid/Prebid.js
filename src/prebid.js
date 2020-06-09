@@ -14,6 +14,7 @@ import { adunitCounter } from './adUnits.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
+import { setLastLocationFromLastAdUnit } from './marfeelTools.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -545,6 +546,7 @@ $$PREBID_GLOBAL$$.requestBids.before(executeStorageCallbacks, 49);
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
+  setLastLocationFromLastAdUnit(adUnitArr);
   if (utils.isArray(adUnitArr)) {
     $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
   } else if (typeof adUnitArr === 'object') {
