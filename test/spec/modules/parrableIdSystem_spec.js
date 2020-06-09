@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import find from 'core-js-pure/features/array/find.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { newStorageManager } from 'src/storageManager.js';
@@ -221,7 +222,7 @@ describe('Parrable ID System', function() {
             expect(bid).to.have.deep.nested.property('userId.parrableId');
             expect(bid.userId.parrableId.eid).to.equal(P_COOKIE_EID);
             expect(bid.userId.parrableId.ibaOptout).to.equal(true);
-            const parrableIdAsEid = bid.userIdAsEids.find(e => e.source == 'parrable.com');
+            const parrableIdAsEid = find(bid.userIdAsEids, e => e.source == 'parrable.com');
             expect(parrableIdAsEid).to.deep.equal({
               source: 'parrable.com',
               uids: [{
@@ -248,7 +249,7 @@ describe('Parrable ID System', function() {
             expect(bid).to.have.deep.nested.property('userId.parrableId');
             expect(bid.userId.parrableId).to.not.have.property('eid');
             expect(bid.userId.parrableId.ccpaOptout).to.equal(true);
-            const parrableIdAsEid = bid.userIdAsEids.find(e => e.source == 'parrable.com');
+            const parrableIdAsEid = find(bid.userIdAsEids, e => e.source == 'parrable.com');
             expect(parrableIdAsEid).to.deep.equal({
               source: 'parrable.com',
               uids: [{
