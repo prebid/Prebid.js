@@ -652,11 +652,11 @@ describe('33acrossBidAdapter:', function () {
         const invalidSchainValues = [
           {
             'ver': "1.0",
-            'complete': '1',
+            'complete': 1,
           },
           {
             'ver': "1.0",
-            'complete': '1',
+            'complete': 1,
             'nodes': []
           },
           {
@@ -672,11 +672,22 @@ describe('33acrossBidAdapter:', function () {
           },
           {
             'ver': "1.0",
-            'complete': '1',
+            'complete': 1,
             'nodes': [
               {
                 'sid': "00001",
                 'hp': 1
+              }
+            ]
+          },
+          {
+            'ver': "1.0",
+            'complete': 0,
+            'nodes': [
+              {
+                'asi': "",
+                'sid': "00001",
+                'hp': 1,
               }
             ]
           }

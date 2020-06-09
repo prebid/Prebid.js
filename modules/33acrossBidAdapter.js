@@ -175,7 +175,7 @@ function _getSchainInfo(schain) {
 // of the above conditions fail.
 function _isValidSchain(schain) {
   //Check of nodes are valid
-  if(!schain.nodes || !schain.nodes.length > 0) {
+  if(!schain.nodes || !(schain.nodes.length > 0)) {
     return false;
   }
 
