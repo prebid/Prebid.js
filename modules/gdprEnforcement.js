@@ -49,7 +49,8 @@ function getGvlid(bidderCode) {
 }
 
 /**
- * This function takes in a rule and consentData and validates against the consentData provided. If it returns true Prebid will allow the next call else it will log a warning
+ * This function takes in a rule and consentData and validates against the consentData provided. Depending on what it returns,
+ * the caller may decide to suppress a TCF-sensitive activity.
  * @param {Object} rule - enforcement rules set in config
  * @param {Object} consentData - gdpr consent data
  * @param {string=} currentModule - Bidder code of the current module
@@ -64,13 +65,23 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
     return true;
   }
 
+  // get data from the consent string
   const purposeConsent = utils.deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`);
   const vendorConsent = utils.deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
   const liTransparency = utils.deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
 
+  /*
+    Since vendor exceptions have already been handled, the purpose as a whole is allowed if it's not being enforced
+    or the user has consented. Similar with vendors.
+  */
   const purposeAllowed = rule.enforcePurpose === false || purposeConsent === true;
   const vendorAllowed = rule.enforceVendor === false || vendorConsent === true;
 
+  /*
+    Few if any vendors should be declaring Legitimate Interest for Device Access (Purpose 1), but some are claiming
+    LI for Basic Ads (Purpose 2). Prebid.js can't check to see who's declaring what legal basis, so if LI has been
+    established for Purpose 2, allow the auction to take place and let the server sort out the legal basis calculation.
+  */
   if (purposeId === 2) {
     return (purposeAllowed && vendorAllowed) || (liTransparency === true);
   }
@@ -105,7 +116,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
           result.valid = true;
           fn.call(this, gvlid, moduleName, result);
         } else {
-          curModule && utils.logWarn(`User denied Permission for Device access for ${curModule}`);
+          curModule && utils.logWarn(`Device access denied for ${curModule} by TCF2`);
           result.valid = false;
           fn.call(this, gvlid, moduleName, result);
         }
@@ -203,7 +214,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
           if (includes(disabledBidders, currBidder)) return false;
           const isAllowed = gvlId && validateRules(purpose2Rule, consentData, currBidder, gvlId);
           if (!isAllowed) {
-            utils.logWarn(`User blocked bidder: ${currBidder}. No bid request will be sent to their endpoint.`);
+            utils.logWarn(`TCF2 blocked auction for ${currBidder}`);
             events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
             disabledBidders.push(currBidder);
           }
@@ -212,7 +223,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
       });
       fn.call(this, adUnits, ...args);
     } else {
-      utils.logInfo('Enforcing TCF2 only');
+      // we don't enforce TCF1.1 strings
       fn.call(this, adUnits, ...args);
     }
   } else {
@@ -230,7 +241,7 @@ const hasPurpose2 = (rule) => { return rule.purpose === TCF2.purpose2.name }
 export function setEnforcementConfig(config) {
   const rules = utils.deepAccess(config, 'gdpr.rules');
   if (!rules) {
-    utils.logWarn('GDPR enforcement rules not defined, enforcing TCF2 Purpose 1 and Purpose 2');
+    utils.logWarn('TCF2: enforcing P1 and P2');
     enforcementRules = DEFAULT_RULES;
   } else {
     enforcementRules = rules;
