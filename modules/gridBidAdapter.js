@@ -47,6 +47,7 @@ export const spec = {
     const slotsMapByUid = {};
     const sizeMap = {};
     const bids = validBidRequests || [];
+    let pageKeywords;
     let reqId;
 
     bids.forEach(bid => {
@@ -54,6 +55,15 @@ export const spec = {
       const {params: {uid}, adUnitCode, mediaTypes} = bid;
       auids.push(uid);
       const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!pageKeywords && !utils.isEmpty(bid.params.keywords)) {
+        const keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+
+        if (keywords.length > 0) {
+          keywords.forEach(deleteValues);
+        }
+        pageKeywords = keywords;
+      }
 
       const addedSizes = {};
       sizesId.forEach((sizeId) => {
@@ -101,6 +111,10 @@ export const spec = {
       wrapperType: 'Prebid_js',
       wrapperVersion: '$prebid.version$'
     };
+
+    if (pageKeywords) {
+      payload.keywords = JSON.stringify(pageKeywords);
+    }
 
     if (bidderRequest) {
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -179,6 +193,16 @@ export const spec = {
     }
   }
 };
+
+function isPopulatedArray(arr) {
+  return !!(utils.isArray(arr) && arr.length > 0);
+}
+
+function deleteValues(keyPairObj) {
+  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
+    delete keyPairObj.value;
+  }
+}
 
 function _getBidFromResponse(respItem) {
   if (!respItem) {
