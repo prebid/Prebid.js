@@ -41,7 +41,7 @@ describe('Smart bid adapter tests', function () {
     requestId: 'efgh5678',
     transactionId: 'zsfgzzg'
   }];
-  
+
   var DEFAULT_PARAMS_WITH_EIDS = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
@@ -472,7 +472,7 @@ describe('Smart bid adapter tests', function () {
       expect(request[1]).to.not.be.empty;
     });
   });
-  
+
   describe('External ids tests', function () {
     it('Verify external ids in request and ids found', function () {
       config.setConfig({
