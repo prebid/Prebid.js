@@ -25,6 +25,7 @@ const BIDDER_REQUEST = {
     'consentString': 'consent_string',
     'gdprApplies': true
   },
+  'uspConsent': 'consent_string',
   'refererInfo': {
     'referer': 'https://www.greatsite.com'
   }
@@ -131,6 +132,7 @@ describe('VidazooBidAdapter', function () {
         data: {
           gdprConsent: 'consent_string',
           gdpr: 1,
+          usPrivacy: 'consent_string',
           sizes: ['300x250', '300x600'],
           url: 'https%3A%2F%2Fwww.greatsite.com',
           cb: 1000,
