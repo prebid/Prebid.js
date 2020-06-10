@@ -307,6 +307,7 @@ export function newBidder(spec) {
               // creating a copy of original values as cpm and currency are modified later
               bid.originalCpm = bid.cpm;
               bid.originalCurrency = bid.currency;
+              bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
               const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {

@@ -423,6 +423,7 @@ describe('bidders created by newBidder', function () {
       expect(bidObject.originalCurrency).to.equal(bid.currency);
       expect(doneStub.calledOnce).to.equal(true);
       expect(logErrorSpy.callCount).to.equal(0);
+      expect(bidObject.meta).to.exist;
     });
 
     it('should call spec.getUserSyncs() with the response', function () {
