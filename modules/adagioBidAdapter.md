@@ -12,11 +12,14 @@ Connects to Adagio demand source to fetch bids.
 
 ```javascript
     var adUnits = [
-     {
-       code: 'dfp_banniere_atf',
-       sizes: [[300, 250], [300, 600]],
-       bids: [
-        {
+      {
+        code: 'dfp_banniere_atf',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]],
+          }
+        },
+        bids: [{
           bidder: 'adagio', // Required
           params: {
             organizationId: '0', // Required - Organization ID provided by Adagio.
@@ -36,9 +39,8 @@ Connects to Adagio demand source to fetch bids.
             subcategory: 'handball', // Optional. Subcategory of the content displayed in the page.
             postBid: false // Optional. Use it in case of Post-bid integration only.
           }
-         }
-       ]
-     }
+        }]
+      }
     ];
 
     pbjs.addAdUnits(adUnits);
