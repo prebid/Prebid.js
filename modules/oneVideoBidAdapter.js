@@ -1,13 +1,14 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
+  VERSION: '3.0.3',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
   SYNC_ENDPOINT3: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
-  supportedMediaTypes: ['video'],
+  supportedMediaTypes: ['video', 'banner'],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -21,6 +22,15 @@ export const spec = {
 
     // Video validations
     if (typeof bid.params.video === 'undefined' || typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight == 'undefined' || typeof bid.params.video.mimes == 'undefined') {
+      return false;
+    }
+
+    // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
+    if (bid.mediaTypes.video) {
+      if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
+        return false;
+      }
+    } else if (bid.mediaTypes.banner && !bid.params.video.display) {
       return false;
     }
 
@@ -81,18 +91,26 @@ export const spec = {
       creativeId: bid.crid,
       width: size.width,
       height: size.height,
-      mediaType: 'video',
       currency: response.cur,
       ttl: 100,
       netRevenue: true,
       adUnitCode: bidRequest.adUnitCode
     };
+
+    bidResponse.mediaType = (bidRequest.mediaTypes.banner) ? 'banner' : 'video'
+
     if (bid.nurl) {
       bidResponse.vastUrl = bid.nurl;
+    } else if (bid.adm && bidRequest.params.video.display === 1) {
+      bidResponse.ad = bid.adm
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
-    bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
+
+    if (bidRequest.mediaTypes.video) {
+      bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
+    }
+
     return bidResponse;
   },
   /**
@@ -102,7 +120,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, responses, consentData) {
+  getUserSyncs: function(syncOptions, responses, consentData = {}) {
     let { gdprApplies, consentString = '' } = consentData;
 
     if (syncOptions.pixelEnabled) {
@@ -153,6 +171,8 @@ function getRequestData(bid, consentData, bidRequest) {
       bidfloor: bid.params.bidfloor,
       ext: {
         hb: 1,
+        prebidver: '$prebid.version$',
+        adapterver: spec.VERSION,
       }
     }],
     site: {
@@ -199,6 +219,8 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.rewarded) {
       bidData.imp[0].ext.rewarded = bid.params.video.rewarded
     }
+    bidData.imp[0].video.linearity = 1;
+    bidData.imp[0].video.protocols = bid.params.video.protocols || [2, 5];
   } else if (bid.params.video.display == 1) {
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
@@ -208,6 +230,14 @@ function getRequestData(bid, consentData, bidRequest) {
     };
     if (bid.params.video.placement) {
       bidData.imp[0].banner.placement = bid.params.video.placement
+    }
+    if (bid.params.video.maxduration) {
+      bidData.imp[0].banner.ext = bidData.imp[0].banner.ext || {}
+      bidData.imp[0].banner.ext.maxduration = bid.params.video.maxduration
+    }
+    if (bid.params.video.minduration) {
+      bidData.imp[0].banner.ext = bidData.imp[0].banner.ext || {}
+      bidData.imp[0].banner.ext.minduration = bid.params.video.minduration
     }
   }
   if (bid.params.video.inventoryid) {
@@ -225,6 +255,9 @@ function getRequestData(bid, consentData, bidRequest) {
         }
       }
     }
+    if (bid.params.video.hp == 1) {
+      bidData.source.ext.schain.nodes[0].hp = bid.params.video.hp;
+    }
   }
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
@@ -237,13 +270,14 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.regs.ext.gdpr = 1
     }
 
-    if (consentData.consentString) {
+    if (consentData && consentData.consentString) {
       bidData.user = {
         ext: {
           consent: consentData.consentString
         }
       };
     }
+    // ccpa support
     if (bidRequest && bidRequest.uspConsent) {
       bidData.regs.ext.us_privacy = bidRequest.uspConsent
     }

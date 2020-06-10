@@ -3,15 +3,15 @@ import {
 } from 'chai';
 import {
   spec
-} from 'modules/smartadserverBidAdapter';
+} from 'modules/smartadserverBidAdapter.js';
 import {
   newBidder
-} from 'src/adapters/bidderFactory';
+} from 'src/adapters/bidderFactory.js';
 import {
   config
-} from 'src/config';
-import * as utils from 'src/utils';
-import { requestBidsHook } from 'modules/consentManagement';
+} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import { requestBidsHook } from 'modules/consentManagement.js';
 
 // Default params with optional ones
 describe('Smart bid adapter tests', function () {
@@ -81,7 +81,7 @@ describe('Smart bid adapter tests', function () {
     }
   }];
 
-    // Default params without optional ones
+  // Default params without optional ones
   var DEFAULT_PARAMS_WO_OPTIONAL = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
@@ -310,6 +310,35 @@ describe('Smart bid adapter tests', function () {
     });
   });
 
+  describe('ccpa/us privacy tests', function () {
+    afterEach(function () {
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+    });
+
+    it('Verify build request with us privacy', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        },
+        consentManagement: {
+          cmp: 'iab',
+          consentRequired: true,
+          timeout: 1000,
+          allowAuctionWithoutConsent: true
+        }
+      });
+
+      const uspConsentValue = '1YNN'
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        uspConsent: uspConsentValue
+      });
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('us_privacy').and.to.equal(uspConsentValue);
+    });
+  });
+
   describe('Instream video tests', function () {
     afterEach(function () {
       config.resetConfig();
@@ -444,28 +473,75 @@ describe('Smart bid adapter tests', function () {
     });
   });
   
-  it('Verify external ids in request and ids found', function () {
-    config.setConfig({
-      'currency': {
-        'adServerCurrency': 'EUR'
+  describe('External ids tests', function () {
+    it('Verify external ids in request and ids found', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        }
+      });
+      const request = spec.buildRequests(DEFAULT_PARAMS_WITH_EIDS);
+      expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+      expect(request[0]).to.have.property('method').and.to.equal('POST');
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('eids');
+      expect(requestContent.eids).to.not.equal(null).and.to.not.be.undefined;
+      expect(requestContent.eids.length).to.greaterThan(0);
+      for (let index in requestContent.eids) {
+        let eid = requestContent.eids[index];
+        expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
+        expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
+        for (let uidsIndex in eid.uids) {
+          let uid = eid.uids[uidsIndex];
+          expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
+        }
       }
     });
-    const request = spec.buildRequests(DEFAULT_PARAMS_WITH_EIDS);
-    expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
-    expect(request[0]).to.have.property('method').and.to.equal('POST');
-    const requestContent = JSON.parse(request[0].data);
+  });
 
-    expect(requestContent).to.have.property('eids');
-    expect(requestContent.eids).to.not.equal(null).and.to.not.be.undefined;
-    expect(requestContent.eids.length).to.greaterThan(0);
-    for (let index in requestContent.eids) {
-      let eid = requestContent.eids[index];
-      expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
-      expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
-      for (let uidsIndex in eid.uids) {
-        let uid = eid.uids[uidsIndex];
-        expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
-      }
-    }
+  describe('Supply Chain Serializer tests', function () {
+    it('Verify a multi node supply chain serialization matches iab example', function() {
+      let schain = {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'exchange1.com',
+            'sid': '1234',
+            'hp': 1,
+            'rid': 'bid-request-1',
+            'name': 'publisher',
+            'domain': 'publisher.com'
+          },
+          {
+            'asi': 'exchange2.com',
+            'sid': 'abcd',
+            'hp': 1,
+            'rid': 'bid-request-2',
+            'name': 'intermediary',
+            'domain': 'intermediary.com'
+          }
+        ]
+      };
+
+      let serializedSchain = spec.serializeSupplyChain(schain);
+      expect(serializedSchain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com');
+    });
+
+    it('Verifiy that null schain produce null result', function () {
+      let actual = spec.serializeSupplyChain(null);
+      expect(null, actual);
+    });
+
+    it('Verifiy that schain with null nodes produce null result', function () {
+      let schain = {
+        'ver': '1.0',
+        'complete': 1
+
+      };
+      let actual = spec.serializeSupplyChain(null);
+      expect(null, actual);
+    });
   });
 });

@@ -1,11 +1,11 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { VIDEO, BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hb';
-const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=iow_labs';
+const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -51,9 +51,22 @@ export const spec = {
 
     bids.forEach(bid => {
       reqId = bid.bidderRequestId;
-      const {params: {uid}, adUnitCode} = bid;
+      const {params: {uid}, adUnitCode, mediaTypes} = bid;
       auids.push(uid);
       const sizesId = utils.parseSizesInput(bid.sizes);
+
+      const addedSizes = {};
+      sizesId.forEach((sizeId) => {
+        addedSizes[sizeId] = true;
+      });
+      const bannerSizesId = utils.parseSizesInput(utils.deepAccess(mediaTypes, 'banner.sizes'));
+      const videoSizesId = utils.parseSizesInput(utils.deepAccess(mediaTypes, 'video.playerSize'));
+      bannerSizesId.concat(videoSizesId).forEach((sizeId) => {
+        if (!addedSizes[sizeId]) {
+          addedSizes[sizeId] = true;
+          sizesId.push(sizeId);
+        }
+      });
 
       if (!slotsMapByUid[uid]) {
         slotsMapByUid[uid] = {};

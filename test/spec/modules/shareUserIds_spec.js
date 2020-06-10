@@ -1,4 +1,4 @@
-import {userIdTargeting} from '../../../modules/userIdTargeting';
+import {userIdTargeting} from '../../../modules/userIdTargeting.js';
 import { expect } from 'chai';
 
 describe('#userIdTargeting', function() {
@@ -22,7 +22,7 @@ describe('#userIdTargeting', function() {
     pubads.clearTargeting();
     pubads.setTargeting('test', ['TEST']);
     userIdTargeting(userIds, JSON.stringify(config));
-    expect(pubads.getTargeting()).to.deep.equal({test: ['TEST']});
+    expect(pubads.getTargeting('test')).to.deep.equal(['TEST']);
   });
 
   it('all UserIds are passed as is with GAM: true', function() {
@@ -31,7 +31,8 @@ describe('#userIdTargeting', function() {
     pubads.setTargeting('test', ['TEST']);
     delete config.GAM_KEYS;
     userIdTargeting(userIds, config);
-    expect(pubads.getTargeting()).to.deep.equal({test: ['TEST'], tdid: ['my-tdid']});
+    expect(pubads.getTargeting('test')).to.deep.equal(['TEST']);
+    expect(pubads.getTargeting('tdid')).to.deep.equal(['my-tdid']);
   })
 
   it('Publisher prefered key-names are used', function() {
@@ -39,7 +40,8 @@ describe('#userIdTargeting', function() {
     pubads.clearTargeting();
     pubads.setTargeting('test', ['TEST']);
     userIdTargeting(userIds, config);
-    expect(pubads.getTargeting()).to.deep.equal({test: ['TEST'], 'TD_ID': ['my-tdid']});
+    expect(pubads.getTargeting('test')).to.deep.equal(['TEST']);
+    expect(pubads.getTargeting('TD_ID')).to.deep.equal(['my-tdid']);
   });
 
   it('Publisher does not want to pass an id', function() {
@@ -48,6 +50,6 @@ describe('#userIdTargeting', function() {
     pubads.setTargeting('test', ['TEST']);
     config.GAM_KEYS.tdid = '';
     userIdTargeting(userIds, config);
-    expect(pubads.getTargeting()).to.deep.equal({test: ['TEST']});
+    expect(pubads.getTargeting('test')).to.deep.equal(['TEST']);
   });
 });

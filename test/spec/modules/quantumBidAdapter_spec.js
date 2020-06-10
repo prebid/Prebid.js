@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import { spec } from 'modules/quantumBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
+import { spec } from 'modules/quantumBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const ENDPOINT = 'https://s.sspqns.com/hb'
 const REQUEST = {
