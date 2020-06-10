@@ -1,9 +1,14 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import find from 'core-js/library/fn/array/find.js';
 import {ajax} from '../src/ajax.js';
 import {BANNER} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
+
+// Do not import POLYFILLS from core-js. Most likely until next major update (v4).
+// Prebid.js committers updated core-js to version 3 on v3.19.0 release (9/5/2020).
+// This broke imports. We need to be backwards compatible since this adapter is copied into
+// other prebids that may be older than the latest version. Try use alternative
+// implementation or put polyfill directly at the end of this file as we did for 'find' function.
+// import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'stroeerCore';
 const DEFAULT_HOST = 'hb.adscale.de';
@@ -144,7 +149,7 @@ export const spec = {
       bidReq => `bid request ${bidReq.bidId} does not have custom params`));
     validators.push(createValidator((bidReq) => utils.isStr(bidReq.params.sid),
       bidReq => `bid request ${bidReq.bidId} does not have a sid string field`));
-    validators.push(createValidator((bidReq) => bidReq.params.ssat === undefined || includes([1, 2], bidReq.params.ssat),
+    validators.push(createValidator((bidReq) => bidReq.params.ssat === undefined || [1, 2].indexOf(bidReq.params.ssat) > -1,
       bidReq => `bid request ${bidReq.bidId} does not have a valid ssat value (must be 1 or 2)`));
 
     return function (bidRequest) {
@@ -525,3 +530,40 @@ function binb2str(bin) {
 }
 
 /* eslint-enable camelcase */
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find#Polyfill
+function find(obj, predicate) {
+  // 1. Let O be ? ToObject(this value).
+  var o = Object(obj);
+
+  // 2. Let len be ? ToLength(? Get(O, "length")).
+  var len = o.length >>> 0;
+
+  // 3. If IsCallable(predicate) is false, throw a TypeError exception.
+  if (typeof predicate !== 'function') {
+    throw TypeError('predicate must be a function');
+  }
+
+  // 4. If thisArg was supplied, let T be thisArg; else let T be undefined.
+  var thisArg = arguments[1];
+
+  // 5. Let k be 0.
+  var k = 0;
+
+  // 6. Repeat, while k < len
+  while (k < len) {
+    // a. Let Pk be ! ToString(k).
+    // b. Let kValue be ? Get(O, Pk).
+    // c. Let testResult be ToBoolean(? Call(predicate, T, « kValue, k, O »)).
+    // d. If testResult is true, return kValue.
+    var kValue = o[k];
+    if (predicate.call(thisArg, kValue, k, o)) {
+      return kValue;
+    }
+    // e. Increase k by 1.
+    k++;
+  }
+
+  // 7. Return undefined.
+  return undefined;
+}
