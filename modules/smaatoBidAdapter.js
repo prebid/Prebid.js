@@ -5,7 +5,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid-test.smaatolabs.net/bidder';
-const CLIENT = 'prebid/js/$prebid.version$_0.1'
+const CLIENT = 'prebid_js_$prebid.version$_0.1'
 
 /**
 * Transform BidRequest to OpenRTB-formatted BidRequest Object
@@ -107,10 +107,8 @@ export const spec = {
       url: validBidRequests[0].params.endpoint || SMAATO_ENDPOINT,
       data: buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest),
       options: {
-        customHeaders: {
-          'X-SMT-Client': CLIENT,
-          'X-SMT-SessionId': bidderRequest.auctionId
-        }
+        withCredentials: true,
+        crossOrigin: true,
       }
     };
   },
@@ -121,14 +119,19 @@ export const spec = {
       * @return {Bid[]} An array of bids which were nested inside the server.
       */
   interpretResponse: (serverResponse, bidRequest) => {
-    // const serverBody  = serverResponse.body;
+    // response is empty (HTTP 204)
+    if (utils.isEmpty(serverResponse.body)) {
+      utils.logInfo('[SMAATO] Empty response body HTTP 204, no bids');
+      return []; // no bids
+    }
+
     let serverResponseHeaders = serverResponse.headers;
     const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
 
     const smtExpires = serverResponseHeaders.get('X-SMT-Expires');
     let ttlSec = 300;
-
-    if (smtExpires !== undefined) {
+    utils.logInfo('[SMAATO] Expires:', smtExpires);
+    if (smtExpires) {
       ttlSec = Math.floor((smtExpires - Date.now()) / 1000);
     }
 
@@ -163,7 +166,7 @@ export const spec = {
               ttl: ttlSec,
               creativeId: b.crid,
               dealId: b.dealid || null,
-              netRevenue: false,
+              netRevenue: true,
               currency: res.cur
             })
           }

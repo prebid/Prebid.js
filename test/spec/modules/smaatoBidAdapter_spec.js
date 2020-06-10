@@ -111,7 +111,7 @@ const interpretedBidsImg = [
     ttl: 300,
     creativeId: 'CR69381',
     dealId: '12345',
-    netRevenue: false,
+    netRevenue: true,
     currency: 'USD'
   }
 ];
@@ -126,7 +126,7 @@ const interpretedBidsRichmedia = [
     ttl: 300,
     creativeId: 'CR69381',
     dealId: '12345',
-    netRevenue: false,
+    netRevenue: true,
     currency: 'USD'
   }
 ];
