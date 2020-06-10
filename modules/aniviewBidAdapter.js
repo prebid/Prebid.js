@@ -24,7 +24,7 @@ function avRenderer(bid) {
 }
 
 function newRenderer(bidRequest) {
-  let playerDomain = bidRequest && bidRequest.bidRequest && bidRequest.bidRequest.params && bidRequest.bidRequest.params.playerDomain ? bidRequest.bidRequest.params.playerDomain : "player.aniview.com";
+  let playerDomain = bidRequest && bidRequest.bidRequest && bidRequest.bidRequest.params && bidRequest.bidRequest.params.playerDomain ? bidRequest.bidRequest.params.playerDomain : 'player.aniview.com';
   const renderer = Renderer.install({
     url: 'https://' + playerDomain + '/script/6.1/prebidRenderer.js',
     config: {},
@@ -168,7 +168,6 @@ function interpretResponse(serverResponse, bidRequest) {
             let cpmData = getCpmData(xml);
             if (cpmData && cpmData.cpm > 0) {
               bidResponse.requestId = bidRequest.data.bidId;
-              //bidResponse.bidderCode = BIDDER_CODE;
               bidResponse.ad = '';
               bidResponse.cpm = cpmData.cpm;
               bidResponse.width = bidRequest.data.AV_WIDTH;
