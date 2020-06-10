@@ -262,6 +262,7 @@ export const spec = {
         protocolVersion: '2.0',
         zoneId: zone,
         componentId: 'prebid',
+        componentSubId: getComponentId(currentBidRequest.params.format),
         timestamp: timeInMillis,
         pKey: keyCode
       };
