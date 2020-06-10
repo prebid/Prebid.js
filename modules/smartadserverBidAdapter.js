@@ -9,7 +9,7 @@ import {
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
-import{
+import {
   createEidsArray
 } from './userId/eids.js';
 const BIDDER_CODE = 'smartadserver';
