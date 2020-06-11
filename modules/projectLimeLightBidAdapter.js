@@ -52,8 +52,9 @@ export const spec = {
       utils.logMessage(e);
       winTop = window;
     }
-    return Object.entries(utils.groupBy(validBidRequests.map(bidRequest => buildPlacement(bidRequest)), 'host'))
-      .map(placement => buildRequest(winTop, placement[0], placement[1].map(placement => placement.adUnit)));
+    const placements = utils.groupBy(validBidRequests.map(bidRequest => buildPlacement(bidRequest)), 'host')
+    return Object.keys(placements)
+      .map(host => buildRequest(winTop, host, placements[host].map(placement => placement.adUnit)));
   },
 
   onBidWon: (bid) => {
