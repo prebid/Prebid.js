@@ -68,6 +68,7 @@ import { hook } from './hook.js';
 import find from 'core-js-pure/features/array/find.js';
 import { OUTSTREAM } from './video.js';
 import { VIDEO } from './mediaTypes.js';
+import { getBidReferrer } from './marfeelTools.js';
 
 const { syncUsers } = userSync;
 const utils = require('./utils.js');
@@ -379,6 +380,8 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
 
   function addBidResponse(adUnitCode, bid) {
     let bidderRequest = this;
+
+    bid.referrer = getBidReferrer(bidderRequest);
 
     bidResponseMap[bid.requestId] = true;
 

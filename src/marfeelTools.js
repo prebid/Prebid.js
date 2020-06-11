@@ -84,6 +84,28 @@ export function getAllowedSizes() {
   return add1x1IfAllowed(getCurrentAuctionSizes())
 }
 
+export function getBidReferrer(bidderRequest) {
+  const bids = bidderRequest.bids;
+  const NO_REFERRER = 'no-referrer';
+  const NO_REFERRER_LOG = 'Bid with no referrer';
+
+  if (!bids || bids.length < 1) {
+    // eslint-disable-next-line no-console
+    console.warn(NO_REFERRER_LOG);
+    return NO_REFERRER;
+  }
+
+  const bid = bids[0];
+
+  if (bid && bid.params && bid.params.referrer) {
+    return bid.params.referrer;
+  } else {
+    // eslint-disable-next-line no-console
+    console.warn(NO_REFERRER_LOG);
+    return NO_REFERRER;
+  }
+}
+
 const isBidCached = (bid) => bid[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING][CONSTANTS.TARGETING_KEYS.CACHED];
 
 const getBidName = (bid) => bid[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING][CONSTANTS.TARGETING_KEYS.BIDDER];
