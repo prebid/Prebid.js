@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'quantumdex';
 const ENDPOINT = 'https://useast.quantumdex.io/auction/adapter';
-const USER_SYNC_URL = 'https://useast.quantumdex.io/usersync/adapter';
+const USER_SYNC_URL = 'https://sync.quantumdex.io/usersync/adapter';
 var bySlotTargetKey = {};
 var bySlotSizesCount = {}
 
