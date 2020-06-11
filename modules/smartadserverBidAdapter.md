@@ -89,7 +89,7 @@ Please reach out to your Technical account manager for more information.
                 bidfloor: 5,
                 video: {
                     protocol: 6,
-                    startDelay: 0
+                    startDelay: 1
                 }
             }
         }]
