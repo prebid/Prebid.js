@@ -153,6 +153,7 @@ export const spec = {
 
         const id = 'ism_tag_' + Math.floor((Math.random() * 10e16));
         window[id] = {
+          plr_AdSlot: e.source.frameElement,
           bidId: e.data.bidId,
           bidPrice: bidsMap[e.data.bidId].price,
           serverResponse
