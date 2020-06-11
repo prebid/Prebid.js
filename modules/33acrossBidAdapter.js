@@ -125,7 +125,15 @@ function _createServerRequest(bidRequest, gdprConsent = {}, uspConsent, pageUrl)
       } ]
     }
   };
-
+  
+  if(bidRequest.schain) {
+    ttxRequest.source = {
+      ext: {
+        schain: bidRequest.schain
+      }
+    }
+  }
+  
   // Finally, set the openRTB 'test' param if this is to be a test bid
   if (params.test === 1) {
     ttxRequest.test = 1;
