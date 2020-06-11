@@ -25,14 +25,12 @@ export const spec = {
       return false;
     }
 
-    // Prevend DAP Outstream validation
+    // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
     if (bid.mediaTypes.video) {
       if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
         return false;
       }
-    }
-    // Banner DAP validation
-    if (bid.mediaTypes.banner && (!bid.params.video.display)) {
+    } else if (bid.mediaTypes.banner && !bid.params.video.display) {
       return false;
     }
 

@@ -27,6 +27,44 @@ describe('nextrollBidAdapter', function() {
   let bidWithoutValidId = { id: '' };
   let bidWithoutId = { params: { zoneId: 'zone1' } };
 
+  describe('nativeBidRequest', () => {
+    it('validates native spec', () => {
+      let nativeAdUnit = [{
+        bidder: 'nextroll',
+        adUnitCode: 'adunit-code',
+        bidId: 'bid_id',
+        mediaTypes: {
+          native: {
+            title: {required: true, len: 80},
+            image: {required: true, sizes: [728, 90]},
+            sponsoredBy: {required: false, len: 20},
+            clickUrl: {required: true},
+            body: {required: true, len: 25},
+            icon: {required: true, sizes: [50, 50], aspect_ratios: [{ratio_height: 3, ratio_width: 4}]},
+            someRandomAsset: {required: false, len: 100} // This should be ignored
+          }
+        },
+        params: {
+          bidfloor: 1,
+          zoneId: 'zone1',
+          publisherId: 'publisher_id'
+        }
+      }];
+
+      let request = spec.buildRequests(nativeAdUnit)
+      let assets = request[0].data.imp.native.request.native.assets
+
+      let excptedAssets = [
+        {id: 1, required: 1, title: {len: 80}},
+        {id: 2, required: 1, img: {w: 728, h: 90, wmin: 1, hmin: 1, type: 3}},
+        {id: 3, required: 1, img: {w: 50, h: 50, wmin: 4, hmin: 3, type: 1}},
+        {id: 5, required: 0, data: {len: 20, type: 1}},
+        {id: 6, required: 1, data: {len: 25, type: 2}}
+      ]
+      expect(assets).to.be.deep.equal(excptedAssets)
+    })
+  })
+
   describe('isBidRequestValid', function() {
     it('validates the bids correctly when the bid has an id', function() {
       expect(spec.isBidRequestValid(validBid)).to.be.true;
@@ -141,6 +179,85 @@ describe('nextrollBidAdapter', function() {
       expect(response.ad).to.be.equal('adm1');
     });
   });
+
+  describe('interpret native response', () => {
+    let clickUrl = 'https://clickurl.com/with/some/path'
+    let titleText = 'Some title'
+    let imgW = 300
+    let imgH = 250
+    let imgUrl = 'https://clickurl.com/img.png'
+    let brandText = 'Some Brand'
+    let impUrl = 'https://clickurl.com/imptracker'
+
+    let responseBody = {
+      body: {
+        id: 'bidresponse_id',
+        seatbid: [{
+          bid: [{
+            price: 1.2,
+            crid: 'crid1',
+            adm: {
+              link: {url: clickUrl},
+              assets: [
+                {id: 1, title: {text: titleText}},
+                {id: 2, img: {w: imgW, h: imgH, url: imgUrl}},
+                {id: 5, data: {value: brandText}}
+              ],
+              imptrackers: [impUrl]
+            }
+          }]
+        }]
+      }
+    };
+
+    it('Should interpret response', () => {
+      let response = spec.interpretResponse(utils.deepClone(responseBody))
+      let expectedResponse = {
+        clickUrl: clickUrl,
+        impressionTrackers: [impUrl],
+        privacyLink: 'https://info.evidon.com/pub_info/573',
+        privacyIcon: 'https://c.betrad.com/pub/icon1.png',
+        title: titleText,
+        image: {url: imgUrl, width: imgW, height: imgH},
+        sponsoredBy: brandText,
+        clickTrackers: [],
+        jstracker: []
+      }
+
+      expect(response[0].native).to.be.deep.equal(expectedResponse)
+    })
+
+    it('Should interpret all assets', () => {
+      let allAssetsResponse = utils.deepClone(responseBody)
+      let iconUrl = imgUrl + '?icon=true', iconW = 10, iconH = 15
+      let logoUrl = imgUrl + '?logo=true', logoW = 20, logoH = 25
+      let bodyText = 'Some body text'
+
+      allAssetsResponse.body.seatbid[0].bid[0].adm.assets.push(...[
+        {id: 3, img: {w: iconW, h: iconH, url: iconUrl}},
+        {id: 4, img: {w: logoW, h: logoH, url: logoUrl}},
+        {id: 6, data: {value: bodyText}}
+      ])
+
+      let response = spec.interpretResponse(allAssetsResponse)
+      let expectedResponse = {
+        clickUrl: clickUrl,
+        impressionTrackers: [impUrl],
+        jstracker: [],
+        clickTrackers: [],
+        privacyLink: 'https://info.evidon.com/pub_info/573',
+        privacyIcon: 'https://c.betrad.com/pub/icon1.png',
+        title: titleText,
+        image: {url: imgUrl, width: imgW, height: imgH},
+        icon: {url: iconUrl, width: iconW, height: iconH},
+        logo: {url: logoUrl, width: logoW, height: logoH},
+        body: bodyText,
+        sponsoredBy: brandText
+      }
+
+      expect(response[0].native).to.be.deep.equal(expectedResponse)
+    })
+  })
 
   describe('hasCCPAConsent', function() {
     function ccpaRequest(consentString) {
