@@ -56,15 +56,15 @@ describe('ConcertAnalyticsAdapter', function() {
       clock.tick(3000 + 1000);
 
       const eventsToReport = ['bidResponse', 'bidWon'];
-      concertAnalytics.eventsStorage.forEach(function(event) {
-        expect(eventsToReport.includes(event.event)).to.equal(true);
-      });
+      for (var i = 0; i < concertAnalytics.eventsStorage.length; i++) {
+        expect(eventsToReport.indexOf(concertAnalytics.eventsStorage[i].event)).to.be.above(-1);
+      }
 
-      eventsToReport.forEach(function(eventName) {
+      for (var i = 0; i < eventsToReport.length; i++) {
         expect(concertAnalytics.eventsStorage.some(function(event) {
-          return event.event === eventName
+          return event.event === eventsToReport[i]
         })).to.equal(true);
-      });
+      }
     });
 
     it('should report data in the shape expected by analytics endpoint', function() {
@@ -73,9 +73,9 @@ describe('ConcertAnalyticsAdapter', function() {
 
       const requiredFields = ['event', 'concert_rid', 'adId', 'auctionId', 'creativeId', 'position', 'url', 'cpm', 'width', 'height', 'timeToRespond'];
 
-      requiredFields.forEach(function(field) {
-        expect(concertAnalytics.eventsStorage[0]).to.have.property(field);
-      });
+      for (var i = 0; i < requiredFields.length; i++) {
+        expect(concertAnalytics.eventsStorage[0]).to.have.property(requiredFields[i]);
+      }
     });
   });
 
