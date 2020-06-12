@@ -5,6 +5,8 @@ import * as utils from '../src/utils.js';
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
+const MEDIA_TYPE = 'banner';
+const CURRENCY = 'USD';
 
 const adapterState = {
   uniqueSiteIds: []
@@ -67,11 +69,25 @@ function _getAdSlotHTMLElement(adUnitCode) {
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
-function _createServerRequest(bidRequest, gdprConsent = {}, uspConsent, pageUrl) {
+function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl, getFloor}) {
   const ttxRequest = {};
   const params = bidRequest.params;
   const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
   const sizes = _transformSizes(bidRequest.sizes);
+  
+  let format;
+
+  // We support size based bidfloors so obtain one if there's a rule associated
+  if (typeof getFloor === 'function') {
+    format = sizes.map((size) => {
+      const formatExt = _getBidFloors(getFloor, size);
+
+      return Object.assign({}, size, formatExt);
+    });
+  } else {
+    format = sizes;
+  }
+
   const minSize = _getMinSize(sizes);
 
   const viewabilityAmount = _isViewabilityMeasurable(element)
@@ -86,7 +102,7 @@ function _createServerRequest(bidRequest, gdprConsent = {}, uspConsent, pageUrl)
   ttxRequest.imp = [];
   ttxRequest.imp[0] = {
     banner: {
-      format: sizes
+      format
     },
     ext: {
       ttx: {
@@ -177,6 +193,24 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
   }
 
   return sync;
+}
+
+function _getBidFloors(getFloor, size) {
+  const bidFloors = getFloor({
+    currency: CURRENCY,
+    mediaType: MEDIA_TYPE,
+    size : [ size.w, size.h ]
+  });
+
+  if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
+    return {
+      ext: {
+        ttx: {
+          bidfloors: [ bidFloors.floor ]
+        }
+      }
+    }
+  }
 }
 
 function _getSize(size) {
@@ -320,7 +354,19 @@ function buildRequests(bidRequests, bidderRequest) {
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
 
-  return bidRequests.map(req => _createServerRequest(req, gdprConsent, uspConsent, pageUrl));
+  let getFloor;
+  if (typeof bidRequests.getFloor === 'function') {
+    getFloor = bidRequests.getFloor.bind(bidRequests);
+  }
+  return bidRequests.map(bidRequest => _createServerRequest(
+    {
+      bidRequest, 
+      gdprConsent, 
+      uspConsent, 
+      pageUrl, 
+      getFloor
+    })
+  );
 }
 
 // NOTE: At this point, the response from 33exchange will only ever contain one bid i.e. the highest bid
