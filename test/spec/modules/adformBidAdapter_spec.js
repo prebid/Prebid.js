@@ -1,8 +1,7 @@
 import {assert, expect} from 'chai';
-import * as url from 'src/url';
-import {spec} from 'modules/adformBidAdapter';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { config } from 'src/config';
+import {spec} from 'modules/adformBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 
 describe('Adform adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -130,25 +129,24 @@ describe('Adform adapter', function () {
       assert.equal(parsedUrl.query.pt, 'gross');
     });
 
-    describe('gdpr', function () {
+    describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
-        let resultBids = JSON.parse(JSON.stringify(bids[0]));
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
         let parsedUrl = parseUrl(request.url).query;
 
-        assert.equal(parsedUrl.gdpr, 'true');
+        assert.equal(parsedUrl.gdpr, '1');
         assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
       });
 
-      it('should not send GDPR Consent data to adform if gdprApplies is false or undefined', function () {
-        let resultBids = JSON.parse(JSON.stringify(bids[0]));
+      it('should not send GDPR Consent data to adform if gdprApplies is undefined', function () {
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: false, consentString: 'concentDataString'}});
         let parsedUrl = parseUrl(request.url).query;
 
-        assert.ok(!parsedUrl.gdpr);
-        assert.ok(!parsedUrl.gdpr_consent);
+        assert.equal(parsedUrl.gdpr, '0');
+        assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
 
         request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: undefined, consentString: 'concentDataString'}});
+        parsedUrl = parseUrl(request.url).query;
         assert.ok(!parsedUrl.gdpr);
         assert.ok(!parsedUrl.gdpr_consent);
       });
@@ -163,6 +161,13 @@ describe('Adform adapter', function () {
 
         request = spec.buildRequests([bids[0]]);
         assert.ok(!request.gdpr);
+      });
+
+      it('should send CCPA Consent data to adform', function () {
+        const request = spec.buildRequests([bids[0]], {uspConsent: '1YA-'});
+        const parsedUrl = parseUrl(request.url).query;
+
+        assert.equal(parsedUrl.us_privacy, '1YA-');
       });
     });
   });
@@ -248,14 +253,14 @@ describe('Adform adapter', function () {
       for (let i = 0; i < result.length; i++) {
         assert.equal(result[i].gdpr, true);
         assert.equal(result[i].gdpr_consent, 'ERW342EIOWT34234KMGds');
-      };
+      }
 
       bidRequest.gdpr = undefined;
       result = spec.interpretResponse(serverResponse, bidRequest);
       for (let i = 0; i < result.length; i++) {
         assert.ok(!result[i].gdpr);
         assert.ok(!result[i].gdpr_consent);
-      };
+      }
     });
 
     it('should set a renderer only for an outstream context', function () {
@@ -303,13 +308,13 @@ describe('Adform adapter', function () {
         serverResponse.body = [serverResponse.body[0]];
         bidRequest.bids = [bidRequest.bids[0]];
 
-        bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']]
+        bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']];
         let result = spec.interpretResponse(serverResponse, bidRequest);
 
         assert.equal(result[0].width, 300);
         assert.equal(result[0].height, 600);
       });
-    })
+    });
   });
 
   beforeEach(function () {

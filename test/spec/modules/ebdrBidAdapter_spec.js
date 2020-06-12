@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/ebdrBidAdapter';
-import { VIDEO, BANNER } from 'src/mediaTypes';
-import * as utils from 'src/utils';
+import { spec } from 'modules/ebdrBidAdapter.js';
+import { VIDEO, BANNER } from 'src/mediaTypes.js';
+import * as utils from 'src/utils.js';
 
 describe('ebdrBidAdapter', function () {
   let bidRequests;

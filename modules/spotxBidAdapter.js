@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { Renderer } from '../src/Renderer';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'spotx';
 const URL = 'https://search.spotxchange.com/openrtb/2.3/dados/';
@@ -10,6 +10,7 @@ export const GOOGLE_CONSENT = { consented_providers: ['3', '7', '11', '12', '15'
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 165,
   aliases: ['spotx'],
   supportedMediaTypes: [VIDEO],
 
@@ -159,6 +160,22 @@ export const spec = {
         spotxReq.video.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params));
       }
 
+      if (utils.getBidIdParameter('min_duration', bid.params) != '') {
+        spotxReq.video.minduration = utils.getBidIdParameter('min_duration', bid.params);
+      }
+
+      if (utils.getBidIdParameter('max_duration', bid.params) != '') {
+        spotxReq.video.maxduration = utils.getBidIdParameter('max_duration', bid.params);
+      }
+
+      if (utils.getBidIdParameter('placement_type', bid.params) != '') {
+        spotxReq.video.ext.placement = utils.getBidIdParameter('placement_type', bid.params);
+      }
+
+      if (utils.getBidIdParameter('position', bid.params) != '') {
+        spotxReq.video.ext.pos = utils.getBidIdParameter('position', bid.params);
+      }
+
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
       }
@@ -202,12 +219,12 @@ export const spec = {
         userExt.consent = bidderRequest.gdprConsent.consentString;
 
         if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
-          requestPayload.regs = {
-            ext: {
-              gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-            }
-          };
+          utils.deepSetValue(requestPayload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
         }
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        utils.deepSetValue(requestPayload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
       // ID5 fied
@@ -308,6 +325,7 @@ export const spec = {
             channel_id: serverResponseBody.id,
             cache_key: spotxBid.ext.cache_key,
             vastUrl: 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key,
+            videoCacheKey: spotxBid.ext.cache_key,
             mediaType: VIDEO,
             width: spotxBid.w,
             height: spotxBid.h

@@ -13,6 +13,8 @@ The `districtmDmxAdapter` module allows publishers to include DMX Exchange deman
 * Single Request
 * Multi-Size Support
 * GDPR Compliant
+* CCPA Compliant
+* COPPA Compliant
 * Bids returned in **NET**
 
  ## Media Types
@@ -23,8 +25,8 @@ The `districtmDmxAdapter` module allows publishers to include DMX Exchange deman
 
 | Key | Scope | Type | Description
 | --- | --- | --- | ---
-| dmxid | Mandatory | Integer | Unique identifier of the placement, dmxid can be obtained in the district m Boost platform.
-| memberid | Mandatory | Integer | Unique identifier for your account, memberid can be obtained in the district m Boost platform.
+| `dmxid` | Mandatory | Integer | Unique identifier of the placement, dmxid can be obtained in the district m Boost platform.
+| `memberid` | Mandatory | Integer | Unique identifier for your account, memberid can be obtained in the district m Boost platform.
 
 # Ad Unit Configuration Example
 
@@ -45,6 +47,9 @@ The `districtmDmxAdapter` module allows publishers to include DMX Exchange deman
         }]
     }];
 ```
+
+
+# Ad Unit Configuration when COPPA is needed
 
 
 # Quick Start Guide

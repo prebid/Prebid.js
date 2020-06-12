@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
 const BIDDER_CODE = 'between';
 
 export const spec = {
@@ -13,7 +13,7 @@ export const spec = {
    * @return boolean True  if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.w && bid.params.h && bid.params.s);
+    return Boolean(bid.params.s);
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -21,17 +21,18 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     let requests = [];
+    const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+
     validBidRequests.forEach(i => {
       let params = {
+        sizes: parseSizesInput(getAdUnitSizes(i)).join('%2C'),
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
         fl: getFl(),
         rr: getRr(),
-        w: i.params.w,
-        h: i.params.h,
         s: i.params.s,
         bidid: i.bidId,
         transactionid: i.transactionId,
@@ -54,6 +55,16 @@ export const spec = {
           params['pubside_macro[' + key + ']'] = encodeURIComponent(i.params.pubdata[key]);
         }
       }
+
+      if (gdprConsent) {
+        if (typeof gdprConsent.gdprApplies !== 'undefined') {
+          params.gdprApplies = !!gdprConsent.gdprApplies;
+        }
+        if (typeof gdprConsent.consentString !== 'undefined') {
+          params.consentString = gdprConsent.consentString;
+        }
+      }
+
       requests.push({method: 'GET', url: 'https://ads.betweendigital.com/adjson', data: params})
     })
     return requests;

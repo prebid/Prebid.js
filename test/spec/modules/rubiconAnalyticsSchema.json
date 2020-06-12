@@ -292,7 +292,8 @@
           "enum": [
             "success",
             "no-bid",
-            "error"
+            "error",
+            "rejected"
           ]
         },
         "error": {

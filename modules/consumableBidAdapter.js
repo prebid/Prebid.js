@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'consumable';
 
@@ -137,7 +137,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//sync.serverbid.com/ss/' + siteId + '.html'
+        url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
       }];
     }
 
