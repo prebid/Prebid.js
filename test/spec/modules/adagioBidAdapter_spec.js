@@ -2,12 +2,13 @@ import { expect } from 'chai';
 import { adagioScriptFromLocalStorageCb, _features, spec } from 'modules/adagioBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
+import * as refererInfo from '../../../src/refererDetection.js';
 
 describe('adagioAdapter', () => {
   let utilsMock;
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
-  const VERSION = '2.2.2';
+  const VERSION = '2.3.0';
 
   beforeEach(function() {
     localStorage.removeItem('adagioScript');
@@ -90,21 +91,21 @@ describe('adagioAdapter', () => {
 
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
-      expect(window.top.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(1);
-    })
+      expect(window.self.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(1);
+    });
 
     it('should compute a printNumber for the new bid request on same adUnitCode and same pageviewId', () => {
       spec.isBidRequestValid(bid);
-      expect(window.top.ADAGIO.adUnits).ok;
-      expect(window.top.ADAGIO.adUnits['adunit-code']).ok;
-      expect(window.top.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(2);
+      expect(window.self.ADAGIO.adUnits).ok;
+      expect(window.self.ADAGIO.adUnits['adunit-code']).ok;
+      expect(window.self.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(2);
 
       spec.isBidRequestValid(bid);
-      expect(window.top.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(3);
+      expect(window.self.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(3);
 
-      window.top.ADAGIO.pageviewId = 123;
+      window.self.ADAGIO.pageviewId = 123;
       spec.isBidRequestValid(bid);
-      expect(window.top.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(1);
+      expect(window.self.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(1);
     });
 
     it('should return false when organization params is not passed', () => {
@@ -144,18 +145,13 @@ describe('adagioAdapter', () => {
       expect(bidTest.params.environment).to.equal('tablet');
     })
 
-    it('should return false if not in the window.top', () => {
-      sandbox.stub(utils, 'getWindowTop').throws();
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
     it('should expose ADAGIO.pbjsAdUnits in window', () => {
       spec.isBidRequestValid(bidWithMediaTypes);
       spec.isBidRequestValid(bid);
-      expect(window.top.ADAGIO.pbjsAdUnits).ok;
-      expect(window.top.ADAGIO.pbjsAdUnits).to.have.lengthOf(2);
-      const adUnitWithMediaTypeSizes = window.top.ADAGIO.pbjsAdUnits.filter((aU) => aU.code === 'adunit-code-2')[0];
-      const adUnitWithSizes = window.top.ADAGIO.pbjsAdUnits.filter((aU) => aU.code === 'adunit-code')[0];
+      expect(window.self.ADAGIO.pbjsAdUnits).ok;
+      expect(window.self.ADAGIO.pbjsAdUnits).to.have.lengthOf(2);
+      const adUnitWithMediaTypeSizes = window.self.ADAGIO.pbjsAdUnits.filter((aU) => aU.code === 'adunit-code-2')[0];
+      const adUnitWithSizes = window.self.ADAGIO.pbjsAdUnits.filter((aU) => aU.code === 'adunit-code')[0];
       expect(adUnitWithMediaTypeSizes.sizes).to.eql([[300, 250]]);
       expect(adUnitWithSizes.sizes).to.eql([[300, 250], [300, 600]]);
     });
@@ -206,18 +202,26 @@ describe('adagioAdapter', () => {
       display: 'none'
     };
 
-    const stubs = {
-      topGetElementById: undefined,
-      topGetComputedStyle: undefined
+    const $sf = {
+      ext: {
+        geom: function() {}
+      }
     }
 
-    top.ADAGIO = top.ADAGIO || {};
-    top.ADAGIO.adUnits = top.ADAGIO.adUnits || {};
-    top.ADAGIO.pbjsAdUnits = top.ADAGIO.pbjsAdUnits || [];
+    const stubs = {
+      topGetElementById: undefined,
+      topGetComputedStyle: undefined,
+      refererInfo: undefined
+    }
+
+    self.ADAGIO = self.ADAGIO || {};
+    self.ADAGIO.adUnits = self.ADAGIO.adUnits || {};
+    self.ADAGIO.pbjsAdUnits = self.ADAGIO.pbjsAdUnits || [];
 
     beforeEach(function () {
       stubs.topGetElementById = sandbox.stub(top.document, 'getElementById');
       stubs.topGetComputedStyle = sandbox.stub(top, 'getComputedStyle');
+      stubs.refererInfo = sandbox.stub(refererInfo, 'detectReferer');
 
       stubs.topGetElementById.withArgs('banner-atf-123').returns(banner300x250);
       stubs.topGetElementById.withArgs('banner-atf-456').returns(banner300x600);
@@ -305,6 +309,24 @@ describe('adagioAdapter', () => {
       }
     ];
 
+    const bidRequestsWithoutAdunitElementId = [
+      {
+        'bidder': 'adagio',
+        'params': {
+          organizationId: '456',
+          site: 'ADAGIO-456',
+          placement: 'PAVE_ATF-456',
+          pagetype: 'ARTICLE',
+          postBid: true
+        },
+        'adUnitCode': 'adunit-code3',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': 'c180kg4267tyqz',
+        'bidderRequestId': '8vfscuixrovn8i',
+        'auctionId': 'lel4fhp239i9km',
+      }
+    ];
+
     let consentString = 'theConsentString';
     let bidderRequest = {
       'bidderCode': 'adagio',
@@ -365,11 +387,11 @@ describe('adagioAdapter', () => {
       expect(request.data.prebidVersion).to.equal('$prebid.version$');
     });
 
-    it('features params "adunit_position" must be empty if adUnitElement is not found in the DOM', () => {
+    it('features params "adunit_position" must not exists if adUnitElement is not found in the DOM', () => {
       const requests = spec.buildRequests([Object.assign({}, bidRequests[0], {params: {adUnitElementId: 'does-not-exist'}})], bidderRequest);
       const request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
-      expect(request.data.adUnits[0].features.adunit_position).to.deep.equal('');
+      expect(request.data.adUnits[0].features.adunit_position).to.not.exist;
     });
 
     it('features params "adunit_position" should be computed even if DOM element is display:none', () => {
@@ -399,28 +421,9 @@ describe('adagioAdapter', () => {
       expect(request.data.adUnits[0].features).to.exist;
     });
 
-    it('outerAdUnitElementId must be added when PostBid param has been set', () => {
-      top.ADAGIO = top.ADAGIO || {};
-      top.ADAGIO.pbjsAdUnits = [];
-
-      top.ADAGIO.pbjsAdUnits.push({
-        code: bidRequestsWithPostBid[0].adUnitCode,
-        sizes: bidRequestsWithPostBid[0].sizes,
-        bids: [{
-          bidder: bidRequestsWithPostBid[0].bidder,
-          params: bidRequestsWithPostBid[0].params
-        }]
-      });
-      let requests = spec.buildRequests(bidRequestsWithPostBid, bidderRequest);
-      let request = requests[0];
-      expect(request.data.adUnits[0].features).to.exist;
-      expect(request.data.adUnits[0].params.outerAdUnitElementId).to.exist;
-      top.ADAGIO.pbjsAdUnits = undefined;
-    });
-
     it('generates a pageviewId if missing', () => {
-      window.top.ADAGIO = window.top.ADAGIO || {};
-      delete window.top.ADAGIO.pageviewId;
+      window.self.ADAGIO = window.self.ADAGIO || {};
+      delete window.self.ADAGIO.pageviewId;
 
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests).to.have.lengthOf(2);
@@ -430,8 +433,8 @@ describe('adagioAdapter', () => {
     });
 
     it('uses an existing pageviewId if present', () => {
-      window.top.ADAGIO = window.top.ADAGIO || {};
-      window.top.ADAGIO.pageviewId = 'abc';
+      window.self.ADAGIO = window.self.ADAGIO || {};
+      window.self.ADAGIO.pageviewId = 'abc';
 
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests).to.have.lengthOf(2);
@@ -441,9 +444,9 @@ describe('adagioAdapter', () => {
     });
 
     it('should send the printNumber in features object', () => {
-      window.top.ADAGIO = window.top.ADAGIO || {};
-      window.top.ADAGIO.pageviewId = 'abc';
-      window.top.ADAGIO.adUnits['adunit-code1'] = {
+      window.self.ADAGIO = window.self.ADAGIO || {};
+      window.self.ADAGIO.pageviewId = 'abc';
+      window.self.ADAGIO.adUnits['adunit-code1'] = {
         pageviewId: 'abc',
         printNumber: 2
       };
@@ -540,17 +543,51 @@ describe('adagioAdapter', () => {
     });
 
     it('should expose version in window', () => {
-      expect(window.top.ADAGIO).ok;
-      expect(window.top.ADAGIO.versions).ok;
-      expect(window.top.ADAGIO.versions.adagioBidderAdapter).to.eq(VERSION);
+      expect(window.self.ADAGIO).ok;
+      expect(window.self.ADAGIO.versions).ok;
+      expect(window.self.ADAGIO.versions.adagioBidderAdapter).to.eq(VERSION);
     });
 
-    it('should returns an empty array if the bidder cannot access to window top (based on refererInfo.reachedTop)', () => {
-      const requests = spec.buildRequests(bidRequests, {
-        ...bidderRequest,
-        refererInfo: { reachedTop: false }
-      });
-      expect(requests).to.be.empty;
+    it('Should returns empty `page_dimensions` features if no body', () => {
+      // This appens when Prebid is executed before DOM has been loaded.
+      sandbox.stub(top.document, 'querySelector').withArgs('body').returns(false);
+      let requests = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const request = requests[0];
+      expect(request.data.adUnits[0].features).to.exist;
+      expect(request.data.adUnits[0].features.page_dimensions).to.not.exist;
+    });
+
+    it('Should remove specifics features if Prebid is in Unfriendly Iframe', () => {
+      sandbox.stub(utils, 'getWindowTop').throws();
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
+      const request = requests[0];
+      expect(request.data.adUnits[0].features).to.exist;
+      expect(request.data.adUnits[0].features.viewport_dimensions).to.not.exist;
+      expect(request.data.adUnits[0].features.page_dimensions).to.not.exist;
+      expect(request.data.adUnits[0].features.adunit_position).to.not.exist;
+      expect(request.data.adUnits[0].features.print_number).to.be.a('String');
+      expect(request.data.adUnits[0].features.dom_loading).to.be.a('String');
+      expect(request.data.adUnits[0].features.user_timestamp).to.be.a('String');
+      expect(request.data.adUnits[0].features.device).to.be.a('String');
+      expect(request.data.adUnits[0].features.url).to.be.a('String');
+      expect(request.data.adUnits[0].features.browser).to.be.a('String');
+      expect(request.data.adUnits[0].features.os).to.be.a('String');
+    });
+
+    it('Should send a request even if adUnitElementId is not found', () => {
+      const requests = spec.buildRequests(bidRequestsWithoutAdunitElementId, bidderRequest);
+      const request = requests[0];
+      expect(request.data.adUnits[0].features).to.exist;
+      expect(request.data.adUnits[0].features.viewport_dimensions).to.exist;
+      expect(request.data.adUnits[0].features.page_dimensions).to.exist;
+      expect(request.data.adUnits[0].features.adunit_position).to.not.exist;
+      expect(request.data.adUnits[0].features.print_number).to.be.a('String');
+      expect(request.data.adUnits[0].features.dom_loading).to.be.a('String');
+      expect(request.data.adUnits[0].features.user_timestamp).to.be.a('String');
+      expect(request.data.adUnits[0].features.device).to.be.a('String');
+      expect(request.data.adUnits[0].features.url).to.be.a('String');
+      expect(request.data.adUnits[0].features.browser).to.be.a('String');
+      expect(request.data.adUnits[0].features.os).to.be.a('String');
     });
 
     it('Should add the schain if available at bidder level', () => {
@@ -585,6 +622,42 @@ describe('adagioAdapter', () => {
       const requests = spec.buildRequests([bidRequests[0]], bidderRequest);
       const request = requests[0];
       expect(request.data.schain).to.not.exist;
+    });
+
+    it('Features object does not include empty properties', () => {
+      sandbox.stub(_features, 'getPageDimensions').returns('');
+      sandbox.stub(_features, 'getViewPortDimensions').returns('');
+      sandbox.stub(_features, 'getSlotPosition').returns('');
+      sandbox.stub(_features, 'getOS').returns('');
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])], bidderRequest);
+      let request = requests[0];
+      expect(request.data.adUnits[0].features).to.exist;
+      expect(request.data.adUnits[0].features.adunit_position).to.not.exist;
+      expect(request.data.adUnits[0].features.page_dimensions).to.not.exist;
+      expect(request.data.adUnits[0].features.viewport_dimensions).to.not.exist;
+      expect(request.data.adUnits[0].features.print_number).to.be.a('String');
+      expect(request.data.adUnits[0].features.dom_loading).to.be.a('String');
+      expect(request.data.adUnits[0].features.user_timestamp).to.be.a('String');
+      expect(request.data.adUnits[0].features.device).to.be.a('String');
+      expect(request.data.adUnits[0].features.url).to.be.a('String');
+      expect(request.data.adUnits[0].features.browser).to.be.a('String');
+      expect(request.data.adUnits[0].features.os).to.not.exist;
+    });
+
+    it('Features object properties must be a string', () => {
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])], bidderRequest);
+      let request = requests[0];
+      expect(request.data.adUnits[0].features).to.exist;
+      expect(request.data.adUnits[0].features.adunit_position).to.be.a('String');
+      expect(request.data.adUnits[0].features.page_dimensions).to.be.a('String');
+      expect(request.data.adUnits[0].features.viewport_dimensions).to.be.a('String');
+      expect(request.data.adUnits[0].features.print_number).to.be.a('String');
+      expect(request.data.adUnits[0].features.dom_loading).to.be.a('String');
+      expect(request.data.adUnits[0].features.user_timestamp).to.be.a('String');
+      expect(request.data.adUnits[0].features.device).to.be.a('String');
+      expect(request.data.adUnits[0].features.url).to.be.a('String');
+      expect(request.data.adUnits[0].features.browser).to.be.a('String');
+      expect(request.data.adUnits[0].features.os).to.be.a('String');
     });
   });
 
@@ -696,17 +769,18 @@ describe('adagioAdapter', () => {
 
     it('Should populate ADAGIO queue with ssp-data', () => {
       spec.interpretResponse(serverResponse, bidRequest);
-      expect(window.top.ADAGIO).ok;
-      expect(window.top.ADAGIO.queue).to.be.an('array');
+      expect(window.self.ADAGIO).ok;
+      expect(window.self.ADAGIO.queue).to.be.an('array');
+      expect(window.self.ADAGIO.queue.find(ob => ob.action === 'ssp-data')).ok;
     });
 
-    it('Should not populate ADAGIO queue with ssp-data if not in top window', () => {
-      utils.getWindowTop().ADAGIO.queue = [];
+    it.skip('Should populate ADAGIO queue with ssp-data if not in top window', () => {
+      utils.getWindowSelf().ADAGIO.queue = [];
       sandbox.stub(utils, 'getWindowTop').throws();
       spec.interpretResponse(serverResponse, bidRequest);
-      expect(window.top.ADAGIO).ok;
-      expect(window.top.ADAGIO.queue).to.be.an('array');
-      expect(window.top.ADAGIO.queue).empty;
+      expect(window.self.ADAGIO).ok;
+      expect(window.self.ADAGIO.queue).to.be.an('array');
+      expect(window.self.ADAGIO.queue).empty;
     });
 
     it('should return an empty response even if an exception is ', () => {
@@ -761,9 +835,9 @@ describe('adagioAdapter', () => {
     it('should verify valid hash with valid script', function () {
       localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, '// hash: ' + VALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
 
-      utilsMock.expects('logInfo').withExactArgs('Start Adagio script').once();
-      utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
-      utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').never();
+      utilsMock.expects('logInfo').withExactArgs('Adagio: start script.').once();
+      utilsMock.expects('logWarn').withExactArgs('Adagio: no hash found.').never();
+      utilsMock.expects('logWarn').withExactArgs('Adagio: invalid script found.').never();
 
       adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
@@ -774,9 +848,9 @@ describe('adagioAdapter', () => {
     it('should verify valid hash with invalid script', function () {
       localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, '// hash: ' + VALID_HASH + '\n' + INVALID_SCRIPT_CONTENT);
 
-      utilsMock.expects('logInfo').withExactArgs('Start Adagio script').never();
-      utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
-      utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').once();
+      utilsMock.expects('logInfo').withExactArgs('Adagio: start script').never();
+      utilsMock.expects('logWarn').withExactArgs('Adagio: no hash found.').never();
+      utilsMock.expects('logWarn').withExactArgs('Adagio: invalid script found.').once();
 
       adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
@@ -787,9 +861,9 @@ describe('adagioAdapter', () => {
     it('should verify invalid hash with valid script', function () {
       localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, '// hash: ' + INVALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
 
-      utilsMock.expects('logInfo').withExactArgs('Start Adagio script').never();
-      utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
-      utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').once();
+      utilsMock.expects('logInfo').withExactArgs('Adagio: start script').never();
+      utilsMock.expects('logWarn').withExactArgs('Adagio: no hash found.').never();
+      utilsMock.expects('logWarn').withExactArgs('Adagio: invalid script found.').once();
 
       adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
@@ -800,14 +874,275 @@ describe('adagioAdapter', () => {
     it('should verify missing hash', function () {
       localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, VALID_SCRIPT_CONTENT);
 
-      utilsMock.expects('logInfo').withExactArgs('Start Adagio script').never();
-      utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').once();
-      utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').never();
+      utilsMock.expects('logInfo').withExactArgs('Adagio: start script').never();
+      utilsMock.expects('logWarn').withExactArgs('Adagio: no hash found.').once();
+      utilsMock.expects('logWarn').withExactArgs('Adagio: invalid script found.').never();
 
       adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
       expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
       utilsMock.verify();
+    });
+  });
+});
+
+describe('adagioAdapter in postBid context', () => {
+  newBidder(spec);
+
+  describe('buildRequests', () => {
+    const sandbox = sinon.createSandbox();
+
+    const banner300x250 = {
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 250,
+      getBoundingClientRect: () => {
+        return {
+          width: banner300x250.width,
+          height: banner300x250.height,
+          left: banner300x250.x,
+          top: banner300x250.y,
+          right: banner300x250.x + banner300x250.width,
+          bottom: banner300x250.y + banner300x250.height
+        };
+      },
+    };
+
+    const banner300x600 = {
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 600,
+      getBoundingClientRect: () => {
+        return {
+          width: banner300x600.width,
+          height: banner300x600.height,
+          left: banner300x600.x,
+          top: banner300x600.y,
+          right: banner300x600.x + banner300x600.width,
+          bottom: banner300x600.y + banner300x600.height
+        };
+      },
+    };
+
+    const computedStyleBlock = {
+      display: 'block'
+    };
+
+    const computedStyleNone = {
+      display: 'none'
+    };
+
+    const $sf = {
+      ext: {
+        geom: function() {}
+      }
+    }
+
+    const stubs = {
+      topGetElementById: undefined,
+      topGetComputedStyle: undefined,
+      refererInfo: undefined
+    }
+
+    self.ADAGIO = self.ADAGIO || {};
+    self.ADAGIO.adUnits = self.ADAGIO.adUnits || {};
+    self.ADAGIO.pbjsAdUnits = self.ADAGIO.pbjsAdUnits || [];
+
+    beforeEach(function () {
+      stubs.topGetElementById = sandbox.stub(top.document, 'getElementById');
+      stubs.topGetComputedStyle = sandbox.stub(top, 'getComputedStyle');
+      stubs.refererInfo = sandbox.stub(refererInfo, 'detectReferer');
+
+      stubs.topGetElementById.withArgs('banner-atf-123').returns(banner300x250);
+      stubs.topGetElementById.withArgs('banner-atf-456').returns(banner300x600);
+      stubs.topGetElementById.withArgs('does-not-exist').returns(null);
+      stubs.topGetComputedStyle.returns(computedStyleBlock);
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    after(function() {
+      sandbox.reset();
+    })
+
+    const bidRequestsWithPostBid = [
+      {
+        'bidder': 'adagio',
+        'params': {
+          organizationId: '456',
+          site: 'ADAGIO-456',
+          placement: 'PAVE_ATF-456',
+          pagetype: 'ARTICLE',
+          adUnitElementId: 'banner-atf-456',
+          postBid: true
+        },
+        'adUnitCode': 'adunit-code3',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': 'c180kg4267tyqz',
+        'bidderRequestId': '8vfscuixrovn8i',
+        'auctionId': 'lel4fhp239i9km',
+      }
+    ];
+
+    let bidderRequest = {
+      'bidderCode': 'adagio',
+      'auctionId': '12jejebn',
+      'bidderRequestId': 'hehehehbeheh',
+      'timeout': 3000,
+      'refererInfo': {
+        'numIframes': 0,
+        'reachedTop': true,
+        'referer': 'http://test.io/index.html?pbjs_debug=true'
+      }
+    };
+
+    it('friendly context: should returns computed specifics features', () => {
+      const requests = spec.buildRequests(bidRequestsWithPostBid, bidderRequest);
+      expect(requests[0].data.adUnits[0].features).to.exist;
+      expect(requests[0].data.adUnits[0].features.viewport_dimensions).to.match(/^[\d]+x[\d]+$/);
+      expect(requests[0].data.adUnits[0].features.page_dimensions).to.match(/^[\d]+x[\d]+$/);
+      expect(requests[0].data.adUnits[0].features.adunit_position).to.match(/^[\d]+x[\d]+$/);
+    });
+
+    it('safeFrame context: should returns computed specifics features', () => {
+      sandbox.stub(utils, 'getWindowTop').throws();
+      window.$sf = $sf;
+
+      stubs.$sfGeom = sandbox.stub(window.$sf.ext, 'geom');
+      stubs.$sfGeom.returns({
+        win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
+        self: {t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250},
+      });
+
+      const requests = spec.buildRequests(bidRequestsWithPostBid, bidderRequest);
+
+      expect(requests[0].data.adUnits[0].features).to.exist;
+      expect(requests[0].data.adUnits[0].features.viewport_dimensions).to.deep.equal('1920x1177');
+      expect(requests[0].data.adUnits[0].features.page_dimensions).to.not.exist
+      expect(requests[0].data.adUnits[0].features.adunit_position).to.deep.equal('210x859');
+      delete window.$sf;
+    });
+
+    it('safeFrame context: should gracelly returns empty string is $sf.geom is misimplemented', () => {
+      sandbox.stub(utils, 'getWindowTop').throws();
+      const w = utils.getWindowSelf();
+
+      w.$sf = {
+        ext: {
+          geom: undefined
+        }
+      }
+
+      const requests = spec.buildRequests(bidRequestsWithPostBid, bidderRequest);
+
+      expect(requests[0].data.adUnits[0].features).to.exist;
+      expect(requests[0].data.adUnits[0].features.viewport_dimensions).to.not.exist;
+      expect(requests[0].data.adUnits[0].features.page_dimensions).to.not.exist;
+      expect(requests[0].data.adUnits[0].features.adunit_position).to.not.exist;
+
+      delete window.$sf;
+    });
+
+    it('Should not returns page_dimensions height in SafeFrame context', () => {
+      sandbox.stub(utils, 'getWindowTop').throws();
+      window.$sf = $sf;
+
+      stubs.$sfGeom = sandbox.stub(window.$sf.ext, 'geom');
+      stubs.$sfGeom.returns({
+        win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
+        self: {t: 1831, r: 308, b: 2081, l: 8, w: 300, h: 250},
+      });
+
+      const requests = spec.buildRequests(bidRequestsWithPostBid, bidderRequest);
+
+      expect(requests[0].data.adUnits[0].features.page_dimensions).to.not.exist;
+
+      delete window.$sf;
+    });
+
+    it('safreFrame context: cross-domain w/ top domain reached', () => {
+      sandbox.stub(utils, 'getWindowTop').throws();
+
+      const info = {
+        numIframes: 2,
+        reachedTop: true,
+        referer: 'http://level.io/',
+        stack: [
+          'http://level.io/',
+          'http://example.com/iframe1.html',
+          'http://example.com/iframe2.html'
+        ],
+        canonicalUrl: ''
+      };
+
+      stubs.refererInfo.returns(info);
+
+      const requests = spec.buildRequests(bidRequestsWithPostBid, {
+        ...bidderRequest,
+        refererInfo: info
+      });
+
+      expect(requests[0].data.site.domain).eq('level.io');
+      expect(requests[0].data.site.page).eq('http://level.io/');
+      expect(requests[0].data.site.referrer).not.ok;
+    });
+
+    it('safreFrame context: cross-domain w/o top domain reached and w/o ancestor', () => {
+      sandbox.stub(utils, 'getWindowTop').throws();
+
+      const info = {
+        numIframes: 2,
+        reachedTop: false,
+        referer: 'http://example.com/iframe1.html',
+        stack: [
+          null,
+          'http://example.com/iframe1.html',
+          'http://example.com/iframe2.html'
+        ],
+        canonicalUrl: ''
+      };
+
+      stubs.refererInfo.returns(info);
+
+      const requests = spec.buildRequests(bidRequestsWithPostBid, {
+        ...bidderRequest,
+        refererInfo: info
+      });
+
+      expect(requests[0].data.site.domain).not.ok;
+      expect(requests[0].data.site.page).not.ok;
+      expect(requests[0].data.site.referrer).not.ok;
+    });
+
+    it('safreFrame context: cross-domain w/o top domain reached and w/ ancestors ', () => {
+      sandbox.stub(utils, 'getWindowTop').throws();
+
+      const info = {
+        numIframes: 2,
+        reachedTop: false,
+        referer: 'http://example.com/iframe1.html',
+        stack: [
+          'http://mytest.com/',
+          'http://example.com/iframe1.html',
+          'http://example.com/iframe2.html'
+        ],
+        canonicalUrl: ''
+      };
+
+      stubs.refererInfo.returns(info);
+
+      const requests = spec.buildRequests(bidRequestsWithPostBid, {
+        ...bidderRequest,
+        refererInfo: info
+      });
+
+      expect(requests[0].data.site.domain).eq('mytest.com');
+      expect(requests[0].data.site.page).not.ok;
+      expect(requests[0].data.site.referrer).not.ok;
     });
   });
 });

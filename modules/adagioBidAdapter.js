@@ -5,9 +5,11 @@ import { loadExternalScript } from '../src/adloader.js'
 import JSEncrypt from 'jsencrypt/bin/jsencrypt.js';
 import sha256 from 'crypto-js/sha256.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'adagio';
-const VERSION = '2.2.2';
+const LOG_PREFIX = 'Adagio:';
+const VERSION = '2.3.0';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
@@ -26,14 +28,14 @@ pV6EP3MTLosuUEpLaQIDAQAB
 export function adagioScriptFromLocalStorageCb(ls) {
   try {
     if (!ls) {
-      utils.logWarn('Adagio Script not found');
+      utils.logWarn(`${LOG_PREFIX} script not found.`);
       return;
     }
 
     const hashRgx = /^(\/\/ hash: (.+)\n)(.+\n)$/;
 
     if (!hashRgx.test(ls)) {
-      utils.logWarn('No hash found in Adagio script');
+      utils.logWarn(`${LOG_PREFIX} no hash found.`);
       storage.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
     } else {
       const r = ls.match(hashRgx);
@@ -44,15 +46,15 @@ export function adagioScriptFromLocalStorageCb(ls) {
       jsEncrypt.setPublicKey(ADAGIO_PUBKEY);
 
       if (jsEncrypt.verify(content, hash, sha256)) {
-        utils.logInfo('Start Adagio script');
+        utils.logInfo(`${LOG_PREFIX} start script.`);
         Function(ls)(); // eslint-disable-line no-new-func
       } else {
-        utils.logWarn('Invalid Adagio script found');
+        utils.logWarn(`${LOG_PREFIX} invalid script found.`);
         storage.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
       }
     }
   } catch (err) {
-    //
+    utils.logError(LOG_PREFIX, err);
   }
 }
 
@@ -72,8 +74,13 @@ function canAccessTopWindow() {
   }
 }
 
+export function isSafeFrameWindow() {
+  const w = utils.getWindowSelf();
+  return !!(w.$sf && w.$sf.ext);
+}
+
 function initAdagio() {
-  const w = utils.getWindowTop();
+  const w = utils.getWindowSelf();
 
   w.ADAGIO = w.ADAGIO || {};
   w.ADAGIO.queue = w.ADAGIO.queue || [];
@@ -82,102 +89,168 @@ function initAdagio() {
 
   getAdagioScript();
 
-  loadExternalScript(ADAGIO_TAG_URL, BIDDER_CODE)
-}
-
-if (canAccessTopWindow()) {
-  initAdagio();
+  loadExternalScript(ADAGIO_TAG_URL, BIDDER_CODE);
 }
 
 export const _features = {
-  getPrintNumber: function (adUnitCode) {
+  getPrintNumber(adUnitCode) {
     const adagioAdUnit = _getOrAddAdagioAdUnit(adUnitCode);
     return adagioAdUnit.printNumber || 1;
   },
 
-  getPageDimensions: function () {
-    const viewportDims = _features.getViewPortDimensions().split('x');
-    const w = utils.getWindowTop();
-    const body = w.document.body;
-    if (!body) {
-      return ''
+  getPageDimensions() {
+    if (isSafeFrameWindow() || !canAccessTopWindow()) {
+      return '';
     }
+
+    // the page dimension can be properly computed when window.top
+    // is accessible.
+    const w = utils.getWindowTop();
+    const viewportDims = _features.getViewPortDimensions().split('x');
+    const body = w.document.querySelector('body');
+
+    if (!body) {
+      return '';
+    }
+
+    const pageDims = { w: 0, h: 0 };
     const html = w.document.documentElement;
     const pageHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
-    return viewportDims[0] + 'x' + pageHeight;
+    pageDims.w = viewportDims[0];
+    pageDims.h = pageHeight;
+
+    return `${pageDims.w}x${pageDims.h}`;
   },
 
-  getViewPortDimensions: function () {
-    let viewPortWidth;
-    let viewPortHeight;
-    const w = utils.getWindowTop();
-    const d = w.document;
-
-    if (w.innerWidth) {
-      viewPortWidth = w.innerWidth;
-      viewPortHeight = w.innerHeight;
-    } else {
-      viewPortWidth = d.getElementsByTagName('body')[0].clientWidth;
-      viewPortHeight = d.getElementsByTagName('body')[0].clientHeight;
+  getViewPortDimensions() {
+    if (!isSafeFrameWindow() && !canAccessTopWindow()) {
+      return '';
     }
 
-    return viewPortWidth + 'x' + viewPortHeight;
+    const viewportDims = { w: 0, h: 0 };
+
+    if (isSafeFrameWindow()) {
+      const w = utils.getWindowSelf();
+
+      if (typeof w.$sf.ext.geom !== 'function') {
+        utils.logWarn(`${LOG_PREFIX} cannot use the $sf.ext.geom() safeFrame API method`);
+        return '';
+      }
+
+      const sfGeom = w.$sf.ext.geom().win;
+      viewportDims.w = Math.round(sfGeom.w);
+      viewportDims.h = Math.round(sfGeom.h);
+    } else {
+      // window.top based computing
+      const w = utils.getWindowTop();
+      const d = w.document;
+      const body = d.querySelector('body');
+
+      if (!body) {
+        return '';
+      }
+
+      if (w.innerWidth) {
+        viewportDims.w = w.innerWidth;
+        viewportDims.h = w.innerHeight;
+      } else {
+        viewportDims.w = d.querySelector('body').clientWidth;
+        viewportDims.h = d.querySelector('body').clientHeight;
+      }
+    }
+
+    return `${viewportDims.w}x${viewportDims.h}`;
   },
 
-  isDomLoading: function () {
-    const w = utils.getWindowTop();
-    let performance = w.performance || w.msPerformance || w.webkitPerformance || w.mozPerformance;
+  /**
+   * domLoading feature is computed on window.top if reachable.
+   */
+  domLoading() {
     let domLoading = -1;
+    let performance;
+
+    performance = (canAccessTopWindow()) ? utils.getWindowTop().performance : utils.getWindowSelf().performance;
 
     if (performance && performance.timing && performance.timing.navigationStart > 0) {
       const val = performance.timing.domLoading - performance.timing.navigationStart;
-      if (val > 0) domLoading = val;
+      if (val > 0) {
+        domLoading = val;
+      }
     }
+
     return domLoading;
   },
 
-  getSlotPosition: function (element) {
-    if (!element) return '';
-
-    const w = utils.getWindowTop();
-    const d = w.document;
-    const el = element;
-
-    let box = el.getBoundingClientRect();
-    const docEl = d.documentElement;
-    const body = d.body;
-    const clientTop = d.clientTop || body.clientTop || 0;
-    const clientLeft = d.clientLeft || body.clientLeft || 0;
-    const scrollTop = w.pageYOffset || docEl.scrollTop || body.scrollTop;
-    const scrollLeft = w.pageXOffset || docEl.scrollLeft || body.scrollLeft;
-
-    const elComputedStyle = w.getComputedStyle(el, null);
-    const elComputedDisplay = elComputedStyle.display || 'block';
-    const mustDisplayElement = elComputedDisplay === 'none';
-
-    if (mustDisplayElement) {
-      el.style = el.style || {};
-      el.style.display = 'block';
-      box = el.getBoundingClientRect();
-      el.style.display = elComputedDisplay;
+  getSlotPosition(adUnitElementId, postBid) {
+    if (!adUnitElementId || (!isSafeFrameWindow() && !canAccessTopWindow())) {
+      return '';
     }
 
-    const position = {
-      x: Math.round(box.left + scrollLeft - clientLeft),
-      y: Math.round(box.top + scrollTop - clientTop)
-    };
+    const position = { x: 0, y: 0 };
 
-    return position.x + 'x' + position.y;
+    if (isSafeFrameWindow()) {
+      const w = utils.getWindowSelf();
+
+      if (typeof w.$sf.ext.geom !== 'function') {
+        // console.log('coool');
+        utils.logWarn(`${LOG_PREFIX} cannot use the $sf.ext.geom() safeFrame API method`);
+        return '';
+      }
+
+      const sfGeom = w.$sf.ext.geom().self;
+      position.x = Math.round(sfGeom.t);
+      position.y = Math.round(sfGeom.l);
+    } else {
+      // window.top based computing
+      const w = utils.getWindowTop();
+      const d = w.document;
+
+      let domElement;
+
+      if (postBid === true) {
+        window.document.getElementById(adUnitElementId);
+        domElement = _getElementFromTopWindow(domElement, window);
+      } else {
+        domElement = window.top.document.getElementById(adUnitElementId);
+      }
+
+      if (!domElement) {
+        return '';
+      }
+
+      let box = domElement.getBoundingClientRect();
+
+      const docEl = d.documentElement;
+      const body = d.body;
+      const clientTop = d.clientTop || body.clientTop || 0;
+      const clientLeft = d.clientLeft || body.clientLeft || 0;
+      const scrollTop = w.pageYOffset || docEl.scrollTop || body.scrollTop;
+      const scrollLeft = w.pageXOffset || docEl.scrollLeft || body.scrollLeft;
+
+      const elComputedStyle = w.getComputedStyle(domElement, null);
+      const elComputedDisplay = elComputedStyle.display || 'block';
+      const mustDisplayElement = elComputedDisplay === 'none';
+
+      if (mustDisplayElement) {
+        domElement.style = domElement.style || {};
+        domElement.style.display = 'block';
+        box = domElement.getBoundingClientRect();
+        domElement.style.display = elComputedDisplay;
+      }
+      position.x = Math.round(box.left + scrollLeft - clientLeft);
+      position.y = Math.round(box.top + scrollTop - clientTop);
+    }
+
+    return `${position.x}x${position.y}`;
   },
 
-  getTimestamp: function () {
+  getTimestamp() {
     return Math.floor(new Date().getTime() / 1000) - new Date().getTimezoneOffset() * 60;
   },
 
-  getDevice: function () {
-    if (!canAccessTopWindow()) return false;
-    const w = utils.getWindowTop();
+  getDevice() {
+    const w = utils.getWindowSelf();
     const ua = w.navigator.userAgent;
 
     if ((/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i).test(ua)) {
@@ -189,31 +262,47 @@ export const _features = {
     return 2; // personal computers
   },
 
-  getBrowser: function () {
-    const w = utils.getWindowTop();
+  getBrowser() {
+    const w = utils.getWindowSelf();
     const ua = w.navigator.userAgent;
     const uaLowerCase = ua.toLowerCase();
     return /Edge\/\d./i.test(ua) ? 'edge' : uaLowerCase.indexOf('chrome') > 0 ? 'chrome' : uaLowerCase.indexOf('firefox') > 0 ? 'firefox' : uaLowerCase.indexOf('safari') > 0 ? 'safari' : uaLowerCase.indexOf('opera') > 0 ? 'opera' : uaLowerCase.indexOf('msie') > 0 || w.MSStream ? 'ie' : 'unknow';
   },
 
-  getOS: function () {
-    const w = window.top;
+  getOS() {
+    const w = utils.getWindowSelf();
     const ua = w.navigator.userAgent;
     const uaLowerCase = ua.toLowerCase();
     return uaLowerCase.indexOf('linux') > 0 ? 'linux' : uaLowerCase.indexOf('mac') > 0 ? 'mac' : uaLowerCase.indexOf('win') > 0 ? 'windows' : '';
+  },
+
+  getUrl(refererInfo) {
+    // top has not been reached, it means we are not sure
+    // to get the proper page url.
+    if (!refererInfo.reachedTop) {
+      return;
+    }
+    return refererInfo.referer;
+  },
+
+  getUrlFromParams(bidRequest) {
+    const { postBidOptions } = bidRequest.params;
+    if (postBidOptions && postBidOptions.url) {
+      return postBidOptions.url;
+    }
   }
 }
 
 function _pushInAdagioQueue(ob) {
   try {
-    if (!canAccessTopWindow()) return;
-    const w = utils.getWindowTop();
+    const w = utils.getWindowSelf();
+    w.ADAGIO.queue = w.ADAGIO.queue || [];
     w.ADAGIO.queue.push(ob);
   } catch (e) {}
 };
 
 function _getOrAddAdagioAdUnit(adUnitCode) {
-  const w = utils.getWindowTop();
+  const w = utils.getWindowSelf();
   if (w.ADAGIO.adUnits[adUnitCode]) {
     return w.ADAGIO.adUnits[adUnitCode]
   }
@@ -222,7 +311,7 @@ function _getOrAddAdagioAdUnit(adUnitCode) {
 
 function _computePrintNumber(adUnitCode) {
   let printNumber = 1;
-  const w = utils.getWindowTop();
+  const w = utils.getWindowSelf();
   if (
     w.ADAGIO &&
     w.ADAGIO.adUnits && w.ADAGIO.adUnits[adUnitCode] &&
@@ -246,31 +335,57 @@ function _getDevice() {
   };
 };
 
-function _getSite() {
-  const w = utils.getWindowTop();
+function _getSite(bidderRequest) {
+  let domain = '';
+  let page = '';
+  let referrer = '';
+
+  const { refererInfo } = bidderRequest;
+
+  if (canAccessTopWindow()) {
+    const w = utils.getWindowTop();
+    domain = w.location.hostname;
+    page = w.location.href;
+    referrer = w.document.referrer || '';
+  } else if (refererInfo.reachedTop) {
+    const url = utils.parseUrl(refererInfo.referer);
+    domain = url.hostname;
+    page = refererInfo.referer;
+  } else if (refererInfo.stack && refererInfo.stack.length && refererInfo.stack[0]) {
+    // important note check if refererInfo.stack[0] is 'thruly' cause a `null` value
+    // will be considered as "localhost" by the parseUrl function.
+    // As the isBidRequestValid returns false when it does not reach the referer
+    // this should never called.
+    const url = utils.parseUrl(refererInfo.stack[0]);
+    domain = url.hostname;
+  }
+
   return {
-    domain: w.location.hostname,
-    page: w.location.href,
-    referrer: w.document.referrer || ''
+    domain,
+    page,
+    referrer
   };
 };
 
 function _getPageviewId() {
-  if (!canAccessTopWindow()) return false;
-  const w = utils.getWindowTop();
+  const w = utils.getWindowSelf();
   w.ADAGIO.pageviewId = w.ADAGIO.pageviewId || utils.generateUUID();
   return w.ADAGIO.pageviewId;
 };
 
 function _getElementFromTopWindow(element, currentWindow) {
-  if (utils.getWindowTop() === currentWindow) {
-    if (!element.getAttribute('id')) {
-      element.setAttribute('id', `adg-${utils.getUniqueIdentifierStr()}`);
+  try {
+    if (utils.getWindowTop() === currentWindow) {
+      if (!element.getAttribute('id')) {
+        element.setAttribute('id', `adg-${utils.getUniqueIdentifierStr()}`);
+      }
+      return element;
+    } else {
+      const frame = currentWindow.frameElement;
+      return _getElementFromTopWindow(frame, currentWindow.parent);
     }
-    return element;
-  } else {
-    const frame = currentWindow.frameElement;
-    return _getElementFromTopWindow(frame, currentWindow.parent);
+  } catch (err) {
+    utils.logWarn(err);
   }
 }
 
@@ -308,44 +423,33 @@ function _autoDetectEnvironment() {
  * @param {Object} bidRequest
  * @returns {Object} features for an element (see specs)
  */
-function _getFeatures(bidRequest) {
-  if (!canAccessTopWindow()) return;
-  const w = utils.getWindowTop();
-  const adUnitCode = bidRequest.adUnitCode;
-  const adUnitElementId = bidRequest.params.adUnitElementId || _autoDetectAdUnitElementId(adUnitCode);
-  let element;
+function _getFeatures(bidRequest, bidderRequest) {
+  const { adUnitElementId } = bidRequest.params;
+  const { refererInfo } = bidderRequest;
 
   if (!adUnitElementId) {
-    utils.logWarn('Unable to detect adUnitElementId. Adagio measures won\'t start');
-  } else {
-    if (bidRequest.params.postBid === true) {
-      window.document.getElementById(adUnitElementId);
-      element = _getElementFromTopWindow(element, window);
-      w.ADAGIO.pbjsAdUnits.map((adUnit) => {
-        if (adUnit.code === adUnitCode) {
-          const outerElementId = element.getAttribute('id');
-          adUnit.outerAdUnitElementId = outerElementId;
-          bidRequest.params.outerAdUnitElementId = outerElementId;
-        }
-      });
-    } else {
-      element = w.document.getElementById(adUnitElementId);
-    }
+    utils.logWarn(`${LOG_PREFIX} unable to get params.adUnitElementId. Continue without tiv.`);
   }
 
   const features = {
     print_number: _features.getPrintNumber(bidRequest.adUnitCode).toString(),
     page_dimensions: _features.getPageDimensions().toString(),
     viewport_dimensions: _features.getViewPortDimensions().toString(),
-    dom_loading: _features.isDomLoading().toString(),
+    dom_loading: _features.domLoading().toString(),
     // layout: features.getLayout().toString(),
-    adunit_position: _features.getSlotPosition(element).toString(),
+    adunit_position: _features.getSlotPosition(adUnitElementId, bidRequest.params.postBid).toString(),
     user_timestamp: _features.getTimestamp().toString(),
     device: _features.getDevice().toString(),
-    url: w.location.origin + w.location.pathname,
+    url: _features.getUrl(refererInfo) || _features.getUrlFromParams(bidRequest) || '',
     browser: _features.getBrowser(),
     os: _features.getOS()
   };
+
+  Object.keys(features).forEach((prop) => {
+    if (features[prop] === '') {
+      delete features[prop];
+    }
+  });
 
   const adUnitFeature = {};
 
@@ -393,49 +497,52 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaType: SUPPORTED_MEDIA_TYPES,
 
-  isBidRequestValid: function (bid) {
+  isBidRequestValid(bid) {
     const { adUnitCode, auctionId, sizes, bidder, params, mediaTypes } = bid;
     const { organizationId, site, placement } = bid.params;
     const adUnitElementId = bid.params.adUnitElementId || _autoDetectAdUnitElementId(adUnitCode);
     const environment = bid.params.environment || _autoDetectEnvironment();
     let isValid = false;
 
-    utils.logInfo('adUnitElementId', adUnitElementId)
+    const refererInfo = getRefererInfo();
+
+    if (!refererInfo.reachedTop) {
+      utils.logWarn(`${LOG_PREFIX} the main page url is unreachabled.`)
+      return isValid;
+    }
 
     try {
-      if (canAccessTopWindow()) {
-        const w = utils.getWindowTop();
-        w.ADAGIO = w.ADAGIO || {};
-        w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
-        w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
-        isValid = !!(organizationId && site && placement);
+      const w = utils.getWindowSelf();
+      w.ADAGIO = w.ADAGIO || {};
+      w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
+      w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
+      isValid = !!(organizationId && site && placement);
 
-        const tempAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
+      const tempAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
 
-        bid.params = {
-          ...bid.params,
-          adUnitElementId,
-          environment
-        }
+      bid.params = {
+        ...bid.params,
+        adUnitElementId,
+        environment
+      }
 
-        tempAdUnits.push({
-          code: adUnitCode,
-          sizes: (mediaTypes && mediaTypes.banner && Array.isArray(mediaTypes.banner.sizes)) ? mediaTypes.banner.sizes : sizes,
-          bids: [{
-            bidder,
-            params
-          }]
-        });
-        w.ADAGIO.pbjsAdUnits = tempAdUnits;
+      tempAdUnits.push({
+        code: adUnitCode,
+        sizes: (mediaTypes && mediaTypes.banner && Array.isArray(mediaTypes.banner.sizes)) ? mediaTypes.banner.sizes : sizes,
+        bids: [{
+          bidder,
+          params
+        }]
+      });
+      w.ADAGIO.pbjsAdUnits = tempAdUnits;
 
-        if (isValid === true) {
-          let printNumber = _computePrintNumber(adUnitCode);
-          w.ADAGIO.adUnits[adUnitCode] = {
-            auctionId: auctionId,
-            pageviewId: _getPageviewId(),
-            printNumber
-          };
-        }
+      if (isValid === true) {
+        let printNumber = _computePrintNumber(adUnitCode);
+        w.ADAGIO.adUnits[adUnitCode] = {
+          auctionId: auctionId,
+          pageviewId: _getPageviewId(),
+          printNumber
+        };
       }
     } catch (e) {
       return isValid;
@@ -443,18 +550,15 @@ export const spec = {
     return isValid;
   },
 
-  buildRequests: function (validBidRequests, bidderRequest) {
-    // AdagioBidAdapter works when window.top can be reached only
-    if (!bidderRequest.refererInfo.reachedTop) return [];
-
+  buildRequests(validBidRequests, bidderRequest) {
     const secure = (location.protocol === 'https:') ? 1 : 0;
     const device = _getDevice();
-    const site = _getSite();
+    const site = _getSite(bidderRequest);
     const pageviewId = _getPageviewId();
     const gdprConsent = _getGdprConsent(bidderRequest);
     const schain = _getSchain(validBidRequests[0]);
     const adUnits = utils._map(validBidRequests, (bidRequest) => {
-      bidRequest.features = _getFeatures(bidRequest);
+      bidRequest.features = _getFeatures(bidRequest, bidderRequest);
       return bidRequest;
     });
 
@@ -463,7 +567,10 @@ export const spec = {
       if (adUnit.params && adUnit.params.organizationId) {
         adUnit.params.organizationId = adUnit.params.organizationId.toString();
       }
-      (groupedAdUnits[adUnit.params.organizationId] = groupedAdUnits[adUnit.params.organizationId] || []).push(adUnit);
+
+      groupedAdUnits[adUnit.params.organizationId] = groupedAdUnits[adUnit.params.organizationId] || []
+      groupedAdUnits[adUnit.params.organizationId].push(adUnit);
+
       return groupedAdUnits;
     }, {});
 
@@ -495,7 +602,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function (serverResponse, bidRequest) {
+  interpretResponse(serverResponse, bidRequest) {
     let bidResponses = [];
     try {
       const response = serverResponse.body;
@@ -528,7 +635,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function (syncOptions, serverResponses) {
+  getUserSyncs(syncOptions, serverResponses) {
     if (!serverResponses.length || serverResponses[0].body === '' || !serverResponses[0].body.userSyncs) {
       return false;
     }
@@ -539,7 +646,9 @@ export const spec = {
       }
     })
     return syncs;
-  }
-}
+  },
+};
+
+initAdagio();
 
 registerBidder(spec);
