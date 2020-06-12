@@ -1040,6 +1040,7 @@ export const spec = {
                   br.cpm = (parseFloat(bid.price) || 0).toFixed(2);
                   br.width = bid.w;
                   br.height = bid.h;
+                  br.sspID = bid.id || '';
                   br.creativeId = bid.crid || bid.id;
                   br.dealId = bid.dealid;
                   br.currency = respCur;
