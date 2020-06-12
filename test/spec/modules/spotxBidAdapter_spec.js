@@ -146,7 +146,9 @@ describe('the spotx adapter', function () {
         number_of_ads: 2,
         spotx_all_google_consent: 1,
         min_duration: 5,
-        max_duration: 10
+        max_duration: 10,
+        placement_type: 1,
+        position: 1
       };
 
       bid.userId = {
@@ -183,7 +185,9 @@ describe('the spotx adapter', function () {
         outstream_function: '987',
         custom: {bar: 'foo'},
         sdk_name: 'Prebid 1+',
-        versionOrtb: '2.3'
+        versionOrtb: '2.3',
+        placement: 1,
+        pos: 1
       });
 
       expect(request.data.imp.video.startdelay).to.equal(1);
@@ -314,6 +318,18 @@ describe('the spotx adapter', function () {
 
       expect(request.data.imp.video.minduration).to.equal(3);
       expect(request.data.imp.video.maxduration).to.equal(15);
+    });
+
+    it('should pass placement_type and position params', function() {
+      var request;
+
+      bid.params.placement_type = 2
+      bid.params.position = 5
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp.video.ext.placement).to.equal(2);
+      expect(request.data.imp.video.ext.pos).to.equal(5);
     });
   });
 
