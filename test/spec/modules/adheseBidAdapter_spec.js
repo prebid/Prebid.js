@@ -17,9 +17,10 @@ let minimalBid = function() {
   }
 };
 
-let bidWithParams = function(data) {
+let bidWithParams = function(data, userId) {
   let bid = minimalBid();
   bid.params.data = data;
+  bid.userId = userId;
   return bid;
 };
 
@@ -98,6 +99,12 @@ describe('AdheseAdapter', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
       expect(req.url).to.contain('/xfaHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ');
+    });
+
+    it('should include id5 id as /x5 param', function () {
+      let req = spec.buildRequests([ bidWithParams({}, {'id5id': 'ID5-1234567890'}) ], bidderRequest);
+
+      expect(req.url).to.contain('/x5ID5-1234567890');
     });
 
     it('should include bids', function () {
