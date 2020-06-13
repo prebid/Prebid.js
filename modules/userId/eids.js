@@ -64,8 +64,12 @@ const USER_IDS_CONFIG = {
 
   // DigiTrust
   'digitrustid': {
-    getValue: function(data) {
-      return data.data.id;
+    getValue: function (data) {
+      var id = null;
+      if (data && data.data && data.data.id != null) {
+        id = data.data.id;
+      }
+      return id;
     },
     source: 'digitru.st',
     atype: 1

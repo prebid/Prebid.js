@@ -34,8 +34,9 @@ pbjs.setConfig({
 });
 ```
 
-Please contact support@konduit.me for assistance.
+Konduit module respects the Prebid `enableSendAllBids` flag and supports both ‘Send All Bids’ and ‘Use only a winner bid’ scenarios.
 
+Please contact support@konduit.me for assistance.
 
 ## GAM related configuration
 
@@ -43,10 +44,22 @@ It is important to configure your GAM line items.
 Please contact support@konduit.me for assistance.
 
 In most cases it would require only Creative VAST URL update with the following URL:
+
+Konduit platform supports ‘Send all bids’ scenario and depending on whether this feature is used or not GAM configuration could be slightly different.
+
+- Send all bids is off (a single winner bid is used)
+GAM line item creative URL should be updated as:
 ```
-https://p.konduit.me/api/vastProxy?konduit_hb=1&konduit_hb_awarded=1&konduit_cache_key=%%PATTERN:konduit_cache_key%%&konduit_id=%%PATTERN:konduit_id%%
+https://p.konduit.me/api/vastProxy?konduit_hb=1&konduit_hb_awarded=1&konduit_cache_key=%%PATTERN:k_cache_key%%&konduit_id=%%PATTERN:k_id%%
 ```
 
+- Send all bids is on
+GAM line item creative URL should be updated as:
+```
+https://p.konduit.me/api/vastProxy?konduit_hb=1&konduit_hb_awarded=1&konduit_cache_key=%%PATTERN:k_cache_key_BIDDERCODE%%&konduit_id=%%PATTERN:k_id%%
+```
+
+k_cache_key_BIDDERCODE is a bidder specific macro and ‘BIDDERCODE’ should be replaced with a bidder code. For instance, k_cache_key_appnexus.
 
 # Usage
 
@@ -54,6 +67,7 @@ Konduit module contains a single function that accepts an `options` parameter.
 
 The `options` parameter can include:
 * `bid` - prebid object with VAST url that should be cached (if not passed first winning bid from `auctionManager.getWinningBids()` will be used)
+* `bids` - array of prebid objects with VAST url that should be cached (if not passed and `enableSendAllBids: true` bids from `auctionManager.getBidsReceived()` will be used)
 * `adUnitCode` - adUnitCode where a winner bid can be found
 * `timeout` - max time to wait for Konduit response with cache key and kCpm data
 * `callback` - callback function is called once Konduit cache data for the bid. Arguments of this function are - `error` and `bids` (error should be `null` if Konduit request is successful)
@@ -65,7 +79,7 @@ The function adds two parameters into the passed bid - kCpm and konduitCacheKey.
 pbjs.requestBids({
     bidsBackHandler: function (bids) {
         pbjs.adServers.konduit.processBids({
-            callback: function (error, bids) {
+            callback: function (error, processedBids) {
                 var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
                     ...
                 });
