@@ -13,6 +13,13 @@ const MODULE_NAME = 'sharedId';
 const ID_SVC = 'https://id.sharedid.org/id';
 const DEFAULT_24_HOURS = 86400;
 const OPT_OUT_VALUE = '00000000000000000000000000';
+// These values should NEVER change. If
+// they do, we're no longer making ulids!
+const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford's Base32
+const ENCODING_LEN = ENCODING.length;
+const TIME_MAX = Math.pow(2, 48) - 1;
+const TIME_LEN = 10;
+const RANDOM_LEN = 16;
 const id = factory();
 /**
  * Constructs cookie value
@@ -150,14 +157,6 @@ function encodeId(value) {
   }
   return sharedId;
 }
-
-// These values should NEVER change. If
-// they do, we're no longer making ulids!
-const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford's Base32
-const ENCODING_LEN = ENCODING.length;
-const TIME_MAX = Math.pow(2, 48) - 1;
-const TIME_LEN = 10;
-const RANDOM_LEN = 16;
 
 /**
  * the factory to generate unique identifier based on time and current pseudorandom number
