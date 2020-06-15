@@ -98,14 +98,18 @@ export const spec = {
 
       if (response.media_type === 'video') {
         bidResponse.vastXml = response.vastXML;
-        if (JSON.parse(bidRequest.data).videoData.format == 'outstream') {
-          bidResponse.renderer = Renderer.install({
-            url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
-          });
-          bidResponse.renderer.setRender(renderer);
+        try {
+          if (JSON.parse(bidRequest.data).videoData.format == 'outstream') {
+            bidResponse.renderer = Renderer.install({
+              url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
+            });
+            bidResponse.renderer.setRender(renderer);
+          }
+        } catch (e) {
+          bidResponse.ad = response.adm;
         }
       } else {
-        bidResponse.ad = response.adm
+        bidResponse.ad = response.adm;
       }
 
       bidResponses.push(bidResponse);
@@ -128,7 +132,7 @@ export const spec = {
     var consent = '';
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString != 'undefined') {
-      consent = `pubconsent='${gdprConsent.consentString}'&euconsent='${gdprConsent.consentString}'`
+      consent = `consentString=’${gdprConsent.consentString}`
     }
 
     if (syncOptions.iframeEnabled) {
