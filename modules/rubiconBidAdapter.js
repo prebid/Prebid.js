@@ -339,6 +339,9 @@ export const spec = {
         utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
       }
 
+      // set ext.prebid.auctiontimestamp using auction time
+      utils.deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
+
       return {
         method: 'POST',
         url: VIDEO_ENDPOINT,
