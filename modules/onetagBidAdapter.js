@@ -1,7 +1,10 @@
 'use strict';
 
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { OUTSTREAM, INSTREAM } from '../src/video.js';
 const { registerBidder } = require('../src/adapters/bidderFactory.js');
+import { Renderer } from '../src/Renderer.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -29,9 +32,7 @@ export function isValid(type, bid) {
     return parseSizes(bid).length > 0;
   } else if (type === VIDEO && hasTypeVideo(bid)) {
     const context = bid.mediaTypes.video.context;
-    if (context === 'outstream') {
-      return parseVideoSize(bid).length > 0 && typeof bid.renderer !== 'undefined' && typeof bid.renderer.render !== 'undefined' && typeof bid.renderer.url !== 'undefined';
-    } else if (context === 'instream') {
+    if (context === 'outstream' || context === 'instream') {
       return parseVideoSize(bid).length > 0;
     }
   }
@@ -67,6 +68,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     payload.userId = bidderRequest.userId;
   }
 
+  if (window.localStorage) {
+    payload.onetagSid = window.localStorage.getItem("onetag_sid");
+  }
+
   const payloadString = JSON.stringify(payload);
 
   return {
@@ -76,7 +81,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
 }
 
-function interpretResponse(serverResponse, request) {
+function interpretResponse(serverResponse, bidderRequest) {
   let body = serverResponse.body;
   const bids = [];
 
@@ -112,13 +117,59 @@ function interpretResponse(serverResponse, request) {
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
-      responseBid.vastXml = bid.ad;
+      const context = utils.deepAccess(bidderRequest, 'mediaTypes.video.context');
+      if (context === INSTREAM) {
+        // TODO get VAST url from server bid
+        responseBid.vastUrl = '';
+        // TODO get cache key from server bid
+        responseBid.videoCacheKey = '';
+      } else if (context === OUTSTREAM) {
+        // TODO get player url from server
+        bid.rendererUrl = "https://local.onetag.net:9000/dist/PlayerStandalone.js";
+        // TODO get VAST xml from server bid
+        responseBid.vastXml = '';
+        // TODO get VAST url from server bid
+        responseBid.vastUrl = '';
+        const videoBid = find(bidderRequest.bids, bidRequest.bidId === bid.requestId);
+        const rendererOptions = utils.deepAccess(videoBid, 'renderer.options');
+        responseBid.renderer = createRenderer(bid, rendererOptions);
+      }
     }
 
     bids.push(responseBid);
   });
 
   return bids;
+}
+
+function createRenderer(bid, rendererOptions = {}) {
+  const renderer = Renderer.install({
+    id: bid.requestId,
+    url: bid.rendererUrl,
+    config: rendererOptions,
+    adUnitCode: bid.adUnitCode,
+    loaded: false
+  });
+
+  try {
+    renderer.setRender(ourRenderer);
+  } catch (e) {
+    console.log(e);
+  }
+
+  return renderer;
+}
+
+function ourRenderer(bidResponse) {
+  bidResponse.renderer.push(() => {
+    window.onetag.PlayerStandalone.init({
+      width: bidResponse.width,
+      height: bidResponse.height,
+      vastXml: bidResponse.vastXml,
+      nodeId: bidResponse.adUnitCode,
+      config: bidResponse.renderer.getConfig()
+    });
+  });
 }
 
 /**
@@ -176,8 +227,7 @@ function getPageInfo() {
     yOffset: yOffset,
     docHidden: isDocHidden,
     hLength: history.length,
-    date: t.toUTCString(),
-    timeOffset: t.getTimezoneOffset()
+    timing = getTiming()
   };
 }
 
@@ -223,6 +273,43 @@ function setGeneralInfo(bidRequest) {
   if (params.dealId) {
     this['dealId'] = params.dealId;
   }
+  if (params.floor) {
+    this['floor'] = params.floor;
+  }
+  const coords = getSpaceCoords(bidRequest.adUnitCode);
+  if (coords) {
+    this['coords'] = coords;
+  }
+}
+
+function getSpaceCoords(id) {
+  const space = document.getElementById(id);
+  if (space && space.getBoundingClientRect) {
+    const rect = space.getBoundingClientRect();
+    const coords = {};
+    coords.top = rect.top + window.pageYOffset;
+    coords.right = rect.right + window.pageXOffset;
+    coords.bottom = rect.bottom + window.pageYOffset;
+    coords.left = rect.left + window.pageXOffset;
+    return coords;
+  }
+  return null;
+}
+
+function getTiming() {
+  try {
+    if (window.performance != null && window.performance.timing != null) {
+      const timing = {};
+      const perf = window.performance.timing;
+      timing.plt = perf.loadEventEnd - perf.navigationStart;
+      timing.ct = perf.responseEnd - perf.requestStart;
+      timing.rt = perf.domComplete - perf.domLoading;
+      return timing;
+    }
+  } catch(e) {
+    return null;
+  }
+  return null;
 }
 
 function parseVideoSize(bid) {
@@ -256,25 +343,30 @@ function getSizes(sizes) {
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   const syncs = [];
+  let params = '';
+  if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+    params += '&gdpr_consent=' + gdprConsent.consentString;
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+    }
+  }
+  if (uspConsent && typeof uspConsent === 'string') {
+    params += '&us_privacy=' + uspConsent;
+  }
   if (syncOptions.iframeEnabled) {
     const rnd = new Date().getTime();
-    let params = '?cb=' + rnd;
-
-    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      params += '&gdpr_consent=' + gdprConsent.consentString;
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      }
-    }
-
-    if (uspConsent && typeof uspConsent === 'string') {
-      params += '&us_privacy=' + uspConsent;
-    }
+    params = '?cb=' + rnd + params
 
     syncs.push({
       type: 'iframe',
       url: USER_SYNC_ENDPOINT + params
     });
+  }
+  if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+    const res = serverResponses[0];
+    if (res.pixelsUrls && res.pixelsUrls.length > 0) {
+      syncs = syncs.concat(res.pixelsUrls.map(url => ({type: 'image', url: url + '?' + params.splice(0,1)})));
+    }
   }
   return syncs;
 }
