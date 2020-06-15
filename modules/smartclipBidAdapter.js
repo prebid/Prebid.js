@@ -347,8 +347,11 @@ function createOutstreamScript(bid) {
   utils.logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
 
   const elementId = bid.adUnitCode;
+  // eslint-disable-next-line camelcase
   var sc_smartIntxtStart;
+  // eslint-disable-next-line camelcase
   var sc_smartIntxtNoad;
+  // eslint-disable-next-line camelcase
   var sc_smartIntxtEnd;
   var SmartPlay;
   let smartPlayObj = {
