@@ -92,15 +92,29 @@ describe('gdpr enforcement', function () {
   })
 
   describe('deviceAccessHook', function () {
+    let adapterManagerStub;
+
+    function getBidderSpec(gvlid) {
+      return {
+        getSpec: () => {
+          return {
+            gvlid
+          }
+        }
+      }
+    }
+
     beforeEach(function () {
       nextFnSpy = sinon.spy();
       gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
       logWarnSpy = sinon.spy(utils, 'logWarn');
+      adapterManagerStub = sinon.stub(adapterManager, 'getBidAdapter');
     });
     afterEach(function () {
       config.resetConfig();
       gdprDataHandler.getConsentData.restore();
       logWarnSpy.restore();
+      adapterManagerStub.restore();
     });
     it('should not allow device access when device access flag is set to false', function () {
       config.setConfig({
@@ -127,6 +141,8 @@ describe('gdpr enforcement', function () {
     });
 
     it('should only check for consent for vendor exceptions when enforcePurpose and enforceVendor are false', function () {
+      adapterManagerStub.withArgs('appnexus').returns(getBidderSpec(1));
+      adapterManagerStub.withArgs('rubicon').returns(getBidderSpec(5));
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -149,6 +165,8 @@ describe('gdpr enforcement', function () {
     });
 
     it('should check consent for all vendors when enforcePurpose and enforceVendor are true', function () {
+      adapterManagerStub.withArgs('appnexus').returns(getBidderSpec(1));
+      adapterManagerStub.withArgs('rubicon').returns(getBidderSpec(3));
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -170,6 +188,7 @@ describe('gdpr enforcement', function () {
     });
 
     it('should allow device access when gdprApplies is false and hasDeviceAccess flag is true', function () {
+      adapterManagerStub.withArgs('appnexus').returns(getBidderSpec(1));
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -193,6 +212,74 @@ describe('gdpr enforcement', function () {
         valid: true
       }
       sinon.assert.calledWith(nextFnSpy, 1, 'appnexus', result);
+    });
+
+    it('should use gvlMapping set by publisher', function() {
+      config.setConfig({
+        'gvlMapping': {
+          'appnexus': 4
+        }
+      });
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      let consentData = {}
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.gdprApplies = true;
+      consentData.apiVersion = 2;
+      gdprDataHandlerStub.returns(consentData);
+
+      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      expect(nextFnSpy.calledOnce).to.equal(true);
+      let result = {
+        hasEnforcementHook: true,
+        valid: true
+      }
+      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', result);
+      config.resetConfig();
+    });
+
+    it('should use gvl id of alias and not of parent', function() {
+      let curBidderStub = sinon.stub(config, 'getCurrentBidder');
+      curBidderStub.returns('appnexus-alias');
+      adapterManager.aliasBidAdapter('appnexus', 'appnexus-alias');
+      config.setConfig({
+        'gvlMapping': {
+          'appnexus-alias': 4
+        }
+      });
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      let consentData = {}
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.gdprApplies = true;
+      consentData.apiVersion = 2;
+      gdprDataHandlerStub.returns(consentData);
+
+      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      expect(nextFnSpy.calledOnce).to.equal(true);
+      let result = {
+        hasEnforcementHook: true,
+        valid: true
+      }
+      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', result);
+      config.resetConfig();
+      curBidderStub.restore();
     });
   });
 

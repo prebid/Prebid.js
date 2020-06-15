@@ -40,12 +40,28 @@ function getGvlid(bidderCode) {
   let gvlid;
   bidderCode = bidderCode || config.getCurrentBidder();
   if (bidderCode) {
-    const bidder = adapterManager.getBidAdapter(bidderCode);
-    if (bidder && bidder.getSpec) {
-      gvlid = bidder.getSpec().gvlid;
+    const gvlMapping = config.getConfig('gvlMapping');
+    if (gvlMapping && gvlMapping[bidderCode]) {
+      gvlid = gvlMapping[bidderCode];
+    } else {
+      const bidder = adapterManager.getBidAdapter(bidderCode);
+      if (bidder && bidder.getSpec) {
+        gvlid = bidder.getSpec().gvlid;
+      }
     }
   }
   return gvlid;
+}
+
+function getGvlidForUserIdModule(userIdModule) {
+  let gvlId;
+  const gvlMapping = config.getConfig('gvlMapping');
+  if (gvlMapping && gvlMapping[userIdModule.name]) {
+    gvlId = gvlMapping[userIdModule.name];
+  } else {
+    gvlId = userIdModule.gvlid;
+  }
+  return gvlId;
 }
 
 /**
@@ -107,11 +123,15 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
     const consentData = gdprDataHandler.getConsentData();
     if (consentData && consentData.gdprApplies) {
       if (consentData.apiVersion === 2) {
-        if (!gvlid) {
-          gvlid = getGvlid();
+        const curBidder = config.getCurrentBidder();
+        // Bidders have a copy of storage object with bidder code binded. Aliases will also pass the same bidder code when invoking storage functions and hence if alias tries to access device we will try to grab the gvl id for alias instead of original bidder
+        if (curBidder && (curBidder != moduleName) && adapterManager.aliasRegistry[curBidder] === moduleName) {
+          gvlid = getGvlid(curBidder);
+        } else {
+          gvlid = getGvlid(moduleName);
         }
-        const curModule = moduleName || config.getCurrentBidder();
-        let isAllowed = gvlid && validateRules(purpose1Rule, consentData, curModule, gvlid);
+        const curModule = moduleName || curBidder;
+        let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
         if (isAllowed) {
           result.valid = true;
           fn.call(this, gvlid, moduleName, result);
@@ -143,13 +163,9 @@ export function userSyncHook(fn, ...args) {
     if (consentData.apiVersion === 2) {
       const gvlid = getGvlid();
       const curBidder = config.getCurrentBidder();
-      if (gvlid) {
-        let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
-        if (isAllowed) {
-          fn.call(this, ...args);
-        } else {
-          utils.logWarn(`User sync not allowed for ${curBidder}`);
-        }
+      let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
+      if (isAllowed) {
+        fn.call(this, ...args);
       } else {
         utils.logWarn(`User sync not allowed for ${curBidder}`);
       }
@@ -172,15 +188,11 @@ export function userIdHook(fn, submodules, consentData) {
   if (consentData && consentData.gdprApplies) {
     if (consentData.apiVersion === 2) {
       let userIdModules = submodules.map((submodule) => {
-        const gvlid = submodule.submodule.gvlid;
+        const gvlid = getGvlidForUserIdModule(submodule.submodule);
         const moduleName = submodule.submodule.name;
-        if (gvlid) {
-          let isAllowed = validateRules(purpose1Rule, consentData, moduleName, gvlid);
-          if (isAllowed) {
-            return submodule;
-          } else {
-            utils.logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
-          }
+        let isAllowed = validateRules(purpose1Rule, consentData, moduleName, gvlid);
+        if (isAllowed) {
+          return submodule;
         } else {
           utils.logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
         }
