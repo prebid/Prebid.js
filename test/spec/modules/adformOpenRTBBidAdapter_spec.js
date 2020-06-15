@@ -43,7 +43,7 @@ describe('AdformOpenRTB adapter', function () {
       assert.ok(request.data);
     });
 
-    describe('gdpr', function () {
+    describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
         let validBidRequests = [{ bidId: 'bidId', params: { siteId: 'siteId', test: 1 } }];
         let bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
@@ -60,15 +60,37 @@ describe('AdformOpenRTB adapter', function () {
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(typeof request.regs.ext.gdpr, 'number');
+        assert.equal(request.regs.ext.gdpr, 1);
       });
 
-      it('should not send GDPR Consent data to adform if gdprApplies is false or undefined', function () {
+      it('should send CCPA Consent data to adform', function () {
+        let validBidRequests = [{ bidId: 'bidId', params: { siteId: 'siteId', test: 1 } }];
+        let bidderRequest = { uspConsent: '1YA-', refererInfo: { referer: 'page' } };
+        let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+
+        assert.equal(request.regs.ext.us_privacy, '1YA-');
+
+        bidderRequest = { uspConsent: '1YA-', gdprConsent: { gdprApplies: true, consentString: 'consentDataString' }, refererInfo: { referer: 'page' } };
+        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+
+        assert.equal(request.regs.ext.us_privacy, '1YA-');
+        assert.equal(request.user.ext.consent, 'consentDataString');
+        assert.equal(request.regs.ext.gdpr, 1);
+      });
+
+      it('should not send GDPR Consent data to adform if gdprApplies is undefined', function () {
         let validBidRequests = [{
           bidId: 'bidId',
           params: { siteId: 'siteId' }
         }];
         let bidderRequest = {gdprConsent: {gdprApplies: false, consentString: 'consentDataString'}, refererInfo: { referer: 'page' }};
         let request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
+
+        assert.equal(request.user.ext.consent, 'consentDataString');
+        assert.equal(request.regs.ext.gdpr, 0);
+
+        bidderRequest = {gdprConsent: {consentString: 'consentDataString'}, refererInfo: { referer: 'page' }};
+        request = JSON.parse(spec.buildRequests(validBidRequests, bidderRequest).data);
 
         assert.equal(request.user, undefined);
         assert.equal(request.regs, undefined);

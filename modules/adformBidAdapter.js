@@ -9,8 +9,10 @@ import * as utils from '../src/utils.js';
 const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js';
 
 const BIDDER_CODE = 'adform';
+const GVLID = 50;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
     return !!(bid.params.mid);
@@ -47,13 +49,19 @@ export const spec = {
     request.push('pt=' + netRevenue);
     request.push('stid=' + validBidRequests[0].auctionId);
 
-    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+    const gdprApplies = utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
+    const consentString = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
+    if (gdprApplies !== undefined) {
       gdprObject = {
-        gdpr: bidderRequest.gdprConsent.gdprApplies,
-        gdpr_consent: bidderRequest.gdprConsent.consentString
+        gdpr: gdprApplies,
+        gdpr_consent: consentString
       };
-      request.push('gdpr=' + gdprObject.gdpr);
-      request.push('gdpr_consent=' + gdprObject.gdpr_consent);
+      request.push('gdpr=' + (gdprApplies & 1));
+      request.push('gdpr_consent=' + consentString);
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      request.push('us_privacy=' + bidderRequest.uspConsent);
     }
 
     for (i = 1, l = globalParams.length; i < l; i++) {
