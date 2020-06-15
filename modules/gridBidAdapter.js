@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hb';
@@ -47,7 +48,7 @@ export const spec = {
     const slotsMapByUid = {};
     const sizeMap = {};
     const bids = validBidRequests || [];
-    let pageKeywords;
+    let pageKeywords = null;
     let reqId;
 
     bids.forEach(bid => {
@@ -57,12 +58,7 @@ export const spec = {
       const sizesId = utils.parseSizesInput(bid.sizes);
 
       if (!pageKeywords && !utils.isEmpty(bid.params.keywords)) {
-        const keywords = utils.transformBidderParamKeywords(bid.params.keywords);
-
-        if (keywords.length > 0) {
-          keywords.forEach(deleteValues);
-        }
-        pageKeywords = keywords;
+        pageKeywords = utils.transformBidderParamKeywords(bid.params.keywords);
       }
 
       const addedSizes = {};
@@ -103,6 +99,19 @@ export const spec = {
         slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
       });
     });
+
+    const configKeywords = utils.transformBidderParamKeywords({
+      'user': utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || null,
+      'context': utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || null
+    });
+
+    if (configKeywords.length) {
+      pageKeywords = (pageKeywords || []).concat(configKeywords);
+    }
+
+    if (pageKeywords && pageKeywords.length > 0) {
+      pageKeywords.forEach(deleteValues);
+    }
 
     const payload = {
       auids: auids.join(','),

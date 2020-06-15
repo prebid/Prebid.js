@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, resetUserSync, getSyncUrl } from 'modules/gridBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 
 describe('TheMediaGrid Adapter', function () {
   const adapter = newBidder(spec);
@@ -213,6 +214,51 @@ describe('TheMediaGrid Adapter', function () {
       }, {
         'key': 'emptyArr'
       }]);
+    });
+
+    it('should mix keyword param with keywords from config', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'fpd.user' ? {'keywords': ['a', 'b']} : arg === 'fpd.context' ? {'keywords': ['any words']} : null);
+
+      const bidRequestWithKeywords = [].concat(bidRequests);
+      bidRequestWithKeywords[1] = Object.assign({},
+        bidRequests[1],
+        {
+          params: {
+            uid: '1',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              multiValMixed: ['value1', 2, 'value3']
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests(bidRequestWithKeywords, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.keywords).to.be.an('string');
+      payload.keywords = JSON.parse(payload.keywords);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'single',
+        'value': ['val']
+      }, {
+        'key': 'singleArr',
+        'value': ['val']
+      }, {
+        'key': 'multiValMixed',
+        'value': ['value1', '2', 'value3']
+      }, {
+        'key': 'user',
+        'value': ['a', 'b']
+      }, {
+        'key': 'context',
+        'value': ['any words']
+      }]);
+
+      getConfigStub.restore();
     });
   });
 
