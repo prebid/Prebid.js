@@ -69,16 +69,18 @@ function _getAdSlotHTMLElement(adUnitCode) {
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
-function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl, getFloor}) {
+function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl}) {
   const ttxRequest = {};
   const params = bidRequest.params;
   const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
   const sizes = _transformSizes(bidRequest.sizes);
-  
+
   let format;
 
   // We support size based bidfloors so obtain one if there's a rule associated
-  if (typeof getFloor === 'function') {
+  if (typeof bidRequest.getFloor === 'function') {
+    let getFloor = bidRequest.getFloor.bind(bidRequest);
+
     format = sizes.map((size) => {
       const formatExt = _getBidFloors(getFloor, size);
 
@@ -199,7 +201,7 @@ function _getBidFloors(getFloor, size) {
   const bidFloors = getFloor({
     currency: CURRENCY,
     mediaType: MEDIA_TYPE,
-    size : [ size.w, size.h ]
+    size: [ size.w, size.h ]
   });
 
   if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
@@ -354,17 +356,12 @@ function buildRequests(bidRequests, bidderRequest) {
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
 
-  let getFloor;
-  if (typeof bidRequests.getFloor === 'function') {
-    getFloor = bidRequests.getFloor.bind(bidRequests);
-  }
   return bidRequests.map(bidRequest => _createServerRequest(
     {
-      bidRequest, 
-      gdprConsent, 
-      uspConsent, 
-      pageUrl, 
-      getFloor
+      bidRequest,
+      gdprConsent,
+      uspConsent,
+      pageUrl
     })
   );
 }

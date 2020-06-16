@@ -141,7 +141,7 @@ describe('33acrossBidAdapter:', function () {
     };
 
     this.withFormatFloors = floors => {
-      const format = ttxRequest.imp[0].banner.format.map((fm, i)=> {
+      const format = ttxRequest.imp[0].banner.format.map((fm, i) => {
         return Object.assign(fm, {
           ext: {
             ttx: {
@@ -699,7 +699,7 @@ describe('33acrossBidAdapter:', function () {
 
     context('when price floor module is enabled in bidRequest', function() {
       it('does not set any bidfloors in ttxRequest if there is no floor', function() {
-        bidRequests.getFloor = () => ({});
+        bidRequests[0].getFloor = () => ({});
 
         const ttxRequest = new TtxRequestBuilder()
           .build();
@@ -712,12 +712,12 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('sets bidfloors in ttxRequest if there is a floor', function() {
-        bidRequests.getFloor = ({size, currency, mediaType}) => {
-          const floor = ( size[0] === 300 && size[1] === 250 ) ? 1.0 : 0.10
+        bidRequests[0].getFloor = ({size, currency, mediaType}) => {
+          const floor = (size[0] === 300 && size[1] === 250) ? 1.0 : 0.10
           return (
             {
-            floor,
-            currency: 'USD'
+              floor,
+              currency: 'USD'
             }
           );
         };
@@ -734,7 +734,6 @@ describe('33acrossBidAdapter:', function () {
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
     });
-
   });
 
   describe('interpretResponse', function() {
