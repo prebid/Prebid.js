@@ -15,6 +15,7 @@
     "eplanningBidAdapter",
     "freestarAnalyticsAdapter",
     "freestarBidAdapter",
+    "gridBidAdapter",
     "gumgumBidAdapter",
     "ixBidAdapter",
     "justpremiumBidAdapter",
