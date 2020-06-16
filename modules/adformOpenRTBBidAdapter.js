@@ -3,13 +3,15 @@
 
 import {
   registerBidder
-} from '../src/adapters/bidderFactory';
+} from '../src/adapters/bidderFactory.js';
 import {
   NATIVE
-} from '../src/mediaTypes';
-import * as utils from '../src/utils';
+} from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'adformOpenRTB';
+const GVLID = 50;
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
 const NATIVE_PARAMS = {
   title: {
@@ -45,6 +47,7 @@ const NATIVE_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [ NATIVE ],
   isBidRequestValid: bid => !!bid.params.mid,
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -56,6 +59,8 @@ export const spec = {
     const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
+    const currency = config.getConfig('currency.adServerCurrency');
+    const cur = currency && [ currency ];
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
@@ -66,11 +71,28 @@ export const spec = {
         };
         if (props) {
           asset.id = props.id;
+          let wmin, hmin, w, h;
+          let aRatios = bidParams.aspect_ratios;
+
+          if (aRatios && aRatios[0]) {
+            aRatios = aRatios[0];
+            wmin = aRatios.min_width || 0;
+            hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
+          }
+
+          if (bidParams.sizes) {
+            const sizes = flatten(bidParams.sizes);
+            w = sizes[0];
+            h = sizes[1];
+          }
+
           asset[props.name] = {
             len: bidParams.len,
-            wmin: bidParams.sizes && bidParams.sizes[0],
-            hmin: bidParams.sizes && bidParams.sizes[1],
-            type: props.type
+            type: props.type,
+            wmin,
+            hmin,
+            w,
+            h
           };
 
           return asset;
@@ -94,6 +116,7 @@ export const spec = {
       device: { ua },
       source: { tid, fd: 1 },
       ext: { pt },
+      cur,
       imp
     };
 
@@ -101,14 +124,18 @@ export const spec = {
       request.is_debug = !!test;
       request.test = 1;
     }
-    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
+    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
       request.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
       request.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies & 1 } };
     }
 
+    if (bidderRequest.uspConsent) {
+      utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
     return {
       method: 'POST',
-      url: '//' + adxDomain + '/adx/openrtb',
+      url: 'https://' + adxDomain + '/adx/openrtb',
       data: JSON.stringify(request),
       options: {
         contentType: 'application/json'
@@ -122,9 +149,13 @@ export const spec = {
     }
     const { seatbid, cur } = serverResponse.body;
 
+    const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
+      result[bid.impid - 1] = bid;
+      return result;
+    }, []);
+
     return bids.map((bid, id) => {
-      const _cbid = seatbid && seatbid[id] && seatbid[id].bid;
-      const bidResponse = _cbid && _cbid[0];
+      const bidResponse = bidResponses[id];
       if (bidResponse) {
         return {
           requestId: bid.bidId,
@@ -170,4 +201,8 @@ function setOnAny(collection, key) {
       return result;
     }
   }
+}
+
+function flatten(arr) {
+  return [].concat(...arr);
 }

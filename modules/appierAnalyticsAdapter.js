@@ -1,10 +1,10 @@
-import {ajax} from 'src/ajax';
-import adapter from '../src/AnalyticsAdapter';
+import {ajax} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import {logError, logInfo} from '../src/utils';
+import adapterManager from '../src/adapterManager.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {logError, logInfo, deepClone} from '../src/utils.js';
 
-const utils = require('../src/utils');
 const analyticsType = 'endpoint';
 
 export const ANALYTICS_VERSION = '1.0.0';
@@ -61,7 +61,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
      * Optional option: predictionId
      * @type {boolean}
      */
-    analyticsOptions.options = utils.deepClone(config.options);
+    analyticsOptions.options = deepClone(config.options);
     if (typeof config.options.affiliateId !== 'string' || config.options.affiliateId.length < 1) {
       logError('"options.affiliateId" is required.');
       return false;
@@ -190,7 +190,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
   },
   handleAuctionEnd(auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
-    const highestCpmBids = pbjs.getHighestCpmBids();
+    const highestCpmBids = getGlobal().getHighestCpmBids();
     this.sendEventMessage('bid',
       this.createBidMessage(auctionEndArgs, highestCpmBids, cachedAuction.timeoutBids)
     );

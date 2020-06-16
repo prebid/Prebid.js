@@ -1,20 +1,28 @@
-import * as utils from '../src/utils'
+import * as utils from '../src/utils.js'
 
-import { config } from '../src/config'
-import includes from 'core-js/library/fn/array/includes';
-import { registerBidder } from '../src/adapters/bidderFactory'
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+
+import { config } from '../src/config.js'
+import { getStorageManager } from '../src/storageManager.js';
+import includes from 'core-js-pure/features/array/includes';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+
+const storage = getStorageManager();
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
-const DT_CREDENTIALS = { member: 'YcXr87z2lpbB' }
+const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const TIME_TO_LIVE = 60
+const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 
+let invalidRequestIds = {};
 let browserParams = {};
 let pageViewId = null
 
 // TODO: potential 0 values for browserParams sent to ad server
-function _getBrowserParams() {
+function _getBrowserParams(topWindowUrl) {
   let topWindow
   let topScreen
   let topUrl
@@ -23,7 +31,7 @@ function _getBrowserParams() {
   function getNetworkSpeed () {
     const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
     const Mbps = connection && (connection.downlink || connection.bandwidth)
-    return Mbps ? Math.round(Mbps * 1024) : null // 1 megabit -> 1024 kilobits
+    return Mbps ? Math.round(Mbps * 1024) : null
   }
   function getOgURL () {
     let ogURL = ''
@@ -41,7 +49,7 @@ function _getBrowserParams() {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
-    topUrl = utils.getTopWindowUrl()
+    topUrl = topWindowUrl || '';
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -53,9 +61,9 @@ function _getBrowserParams() {
     sw: topScreen.width,
     sh: topScreen.height,
     pu: topUrl,
-    ce: utils.cookiesAreEnabled(),
+    ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: JSON.stringify({ t: 0, rq: 8 }),
+    jcsi: JSON.stringify(JCSI),
     ogu: getOgURL()
   }
 
@@ -75,14 +83,16 @@ function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
 }
 
-// TODO: use getConfig()
-function _getDigiTrustQueryParams() {
-  function getDigiTrustId () {
-    var digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
-  };
+function _getTradeDeskIDParam(userId) {
+  const unifiedIdObj = {};
+  if (userId.tdid) {
+    unifiedIdObj.tdid = userId.tdid;
+  }
+  return unifiedIdObj;
+}
 
-  let digiTrustId = getDigiTrustId();
+function _getDigiTrustQueryParams(userId) {
+  let digiTrustId = userId.digitrustid && userId.digitrustid.data;
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return {};
@@ -90,6 +100,28 @@ function _getDigiTrustQueryParams() {
   return {
     dt: digiTrustId.id
   };
+}
+
+/**
+ * Serializes the supply chain object according to IAB standards
+ * @see https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
+ * @param {Object} schainObj supply chain object
+ * @returns {string}
+ */
+function _serializeSupplyChainObj(schainObj) {
+  let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
+
+  // order of properties: asi,sid,hp,rid,name,domain
+  schainObj.nodes.map(node => {
+    serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['rid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['name'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['domain'] || '')}`;
+  })
+
+  return serializedSchain;
 }
 
 /**
@@ -103,11 +135,21 @@ function isBidRequestValid (bid) {
     params,
     adUnitCode
   } = bid;
+  const id = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo;
+
+  if (invalidRequestIds[id]) {
+    utils.logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
+    return false;
+  }
 
   switch (true) {
     case !!(params.inScreen): break;
+    case !!(params.inScreenPubID): break;
     case !!(params.inSlot): break;
     case !!(params.ICV): break;
+    case !!(params.video): break;
+    case !!(params.inVideo): break;
+    case !!(params.videoPubID): break;
     default:
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
@@ -122,6 +164,41 @@ function isBidRequestValid (bid) {
 }
 
 /**
+ * Renames vid params from mediatypes.video keys
+ * @param {Object} attributes
+ * @returns {Object}
+ */
+function _getVidParams (attributes) {
+  const {
+    minduration: mind,
+    maxduration: maxd,
+    linearity: li,
+    startdelay: sd,
+    placement: pt,
+    protocols = [],
+    playerSize = []
+  } = attributes;
+  const sizes = utils.parseSizesInput(playerSize);
+  const [viw, vih] = sizes[0] && sizes[0].split('x');
+  let pr = '';
+
+  if (protocols.length) {
+    pr = protocols.join(',');
+  }
+
+  return {
+    mind,
+    maxd,
+    li,
+    sd,
+    pt,
+    pr,
+    viw,
+    vih
+  };
+}
+
+/**
  * Make a server request from the list of BidRequests.
  *
  * @param {validBidRequests[]} - an array of bids
@@ -129,20 +206,31 @@ function isBidRequestValid (bid) {
  */
 function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
-  const gdprConsent = Object.assign({ consentString: null, gdprApplies: true }, bidderRequest && bidderRequest.gdprConsent)
+  const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+  const uspConsent = bidderRequest && bidderRequest.uspConsent;
+  const timeout = config.getConfig('bidderTimeout');
+  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
   utils._each(validBidRequests, bidRequest => {
-    const timeout = config.getConfig('bidderTimeout');
     const {
       bidId,
+      mediaTypes = {},
       params = {},
-      transactionId
+      schain,
+      transactionId,
+      userId = {}
     } = bidRequest;
-    const data = {}
+    const bannerSizes = mediaTypes.banner && mediaTypes.banner.sizes;
+    let data = {};
+
     if (pageViewId) {
-      data.pv = pageViewId
+      data.pv = pageViewId;
     }
     if (params.bidfloor) {
       data.fp = params.bidfloor;
+    }
+    if (params.inScreenPubID) {
+      data.pubId = params.inScreenPubID;
+      data.pi = 2;
     }
     if (params.inScreen) {
       data.t = params.inScreen;
@@ -156,9 +244,32 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
     }
-    data.gdprApplies = gdprConsent.gdprApplies;
-    if (gdprConsent.gdprApplies) {
+    if (params.videoPubID) {
+      data = Object.assign(data, _getVidParams(mediaTypes.video));
+      data.pubId = params.videoPubID;
+      data.pi = 7;
+    }
+    if (params.video) {
+      data = Object.assign(data, _getVidParams(mediaTypes.video));
+      data.t = params.video;
+      data.pi = 7;
+    }
+    if (params.inVideo) {
+      data = Object.assign(data, _getVidParams(mediaTypes.video));
+      data.t = params.inVideo;
+      data.pi = 6;
+    }
+    if (gdprConsent) {
+      data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
+    }
+    if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
+    }
+    if (uspConsent) {
+      data.uspConsent = uspConsent;
+    }
+    if (schain && schain.nodes) {
+      data.schain = _serializeSupplyChainObj(schain);
     }
 
     bids.push({
@@ -167,10 +278,10 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bidRequest.sizes,
+      sizes: bannerSizes || bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams())
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
     })
   });
   return bids;
@@ -185,6 +296,19 @@ function buildRequests (validBidRequests, bidderRequest) {
 function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = []
   const serverResponseBody = serverResponse.body
+
+  if (!serverResponseBody || serverResponseBody.err) {
+    const data = bidRequest.data || {}
+    const id = data.t || data.si || data.ni || data.pubId;
+    const delayTime = serverResponseBody ? serverResponseBody.err.drt : DELAY_REQUEST_TIME;
+    invalidRequestIds[id] = { productId: data.pi, timestamp: new Date().getTime() };
+
+    setTimeout(() => {
+      !!invalidRequestIds[id] && delete invalidRequestIds[id];
+    }, delayTime);
+    utils.logWarn(`[GumGum] Please check the implementation for ${id}`);
+  }
+
   const defaultResponse = {
     ad: {
       price: 0,
@@ -199,12 +323,14 @@ function interpretResponse (serverResponse, bidRequest) {
     ad: {
       price: cpm,
       id: creativeId,
-      markup
+      markup,
+      cur
     },
     cw: wrapper,
     pag: {
       pvid
-    }
+    },
+    jcsi
   } = Object.assign(defaultResponse, serverResponseBody)
   let data = bidRequest.data || {}
   let product = data.pi
@@ -218,6 +344,10 @@ function interpretResponse (serverResponse, bidRequest) {
     height = '1'
   }
 
+  if (jcsi) {
+    serverResponseBody.jcsi = JCSI
+  }
+
   // update Page View ID from server response
   pageViewId = pvid
 
@@ -225,10 +355,12 @@ function interpretResponse (serverResponse, bidRequest) {
     bidResponses.push({
       // dealId: DEAL_ID,
       // referrer: REFERER,
+      ...(product === 7 && { vastXml: markup }),
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
+      ...(product === 6 && {ad: markup}),
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
-      currency: 'USD',
+      currency: cur || 'USD',
       height,
       netRevenue: true,
       requestId: bidRequest.id,
@@ -268,6 +400,7 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES
 }
 registerBidder(spec)

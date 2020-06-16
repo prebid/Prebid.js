@@ -7,6 +7,9 @@
 
 import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook.js'
+
+const MODULE_NAME = 'unifiedId';
 
 /** @type {Submodule} */
 export const unifiedIdSubmodule = {
@@ -14,7 +17,7 @@ export const unifiedIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'unifiedId',
+  name: MODULE_NAME,
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -28,7 +31,7 @@ export const unifiedIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleParams} [configParams]
-   * @returns {function(callback:function)}
+   * @returns {IdResponse|undefined}
    */
   getId(configParams) {
     if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
@@ -36,20 +39,30 @@ export const unifiedIdSubmodule = {
       return;
     }
     // use protocol relative urls for http or https
-    const url = configParams.url || `//match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`;
+    const url = configParams.url || `https://match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`;
 
-    return function (callback) {
-      ajax(url, response => {
-        let responseObj;
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            utils.logError(error);
+    const resp = function (callback) {
+      const callbacks = {
+        success: response => {
+          let responseObj;
+          if (response) {
+            try {
+              responseObj = JSON.parse(response);
+            } catch (error) {
+              utils.logError(error);
+            }
           }
+          callback(responseObj);
+        },
+        error: error => {
+          utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+          callback();
         }
-        callback(responseObj);
-      }, undefined, { method: 'GET' });
-    }
+      };
+      ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+    };
+    return {callback: resp};
   }
 };
+
+submodule('userId', unifiedIdSubmodule);

@@ -1,12 +1,16 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { VIDEO, BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'grid';
-const ENDPOINT_URL = '//grid.bidswitch.net/hb';
+const ENDPOINT_URL = 'https://grid.bidswitch.net/hb';
+const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
-const RENDERER_URL = '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+
+let hasSynced = false;
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -44,13 +48,31 @@ export const spec = {
     const slotsMapByUid = {};
     const sizeMap = {};
     const bids = validBidRequests || [];
+    let pageKeywords = null;
     let reqId;
 
     bids.forEach(bid => {
       reqId = bid.bidderRequestId;
-      const {params: {uid}, adUnitCode} = bid;
+      const {params: {uid}, adUnitCode, mediaTypes} = bid;
       auids.push(uid);
       const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!pageKeywords && !utils.isEmpty(bid.params.keywords)) {
+        pageKeywords = utils.transformBidderParamKeywords(bid.params.keywords);
+      }
+
+      const addedSizes = {};
+      sizesId.forEach((sizeId) => {
+        addedSizes[sizeId] = true;
+      });
+      const bannerSizesId = utils.parseSizesInput(utils.deepAccess(mediaTypes, 'banner.sizes'));
+      const videoSizesId = utils.parseSizesInput(utils.deepAccess(mediaTypes, 'video.playerSize'));
+      bannerSizesId.concat(videoSizesId).forEach((sizeId) => {
+        if (!addedSizes[sizeId]) {
+          addedSizes[sizeId] = true;
+          sizesId.push(sizeId);
+        }
+      });
 
       if (!slotsMapByUid[uid]) {
         slotsMapByUid[uid] = {};
@@ -78,14 +100,35 @@ export const spec = {
       });
     });
 
+    const configKeywords = utils.transformBidderParamKeywords({
+      'user': utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || null,
+      'context': utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || null
+    });
+
+    if (configKeywords.length) {
+      pageKeywords = (pageKeywords || []).concat(configKeywords);
+    }
+
+    if (pageKeywords && pageKeywords.length > 0) {
+      pageKeywords.forEach(deleteValues);
+    }
+
     const payload = {
-      u: utils.getTopWindowUrl(),
       auids: auids.join(','),
       sizes: utils.getKeys(sizeMap).join(','),
-      r: reqId
+      r: reqId,
+      wrapperType: 'Prebid_js',
+      wrapperVersion: '$prebid.version$'
     };
 
+    if (pageKeywords) {
+      payload.keywords = JSON.stringify(pageKeywords);
+    }
+
     if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = bidderRequest.refererInfo.referer;
+      }
       if (bidderRequest.timeout) {
         payload.wtimeout = bidderRequest.timeout;
       }
@@ -96,6 +139,9 @@ export const spec = {
         payload.gdpr_applies =
           (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
             ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
+      if (bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
       }
     }
 
@@ -132,8 +178,40 @@ export const spec = {
     }
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
+  },
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+    if (!hasSynced && syncOptions.pixelEnabled) {
+      let params = '';
+
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params += `&gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
+      if (uspConsent) {
+        params += `&us_privacy=${uspConsent}`;
+      }
+
+      hasSynced = true;
+      return {
+        type: 'image',
+        url: SYNC_URL + params
+      };
+    }
   }
 };
+
+function isPopulatedArray(arr) {
+  return !!(utils.isArray(arr) && arr.length > 0);
+}
+
+function deleteValues(keyPairObj) {
+  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
+    delete keyPairObj.value;
+  }
+}
 
 function _getBidFromResponse(respItem) {
   if (!respItem) {
@@ -238,6 +316,14 @@ function createRenderer (bid, rendererParams) {
   }
 
   return renderer;
+}
+
+export function resetUserSync() {
+  hasSynced = false;
+}
+
+export function getSyncUrl() {
+  return SYNC_URL;
 }
 
 registerBidder(spec);

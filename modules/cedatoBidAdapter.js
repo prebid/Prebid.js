@@ -1,20 +1,20 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const BIDDER_CODE = 'cedato';
-const BID_URL = '//h.cedatoplayer.com/hb';
-const SYNC_URL = '//h.cedatoplayer.com/hb_usync?uid={UUID}';
-const COOKIE_NAME = 'hb-cedato-id';
-const UUID_LEN = 36;
+const BID_URL = 'https://h.cedatoplayer.com/hb';
+const SYNC_URL = 'https://h.cedatoplayer.com/hb_usync';
 const TTL = 10000;
 const CURRENCY = 'USD';
-const FIRST_PRICE = 1;
 const NET_REVENUE = true;
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
     return !!(
@@ -22,109 +22,193 @@ export const spec = {
       bid.params &&
       bid.params.player_id &&
       utils.checkCookieSupport() &&
-      utils.cookiesAreEnabled()
+      storage.cookiesAreEnabled()
     );
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
-    const req = bidRequests[Math.floor(Math.random() * bidRequests.length)];
-    const params = req.params;
-    const at = FIRST_PRICE;
-    const site = { id: params.player_id, domain: document.domain };
-    const device = { ua: navigator.userAgent, ip: '' };
-    const user = { id: getUserID() }
+    const site = { domain: document.domain };
+    const device = { ua: navigator.userAgent, w: screen.width, h: screen.height };
     const currency = CURRENCY;
     const tmax = bidderRequest.timeout;
+    const auctionId = bidderRequest.auctionId;
+    const auctionStart = bidderRequest.auctionStart;
+    const bidderRequestId = bidderRequest.bidderRequestId;
 
     const imp = bidRequests.map(req => {
-      const banner = { 'format': getFormats(utils.deepAccess(req, 'mediaTypes.banner.sizes')) };
-      const bidfloor = params.bidfloor;
+      const banner = getMediaType(req, 'banner');
+      const video = getMediaType(req, 'video');
+      const params = req.params;
       const bidId = req.bidId;
+      const adUnitCode = req.adUnitCode;
+      const bidRequestsCount = req.bidRequestsCount;
+      const bidderWinsCount = req.bidderWinsCount;
+      const transactionId = req.transactionId;
 
       return {
         bidId,
         banner,
-        bidfloor,
+        video,
+        adUnitCode,
+        bidRequestsCount,
+        bidderWinsCount,
+        transactionId,
+        params
       };
     });
 
     const payload = {
       version: '$prebid.version$',
-      at,
       site,
       device,
-      user,
       imp,
       currency,
       tmax,
+      auctionId,
+      auctionStart,
+      bidderRequestId
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr_consent = {
-        consent_string: bidderRequest.gdprConsent.consentString,
-        consent_required: bidderRequest.gdprConsent.gdprApplies
-      };
+    if (bidderRequest) {
+      payload.referer_info = bidderRequest.refererInfo;
+      payload.us_privacy = bidderRequest.uspConsent;
+
+      if (bidderRequest.gdprConsent) {
+        payload.gdpr_consent = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          consent_required: bidderRequest.gdprConsent.gdprApplies
+        };
+      }
     }
 
-    return {
-      method: 'POST',
-      url: BID_URL,
-      data: JSON.stringify(payload),
-    };
+    return formatRequest(payload, bidderRequest);
   },
 
-  interpretResponse: function(resp) {
-    if (resp.body === '') return [];
+  interpretResponse: function(resp, {bidderRequest}) {
+    resp = resp.body;
+    const bids = [];
 
-    const bids = resp.body.seatbid[0].bid.map(bid => {
-      const cpm = bid.price;
-      const requestId = bid.uuid;
-      const width = bid.w;
-      const height = bid.h;
-      const creativeId = bid.crid;
-      const dealId = bid.dealid;
-      const currency = resp.body.cur;
-      const netRevenue = NET_REVENUE;
-      const ttl = TTL;
-      const ad = bid.adm;
+    if (!resp) {
+      return bids;
+    }
 
-      return {
-        cpm,
-        requestId,
-        width,
-        height,
-        creativeId,
-        dealId,
-        currency,
-        netRevenue,
-        ttl,
-        ad,
-      };
+    resp.seatbid[0].bid.map(serverBid => {
+      const bid = newBid(serverBid, bidderRequest);
+      bid.currency = resp.cur;
+      bids.push(bid);
     });
 
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, resps, gdprConsent) {
+  getUserSyncs: function(syncOptions, resps, gdprConsent, uspConsent) {
     const syncs = [];
-    if (syncOptions.pixelEnabled) {
-      resps.forEach(() => {
-        syncs.push(getSync('image', gdprConsent));
-      });
-    }
     if (syncOptions.iframeEnabled) {
-      resps.forEach(() => {
-        syncs.push(getSync('iframe', gdprConsent));
-      });
+      syncs.push(getSync('iframe', gdprConsent, uspConsent));
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push(getSync('image', gdprConsent, uspConsent));
     }
     return syncs;
   }
 }
 
-const getSync = (type, gdprConsent) => {
-  const uuid = getUserID();
+function getMediaType(req, type) {
+  const { mediaTypes } = req;
+
+  if (!mediaTypes) {
+    return;
+  }
+
+  switch (type) {
+    case 'banner':
+      if (mediaTypes.banner) {
+        const { sizes } = mediaTypes.banner;
+        return {
+          format: getFormats(sizes)
+        };
+      }
+      break;
+
+    case 'video':
+      if (mediaTypes.video) {
+        const { playerSize, context } = mediaTypes.video;
+        return {
+          context: context,
+          format: getFormats(playerSize)
+        };
+      }
+  }
+}
+
+function newBid(serverBid, bidderRequest) {
+  const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
+
+  const cpm = serverBid.price;
+  const requestId = serverBid.uuid;
+  const width = serverBid.w;
+  const height = serverBid.h;
+  const creativeId = serverBid.crid;
+  const dealId = serverBid.dealid;
+  const mediaType = serverBid.media_type;
+  const netRevenue = NET_REVENUE;
+  const ttl = TTL;
+
+  const bid = {
+    cpm,
+    requestId,
+    width,
+    height,
+    mediaType,
+    creativeId,
+    dealId,
+    netRevenue,
+    ttl,
+  };
+
+  if (mediaType == 'video') {
+    const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+
+    if (videoContext == 'instream') {
+      bid.vastUrl = serverBid.vast_url;
+      bid.vastImpUrl = serverBid.notify_url;
+    }
+  } else {
+    bid.ad = serverBid.adm;
+  }
+
+  return bid;
+}
+
+function formatRequest(payload, bidderRequest) {
+  const payloadByUrl = {};
+  const requests = [];
+
+  payload.imp.forEach(imp => {
+    const url = imp.params.bid_url || BID_URL;
+    if (!payloadByUrl[url]) {
+      payloadByUrl[url] = {
+        ...payload,
+        imp: []
+      };
+    }
+    payloadByUrl[url].imp.push(imp);
+  });
+
+  for (const url in payloadByUrl) {
+    requests.push({
+      url,
+      method: 'POST',
+      data: JSON.stringify(payloadByUrl[url]),
+      bidderRequest
+    });
+  }
+
+  return requests;
+}
+
+const getSync = (type, gdprConsent, uspConsent = '') => {
   const syncUrl = SYNC_URL;
-  let params = '&type=' + type;
+  let params = '?type=' + type + '&us_privacy=' + uspConsent;
   if (gdprConsent && typeof gdprConsent.consentString === 'string') {
     if (typeof gdprConsent.gdprApplies === 'boolean') {
       params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
@@ -134,25 +218,9 @@ const getSync = (type, gdprConsent) => {
   }
   return {
     type: type,
-    url: syncUrl.replace('{UUID}', uuid) + params,
+    url: syncUrl + params,
   };
 }
-
-const getUserID = () => {
-  const cookieName = COOKIE_NAME;
-  const uuidLen = UUID_LEN;
-
-  const i = document.cookie.indexOf(cookieName);
-
-  if (i === -1) {
-    const uuid = utils.generateUUID();
-    document.cookie = `${cookieName}=${uuid}; path=/`;
-    return uuid;
-  }
-
-  const j = i + cookieName.length + 1;
-  return document.cookie.substring(j, j + uuidLen);
-};
 
 const getFormats = arr => arr.map((s) => {
   return { w: s[0], h: s[1] };

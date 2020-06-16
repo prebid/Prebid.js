@@ -1,7 +1,7 @@
 import {assert, expect} from 'chai';
-import * as url from 'src/url';
-import {spec} from 'modules/adformBidAdapter';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import {spec} from 'modules/adformBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 
 describe('Adform adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -37,7 +37,7 @@ describe('Adform adapter', function () {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       let query = parsedUrl.query;
 
-      assert.equal(parsedUrl.path, '//newDomain/adx');
+      assert.equal(parsedUrl.path, 'https://newDomain/adx');
       assert.equal(query.tid, 45);
       assert.equal(query.rp, 4);
       assert.equal(query.fd, 1);
@@ -48,6 +48,24 @@ describe('Adform adapter', function () {
     it('should set correct request method', function () {
       let request = spec.buildRequests([bids[0]]);
       assert.equal(request.method, 'GET');
+    });
+
+    it('should pass request currency from config', function () {
+      config.setConfig({ currency: { adServerCurrency: 'PLN' } });
+      let request = parseUrl(spec.buildRequests(bids).url);
+
+      request.items.forEach(item => {
+        assert.equal(item.rcur, 'PLN');
+      });
+    });
+
+    it('should prefer bid currency over global config', function () {
+      config.setConfig({ currency: { adServerCurrency: 'PLN' } });
+      bids[0].params.rcur = 'USD';
+      let request = parseUrl(spec.buildRequests(bids).url);
+      const currencies = request.items.map(item => item.rcur);
+
+      assert.deepEqual(currencies, [ 'USD', 'PLN', 'PLN', 'PLN', 'PLN', 'PLN', 'PLN' ]);
     });
 
     it('should correctly form bid items', function () {
@@ -111,25 +129,24 @@ describe('Adform adapter', function () {
       assert.equal(parsedUrl.query.pt, 'gross');
     });
 
-    describe('gdpr', function () {
+    describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
-        let resultBids = JSON.parse(JSON.stringify(bids[0]));
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
         let parsedUrl = parseUrl(request.url).query;
 
-        assert.equal(parsedUrl.gdpr, 'true');
+        assert.equal(parsedUrl.gdpr, '1');
         assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
       });
 
-      it('should not send GDPR Consent data to adform if gdprApplies is false or undefined', function () {
-        let resultBids = JSON.parse(JSON.stringify(bids[0]));
+      it('should not send GDPR Consent data to adform if gdprApplies is undefined', function () {
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: false, consentString: 'concentDataString'}});
         let parsedUrl = parseUrl(request.url).query;
 
-        assert.ok(!parsedUrl.gdpr);
-        assert.ok(!parsedUrl.gdpr_consent);
+        assert.equal(parsedUrl.gdpr, '0');
+        assert.equal(parsedUrl.gdpr_consent, 'concentDataString');
 
         request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: undefined, consentString: 'concentDataString'}});
+        parsedUrl = parseUrl(request.url).query;
         assert.ok(!parsedUrl.gdpr);
         assert.ok(!parsedUrl.gdpr_consent);
       });
@@ -144,6 +161,13 @@ describe('Adform adapter', function () {
 
         request = spec.buildRequests([bids[0]]);
         assert.ok(!request.gdpr);
+      });
+
+      it('should send CCPA Consent data to adform', function () {
+        const request = spec.buildRequests([bids[0]], {uspConsent: '1YA-'});
+        const parsedUrl = parseUrl(request.url).query;
+
+        assert.equal(parsedUrl.us_privacy, '1YA-');
       });
     });
   });
@@ -229,14 +253,22 @@ describe('Adform adapter', function () {
       for (let i = 0; i < result.length; i++) {
         assert.equal(result[i].gdpr, true);
         assert.equal(result[i].gdpr_consent, 'ERW342EIOWT34234KMGds');
-      };
+      }
 
       bidRequest.gdpr = undefined;
       result = spec.interpretResponse(serverResponse, bidRequest);
       for (let i = 0; i < result.length; i++) {
         assert.ok(!result[i].gdpr);
         assert.ok(!result[i].gdpr_consent);
-      };
+      }
+    });
+
+    it('should set a renderer only for an outstream context', function () {
+      serverResponse.body = [serverResponse.body[3], serverResponse.body[2]];
+      bidRequest.bids = [bidRequest.bids[6], bidRequest.bids[6]];
+      let result = spec.interpretResponse(serverResponse, bidRequest);
+      assert.ok(result[0].renderer);
+      assert.equal(result[1].renderer, undefined);
     });
 
     describe('verifySizes', function () {
@@ -276,18 +308,21 @@ describe('Adform adapter', function () {
         serverResponse.body = [serverResponse.body[0]];
         bidRequest.bids = [bidRequest.bids[0]];
 
-        bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']]
+        bidRequest.bids[0].sizes = [['300', '250'], ['250', '300'], ['300', '600'], ['600', '300']];
         let result = spec.interpretResponse(serverResponse, bidRequest);
 
         assert.equal(result[0].width, 300);
         assert.equal(result[0].height, 600);
       });
-    })
+    });
   });
 
   beforeEach(function () {
-    let sizes = [[250, 300], [300, 250], [300, 600]];
+    config.setConfig({ currency: {} });
+
+    let sizes = [[250, 300], [300, 250], [300, 600], [600, 300]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
+    let mediaTypes = [{video: {context: 'outstream'}, banner: {sizes: sizes[3]}}];
     let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }, {mid: 5, pt: 'net'}, {mid: 6, pt: 'gross'}];
     bids = [
       {
@@ -367,6 +402,7 @@ describe('Adform adapter', function () {
         params: params[4],
         placementCode: placementCode[2],
         sizes: [],
+        mediaTypes: mediaTypes[0],
         transactionId: '5f33781f-9552-7ev3'
       }
     ];

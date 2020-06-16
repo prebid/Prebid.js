@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec as adapter, URL} from 'modules/vidazooBidAdapter';
-import * as utils from 'src/utils';
+import { expect } from 'chai';
+import { spec as adapter, URL } from 'modules/vidazooBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 const BID = {
   'bidId': '2d52001cabd527',
@@ -22,22 +22,31 @@ const BID = {
 
 const BIDDER_REQUEST = {
   'gdprConsent': {
-    'consentString': 'consent_string'
+    'consentString': 'consent_string',
+    'gdprApplies': true
+  },
+  'uspConsent': 'consent_string',
+  'refererInfo': {
+    'referer': 'https://www.greatsite.com'
   }
 };
 
 const SERVER_RESPONSE = {
   body: {
-    'ad': '<iframe>console.log("hello world")</iframe>',
-    'price': 0.8,
-    'creativeId': '12610997325162499419',
-    'exp': 30,
-    'cookies': [{
-      'src': 'https://sync.com',
-      'type': 'iframe'
-    }, {
-      'src': 'https://sync.com',
-      'type': 'img'
+    results: [{
+      'ad': '<iframe>console.log("hello world")</iframe>',
+      'price': 0.8,
+      'creativeId': '12610997325162499419',
+      'exp': 30,
+      'width': 300,
+      'height': 250,
+      'cookies': [{
+        'src': 'https://sync.com',
+        'type': 'iframe'
+      }, {
+        'src': 'https://sync.com',
+        'type': 'img'
+      }]
     }]
   }
 };
@@ -111,41 +120,26 @@ describe('VidazooBidAdapter', function () {
     let sandbox;
     before(function () {
       sandbox = sinon.sandbox.create();
-      sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.greatsite.com');
       sandbox.stub(Date, 'now').returns(1000);
     });
 
     it('should build request for each size', function () {
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
-      expect(requests).to.have.length(2);
+      expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
-        method: 'GET',
-        url: `${URL}/prebid/59db6b3b4ffaa70004f45cdc`,
+        method: 'POST',
+        url: `${URL}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
         data: {
-          consent: 'consent_string',
-          width: '300',
-          height: '250',
-          url: 'http://www.greatsite.com',
+          gdprConsent: 'consent_string',
+          gdpr: 1,
+          usPrivacy: 'consent_string',
+          sizes: ['300x250', '300x600'],
+          url: 'https%3A%2F%2Fwww.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
           publisherId: '59ac17c192832d0011283fe3',
-          'ext.param1': 'loremipsum',
-          'ext.param2': 'dolorsitamet',
-        }
-      });
-      expect(requests[1]).to.deep.equal({
-        method: 'GET',
-        url: `${URL}/prebid/59db6b3b4ffaa70004f45cdc`,
-        data: {
-          consent: 'consent_string',
-          width: '300',
-          height: '600',
-          url: 'http://www.greatsite.com',
-          cb: 1000,
-          bidFloor: 0.1,
-          bidId: '2d52001cabd527',
-          publisherId: '59ac17c192832d0011283fe3',
+          dealId: 1,
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }
@@ -156,6 +150,25 @@ describe('VidazooBidAdapter', function () {
       sandbox.restore();
     });
   });
+  describe('getUserSyncs', function () {
+    it('should have valid user sync with iframeEnabled', function () {
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
+
+      expect(result).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://static.cootlogix.com/basev/sync/user_sync.html'
+      }]);
+    });
+
+    it('should have valid user sync with pixelEnabled', function () {
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
+
+      expect(result).to.deep.equal([{
+        'url': 'https://sync.com',
+        'type': 'image'
+      }]);
+    })
+  });
 
   describe('interpret response', function () {
     it('should return empty array when there is no response', function () {
@@ -164,12 +177,12 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
@@ -191,7 +204,7 @@ describe('VidazooBidAdapter', function () {
 
     it('should take default TTL', function () {
       const serverResponse = utils.deepClone(SERVER_RESPONSE);
-      delete serverResponse.body.exp;
+      delete serverResponse.body.results[0].exp;
       const responses = adapter.interpretResponse(serverResponse, REQUEST);
       expect(responses).to.have.length(1);
       expect(responses[0].ttl).to.equal(300);

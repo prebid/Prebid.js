@@ -1,17 +1,12 @@
-import sigmoidAnalytic from 'modules/sigmoidAnalyticsAdapter';
+import sigmoidAnalytic from 'modules/sigmoidAnalyticsAdapter.js';
 import { expect } from 'chai';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
 
 describe('sigmoid Prebid Analytic', function () {
-  let xhr;
-  before(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-  })
   after(function () {
     sigmoidAnalytic.disableAnalytics();
-    xhr.restore();
   });
 
   describe('enableAnalytics', function () {
