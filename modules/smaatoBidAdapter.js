@@ -167,7 +167,12 @@ export const spec = {
               creativeId: b.crid,
               dealId: b.dealid || null,
               netRevenue: true,
-              currency: res.cur
+              currency: res.cur,
+              meta: {
+                advertiserDomains: b.adomain,
+                networkName: b.bidderName,
+                agencyId: sb.seat
+              }
             })
           }
         })

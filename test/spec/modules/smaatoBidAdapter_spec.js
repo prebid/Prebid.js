@@ -112,7 +112,12 @@ const interpretedBidsImg = [
     creativeId: 'CR69381',
     dealId: '12345',
     netRevenue: true,
-    currency: 'USD'
+    currency: 'USD',
+    meta: {
+      advertiserDomains: ['smaato.com'],
+      agencyId: 'CM6523',
+      networkName: 'smaato'
+    }
   }
 ];
 
@@ -127,7 +132,12 @@ const interpretedBidsRichmedia = [
     creativeId: 'CR69381',
     dealId: '12345',
     netRevenue: true,
-    currency: 'USD'
+    currency: 'USD',
+    meta: {
+      advertiserDomains: ['smaato.com'],
+      agencyId: 'CM6523',
+      networkName: 'smaato'
+    }
   }
 ];
 
