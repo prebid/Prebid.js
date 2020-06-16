@@ -299,7 +299,7 @@ describe('sovrnBidAdapter', function() {
       const data = JSON.parse(spec.buildRequests(digitrustRequests, bidderRequest).data);
       expect(data.user.ext.eids[0].source).to.equal('adserver.org')
       expect(data.user.ext.eids[0].uids[0].id).to.equal('SOMESORTOFID')
-      expect(data.user.ext.eids[0].uids[0].ext.rtiPartner).to.equal('TIDI')
+      expect(data.user.ext.eids[0].uids[0].ext.rtiPartner).to.equal('TDID')
     })
   });
   describe('interpretResponse', function () {

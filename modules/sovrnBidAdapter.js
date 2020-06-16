@@ -108,7 +108,7 @@ export const spec = {
             {
               id: unifiedID,
               ext: {
-                rtiPartner: 'TIDI'
+                rtiPartner: 'TDID'
               }
             }
           ]
