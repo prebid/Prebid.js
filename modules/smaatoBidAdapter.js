@@ -61,14 +61,20 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     },
     regs: {
       coppa: config.getConfig('coppa') === true ? 1 : 0,
-      ext: {
-        gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-      }
+      ext: {}
+    },
+    user: {
+      ext: {}
     },
     ext: {
       client: CLIENT
     }
   };
+
+  if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
+    utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+    utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+  }
 
   if (bidderRequest.uspConsent !== undefined) {
     utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);

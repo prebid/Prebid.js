@@ -143,7 +143,7 @@ const interpretedBidsRichmedia = [
 
 const defaultBidderRequest = {
   gdprConsent: {
-    consentString: 'gdprConsentStr',
+    consentString: 'HFIDUYFIUYIUYWIPOI87392DSU',
     gdprApplies: true
   },
   uspConsent: 'uspConsentString',
@@ -235,13 +235,15 @@ describe('smaatoBidAdapterTestOld', () => {
       expect(this.req.site.publisher.id).to.equal('publisherId');
     })
 
-    it('sends gdpr if exists', () => {
+    it('sends gdpr applies if exists', () => {
       expect(this.req.regs.ext.gdpr).to.equal(1);
+      expect(this.req.user.ext.consent).to.equal('HFIDUYFIUYIUYWIPOI87392DSU');
     });
 
-    it('sends no gdpr if no gdpr exists', () => {
-      let req = JSON.parse(spec.buildRequests([singleBannerBidRequest], minimalBidderRequest).data);
-      expect(req.regs.ext.gdpr).to.equal(0);
+    it('sends no gdpr applies if no gdpr exists', () => {
+      let req_without_gdpr = JSON.parse(spec.buildRequests([singleBannerBidRequest], minimalBidderRequest).data);
+      expect(req_without_gdpr.regs.ext.gdpr).to.not.exist;
+      expect(req_without_gdpr.user.ext.consent).to.not.exist;
     });
 
     it('sends usp if exists', () => {
@@ -249,8 +251,8 @@ describe('smaatoBidAdapterTestOld', () => {
     });
 
     it('sends no usp if no usp exists', () => {
-      let req = JSON.parse(spec.buildRequests([singleBannerBidRequest], minimalBidderRequest).data);
-      expect(req.regs.ext.us_privacy).to.not.exist;
+      let req_without_usp = JSON.parse(spec.buildRequests([singleBannerBidRequest], minimalBidderRequest).data);
+      expect(req_without_usp.regs.ext.us_privacy).to.not.exist;
     });
   });
 
