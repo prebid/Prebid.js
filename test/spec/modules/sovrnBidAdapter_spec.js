@@ -70,10 +70,15 @@ describe('sovrnBidAdapter', function() {
     });
 
     it('sets the proper banner object', function() {
-      const payload = JSON.parse(request.data);
+      const payload = JSON.parse(request.data)
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
       expect(payload.imp[0].banner.w).to.equal(1)
       expect(payload.imp[0].banner.h).to.equal(1)
+    })
+
+    it('includes the ad unit code int the request', function() {
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].adunitcode).to.equal('adunit-code')
     })
 
     it('accepts a single array as a size', function() {
@@ -267,8 +272,36 @@ describe('sovrnBidAdapter', function() {
       expect(data.user.ext.digitrust.id).to.equal('digitrust-id-123');
       expect(data.user.ext.digitrust.keyv).to.equal(4);
     });
-  });
+    it('should add the unifiedID if present', function() {
+      const digitrustRequests = [{
+        'bidder': 'sovrn',
+        'params': {
+          'tagid': 403370
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [
+          [300, 250],
+          [300, 600]
+        ],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+        'userId': {
+          'tdid': 'SOMESORTOFID',
+        }
+      }].concat(bidRequests);
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      };
 
+      const data = JSON.parse(spec.buildRequests(digitrustRequests, bidderRequest).data);
+      expect(data.user.ext.eids[0].source).to.equal('adserver.org')
+      expect(data.user.ext.eids[0].uids[0].id).to.equal('SOMESORTOFID')
+      expect(data.user.ext.eids[0].uids[0].ext.rtiPartner).to.equal('TIDI')
+    })
+  });
   describe('interpretResponse', function () {
     let response;
     beforeEach(function () {

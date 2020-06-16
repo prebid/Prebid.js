@@ -27,6 +27,7 @@ export const spec = {
       let iv;
       let schain;
       let digitrust;
+      let unifiedID;
 
       utils._each(bidReqs, function (bid) {
         if (!digitrust) {
@@ -38,6 +39,10 @@ export const spec = {
             }
           }
         }
+        if (!unifiedID) {
+          unifiedID = utils.deepAccess(bid, 'userId.tdid');
+        }
+
         if (bid.schain) {
           schain = schain || bid.schain;
         }
@@ -48,6 +53,7 @@ export const spec = {
         bidSizes = bidSizes.filter(size => utils.isArray(size))
         const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
         sovrnImps.push({
+          adunitcode: bid.adUnitCode,
           id: bid.bidId,
           banner: {
             format: processedSizes,
@@ -95,9 +101,22 @@ export const spec = {
           keyv: digitrust.keyv
         })
       }
+      if (unifiedID) {
+        const idArray = [{
+          source: 'adserver.org',
+          uids: [
+            {
+              id: unifiedID,
+              ext: {
+                rtiPartner: 'TIDI'
+              }
+            }
+          ]
+        }]
+        utils.deepSetValue(sovrnBidReq, 'user.ext.eids', idArray)
+      }
 
-      let url = `https://ap.lijit.com/rtb/bid?` +
-        `src=$$REPO_AND_VERSION$$`;
+      let url = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
       if (iv) url += `&iv=${iv}`;
 
       return {
