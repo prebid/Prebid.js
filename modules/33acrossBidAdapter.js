@@ -125,15 +125,15 @@ function _createServerRequest(bidRequest, gdprConsent = {}, uspConsent, pageUrl)
       } ]
     }
   };
-  
-  if(bidRequest.schain) {
+
+  if (bidRequest.schain) {
     ttxRequest.source = {
       ext: {
         schain: bidRequest.schain
       }
     }
   }
-  
+
   // Finally, set the openRTB 'test' param if this is to be a test bid
   if (params.test === 1) {
     ttxRequest.test = 1;
@@ -341,9 +341,9 @@ function interpretResponse(serverResponse, bidRequest) {
 // '33acrossBidAdapter#getUserSyncs'
 function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
   const syncUrls = (
-    (syncOptions.iframeEnabled) 
-    ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, siteId })) 
-    : ([])
+    (syncOptions.iframeEnabled)
+      ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, siteId }))
+      : ([])
   );
 
   // Clear adapter state of siteID's since we don't need this info anymore.
@@ -354,7 +354,7 @@ function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
 
 export const spec = {
   NON_MEASURABLE,
-  
+
   code: BIDDER_CODE,
 
   isBidRequestValid,

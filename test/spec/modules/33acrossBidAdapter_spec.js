@@ -92,8 +92,8 @@ describe('33acrossBidAdapter:', function () {
       Object.assign(ttxRequest, {
         regs: {
           ext: Object.assign(
-            {}, 
-            ttxRequest.regs.ext, 
+            {},
+            ttxRequest.regs.ext,
             { gdpr }
           )
         }
@@ -105,8 +105,8 @@ describe('33acrossBidAdapter:', function () {
       Object.assign(ttxRequest, {
         regs: {
           ext: Object.assign(
-            {}, 
-            ttxRequest.regs.ext, 
+            {},
+            ttxRequest.regs.ext,
             { us_privacy: consent }
           )
         }
@@ -604,39 +604,39 @@ describe('33acrossBidAdapter:', function () {
       it('builds request with schain info in source', function() {
         const schainValues = [
           {
-            'ver': "1.0",
+            'ver': '1.0',
             'complete': 1,
             'nodes': [
               {
-                'asi': "bidderA.com",
-                'sid': "00001",
+                'asi': 'bidderA.com',
+                'sid': '00001',
                 'hp': 1
               }
             ]
           },
           {
-            'ver': "1.0",
+            'ver': '1.0',
             'complete': 1,
           },
           {
-            'ver': "1.0",
+            'ver': '1.0',
             'complete': 1,
             'nodes': []
           },
           {
-            'ver': "1.0",
+            'ver': '1.0',
             'complete': '1',
             'nodes': [
               {
-                'asi': "bidderA.com",
-                'sid': "00001",
+                'asi': 'bidderA.com',
+                'sid': '00001',
                 'hp': 1
               }
             ]
           }
         ];
 
-        schainValues.forEach((schain)=> {
+        schainValues.forEach((schain) => {
           bidRequests[0].schain = schain;
 
           const ttxRequest = new TtxRequestBuilder()
@@ -645,22 +645,22 @@ describe('33acrossBidAdapter:', function () {
           const serverRequest = new ServerRequestBuilder()
             .withData(ttxRequest)
             .build();
-  
+
           const builtServerRequests = spec.buildRequests(bidRequests, {});
-  
+
           expect(builtServerRequests).to.deep.equal([serverRequest]);
-        }); 
+        });
       });
     });
 
     context('when there no schain object is passed', function() {
       it('does not set source field', function() {
         const ttxRequest = new TtxRequestBuilder()
-        .build();
-        
+          .build();
+
         const serverRequest = new ServerRequestBuilder()
-        .withData(ttxRequest)
-        .build();
+          .withData(ttxRequest)
+          .build();
 
         const builtServerRequests = spec.buildRequests(bidRequests, {});
 
@@ -668,7 +668,6 @@ describe('33acrossBidAdapter:', function () {
       });
     });
   });
-
 
   describe('interpretResponse', function() {
     let ttxRequest, serverRequest;
@@ -1024,7 +1023,6 @@ describe('33acrossBidAdapter:', function () {
 
           expect(syncResults).to.deep.equal([]);
         });
-        
       });
     });
   });
