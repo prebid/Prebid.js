@@ -47,6 +47,7 @@ describe('OneVideoBidAdapter', function () {
           sid: 134,
           rewarded: 1,
           placement: 1,
+          hp: 1,
           inventoryid: 123
         },
         site: {
@@ -181,6 +182,21 @@ describe('OneVideoBidAdapter', function () {
       }
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     })
+
+    it('should return true for Multi-Format AdUnits, when the mediaTypes are both "banner" and "video" (Multi-Format Support)', function () {
+      bidRequest = {
+        mediaTypes: {
+          banner: {
+            sizes: [640, 480]
+          },
+          video: {
+            context: 'outstream',
+            playerSize: [640, 480]
+          }
+        }
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    })
   });
 
   describe('spec.buildRequests', function () {
@@ -202,7 +218,7 @@ describe('OneVideoBidAdapter', function () {
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
-      const VERSION = '3.0.2';
+      const VERSION = '3.0.3';
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
@@ -350,6 +366,7 @@ describe('OneVideoBidAdapter', function () {
       const data = requests[0].data;
       expect(data.source.ext.schain.nodes[0].sid).to.equal(bidRequest.params.video.sid);
       expect(data.source.ext.schain.nodes[0].rid).to.equal(data.id);
+      expect(data.source.ext.schain.nodes[0].hp).to.equal(bidRequest.params.video.hp);
     });
   });
   describe('should send banner object', function () {

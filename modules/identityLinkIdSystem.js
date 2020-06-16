@@ -73,7 +73,7 @@ function getEnvelope(url, callback) {
           utils.logError(error);
         }
       }
-      callback(responseObj.envelope);
+      callback((responseObj && responseObj.envelope) ? responseObj.envelope : '');
     },
     error: error => {
       utils.logError(`identityLink: ID fetch encountered an error`, error);

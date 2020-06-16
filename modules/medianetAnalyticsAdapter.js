@@ -11,6 +11,7 @@ const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics
 const CONFIG_URL = 'https://prebid.media.net/rtb/prebid/analytics/config';
 const EVENT_PIXEL_URL = 'https://qsearch-a.akamaihd.net/log';
 const DEFAULT_LOGGING_PERCENT = 50;
+
 const PRICE_GRANULARITY = {
   'auto': 'pbAg',
   'custom': 'pbCg',
@@ -209,6 +210,16 @@ class AdSlot {
     this.logged = false;
     this.targeting = undefined;
     this.medianetPresent = 0;
+    // shouldBeLogged is assigned when requested,
+    // since we are waiting for logging percent response
+    this.shouldBeLogged = undefined;
+  }
+
+  getShouldBeLogged() {
+    if (this.shouldBeLogged === undefined) {
+      this.shouldBeLogged = isSampled();
+    }
+    return this.shouldBeLogged;
   }
 
   getLoggingData() {
@@ -508,7 +519,7 @@ function sendEvent(id, adunit, isBidWonEvent) {
   }
   if (isBidWonEvent) {
     fireAuctionLog(id, adunit, isBidWonEvent);
-  } else if (isSampled() && !auctions[id].adSlots[adunit].logged) {
+  } else if (auctions[id].adSlots[adunit].getShouldBeLogged() && !auctions[id].adSlots[adunit].logged) {
     auctions[id].adSlots[adunit].logged = true;
     fireAuctionLog(id, adunit, isBidWonEvent);
   }
@@ -650,6 +661,9 @@ medianetAnalytics.enableAnalytics = function (configuration) {
     utils.logError('Media.net Analytics adapter: cid is required.');
     return;
   }
+  $$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
+  $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled = true;
+
   pageDetails = new PageDetail();
 
   config = new Configure(configuration.options.cid);

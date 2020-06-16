@@ -202,6 +202,7 @@ describe('ValueimpressionBidAdapter', function () {
       },
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
+      'targetKey': 0,
       'bidId': '30b31c1838de1f',
     },
     {
@@ -213,6 +214,7 @@ describe('ValueimpressionBidAdapter', function () {
       },
       'adUnitCode': 'adunit-code-2',
       'sizes': [[120, 600], [300, 600], [160, 600]],
+      'targetKey': 1,
       'bidId': '30b31c1838de1e',
     }];
 
@@ -233,14 +235,14 @@ describe('ValueimpressionBidAdapter', function () {
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://adapter.valueimpression.com/bid')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/adapter')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
     })
 
     it('should return a properly formatted request with GDPR applies set to true', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://adapter.valueimpression.com/bid')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/adapter')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal('true')
       expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
@@ -249,7 +251,7 @@ describe('ValueimpressionBidAdapter', function () {
     it('should return a properly formatted request with GDPR applies set to false', function () {
       bidderRequests.gdprConsent.gdprApplies = false;
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://adapter.valueimpression.com/bid')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/adapter')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal('false')
       expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
@@ -269,7 +271,7 @@ describe('ValueimpressionBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://adapter.valueimpression.com/bid')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/adapter')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal('false')
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
@@ -289,7 +291,7 @@ describe('ValueimpressionBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://adapter.valueimpression.com/bid')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/adapter')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal('true')
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
@@ -307,7 +309,7 @@ describe('ValueimpressionBidAdapter', function () {
   describe('.interpretResponse', function () {
     const bidRequests = {
       'method': 'POST',
-      'url': 'https://adapter.valueimpression.com/bid',
+      'url': 'https://useast.quantumdex.io/auction/adapter',
       'withCredentials': true,
       'data': {
         'device': {
@@ -319,9 +321,9 @@ describe('ValueimpressionBidAdapter', function () {
         },
         'site': {
           'id': '343',
-          'page': 'https://www.includehelp.com/?pbjs_debug=true',
+          'page': 'https://www.example.com/tutorial',
           'referrer': '',
-          'hostname': 'www.includehelp.com'
+          'hostname': 'www.example.com'
         }
       },
       'bidderRequests': [
