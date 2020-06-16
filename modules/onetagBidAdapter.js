@@ -92,6 +92,7 @@ function interpretResponse(serverResponse, bidderRequest) {
       return bids;
     }
   }
+  const requestData = JSON.parse(bidderRequest.data);
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
   }
@@ -101,18 +102,15 @@ function interpretResponse(serverResponse, bidderRequest) {
   body.bids.forEach(function(bid) {
     let responseBid = {
       ...bid,
-      ...bid.ad,
       netRevenue: false,
     };
-
     responseBid.ttl = responseBid.ttl || 300;
     responseBid.dealId = responseBid.dealId || '';
     if (bid.mediaType === VIDEO) {
-      const context = deepAccess(bidderRequest, 'mediaTypes.video.context');
-      if (context === OUTSTREAM) {
-        const videoBid = find(bidderRequest.bids, bidRequest.bidId === bid.requestId);
-        const rendererOptions = deepAccess(videoBid, 'renderer.options');
-        responseBid.renderer = createRenderer(bid, rendererOptions);
+      const videoBid = find(requestData.bids, (item) => item.bidId === bid.requestId);
+      if (videoBid.context === OUTSTREAM) {
+        // const rendererOptions = deepAccess(videoBid, 'renderer.options');
+        responseBid.renderer = createRenderer(bid);
       }
     }
     bids.push(responseBid);
