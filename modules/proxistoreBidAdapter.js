@@ -1,14 +1,24 @@
 const { registerBidder } = require('../src/adapters/bidderFactory.js');
-const BIDDER_CODE = 'proxistore';
-const PROXISTORE_VENDOR_ID = 418;
+
+var BIDDER_CODE = 'proxistore';
+var PROXISTORE_VENDOR_ID = 418;
 
 function _createServerRequest(bidRequests, bidderRequest) {
-  const sizeIds = [];
-  bidRequests.forEach(bid => {
-    const sizeId = {id: bid.bidId, sizes: bid.sizes.map(size => { return { width: size[0], height: size[1] } })};
+  var sizeIds = [];
+
+  bidRequests.forEach(function (bid) {
+    var sizeId = {
+      id: bid.bidId,
+      sizes: bid.sizes.map(function (size) {
+        return {
+          width: size[0],
+          height: size[1]
+        };
+      })
+    };
     sizeIds.push(sizeId);
   });
-  const payload = {
+  var payload = {
     auctionId: bidRequests[0].auctionId,
     transactionId: bidRequests[0].auctionId,
     bids: sizeIds,
@@ -18,22 +28,22 @@ function _createServerRequest(bidRequests, bidderRequest) {
       applies: false
     }
   };
-
-  const options = {
+  var options = {
     contentType: 'application/json',
     withCredentials: true
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    if ((typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') && bidderRequest.gdprConsent.gdprApplies) {
+    if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) {
       payload.gdpr.applies = true;
     }
-    if ((typeof bidderRequest.gdprConsent.consentString === 'string') && bidderRequest.gdprConsent.consentString) {
+
+    if (typeof bidderRequest.gdprConsent.consentString === 'string' && bidderRequest.gdprConsent.consentString) {
       payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
     }
-    if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
-      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
-      payload.gdpr.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)]);
+
+    if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents && typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
+      payload.gdpr.consentGiven = !!bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
     }
   }
 
@@ -59,17 +69,31 @@ function _createBidResponse(response) {
     vastUrl: response.vastUrl,
     vastXml: response.vastXml,
     dealId: response.dealId
-  }
+  };
 }
-
 /**
  * Determines whether or not the given bid request is valid.
  *
  * @param bid  The bid params to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
+
 function isBidRequestValid(bid) {
-  return !!(bid.params.website && bid.params.language);
+  const hasNoAd = function() {
+    const storedtime = new Date(localStorage.getItem(`PX_NoAds_${bid.params.website}`));
+    if (!storedtime) {
+      return false;
+    } else {
+      const now = new Date();
+      var diff = Math.abs(storedtime.getTime() - now.getTime()) / 30000;
+      if (diff > 5) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+  }
+  return !!(bid.params.website && bid.params.language) && !hasNoAd();
 }
 
 /**
@@ -79,11 +103,11 @@ function isBidRequestValid(bid) {
  * @param bidderRequest
  * @return ServerRequest Info describing the request to the server.
  */
+
 function buildRequests(bidRequests, bidderRequest) {
   var request = _createServerRequest(bidRequests, bidderRequest);
   return request;
 }
-
 /**
  * Unpack the response from the server into a list of bids.
  *
@@ -91,12 +115,21 @@ function buildRequests(bidRequests, bidderRequest) {
  * @param bidRequest Request original server request
  * @return  An array of bids which were nested inside the server.
  */
+
 function interpretResponse(serverResponse, bidRequest) {
+  const itemName = `PX_NoAds_${websiteFromBidRequest(bidRequest.data)}`;
   if (serverResponse.body.length > 0) {
+    localStorage.removeItem(itemName, true);
     return serverResponse.body.map(_createBidResponse);
   } else {
+    localStorage.setItem(itemName, new Date());
     return [];
   }
+}
+
+var websiteFromBidRequest = function(data) {
+  const parsedData = JSON.parse(data);
+  return parsedData.website;
 }
 
 /**
@@ -106,11 +139,12 @@ function interpretResponse(serverResponse, bidRequest) {
  * @param serverResponses List of server's responses.
  * @return The user syncs which should be dropped.
  */
+
 function getUserSyncs(syncOptions, serverResponses) {
   return [];
 }
 
-const spec = {
+var spec = {
   code: BIDDER_CODE,
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
