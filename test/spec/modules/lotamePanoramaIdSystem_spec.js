@@ -404,7 +404,7 @@ describe('LotameId', function() {
     });
   });
 
-  describe('gdpr applies', function () {
+  describe('when gdpr applies', function () {
     let request;
     let callBackSpy = sinon.spy();
 
