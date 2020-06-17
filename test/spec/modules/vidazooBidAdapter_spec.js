@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec as adapter, URL } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { version } from "package.json";
+import { version } from 'package.json';
 
 const BID = {
   'bidId': '2d52001cabd527',
