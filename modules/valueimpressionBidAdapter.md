@@ -3,7 +3,7 @@
 ```
 Module Name: Valueimpression Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: thuyhq@83.com.vn
+Maintainer: k.vision@valueimpression.com
 ```
 
 # Description
