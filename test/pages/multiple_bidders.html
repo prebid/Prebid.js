@@ -2,173 +2,113 @@
 <!DOCTYPE html>
 <html>
 
-    <head>
-        <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
-        <script async src="../../build/dist/prebid.js"></script>
-        <meta charset="utf-8">
-        <style>
-            body {
-                color: #555;
-                font-family: sans-serif;
+<head>
+  <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+  <script async src="../../build/dist/prebid.js"></script>
+  <meta charset="utf-8">
+  <style>
+    body {
+      color: #555;
+      font-family: sans-serif;
+    }
+  </style>
+
+  <script>
+    var PREBID_TIMEOUT = 10000;
+
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    function initAdserver() {
+      if (pbjs.initAdserverSet) return;
+
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync('div-banner-native-1');
+          googletag.pubads().refresh();
+        });
+      });
+
+      pbjs.initAdserverSet = true;
+    }
+
+    pbjs.que.push(function () {
+      var adUnits = [{
+        code: 'div-banner-native-1',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        bids: [{
+          bidder: 'appnexus',
+          params: {
+            placementId: 13232392,
+          }
+        }]
+      },
+      {
+        code: 'div-banner-native-2',
+        mediaTypes: {
+          native: {
+            title: {
+              required: true
+            },
+            image: {
+              required: true
+            },
+            sponsoredBy: {
+              required: true
             }
+          }
+        },
+        bids: [{
+          bidder: 'adasta',
+          params: {
+            placementId: 13232392,
+          }
+        }]
+      }];
 
-        </style>
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids({
+        timeout: PREBID_TIMEOUT,
+        bidsBackHandler: function (bidResponses) {
+          initAdserver();
+        }
+      });
+    });
 
-        <script>
-        	  var PREBID_TIMEOUT = 10000;
-        
-            var googletag = googletag || {};
-            googletag.cmd = googletag.cmd || [];
+  </script>
 
-            var pbjs = pbjs || {};
-            pbjs.que = pbjs.que || [];
+  <script>
+    googletag.cmd.push(function () {
+      googletag
+        .defineSlot('/19968336/prebid_multiformat_test', [[300, 250], [300, 600]], 'div-banner-native-1')
+        .addService(googletag.pubads());
 
-            function initAdserver() {
-                if (pbjs.initAdserverSet) return;
+      googletag.pubads().disableInitialLoad();
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
 
-                googletag.cmd.push(function() {
-                    pbjs.que.push(function() {
-                        pbjs.setTargetingForGPTAsync();
-                        googletag.pubads().refresh();
-                    });
-                });
+  </script>
+</head>
 
-                pbjs.initAdserverSet = true;
-            }
+<body>
+  <h2>Multi-Format Ad Units</h2>
+  <h3>div-banner</h3>
+  <div id='div-banner-native-1'>
+    <script>
+      googletag.cmd.push(function () {
+        googletag.display('div-banner-native-1');
+      });
 
-            pbjs.que.push(function() {
-                var adUnits = [{
-                        code: 'div-banner-native-1',
-                        mediaTypes: {
-                            banner: {
-                                sizes: [[300, 250], [300, 600]]
-                            }
-                        },
-                        bids: [{
-                            bidder: 'appnexus',
-                            params: {
-                                placementId: 13232392,
-                            }
-                        }]
-                    },
-                    {
-                        code: 'div-banner-native-2',
-                        mediaTypes: {
-                            native: {
-                                title: {
-                                    required: true
-                                },
-                                image: {
-                                    required: true
-                                },
-                                sponsoredBy: {
-                                    required: true
-                                }
-                            }
-                        },
-                        bids: [{
-                            bidder: 'adasta',
-                            params: {
-                                placementId: 13232392,
-                            }
-                        }]
-                    }, {
-                    code: '/19968336/prebid_native_example_2',
-                    sizes: [
-                        [1, 1]
-                    ],
-                    mediaTypes: {
-                        native: {
-                            title: {
-                                required: true
-                            },
-                            body: {
-                                required: true
-                            },
-                            image: {
-                                required: true
-                            },
-                            sponsoredBy: {
-                                required: true
-                            },
-                            icon: {
-                                required: false
-                            },
-                        }
-                    },
-                    bids: [{
-                        bidder: 'appnexus',
-                        params: {
-                            placementId: 13232354,
-                            allowSmallerSizes: true
-                        }
-                    }]
-                }];
-
-                pbjs.addAdUnits(adUnits);
-                pbjs.requestBids({
-					timeout: PREBID_TIMEOUT,
-                    bidsBackHandler: function(bidResponses) {
-                        initAdserver();
-                    }
-                });
-            });
-
-        </script>
-
-        <script>
-            googletag.cmd.push(function() {
-                googletag
-                    .defineSlot(
-                        '/19968336/prebid_multiformat_test', [
-                            [300, 250],
-                            [300, 600]
-                        ],
-                        'div-banner-native-1'
-                    )
-                    .addService(googletag.pubads());
-
-                googletag
-                    .defineSlot(
-                        '/19968336/prebid_multiformat_test', [
-                            [300, 250],
-                            [360, 360]
-                        ],
-                        'div-banner-native-2'
-                    )
-                    .addService(googletag.pubads());
-
-                googletag.pubads().disableInitialLoad();
-                googletag.pubads().enableSingleRequest();
-                googletag.enableServices();
-            });
-
-        </script>
-    </head>
-
-    <body>
-        <h2>Multi-Format Ad Units</h2>
-        <h3>div-banner</h3>
-        <div id='div-banner-native-1'>
-            <script>
-                googletag.cmd.push(function() {
-                    googletag.display('div-banner-native-1');
-                });
-
-            </script>
-        </div>
-
-        <h3>div-native</h3>
-        <div id='div-banner-native-2'>
-            <p>No response</p>
-            <script type='text/javascript'>
-                googletag.cmd.push(function() {
-                    googletag.display('div-banner-native-2');
-                });
-
-            </script>
-        </div>
-
-    </body>
+    </script>
+  </div>
+</body>
 
 </html>

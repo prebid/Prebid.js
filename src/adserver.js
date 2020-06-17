@@ -1,4 +1,4 @@
-import { formatQS } from './url.js';
+import { formatQS } from './utils.js';
 import { targeting } from './targeting.js';
 
 // Adserver parent class

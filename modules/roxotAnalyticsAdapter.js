@@ -1,8 +1,11 @@
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import {ajaxBuilder} from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const utils = require('../src/utils.js');
 let ajax = ajaxBuilder(0);
@@ -68,17 +71,17 @@ function detectDevice() {
 
 function checkIsNewFlag() {
   let key = buildLocalStorageKey(isNewKey);
-  let lastUpdate = Number(utils.getDataFromLocalStorage(key));
-  utils.setDataInLocalStorage(key, Date.now());
+  let lastUpdate = Number(storage.getDataFromLocalStorage(key));
+  storage.setDataInLocalStorage(key, Date.now());
   return Date.now() - lastUpdate > isNewTtl;
 }
 
 function updateUtmTimeout() {
-  utils.setDataInLocalStorage(buildLocalStorageKey(utmTtlKey), Date.now());
+  storage.setDataInLocalStorage(buildLocalStorageKey(utmTtlKey), Date.now());
 }
 
 function isUtmTimeoutExpired() {
-  let utmTimestamp = utils.getDataFromLocalStorage(buildLocalStorageKey(utmTtlKey));
+  let utmTimestamp = storage.getDataFromLocalStorage(buildLocalStorageKey(utmTtlKey));
   return (Date.now() - utmTimestamp) > utmTtl;
 }
 
@@ -356,11 +359,11 @@ roxotAdapter.buildUtmTagData = function () {
   });
   utmTags.forEach(function (utmTagKey) {
     if (utmTagsDetected) {
-      utils.setDataInLocalStorage(buildLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      storage.setDataInLocalStorage(buildLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
       updateUtmTimeout();
     } else {
       if (!isUtmTimeoutExpired()) {
-        utmTagData[utmTagKey] = utils.getDataFromLocalStorage(buildLocalStorageKey(utmTagKey)) ? utils.getDataFromLocalStorage(buildLocalStorageKey(utmTagKey)) : '';
+        utmTagData[utmTagKey] = storage.getDataFromLocalStorage(buildLocalStorageKey(utmTagKey)) ? storage.getDataFromLocalStorage(buildLocalStorageKey(utmTagKey)) : '';
         updateUtmTimeout();
       }
     }

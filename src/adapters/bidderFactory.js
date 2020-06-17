@@ -7,11 +7,14 @@ import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
 import events from '../events.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess, isArray } from '../utils.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
-import { getHook } from '../hook.js';
+import { getHook, hook } from '../hook.js';
+import { getCoreStorageManager } from '../storageManager.js';
+
+export const storage = getCoreStorageManager('bidderFactory');
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -103,7 +106,7 @@ import { getHook } from '../hook.js';
  * @property {object} [native] Object for storing native creative assets
  * @property {object} [video] Object for storing video response data
  * @property {object} [meta] Object for storing bid meta data
- * @property {string} [meta.iabSubCatId] The IAB subcategory ID
+ * @property {string} [meta.primaryCatId] The IAB primary category ID
  * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
  *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
  */
@@ -331,22 +334,7 @@ export function newBidder(spec) {
   });
 
   function registerSyncs(responses, gdprConsent, uspConsent) {
-    const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
-    if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
-      let filterConfig = config.getConfig('userSync.filterSettings');
-      let syncs = spec.getUserSyncs({
-        iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
-        pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
-      }, responses, gdprConsent, uspConsent);
-      if (syncs) {
-        if (!Array.isArray(syncs)) {
-          syncs = [syncs];
-        }
-        syncs.forEach((sync) => {
-          userSync.registerSync(sync.type, spec.code, sync.url)
-        });
-      }
-    }
+    registerSyncInner(spec, responses, gdprConsent, uspConsent);
   }
 
   function filterAndWarn(bid) {
@@ -357,6 +345,25 @@ export function newBidder(spec) {
     return true;
   }
 }
+
+export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent) {
+  const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
+  if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
+    let filterConfig = config.getConfig('userSync.filterSettings');
+    let syncs = spec.getUserSyncs({
+      iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
+      pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
+    }, responses, gdprConsent, uspConsent);
+    if (syncs) {
+      if (!Array.isArray(syncs)) {
+        syncs = [syncs];
+      }
+      syncs.forEach((sync) => {
+        userSync.registerSync(sync.type, spec.code, sync.url)
+      });
+    }
+  }
+}, 'registerSyncs')
 
 export function preloadBidderMappingFile(fn, adUnits) {
   if (!config.getConfig('adpod.brandCategoryExclusion')) {
@@ -374,27 +381,32 @@ export function preloadBidderMappingFile(fn, adUnits) {
       let info = bidderSpec.getSpec().getMappingFileInfo();
       let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
       let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
-      let mappingData = getDataFromLocalStorage(key);
-      if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-        ajax(info.url,
-          {
-            success: (response) => {
-              try {
-                response = JSON.parse(response);
-                let mapping = {
-                  lastUpdated: timestamp(),
-                  mapping: response.mapping
+      let mappingData = storage.getDataFromLocalStorage(key);
+      try {
+        mappingData = mappingData ? JSON.parse(mappingData) : undefined;
+        if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+          ajax(info.url,
+            {
+              success: (response) => {
+                try {
+                  response = JSON.parse(response);
+                  let mapping = {
+                    lastUpdated: timestamp(),
+                    mapping: response.mapping
+                  }
+                  storage.setDataInLocalStorage(key, JSON.stringify(mapping));
+                } catch (error) {
+                  logError(`Failed to parse ${bidder} bidder translation mapping file`);
                 }
-                setDataInLocalStorage(key, JSON.stringify(mapping));
-              } catch (error) {
-                logError(`Failed to parse ${bidder} bidder translation mapping file`);
+              },
+              error: () => {
+                logError(`Failed to load ${bidder} bidder translation file`)
               }
             },
-            error: () => {
-              logError(`Failed to load ${bidder} bidder translation file`)
-            }
-          },
-        );
+          );
+        }
+      } catch (error) {
+        logError(`Failed to parse ${bidder} bidder translation mapping file`);
       }
     }
   });
@@ -413,7 +425,7 @@ export function getIabSubCategory(bidderCode, category) {
   if (bidderSpec.getSpec().getMappingFileInfo) {
     let info = bidderSpec.getSpec().getMappingFileInfo();
     let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getBidderCode();
-    let data = getDataFromLocalStorage(key);
+    let data = storage.getDataFromLocalStorage(key);
     if (data) {
       try {
         data = JSON.parse(data);
