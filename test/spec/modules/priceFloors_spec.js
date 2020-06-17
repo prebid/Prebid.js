@@ -14,11 +14,13 @@ import {
   fieldMatchingFunctions,
   allowedFields
 } from 'modules/priceFloors.js';
+import events from 'src/events.js';
 
 describe('the price floors module', function () {
   let logErrorSpy;
   let logWarnSpy;
   let sandbox;
+  let clock;
   const basicFloorData = {
     modelVersion: 'basic model',
     currency: 'USD',
@@ -58,12 +60,14 @@ describe('the price floors module', function () {
     };
   }
   beforeEach(function() {
+    clock = sinon.useFakeTimers();
     sandbox = sinon.sandbox.create();
     logErrorSpy = sinon.spy(utils, 'logError');
     logWarnSpy = sinon.spy(utils, 'logWarn');
   });
 
   afterEach(function() {
+    clock.restore();
     handleSetFloorsConfig({enabled: false});
     sandbox.restore();
     utils.logError.restore();
@@ -288,17 +292,10 @@ describe('the price floors module', function () {
       });
     };
     let fakeFloorProvider;
-    let clock;
     let actualAllowedFields = allowedFields;
     let actualFieldMatchingFunctions = fieldMatchingFunctions;
     const defaultAllowedFields = [...allowedFields];
     const defaultMatchingFunctions = {...fieldMatchingFunctions};
-    before(function () {
-      clock = sinon.useFakeTimers();
-    });
-    after(function () {
-      clock.restore();
-    });
     beforeEach(function() {
       fakeFloorProvider = sinon.fakeServer.create();
     });
@@ -1054,6 +1051,26 @@ describe('the price floors module', function () {
         }
       });
       expect(returnedBidResponse.cpm).to.equal(7.5);
+    });
+  });
+
+  describe('Post Auction Tests', function () {
+    let AUCTION_END_EVENT;
+    beforeEach(function () {
+      AUCTION_END_EVENT = {
+        auctionId: '123-45-6789'
+      };
+    });
+    it('should wait 3 seconds before deleting auction floor data', function () {
+      handleSetFloorsConfig({enabled: true});
+      _floorDataForAuction[AUCTION_END_EVENT.auctionId] = utils.deepClone(basicFloorConfig);
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, AUCTION_END_EVENT);
+      // should still be here
+      expect(_floorDataForAuction[AUCTION_END_EVENT.auctionId]).to.not.be.undefined;
+      // tick for 4 seconds
+      clock.tick(4000);
+      // should be undefined now
+      expect(_floorDataForAuction[AUCTION_END_EVENT.auctionId]).to.be.undefined;
     });
   });
 });
