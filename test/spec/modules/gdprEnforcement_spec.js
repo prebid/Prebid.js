@@ -362,6 +362,9 @@ describe('gdpr enforcement', function() {
         }
       }]
       userIdHook(nextFnSpy, submodules, consentData);
+      // Should pass back hasValidated flag since version 2
+      const args = nextFnSpy.getCalls()[0].args;
+      expect(args[1].hasValidated).to.be.true;
       expect(nextFnSpy.calledOnce).to.equal(true);
     });
 
@@ -374,8 +377,40 @@ describe('gdpr enforcement', function() {
       }];
       let consentData = null;
       userIdHook(nextFnSpy, submodules, consentData);
+      // Should not pass back hasValidated flag since version 2
+      const args = nextFnSpy.getCalls()[0].args;
+      expect(args[1]).to.be.null;
       expect(nextFnSpy.calledOnce).to.equal(true);
       expect(nextFnSpy.calledWith(undefined, submodules, consentData));
+    });
+
+    it('should not enforce if not apiVersion 2', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: false,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      let consentData = {}
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.apiVersion = 1;
+      consentData.gdprApplies = true;
+      let submodules = [{
+        submodule: {
+          gvlid: 1,
+          name: 'sampleUserId'
+        }
+      }]
+      userIdHook(nextFnSpy, submodules, consentData);
+      // Should not pass back hasValidated flag since version 1
+      const args = nextFnSpy.getCalls()[0].args;
+      expect(args[1].hasValidated).to.be.undefined;
+      expect(args[0]).to.deep.equal(submodules);
+      expect(nextFnSpy.calledOnce).to.equal(true);
     });
 
     it('should not allow user id module if user denied consent', function() {

@@ -88,7 +88,7 @@ export const spec = {
           videoProtocol: bid.params.video.protocol,
           playerWidth: playerSize[0],
           playerHeight: playerSize[1],
-          adBreak: bid.params.video.startDelay || 0
+          adBreak: bid.params.video.startDelay || 1
         };
       } else {
         return {};

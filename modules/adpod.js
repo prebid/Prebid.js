@@ -352,7 +352,7 @@ export function checkVideoBidSetupHook(fn, bid, bidRequest, videoMediaType, cont
   if (context === ADPOD) {
     let result = true;
     let brandCategoryExclusion = config.getConfig('adpod.brandCategoryExclusion');
-    if (brandCategoryExclusion && !utils.deepAccess(bid, 'meta.iabSubCatId')) {
+    if (brandCategoryExclusion && !utils.deepAccess(bid, 'meta.primaryCatId')) {
       result = false;
     }
 
