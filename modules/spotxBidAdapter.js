@@ -10,6 +10,7 @@ export const GOOGLE_CONSENT = { consented_providers: ['3', '7', '11', '12', '15'
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 165,
   aliases: ['spotx'],
   supportedMediaTypes: [VIDEO],
 
@@ -157,6 +158,22 @@ export const spec = {
 
       if (utils.getBidIdParameter('start_delay', bid.params) != '') {
         spotxReq.video.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params));
+      }
+
+      if (utils.getBidIdParameter('min_duration', bid.params) != '') {
+        spotxReq.video.minduration = utils.getBidIdParameter('min_duration', bid.params);
+      }
+
+      if (utils.getBidIdParameter('max_duration', bid.params) != '') {
+        spotxReq.video.maxduration = utils.getBidIdParameter('max_duration', bid.params);
+      }
+
+      if (utils.getBidIdParameter('placement_type', bid.params) != '') {
+        spotxReq.video.ext.placement = utils.getBidIdParameter('placement_type', bid.params);
+      }
+
+      if (utils.getBidIdParameter('position', bid.params) != '') {
+        spotxReq.video.ext.pos = utils.getBidIdParameter('position', bid.params);
       }
 
       if (bid.crumbs && bid.crumbs.pubcid) {

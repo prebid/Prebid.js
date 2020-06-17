@@ -1,6 +1,9 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const BIDDER_CODE = 'cedato';
 const BID_URL = 'https://h.cedatoplayer.com/hb';
@@ -19,7 +22,7 @@ export const spec = {
       bid.params &&
       bid.params.player_id &&
       utils.checkCookieSupport() &&
-      utils.cookiesAreEnabled()
+      storage.cookiesAreEnabled()
     );
   },
 

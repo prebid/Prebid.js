@@ -2,8 +2,9 @@ import { ajax } from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
-import { parse as parseURL } from '../src/url.js';
+import { getStorageManager } from '../src/storageManager.js';
 
+const storage = getStorageManager();
 const CONSTANTS = require('../src/constants.json');
 
 const ANALYTICS_TYPE = 'endpoint';
@@ -27,7 +28,7 @@ function getPageInfo() {
   }
 
   if (document.referrer) {
-    pageInfo.referrerDomain = parseURL(document.referrer).hostname;
+    pageInfo.referrerDomain = utils.parseUrl(document.referrer).hostname;
   }
 
   return pageInfo;
@@ -46,8 +47,8 @@ function getUniqId() {
   let uniq = cookies[ UNIQ_ID_KEY ];
   if (!uniq) {
     try {
-      if (utils.hasLocalStorage()) {
-        uniq = utils.getDataFromLocalStorage(UNIQ_ID_KEY) || '';
+      if (storage.hasLocalStorage()) {
+        uniq = storage.getDataFromLocalStorage(UNIQ_ID_KEY) || '';
         isUniqFromLS = true;
       }
     } catch (b) {}
@@ -62,7 +63,7 @@ function getUniqId() {
     expires.setFullYear(expires.getFullYear() + 10);
 
     try {
-      utils.setCookie(UNIQ_ID_KEY, uniq, expires.toUTCString());
+      storage.setCookie(UNIQ_ID_KEY, uniq, expires.toUTCString());
     } catch (e) {}
   }
 
@@ -90,7 +91,7 @@ function initFirstVisit() {
     now.setFullYear(now.getFullYear() + 20);
 
     try {
-      utils.setCookie(FIRST_VISIT_DATE, visitDate, now.toUTCString());
+      storage.setCookie(FIRST_VISIT_DATE, visitDate, now.toUTCString());
     } catch (e) {}
   }
 
@@ -110,7 +111,7 @@ function parseCookies(cookie) {
   let param, value;
   let i, j;
 
-  if (!cookie || !utils.cookiesAreEnabled()) {
+  if (!cookie || !storage.cookiesAreEnabled()) {
     return {};
   }
 
@@ -203,7 +204,7 @@ function initSession() {
   }
 
   try {
-    utils.setCookie(SESSION_ID, sessionId, expires.toUTCString());
+    storage.setCookie(SESSION_ID, sessionId, expires.toUTCString());
   } catch (e) {}
 
   return {
@@ -249,10 +250,10 @@ function saveTrackRequestTime() {
   const expires = new Date(now + SESSION_DURATION);
 
   try {
-    if (utils.hasLocalStorage()) {
-      utils.setDataInLocalStorage(TRACK_TIME_KEY, now.toString());
+    if (storage.hasLocalStorage()) {
+      storage.setDataInLocalStorage(TRACK_TIME_KEY, now.toString());
     } else {
-      utils.setCookie(TRACK_TIME_KEY, now.toString(), expires.toUTCString());
+      storage.setCookie(TRACK_TIME_KEY, now.toString(), expires.toUTCString());
     }
   } catch (a) {}
 }
@@ -261,9 +262,9 @@ function getTrackRequestLastTime() {
   let cookie;
 
   try {
-    if (utils.hasLocalStorage()) {
+    if (storage.hasLocalStorage()) {
       return parseInt(
-        utils.getDataFromLocalStorage(TRACK_TIME_KEY) || 0,
+        storage.getDataFromLocalStorage(TRACK_TIME_KEY) || 0,
         10,
       );
     }

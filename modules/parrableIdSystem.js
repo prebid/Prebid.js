@@ -6,10 +6,54 @@
  */
 
 import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { uspDataHandler } from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
+const PARRABLE_COOKIE_NAME = '_parrable_id';
+const LEGACY_ID_COOKIE_NAME = '_parrable_eid';
+const LEGACY_OPTOUT_COOKIE_NAME = '_parrable_optout';
+const ONE_YEAR_MS = 364 * 24 * 60 * 60 * 1000;
+const EXPIRE_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
+
+const storage = getStorageManager();
+
+function getExpirationDate() {
+  const oneYearFromNow = new Date(utils.timestamp() + ONE_YEAR_MS);
+  return oneYearFromNow.toGMTString();
+}
+
+function deserializeParrableId(parrableIdStr) {
+  const parrableId = {};
+  const values = parrableIdStr.split(',');
+
+  values.forEach(function(value) {
+    const pair = value.split(':');
+    // unpack a value of 1 as true
+    parrableId[pair[0]] = +pair[1] === 1 ? true : pair[1];
+  });
+
+  return parrableId;
+}
+
+function serializeParrableId(parrableId) {
+  let components = [];
+
+  if (parrableId.eid) {
+    components.push('eid:' + parrableId.eid);
+  }
+  if (parrableId.ibaOptout) {
+    components.push('ibaOptout:1');
+  }
+  if (parrableId.ccpaOptout) {
+    components.push('ccpaOptout:1');
+  }
+
+  return components.join(',');
+}
 
 function isValidConfig(configParams) {
   if (!configParams) {
@@ -20,15 +64,72 @@ function isValidConfig(configParams) {
     utils.logError('User ID - parrableId submodule requires partner list');
     return false;
   }
+  if (configParams.storage) {
+    utils.logWarn('User ID - parrableId submodule does not require a storage config');
+  }
   return true;
 }
 
-function fetchId(configParams, consentData, currentStoredId) {
+function readCookie() {
+  const parrableIdStr = storage.getCookie(PARRABLE_COOKIE_NAME);
+  if (parrableIdStr) {
+    return deserializeParrableId(decodeURIComponent(parrableIdStr));
+  }
+  return null;
+}
+
+function writeCookie(parrableId) {
+  if (parrableId) {
+    const parrableIdStr = encodeURIComponent(serializeParrableId(parrableId));
+    storage.setCookie(PARRABLE_COOKIE_NAME, parrableIdStr, getExpirationDate(), 'lax');
+  }
+}
+
+function readLegacyCookies() {
+  const eid = storage.getCookie(LEGACY_ID_COOKIE_NAME);
+  const ibaOptout = (storage.getCookie(LEGACY_OPTOUT_COOKIE_NAME) === 'true');
+  if (eid || ibaOptout) {
+    const parrableId = {};
+    if (eid) {
+      parrableId.eid = eid;
+    }
+    if (ibaOptout) {
+      parrableId.ibaOptout = ibaOptout;
+    }
+    return parrableId;
+  }
+  return null;
+}
+
+function migrateLegacyCookies(parrableId) {
+  if (parrableId) {
+    writeCookie(parrableId);
+    if (parrableId.eid) {
+      storage.setCookie(LEGACY_ID_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
+    }
+    if (parrableId.ibaOptout) {
+      storage.setCookie(LEGACY_OPTOUT_COOKIE_NAME, '', EXPIRE_COOKIE_DATE);
+    }
+  }
+}
+
+function fetchId(configParams) {
   if (!isValidConfig(configParams)) return;
 
+  let parrableId = readCookie();
+  if (!parrableId) {
+    parrableId = readLegacyCookies();
+    migrateLegacyCookies(parrableId);
+  }
+
+  const eid = (parrableId) ? parrableId.eid : null;
+  const refererInfo = getRefererInfo();
+  const uspString = uspDataHandler.getConsentData();
+
   const data = {
-    eid: currentStoredId || null,
-    trackers: configParams.partner.split(',')
+    eid,
+    trackers: configParams.partner.split(','),
+    url: refererInfo.referer
   };
 
   const searchParams = {
@@ -36,28 +137,56 @@ function fetchId(configParams, consentData, currentStoredId) {
     _rand: Math.random()
   };
 
+  if (uspString) {
+    searchParams.us_privacy = uspString;
+  }
+
   const options = {
     method: 'GET',
     withCredentials: true
   };
 
   const callback = function (cb) {
-    const onSuccess = (response) => {
-      let eid;
-      if (response) {
-        try {
-          let responseObj = JSON.parse(response);
-          eid = responseObj ? responseObj.eid : undefined;
-        } catch (error) {
-          utils.logError(error);
+    const callbacks = {
+      success: response => {
+        let newParrableId = parrableId ? utils.deepClone(parrableId) : {};
+        if (response) {
+          try {
+            let responseObj = JSON.parse(response);
+            if (responseObj) {
+              if (responseObj.ccpaOptout !== true) {
+                newParrableId.eid = responseObj.eid;
+              } else {
+                newParrableId.eid = null;
+                newParrableId.ccpaOptout = true;
+              }
+              if (responseObj.ibaOptout === true) {
+                newParrableId.ibaOptout = true;
+              }
+            }
+          } catch (error) {
+            utils.logError(error);
+            cb();
+          }
+          writeCookie(newParrableId);
+          cb(newParrableId);
+        } else {
+          utils.logError('parrableId: ID fetch returned an empty result');
+          cb();
         }
+      },
+      error: error => {
+        utils.logError(`parrableId: ID fetch encountered an error`, error);
+        cb();
       }
-      cb(eid);
     };
-    ajax(PARRABLE_URL, onSuccess, searchParams, options);
+    ajax(PARRABLE_URL, callbacks, searchParams, options);
   };
 
-  return { callback };
+  return {
+    callback,
+    id: parrableId
+  };
 };
 
 /** @type {Submodule} */
@@ -70,11 +199,14 @@ export const parrableIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {Object|string} value
+   * @param {ParrableId} parrableId
    * @return {(Object|undefined}
    */
-  decode(value) {
-    return (value && typeof value === 'string') ? { 'parrableid': value } : undefined;
+  decode(parrableId) {
+    if (parrableId && utils.isPlainObject(parrableId)) {
+      return { 'parrableid': parrableId.eid };
+    }
+    return undefined;
   },
 
   /**
@@ -82,10 +214,10 @@ export const parrableIdSubmodule = {
    * @function
    * @param {SubmoduleParams} [configParams]
    * @param {ConsentData} [consentData]
-   * @returns {function(callback:function)}
+   * @returns {function(callback:function), id:ParrableId}
    */
-  getId(configParams, consentData, currentStoredId) {
-    return fetchId(configParams, consentData, currentStoredId);
+  getId(configParams, gdprConsentData, currentStoredId) {
+    return fetchId(configParams);
   }
 };
 
