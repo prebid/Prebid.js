@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 const { registerBidder } = require('../src/adapters/bidderFactory.js');
 
 var BIDDER_CODE = 'proxistore';
@@ -117,7 +119,7 @@ function buildRequests(bidRequests, bidderRequest) {
  */
 
 function interpretResponse(serverResponse, bidRequest) {
-  const itemName = `PX_NoAds_${websiteFromBidRequest(bidRequest.data)}`;
+  const itemName = `PX_NoAds_${websiteFromBidRequest(bidRequest)}`;
   if (serverResponse.body.length > 0) {
     localStorage.removeItem(itemName, true);
     return serverResponse.body.map(_createBidResponse);
@@ -127,9 +129,12 @@ function interpretResponse(serverResponse, bidRequest) {
   }
 }
 
-var websiteFromBidRequest = function(data) {
-  const parsedData = JSON.parse(data);
-  return parsedData.website;
+var websiteFromBidRequest = function(bidR) {
+  if (bidR.data) {
+    return JSON.parse(bidR.data).website
+  } else if (bidR.params.website) {
+    return bidR.params.website;
+  }
 }
 
 /**
