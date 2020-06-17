@@ -34,6 +34,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     publisherId: pId,
     sizes: sizes,
     dealId: dealId,
+    res: `${screen.width}x${screen.height}`
   };
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.consentString) {
