@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec as adapter, URL } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { version } from "package.json";
 
 const BID = {
   'bidId': '2d52001cabd527',
@@ -140,6 +141,8 @@ describe('VidazooBidAdapter', function () {
           bidId: '2d52001cabd527',
           publisherId: '59ac17c192832d0011283fe3',
           dealId: 1,
+          bidderVersion: adapter.version,
+          prebidVersion: version,
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }
