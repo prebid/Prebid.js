@@ -141,7 +141,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
           fn.call(this, gvlid, moduleName, result);
         }
       } else {
-        utils.logInfo('Enforcing TCF2 only');
+        // The module doesn't enforce TCF1.1 strings
         result.valid = true;
         fn.call(this, gvlid, moduleName, result);
       }
@@ -170,7 +170,7 @@ export function userSyncHook(fn, ...args) {
         utils.logWarn(`User sync not allowed for ${curBidder}`);
       }
     } else {
-      utils.logInfo('Enforcing TCF2 only');
+      // The module doesn't enforce TCF1.1 strings
       fn.call(this, ...args);
     }
   } else {
@@ -200,7 +200,7 @@ export function userIdHook(fn, submodules, consentData) {
       }).filter(module => module)
       fn.call(this, userIdModules, {...consentData, hasValidated: true});
     } else {
-      utils.logInfo('Enforcing TCF2 only');
+      // The module doesn't enforce TCF1.1 strings
       fn.call(this, submodules, consentData);
     }
   } else {
@@ -209,7 +209,7 @@ export function userIdHook(fn, submodules, consentData) {
 }
 
 /**
- * Checks if a bidder is allowed. If it's not allowed, the bidder adapter won't send request to their endpoint.
+ * Checks if a bidder is allowed in Auction.
  * Enforces "purpose 2 (basic ads)" of TCF v2.0 spec
  * @param {Function} fn - Function reference to the original function.
  * @param {Array<adUnits>} adUnits
@@ -224,7 +224,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
           const currBidder = bid.bidder;
           const gvlId = getGvlid(currBidder);
           if (includes(disabledBidders, currBidder)) return false;
-          const isAllowed = gvlId && validateRules(purpose2Rule, consentData, currBidder, gvlId);
+          const isAllowed = !!validateRules(purpose2Rule, consentData, currBidder, gvlId);
           if (!isAllowed) {
             utils.logWarn(`TCF2 blocked auction for ${currBidder}`);
             events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
@@ -235,7 +235,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
       });
       fn.call(this, adUnits, ...args);
     } else {
-      // we don't enforce TCF1.1 strings
+      // The module doesn't enforce TCF1.1 strings
       fn.call(this, adUnits, ...args);
     }
   } else {

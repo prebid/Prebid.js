@@ -520,7 +520,7 @@ describe('gdpr enforcement', function () {
     let sandbox;
     let adapterManagerStub;
     let emitEventSpy;
-    let logInfoSpy;
+
     const MOCK_AD_UNITS = [{
       code: 'ad-unit-1',
       mediaTypes: {},
@@ -538,12 +538,12 @@ describe('gdpr enforcement', function () {
         bidder: 'bidder_3'
       }]
     }];
+
     beforeEach(function () {
       sandbox = sinon.createSandbox();
       gdprDataHandlerStub = sandbox.stub(gdprDataHandler, 'getConsentData');
       adapterManagerStub = sandbox.stub(adapterManager, 'getBidAdapter');
       logWarnSpy = sandbox.spy(utils, 'logWarn');
-      logInfoSpy = sandbox.spy(utils, 'logInfo');
       nextFnSpy = sandbox.spy();
       emitEventSpy = sandbox.spy(events, 'emit');
     });
@@ -551,7 +551,8 @@ describe('gdpr enforcement', function () {
       config.resetConfig();
       sandbox.restore();
     });
-    it('should block bidder which does not have consent and allow bidder which has consent', function () {
+
+    it('should block bidder which does not have consent and allow bidder which has consent (liTransparency is established)', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -598,12 +599,71 @@ describe('gdpr enforcement', function () {
         code: 'ad-unit-2',
         mediaTypes: {},
         bids: [
-          sinon.match({ bidder: 'bidder_2' })
+          sinon.match({ bidder: 'bidder_2' }),
+          sinon.match({ bidder: 'bidder_3' }) // should be allowed even though it's doesn't have a gvlId because liTransparency is established.
         ]
       }], []);
-      expect(emitEventSpy.calledOnce).to.equal(true);
+    });
+
+    it('should block bidder which does not have consent and allow bidder which has consent (liTransparency is NOT established)', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'basicAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: ['bidder_3']
+          }]
+        }
+      });
+      const consentData = {};
+
+      // set li for purpose 2 to false
+      const newConsentData = utils.deepClone(staticConfig);
+      newConsentData.consentData.getTCData.purpose.legitimateInterests['2'] = false;
+
+      consentData.vendorData = newConsentData.consentData.getTCData;
+      consentData.apiVersion = 2;
+      consentData.gdprApplies = true;
+
+      gdprDataHandlerStub.returns(consentData);
+      adapterManagerStub.withArgs('bidder_1').returns({
+        getSpec: function () {
+          return { 'gvlid': 4 }
+        }
+      });
+      adapterManagerStub.withArgs('bidder_2').returns({
+        getSpec: function () {
+          return { 'gvlid': 5 }
+        }
+      });
+      adapterManagerStub.withArgs('bidder_3').returns({
+        getSpec: function () {
+          return { 'gvlid': undefined }
+        }
+      });
+
+      makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
+
+      // Assertions
+      expect(nextFnSpy.calledOnce).to.equal(true);
+      sinon.assert.calledWith(nextFnSpy, [{
+        code: 'ad-unit-1',
+        mediaTypes: {},
+        bids: [
+          sinon.match({ bidder: 'bidder_1' }), // 'bidder_2' is not present because it doesn't have vendorConsent
+        ]
+      }, {
+        code: 'ad-unit-2',
+        mediaTypes: {},
+        bids: [
+          sinon.match({ bidder: 'bidder_3' }), // 'bidder_3' is allowed despite gvlId being undefined because it's part of vendorExceptions
+        ]
+      }], []);
+
       expect(logWarnSpy.calledOnce).to.equal(true);
-      sinon.assert.calledWith(emitEventSpy, EVENTS.BIDDER_BLOCKED, 'bidder_3');
+      expect(emitEventSpy.calledOnce).to.equal(true);
+      sinon.assert.calledWith(emitEventSpy, EVENTS.BIDDER_BLOCKED, 'bidder_2');
     });
 
     it('should skip validation checks if GDPR version is not equal to "2"', function () {
