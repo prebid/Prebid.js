@@ -193,7 +193,7 @@ export const lotamePanoramaIdSubmodule = {
       }
       const url = utils.buildUrl({
         protocol: 'https',
-        host: `bcp.dev.lotame.com`,
+        host: `id.crwdcntrl.net`,
         pathname: '/id',
         search: utils.isEmpty(queryParams) ? undefined : queryParams,
       });

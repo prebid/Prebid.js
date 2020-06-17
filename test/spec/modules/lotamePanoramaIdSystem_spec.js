@@ -64,7 +64,7 @@ describe('LotameId', function() {
     });
 
     it('should call the remote server when getId is called', function () {
-      expect(request.url).to.be.eq('https://bcp.dev.lotame.com/id');
+      expect(request.url).to.be.eq('https://id.crwdcntrl.net/id');
 
       expect(callBackSpy.calledOnce).to.be.true;
     });
@@ -435,7 +435,7 @@ describe('LotameId', function() {
 
     it('should pass the gdpr consent string back', function() {
       expect(request.url).to.be.eq(
-        'https://bcp.dev.lotame.com/id?gdpr_applies=true&gdpr_consent=consentGiven'
+        'https://id.crwdcntrl.net/id?gdpr_applies=true&gdpr_consent=consentGiven'
       );
     });
   });
