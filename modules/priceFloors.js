@@ -532,8 +532,10 @@ export function handleSetFloorsConfig(config) {
 
     if (!addedFloorsHook) {
       // register hooks / listening events
-      // when auction finishes remove it's associated floor data
-      events.on(CONSTANTS.EVENTS.AUCTION_END, (args) => delete _floorDataForAuction[args.auctionId]);
+      // when auction finishes remove it's associated floor data after 3 seconds so we stil have it for latent responses
+      events.on(CONSTANTS.EVENTS.AUCTION_END, (args) => {
+        setTimeout(() => delete _floorDataForAuction[args.auctionId], 3000);
+      });
 
       // we want our hooks to run after the currency hooks
       getGlobal().requestBids.before(requestBidsHook, 50);
