@@ -140,7 +140,7 @@ describe('VidazooBidAdapter', function () {
           bidId: '2d52001cabd527',
           publisherId: '59ac17c192832d0011283fe3',
           dealId: 1,
-          res: '1680x1050',
+          res: `${window.top.screen.width}x${window.top.screen.height}`,
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }
