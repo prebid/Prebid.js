@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import includes from 'core-js-pure/features/array/includes.js';
 
 export const URL = 'https://prebid.cootlogix.com';
 const BIDDER_CODE = 'vidazoo';
@@ -78,8 +77,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
   let key;
   utils._each(userIds, (userId, idSystemProviderName) => {
-
-    if (!!SUPPORTED_ID_SYSTEMS[idSystemProviderName]) {
+    if (SUPPORTED_ID_SYSTEMS[idSystemProviderName]) {
       key = `uid.${idSystemProviderName}`;
 
       switch (idSystemProviderName) {

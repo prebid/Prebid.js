@@ -234,5 +234,4 @@ describe('VidazooBidAdapter', function () {
       });
     });
   });
-
 });
