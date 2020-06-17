@@ -230,22 +230,22 @@ function MarsmediaAdapter() {
       );
       utils.triggerPixel(bid.nurl, null);
     };
-    const bidString = JSON.stringify(bid);
-    const encodedBuf = window.btoa(bidString);
-    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=17&bid=3mhdom&hb_j=' + encodedBuf, null);
+    sendbeacon(bid, 17)
   };
 
   this.onTimeout = function (bid) {
-    const bidString = JSON.stringify(bid);
-    const encodedBuf = window.btoa(bidString);
-    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=19&bid=3mhdom&hb_j=' + encodedBuf, null);
+    sendbeacon(bid, 19)
   };
 
   this.onSetTargeting = function (bid) {
+    sendbeacon(bid, 20)
+  };
+
+  function sendbeacon(bid, type) {
     const bidString = JSON.stringify(bid);
     const encodedBuf = window.btoa(bidString);
-    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=20&bid=3mhdom&hb_j=' + encodedBuf, null);
-  };
+    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=' + type + '&bid=3mhdom&hb_j=' + encodedBuf, null);
+  }
 
   this.interpretResponse = function (serverResponse) {
     let responses = serverResponse.body || [];
