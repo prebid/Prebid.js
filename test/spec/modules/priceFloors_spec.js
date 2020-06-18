@@ -407,6 +407,89 @@ describe('the price floors module', function () {
         fetchStatus: undefined
       });
     });
+    it('should randomly pick a model if floorsSchemaVersion is 2', function () {
+      let inputFloors = {
+        ...basicFloorConfig,
+        data: {
+          floorsSchemaVersion: 2,
+          currency: 'USD',
+          modelGroups: [
+            {
+              modelVersion: 'model-1',
+              modelWeight: 10,
+              schema: {
+                delimiter: '|',
+                fields: ['mediaType']
+              },
+              values: {
+                'banner': 1.0,
+                '*': 2.5
+              }
+            }, {
+              modelVersion: 'model-2',
+              modelWeight: 40,
+              schema: {
+                delimiter: '|',
+                fields: ['size']
+              },
+              values: {
+                '300x250': 1.0,
+                '*': 2.5
+              }
+            }, {
+              modelVersion: 'model-3',
+              modelWeight: 50,
+              schema: {
+                delimiter: '|',
+                fields: ['domain']
+              },
+              values: {
+                'www.prebid.org': 1.0,
+                '*': 2.5
+              }
+            }
+          ]
+        }
+      };
+      handleSetFloorsConfig(inputFloors);
+
+      // stub random to give us wanted vals
+      let randValue;
+      sandbox.stub(Math, 'random').callsFake(() => randValue);
+
+      // 0 - 10 should use first model
+      randValue = 0.05;
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'model-1',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
+      });
+
+      // 11 - 50 should use second model
+      randValue = 0.40;
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'model-2',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
+      });
+
+      // 51 - 100 should use third model
+      randValue = 0.75;
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'model-3',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
+      });
+    });
     it('should not overwrite previous data object if the new one is bad', function () {
       handleSetFloorsConfig({...basicFloorConfig});
       handleSetFloorsConfig({
@@ -615,6 +698,11 @@ describe('the price floors module', function () {
       expect(logErrorSpy.calledOnce).to.equal(true);
     });
     describe('isFloorsDataValid', function () {
+      it('should return false if unknown floorsSchemaVersion', function () {
+        let inputFloorData = utils.deepClone(basicFloorData);
+        inputFloorData.floorsSchemaVersion = 3;
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
+      });
       it('should work correctly for fields array', function () {
         let inputFloorData = utils.deepClone(basicFloorData);
         expect(isFloorsDataValid(inputFloorData)).to.to.equal(true);
@@ -669,6 +757,66 @@ describe('the price floors module', function () {
         };
         expect(isFloorsDataValid(inputFloorData)).to.to.equal(true);
         expect(inputFloorData.values).to.deep.equal({ 'test-div-1|native': 1.0 });
+      });
+      it('should work correctly for floorsSchemaVersion 2', function () {
+        let inputFloorData = {
+          floorsSchemaVersion: 2,
+          currency: 'USD',
+          modelGroups: [
+            {
+              modelVersion: 'model-1',
+              modelWeight: 10,
+              schema: {
+                delimiter: '|',
+                fields: ['mediaType']
+              },
+              values: {
+                'banner': 1.0,
+                '*': 2.5
+              }
+            }, {
+              modelVersion: 'model-2',
+              modelWeight: 40,
+              schema: {
+                delimiter: '|',
+                fields: ['size']
+              },
+              values: {
+                '300x250': 1.0,
+                '*': 2.5
+              }
+            }, {
+              modelVersion: 'model-3',
+              modelWeight: 50,
+              schema: {
+                delimiter: '|',
+                fields: ['domain']
+              },
+              values: {
+                'www.prebid.org': 1.0,
+                '*': 2.5
+              }
+            }
+          ]
+        };
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(true);
+
+        // remove one of the modelWeight's and it should be false
+        delete inputFloorData.modelGroups[1].modelWeight;
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
+        inputFloorData.modelGroups[1].modelWeight = 40;
+
+        // remove values from a model and it should not validate
+        const tempValues = {...inputFloorData.modelGroups[0].values};
+        delete inputFloorData.modelGroups[0].values;
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
+        inputFloorData.modelGroups[0].values = tempValues;
+
+        // modelGroups should be an array and have at least one entry
+        delete inputFloorData.modelGroups;
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
+        inputFloorData.modelGroups = [];
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
       });
     });
     describe('getFloor', function () {
