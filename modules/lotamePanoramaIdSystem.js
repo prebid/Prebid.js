@@ -200,24 +200,25 @@ export const lotamePanoramaIdSubmodule = {
       ajax(
         url,
         (response) => {
-          let responseObj = {};
+          let coreId;
           if (response) {
             try {
-              responseObj = JSON.parse(response);
+              let responseObj = JSON.parse(response);
               saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts);
-
-              if (utils.isStr(responseObj.core_id)) {
-                saveLotameCache(
-                  KEY_ID,
-                  responseObj.core_id,
-                  responseObj.expiry_ts
-                );
-              } else {
-                clearLotameCache(KEY_ID);
-              }
 
               if (utils.isStr(responseObj.profile_id)) {
                 setProfileId(responseObj.profile_id);
+
+                if (utils.isStr(responseObj.core_id)) {
+                  saveLotameCache(
+                    KEY_ID,
+                    responseObj.core_id,
+                    responseObj.expiry_ts
+                  );
+                  coreId = responseObj.core_id;
+                } else {
+                  clearLotameCache(KEY_ID);
+                }
               } else {
                 clearLotameCache(KEY_PROFILE);
                 clearLotameCache(KEY_ID);
@@ -226,7 +227,7 @@ export const lotamePanoramaIdSubmodule = {
               utils.logError(error);
             }
           }
-          callback(responseObj);
+          callback(coreId);
         },
         undefined,
         {
