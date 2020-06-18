@@ -279,7 +279,7 @@ function retrieveAd(bidId, decision) {
 }
 
 function checkConsent(P, d) {
-  const GVL = {"150":{"id":150,"name":"Inskin Media LTD","purposes":{"1":1,"3":3,"4":4,"9":9,"10":10},"legIntPurposes":{"2":2,"7":7},"flexiblePurposes":{"2":2,"7":7},"specialPurposes":{"1":1,"2":2},"features":{"3":3},"specialFeatures":{},"policyUrl":"http://www.inskinmedia.com/privacy-policy.html"}};
+  const GVL = {'150': {'id': 150, 'name': 'Inskin Media LTD', 'purposes': {'1': 1, '3': 3, '4': 4, '9': 9, '10': 10}, 'legIntPurposes': {'2': 2, '7': 7}, 'flexiblePurposes': {'2': 2, '7': 7}, 'specialPurposes': {'1': 1, '2': 2}, 'features': {'3': 3}, 'specialFeatures': {}, 'policyUrl': 'http://www.inskinmedia.com/privacy-policy.html'}};
   const V = 150;
 
   // vendor claims (inflexible) consent as their basis, publisher doesn't
@@ -287,9 +287,9 @@ function checkConsent(P, d) {
   // to the vendor
   try {
     if (
-      GVL[V].purposes[P] && !GVL[V].flexiblePurposes[P]
-      && d.purpose.consents[P]
-      && d.vendor.consents[V]
+      GVL[V].purposes[P] && !GVL[V].flexiblePurposes[P] &&
+      d.purpose.consents[P] &&
+      d.vendor.consents[V]
     ) {
       return true;
     }
@@ -301,9 +301,9 @@ function checkConsent(P, d) {
   // for the LI basis for this vendor
   try {
     if (
-      GVL[V].legIntPurposes[P] && !GVL[V].flexiblePurposes[P]
-      && d.purpose.legitimateInterests[P]
-      && d.vendor.legitimateInterests[V]
+      GVL[V].legIntPurposes[P] && !GVL[V].flexiblePurposes[P] &&
+      d.purpose.legitimateInterests[P] &&
+      d.vendor.legitimateInterests[V]
     ) {
       return true;
     }
@@ -315,10 +315,9 @@ function checkConsent(P, d) {
   // purpose + vendor) OR (user consents to purpose + vendor))
   try {
     if (
-      GVL[V].legIntPurposes[P] && GVL[V].flexiblePurposes[P]
-      && (
-        (d.purpose.legitimateInterests[P] && d.vendor.legitimateInterests[V])
-        ||
+      GVL[V].legIntPurposes[P] && GVL[V].flexiblePurposes[P] &&
+      (
+        (d.purpose.legitimateInterests[P] && d.vendor.legitimateInterests[V]) ||
         (d.purpose.consents[P] && d.vendor.consents[V])
       )
     ) {
@@ -331,9 +330,9 @@ function checkConsent(P, d) {
   // to purpose + vendor
   try {
     if (
-      GVL[V].legIntPurposes[P] && GVL[V].flexiblePurposes[P]
-      && d.purpose.consents[P]
-      && d.vendor.consents[V]
+      GVL[V].legIntPurposes[P] && GVL[V].flexiblePurposes[P] &&
+      d.purpose.consents[P] &&
+      d.vendor.consents[V]
     ) {
       return true;
     }
@@ -345,10 +344,9 @@ function checkConsent(P, d) {
   // vendor) OR (user consents to purpose + vendor))
   try {
     if (
-      GVL[V].purposes[P] && GVL[V].flexiblePurposes[P]
-      && (
-        (d.purpose.legitimateInterests[P] && d.vendor.legitimateInterests[V])
-        ||
+      GVL[V].purposes[P] && GVL[V].flexiblePurposes[P] &&
+      (
+        (d.purpose.legitimateInterests[P] && d.vendor.legitimateInterests[V]) ||
         (d.purpose.consents[P] && d.vendor.consents[V])
       )
     ) {
@@ -362,9 +360,9 @@ function checkConsent(P, d) {
   // vendor
   try {
     if (
-      GVL[V].purposes[P] && GVL[V].flexiblePurposes[P]
-      && d.purpose.legitimateInterests[P]
-      && d.vendor.legitimateInterests[V]
+      GVL[V].purposes[P] && GVL[V].flexiblePurposes[P] &&
+      d.purpose.legitimateInterests[P] &&
+      d.vendor.legitimateInterests[V]
     ) {
       return true;
     }
