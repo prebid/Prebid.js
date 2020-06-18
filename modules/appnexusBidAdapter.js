@@ -12,10 +12,28 @@ import { getStorageManager } from '../src/storageManager.js';
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
-  'startdelay', 'skippable', 'playback_method', 'frameworks'];
+  'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
+const VIDEO_MAPPING = {
+  playback_method: {
+    'unknown': 0,
+    'auto_play_sound_on': 1,
+    'auto_play_sound_off': 2,
+    'click_to_play': 3,
+    'mouse_over': 4,
+    'auto_play_sound_unknown': 5
+  },
+  context: {
+    'unknown': 0,
+    'pre_roll': 1,
+    'mid_roll': 2,
+    'post_roll': 3,
+    'outstream': 4,
+    'in-banner': 5
+  }
+};
 const NATIVE_MAPPING = {
   body: 'description',
   body2: 'desc2',
@@ -711,7 +729,19 @@ function bidToTag(bid) {
     // place any valid video params on the tag
     Object.keys(bid.params.video)
       .filter(param => includes(VIDEO_TARGETING, param))
-      .forEach(param => tag.video[param] = bid.params.video[param]);
+      .forEach(param => {
+        switch (param) {
+          // may change mimes in the future
+          case 'context':
+          case 'playback_method':
+            let type = bid.params.video[param];
+            type = (utils.isArray(type)) ? type[0] : type;
+            tag.video[param] = VIDEO_MAPPING[param][type];
+            break;
+          default:
+            tag.video[param] = bid.params.video[param];
+        }
+      });
   }
 
   if (bid.renderer) {
