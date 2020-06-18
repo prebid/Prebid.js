@@ -12,8 +12,8 @@
  * from Marfeel Solutions SL.
  */
 
-import { isBidSizeAllowed, getAllowedSizes, isBidAllowed } from './marfeelTools';
-import { auctionManager } from './auctionManager';
+import { isBidSizeAllowed, getAllowedSizes, isBidAllowed } from './marfeelTools.js';
+import { auctionManager } from './auctionManager.js';
 
 describe('marfeelTools', function () {
   describe('isBidSizeAllowed', function() {

@@ -3,18 +3,17 @@
    access to a publisher page from creative payloads.
  */
 
-import events from './events';
-import { fireNativeTrackers, getAssetMessage } from './native';
-import { EVENTS } from './constants';
-import { replaceAuctionPrice } from './utils';
-import { auctionManager } from './auctionManager';
-import find from 'core-js/library/fn/array/find';
+import events from './events.js';
+import { fireNativeTrackers, getAssetMessage } from './native.js';
+import { EVENTS } from './constants.json';
+import { replaceAuctionPrice } from './utils.js';
+import { auctionManager } from './auctionManager.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const BID_WON = EVENTS.BID_WON;
-const ERROR_SECURE_CREATIVE = EVENTS.ERROR_SECURE_CREATIVE;
 
 export function listenMessagesFromCreative() {
-  addEventListener('message', receiveMessage, false);
+  window.addEventListener('message', receiveMessage, false);
 }
 
 function receiveMessage(ev) {
@@ -27,23 +26,17 @@ function receiveMessage(ev) {
   }
 
   if (data && data.adId) {
-    const adObject = find(auctionManager.getBidsReceived(), function(bid) {
+    const adObject = find(auctionManager.getBidsReceived(), function (bid) {
       return bid.adId === data.adId;
     });
 
-    if (data.message === 'Prebid Request') {
-      if (typeof ev.source !== 'undefined') {
-        sendAdToCreative(adObject, data.adServerDomain, ev.source);
+    if (adObject && data.message === 'Prebid Request') {
+      _sendAdToCreative(adObject, ev, data.adServerDomain);
 
-        // save winning bids
-        auctionManager.addWinningBid(adObject);
+      // save winning bids
+      auctionManager.addWinningBid(adObject);
 
-        events.emit(BID_WON, adObject);
-      } else {
-        events.emit(ERROR_SECURE_CREATIVE, {
-          msg: 'Target Safeframe removed from the DOM before display'
-        });
-      }
+      events.emit(BID_WON, adObject);
     }
 
     // handle this script from native template in an ad server
@@ -67,11 +60,10 @@ function receiveMessage(ev) {
   }
 }
 
-function sendAdToCreative(adObject, remoteDomain, source) {
+export function _sendAdToCreative(adObject, ev, remoteDomain) {
   const { adId, ad, adUrl, width, height, cpm } = adObject;
-
   if (adId) {
-    source.postMessage(JSON.stringify({
+    ev.source.postMessage(JSON.stringify({
       message: 'Prebid Response',
       ad: replaceAuctionPrice(ad, cpm),
       adUrl: replaceAuctionPrice(adUrl, cpm),

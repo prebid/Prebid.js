@@ -1,7 +1,6 @@
-import {parse as parseURL, format as formatURL} from './url';
-import { config } from './config';
+import { config } from './config.js';
 
-var utils = require('./utils');
+var utils = require('./utils.js');
 
 const XHR_DONE = 4;
 
@@ -18,11 +17,6 @@ export const ajax = ajaxBuilder();
 
 export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
   return function(url, callback, data, options = {}) {
-    let isSecureWeb = true;
-    if (utils.getTopWindowLocation().protocol.indexOf('https') !== 0) {
-      isSecureWeb = false;
-    }
-    url = (url.includes('https:') || url.includes('http:')) ? url : (isSecureWeb) ? 'https:' + url : 'http:' + url;
     try {
       let x;
       let method = options.method || (data ? 'POST' : 'GET');
@@ -66,9 +60,9 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       }
 
       if (method === 'GET' && data) {
-        let urlInfo = parseURL(url, options);
+        let urlInfo = utils.parseUrl(url, options);
         Object.assign(urlInfo.search, data);
-        url = formatURL(urlInfo);
+        url = utils.buildUrl(urlInfo);
       }
 
       x.open(method, url, true);

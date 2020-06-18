@@ -1,8 +1,7 @@
 import {assert, expect} from 'chai';
-import * as url from 'src/url';
-import {spec} from 'modules/adformBidAdapter';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { config } from 'src/config';
+import {spec} from 'modules/adformBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 
 describe('Adform adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -38,7 +37,7 @@ describe('Adform adapter', function () {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       let query = parsedUrl.query;
 
-      assert.equal(parsedUrl.path, '//newDomain/adx');
+      assert.equal(parsedUrl.path, 'https://newDomain/adx');
       assert.equal(query.tid, 45);
       assert.equal(query.rp, 4);
       assert.equal(query.fd, 1);
@@ -258,6 +257,14 @@ describe('Adform adapter', function () {
       };
     });
 
+    it('should set a renderer only for an outstream context', function () {
+      serverResponse.body = [serverResponse.body[3], serverResponse.body[2]];
+      bidRequest.bids = [bidRequest.bids[6], bidRequest.bids[6]];
+      let result = spec.interpretResponse(serverResponse, bidRequest);
+      assert.ok(result[0].renderer);
+      assert.equal(result[1].renderer, undefined);
+    });
+
     describe('verifySizes', function () {
       it('should respond with empty response when sizes doesn\'t match', function () {
         serverResponse.body[0].response = 'banner';
@@ -307,8 +314,9 @@ describe('Adform adapter', function () {
   beforeEach(function () {
     config.setConfig({ currency: {} });
 
-    let sizes = [[250, 300], [300, 250], [300, 600]];
+    let sizes = [[250, 300], [300, 250], [300, 600], [600, 300]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
+    let mediaTypes = [{video: {context: 'outstream'}, banner: {sizes: sizes[3]}}];
     let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }, {mid: 5, pt: 'net'}, {mid: 6, pt: 'gross'}];
     bids = [
       {
@@ -388,6 +396,7 @@ describe('Adform adapter', function () {
         params: params[4],
         placementCode: placementCode[2],
         sizes: [],
+        mediaTypes: mediaTypes[0],
         transactionId: '5f33781f-9552-7ev3'
       }
     ];

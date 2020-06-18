@@ -27,7 +27,7 @@ Module that connects to AdMatic demand sources
                         pid: 193937152158, // publisher id without "adm-pub-" prefix 
                         wid: 104276324971, // website id
                         priceType: 'gross', // default is net
-                        url: window.originalLocation.href || window.top.location.href //page url from js
+                        url: window.location.href || window.top.location.href //page url from js
                     }
                }
            ]
@@ -45,7 +45,7 @@ Module that connects to AdMatic demand sources
                         pid: 193937152158, // publisher id without "adm-pub-" prefix 
                         wid: 104276324971, // website id
                         priceType: 'gross', // default is net
-                        url: window.originalLocation.href || window.top.location.href //page url from js
+                        url: window.location.href || window.top.location.href //page url from js
                     }
                }
            ]

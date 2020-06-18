@@ -1,7 +1,6 @@
-import { VIDEO } from '../src/mediaTypes';
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
+import { VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'aniview';
 const TTL = 600;
@@ -44,27 +43,30 @@ function isBidRequestValid(bid) {
 
   return true;
 }
-
+let irc = 0;
 function buildRequests(validBidRequests, bidderRequest) {
   let bidRequests = [];
 
   for (let i = 0; i < validBidRequests.length; i++) {
     let bidRequest = validBidRequests[i];
+    var sizes = [[640, 480]];
 
-    if (!bidRequest.sizes || !bidRequest.sizes.length) {
-      bidRequest.sizes = [[640, 480]];
+    if (bidRequest.mediaTypes && bidRequest.mediaTypes.video && bidRequest.mediaTypes.video.playerSize) {
+      sizes = bidRequest.mediaTypes.video.playerSize;
+    } else {
+      if (bidRequest.sizes) {
+        sizes = bidRequest.sizes;
+      }
+    }
+    if (sizes.length === 2 && typeof sizes[0] === 'number') {
+      sizes = [[sizes[0], sizes[1]]];
     }
 
-    if (bidRequest.sizes.length === 2 && typeof bidRequest.sizes[0] === 'number' && typeof bidRequest.sizes[1] === 'number') {
-      let adWidth = bidRequest.sizes[0];
-      let adHeight = bidRequest.sizes[1];
-      bidRequest.sizes = [[adWidth, adHeight]];
-    }
-
-    for (let j = 0; j < bidRequest.sizes.length; j++) {
-      let size = bidRequest.sizes[j];
+    for (let j = 0; j < sizes.length; j++) {
+      let size = sizes[j];
       let playerWidth;
       let playerHeight;
+
       if (size && size.length == 2) {
         playerWidth = size[0];
         playerHeight = size[1];
@@ -82,32 +84,45 @@ function buildRequests(validBidRequests, bidderRequest) {
       };
 
       if (s2sParams.AV_APPPKGNAME && !s2sParams.AV_URL) { s2sParams.AV_URL = s2sParams.AV_APPPKGNAME; }
-      if (!s2sParams.AV_IDFA && !s2sParams.AV_URL) { s2sParams.AV_URL = utils.getTopWindowUrl(); }
+      if (!s2sParams.AV_IDFA && !s2sParams.AV_URL) {
+        if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+          s2sParams.AV_URL = bidderRequest.refererInfo.referer;
+        } else {
+          s2sParams.AV_URL = window.location.href;
+        }
+      }
       if (s2sParams.AV_IDFA && !s2sParams.AV_AID) { s2sParams.AV_AID = s2sParams.AV_IDFA; }
       if (s2sParams.AV_AID && !s2sParams.AV_IDFA) { s2sParams.AV_IDFA = s2sParams.AV_AID; }
 
-      s2sParams.pbjs = 1;
       s2sParams.cb = Math.floor(Math.random() * 999999999);
       s2sParams.AV_WIDTH = playerWidth;
       s2sParams.AV_HEIGHT = playerHeight;
-      s2sParams.s2s = '1';
-      s2sParams.bidId = bidRequest.bidId;
       s2sParams.bidWidth = playerWidth;
       s2sParams.bidHeight = playerHeight;
+      s2sParams.bidId = bidRequest.bidId;
+      s2sParams.pbjs = 1;
+      s2sParams.tgt = 10;
+      s2sParams.s2s = '1';
+      s2sParams.irc = irc;
+      irc++;
+      s2sParams.wpm = 1;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.gdprApplies) {
           s2sParams.AV_GDPR = 1;
-          s2sParams.AV_CONSENT = bidderRequest.gdprConsent.consentString
+          s2sParams.AV_CONSENT = bidderRequest.gdprConsent.consentString;
         }
+      }
+      if (bidderRequest && bidderRequest.uspConsent) {
+        s2sParams.AV_CCPA = bidderRequest.uspConsent;
       }
 
       let serverDomain = bidRequest.params && bidRequest.params.serverDomain ? bidRequest.params.serverDomain : 'gov.aniview.com';
-      let serverUrl = 'https://' + serverDomain + '/api/adserver/vast3/';
+      let servingUrl = 'https://' + serverDomain + '/api/adserver/vast3/';
 
       bidRequests.push({
         method: 'GET',
-        url: serverUrl,
+        url: servingUrl,
         data: s2sParams,
         bidRequest
       });
@@ -180,12 +195,68 @@ function interpretResponse(serverResponse, bidRequest) {
   return bidResponses;
 }
 
+function getSyncData(xml, options) {
+  let ret = [];
+  if (xml) {
+    let ext = xml.getElementsByTagName('Extensions');
+    if (ext && ext.length > 0) {
+      ext = ext[0].getElementsByTagName('Extension');
+      if (ext && ext.length > 0) {
+        for (var i = 0; i < ext.length; i++) {
+          if (ext[i].getAttribute('type') == 'ANIVIEW') {
+            let syncs = ext[i].getElementsByTagName('AdServingSync');
+            if (syncs && syncs.length == 1) {
+              try {
+                let data = JSON.parse(syncs[0].textContent);
+                if (data && data.trackers && data.trackers.length) {
+                  data = data.trackers;
+                  for (var j = 0; j < data.length; j++) {
+                    if (typeof data[j] === 'object' && typeof data[j].url === 'string' && data[j].e === 'inventory') {
+                      if (data[j].t == 1 && options.pixelEnabled) {
+                        ret.push({url: data[j].url, type: 'image'});
+                      } else {
+                        if (data[j].t == 3 && options.iframeEnabled) {
+                          ret.push({url: data[j].url, type: 'iframe'});
+                        }
+                      }
+                    }
+                  }
+                }
+              } catch (e) {}
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+function getUserSyncs(syncOptions, serverResponses) {
+  if (serverResponses && serverResponses[0] && serverResponses[0].body) {
+    if (serverResponses.error) {
+      return [];
+    } else {
+      try {
+        let xmlStr = serverResponses[0].body;
+        let xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
+        if (xml && xml.getElementsByTagName('parsererror').length == 0) {
+          let syncData = getSyncData(xml, syncOptions);
+          return syncData;
+        }
+      } catch (e) {}
+    }
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO],
   isBidRequestValid,
   buildRequests,
-  interpretResponse
-}
+  interpretResponse,
+  getUserSyncs
+};
 
 registerBidder(spec);

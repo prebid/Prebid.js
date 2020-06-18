@@ -33,11 +33,10 @@
     "BID_WON": "bidWon",
     "BIDDER_DONE": "bidderDone",
     "SET_TARGETING": "setTargeting",
+    "BEFORE_REQUEST_BIDS": "beforeRequestBids",
     "REQUEST_BIDS": "requestBids",
     "ADD_AD_UNITS": "addAdUnits",
-    "AD_RENDER_FAILED" : "adRenderFailed",
-	"CMP_UPDATE": "consentUpdate",
-	"ERROR_SECURE_CREATIVE": "secureCreative"
+    "AD_RENDER_FAILED" : "adRenderFailed"
   },
   "AD_RENDER_FAILED_REASON" : {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocuemnt",
@@ -67,8 +66,7 @@
     "FORMAT": "hb_format",
     "UUID": "hb_uuid",
     "CACHE_ID": "hb_cache_id",
-	"CACHE_HOST": "hb_cache_host",
-	"CACHED": "hb_cached"
+    "CACHE_HOST": "hb_cache_host"
   },
   "NATIVE_KEYS": {
     "title": "hb_native_title",
@@ -97,6 +95,7 @@
   },
   "BID_STATUS" : {
     "BID_TARGETING_SET": "targetingSet",
-    "RENDERED": "rendered"
+    "RENDERED": "rendered",
+    "BID_REJECTED": "bidRejected"
   }
 }

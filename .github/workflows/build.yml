@@ -34,7 +34,7 @@ jobs:
       run: gulp build --modules=modules.json
 
     - name: ➗ Create prebid.ww.js from prebid.js
-      run: cp /build/dist/prebid.js /build/dist/prebid.ww.js 
+      run: cp ./build/dist/prebid.js ./build/dist/prebid.ww.js 
 
     - name: ♻️ Adapt to web worker
       run: sed -i 's/location/originalLocation/g' ./build/dist/prebid.ww.js

@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'rtbdemand';
 const BIDDER_SERVER = 'bidding.rtbdemand.com';
@@ -21,7 +21,7 @@ export const spec = {
         bid_floor: parseFloat(bidRequest.params.floor) > 0 ? bidRequest.params.floor : 0,
         charset: document.charSet || document.characterSet,
         site_domain: document.location.hostname,
-        site_page: window.originalLocation.href,
+        site_page: window.location.href,
         subid: 'hb',
         flashver: getFlashVersion(),
         tmax: bidderRequest.timeout,
@@ -41,7 +41,7 @@ export const spec = {
 
       return {
         method: 'GET',
-        url: '//' + server + '/hb',
+        url: 'https://' + server + '/hb',
         data: payload
       };
     });
@@ -72,7 +72,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//' + BIDDER_SERVER + '/delivery/matches.php?type=iframe',
+        url: 'https://' + BIDDER_SERVER + '/delivery/matches.php?type=iframe',
       }];
     }
   }

@@ -1,7 +1,7 @@
 /* eslint dot-notation:0, quote-props:0 */
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -28,6 +28,8 @@ export const spec = {
 
   code: 'pulsepoint',
 
+  gvlid: 81,
+
   aliases: ['pulseLite', 'pulsepointLite'],
 
   supportedMediaTypes: ['banner', 'native', 'video'],
@@ -47,6 +49,7 @@ export const spec = {
       badv: bidRequests[0].params.badv,
       user: user(bidRequests[0], bidderRequest),
       regs: regs(bidderRequest),
+      source: source(bidRequests[0].schain),
     };
     return {
       method: 'POST',
@@ -114,9 +117,9 @@ function bidResponseAvailable(request, response) {
         creative_id: idToBidMap[id].crid,
         creativeId: idToBidMap[id].crid,
         adId: id,
-        ttl: DEFAULT_BID_TTL,
+        ttl: idToBidMap[id].exp || DEFAULT_BID_TTL,
         netRevenue: DEFAULT_NET_REVENUE,
-        currency: DEFAULT_CURRENCY
+        currency: bidResponse.cur || DEFAULT_CURRENCY
       };
       if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
@@ -132,22 +135,13 @@ function bidResponseAvailable(request, response) {
         bid.height = idToBidMap[id].h;
       } else {
         bid.ad = idToBidMap[id].adm;
-        bid.width = idToImpMap[id].banner.w;
-        bid.height = idToImpMap[id].banner.h;
+        bid.width = idToBidMap[id].w || idToImpMap[id].banner.w;
+        bid.height = idToBidMap[id].h || idToImpMap[id].banner.h;
       }
-      applyExt(bid, idToBidMap[id])
       bids.push(bid);
     }
   });
   return bids;
-}
-
-function applyExt(bid, ortbBid) {
-  if (ortbBid && ortbBid.ext) {
-    bid.ttl = ortbBid.ext.ttl || bid.ttl;
-    bid.currency = ortbBid.ext.currency || bid.currency;
-    bid.netRevenue = ortbBid.ext.netRevenue != null ? ortbBid.ext.netRevenue : bid.netRevenue;
-  }
 }
 
 /**
@@ -169,12 +163,28 @@ function impression(slot) {
  * Produces an OpenRTB Banner object for the slot given.
  */
 function banner(slot) {
-  const size = adSize(slot);
+  const sizes = parseSizes(slot);
+  const size = adSize(slot, sizes);
   return (slot.nativeParams || slot.params.video) ? null : {
     w: size[0],
     h: size[1],
     battr: slot.params.battr,
+    format: sizes
   };
+}
+
+/**
+ * Produce openrtb format objects based on the sizes configured for the slot.
+ */
+function parseSizes(slot) {
+  const sizes = utils.deepAccess(slot, 'mediaTypes.banner.sizes');
+  if (sizes && utils.isArray(sizes)) {
+    return sizes.filter(sz => utils.isArray(sz) && sz.length === 2).map(sz => ({
+      w: sz[0],
+      h: sz[1]
+    }));
+  }
+  return null;
 }
 
 /**
@@ -380,12 +390,14 @@ function parse(rawResponse) {
 /**
  * Determines the AdSize for the slot.
  */
-function adSize(slot) {
+function adSize(slot, sizes) {
   if (slot.params.cf) {
     const size = slot.params.cf.toUpperCase().split('X');
     const width = parseInt(slot.params.cw || size[0], 10);
     const height = parseInt(slot.params.ch || size[1], 10);
     return [width, height];
+  } else if (sizes && sizes.length > 0) {
+    return [sizes[0].w, sizes[0].h];
   }
   return [1, 1];
 }
@@ -405,9 +417,31 @@ function user(bidRequest, bidderRequest) {
     if (bidRequest.userId) {
       ext.eids = [];
       addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcommon');
-      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'ttdid');
-      addExternalUserId(ext.eids, utils.deepAccess(bidRequest.userId.digitrustid, 'data.id'), 'digitrust');
-      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5id');
+      addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
+      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo');
+      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
+      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5-sync.com');
+      addExternalUserId(ext.eids, bidRequest.userId.parrableid, 'parrable.com');
+      // liveintent
+      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+        addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
+      }
+      // TTD
+      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'adserver.org', {
+        rtiPartner: 'TDID'
+      });
+      // digitrust
+      const digitrustResponse = bidRequest.userId.digitrustid;
+      if (digitrustResponse && digitrustResponse.data) {
+        var digitrust = {};
+        if (digitrustResponse.data.id) {
+          digitrust.id = digitrustResponse.data.id;
+        }
+        if (digitrustResponse.data.keyv) {
+          digitrust.keyv = digitrustResponse.data.keyv;
+        }
+        ext.digitrust = digitrust;
+      }
     }
   }
   return { ext };
@@ -416,13 +450,15 @@ function user(bidRequest, bidderRequest) {
 /**
  * Produces external userid object in ortb 3.0 model.
  */
-function addExternalUserId(eids, value, source) {
-  if (value) {
+function addExternalUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
     eids.push({
       source,
-      uids: [{
-        id: value
-      }]
+      uids: [ uid ]
     });
   }
 }
@@ -431,8 +467,29 @@ function addExternalUserId(eids, value, source) {
  * Produces the regulations ortb object
  */
 function regs(bidderRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    return { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+  if (bidderRequest.gdprConsent || bidderRequest.uspConsent) {
+    var ext = {};
+    // GDPR applies attribute (actual consent value is in user object)
+    if (bidderRequest.gdprConsent) {
+      ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+    }
+    // CCPA
+    if (bidderRequest.uspConsent) {
+      ext.us_privacy = bidderRequest.uspConsent;
+    }
+    return { ext };
+  }
+  return null;
+}
+
+/**
+ * Creates source object with supply chain
+ */
+function source(schain) {
+  if (schain) {
+    return {
+      ext: { schain }
+    };
   }
   return null;
 }

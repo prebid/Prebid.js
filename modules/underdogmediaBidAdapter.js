@@ -1,18 +1,26 @@
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'underdogmedia';
-const UDM_ADAPTER_VERSION = '1.13V';
+const UDM_ADAPTER_VERSION = '3.5V';
 const UDM_VENDOR_ID = '159';
+const prebidVersion = '$prebid.version$';
+let USER_SYNCED = false;
 
-utils.logMessage(`Initializing UDM Adapter. PBJS Version: ${$$PREBID_GLOBAL$$.version} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 20180604`);
+utils.logMessage(`Initializing UDM Adapter. PBJS Version: ${prebidVersion} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 20191028`);
+
+// helper function for testing user syncs
+export function resetUserSync() {
+  USER_SYNCED = false;
+}
 
 export const spec = {
   code: BIDDER_CODE,
   bidParams: [],
 
   isBidRequestValid: function (bid) {
-    return !!((bid.params && bid.params.siteId) && (bid.sizes && bid.sizes.length > 0));
+    const bidSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
+    return !!((bid.params && bid.params.siteId) && (bidSizes && bidSizes.length > 0));
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -20,7 +28,8 @@ export const spec = {
     var siteId = 0;
 
     validBidRequests.forEach(bidParam => {
-      sizes = utils.flatten(sizes, utils.parseSizesInput(bidParam.sizes));
+      let bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
+      sizes = utils.flatten(sizes, utils.parseSizesInput(bidParamSizes));
       siteId = bidParam.params.siteId;
     });
 
@@ -28,7 +37,8 @@ export const spec = {
       tid: 1,
       dt: 10,
       sid: siteId,
-      sizes: sizes.join(',')
+      sizes: sizes.join(','),
+      version: UDM_ADAPTER_VERSION
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -44,13 +54,34 @@ export const spec = {
       }
     }
 
+    if (bidderRequest.uspConsent) {
+      data.uspConsent = bidderRequest.uspConsent;
+    }
+
     if (!data.gdprApplies || data.consentGiven) {
       return {
         method: 'GET',
-        url: `${window.originalLocation.protocol}//udmserve.net/udm/img.fetch`,
+        url: 'https://udmserve.net/udm/img.fetch',
         data: data,
         bidParams: validBidRequests
       };
+    }
+  },
+
+  getUserSyncs: function (syncOptions, serverResponses) {
+    if (!USER_SYNCED && serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.userSyncs && serverResponses[0].body.userSyncs.length > 0) {
+      USER_SYNCED = true;
+      const userSyncs = serverResponses[0].body.userSyncs;
+      const syncs = userSyncs.filter(sync => {
+        const {type} = sync;
+        if (syncOptions.iframeEnabled && type === 'iframe') {
+          return true
+        }
+        if (syncOptions.pixelEnabled && type === 'image') {
+          return true
+        }
+      })
+      return syncs;
     }
   },
 
@@ -67,7 +98,8 @@ export const spec = {
         }
 
         var sizeNotFound = true;
-        utils.parseSizesInput(bidParam.sizes).forEach(size => {
+        const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes
+        utils.parseSizesInput(bidParamSizes).forEach(size => {
           if (size === mid.width + 'x' + mid.height) {
             sizeNotFound = false;
           }
@@ -87,7 +119,7 @@ export const spec = {
           creativeId: mid.mid,
           currency: 'USD',
           netRevenue: false,
-          ttl: config.getConfig('_bidderTimeout'),
+          ttl: mid.ttl || 60,
         };
 
         if (bidResponse.cpm <= 0) {
@@ -110,9 +142,14 @@ export const spec = {
 };
 
 function makeNotification(bid, mid, bidParam) {
-  var url = mid.notification_url;
+  let url = mid.notification_url;
 
-  url += UDM_ADAPTER_VERSION;
+  const versionIndex = url.indexOf(';version=')
+  if (versionIndex + 1) {
+    url = url.substring(0, versionIndex)
+  }
+
+  url += `;version=${UDM_ADAPTER_VERSION}`;
   url += ';cb=' + Math.random();
   url += ';qqq=' + (1 / bid.cpm);
   url += ';hbt=' + config.getConfig('_bidderTimeout');
@@ -129,7 +166,7 @@ function makeNotification(bid, mid, bidParam) {
 function getUrlVars() {
   var vars = {};
   var hash;
-  var hashes = window.originalLocation.href.slice(window.originalLocation.href.indexOf('?') + 1).split('&');
+  var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
   for (var i = 0; i < hashes.length; i++) {
     hash = hashes[i].split('=');
     if (hash[0].match(/^utm_/)) {

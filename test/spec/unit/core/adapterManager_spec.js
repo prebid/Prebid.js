@@ -1,18 +1,19 @@
 import { expect } from 'chai';
-import adapterManager, { gdprDataHandler } from 'src/adapterManager';
+import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import {
   getAdUnits,
   getServerTestingConfig,
-  getServerTestingsAds
-} from 'test/fixtures/fixtures';
+  getServerTestingsAds,
+  getBidRequests
+} from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { setSizeConfig } from 'src/sizeMapping';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import s2sTesting from 'modules/s2sTesting';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { setSizeConfig } from 'src/sizeMapping.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import s2sTesting from 'modules/s2sTesting.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -42,16 +43,23 @@ var rubiconAdapterMock = {
   callBids: sinon.stub()
 };
 
+var badAdapterMock = {
+  bidder: 'badBidder',
+  callBids: sinon.stub().throws(Error('some fake error'))
+};
+
 describe('adapterManager tests', function () {
   let orgAppnexusAdapter;
   let orgAdequantAdapter;
   let orgPrebidServerAdapter;
   let orgRubiconAdapter;
+  let orgBadBidderAdapter;
   before(function () {
     orgAppnexusAdapter = adapterManager.bidderRegistry['appnexus'];
     orgAdequantAdapter = adapterManager.bidderRegistry['adequant'];
     orgPrebidServerAdapter = adapterManager.bidderRegistry['prebidServer'];
     orgRubiconAdapter = adapterManager.bidderRegistry['rubicon'];
+    orgBadBidderAdapter = adapterManager.bidderRegistry['badBidder'];
   });
 
   after(function () {
@@ -59,6 +67,7 @@ describe('adapterManager tests', function () {
     adapterManager.bidderRegistry['adequant'] = orgAdequantAdapter;
     adapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
     adapterManager.bidderRegistry['rubicon'] = orgRubiconAdapter;
+    adapterManager.bidderRegistry['badBidder'] = orgBadBidderAdapter;
     config.setConfig({s2sConfig: { enabled: false }});
   });
 
@@ -71,11 +80,16 @@ describe('adapterManager tests', function () {
       sinon.stub(utils, 'logError');
       appnexusAdapterMock.callBids.reset();
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
+      adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
+      adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
     });
 
     afterEach(function () {
       utils.logError.restore();
       delete adapterManager.bidderRegistry['appnexus'];
+      delete adapterManager.bidderRegistry['rubicon'];
+      delete adapterManager.bidderRegistry['badBidder'];
+      config.resetConfig();
     });
 
     it('should log an error if a bidder is used that does not exist', function () {
@@ -94,6 +108,34 @@ describe('adapterManager tests', function () {
       sinon.assert.called(utils.logError);
     });
 
+    it('should catch a bidder adapter thrown error and continue with other bidders', function () {
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids: [
+          {bidder: 'appnexus', params: {placementId: 'id'}},
+          {bidder: 'badBidder', params: {placementId: 'id'}},
+          {bidder: 'rubicon', params: {account: 1111, site: 2222, zone: 3333}}
+        ]
+      }];
+      let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+
+      let doneBidders = [];
+      function mockDoneCB() {
+        doneBidders.push(this.bidderCode)
+      }
+      adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB);
+      sinon.assert.calledOnce(appnexusAdapterMock.callBids);
+      sinon.assert.calledOnce(badAdapterMock.callBids);
+      sinon.assert.calledOnce(rubiconAdapterMock.callBids);
+
+      expect(utils.logError.calledOnce).to.be.true;
+      expect(utils.logError.calledWith(
+        'badBidder Bid Adapter emitted an uncaught error when parsing their bidRequest'
+      )).to.be.true;
+      // done should be called for our bidder!
+      expect(doneBidders.indexOf('badBidder') === -1).to.be.false;
+    });
     it('should emit BID_REQUESTED event', function () {
       // function to count BID_REQUESTED events
       let cnt = 0;
@@ -134,6 +176,112 @@ describe('adapterManager tests', function () {
       expect(cnt).to.equal(1);
       sinon.assert.calledOnce(appnexusAdapterMock.callBids);
       events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
+    });
+
+    it('should give bidders access to bidder-specific config', function(done) {
+      let mockBidders = ['rubicon', 'appnexus', 'pubmatic'];
+      let bidderRequest = getBidRequests().filter(bidRequest => includes(mockBidders, bidRequest.bidderCode));
+      let adUnits = getAdUnits();
+
+      let bidders = {};
+      let results = {};
+      let cbCount = 0;
+
+      function mock(bidder) {
+        bidders[bidder] = adapterManager.bidderRegistry[bidder];
+        adapterManager.bidderRegistry[bidder] = {
+          callBids: function(bidRequest, addBidResponse, done, ajax, timeout, configCallback) {
+            let myResults = results[bidRequest.bidderCode] = [];
+            myResults.push(config.getConfig('buildRequests'));
+            myResults.push(config.getConfig('test1'));
+            myResults.push(config.getConfig('test2'));
+            // emulate ajax callback that would register bids
+            setTimeout(configCallback(() => {
+              myResults.push(config.getConfig('interpretResponse'));
+              myResults.push(config.getConfig('afterInterpretResponse'));
+              if (++cbCount === Object.keys(bidders).length) {
+                assertions();
+              }
+            }), 1);
+            done();
+          }
+        }
+      }
+
+      mockBidders.forEach(bidder => {
+        mock(bidder);
+      });
+
+      config.setConfig({
+        buildRequests: {
+          data: 1
+        },
+        test1: { speedy: true, fun: { test: true } },
+        interpretResponse: 'baseInterpret',
+        afterInterpretResponse: 'anotherBaseInterpret'
+      });
+      config.setBidderConfig({
+        bidders: [ 'appnexus' ],
+        config: {
+          buildRequests: {
+            test: 2
+          },
+          test1: { fun: { safe: true, cheap: false } },
+          interpretResponse: 'appnexusInterpret'
+        }
+      });
+      config.setBidderConfig({
+        bidders: [ 'rubicon' ],
+        config: {
+          buildRequests: 'rubiconBuild',
+          interpretResponse: null
+        }
+      });
+      config.setBidderConfig({
+        bidders: [ 'appnexus', 'rubicon' ],
+        config: {
+          test2: { amazing: true }
+        }
+      });
+
+      adapterManager.callBids(adUnits, bidderRequest, () => {}, () => {});
+
+      function assertions() {
+        expect(results).to.deep.equal({
+          'appnexus': [
+            {
+              data: 1,
+              test: 2
+            },
+            { fun: { safe: true, cheap: false, test: true }, speedy: true },
+            { amazing: true },
+            'appnexusInterpret',
+            'anotherBaseInterpret'
+          ],
+          'pubmatic': [
+            {
+              data: 1
+            },
+            { fun: { test: true }, speedy: true },
+            undefined,
+            'baseInterpret',
+            'anotherBaseInterpret'
+          ],
+          'rubicon': [
+            'rubiconBuild',
+            { fun: { test: true }, speedy: true },
+            { amazing: true },
+            null,
+            'anotherBaseInterpret'
+          ]
+        });
+
+        // restore bid adapters
+        Object.keys(bidders).forEach(bidder => {
+          adapterManager.bidderRegistry[bidder] = bidders[bidder];
+        });
+        done();
+      }
     });
   });
 

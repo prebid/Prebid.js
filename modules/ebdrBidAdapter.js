@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import { VIDEO, BANNER } from '../src/mediaTypes';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'ebdr';
 export const spec = {
   code: BIDDER_CODE,
@@ -10,8 +10,8 @@ export const spec = {
   },
   buildRequests: function(bids) {
     const rtbServerDomain = 'dsp.bnmla.com';
-    let domain = window.originalLocation.host;
-    let page = window.originalLocation.pathname + location.search + location.hash;
+    let domain = window.location.host;
+    let page = window.location.pathname + location.search + location.hash;
     let ebdrImps = [];
     const ebdrReq = {};
     let ebdrParams = {};
@@ -57,7 +57,7 @@ export const spec = {
     };
     return {
       method: 'GET',
-      url: '//' + rtbServerDomain + '/hb?' + '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq)),
+      url: 'https://' + rtbServerDomain + '/hb?' + '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq)),
       bids: ebdrReq
     };
   },

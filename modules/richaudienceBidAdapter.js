@@ -1,9 +1,10 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {config} from '../src/config';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'richaudience';
+let REFERER = '';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -39,22 +40,24 @@ export const spec = {
         bidder: bid.bidder,
         bidderRequestId: bid.bidderRequestId,
         tagId: bid.adUnitCode,
-        sizes: bid.sizes.map(size => ({
-          w: size[0],
-          h: size[1],
-        })),
+        sizes: raiGetSizes(bid),
         referer: (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null),
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
+        user: raiSetEids(bid),
+        demand: raiGetDemandType(bid) ? 'video' : 'display',
+        videoData: raiGetVideoInfo(bid)
       };
+
+      REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
+
+      payload.gdpr_consent = '';
+      payload.gdpr = null;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-        payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
-      } else {
-        payload.gdpr_consent = '';
-        payload.gdpr = null;
+        payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
       }
 
       var payloadString = JSON.stringify(payload);
@@ -76,34 +79,29 @@ export const spec = {
      */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-
+    // try catch
     var response = serverResponse.body;
+    if (response) {
+      var bidResponse = {
+        requestId: JSON.parse(bidRequest.data).bidId,
+        cpm: response.cpm,
+        width: response.width,
+        height: response.height,
+        creativeId: response.creative_id,
+        mediaType: response.media_type,
+        netRevenue: response.netRevenue,
+        currency: response.currency,
+        ttl: response.ttl,
+        dealId: response.dealId,
+      };
 
-    try {
-      if (response) {
-        var bidResponse = {
-          requestId: JSON.parse(bidRequest.data).bidId,
-          cpm: response.cpm,
-          width: response.width,
-          height: response.height,
-          creativeId: response.creative_id,
-          mediaType: response.media_type,
-          netRevenue: response.netRevenue,
-          currency: response.currency,
-          ttl: response.ttl,
-          dealId: response.dealId,
-        };
-
-        if (response.media_type === 'video') {
-          bidResponse.vastXml = response.vastXML;
-        } else {
-          bidResponse.ad = response.adm
-        }
-
-        bidResponses.push(bidResponse);
+      if (response.media_type === 'video') {
+        bidResponse.vastXml = response.vastXML;
+      } else {
+        bidResponse.ad = response.adm
       }
-    } catch (error) {
-      utils.logError('Error while parsing Rich Audience response', error);
+
+      bidResponses.push(bidResponse);
     }
     return bidResponses
   },
@@ -120,16 +118,30 @@ export const spec = {
 
     var rand = Math.floor(Math.random() * 9999999999);
     var syncUrl = '';
+    var consent = '';
 
-    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand + '&pubconsent=' + gdprConsent.consentString + '&euconsent=' + gdprConsent.consentString;
-    } else {
-      syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand;
+    if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString != 'undefined') {
+      consent = `pubconsent='${gdprConsent.consentString}'&euconsent='${gdprConsent.consentString}'`
     }
 
     if (syncOptions.iframeEnabled) {
+      syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand
+      if (consent != '') {
+        syncUrl += `&${consent}`
+      }
       syncs.push({
         type: 'iframe',
+        url: syncUrl
+      });
+    }
+
+    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0) {
+      syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
+      if (consent != '') {
+        syncUrl += `&${consent}`
+      }
+      syncs.push({
+        type: 'image',
         url: syncUrl
       });
     }
@@ -138,3 +150,59 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+function raiGetSizes(bid) {
+  let raiNewSizes;
+  if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) {
+    raiNewSizes = bid.mediaTypes.banner.sizes
+  }
+  if (raiNewSizes != null) {
+    return raiNewSizes.map(size => ({
+      w: size[0],
+      h: size[1]
+    }));
+  }
+}
+
+function raiGetDemandType(bid) {
+  if (bid.mediaTypes != undefined) {
+    if (bid.mediaTypes.video != undefined) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function raiGetVideoInfo(bid) {
+  let videoData = [];
+  if (raiGetDemandType(bid)) {
+    videoData.push({format: bid.mediaTypes.video.context});
+    videoData.push({playerSize: bid.mediaTypes.video.playerSize});
+    videoData.push({mimes: bid.mediaTypes.video.mimes});
+  }
+  return videoData;
+}
+
+function raiSetEids(bid) {
+  let eids = [];
+
+  if (bid && bid.userId) {
+    raiSetUserId(bid, eids, 'id5-sync.com', utils.deepAccess(bid, `userId.id5id`));
+    raiSetUserId(bid, eids, 'pubcommon', utils.deepAccess(bid, `userId.pubcid`));
+    raiSetUserId(bid, eids, 'criteo.com', utils.deepAccess(bid, `userId.criteoId`));
+    raiSetUserId(bid, eids, 'liveramp.com', utils.deepAccess(bid, `userId.idl_env`));
+    raiSetUserId(bid, eids, 'liveintent.com', utils.deepAccess(bid, `userId.lipb.lipbid`));
+    raiSetUserId(bid, eids, 'adserver.org', utils.deepAccess(bid, `userId.tdid`));
+  }
+
+  return eids;
+}
+
+function raiSetUserId(bid, eids, source, value) {
+  if (utils.isStr(value)) {
+    eids.push({
+      userId: value,
+      source: source
+    });
+  }
+}

@@ -1,8 +1,8 @@
-import { BANNER, NATIVE } from '../src/mediaTypes';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
-const {registerBidder} = require('../src/adapters/bidderFactory');
+const {registerBidder} = require('../src/adapters/bidderFactory.js');
 const BIDDER_CODE = 'my6sense';
-const END_POINT = '//hb.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.json';
+const END_POINT = 'https://hb.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.json';
 const END_POINT_METHOD = 'POST';
 
 // called first
@@ -12,7 +12,7 @@ function isBidRequestValid(bid) {
 
 function getUrl(url) {
   if (!url) {
-    url = window.originalLocation.href;// "clean" url of current web page
+    url = window.location.href;// "clean" url of current web page
   }
   var canonicalLink = null;
   // first look for meta data with property "og:url"
