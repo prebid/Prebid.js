@@ -4,7 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
-const SMAATO_ENDPOINT = 'https://prebid-test.smaatolabs.net/bidder';
+const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
 const CLIENT = 'prebid_js_$prebid.version$_0.1'
 
 /**
@@ -211,7 +211,7 @@ const createImgAd = (adm) => {
     clickEvent += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
   })
 
-  let markup = `<div onclick="${clickEvent}"><a href="${image.img.ctaurl}"><img src="${image.img.url}" width="${image.img.w}" height="${image.img.h}"/></a>`;
+  let markup = `<div style="cursor:pointer" onclick="${clickEvent};window.open(decodeURIComponent('${encodeURIComponent(image.img.ctaurl)}'));"><img src="${image.img.url}" width="${image.img.w}" height="${image.img.h}"/>`;
 
   image.impressiontrackers.forEach(src => {
     markup += `<img src="${src}" alt="" width="0" height="0"/>`;
