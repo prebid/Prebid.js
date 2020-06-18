@@ -11,6 +11,7 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'adformOpenRTB';
+const GVLID = 50;
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
 const NATIVE_PARAMS = {
   title: {
@@ -46,6 +47,7 @@ const NATIVE_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [ NATIVE ],
   isBidRequestValid: bid => !!bid.params.mid,
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -122,9 +124,13 @@ export const spec = {
       request.is_debug = !!test;
       request.test = 1;
     }
-    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
+    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
       request.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
       request.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies & 1 } };
+    }
+
+    if (bidderRequest.uspConsent) {
+      utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
     return {

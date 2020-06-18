@@ -2,15 +2,12 @@ import {expect} from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {userSync} from 'src/userSync.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import find from 'core-js/library/fn/array/find.js';
-
-var CONSTANTS = require('src/constants.json');
+import find from 'core-js-pure/features/array/find.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
+const PBS_INTEGRATION = 'pbjs';
 
 describe('the rubicon adapter', function () {
   let sandbox,
@@ -1464,6 +1461,7 @@ describe('the rubicon adapter', function () {
           expect(post.site.content.language).to.equal('en');
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
+          expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
           expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
@@ -1482,10 +1480,11 @@ describe('the rubicon adapter', function () {
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
-          expect(post.ext.prebid).to.have.property('cache').that.is.an('object')
-          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object')
-          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean')
-          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
+          expect(post.ext.prebid).to.have.property('cache').that.is.an('object');
+          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object');
+          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
+          expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
         });
 
         it('should correctly set bidfloor on imp when getfloor in scope', function () {
@@ -1842,6 +1841,18 @@ describe('the rubicon adapter', function () {
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
+        });
+
+        it('should use the integration type provided in the config instead of the default', () => {
+          createVideoBidderRequest();
+          sandbox.stub(config, 'getConfig').callsFake(function (key) {
+            const config = {
+              'rubicon.int_type': 'testType'
+            };
+            return config[key];
+          });
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
         });
       });
 

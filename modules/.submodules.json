@@ -9,7 +9,8 @@
     "liveIntentIdSystem",
     "criteoIdSystem",
     "netIdSystem",
-    "identityLinkIdSystem"
+    "identityLinkIdSystem",
+    "sharedIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",

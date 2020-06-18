@@ -20,7 +20,7 @@ function newWebpackConfig(codeCoverage) {
       enforce: 'post',
       exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
       use: {
-        loader: 'istanbul-instrumenter-loader',
+        loader: '@jsdevtools/coverage-istanbul-loader',
         options: { esModules: true }
       },
       test: /\.js$/
