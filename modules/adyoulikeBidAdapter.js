@@ -80,7 +80,7 @@ export const spec = {
 
     try {
       bidRequests = JSON.parse(request.data).Bids;
-    } catch (e) {
+    } catch (err) {
       // json error initial request can't be read
     }
 
