@@ -239,39 +239,6 @@ describe('sovrnBidAdapter', function() {
       expect(data.source.ext.schain.nodes.length).to.equal(1)
     });
 
-    it('should add digitrust data if present', function() {
-      const digitrustRequests = [{
-        'bidder': 'sovrn',
-        'params': {
-          'tagid': 403370
-        },
-        'adUnitCode': 'adunit-code',
-        'sizes': [
-          [300, 250],
-          [300, 600]
-        ],
-        'bidId': '30b31c1838de1e',
-        'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
-        'userId': {
-          'digitrustid': {
-            'data': {
-              'id': 'digitrust-id-123',
-              'keyv': 4
-            }
-          }
-        }
-      }].concat(bidRequests);
-      const bidderRequest = {
-        refererInfo: {
-          referer: 'http://example.com/page.html',
-        }
-      };
-      const data = JSON.parse(spec.buildRequests(digitrustRequests, bidderRequest).data);
-
-      expect(data.user.ext.digitrust.id).to.equal('digitrust-id-123');
-      expect(data.user.ext.digitrust.keyv).to.equal(4);
-    });
     it('should add the unifiedID if present', function() {
       const digitrustRequests = [{
         'bidder': 'sovrn',
