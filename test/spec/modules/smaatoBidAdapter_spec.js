@@ -97,7 +97,7 @@ const openRtbBidResponse = (adType) => {
 
 const request = {
   method: 'POST',
-  url: 'https://unifiedbidding.ad.smaato.net/oapi/unifiedbidding',
+  url: 'https://prebid.ad.smaato.net/oapi/prebid',
   data: ''
 };
 
