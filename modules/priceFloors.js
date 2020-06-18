@@ -400,8 +400,7 @@ function modelIsValid(model) {
 }
 
 /**
- * @summary Fields array should have at least one entry and all should match allowed fields
- * Each rule in the values array should have a 'key' and 'floor' param
+ * @summary Mapping of floor schema version to it's corresponding validation
  */
 const floorsSchemaValidation = {
   1: data => modelIsValid(data),
