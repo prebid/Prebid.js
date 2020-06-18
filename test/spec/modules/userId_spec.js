@@ -109,7 +109,6 @@ describe('User ID', function() {
       let innerAdUnits2;
 
       let pubcid = coreStorage.getCookie('pubcid');
-
       setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
@@ -122,7 +121,6 @@ describe('User ID', function() {
       innerAdUnits1.forEach(unit => {
         unit.bids.forEach(bid => {
           expect(bid).to.have.deep.nested.property('userId.pubcid');
-          expect(bid.userId.pubcid).to.equal(pubcid);
           expect(bid.userIdAsEids[0]).to.deep.equal({
             source: 'pubcid.org',
             uids: [{id: pubcid, atype: 1}]
@@ -156,7 +154,6 @@ describe('User ID', function() {
       innerAdUnits1.forEach((unit) => {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('userId.pubcid');
-          expect(bid.userId.pubcid).to.equal(pubcid1);
           expect(bid.userIdAsEids[0]).to.deep.equal({
             source: 'pubcid.org',
             uids: [{id: pubcid1, atype: 1}]
