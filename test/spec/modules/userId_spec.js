@@ -109,6 +109,7 @@ describe('User ID', function() {
       let innerAdUnits2;
 
       let pubcid = coreStorage.getCookie('pubcid');
+      expect(pubcid).to.be.null; // there should be no cookie initially
 
       setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
