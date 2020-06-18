@@ -1108,6 +1108,90 @@ describe('PubMatic adapter', function () {
         expect(data2.regs).to.equal(undefined);// USP/CCPAs
       });
 
+      describe('setting imp.floor using floorModule', function() {
+        /*
+          Use the minimum value among floor from floorModule per mediaType
+          If params.adfloor is set then take max(kadfloor, min(floors from floorModule))
+          set imp.bidfloor only if it is more than 0
+        */
+
+        let newRequest;
+        let floorModuleTestData;
+        let getFloor = function(req) {
+          return floorModuleTestData[req.mediaType];
+        };
+
+        beforeEach(() => {
+          floorModuleTestData = {
+            'banner': {
+              'currency': 'USD',
+              'floor': 1.50
+            },
+            'video': {
+              'currency': 'USD',
+              'floor': 2.50
+            },
+            'native': {
+              'currency': 'USD',
+              'floor': 3.50
+            }
+          };
+          newRequest = utils.deepClone(bannerVideoAndNativeBidRequests);
+          newRequest[0].getFloor = getFloor;
+        });
+
+        it('bidfloor should be undefined if calculation is <= 0', function() {
+          floorModuleTestData.banner.floor = 0; // lowest of them all
+          newRequest[0].params.kadfloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(undefined);
+        });
+
+        it('ignore floormodule o/p if floor is not number', function() {
+          floorModuleTestData.banner.floor = 'INR';
+          newRequest[0].params.kadfloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(2.5); // video will be lowest now
+        });
+
+        it('ignore floormodule o/p if currency is not matched', function() {
+          floorModuleTestData.banner.currency = 'INR';
+          newRequest[0].params.kadfloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(2.5); // video will be lowest now
+        });
+
+        it('kadfloor is not passed, use minimum from floorModule', function() {
+          newRequest[0].params.kadfloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(1.5);
+        });
+
+        it('kadfloor is passed as 3, use kadfloor as it is highest', function() {
+          newRequest[0].params.kadfloor = '3.0';// yes, we want it as a string
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(3);
+        });
+
+        it('kadfloor is passed as 1, use min of fllorModule as it is highest', function() {
+          newRequest[0].params.kadfloor = '1.0';// yes, we want it as a string
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(1.5);
+        });
+      });
+
       it('should NOT include coppa flag in bid request if coppa config is not present', () => {
         const request = spec.buildRequests(bidRequests, {});
         let data = JSON.parse(request.data);
