@@ -118,6 +118,7 @@ import CONSTANTS from '../../src/constants.json';
 import {module, hook} from '../../src/hook.js';
 import {createEidsArray} from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
+import { getRefererInfo } from '../../src/refererDetection.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -167,9 +168,10 @@ function setStoredValue(storage, value) {
     const valueStr = utils.isPlainObject(value) ? JSON.stringify(value) : value;
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     if (storage.type === COOKIE) {
-      coreStorage.setCookie(storage.name, valueStr, expiresStr, 'Lax');
+      const topUrl = utils.removeSubdomain(utils.parseUrl(getRefererInfo().referer).hostname);
+      coreStorage.setCookie(storage.name, valueStr, expiresStr, 'Lax', topUrl);
       if (typeof storage.refreshInSeconds === 'number') {
-        coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr);
+        coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr, '/', topUrl);
       }
     } else if (storage.type === LOCAL_STORAGE) {
       coreStorage.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
