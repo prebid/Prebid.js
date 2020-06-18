@@ -40,7 +40,7 @@ export const spec = {
         pageUrl: bidderRequest.refererInfo.referer,
         screen: [window.screen.width, window.screen.height].join('x'),
         debug: utils.debugTurnedOn(),
-        uid: getUid(),
+        uid: getUid(bidderRequest),
         optedOut: hasOptedOutOfPersonalization(),
         adapterVersion: '1.1.0',
         uspConsent: bidderRequest.uspConsent,
@@ -114,8 +114,8 @@ export const spec = {
    *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
    * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @param {gdprConsent}
-   * @param {uspConsent}
+   * @param {gdprConsent} object GDPR consent object.
+   * @param {uspConsent} string US Privacy String.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
@@ -168,8 +168,8 @@ const storage = getStorageManager();
 /**
  * Check or generate a UID for the current user.
  */
-function getUid() {
-  if (hasOptedOutOfPersonalization()) {
+function getUid(bidderRequest) {
+  if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
     return false;
   }
 
@@ -192,4 +192,17 @@ function hasOptedOutOfPersonalization() {
   const CONCERT_NO_PERSONALIZATION_KEY = 'c_nap';
 
   return storage.getDataFromLocalStorage(CONCERT_NO_PERSONALIZATION_KEY) === 'true';
+}
+
+/**
+ * Whether the privacy consent strings allow personalization.
+ *
+ * @param {BidderRequest} bidderRequest Object which contains any data consent signals
+ */
+function consentAllowsPpid(bidderRequest) {
+  /* NOTE: We cannot easily test GDPR consent, without the
+   * `consent-string` npm module; so will have to rely on that
+   * happening on the bid-server. */
+  return !(bidderRequest.uspConsent === 'string' &&
+           bidderRequest.uspConsent.toUpperCase().substring(0,2) === '1YY')
 }
