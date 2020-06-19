@@ -258,16 +258,23 @@ function setGeneralInfo(bidRequest) {
 
 function getSpaceCoords(id) {
   const space = document.getElementById(id);
-  if (space && space.getBoundingClientRect) {
-    const rect = space.getBoundingClientRect();
-    const coords = {};
-    coords.top = rect.top + window.pageYOffset;
-    coords.right = rect.right + window.pageXOffset;
-    coords.bottom = rect.bottom + window.pageYOffset;
-    coords.left = rect.left + window.pageXOffset;
+  try {
+    let window = space.ownerDocument.defaultView;
+    let frame = window.frameElement;
+    const coords = { top: 0, bottom: 0, left: 0, right: 0 };
+    do {
+      const { top, bottom, left, right } = frame.getBoundingClientRect();
+      coords.top += top + window.pageXOffset;
+      coords.bottom += bottom + window.pageXOffset;
+      coords.left += left + window.pageXOffset;
+      coords.right += right + window.pageXOffset;
+      window = window.parent;
+      frame = window.frameElement;
+    } while (window !== window.top);
     return coords;
+  } catch(e) {
+    return null;
   }
-  return null;
 }
 
 function getTiming() {
