@@ -5,7 +5,6 @@ import { OUTSTREAM, INSTREAM } from '../src/video.js';
 const { registerBidder } = require('../src/adapters/bidderFactory.js');
 import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
-import { deepAccess } from "../src/utils";
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -83,15 +82,8 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function interpretResponse(serverResponse, bidderRequest) {
-  let body = serverResponse.body;
+  const body = serverResponse.body;
   const bids = [];
-  if (typeof serverResponse === 'string') {
-    try {
-      body = JSON.parse(serverResponse);
-    } catch (e) {
-      return bids;
-    }
-  }
   const requestData = JSON.parse(bidderRequest.data);
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
@@ -109,7 +101,6 @@ function interpretResponse(serverResponse, bidderRequest) {
     if (bid.mediaType === VIDEO) {
       const videoBid = find(requestData.bids, (item) => item.bidId === bid.requestId);
       if (videoBid.context === OUTSTREAM) {
-        // const rendererOptions = deepAccess(videoBid, 'renderer.options');
         responseBid.renderer = createRenderer(bid);
       }
     }
@@ -343,11 +334,11 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
       url: USER_SYNC_ENDPOINT + params
     });
   }
-  if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-    const res = serverResponses[0];
-    if (res.pixelUrls && res.pixelUrls.length > 0) {
-      syncs = syncs.concat(res.pixelUrls.map(url => ({type: 'image', url: url + '?' + params.splice(0,1)})));
-    }
+  if (syncOptions.pixelEnabled) {
+    syncs.push({
+      type: 'image',
+      url: USER_SYNC_ENDPOINT + '?tag=img' + params
+    });
   }
   return syncs;
 }
