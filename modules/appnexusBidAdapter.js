@@ -11,7 +11,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
-const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
+const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
@@ -731,7 +731,6 @@ function bidToTag(bid) {
       .filter(param => includes(VIDEO_TARGETING, param))
       .forEach(param => {
         switch (param) {
-          // may change mimes in the future
           case 'context':
           case 'playback_method':
             let type = bid.params.video[param];
