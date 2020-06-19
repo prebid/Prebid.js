@@ -13,6 +13,7 @@
   "justpremiumBidAdapter",
   "lockerdomeBidAdapter",
   "mantisBidAdapter",
+  "mavenDistributionAnalyticsAdapter",
   "medianetBidAdapter",
   "openxBidAdapter",
   "pubmaticBidAdapter",
