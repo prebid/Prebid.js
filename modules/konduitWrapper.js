@@ -5,16 +5,20 @@ import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { getPriceBucketString } from '../src/cpmBucketManager.js';
 import { getPriceByGranularity } from '../src/auction.js';
+import { auctionManager } from '../src/auctionManager.js';
 
 const SERVER_PROTOCOL = 'https';
 const SERVER_HOST = 'p.konduit.me';
 
+const KONDUIT_PREBID_MODULE_VERSION = '1.0.0';
 const MODULE_NAME = 'Konduit';
 
 const KONDUIT_ID_CONFIG = 'konduit.konduitId';
+const SEND_ALL_BIDS_CONFIG = 'enableSendAllBids';
 
 export const errorMessages = {
   NO_KONDUIT_ID: 'A konduitId param is required to be in configs',
+  NO_BIDS: 'No bids received in the auction',
   NO_BID: 'A bid was not found',
   CACHE_FAILURE: 'A bid was not cached',
 };
@@ -78,14 +82,81 @@ function sendRequest ({ host = SERVER_HOST, protocol = SERVER_PROTOCOL, method =
   );
 }
 
+function composeBidsProcessorRequestPayload(bid) {
+  return {
+    auctionId: bid.auctionId,
+    vastUrl: bid.vastUrl,
+    bidderCode: bid.bidderCode,
+    creativeId: bid.creativeId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+  };
+}
+
+function setDefaultKCpmToBid(bid, winnerBid, priceGranularity) {
+  bid.kCpm = bid.cpm;
+
+  if (!bid.adserverTargeting) {
+    bid.adserverTargeting = {};
+  }
+
+  const kCpm = getPriceByGranularity(priceGranularity)(bid);
+
+  if (config.getConfig(SEND_ALL_BIDS_CONFIG)) {
+    bid.adserverTargeting[`k_cpm_${bid.bidderCode}`] = kCpm;
+  }
+
+  if ((winnerBid.bidderCode === bid.bidderCode) && (winnerBid.creativeId === bid.creativeId)) {
+    bid.adserverTargeting.k_cpm = kCpm;
+  }
+}
+
+function addKCpmToBid(kCpm, bid, winnerBid, priceGranularity) {
+  if (utils.isNumber(kCpm)) {
+    bid.kCpm = kCpm;
+    const priceStringsObj = getPriceBucketString(
+      kCpm,
+      config.getConfig('customPriceBucket'),
+      config.getConfig('currency.granularityMultiplier')
+    );
+
+    const calculatedKCpm = priceStringsObj.custom || priceStringsObj[priceGranularity] || priceStringsObj.med;
+
+    if (config.getConfig(SEND_ALL_BIDS_CONFIG)) {
+      bid.adserverTargeting[`k_cpm_${bid.bidderCode}`] = calculatedKCpm;
+    }
+
+    if ((winnerBid.bidderCode === bid.bidderCode) && (winnerBid.creativeId === bid.creativeId)) {
+      bid.adserverTargeting.k_cpm = calculatedKCpm;
+    }
+  }
+}
+
+function addKonduitCacheKeyToBid(cacheKey, bid, winnerBid) {
+  if (utils.isStr(cacheKey)) {
+    bid.konduitCacheKey = cacheKey;
+
+    if (config.getConfig(SEND_ALL_BIDS_CONFIG)) {
+      bid.adserverTargeting[`k_cache_key_${bid.bidderCode}`] = cacheKey;
+    }
+
+    if ((winnerBid.bidderCode === bid.bidderCode) && (winnerBid.creativeId === bid.creativeId)) {
+      bid.adserverTargeting.k_cache_key = cacheKey;
+      bid.adserverTargeting.konduit_cache_key = cacheKey;
+    }
+  }
+}
+
 /**
- * This function accepts an object with bid and tries to cache it while generating konduit_cache_key for it.
+ * This function accepts an object with bid and tries to cache it while generating k_cache_key for it.
  * In addition, it returns a list with updated bid objects where k_cpm key is added
  * @param {Object} options
- * @param {Object} [options.bid] - winner bid from publisher
- * @param {string} [options.adUnitCode] - to look for winner bid
- * @param {string} [options.timeout] - timeout for bidsProcessor request
- * @param {function} [options.callback] - callback will be called in the end of the request
+ * @param {Object} [options.bid] - a winner bid provided by a client
+ * @param {Object} [options.bids] - bids array provided by a client for "Send All Bids" scenario
+ * @param {string} [options.adUnitCode] - ad unit code that is used to get winning bids
+ * @param {string} [options.timeout] - timeout for Konduit bids processor HTTP request
+ * @param {function} [options.callback] - callback function to be executed on HTTP request end; the function is invoked with two parameters - error and bids
  */
 export function processBids(options = {}) {
   const konduitId = config.getConfig(KONDUIT_ID_CONFIG);
@@ -95,19 +166,28 @@ export function processBids(options = {}) {
     logError(errorMessages.NO_KONDUIT_ID);
 
     if (options.callback) {
-      options.callback(new Error(errorMessages.NO_KONDUIT_ID));
+      options.callback(new Error(errorMessages.NO_KONDUIT_ID), []);
     }
 
     return null;
   }
 
-  const bid = options.bid || targeting.getWinningBids(options.adUnitCode)[0];
+  const publisherBids = options.bids || auctionManager.getBidsReceived();
 
-  if (!bid) {
-    logError(errorMessages.NO_BID);
+  const winnerBid = options.bid || targeting.getWinningBids(options.adUnitCode, publisherBids)[0];
+  const bids = [];
+
+  if (config.getConfig(SEND_ALL_BIDS_CONFIG)) {
+    bids.push(...publisherBids);
+  } else if (winnerBid) {
+    bids.push(winnerBid);
+  }
+
+  if (!bids.length) {
+    logError(errorMessages.NO_BIDS);
 
     if (options.callback) {
-      options.callback(new Error(errorMessages.NO_BID));
+      options.callback(new Error(errorMessages.NO_BIDS), []);
     }
 
     return null;
@@ -115,23 +195,12 @@ export function processBids(options = {}) {
 
   const priceGranularity = config.getConfig('priceGranularity');
 
-  bid.kCpm = bid.cpm;
+  const bidsToProcess = [];
 
-  if (!bid.adserverTargeting) {
-    bid.adserverTargeting = {};
-  }
-
-  bid.adserverTargeting.k_cpm = getPriceByGranularity(priceGranularity)(bid);
-
-  const bidsToProcess = [{
-    auctionId: bid.auctionId,
-    vastUrl: bid.vastUrl,
-    bidderCode: bid.bidderCode,
-    creativeId: bid.creativeId,
-    adUnitCode: bid.adUnitCode,
-    cpm: bid.cpm,
-    currency: bid.currency,
-  }];
+  bids.forEach((bid) => {
+    setDefaultKCpmToBid(bid, winnerBid, priceGranularity);
+    bidsToProcess.push(composeBidsProcessorRequestPayload(bid));
+  });
 
   sendRequest({
     method: 'POST',
@@ -139,7 +208,10 @@ export function processBids(options = {}) {
     timeout: options.timeout || 1000,
     payload: {
       clientId: konduitId,
+      konduitPrebidModuleVersion: KONDUIT_PREBID_MODULE_VERSION,
+      enableSendAllBids: config.getConfig(SEND_ALL_BIDS_CONFIG),
       bids: bidsToProcess,
+      bidResponsesCount: auctionManager.getBidsReceived().length,
     },
     callbacks: {
       success: (data) => {
@@ -147,41 +219,32 @@ export function processBids(options = {}) {
         logInfo('Bids processed successfully ', data);
         try {
           const { kCpmData, cacheData } = JSON.parse(data);
-          const processedBidKey = `${bid.bidderCode}:${bid.creativeId}`;
 
-          if (!utils.isEmpty(cacheData)) {
-            bid.adserverTargeting.konduit_id = konduitId;
-          } else {
-            error = new Error(errorMessages.CACHE_FAILURE);
+          if (utils.isEmpty(cacheData)) {
+            throw new Error(errorMessages.CACHE_FAILURE);
           }
 
-          if (utils.isNumber(kCpmData[processedBidKey])) {
-            bid.kCpm = kCpmData[processedBidKey];
-            const priceStringsObj = getPriceBucketString(
-              bid.kCpm,
-              config.getConfig('customPriceBucket'),
-              config.getConfig('currency.granularityMultiplier')
-            );
-            bid.adserverTargeting.k_cpm = priceStringsObj.custom || priceStringsObj[priceGranularity] || priceStringsObj.med;
-          }
+          winnerBid.adserverTargeting.konduit_id = konduitId;
+          winnerBid.adserverTargeting.k_id = konduitId;
 
-          if (utils.isStr(cacheData[processedBidKey])) {
-            bid.konduitCacheKey = cacheData[processedBidKey];
-            bid.adserverTargeting.konduit_cache_key = cacheData[processedBidKey];
-          }
+          bids.forEach((bid) => {
+            const processedBidKey = `${bid.bidderCode}:${bid.creativeId}`;
+            addKCpmToBid(kCpmData[processedBidKey], bid, winnerBid, priceGranularity);
+            addKonduitCacheKeyToBid(cacheData[processedBidKey], bid, winnerBid);
+          })
         } catch (err) {
           error = err;
           logError('Error parsing JSON response for bidsProcessor data: ', err)
         }
 
         if (options.callback) {
-          options.callback(error, [bid]);
+          options.callback(error, bids);
         }
       },
       error: (error) => {
-        logError('Bid was not processed successfully ', error);
+        logError('Bids were not processed successfully ', error);
         if (options.callback) {
-          options.callback(utils.isStr(error) ? new Error(error) : error, [bid]);
+          options.callback(utils.isStr(error) ? new Error(error) : error, bids);
         }
       }
     }
