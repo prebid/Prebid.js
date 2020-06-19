@@ -835,7 +835,8 @@ describe('IndexexchangeAdapter', function () {
           meta: {
             networkId: 50,
             brandId: 303325,
-            brandName: 'OECTA'
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
           }
         }
       ];
@@ -862,7 +863,8 @@ describe('IndexexchangeAdapter', function () {
           meta: {
             networkId: 50,
             brandId: 303325,
-            brandName: 'OECTA'
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
           }
         }
       ];
