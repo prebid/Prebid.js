@@ -1042,6 +1042,7 @@ export const spec = {
               }
               if (bid.adomain && bid.adomain.length > 0) {
                 newBid.meta.clickUrl = bid.adomain[0];
+                newBid.meta.advertiserDomains = bid.adomain;
               }
 
               // adserverTargeting
