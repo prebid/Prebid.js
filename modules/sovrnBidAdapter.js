@@ -179,7 +179,6 @@ export const spec = {
             .forEach(url => tracks.push({ type: 'image', url }))
         }
       }
-
       return tracks
     } catch (e) {
       return []
