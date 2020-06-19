@@ -333,7 +333,7 @@ export const spec = {
 
           bid.meta = bid.meta || {};
           if (spotxBid && spotxBid.adomain && spotxBid.adomain.length > 0) {
-            bid.meta.advertiserDomains = spotxBid.adomain.split();
+            bid.meta.advertiserDomains = spotxBid.adomain;
           }
 
           const context1 = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
