@@ -1080,6 +1080,9 @@ describe('OpenxAdapter', function () {
               case 'lipb':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.lipb.lipbid;
                 break;
+              case 'parrableId':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.parrableId.eid;
+                break;
               default:
                 userIdValue = EXAMPLE_DATA_BY_ATTR[userIdProviderKey];
             }
