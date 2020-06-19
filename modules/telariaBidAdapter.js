@@ -286,7 +286,7 @@ function createBid(status, reqBid, response, width, height, bidderCode) {
   
   bid.meta = bid.meta || {};
   if (response && response.adomain && response.adomain.length > 0) {
-    bid.meta.advertiserDomains = str.split(response.adomain);
+    bid.meta.advertiserDomains = response.adomain.split();
   }
 
   return bid;
