@@ -330,10 +330,10 @@ export const spec = {
             width: spotxBid.w,
             height: spotxBid.h
           };
-          
+
           bid.meta = bid.meta || {};
-          if (response && response.adomain && response.adomain.length > 0) {
-            bid.meta.advertiserDomains = str.split(response.adomain);
+          if (spotxBid && spotxBid.adomain && spotxBid.adomain.length > 0) {
+            bid.meta.advertiserDomains = spotxBid.adomain.split();
           }
 
           const context1 = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
