@@ -131,7 +131,7 @@ function parseBid(rawBid, currency, bidRequest) {
   if (rawBid.adomain && rawBid.adomain.length > 0) {
     bid.meta.advertiserDomains = rawBid.adomain;
   }
-  
+
   return bid;
 }
 
