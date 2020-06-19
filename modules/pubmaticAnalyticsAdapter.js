@@ -4,6 +4,7 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
@@ -124,7 +125,19 @@ function parseBidResponse(bid) {
       if (typeof bid.getCpmInNewCurrency === 'function') {
         return window.parseFloat(Number(bid.getCpmInNewCurrency(CURRENCY_USD)).toFixed(BID_PRECISION));
       }
-      utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
+      utils.logWarn(LOG_PRE_FIX + 'Could not determine the Net cpm in USD for the bid thus using bid.cpm', bid);
+      return bid.cpm
+    },
+    'bidGrossCpmUSD', () => {
+      if (typeof bid.originalCurrency === 'string' && bid.originalCurrency.toUpperCase() === CURRENCY_USD) {
+        return window.parseFloat(Number(bid.originalCpm).toFixed(BID_PRECISION));
+      }
+      // use currency conversion function if present
+      if (typeof getGlobal().convertCurrency === 'function') {
+        return window.parseFloat(Number(getGlobal().convertCurrency(bid.originalCpm, bid.originalCurrency, CURRENCY_USD)).toFixed(BID_PRECISION));
+      }
+      utils.logWarn(LOG_PRE_FIX + 'Could not determine the Gross cpm in USD for the bid, thus using bid.originalCpm', bid);
+      return bid.originalCpm
     },
     'dealId',
     'currency',
@@ -152,20 +165,8 @@ function getDomainFromUrl(url) {
   return a.hostname;
 }
 
-function getHighestBidForAdUnit(adUnit) {
-  return Object.keys(adUnit.bids).reduce(function(currentHighestBid, bidId) {
-    // todo: later we will need to consider grossECPM and netECPM
-    let bid = adUnit.bids[bidId];
-    if (bid.bidResponse && bid.bidResponse.bidPriceUSD > currentHighestBid.bidPriceUSD) {
-      currentHighestBid.bidPriceUSD = bid.bidResponse.bidPriceUSD;
-      currentHighestBid.bidId = bidId;
-    }
-    return currentHighestBid;
-  }, {bidId: '', bidPriceUSD: 0});
-}
-
-function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
-  const highestsBid = getHighestBidForAdUnit(adUnit);
+function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
+  highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
     let bid = adUnit.bids[bidId];
     partnerBids.push({
@@ -175,16 +176,15 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
       'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
       'kgpsv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
       'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
-      'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM, precision
-      'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM, precision
+      'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
+      'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0,
       'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
       'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
       'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
       'l2': 0,
-      // 'ss': (bid.source === 'server' ? 1 : 0), // todo: is there any special handling required as per OW?
       'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
       't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
-      'wb': highestsBid.bidId === bid.bidId ? 1 : 0,
+      'wb': (highestBid && highestBid.requestId === bid.bidId ? 1 : 0),
       'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
       'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
       'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
@@ -194,7 +194,8 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
   }, [])
 }
 
-function executeBidsLoggerCall(auctionId) {
+function executeBidsLoggerCall(e, highestCpmBids) {
+  let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
   let outputObj = { s: [] };
@@ -230,7 +231,7 @@ function executeBidsLoggerCall(auctionId) {
     let slotObject = {
       'sn': adUnitId,
       'sz': adUnit.dimensions.map(e => e[0] + 'x' + e[1]),
-      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId)
+      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId))
     };
     slotsArray.push(slotObject);
     return slotsArray;
@@ -263,8 +264,8 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&pdvid=' + enc(profileVersionId);
   pixelURL += '&slot=' + enc(adUnitId);
   pixelURL += '&pn=' + enc(winningBid.bidder);
-  pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD); // todo: later we will need to consider grossECPM and netECPM
-  pixelURL += '&eg=' + enc(winningBid.bidResponse.bidPriceUSD); // todo: later we will need to consider grossECPM and netECPM
+  pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
+  pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(winningBid.params.kgpv || adUnitId);
   ajax(
     pixelURL,
@@ -345,8 +346,9 @@ function bidWonHandler(args) {
 
 function auctionEndHandler(args) {
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
+  let highestCpmBids = getGlobal().getHighestCpmBids() || [];
   setTimeout(() => {
-    executeBidsLoggerCall.call(this, args.auctionId);
+    executeBidsLoggerCall.call(this, args, highestCpmBids);
   }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
 }
 
