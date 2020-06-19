@@ -1041,8 +1041,8 @@ export const spec = {
                 newBid.meta.buyerId = bid.ext.advid;
               }
               if (bid.adomain && bid.adomain.length > 0) {
-                newBid.meta.clickUrl = bid.adomain[0];
                 newBid.meta.advertiserDomains = bid.adomain;
+                newBid.meta.clickUrl = bid.adomain[0];
               }
 
               // adserverTargeting
