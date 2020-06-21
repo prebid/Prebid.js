@@ -12,7 +12,7 @@ const CONFIG = {
   }
 };
 
-var bidderConfig = CONFIG["quantumdex"];
+var bidderConfig = CONFIG['quantumdex'];
 var bySlotTargetKey = {};
 var bySlotSizesCount = {}
 
