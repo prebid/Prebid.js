@@ -1,8 +1,10 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'valueimpression';
-const ENDPOINT = 'https://adapter.valueimpression.com/bid';
-const USER_SYNC_URL = 'https://adapter.valueimpression.com/usersync';
+const ENDPOINT = 'https://useast.quantumdex.io/auction/adapter';
+const USER_SYNC_URL = 'https://sync.quantumdex.io/usersync/adapter';
+var bySlotTargetKey = {};
+var bySlotSizesCount = {}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -33,19 +35,41 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    var bids = JSON.parse(JSON.stringify(validBidRequests))
     const payload = {};
+
+    bids.forEach(bidReq => {
+      var targetKey = 0;
+      if (bySlotTargetKey[bidReq.adUnitCode] != undefined) {
+        targetKey = bySlotTargetKey[bidReq.adUnitCode];
+      } else {
+        var biggestSize = _getBiggestSize(bidReq.sizes);
+        if (biggestSize) {
+          if (bySlotSizesCount[biggestSize] != undefined) {
+            bySlotSizesCount[biggestSize]++
+            targetKey = bySlotSizesCount[biggestSize];
+          } else {
+            bySlotSizesCount[biggestSize] = 0;
+            targetKey = 0
+          }
+        }
+      }
+      bySlotTargetKey[bidReq.adUnitCode] = targetKey;
+      bidReq.targetKey = targetKey;
+    });
+
     payload.device = {};
     payload.device.ua = navigator.userAgent;
-    payload.device.height = window.innerHeight;
-    payload.device.width = window.innerWidth;
+    payload.device.height = window.top.innerHeight;
+    payload.device.width = window.top.innerWidth;
     payload.device.dnt = _getDoNotTrack();
     payload.device.language = navigator.language;
 
     payload.site = {};
-    payload.site.id = validBidRequests[0].params.siteId;
-    payload.site.page = window.location.href;
-    payload.site.referrer = document.referrer;
-    payload.site.hostname = window.location.hostname;
+    payload.site.id = bids[0].params.siteId;
+    payload.site.page = _extractTopWindowUrlFromBidderRequest(bidderRequest);
+    payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
+    payload.site.hostname = window.top.location.hostname;
 
     // Apply GDPR parameters to request.
     payload.gdpr = {};
@@ -55,21 +79,23 @@ export const spec = {
         payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
       }
     }
-    if (validBidRequests[0].schain) {
-      payload.schain = JSON.stringify(validBidRequests[0].schain)
+    // Apply schain.
+    if (bids[0].schain) {
+      payload.schain = JSON.stringify(bids[0].schain)
     }
+    // Apply us_privacy.
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
     }
 
-    payload.bids = validBidRequests;
+    payload.bids = bids;
 
     return {
       method: 'POST',
       url: ENDPOINT,
       data: payload,
       withCredentials: true,
-      bidderRequests: validBidRequests
+      bidderRequests: bids
     };
   },
   interpretResponse: function (serverResponse, bidRequest) {
@@ -125,27 +151,68 @@ export const spec = {
       }
     } catch (e) { }
     return syncs;
-  },
-
-  onTimeout: function (timeoutData) {
-  },
-
-  onBidWon: function (bid) {
-  },
-
-  onSetTargeting: function (bid) {
   }
 };
 
+function _getBiggestSize(sizes) {
+  if (sizes.length <= 0) return false
+  var acreage = 0;
+  var index = 0;
+  for (var i = 0; i < sizes.length; i++) {
+    var currentAcreage = sizes[i][0] * sizes[i][1];
+    if (currentAcreage >= acreage) {
+      acreage = currentAcreage;
+      index = i;
+    }
+  }
+  return sizes[index][0] + 'x' + sizes[index][1];
+}
+
 function _getDoNotTrack() {
-  if (window.doNotTrack || navigator.doNotTrack || navigator.msDoNotTrack) {
-    if (window.doNotTrack == '1' || navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') {
+  if (window.top.doNotTrack || navigator.doNotTrack || navigator.msDoNotTrack) {
+    if (window.top.doNotTrack == '1' || navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') {
       return 1;
     } else {
       return 0;
     }
   } else {
     return 0;
+  }
+}
+
+/**
+ * Extracts the page url from given bid request or use the (top) window location as fallback
+ *
+ * @param {*} bidderRequest
+ * @returns {string}
+ */
+function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
+  if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl')) {
+    return bidderRequest.refererInfo.canonicalUrl;
+  }
+
+  try {
+    return window.top.location.href;
+  } catch (e) {
+    return window.location.href;
+  }
+}
+
+/**
+ * Extracts the referrer from given bid request or use the (top) document referrer as fallback
+ *
+ * @param {*} bidderRequest
+ * @returns {string}
+ */
+function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
+  if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
+    return bidderRequest.refererInfo.referer;
+  }
+
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return window.document.referrer;
   }
 }
 
