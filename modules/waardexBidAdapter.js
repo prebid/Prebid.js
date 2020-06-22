@@ -3,9 +3,10 @@ import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
 const domain = 'hb.justbidit.xyz';
-const httpPort = 8800;
 const httpsPort = 8843;
 const path = '/prebid';
+
+const ENDPOINT = `https://${domain}:${httpsPort}${path}`;
 
 const BIDDER_CODE = 'waardex';
 
@@ -184,10 +185,8 @@ export const spec = {
     if (validBidRequests[0] && validBidRequests[0].params && +validBidRequests[0].params.pubId) {
       pubId = +validBidRequests[0].params.pubId;
     }
-    const port = location.protocol === 'https:' ? httpsPort : httpPort;
-    const protocol = location.protocol === 'https:' ? 'https' : 'http';
 
-    const url = `${protocol}://${domain}:${port}${path}?pubId=${pubId}`;
+    const url = `${ENDPOINT}?pubId=${pubId}`;
 
     return {
       method: 'POST',
