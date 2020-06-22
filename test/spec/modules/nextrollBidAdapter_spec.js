@@ -126,8 +126,8 @@ describe('nextrollBidAdapter', function() {
     });
 
     it('sets the CCPA consent string', function () {
-      const us_privacy = "1YYY";
-      const request = spec.buildRequests([validBid], {"uspConsent": us_privacy})[0];
+      const us_privacy = '1YYY';
+      const request = spec.buildRequests([validBid], {'uspConsent': us_privacy})[0];
 
       expect(request.data.regs.ext.us_privacy).to.be.equal(us_privacy);
     });
