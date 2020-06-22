@@ -21,6 +21,9 @@ let liveConnect = null;
  * This function is used in tests
  */
 export function reset() {
+  if (window && window.liQ) {
+    window.liQ = [];
+  }
   eventFired = false;
   liveConnect = null;
 }
@@ -51,7 +54,7 @@ function initializeLiveConnect(configParams) {
 
   const publisherId = configParams && configParams.publisherId;
   if (!publisherId && typeof publisherId !== 'string') {
-    utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
+    utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}' - ${JSON.stringify(configParams)}`);
     return;
   }
 
@@ -76,9 +79,6 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
-  if (configParams.providedIdentifierName) {
-    liveConnectConfig.providedIdentifierName = configParams.providedIdentifierName;
-  }
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
