@@ -54,7 +54,7 @@ function initializeLiveConnect(configParams) {
 
   const publisherId = configParams && configParams.publisherId;
   if (!publisherId && typeof publisherId !== 'string') {
-    utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}' - ${JSON.stringify(configParams)}`);
+    utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
     return;
   }
 
