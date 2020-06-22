@@ -1,10 +1,10 @@
 'use strict';
 
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { OUTSTREAM, INSTREAM } from '../src/video.js';
-const { registerBidder } = require('../src/adapters/bidderFactory.js');
+import { OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
+const { registerBidder } = require('../src/adapters/bidderFactory.js');
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -69,7 +69,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
 
   if (window.localStorage) {
-    payload.onetagSid = window.localStorage.getItem("onetag_sid");
+    payload.onetagSid = window.localStorage.getItem('onetag_sid');
   }
 
   const payloadString = JSON.stringify(payload);
@@ -120,7 +120,7 @@ function createRenderer(bid, rendererOptions = {}) {
   try {
     renderer.setRender(ourRenderer);
   } catch (e) {
-    console.log(e);
+
   }
   return renderer;
 }
@@ -137,60 +137,63 @@ function ourRenderer(bidResponse) {
   });
 }
 
+/***
+ * Returns information about current frame nesting
+ */
+function getFrameNesting() {
+  let frame = window;
+  try {
+    while (frame !== frame.top) {
+      // eslint-disable-next-line no-unused-expressions
+      frame.location.href;
+      frame = frame.parent;
+    }
+  } catch (e) {}
+  return {
+    topmostFrame: frame,
+    currentFrameNesting: frame.top === frame ? 1 : 2
+  }
+}
+
+function getDocumentVisibility(window) {
+  try {
+    if (typeof window.document.hidden !== 'undefined') {
+      return window.document.hidden;
+    } else if (typeof window.document['msHidden'] !== 'undefined') {
+      return window.document['msHidden'];
+    } else if (typeof window.document['webkitHidden'] !== 'undefined') {
+      return window.document['webkitHidden'];
+    } else {
+      return null;
+    }
+  } catch (e) {
+    return null;
+  }
+}
+
 /**
  * Returns information about the page needed by the server in an object to be converted in JSON
  * @returns {{location: *, referrer: (*|string), masked: *, wWidth: (*|Number), wHeight: (*|Number), sWidth, sHeight, date: string, timeOffset: number}}
  */
 function getPageInfo() {
-  let w, d, l, r, m, p, e, t, s;
-  for (w = window, d = w.document, l = d.location.href, r = d.referrer, m = 0, e = encodeURIComponent, t = new Date(), s = screen; w !== w.parent;) {
-    try {
-      p = w.parent; l = p.location.href; r = p.document.referrer; w = p;
-    } catch (e) {
-      m = top !== w.parent ? 2 : 1;
-      break
-    }
-  }
-  let isDocHidden;
-  let xOffset;
-  let yOffset;
-  try {
-    if (typeof w.document.hidden !== 'undefined') {
-      isDocHidden = w.document.hidden;
-    } else if (typeof w.document['msHidden'] !== 'undefined') {
-      isDocHidden = w.document['msHidden'];
-    } else if (typeof w.document['webkitHidden'] !== 'undefined') {
-      isDocHidden = w.document['webkitHidden'];
-    } else {
-      isDocHidden = null;
-    }
-  } catch (e) {
-    isDocHidden = null;
-  }
-  try {
-    xOffset = w.pageXOffset;
-    yOffset = w.pageYOffset;
-  } catch (e) {
-    xOffset = null;
-    yOffset = null;
-  }
+  const { topmostFrame, currentFrameNesting } = getFrameNesting();
   return {
-    location: e(l),
-    referrer: e(r) || '0',
-    masked: m,
-    wWidth: w.innerWidth,
-    wHeight: w.innerHeight,
-    oWidth: w.outerWidth,
-    oHeight: w.outerHeight,
-    sWidth: s.width,
-    sHeight: s.height,
-    aWidth: s.availWidth,
-    aHeight: s.availHeight,
-    sLeft: 'screenLeft' in w ? w.screenLeft : w.screenX,
-    sTop: 'screenTop' in w ? w.screenTop : w.screenY,
-    xOffset: xOffset,
-    yOffset: yOffset,
-    docHidden: isDocHidden,
+    location: encodeURIComponent(topmostFrame.location.href),
+    referrer: encodeURIComponent(topmostFrame.document.referrer) || '0',
+    masked: currentFrameNesting,
+    wWidth: topmostFrame.innerWidth,
+    wHeight: topmostFrame.innerHeight,
+    oWidth: topmostFrame.outerWidth,
+    oHeight: topmostFrame.outerHeight,
+    sWidth: topmostFrame.screen.width,
+    sHeight: topmostFrame.screen.height,
+    aWidth: topmostFrame.screen.availWidth,
+    aHeight: topmostFrame.screen.availHeight,
+    sLeft: 'screenLeft' in topmostFrame ? topmostFrame.screenLeft : topmostFrame.screenX,
+    sTop: 'screenTop' in topmostFrame ? topmostFrame.screenTop : topmostFrame.screenY,
+    xOffset: topmostFrame.pageXOffset,
+    yOffset: topmostFrame.pageYOffset,
+    docHidden: getDocumentVisibility(topmostFrame),
     hLength: history.length,
     timing: getTiming()
   };
@@ -250,10 +253,11 @@ function setGeneralInfo(bidRequest) {
 function getSpaceCoords(id) {
   const space = document.getElementById(id);
   try {
+    const { top, bottom, left, right } = space.getBoundingClientRect();
+    const coords = { top, bottom, left, right };
     let window = space.ownerDocument.defaultView;
     let frame = window.frameElement;
-    const coords = { top: 0, bottom: 0, left: 0, right: 0 };
-    do {
+    while (frame != null) {
       const { top, bottom, left, right } = frame.getBoundingClientRect();
       coords.top += top + window.pageXOffset;
       coords.bottom += bottom + window.pageXOffset;
@@ -261,9 +265,9 @@ function getSpaceCoords(id) {
       coords.right += right + window.pageXOffset;
       window = window.parent;
       frame = window.frameElement;
-    } while (window !== window.top);
+    }
     return coords;
-  } catch(e) {
+  } catch (e) {
     return null;
   }
 }
@@ -278,7 +282,7 @@ function getTiming() {
       timing.renderTime = perf.domComplete - perf.domLoading;
       return timing;
     }
-  } catch(e) {
+  } catch (e) {
     return null;
   }
   return null;
