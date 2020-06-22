@@ -253,16 +253,14 @@ function setGeneralInfo(bidRequest) {
 function getSpaceCoords(id) {
   const space = document.getElementById(id);
   try {
-    const { top, bottom, left, right } = space.getBoundingClientRect();
-    const coords = { top, bottom, left, right };
+    const { top, left, width, height } = space.getBoundingClientRect();
+    const coords = { top, left, width, height };
     let window = space.ownerDocument.defaultView;
     let frame = window.frameElement;
     while (frame != null) {
-      const { top, bottom, left, right } = frame.getBoundingClientRect();
+      const { top, left } = frame.getBoundingClientRect();
       coords.top += top + window.pageXOffset;
-      coords.bottom += bottom + window.pageXOffset;
       coords.left += left + window.pageXOffset;
-      coords.right += right + window.pageXOffset;
       window = window.parent;
       frame = window.frameElement;
     }
