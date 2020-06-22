@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 const constants = require('src/constants.json');
 
 describe('PubMatic adapter', function () {
@@ -1107,318 +1108,132 @@ describe('PubMatic adapter', function () {
         expect(data2.regs).to.equal(undefined);// USP/CCPAs
       });
 
-      it('Request should have digitrust params', function() {
-        window.DigiTrust = {
-          getUser: function () {
-          }
+      describe('setting imp.floor using floorModule', function() {
+        /*
+          Use the minimum value among floor from floorModule per mediaType
+          If params.adfloor is set then take max(kadfloor, min(floors from floorModule))
+          set imp.bidfloor only if it is more than 0
+        */
+
+        let newRequest;
+        let floorModuleTestData;
+        let getFloor = function(req) {
+          return floorModuleTestData[req.mediaType];
         };
-        var bidRequest = {};
-        let sandbox = sinon.sandbox.create();
-        sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-          ({
-            success: true,
-            identity: {
-              privacy: {optout: false},
-              id: 'testId',
-              keyv: 4
-            }
-          })
-        );
 
-        let request = spec.buildRequests(bidRequests, bidRequest);
-        let data = JSON.parse(request.data);
-        expect(data.user.eids).to.deep.equal([{
-          'source': 'digitru.st',
-          'uids': [{
-            'id': 'testId',
-            'atype': 1,
-            'ext': {
-              'keyv': 4
-            }
-          }]
-        }]);
-        sandbox.restore();
-        delete window.DigiTrust;
-      });
-
-      it('Request should not have digitrust params when DigiTrust not loaded', function() {
-        let request = spec.buildRequests(bidRequests, {});
-        let data = JSON.parse(request.data);
-        expect(data.user.eids).to.deep.equal(undefined);
-      });
-
-      it('Request should not have digitrust params due to optout', function() {
-        window.DigiTrust = {
-          getUser: function () {
-          }
-        };
-        let sandbox = sinon.sandbox.create();
-        sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-          ({
-            success: true,
-            identity: {
-              privacy: {optout: true},
-              id: 'testId',
-              keyv: 4
-            }
-          })
-        );
-
-        let request = spec.buildRequests(bidRequests, {});
-        let data = JSON.parse(request.data);
-        expect(data.user.eids).to.deep.equal(undefined);
-        sandbox.restore();
-        delete window.DigiTrust;
-      });
-
-      it('Request should not have digitrust params due to failure', function() {
-        window.DigiTrust = {
-          getUser: function () {
-          }
-        };
-        let sandbox = sinon.sandbox.create();
-        sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-          ({
-            success: false,
-            identity: {
-              privacy: {optout: false},
-              id: 'testId',
-              keyv: 4
-            }
-          })
-        );
-
-        let request = spec.buildRequests(bidRequests, {});
-        let data = JSON.parse(request.data);
-        expect(data.user.eids).to.deep.equal(undefined);
-        sandbox.restore();
-        delete window.DigiTrust;
-      });
-
-      describe('DigiTrustId from config', function() {
-        var origGetConfig;
-        let sandbox;
         beforeEach(() => {
-          sandbox = sinon.sandbox.create();
-          window.DigiTrust = {
-            getUser: sandbox.spy()
+          floorModuleTestData = {
+            'banner': {
+              'currency': 'USD',
+              'floor': 1.50
+            },
+            'video': {
+              'currency': 'USD',
+              'floor': 2.50
+            },
+            'native': {
+              'currency': 'USD',
+              'floor': 3.50
+            }
           };
+          newRequest = utils.deepClone(bannerVideoAndNativeBidRequests);
+          newRequest[0].getFloor = getFloor;
         });
 
-        afterEach(() => {
-          sandbox.restore();
-          delete window.DigiTrust;
-        });
-
-        it('Request should have digiTrustId config params', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              digiTrustId: {
-                success: true,
-                identity: {
-                  privacy: {optout: false},
-                  id: 'testId',
-                  keyv: 4
-                }
-              }
-            };
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
+        it('bidfloor should be undefined if calculation is <= 0', function() {
+          floorModuleTestData.banner.floor = 0; // lowest of them all
+          newRequest[0].params.kadfloor = undefined;
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal([{
-            'source': 'digitru.st',
-            'uids': [{
-              'id': 'testId',
-              'atype': 1,
-              'ext': {
-                'keyv': 4
-              }
-            }]
-          }]);
-          // should not have called DigiTrust.getUser()
-          expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(undefined);
         });
 
-        it('Request should not have digiTrustId config params due to optout', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              digiTrustId: {
-                success: true,
-                identity: {
-                  privacy: {optout: true},
-                  id: 'testId',
-                  keyv: 4
-                }
-              }
-            }
-            return config[key];
-          });
-          let request = spec.buildRequests(bidRequests, {});
+        it('ignore floormodule o/p if floor is not number', function() {
+          floorModuleTestData.banner.floor = 'INR';
+          newRequest[0].params.kadfloor = undefined;
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal(undefined);
-          // should not have called DigiTrust.getUser()
-          expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(2.5); // video will be lowest now
         });
 
-        it('Request should not have digiTrustId config params due to failure', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              digiTrustId: {
-                success: false,
-                identity: {
-                  privacy: {optout: false},
-                  id: 'testId',
-                  keyv: 4
-                }
-              }
-            }
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
+        it('ignore floormodule o/p if currency is not matched', function() {
+          floorModuleTestData.banner.currency = 'INR';
+          newRequest[0].params.kadfloor = undefined;
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal(undefined);
-          // should not have called DigiTrust.getUser()
-          expect(window.DigiTrust.getUser.notCalled).to.equal(true);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(2.5); // video will be lowest now
         });
 
-        it('Request should not have digiTrustId config params if they do not exist', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {};
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
+        it('kadfloor is not passed, use minimum from floorModule', function() {
+          newRequest[0].params.kadfloor = undefined;
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal(undefined);
-          // should have called DigiTrust.getUser() once
-          expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(1.5);
         });
 
-        it('should NOT include coppa flag in bid request if coppa config is not present', () => {
-          const request = spec.buildRequests(bidRequests, {});
+        it('kadfloor is passed as 3, use kadfloor as it is highest', function() {
+          newRequest[0].params.kadfloor = '3.0';// yes, we want it as a string
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
-          if (data.regs) {
-            // in case GDPR is set then data.regs will exist
-            expect(data.regs.coppa).to.equal(undefined);
-          } else {
-            expect(data.regs).to.equal(undefined);
-          }
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(3);
         });
 
-        it('should include coppa flag in bid request if coppa is set to true', () => {
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'coppa': true
-            };
-            return config[key];
-          });
-          const request = spec.buildRequests(bidRequests, {});
+        it('kadfloor is passed as 1, use min of fllorModule as it is highest', function() {
+          newRequest[0].params.kadfloor = '1.0';// yes, we want it as a string
+          let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
-          expect(data.regs.coppa).to.equal(1);
-        });
-
-        it('should NOT include coppa flag in bid request if coppa is set to false', () => {
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'coppa': false
-            };
-            return config[key];
-          });
-          const request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          if (data.regs) {
-            // in case GDPR is set then data.regs will exist
-            expect(data.regs.coppa).to.equal(undefined);
-          } else {
-            expect(data.regs).to.equal(undefined);
-          }
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(1.5);
         });
       });
 
-      describe('AdsrvrOrgId from config', function() {
-        let sandbox;
-        beforeEach(() => {
-          sandbox = sinon.sandbox.create();
+      it('should NOT include coppa flag in bid request if coppa config is not present', () => {
+        const request = spec.buildRequests(bidRequests, {});
+        let data = JSON.parse(request.data);
+        if (data.regs) {
+          // in case GDPR is set then data.regs will exist
+          expect(data.regs.coppa).to.equal(undefined);
+        } else {
+          expect(data.regs).to.equal(undefined);
+        }
+      });
+
+      it('should include coppa flag in bid request if coppa is set to true', () => {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake(key => {
+          const config = {
+            'coppa': true
+          };
+          return config[key];
         });
+        const request = spec.buildRequests(bidRequests, {});
+        let data = JSON.parse(request.data);
+        expect(data.regs.coppa).to.equal(1);
+        sandbox.restore();
+      });
 
-        afterEach(() => {
-          sandbox.restore();
+      it('should NOT include coppa flag in bid request if coppa is set to false', () => {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake(key => {
+          const config = {
+            'coppa': false
+          };
+          return config[key];
         });
-
-        it('Request should have adsrvrOrgId config params', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              adsrvrOrgId: {
-                'TDID': '5e740345-c25e-436d-b466-5f2f9fa95c17',
-                'TDID_LOOKUP': 'TRUE',
-                'TDID_CREATED_AT': '2018-10-01T07:05:40'
-              }
-            };
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal([{
-            'source': 'adserver.org',
-            'uids': [{
-              'id': '5e740345-c25e-436d-b466-5f2f9fa95c17',
-              'atype': 1,
-              'ext': {
-                'rtiPartner': 'TDID'
-              }
-            }]
-          }]);
-        });
-
-        it('Request should NOT have adsrvrOrgId config params if id in adsrvrOrgId is NOT string', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              adsrvrOrgId: {
-                'TDID': 1,
-                'TDID_LOOKUP': 'TRUE',
-                'TDID_CREATED_AT': '2018-10-01T07:05:40'
-              }
-            };
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal(undefined);
-        });
-
-        it('Request should NOT have adsrvrOrgId config params if adsrvrOrgId is NOT object', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              adsrvrOrgId: null
-            };
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal(undefined);
-        });
-
-        it('Request should NOT have adsrvrOrgId config params if id in adsrvrOrgId is NOT set', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              adsrvrOrgId: {
-                'TDID_LOOKUP': 'TRUE',
-                'TDID_CREATED_AT': '2018-10-01T07:05:40'
-              }
-            };
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal(undefined);
-        });
+        const request = spec.buildRequests(bidRequests, {});
+        let data = JSON.parse(request.data);
+        if (data.regs) {
+          // in case GDPR is set then data.regs will exist
+          expect(data.regs.coppa).to.equal(undefined);
+        } else {
+          expect(data.regs).to.equal(undefined);
+        }
+        sandbox.restore();
       });
 
       describe('AdsrvrOrgId from userId module', function() {
@@ -1434,6 +1249,7 @@ describe('PubMatic adapter', function () {
         it('Request should have AdsrvrOrgId config params', function() {
           bidRequests[0].userId = {};
           bidRequests[0].userId.tdid = 'TTD_ID_FROM_USER_ID_MODULE';
+          bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal([{
@@ -1461,6 +1277,7 @@ describe('PubMatic adapter', function () {
           });
           bidRequests[0].userId = {};
           bidRequests[0].userId.tdid = 'TTD_ID_FROM_USER_ID_MODULE';
+          bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal([{
@@ -1491,161 +1308,12 @@ describe('PubMatic adapter', function () {
         });
       });
 
-      describe('AdsrvrOrgId and Digitrust', function() {
-        // here we are considering cases only of accepting DigiTrustId from config
-        let sandbox;
-        beforeEach(() => {
-          sandbox = sinon.sandbox.create();
-          window.DigiTrust = {
-            getUser: sandbox.spy()
-          };
-        });
-
-        afterEach(() => {
-          sandbox.restore();
-          delete window.DigiTrust;
-        });
-
-        it('Request should have id of both AdsrvrOrgId and Digitrust if both have returned valid ids', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              adsrvrOrgId: {
-                'TDID': '5e740345-c25e-436d-b466-5f2f9fa95c17',
-                'TDID_LOOKUP': 'TRUE',
-                'TDID_CREATED_AT': '2018-10-01T07:05:40'
-              },
-              digiTrustId: {
-                success: true,
-                identity: {
-                  privacy: {optout: false},
-                  id: 'testId',
-                  keyv: 4
-                }
-              }
-            };
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal([{
-            'source': 'digitru.st',
-            'uids': [{
-              'id': 'testId',
-              'atype': 1,
-              'ext': {
-                'keyv': 4
-              }
-            }]
-          }, {
-            'source': 'adserver.org',
-            'uids': [{
-              'id': '5e740345-c25e-436d-b466-5f2f9fa95c17',
-              'atype': 1,
-              'ext': {
-                'rtiPartner': 'TDID'
-              }
-            }]
-          }]);
-        });
-
-        it('Request should have id of only AdsrvrOrgId and NOT Digitrust if only AdsrvrOrgId have returned valid id', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              adsrvrOrgId: {
-                'TDID': '5e740345-c25e-436d-b466-5f2f9fa95c17',
-                'TDID_LOOKUP': 'TRUE',
-                'TDID_CREATED_AT': '2018-10-01T07:05:40'
-              },
-              digiTrustId: {
-                success: true,
-                identity: {
-                  privacy: {optout: true},
-                  id: 'testId',
-                  keyv: 4
-                }
-              }
-            };
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal([{
-            'source': 'adserver.org',
-            'uids': [{
-              'id': '5e740345-c25e-436d-b466-5f2f9fa95c17',
-              'atype': 1,
-              'ext': {
-                'rtiPartner': 'TDID'
-              }
-            }]
-          }]);
-        });
-
-        it('Request should have id of only Digitrust and NOT AdsrvrOrgId if only Digitrust have returned valid id', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              adsrvrOrgId: {
-                'TDID_LOOKUP': 'TRUE',
-                'TDID_CREATED_AT': '2018-10-01T07:05:40'
-              },
-              digiTrustId: {
-                success: true,
-                identity: {
-                  privacy: {optout: false},
-                  id: 'testId',
-                  keyv: 4
-                }
-              }
-            };
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal([{
-            'source': 'digitru.st',
-            'uids': [{
-              'id': 'testId',
-              'atype': 1,
-              'ext': {
-                'keyv': 4
-              }
-            }]
-          }]);
-        });
-
-        it('Request should NOT have id of Digitrust and NOT AdsrvrOrgId if only both have NOT returned valid ids', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              adsrvrOrgId: {
-                'TDID_LOOKUP': 'TRUE',
-                'TDID_CREATED_AT': '2018-10-01T07:05:40'
-              },
-              digiTrustId: {
-                success: true,
-                identity: {
-                  privacy: {optout: true},
-                  id: 'testId',
-                  keyv: 4
-                }
-              }
-            };
-            return config[key];
-          });
-
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal(undefined);
-        });
-      });
-
       describe('UserIds from request', function() {
         describe('pubcommon Id', function() {
           it('send the pubcommon id if it is present', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.pubcid = 'pub_common_user_id';
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
@@ -1660,18 +1328,22 @@ describe('PubMatic adapter', function () {
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.pubcid = 1;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.pubcid = [];
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.pubcid = null;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.pubcid = {};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
@@ -1682,6 +1354,7 @@ describe('PubMatic adapter', function () {
           it('send the digitrust id if it is present', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.digitrustid = {data: {id: 'digitrust_user_id'}};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
@@ -1696,18 +1369,22 @@ describe('PubMatic adapter', function () {
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.digitrustid = {data: {id: 1}};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.digitrustid = {data: {id: []}};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.digitrustid = {data: {id: null}};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.digitrustid = {data: {id: {}}};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
@@ -1718,6 +1395,7 @@ describe('PubMatic adapter', function () {
           it('send the id5 id if it is present', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.id5id = 'id5-user-id';
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
@@ -1732,18 +1410,22 @@ describe('PubMatic adapter', function () {
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.id5id = 1;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.id5id = [];
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.id5id = null;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.id5id = {};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
@@ -1754,6 +1436,7 @@ describe('PubMatic adapter', function () {
           it('send the criteo id if it is present', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.criteoId = 'criteo-user-id';
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
@@ -1768,18 +1451,22 @@ describe('PubMatic adapter', function () {
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.criteoId = 1;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.criteoId = [];
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.criteoId = null;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.criteoId = {};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
@@ -1790,6 +1477,7 @@ describe('PubMatic adapter', function () {
           it('send the identity-link id if it is present', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.idl_env = 'identity-link-user-id';
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
@@ -1804,18 +1492,22 @@ describe('PubMatic adapter', function () {
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.idl_env = 1;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.idl_env = [];
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.idl_env = null;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.idl_env = {};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
@@ -1826,6 +1518,7 @@ describe('PubMatic adapter', function () {
           it('send the LiveIntent id if it is present', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.lipb = { lipbid: 'live-intent-user-id' };
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
@@ -1840,18 +1533,22 @@ describe('PubMatic adapter', function () {
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.lipb = { lipbid: 1 };
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.lipb.lipbid = [];
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.lipb.lipbid = null;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.lipb.lipbid = {};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
@@ -1862,6 +1559,7 @@ describe('PubMatic adapter', function () {
           it('send the Parrable id if it is present', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.parrableid = 'parrable-user-id';
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
@@ -1876,18 +1574,22 @@ describe('PubMatic adapter', function () {
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.parrableid = 1;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.parrableid = [];
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.parrableid = null;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.parrableid = {};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
@@ -1898,6 +1600,7 @@ describe('PubMatic adapter', function () {
           it('send the Britepool id if it is present', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.britepoolid = 'britepool-user-id';
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
@@ -1912,18 +1615,22 @@ describe('PubMatic adapter', function () {
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.britepoolid = 1;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.britepoolid = [];
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.britepoolid = null;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.britepoolid = {};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
@@ -1934,6 +1641,7 @@ describe('PubMatic adapter', function () {
           it('send the NetId if it is present', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.netId = 'netid-user-id';
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
@@ -1948,18 +1656,22 @@ describe('PubMatic adapter', function () {
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.netId = 1;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.netId = [];
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.netId = null;
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
             bidRequests[0].userId.netId = {};
+            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);

@@ -20,5 +20,4 @@ pbjs.enableAnalytics({
 - Supports only Banner and Video media-type
 - Does not supports Native media type
 - Does not supports instream-video creative-render tracker
-- BidCpmAdjustment: Bid CPM only after BidCpmAdjustment is logged
-- If a currency module is NOT included and a bidder responds in a non-USD currency then PubMatic analytics bidder will not be able to log the bid CPM
+- If a currency module is NOT included and a bidder responds in a non-USD currency then PubMatic analytics bidder will log values in original bid currency otherwise always logged in USD
