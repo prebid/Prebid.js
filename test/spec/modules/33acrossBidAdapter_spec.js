@@ -140,7 +140,6 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-<<<<<<< HEAD
     this.withFormatFloors = floors => {
       const format = ttxRequest.imp[0].banner.format.map((fm, i) => {
         return Object.assign(fm, {
@@ -157,8 +156,6 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-=======
->>>>>>> ba6d90438bc6d6f3e0660b8a65d3593587586979
     this.build = () => ttxRequest;
   }
 
