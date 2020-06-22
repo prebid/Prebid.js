@@ -80,6 +80,30 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
+  const lat = utils.deepAccess(validBidRequests[0], 'params.lat')
+  const lon = utils.deepAccess(validBidRequests[0], 'params.lon')
+  if (typeof lat === 'number' && typeof lon === 'number') {
+    request.device.geo = {
+      lat: lat,
+      lon: lon
+    }
+  }
+
+  const yob = utils.deepAccess(validBidRequests[0], 'params.yob')
+  if (typeof yob === 'number') {
+    request.user.yob = yob;
+  }
+
+  const gender = utils.deepAccess(validBidRequests[0], 'params.gender')
+  if (typeof gender === 'string') {
+    request.user.gender = gender;
+  }
+
+  const keywords = utils.deepAccess(validBidRequests[0], 'params.keywords')
+  if (typeof keywords === 'string') {
+    request.site.keywords = keywords;
+  }
+
   utils.logInfo('[SMAATO] OpenRTB Request:', request);
   return JSON.stringify(request);
 }

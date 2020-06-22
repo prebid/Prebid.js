@@ -17,7 +17,7 @@ const imageAd = {
       'http://localhost:3000/track/click/1'
     ]
   }
-}
+};
 
 const richmediaAd = {
   richmedia: {
@@ -34,7 +34,7 @@ const richmediaAd = {
       'http://localhost:3000/track/click/1'
     ]
   }
-}
+};
 
 const ADTYPE_IMG = 'Img';
 const ADTYPE_RICHMEDIA = 'Richmedia';
@@ -253,6 +253,36 @@ describe('smaatoBidAdapterTestOld', () => {
     it('sends no usp if no usp exists', () => {
       let req_without_usp = JSON.parse(spec.buildRequests([singleBannerBidRequest], minimalBidderRequest).data);
       expect(req_without_usp.regs.ext.us_privacy).to.not.exist;
+    });
+
+    it('sends lat/lon if available', () => {
+      let bidRequest = utils.deepClone(singleBannerBidRequest);
+      bidRequest.params.lat = 3.1415;
+      bidRequest.params.lon = -3.1415;
+      let req_with_geo = JSON.parse(spec.buildRequests([bidRequest], minimalBidderRequest).data);
+      expect(req_with_geo.device.geo.lat).to.equal(bidRequest.params.lat);
+      expect(req_with_geo.device.geo.lon).to.equal(bidRequest.params.lon);
+    });
+
+    it('sends year of birth if available', () => {
+      let bidRequest = utils.deepClone(singleBannerBidRequest);
+      bidRequest.params.yob = 33;
+      let req_yob = JSON.parse(spec.buildRequests([bidRequest], minimalBidderRequest).data);
+      expect(req_yob.user.yob).to.equal(bidRequest.params.yob);
+    });
+
+    it('sends gender if available', () => {
+      let bidRequest = utils.deepClone(singleBannerBidRequest);
+      bidRequest.params.gender = 'f';
+      let req_gender = JSON.parse(spec.buildRequests([bidRequest], minimalBidderRequest).data);
+      expect(req_gender.user.gender).to.equal(bidRequest.params.gender);
+    });
+
+    it('sends site keywords if available', () => {
+      let bidRequest = utils.deepClone(singleBannerBidRequest);
+      bidRequest.params.keywords = 'kw1,kw2,kw3';
+      let req_kws = JSON.parse(spec.buildRequests([bidRequest], minimalBidderRequest).data);
+      expect(req_kws.site.keywords).to.equal(bidRequest.params.keywords);
     });
   });
 
