@@ -4,7 +4,7 @@
  */
 
 import events from './events.js';
-import { fireNativeTrackers, getAssetMessage } from './native.js';
+import { fireNativeTrackers, getAssetMessage, getAllAssetsMessage } from './native.js';
 import { EVENTS } from './constants.json';
 import { logWarn, replaceAuctionPrice } from './utils.js';
 import { auctionManager } from './auctionManager.js';
@@ -51,6 +51,9 @@ function receiveMessage(ev) {
         const message = getAssetMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
         return;
+      } else if (data.action === 'allAssetRequest') {
+        const message = getAllAssetsMessage(data, adObject);
+        ev.source.postMessage(JSON.stringify(message), ev.origin);
       }
 
       const trackerType = fireNativeTrackers(data, adObject);

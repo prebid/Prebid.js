@@ -86,7 +86,9 @@
     "likes": "hb_native_likes",
     "phone": "hb_native_phone",
     "price": "hb_native_price",
-    "salePrice": "hb_native_saleprice"
+    "salePrice": "hb_native_saleprice",
+    "rendererUrl": "hb_renderer_url",
+    "adTemplate": "hb_adTemplate"
   },
   "S2S" : {
     "SRC" : "s2s",
