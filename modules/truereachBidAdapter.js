@@ -12,7 +12,8 @@ export const spec = {
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   isBidRequestValid: function (bidRequest) {
-    return (bidRequest.params.site_id && utils.deepAccess(bidRequest, 'mediaTypes.banner') && (utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0));
+    return (bidRequest.params.site_id && bidRequest.params.bidfloor &&
+    utils.deepAccess(bidRequest, 'mediaTypes.banner') && (utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0));
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -25,14 +26,13 @@ export const spec = {
     let siteId = utils.deepAccess(validBidRequests[0], 'params.site_id');
     let bidderUrl = utils.deepAccess(validBidRequests[0], 'params.bidderUrl');
 
-    let url = (bidderUrl || BIDDER_URL) + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
+    let url = BIDDER_URL + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
 
     return {
       method: 'POST',
       url: url,
       data: queryParams,
-      options: { withCredentials: true },
-      bidderName: BIDDER_CODE
+      options: { withCredentials: true }
     };
   },
 
@@ -57,14 +57,13 @@ export const spec = {
     const bidResponse = {
       requestId: bidderBid.impid,
       cpm: responseCPM,
+      currency: serverResponse.cur || 'USD',
       width: parseInt(bidderBid.w),
       height: parseInt(bidderBid.h),
-      creativeId: bidderBid.crid,
-      currency: 'USD',
-      netRevenue: false,
-      ttl: 180,
       ad: decodeURIComponent(responseAd),
-      bidderCode: BIDDER_CODE
+      ttl: 180,
+      creativeId: bidderBid.crid,
+      netRevenue: false
     };
 
     bidResponses.push(bidResponse);
@@ -72,11 +71,6 @@ export const spec = {
     return bidResponses;
   },
 
-  transformBidParams: function (params, isOpenRtb) {
-    return utils.convertTypes({
-      'site_id': 'string'
-    }, params);
-  }
 };
 
 function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
