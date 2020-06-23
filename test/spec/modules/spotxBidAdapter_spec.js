@@ -411,7 +411,7 @@ describe('the spotx adapter', function () {
       expect(responses).to.be.an('array').with.length(2);
       expect(responses[0].cache_key).to.equal('cache123');
       expect(responses[0].channel_id).to.equal(12345);
-      expect(responses[0].adomain[0]).to.equal('abc.com');
+      expect(responses[0].meta.advertiserDomains[0]).to.equal('abc.com');
       expect(responses[0].cpm).to.equal(12);
       expect(responses[0].creativeId).to.equal(321);
       expect(responses[0].currency).to.equal('USD');
@@ -426,7 +426,7 @@ describe('the spotx adapter', function () {
       expect(responses[1].cache_key).to.equal('cache124');
       expect(responses[1].channel_id).to.equal(12345);
       expect(responses[1].cpm).to.equal(13);
-      expect(responses[1].adomain[0]).to.equal('def.com');
+      expect(responses[1].meta.advertiserDomains[0]).to.equal('def.com');
       expect(responses[1].creativeId).to.equal('');
       expect(responses[1].currency).to.equal('USD');
       expect(responses[1].height).to.equal(100);
