@@ -2340,7 +2340,7 @@ describe('PubMatic adapter', function () {
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal([{
-            'source': 'pubcommon',
+            'source': 'pubcid.org',
             'uids': [{
               'id': 'PUBCOMMON_ID_FROM_USER_ID_MODULE',
               'atype': 1
@@ -2744,7 +2744,6 @@ describe('PubMatic adapter', function () {
       it('should check for valid video mediaType in case of multiformat request', function() {
         let request = spec.buildRequests(videoBidRequests);
         let response = spec.interpretResponse(videoBidResponse, request);
-
         expect(response[0].mediaType).to.equal('video');
       });
 
