@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec as adapter, URL } from 'modules/vidazooBidAdapter.js';
+import { spec as adapter, URL, SUPPORTED_ID_SYSTEMS } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const BID = {
@@ -208,6 +208,30 @@ describe('VidazooBidAdapter', function () {
       const responses = adapter.interpretResponse(serverResponse, REQUEST);
       expect(responses).to.have.length(1);
       expect(responses[0].ttl).to.equal(300);
+    });
+  });
+
+  describe(`user id system`, function () {
+    Object.keys(SUPPORTED_ID_SYSTEMS).forEach((idSystemProvider) => {
+      const id = Date.now().toString();
+      const bid = utils.deepClone(BID);
+
+      const userId = (function () {
+        switch (idSystemProvider) {
+          case 'digitrustid': return { data: { id: id } };
+          case 'lipb': return { lipbid: id };
+          default: return id;
+        }
+      })();
+
+      bid.userId = {
+        [idSystemProvider]: userId
+      };
+
+      it(`should include 'uid.${idSystemProvider}' in request params`, function () {
+        const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
+      });
     });
   });
 });
