@@ -11,6 +11,8 @@ describe('Livewrapped adapter tests', function () {
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
 
+    window.livewrapped = undefined;
+
     bidderRequest = {
       bidderCode: 'livewrapped',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
@@ -100,7 +102,9 @@ describe('Livewrapped adapter tests', function () {
         userId: 'user id',
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
@@ -135,7 +139,9 @@ describe('Livewrapped adapter tests', function () {
         userId: 'user id',
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
@@ -171,7 +177,9 @@ describe('Livewrapped adapter tests', function () {
         userId: 'user id',
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           callerAdUnitId: 'caller id 1',
@@ -200,7 +208,9 @@ describe('Livewrapped adapter tests', function () {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
         publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
         url: 'https://www.domain.com',
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
@@ -228,7 +238,9 @@ describe('Livewrapped adapter tests', function () {
       let expectedQuery = {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
         url: 'https://www.domain.com',
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
@@ -258,7 +270,9 @@ describe('Livewrapped adapter tests', function () {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
         publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
         url: 'https://www.domain.com',
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         deviceId: 'deviceid',
         ifa: 'ifa',
         cookieSupport: true,
@@ -289,7 +303,9 @@ describe('Livewrapped adapter tests', function () {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
         publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
         url: 'https://www.domain.com',
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         tid: 'tracking id',
         test: true,
         cookieSupport: true,
@@ -319,7 +335,9 @@ describe('Livewrapped adapter tests', function () {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
         publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
         url: 'https://www.domain.com',
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
@@ -348,7 +366,9 @@ describe('Livewrapped adapter tests', function () {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
         publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
         url: 'https://www.domain.com',
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         rcv: true,
         adRequests: [{
@@ -377,7 +397,9 @@ describe('Livewrapped adapter tests', function () {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
         publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
         url: 'https://www.domain.com',
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
@@ -406,7 +428,9 @@ describe('Livewrapped adapter tests', function () {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
         publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
         url: 'https://www.domain.com',
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
@@ -415,6 +439,53 @@ describe('Livewrapped adapter tests', function () {
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           native: {'nativedata': 'content parsed serverside only'},
           banner: true
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should use app objects', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+      let testbidRequest = clone(bidderRequest);
+      delete testbidRequest.bids[0].params.url;
+
+      let origGetConfig = config.getConfig;
+      sandbox.stub(config, 'getConfig').callsFake(function (key) {
+        if (key === 'app') {
+          return {bundle: 'bundle', domain: 'https://appdomain.com'};
+        }
+        if (key === 'device') {
+          return {ifa: 'ifa', width: 300, height: 200};
+        }
+        return origGetConfig.apply(config, arguments);
+      });
+
+      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://appdomain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.3',
+        width: 300,
+        height: 200,
+        ifa: 'ifa',
+        bundle: 'bundle',
+        cookieSupport: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
 
@@ -436,7 +507,9 @@ describe('Livewrapped adapter tests', function () {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
         publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
         url: 'https://www.domain.com',
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
@@ -468,7 +541,9 @@ describe('Livewrapped adapter tests', function () {
         userId: 'user id',
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         gdprApplies: true,
         gdprConsent: 'test',
@@ -502,7 +577,9 @@ describe('Livewrapped adapter tests', function () {
         userId: 'user id',
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         gdprApplies: false,
         adRequests: [{
@@ -531,7 +608,9 @@ describe('Livewrapped adapter tests', function () {
         userId: 'user id',
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: false,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
@@ -559,7 +638,9 @@ describe('Livewrapped adapter tests', function () {
         userId: 'user id',
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: false,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
@@ -620,7 +701,9 @@ describe('Livewrapped adapter tests', function () {
         userId: 'pubcid 123',
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
@@ -650,7 +733,9 @@ describe('Livewrapped adapter tests', function () {
         userId: 'user id',
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
-        version: '1.2',
+        version: '1.3',
+        width: 100,
+        height: 100,
         cookieSupport: true,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
@@ -701,6 +786,31 @@ describe('Livewrapped adapter tests', function () {
         'atype': 1
       }]
     }]);
+  });
+
+  it('should send schain object if available', function() {
+    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+    let testbidRequest = clone(bidderRequest);
+    let schain = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'directseller.com',
+          'sid': '00001',
+          'rid': 'BidRequest1',
+          'hp': 1
+        }
+      ]
+    };
+
+    testbidRequest.bids[0].schain = schain;
+
+    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+    let data = JSON.parse(result.data);
+
+    expect(data.schain).to.deep.equal(schain);
   });
 
   describe('interpretResponse', function () {
@@ -886,6 +996,39 @@ describe('Livewrapped adapter tests', function () {
       let bids = spec.interpretResponse({body: lwResponse});
 
       expect(bids).to.deep.equal(expectedResponse);
+    })
+
+    it('should send debug-data to external debugger', function() {
+      let lwResponse = {
+        ads: [
+          {
+            id: '28e5ddf4-3c01-11e8-86a7-0a44794250d4',
+            callerId: 'site_outsider_0',
+            tag: '<span>ad</span>',
+            width: 300,
+            height: 250,
+            cpmBid: 2.565917,
+            bidId: '32e50fad901ae89',
+            auctionId: '13e674db-d4d8-4e19-9d28-ff38177db8bf',
+            creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
+            ttl: 120
+          }
+        ],
+        currency: 'USD',
+        dbg: 'debugdata'
+      };
+
+      let debugData;
+
+      window.livewrapped = {
+        s2sDebug: function(dbg) {
+          debugData = dbg;
+        }
+      };
+
+      spec.interpretResponse({body: lwResponse});
+
+      expect(debugData).to.equal(lwResponse.dbg);
     })
   });
 

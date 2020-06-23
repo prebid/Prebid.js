@@ -100,6 +100,24 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
     });
 
+    it('should add publisher_id in request', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            publisherId: '1231234'
+          }
+        });
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].publisher_id).to.exist;
+      expect(payload.tags[0].publisher_id).to.deep.equal(1231234);
+      expect(payload.publisher_id).to.exist;
+      expect(payload.publisher_id).to.deep.equal(1231234);
+    })
+
     it('should add source and verison to the tag', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
@@ -230,12 +248,12 @@ describe('AppNexusAdapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].video).to.deep.equal({
         skippable: true,
-        playback_method: ['auto_play_sound_off'],
+        playback_method: 2,
         custom_renderer_present: true
       });
       expect(payload.tags[1].video).to.deep.equal({
         skippable: true,
-        playback_method: ['auto_play_sound_off']
+        playback_method: 2
       });
     });
 
