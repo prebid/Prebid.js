@@ -20,7 +20,7 @@ function newWebpackConfig(codeCoverage) {
       enforce: 'post',
       exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
       use: {
-        loader: '@jsdevtools/coverage-istanbul-loader',
+        loader: 'istanbul-instrumenter-loader',
         options: { esModules: true }
       },
       test: /\.js$/
@@ -136,7 +136,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      [file ? file : 'test/test_index.js']: ['webpack', 'sourcemap']
+      'test/test_index.js': ['webpack', 'sourcemap']
     },
 
     // web server port
