@@ -1,5 +1,6 @@
 import { spec } from 'modules/smaatoBidAdapter.js';
 import * as utils from 'src/utils.js';
+import {config} from 'src/config.js';
 
 const imageAd = {
   image: {
@@ -38,6 +39,19 @@ const richmediaAd = {
 
 const ADTYPE_IMG = 'Img';
 const ADTYPE_RICHMEDIA = 'Richmedia';
+
+const context = {
+  keywords: ['power tools'],
+  search: 'drill',
+  content: { userrating: 4 }
+};
+
+const user = {
+  keywords: ['a', 'b'],
+  gender: 'M',
+  yob: '1984',
+  geo: { country: 'ca' }
+};
 
 const openRtbBidResponse = (adType) => {
   let adm = '';
@@ -181,7 +195,13 @@ const singleBannerBidRequest = {
   bidderWinsCount: 0
 };
 
-describe('smaatoBidAdapterTestOld', () => {
+describe('smaatoBidAdapterTest', () => {
+  let sandbox;
+
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+  });
+
   describe('isBidRequestValid', () => {
     it('has valid params', () => {
       expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456'}})).to.be.true;
@@ -255,35 +275,28 @@ describe('smaatoBidAdapterTestOld', () => {
       expect(req_without_usp.regs.ext.us_privacy).to.not.exist;
     });
 
-    it('sends lat/lon if available', () => {
+    it('sends fp data', () => {
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+          fpd: {
+            context,
+            user
+          }
+        };
+        return utils.deepAccess(config, key);
+      });
       let bidRequest = utils.deepClone(singleBannerBidRequest);
-      bidRequest.params.lat = 3.1415;
-      bidRequest.params.lon = -3.1415;
-      let req_with_geo = JSON.parse(spec.buildRequests([bidRequest], minimalBidderRequest).data);
-      expect(req_with_geo.device.geo.lat).to.equal(bidRequest.params.lat);
-      expect(req_with_geo.device.geo.lon).to.equal(bidRequest.params.lon);
-    });
-
-    it('sends year of birth if available', () => {
-      let bidRequest = utils.deepClone(singleBannerBidRequest);
-      bidRequest.params.yob = 33;
-      let req_yob = JSON.parse(spec.buildRequests([bidRequest], minimalBidderRequest).data);
-      expect(req_yob.user.yob).to.equal(bidRequest.params.yob);
-    });
-
-    it('sends gender if available', () => {
-      let bidRequest = utils.deepClone(singleBannerBidRequest);
-      bidRequest.params.gender = 'f';
-      let req_gender = JSON.parse(spec.buildRequests([bidRequest], minimalBidderRequest).data);
-      expect(req_gender.user.gender).to.equal(bidRequest.params.gender);
-    });
-
-    it('sends site keywords if available', () => {
-      let bidRequest = utils.deepClone(singleBannerBidRequest);
-      bidRequest.params.keywords = 'kw1,kw2,kw3';
-      let req_kws = JSON.parse(spec.buildRequests([bidRequest], minimalBidderRequest).data);
-      expect(req_kws.site.keywords).to.equal(bidRequest.params.keywords);
-    });
+      let req_fpd = JSON.parse(spec.buildRequests([bidRequest], defaultBidderRequest).data);
+      expect(req_fpd.user.geo.country).to.equal('ca');
+      expect(req_fpd.user.gender).to.equal('M');
+      expect(req_fpd.user.yob).to.equal('1984');
+      expect(req_fpd.user.keywords).to.eql(['a', 'b']);
+      expect(req_fpd.user.ext.consent).to.equal('HFIDUYFIUYIUYWIPOI87392DSU');
+      expect(req_fpd.site.keywords).to.eql(['power tools']);
+      expect(req_fpd.site.search).to.equal('drill');
+      expect(req_fpd.site.content.userrating).to.equal(4);
+      expect(req_fpd.site.publisher.id).to.equal('publisherId');
+    })
   });
 
   describe('interpretResponse', () => {

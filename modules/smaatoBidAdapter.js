@@ -71,6 +71,9 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     }
   };
 
+  Object.assign(request.user, config.getConfig('fpd.user'));
+  Object.assign(request.site, config.getConfig('fpd.context'));
+
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
     utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
@@ -80,6 +83,7 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
+  /**
   const lat = utils.deepAccess(validBidRequests[0], 'params.lat')
   const lon = utils.deepAccess(validBidRequests[0], 'params.lon')
   if (typeof lat === 'number' && typeof lon === 'number') {
@@ -103,6 +107,7 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
   if (typeof keywords === 'string') {
     request.site.keywords = keywords;
   }
+   */
 
   utils.logInfo('[SMAATO] OpenRTB Request:', request);
   return JSON.stringify(request);
