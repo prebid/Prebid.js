@@ -45,7 +45,6 @@ export function isValid(type, bid) {
  * @param {validBidRequests[]} - an array of bids
  * @return ServerRequest Info describing the request to the server.
  */
-
 function buildRequests(validBidRequests, bidderRequest) {
   const bids = requestsToBids(validBidRequests);
   const bidObject = {'bids': bids};
@@ -137,9 +136,6 @@ function ourRenderer(bidResponse) {
   });
 }
 
-/***
- * Returns information about current frame nesting
- */
 function getFrameNesting() {
   let frame = window;
   try {
@@ -194,6 +190,7 @@ function getPageInfo() {
     xOffset: topmostFrame.pageXOffset,
     yOffset: topmostFrame.pageYOffset,
     docHidden: getDocumentVisibility(topmostFrame),
+    docHeight: topmostFrame.document.body.scrollHeight,
     hLength: history.length,
     timing: getTiming()
   };
