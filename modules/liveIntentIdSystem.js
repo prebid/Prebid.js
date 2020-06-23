@@ -52,12 +52,7 @@ function initializeLiveConnect(configParams) {
     return liveConnect;
   }
 
-  const publisherId = configParams && configParams.publisherId;
-  if (!publisherId && typeof publisherId !== 'string') {
-    utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
-    return;
-  }
-
+  const publisherId = (configParams && configParams.publisherId) || 'any';
   const identityResolutionConfig = {
     source: 'prebid',
     publisherId: publisherId
@@ -115,7 +110,7 @@ export const liveIntentIdSubmodule = {
     }
 
     if (configParams) {
-      initializeLiveConnect(configParams);
+      initializeLiveConnect(configParams || {});
       tryFireEvent();
     }
 
