@@ -11,11 +11,29 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
-const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
-  'startdelay', 'skippable', 'playback_method', 'frameworks'];
+const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
+  'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
+const VIDEO_MAPPING = {
+  playback_method: {
+    'unknown': 0,
+    'auto_play_sound_on': 1,
+    'auto_play_sound_off': 2,
+    'click_to_play': 3,
+    'mouse_over': 4,
+    'auto_play_sound_unknown': 5
+  },
+  context: {
+    'unknown': 0,
+    'pre_roll': 1,
+    'mid_roll': 2,
+    'post_roll': 3,
+    'outstream': 4,
+    'in-banner': 5
+  }
+};
 const NATIVE_MAPPING = {
   body: 'description',
   body2: 'desc2',
@@ -199,6 +217,10 @@ export const spec = {
       payload.tpuids = tpuids;
     }
 
+    if (tags[0].publisher_id) {
+      payload.publisher_id = tags[0].publisher_id;
+    }
+
     const request = formatRequest(payload, bidderRequest);
     return request;
   },
@@ -264,7 +286,7 @@ export const spec = {
   getMappingFileInfo: function() {
     return {
       url: mappingFileUrl,
-      refreshInDays: 7
+      refreshInDays: 2
     }
   },
 
@@ -282,7 +304,8 @@ export const spec = {
       'member': 'string',
       'invCode': 'string',
       'placementId': 'number',
-      'keywords': utils.transformBidderParamKeywords
+      'keywords': utils.transformBidderParamKeywords,
+      'publisherId': 'number'
     }, params);
 
     if (isOpenRtb) {
@@ -525,8 +548,8 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
     switch (videoContext) {
       case ADPOD:
-        const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
-        bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
+        const primaryCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+        bid.meta = Object.assign({}, bid.meta, { primaryCatId });
         const dealTier = rtbBid.deal_priority;
         bid.video = {
           context: ADPOD,
@@ -657,6 +680,9 @@ function bidToTag(bid) {
   if (bid.params.extInvCode) {
     tag.ext_inv_code = bid.params.extInvCode;
   }
+  if (bid.params.publisherId) {
+    tag.publisher_id = parseInt(bid.params.publisherId, 10);
+  }
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
@@ -703,7 +729,18 @@ function bidToTag(bid) {
     // place any valid video params on the tag
     Object.keys(bid.params.video)
       .filter(param => includes(VIDEO_TARGETING, param))
-      .forEach(param => tag.video[param] = bid.params.video[param]);
+      .forEach(param => {
+        switch (param) {
+          case 'context':
+          case 'playback_method':
+            let type = bid.params.video[param];
+            type = (utils.isArray(type)) ? type[0] : type;
+            tag.video[param] = VIDEO_MAPPING[param][type];
+            break;
+          default:
+            tag.video[param] = bid.params.video[param];
+        }
+      });
   }
 
   if (bid.renderer) {
