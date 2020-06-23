@@ -482,7 +482,7 @@ adapterManager.registerAnalyticsAdapter = function ({adapter, code}) {
   }
 };
 
-adapterManager.enableAnalytics = function (config) {
+adapterManager.enableAnalytics = hook('async', function (config) {
   if (!utils.isArray(config)) {
     config = [config];
   }
@@ -496,7 +496,9 @@ adapterManager.enableAnalytics = function (config) {
         ${adapterConfig.provider}.`);
     }
   });
-};
+}, 'enableAnalytics');
+
+adapterManager.enableAnalytics =
 
 adapterManager.getBidAdapter = function(bidder) {
   return _bidderRegistry[bidder];

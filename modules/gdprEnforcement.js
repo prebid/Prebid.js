@@ -16,7 +16,8 @@ import { EVENTS } from '../src/constants.json';
 
 const TCF2 = {
   'purpose1': { id: 1, name: 'storage' },
-  'purpose2': { id: 2, name: 'basicAds' }
+  'purpose2': { id: 2, name: 'basicAds' },
+  'purpose7': { id: 7, name: 'measurement' }
 }
 
 const DEFAULT_RULES = [{
@@ -33,8 +34,11 @@ const DEFAULT_RULES = [{
 
 export let purpose1Rule;
 export let purpose2Rule;
-let addedDeviceAccessHook = false;
+export let purpose7Rule;
+
 export let enforcementRules;
+
+let addedDeviceAccessHook = false;
 
 function getGvlid(bidderCode) {
   let gvlid;
@@ -243,8 +247,23 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
   }
 }
 
+function enableAnalyticsHook(fn, config) {
+  const consentData = gdprDataHandler.getConsentData();
+  if (consentData && consentData.gdprApplies) {
+    if (consentData.apiVersion === 2) {
+      // TODO: Find a way to get gvlId for a Analytics Adapter.
+    } else {
+      // This module doesn't enforce TCF1.1 strings
+      fn.call(this, config);
+    }
+  } else {
+    fn.call(this, config);
+  }
+}
+
 const hasPurpose1 = (rule) => { return rule.purpose === TCF2.purpose1.name }
 const hasPurpose2 = (rule) => { return rule.purpose === TCF2.purpose2.name }
+const hasPurpose7 = (rule) => { return rule.purpose === TCF2.purpose7.name }
 
 /**
  * A configuration function that initializes some module variables, as well as adds hooks
@@ -261,6 +280,7 @@ export function setEnforcementConfig(config) {
 
   purpose1Rule = find(enforcementRules, hasPurpose1);
   purpose2Rule = find(enforcementRules, hasPurpose2);
+  purpose7Rule = find(enforcementRules, hasPurpose7);
 
   if (!purpose1Rule) {
     purpose1Rule = DEFAULT_RULES[0];
@@ -279,6 +299,10 @@ export function setEnforcementConfig(config) {
   }
   if (purpose2Rule) {
     getHook('makeBidRequests').before(makeBidRequestsHook);
+  }
+
+  if (purpose7Rule) {
+    getHook('enableAnalytics').before(enableAnalyticsHook);
   }
 }
 
