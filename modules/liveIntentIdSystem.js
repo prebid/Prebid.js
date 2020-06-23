@@ -48,11 +48,12 @@ function parseLiveIntentCollectorConfig(collectConfig) {
 }
 
 function initializeLiveConnect(configParams) {
+  configParams = configParams || {};
   if (liveConnect) {
     return liveConnect;
   }
 
-  const publisherId = (configParams && configParams.publisherId) || 'any';
+  const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
     source: 'prebid',
     publisherId: publisherId
@@ -109,10 +110,10 @@ export const liveIntentIdSubmodule = {
       return { 'lipb': { ...base, ...value } };
     }
 
-    if (configParams) {
-      initializeLiveConnect(configParams || {});
-      tryFireEvent();
+    if (!liveConnect) {
+      initializeLiveConnect(configParams);
     }
+    tryFireEvent();
 
     return (value && typeof value['unifiedId'] === 'string') ? composeIdObject(value) : undefined;
   },
