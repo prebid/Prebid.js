@@ -162,8 +162,8 @@ export function getNativeTargeting(bid, bidReq) {
 
   const globalSendTargetingKeys = deepAccess(
     bidReq,
-    `mediaTypes.native.sendTargetingKeys`
-  ) !== false; 
+    `nativeParams.sendTargetingKeys`
+  ) !== false;
 
   Object.keys(bid['native']).forEach(asset => {
     if (asset !== 'adTemplate') {
@@ -182,11 +182,9 @@ export function getNativeTargeting(bid, bidReq) {
 
       const assetSendTargetingKeys = deepAccess(
         bidReq,
-        `mediaTypes.native.${asset}.sendTargetingKeys`
-      );
+        `nativeParams.${asset}.sendTargetingKeys`);
 
       const sendTargeting = typeof assetSendTargetingKeys === 'boolean' ? assetSendTargetingKeys : globalSendTargetingKeys;
-
 
       if (key && value && sendTargeting) {
         keyValues[key] = value;
