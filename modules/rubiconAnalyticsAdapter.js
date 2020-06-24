@@ -87,7 +87,7 @@ function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return utils.pick(bid, [
       'bidder',
-      'bidId', bidId => utils.deepAccess(bid, 'bidResponse.seatBidId') || bidId,
+      'bidId', bidId => utils.deepAccess(bid, 'bidResponse.pbsBidId') || utils.deepAccess(bid, 'bidResponse.seatBidId') || bidId,
       'status',
       'error',
       'source', (source, bid) => {
@@ -197,10 +197,12 @@ function sendMessage(auctionId, bidWonId) {
     if (auctionCache.floorData) {
       auction.floors = utils.pick(auctionCache.floorData, [
         'location',
-        'modelName', () => auctionCache.floorData.modelVersion || '',
+        'modelName', () => auctionCache.floorData.modelVersion,
         'skipped',
         'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
-        'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals')
+        'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),
+        'skipRate', skipRate => !isNaN(skipRate) ? skipRate : 0,
+        'fetchStatus'
       ]);
     }
 

@@ -45,7 +45,9 @@ export const spec = {
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
-        user: raiSetEids(bid)
+        user: raiSetEids(bid),
+        demand: raiGetDemandType(bid) ? 'video' : 'display',
+        videoData: raiGetVideoInfo(bid)
       };
 
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
@@ -116,16 +118,28 @@ export const spec = {
 
     var rand = Math.floor(Math.random() * 9999999999);
     var syncUrl = '';
+    var consent = '';
 
-    gdprConsent && typeof gdprConsent.consentString === 'string' ? syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand + '&pubconsent=' + gdprConsent.consentString + '&euconsent=' + gdprConsent.consentString : syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand;
+    if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString != 'undefined') {
+      consent = `pubconsent='${gdprConsent.consentString}'&euconsent='${gdprConsent.consentString}'`
+    }
 
     if (syncOptions.iframeEnabled) {
+      syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand
+      if (consent != '') {
+        syncUrl += `&${consent}`
+      }
       syncs.push({
         type: 'iframe',
         url: syncUrl
       });
-    } else if (syncOptions.pixelEnabled && REFERER != null) {
-      typeof gdprConsent != 'undefined' && typeof gdprConsent.consentString != 'undefined' ? syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?euconsent=${gdprConsent.consentString}&referrer=${REFERER}` : syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
+    }
+
+    if (syncOptions.pixelEnabled && REFERER != null && syncs.length == 0) {
+      syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
+      if (consent != '') {
+        syncUrl += `&${consent}`
+      }
       syncs.push({
         type: 'image',
         url: syncUrl
@@ -141,8 +155,6 @@ function raiGetSizes(bid) {
   let raiNewSizes;
   if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) {
     raiNewSizes = bid.mediaTypes.banner.sizes
-  } else {
-    raiNewSizes = bid.sizes
   }
   if (raiNewSizes != null) {
     return raiNewSizes.map(size => ({
@@ -150,6 +162,25 @@ function raiGetSizes(bid) {
       h: size[1]
     }));
   }
+}
+
+function raiGetDemandType(bid) {
+  if (bid.mediaTypes != undefined) {
+    if (bid.mediaTypes.video != undefined) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function raiGetVideoInfo(bid) {
+  let videoData = [];
+  if (raiGetDemandType(bid)) {
+    videoData.push({format: bid.mediaTypes.video.context});
+    videoData.push({playerSize: bid.mediaTypes.video.playerSize});
+    videoData.push({mimes: bid.mediaTypes.video.mimes});
+  }
+  return videoData;
 }
 
 function raiSetEids(bid) {

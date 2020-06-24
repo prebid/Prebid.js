@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, resetUserSync, getSyncUrl } from 'modules/gridBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 
 describe('TheMediaGrid Adapter', function () {
   const adapter = newBidder(spec);
@@ -68,6 +69,14 @@ describe('TheMediaGrid Adapter', function () {
         },
         'adUnitCode': 'adunit-code-2',
         'sizes': [[728, 90]],
+        'mediaTypes': {
+          'video': {
+            'playerSize': [400, 600]
+          },
+          'banner': {
+            'sizes': [[728, 90]]
+          }
+        },
         'bidId': '3150ccb55da321',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
@@ -79,6 +88,14 @@ describe('TheMediaGrid Adapter', function () {
         },
         'adUnitCode': 'adunit-code-1',
         'sizes': [[300, 250], [300, 600]],
+        'mediaTypes': {
+          'video': {
+            'playerSize': [400, 600]
+          },
+          'banner': {
+            'sizes': [[300, 250], [300, 600]]
+          }
+        },
         'bidId': '42dbe3a7168a6a',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
@@ -97,13 +114,23 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload).to.have.property('wrapperVersion', '$prebid.version$');
     });
 
+    it('sizes must be added from mediaTypes', function () {
+      const request = spec.buildRequests([bidRequests[0], bidRequests[1]], bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('u', referrer);
+      expect(payload).to.have.property('auids', '1,1');
+      expect(payload).to.have.property('sizes', '300x250,300x600,728x90,400x600');
+      expect(payload).to.have.property('r', '22edbae2733bf6');
+    });
+
     it('sizes must not be duplicated', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('auids', '1,1,2');
-      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
+      expect(payload).to.have.property('sizes', '300x250,300x600,728x90,400x600');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
@@ -138,6 +165,100 @@ describe('TheMediaGrid Adapter', function () {
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('us_privacy', '1YNN');
+    });
+
+    it('should convert keyword params to proper form and attaches to request', function () {
+      const bidRequestWithKeywords = [].concat(bidRequests);
+      bidRequestWithKeywords[1] = Object.assign({},
+        bidRequests[1],
+        {
+          params: {
+            uid: '1',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              singleArrNum: [3],
+              multiValMixed: ['value1', 2, 'value3'],
+              singleValNum: 123,
+              emptyStr: '',
+              emptyArr: [''],
+              badValue: {'foo': 'bar'} // should be dropped
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests(bidRequestWithKeywords, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.keywords).to.be.an('string');
+      payload.keywords = JSON.parse(payload.keywords);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'single',
+        'value': ['val']
+      }, {
+        'key': 'singleArr',
+        'value': ['val']
+      }, {
+        'key': 'singleArrNum',
+        'value': ['3']
+      }, {
+        'key': 'multiValMixed',
+        'value': ['value1', '2', 'value3']
+      }, {
+        'key': 'singleValNum',
+        'value': ['123']
+      }, {
+        'key': 'emptyStr'
+      }, {
+        'key': 'emptyArr'
+      }]);
+    });
+
+    it('should mix keyword param with keywords from config', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'fpd.user' ? {'keywords': ['a', 'b']} : arg === 'fpd.context' ? {'keywords': ['any words']} : null);
+
+      const bidRequestWithKeywords = [].concat(bidRequests);
+      bidRequestWithKeywords[1] = Object.assign({},
+        bidRequests[1],
+        {
+          params: {
+            uid: '1',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              multiValMixed: ['value1', 2, 'value3']
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests(bidRequestWithKeywords, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.keywords).to.be.an('string');
+      payload.keywords = JSON.parse(payload.keywords);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'single',
+        'value': ['val']
+      }, {
+        'key': 'singleArr',
+        'value': ['val']
+      }, {
+        'key': 'multiValMixed',
+        'value': ['value1', '2', 'value3']
+      }, {
+        'key': 'user',
+        'value': ['a', 'b']
+      }, {
+        'key': 'context',
+        'value': ['any words']
+      }]);
+
+      getConfigStub.restore();
     });
   });
 
