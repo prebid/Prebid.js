@@ -10,7 +10,6 @@ const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX
 const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
-const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
@@ -586,96 +585,41 @@ function _createImpressionObject(bid, conf) {
     impObj.banner = bannerObj;
   }
 
+  _addFloorFromFloorModule(impObj, bid);
+
   return impObj.hasOwnProperty(BANNER) ||
           impObj.hasOwnProperty(NATIVE) ||
             impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
 }
 
-function _getDigiTrustObject(key) {
-  function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-  return digiTrustId;
-}
-
-function _handleDigitrustId(eids) {
-  let digiTrustId = _getDigiTrustObject(PUBMATIC_DIGITRUST_KEY);
-  if (digiTrustId !== null) {
-    eids.push({
-      'source': 'digitru.st',
-      'uids': [{
-        'id': digiTrustId.id || '',
-        'atype': 1,
-        'ext': {
-          'keyv': parseInt(digiTrustId.keyv) || 0
+function _addFloorFromFloorModule(impObj, bid) {
+  let bidFloor = -1;
+  // get lowest floor from floorModule
+  if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
+    [BANNER, VIDEO, NATIVE].forEach(mediaType => {
+      if (impObj.hasOwnProperty(mediaType)) {
+        let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
+        if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+          let mediaTypeFloor = parseFloat(floorInfo.floor);
+          bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
         }
-      }]
+      }
     });
   }
-}
-
-function _handleTTDId(eids, validBidRequests) {
-  let ttdId = null;
-  let adsrvrOrgId = config.getConfig('adsrvrOrgId');
-  if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
-    ttdId = validBidRequests[0].userId.tdid;
-  } else if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
-    ttdId = adsrvrOrgId.TDID;
+  // get highest from impObj.bidfllor and floor from floor module
+  // as we are using Math.max, it is ok if we have not got any floor from floorModule, then value of bidFloor will be -1
+  if (impObj.bidfloor) {
+    bidFloor = Math.max(bidFloor, impObj.bidfloor)
   }
 
-  if (ttdId !== null) {
-    eids.push({
-      'source': 'adserver.org',
-      'uids': [{
-        'id': ttdId,
-        'atype': 1,
-        'ext': {
-          'rtiPartner': 'TDID'
-        }
-      }]
-    });
-  }
-}
-
-/**
- * Produces external userid object in ortb 3.0 model.
- */
-function _addExternalUserId(eids, value, source, atype) {
-  if (utils.isStr(value)) {
-    eids.push({
-      source,
-      uids: [{
-        id: value,
-        atype
-      }]
-    });
-  }
+  // assign value only if bidFloor is > 0
+  impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
 function _handleEids(payload, validBidRequests) {
-  let eids = [];
-  _handleDigitrustId(eids);
-  _handleTTDId(eids, validBidRequests);
-  const bidRequest = validBidRequests[0];
-  if (bidRequest && bidRequest.userId) {
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid.org', 1);
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteoId`), 'criteo.com', 1);// replacing criteoRtus
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.lipb.lipbid`), 'liveintent.com', 1);
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.parrableid`), 'parrable.com', 1);
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.britepoolid`), 'britepool.com', 1);
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.netId`), 'netid.de', 1);
-  }
-  if (eids.length > 0) {
-    payload.user.eids = eids;
+  const bidUserIdAsEids = utils.deepAccess(validBidRequests, '0.userIdAsEids');
+  if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    utils.deepSetValue(payload, 'user.eids', bidUserIdAsEids);
   }
 }
 
