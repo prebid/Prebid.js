@@ -140,6 +140,22 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
+    this.withFormatFloors = floors => {
+      const format = ttxRequest.imp[0].banner.format.map((fm, i) => {
+        return Object.assign(fm, {
+          ext: {
+            ttx: {
+              bidfloors: [ floors[i] ]
+            }
+          }
+        })
+      });
+
+      ttxRequest.imp[0].banner.format = format;
+
+      return this;
+    };
+
     this.build = () => ttxRequest;
   }
 
@@ -662,6 +678,57 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .build();
 
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when price floor module is not enabled in bidRequest', function() {
+      it('does not set any bidfloors in ttxRequest', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when price floor module is enabled in bidRequest', function() {
+      it('does not set any bidfloors in ttxRequest if there is no floor', function() {
+        bidRequests[0].getFloor = () => ({});
+
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('sets bidfloors in ttxRequest if there is a floor', function() {
+        bidRequests[0].getFloor = ({size, currency, mediaType}) => {
+          const floor = (size[0] === 300 && size[1] === 250) ? 1.0 : 0.10
+          return (
+            {
+              floor,
+              currency: 'USD'
+            }
+          );
+        };
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withFormatFloors([ 1.0, 0.10 ])
+          .build();
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
         const builtServerRequests = spec.buildRequests(bidRequests, {});
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
