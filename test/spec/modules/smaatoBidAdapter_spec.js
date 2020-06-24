@@ -196,12 +196,6 @@ const singleBannerBidRequest = {
 };
 
 describe('smaatoBidAdapterTest', () => {
-  let sandbox;
-
-  beforeEach(function () {
-    sandbox = sinon.sandbox.create();
-  });
-
   describe('isBidRequestValid', () => {
     it('has valid params', () => {
       expect(spec.isBidRequestValid({params: {publisherId: '123', adspaceId: '456'}})).to.be.true;
@@ -218,6 +212,11 @@ describe('smaatoBidAdapterTest', () => {
   describe('buildRequests', () => {
     beforeEach(() => {
       this.req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+      this.sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      this.sandbox.restore();
     });
 
     it('can override endpoint', () => {
@@ -276,7 +275,7 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     it('sends fp data', () => {
-      sandbox.stub(config, 'getConfig').callsFake(key => {
+      this.sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
           fpd: {
             context,
