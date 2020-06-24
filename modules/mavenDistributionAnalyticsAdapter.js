@@ -21,7 +21,7 @@ const MAVEN_DISTRIBUTION_GLOBAL = '$p'
  *  provider: typeof PROVIDER_CODE
  *  options: {
  *     sampling?: number
- *     zoneMap: {[adUnitCode: string]: {index?: number, zone?: string}}
+ *     zoneMap?: {[adUnitCode: string]: {index?: number, zone?: string}}
  *  }
  * }} MavenDistributionAdapterConfig
  */
@@ -64,13 +64,25 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   const cpmsMap = {}
   const zoneNames = []
   const zoneIndexes = []
+  const adUnitCodes = []
+  const zoneMap = adapterConfig.options.zoneMap || {}
+  let someZoneIndexNonNull = false
+  let someZoneNameNonNull = false
+  let allZoneNamesNonNull = true
   args.adUnits.forEach(adUnit => {
     cpmsMap[adUnit.code] = 0
-    const zoneConfig = adapterConfig.options.zoneMap[adUnit.code] || {}
-    let zoneIndex = zoneConfig.index != null && isFinite(zoneConfig.index)
-      ? +zoneConfig.index : null
+    adUnitCodes.push(adUnit.code)
+
+    const zoneConfig = zoneMap[adUnit.code] || {}
+    const zoneIndexNonNull = zoneConfig.index != null && isFinite(zoneConfig.index)
+    someZoneIndexNonNull = someZoneIndexNonNull || zoneIndexNonNull
+
+    let zoneIndex = zoneIndexNonNull ? +zoneConfig.index : null
+    const zoneNameNonNull = zoneConfig.zone != null
     zoneIndexes.push(zoneIndex)
-    zoneNames.push(zoneConfig.zone != null ? zoneConfig.zone : null)
+    zoneNames.push(zoneNameNonNull ? zoneConfig.zone : null)
+    someZoneNameNonNull = someZoneNameNonNull || zoneNameNonNull
+    allZoneNamesNonNull = allZoneNamesNonNull && zoneNameNonNull
   })
   args.bidsReceived.forEach(bid => {
     cpmsMap[bid.adUnitCode] = Math.max(cpmsMap[bid.adUnitCode], bid.cpm || 0)
@@ -81,9 +93,10 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   const eventToSend = {
     auc: args.auctionId,
     cpms: cpms,
-    zoneIndexes: zoneIndexes,
-    zoneNames: zoneNames,
   }
+  if (!allZoneNamesNonNull) eventToSend.codes = adUnitCodes
+  if (someZoneNameNonNull) eventToSend.zoneNames = zoneNames
+  if (someZoneIndexNonNull) eventToSend.zoneIndexes = zoneIndexes
   return eventToSend
 }
 
@@ -153,8 +166,8 @@ MavenDistributionAnalyticsAdapter.prototype = {
       // call base implementation which prints a warning
       return this.base.enableAnalytics(adapterConfig)
     }
-    if (adapterConfig.options.zoneMap == null) {
-      return logError(`Adapter ${PROVIDER_CODE}: zoneMap null; disabling`)
+    if (adapterConfig.options == null) {
+      return logError(`Adapter ${PROVIDER_CODE}: options null; disabling`)
     }
     const inner = new MavenDistributionAnalyticsAdapterInner(adapterConfig)
     const base = adapter({global: MAVEN_DISTRIBUTION_GLOBAL})

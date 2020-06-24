@@ -10,6 +10,7 @@
   "justpremiumBidAdapter",
   "mantisBidAdapter",
   "mavenAnalyticsAdapter",
+  "mavenDistributionAnalyticsAdapter",
   "openxBidAdapter",
   "rubiconBidAdapter",
   "sovrnBidAdapter",
