@@ -8,41 +8,23 @@ Maintainer: prebid@smaato.com
 
 # Description
 
-Module that connects to Smaato's demand sources
+The Smaato adapter requires setup and approval from the Smaato team, even for existing Smaato publishers. Please reach out to your account team or prebid@smaato.com for more information.
 
 # Test Parameters
 ```
-    var adUnits = [
-        {
-            code: 'test-div',
-            mediaTypes: {
-                banner: {
-                    sizes: [[300, 250]],  // a display size
-                }
-            },
-            bids: [
-                {
-                    bidder: "example",
-                    params: {
-                        placement: '12345'
-                    }
-                }
-            ]
-        },{
-            code: 'test-div',
-            mediaTypes: {
-                banner: {
-                    sizes: [[320, 50]],   // a mobile size
-                }
-            },
-            bids: [
-                {
-                    bidder: "example",
-                    params: {
-                        placement: 67890
-                    }
-                }
-            ]
+var adUnits = [{
+    "code": "header-bid-tag-1",
+    "mediaTypes": {
+        "banner": {
+            "sizes": [320, 50]
         }
-    ];
+    },
+    "bids": [{
+        "bidder": "smaato",
+        "params": {
+            "publisherId": "1100012345",
+            "adspaceId": "11002234"
+        }
+    }]
+}];
 ```
