@@ -160,6 +160,11 @@ export function getNativeTargeting(bid, bidReq) {
     bid['native']['adTemplate'] = getAssetValue(bidReq.nativeParams['adTemplate']);
   }
 
+  const globalSendTargetingKeys = deepAccess(
+    bidReq,
+    `mediaTypes.native.sendTargetingKeys`
+  ) !== false; 
+
   Object.keys(bid['native']).forEach(asset => {
     if (asset !== 'adTemplate') {
       const key = CONSTANTS.NATIVE_KEYS[asset];
@@ -175,14 +180,16 @@ export function getNativeTargeting(bid, bidReq) {
         value = placeholder;
       }
 
-      if (key && value) {
-        if (!deepAccess(bidReq, 'nativeParams.sendTargetingKeys') && typeof deepAccess(bidReq, 'nativeParams.sendTargetingKeys') !== 'undefined' && deepAccess(bidReq, 'nativeParams.' + asset + '.sendTargetingKeys')) {
-          keyValues[key] = value;
-        } else if (deepAccess(bidReq, 'nativeParams.sendTargetingKeys') && (typeof deepAccess(bidReq, 'nativeParams.' + asset + '.sendTargetingKeys') === 'undefined' || deepAccess(bidReq, 'nativeParams.' + asset + '.sendTargetingKeys'))) {
-          keyValues[key] = value;
-        } else if (typeof deepAccess(bidReq, 'nativeParams.sendTargetingKeys') === 'undefined' && (typeof deepAccess(bidReq, 'nativeParams.' + asset + '.sendTargetingKeys') === 'undefined' || deepAccess(bidReq, 'nativeParams.' + asset + '.sendTargetingKeys'))) {
-          keyValues[key] = value;
-        }
+      const assetSendTargetingKeys = deepAccess(
+        bidReq,
+        `mediaTypes.native.${asset}.sendTargetingKeys`
+      );
+
+      const sendTargeting = typeof assetSendTargetingKeys === 'boolean' ? assetSendTargetingKeys : globalSendTargetingKeys;
+
+
+      if (key && value && sendTargeting) {
+        keyValues[key] = value;
       }
     }
   });
