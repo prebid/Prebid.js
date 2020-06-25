@@ -18,6 +18,7 @@ const getConfig = config.getConfig;
 const TYPE = S2S.SRC;
 let _synced = false;
 const DEFAULT_S2S_CURRENCY = 'USD';
+const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_NETREVENUE = true;
 
 let _s2sConfig;
@@ -109,8 +110,6 @@ function setS2sConfig(options) {
   _s2sConfig = options;
 }
 getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
-
-let DEFAULT_S2S_TTL = _s2sConfig.default_s2s_ttl || 60;
 
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
@@ -833,7 +832,8 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.currency = (response.cur) ? response.cur : DEFAULT_S2S_CURRENCY;
 
           // TODO: Remove when prebid-server returns ttl and netRevenue
-          bidObject.ttl = (bid.ttl) ? bid.ttl : DEFAULT_S2S_TTL;
+          let config_ttl = _s2sConfig.default_s2s_ttl || DEFAULT_S2S_TTL;
+          bidObject.ttl = (bid.ttl) ? bid.ttl : config_ttl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
           bids.push({ adUnit: bid.impid, bid: bidObject });
