@@ -54,6 +54,11 @@ export const spec = {
 
     let responseAd = bidderBid.adm;
 
+    if(bidderBid.nurl){
+      let responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px">';
+      responseAd += responseNurl;
+    }
+
     const bidResponse = {
       requestId: bidderBid.impid,
       cpm: responseCPM,
