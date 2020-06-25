@@ -5,7 +5,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const CLIENT = 'prebid_js_$prebid.version$_0.1'
+const CLIENT = 'prebid_js_$prebid.version$_1.0'
 
 /**
 * Transform BidRequest to OpenRTB-formatted BidRequest Object
