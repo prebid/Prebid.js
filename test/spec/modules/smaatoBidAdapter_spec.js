@@ -41,16 +41,13 @@ const ADTYPE_IMG = 'Img';
 const ADTYPE_RICHMEDIA = 'Richmedia';
 
 const context = {
-  keywords: ['power tools'],
-  search: 'drill',
-  content: { userrating: 4 }
+  keywords: ['power tools', 'drills']
 };
 
 const user = {
   keywords: ['a', 'b'],
   gender: 'M',
-  yob: '1984',
-  geo: { country: 'ca' }
+  yob: '1984'
 };
 
 const openRtbBidResponse = (adType) => {
@@ -286,14 +283,11 @@ describe('smaatoBidAdapterTest', () => {
       });
       let bidRequest = utils.deepClone(singleBannerBidRequest);
       let req_fpd = JSON.parse(spec.buildRequests([bidRequest], defaultBidderRequest).data);
-      expect(req_fpd.user.geo.country).to.equal('ca');
       expect(req_fpd.user.gender).to.equal('M');
-      expect(req_fpd.user.yob).to.equal('1984');
-      expect(req_fpd.user.keywords).to.eql(['a', 'b']);
+      expect(req_fpd.user.yob).to.equal(1984);
+      expect(req_fpd.user.keywords).to.eql('a,b');
       expect(req_fpd.user.ext.consent).to.equal('HFIDUYFIUYIUYWIPOI87392DSU');
-      expect(req_fpd.site.keywords).to.eql(['power tools']);
-      expect(req_fpd.site.search).to.equal('drill');
-      expect(req_fpd.site.content.userrating).to.equal(4);
+      expect(req_fpd.site.keywords).to.eql('power tools,drills');
       expect(req_fpd.site.publisher.id).to.equal('publisherId');
     })
   });
