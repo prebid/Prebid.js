@@ -4,6 +4,7 @@ import * as utils from 'src/utils.js';
 
 const BID = {
   'bidId': '2d52001cabd527',
+  'adUnitCode': 'div-gpt-ad-12345-0',
   'params': {
     'cId': '59db6b3b4ffaa70004f45cdc',
     'pId': '59ac17c192832d0011283fe3',
@@ -138,6 +139,7 @@ describe('VidazooBidAdapter', function () {
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
+          adUnitCode: 'div-gpt-ad-12345-0',
           publisherId: '59ac17c192832d0011283fe3',
           dealId: 1,
           res: `${window.top.screen.width}x${window.top.screen.height}`,

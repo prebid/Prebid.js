@@ -33,7 +33,7 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const { params, bidId, userId } = bid;
+  const { params, bidId, userId, adUnitCode } = bid;
   const { bidFloor, cId, pId, ext } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
@@ -43,6 +43,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     cb: Date.now(),
     bidFloor: bidFloor,
     bidId: bidId,
+    adUnitCode: adUnitCode,
     publisherId: pId,
     sizes: sizes,
     dealId: dealId,
