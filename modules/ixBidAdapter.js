@@ -128,6 +128,9 @@ function parseBid(rawBid, currency, bidRequest) {
   bid.meta.networkId = utils.deepAccess(rawBid, 'ext.dspid');
   bid.meta.brandId = utils.deepAccess(rawBid, 'ext.advbrandid');
   bid.meta.brandName = utils.deepAccess(rawBid, 'ext.advbrand');
+  if (rawBid.adomain && rawBid.adomain.length > 0) {
+    bid.meta.advertiserDomains = rawBid.adomain;
+  }
 
   return bid;
 }
