@@ -2160,7 +2160,6 @@ describe('S2S Adapter', function () {
         s2sConfig: {
           default_s2s_ttl: 30
           }
-        }
       });
       expect(config.getConfig('s2sConfig').default_s2s_ttl).to.deep.equal(30)
     });
