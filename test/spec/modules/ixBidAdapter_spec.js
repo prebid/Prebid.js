@@ -872,9 +872,7 @@ describe('IndexexchangeAdapter', function () {
       const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
-    
-    
-  describe('interpretResponse', function () {
+
     it('should get correct bid response for banner ad with missing adomain', function () {
       const expectedParse = [
         {
