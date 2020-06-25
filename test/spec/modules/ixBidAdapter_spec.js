@@ -110,7 +110,7 @@ describe('IndexexchangeAdapter', function () {
     ]
   };
 
-    const DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN = {
+  const DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN = {
     cur: 'USD',
     id: '11a22b33c44d',
     seatbid: [
