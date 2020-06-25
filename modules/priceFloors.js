@@ -295,8 +295,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
   });
 }
 
-export function pickRandomModel(modelGroups) {
-  const weightSum = modelGroups.reduce((accum, model) => accum += model.modelWeight, 0);
+export function pickRandomModel(modelGroups, weightSum) {
   // we loop through the models subtracting the current model weight from our random number
   // once we are at or below zero, we return the associated model
   let random = Math.floor(Math.random() * weightSum + 1)
@@ -317,7 +316,7 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
   if (utils.deepAccess(resolvedFloorsData, 'data.floorsSchemaVersion') === 2) {
     // merge the models specific stuff into the top level data settings (now it looks like floorsSchemaVersion 1!)
     let { modelGroups, ...rest } = resolvedFloorsData.data;
-    resolvedFloorsData.data = Object.assign(rest, pickRandomModel(modelGroups));
+    resolvedFloorsData.data = Object.assign(rest, pickRandomModel(modelGroups, rest.modelWeightSum));
   }
 
   // if we do not have a floors data set, we will try to use data set on adUnits
@@ -410,7 +409,14 @@ const floorsSchemaValidation = {
       return false;
     }
     // every model should have valid schema, as well as an accompanying modelWeight
-    return data.modelGroups.every(model => typeof model.modelWeight === 'number' && modelIsValid(model));
+    data.modelWeightSum = 0;
+    return data.modelGroups.every(model => {
+      if (typeof model.modelWeight === 'number' && modelIsValid(model)) {
+        data.modelWeightSum += model.modelWeight;
+        return true;
+      }
+      return false;
+    });
   }
 };
 
@@ -501,7 +507,13 @@ export function handleFetchResponse(fetchResponse) {
     floorResponse = fetchResponse;
   }
   // Update the global floors object according to the fetched data
-  _floorsConfig.data = parseFloorData(floorResponse, 'fetch') || _floorsConfig.data;
+  const fetchData = parseFloorData(floorResponse, 'fetch');
+  if (fetchData) {
+    // set .data to it
+    _floorsConfig.data = fetchData;
+    // set skipRate override if necessary
+    _floorsConfig.skipRate = utils.isNumber(fetchData.skipRate) ? fetchData.skipRate : _floorsConfig.skipRate;
+  }
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
   resumeDelayedAuctions();

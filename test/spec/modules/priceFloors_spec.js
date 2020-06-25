@@ -630,6 +630,44 @@ describe('the price floors module', function () {
         fetchStatus: 'success'
       });
     });
+    it('it should correctly overwrite skipRate with fetch skipRate', function () {
+      // so floors does not skip
+      sandbox.stub(Math, 'random').callsFake(() => 0.99);
+      // init the fake server with response stuff
+      let fetchFloorData = {
+        ...basicFloorData,
+        modelVersion: 'fetch model name', // change the model name
+      };
+      fetchFloorData.skipRate = 95;
+      fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
+
+      // run setConfig indicating fetch
+      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+
+      // floor provider should be called
+      expect(fakeFloorProvider.requests.length).to.equal(1);
+      expect(fakeFloorProvider.requests[0].url).to.equal('http://www.fakeFloorProvider.json');
+
+      // start the auction it should delay and not immediately call `continueAuction`
+      runStandardAuction();
+
+      // exposedAdUnits should be undefined if the auction has not continued
+      expect(exposedAdUnits).to.be.undefined;
+
+      // make the fetch respond
+      fakeFloorProvider.respond();
+      expect(exposedAdUnits).to.not.be.undefined;
+
+      // the exposedAdUnits should be from the fetch not setConfig level data
+      // and fetchStatus is success since fetch worked
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'fetch model name',
+        location: 'fetch',
+        skipRate: 95,
+        fetchStatus: 'success'
+      });
+    });
     it('Should not break if floor provider returns 404', function () {
       // run setConfig indicating fetch
       handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
