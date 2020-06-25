@@ -2158,10 +2158,10 @@ describe('S2S Adapter', function () {
     it('should set default s2s ttl', function () {
       config.setConfig({
         s2sConfig: {
-          default_s2s_ttl: 30
+          defaultS2sTtl: 30
         }
       });
-      expect(config.getConfig('s2sConfig').default_s2s_ttl).to.deep.equal(30)
+      expect(config.getConfig('s2sConfig').defaultS2sTtl).to.deep.equal(30)
     });
 
     it('should set syncUrlModifier', function () {
