@@ -832,8 +832,8 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.currency = (response.cur) ? response.cur : DEFAULT_S2S_CURRENCY;
 
           // TODO: Remove when prebid-server returns ttl and netRevenue
-          const config_ttl = _s2sConfig.defaultS2sTtl || DEFAULT_S2S_TTL;
-          bidObject.ttl = (bid.ttl) ? bid.ttl : config_ttl;
+          const configTtl = _s2sConfig.defaultS2sTtl || DEFAULT_S2S_TTL;
+          bidObject.ttl = (bid.ttl) ? bid.ttl : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
           bids.push({ adUnit: bid.impid, bid: bidObject });
