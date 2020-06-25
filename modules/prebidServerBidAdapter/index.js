@@ -17,7 +17,6 @@ const getConfig = config.getConfig;
 
 const TYPE = S2S.SRC;
 let _synced = false;
-const DEFAULT_S2S_TTL = pbjs_config.getConfig('defaultS2STTL') || 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
 const DEFAULT_S2S_NETREVENUE = true;
 
@@ -110,6 +109,8 @@ function setS2sConfig(options) {
   _s2sConfig = options;
 }
 getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
+
+let DEFAULT_S2S_TTL = _s2sConfig.default_s2s_ttl || 60;
 
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
