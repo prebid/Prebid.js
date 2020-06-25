@@ -407,12 +407,12 @@ export const spec = {
             if (isVideo) {
               adserverTargeting['oz_' + bidderName + '_vid'] = videoContext; // outstream or instream
             }
-            let flr = utils.deepAccess(allBidsForThisBidid[bidderName], 'ext.bidder.ozone.floor');
-            if (flr) {
-              adserverTargeting['oz_' + bidderName + '_flr'] = flr ? 1 : 0;
+            let flr = utils.deepAccess(allBidsForThisBidid[bidderName], 'ext.bidder.ozone.floor', null);
+            if (flr != null) {
+              adserverTargeting['oz_' + bidderName + '_flr'] = flr;
             }
-            let rid = utils.deepAccess(allBidsForThisBidid[bidderName], 'ext.bidder.ozone.ruleId');
-            if (rid) {
+            let rid = utils.deepAccess(allBidsForThisBidid[bidderName], 'ext.bidder.ozone.ruleId', null);
+            if (rid != null) {
               adserverTargeting['oz_' + bidderName + '_rid'] = rid;
             }
             if (bidderName.match(/^ozappnexus/)) {
