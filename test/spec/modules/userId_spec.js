@@ -28,7 +28,7 @@ let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 
 describe('User ID', function() {
-  function getConfigMock(configArr1, configArr2, configArr3, configArr4, configArr5, configArr6) {
+  function getConfigMock(configArr1, configArr2, configArr3, configArr4, configArr5, configArr6, configArr7) {
     return {
       userSync: {
         syncDelay: 0,
@@ -38,7 +38,8 @@ describe('User ID', function() {
           (configArr3 && configArr3.length >= 3) ? getStorageMock.apply(null, configArr3) : null,
           (configArr4 && configArr4.length >= 3) ? getStorageMock.apply(null, configArr4) : null,
           (configArr5 && configArr5.length >= 3) ? getStorageMock.apply(null, configArr5) : null,
-          (configArr6 && configArr6.length >= 3) ? getStorageMock.apply(null, configArr6) : null
+          (configArr5 && configArr6.length >= 3) ? getStorageMock.apply(null, configArr6) : null,
+          (configArr6 && configArr7.length >= 3) ? getStorageMock.apply(null, configArr7) : null
         ].filter(i => i)}
     }
   }
@@ -393,8 +394,8 @@ describe('User ID', function() {
             name: 'netId',
             storage: { name: 'netId', type: 'cookie' }
           }, {
-            name: 'intentiqId',
-            storage: { name: 'intentiqid', type: 'cookie' }
+            name: 'intentIqId',
+            storage: { name: 'intentIqId', type: 'cookie' }
           }]
         }
       });
@@ -969,40 +970,40 @@ describe('User ID', function() {
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
-    });    
-    
-    it('test hook from intentiqId cookies', function(done) {
+    });
+
+    it('test hook from intentIqId cookies', function(done) {
       // simulate existing browser local storage values
-      coreStorage.setCookie('intentiqid', JSON.stringify({'intentiqid': 'abcdefghijk'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'abcdefghijk'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([intentIqIdSubmodule]);
       init(config);
-      config.setConfig(getConfigMock(['intentiqid', 'intentiqid', 'cookie']));
+      config.setConfig(getConfigMock(['intentIqId', 'intentIqId', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.intentiqid');
-            expect(bid.userId.intentiqid).to.equal('abcdefghijk');
+            expect(bid).to.have.deep.nested.property('userId.intentIqId');
+            expect(bid.userId.intentIqId).to.equal('abcdefghijk');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'intentiq.com',
               uids: [{id: 'abcdefghijk', atype: 1}]
             });
           });
         });
-        coreStorage.setCookie('intentiqid', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
 
-    it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, intentiqid and netId have data to pass', function(done) {
+    it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, intentIqId and netId have data to pass', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('intentiqid', JSON.stringify({'ctrid': 'testintentiqId'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'testintentIqId'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule]);
       init(config);
@@ -1012,7 +1013,7 @@ describe('User ID', function() {
         ['identityLink', 'idl_env', 'cookie'],
         ['britepoolId', 'britepoolid', 'cookie'],
         ['netId', 'netId', 'cookie'],
-        ['intentiqid', 'intentiqid', 'cookie']));
+        ['intentIqId', 'intentIqId', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -1034,10 +1035,10 @@ describe('User ID', function() {
             expect(bid.userId.britepoolid).to.equal('testbritepoolid');
             // also check that netId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.netId');
-            expect(bid.userId.netId).to.equal('testnetId');            
+            expect(bid.userId.netId).to.equal('testnetId');
             // also check that intentIqId id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.intentiqid');
-            expect(bid.userId.netId).to.equal('testintentiqId');
+            expect(bid).to.have.deep.nested.property('userId.intentIqId');
+            expect(bid.userId.intentIqId).to.equal('testintentIqId');
             expect(bid.userIdAsEids.length).to.equal(7);
           });
         });
@@ -1047,7 +1048,7 @@ describe('User ID', function() {
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('intentiqid', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -1059,7 +1060,7 @@ describe('User ID', function() {
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('intentiqid', JSON.stringify({'ctrid': 'testintentiqId'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'testintentIqId'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([]);
 
@@ -1082,7 +1083,7 @@ describe('User ID', function() {
         ['identityLink', 'idl_env', 'cookie'],
         ['britepoolId', 'britepoolid', 'cookie'],
         ['netId', 'netId', 'cookie'],
-        ['intentIqId', 'intentiqid', 'cookie']));
+        ['intentIqId', 'intentIqId', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -1106,8 +1107,8 @@ describe('User ID', function() {
             expect(bid).to.have.deep.nested.property('userId.netId');
             expect(bid.userId.netId).to.equal('testnetId');
             // also check that intentIqId id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.intentiqid');
-            expect(bid.userId.netId).to.equal('testintentiqId');
+            expect(bid).to.have.deep.nested.property('userId.intentIqId');
+            expect(bid.userId.intentIqId).to.equal('testintentIqId');
             expect(bid.userIdAsEids.length).to.equal(7);
           });
         });
@@ -1117,7 +1118,7 @@ describe('User ID', function() {
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('intentiqid', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -1129,7 +1130,7 @@ describe('User ID', function() {
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), new Date(Date.now() + 5000).toUTCString());
-      coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'testintentiqId'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'testintentIqId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
 
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule]);
@@ -1150,9 +1151,9 @@ describe('User ID', function() {
             name: 'britepoolId', storage: { name: 'britepoolid', type: 'cookie' }
           }, {
             name: 'netId', storage: { name: 'netId', type: 'cookie' }
-          },{
-            name: 'intentiqid', storage: { name: 'intentiqid', type: 'cookie' }
-          },{
+          }, {
+            name: 'intentIqId', storage: { name: 'intentIqId', type: 'cookie' }
+          }, {
             name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
           }]
         }
@@ -1197,8 +1198,8 @@ describe('User ID', function() {
             expect(bid).to.have.deep.nested.property('userId.mid');
             expect(bid.userId.mid).to.equal('123456778');
             // also check that intentIqId id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.intentiqid');
-            expect(bid.userId.netId).to.equal('testintentiqId');
+            expect(bid).to.have.deep.nested.property('userId.intentIqId');
+            expect(bid.userId.intentIqId).to.equal('testintentIqId');
             expect(bid.userIdAsEids.length).to.equal(7);
           });
         });
@@ -1208,7 +1209,7 @@ describe('User ID', function() {
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('intentiqid', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});

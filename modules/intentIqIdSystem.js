@@ -22,10 +22,10 @@ export const intentIqIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {{ctrid:string}} value
-   * @returns {{intentiqid:string}}
+   * @returns {{intentIqId:string}}
    */
   decode(value) {
-    return (value && typeof value['ctrid'] === 'string') ? { 'intentiqid': value['ctrid'] } : undefined;
+    return (value && typeof value['ctrid'] === 'string') ? { 'intentIqId': value['ctrid'] } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -34,14 +34,13 @@ export const intentIqIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(configParams) {
-    if (!configParams || typeof configParams.partner !== 'string') {
-      utils.logError('User ID - intentIqId submodule requires a partner to be defined');
+    if (!configParams || typeof configParams.partner !== 'number') {
+      utils.logError('User ID - intentIqId submodule requires a valid partner to be defined');
       return;
     }
-    
+
     // use protocol relative urls for http or https
     const url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
-
     const resp = function (callback) {
       const callbacks = {
         success: response => {

@@ -6,11 +6,11 @@ const USER_IDS_CONFIG = {
   // key-name : {config}
 
   // intentIqId
-  'intentiqid': {
+  'intentIqId': {
     source: 'intentiq.com',
     atype: 1
   },
-		
+
   // pubCommonId
   'pubcid': {
     source: 'pubcid.org',

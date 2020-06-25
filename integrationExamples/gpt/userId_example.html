@@ -140,7 +140,18 @@
                             name: "unifiedid",
                             expires: 30
                         },
-                    }, {
+                    },{
+                        name: "intentIqId",
+                        params: {
+                            partner: 0, //Set your real IntentIQ partner ID here for production.
+                        },
+                        storage: {
+                            type: "cookie",
+                            name: "intentIqId",
+                            expires: 30
+                        },
+                    },
+                     {
                         name: "id5Id",
                         params: {
                             partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
