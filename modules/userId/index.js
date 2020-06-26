@@ -368,7 +368,7 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
 }
 
 /**
- * This is a common function that will initalize subModules if not already done and it will also execute subModule callbacks
+ * This is a common function that will initialize subModules if not already done and it will also execute subModule callbacks
  */
 function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
   let delayed = false;
@@ -633,7 +633,7 @@ export function init(config) {
     utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
     return;
   }
-  // _pubcid_optout is checked for compatiblility with pubCommonId
+  // _pubcid_optout is checked for compatibility with pubCommonId
   if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (coreStorage.getDataFromLocalStorage('_pbjs_id_optout') || coreStorage.getDataFromLocalStorage('_pubcid_optout'))) {
     utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
     return;
