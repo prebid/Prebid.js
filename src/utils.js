@@ -264,9 +264,23 @@ export function logError() {
   }
 }
 
+let getTimestamp
+if (window.performance && window.performance.now) {
+  getTimestamp = function getTimestamp() {
+    // truncate any partial millisecond
+    return window.performance.now() | 0
+  }
+} else {
+  const initTime = +new Date()
+  getTimestamp = function getTimestamp() {
+    return new Date() - initTime
+  }
+}
+
 function decorateLog(args, prefix) {
   args = [].slice.call(args);
   prefix && args.unshift(prefix);
+  args.unshift(getTimestamp())
   args.unshift('display: inline-block; color: #fff; background: #3b88c3; padding: 1px 4px; border-radius: 3px;');
   args.unshift('%cPrebid');
   return args;
