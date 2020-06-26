@@ -1,7 +1,7 @@
 'use strict';
 
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { OUTSTREAM } from '../src/video.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
 const { registerBidder } = require('../src/adapters/bidderFactory.js');
@@ -111,7 +111,7 @@ function interpretResponse(serverResponse, bidderRequest) {
       width,
       height,
       creativeId,
-      dealId: dealId ? dealId : '',
+      dealId: dealId == null ? dealId : '',
       currency,
       netRevenue: false,
       mediaType,
@@ -160,7 +160,7 @@ function onetagRenderer({renderer, width, height, vastXml, adUnitCode}) {
       height,
       vastXml,
       nodeId: adUnitCode,
-      config: bidResponse.renderer.getConfig()
+      config: renderer.getConfig()
     });
   });
 }
