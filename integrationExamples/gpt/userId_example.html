@@ -157,11 +157,6 @@
                         params: {
                             // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
                             partner: '30182847-e426-4ff9-b2b5-9ca1324ea09b'
-                        },
-                        storage: {
-                            type: "cookie",
-                            name: "_parrable_eid", // create a cookie with this name
-                            expires: 365           // cookie can last for a year
                         }
                     }, {
                         name: "pubCommonId",
@@ -184,9 +179,29 @@
                         name: 'idl_env',
                         expires: 30
                       }
+                    }, {
+                      name: "sharedId",
+                      params: {
+                        syncTime: 60 // in seconds, default is 24 hours
+                      },
+                      storage: {
+                        type: "cookie",
+                        name: "sharedid",
+                        expires: 28
+                      }
+                    }, {
+                      name: "liveIntentId",
+                      params: {
+                        publisherId: "9896876"
+                      },
+                      storage: {
+                        type: "cookie",
+                        name: "_li_pbid",
+                        expires: 28
+                      }
                     }],
                     syncDelay: 5000,
-                    auctionDelay: 1000 
+                    auctionDelay: 1000
                 }
             });
             pbjs.addAdUnits(adUnits);

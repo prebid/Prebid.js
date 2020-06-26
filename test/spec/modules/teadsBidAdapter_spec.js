@@ -403,39 +403,63 @@ describe('teadsBidAdapter', () => {
   });
 
   describe('interpretResponse', function() {
-    let bids = {
-      'body': {
-        'responses': [{
-          'ad': AD_SCRIPT,
+    it('should get correct bid responses', function() {
+      let bids = {
+        'body': {
+          'responses': [{
+            'ad': AD_SCRIPT,
+            'cpm': 0.5,
+            'currency': 'USD',
+            'height': 250,
+            'bidId': '3ede2a3fa0db94',
+            'ttl': 360,
+            'width': 300,
+            'creativeId': 'er2ee',
+            'placementId': 34
+          }, {
+            'ad': AD_SCRIPT,
+            'cpm': 0.5,
+            'currency': 'USD',
+            'height': 200,
+            'bidId': '4fef3b4gb1ec15',
+            'ttl': 360,
+            'width': 350,
+            'creativeId': 'fs3ff',
+            'placementId': 34,
+            'dealId': 'ABC_123'
+          }]
+        }
+      };
+      let expectedResponse = [
+        {
           'cpm': 0.5,
-          'currency': 'USD',
-          'height': 250,
-          'netRevenue': true,
-          'bidId': '3ede2a3fa0db94',
-          'ttl': 360,
           'width': 300,
+          'height': 250,
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 360,
+          'ad': AD_SCRIPT,
+          'requestId': '3ede2a3fa0db94',
           'creativeId': 'er2ee',
           'placementId': 34
-        }]
-      }
-    };
-
-    it('should get correct bid response', function() {
-      let expectedResponse = {
-        'cpm': 0.5,
-        'width': 300,
-        'height': 250,
-        'currency': 'USD',
-        'netRevenue': true,
-        'ttl': 360,
-        'ad': AD_SCRIPT,
-        'requestId': '3ede2a3fa0db94',
-        'creativeId': 'er2ee',
-        'placementId': 34
-      };
+        }, {
+          'cpm': 0.5,
+          'width': 350,
+          'height': 200,
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 360,
+          'ad': AD_SCRIPT,
+          'requestId': '4fef3b4gb1ec15',
+          'creativeId': 'fs3ff',
+          'placementId': 34,
+          'dealId': 'ABC_123'
+        }
+      ]
+      ;
 
       let result = spec.interpretResponse(bids);
-      expect(result[0]).to.deep.equal(expectedResponse);
+      expect(result).to.eql(expectedResponse);
     });
 
     it('handles nobid responses', function() {

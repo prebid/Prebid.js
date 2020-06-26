@@ -42,6 +42,11 @@ export const spec = {
       if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
         query.ids = createUserIdString(bid.userIdAsEids)
       }
+      if (bid.params.customParams && utils.isPlainObject(bid.params.customParams)) {
+        for (let prop in bid.params.customParams) {
+          query[prop] = bid.params.customParams[prop]
+        }
+      }
     })
 
     if (bidderRequest && bidderRequest.gdprConsent) {
