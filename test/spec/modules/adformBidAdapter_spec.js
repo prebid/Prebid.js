@@ -131,11 +131,10 @@ describe('Adform adapter', function () {
     });
 
     it('should pass extended ids', function () {
-      bids[0].userId = {
+      bids[0].userIdAsEids = createEidsArray({
         tdid: 'TTD_ID_FROM_USER_ID_MODULE',
         pubcid: 'pubCommonId_FROM_USER_ID_MODULE'
-      };
-      bids[0].userIdAsEids = createEidsArray(bids[0].userId);
+      });
       let request = spec.buildRequests(bids);
       let eids = parseUrl(request.url).query.eids;
 
