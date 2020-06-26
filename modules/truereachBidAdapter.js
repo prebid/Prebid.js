@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'truereach';
@@ -24,7 +24,6 @@ export const spec = {
     let queryParams = buildCommonQueryParamsFromBids(validBidRequests, bidderRequest);
 
     let siteId = utils.deepAccess(validBidRequests[0], 'params.site_id');
-    let bidderUrl = utils.deepAccess(validBidRequests[0], 'params.bidderUrl');
 
     let url = BIDDER_URL + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
 
@@ -54,7 +53,7 @@ export const spec = {
 
     let responseAd = bidderBid.adm;
 
-    if(bidderBid.nurl){
+    if (bidderBid.nurl) {
       let responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px">';
       responseAd += responseNurl;
     }
@@ -115,7 +114,7 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
     device: {
       ua: window.navigator.userAgent
     },
-    tmax:config.getConfig('bidderTimeout')
+    tmax: config.getConfig('bidderTimeout')
   };
 
   return defaultParams;
