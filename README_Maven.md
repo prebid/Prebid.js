@@ -7,6 +7,8 @@ Changes unique to this fork:
 * Module configuration for the HubPages platform (hpmodules.json)
 * The Sublime bid adapter module (modules/sublimeBidAdapter.js)
   and tests (test/spec/modules/sublimeBidAdapter\_spec.js)
+* modules/mavenAnalyticsAdapter.* (Hummingbird)
+* modules/mavenDistributionAnalyticsAdapter.* (for LiftIgniter)
 
 
 ## Building the Salish Prebid Bundle
