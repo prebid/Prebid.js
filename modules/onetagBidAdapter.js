@@ -90,17 +90,46 @@ function interpretResponse(serverResponse, bidderRequest) {
   if (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0) {
     return bids;
   }
-  body.bids.forEach(function(bid) {
-    let responseBid = {
-      ...bid,
+  body.bids.forEach(({
+    requestId,
+    cpm,
+    width,
+    height,
+    creativeId,
+    dealId,
+    currency,
+    mediaType,
+    ttl,
+    rendererUrl,
+    ad,
+    vastUrl,
+    videoCacheKey
+  }) => {
+    const responseBid = {
+      requestId,
+      cpm,
+      width,
+      height,
+      creativeId,
+      dealId: dealId ? dealId : '',
+      currency,
       netRevenue: false,
+      mediaType,
+      ttl: ttl || 300
     };
-    responseBid.ttl = responseBid.ttl || 300;
-    responseBid.dealId = responseBid.dealId || '';
-    if (bid.mediaType === VIDEO) {
-      const videoBid = find(requestData.bids, (item) => item.bidId === bid.requestId);
-      if (videoBid.context === OUTSTREAM) {
-        responseBid.renderer = createRenderer(bid);
+    if (mediaType === BANNER) {
+      responseBid.ad = ad;
+    } else if (mediaType === VIDEO) {
+      const {context, adUnitCode} = find(requestData.bids, (item) => item.bidId === requestId);
+      if (context === INSTREAM) {
+        responseBid.vastUrl = vastUrl;
+        responseBid.videoCacheKey = videoCacheKey;
+      } else if (context === OUTSTREAM) {
+        responseBid.vastXml = ad;
+        responseBid.vastUrl = vastUrl;
+        if (rendererUrl) {
+          responseBid.renderer = createRenderer({requestId, rendererUrl, adUnitCode});
+        }
       }
     }
     bids.push(responseBid);
@@ -117,20 +146,20 @@ function createRenderer(bid, rendererOptions = {}) {
     loaded: false
   });
   try {
-    renderer.setRender(ourRenderer);
+    renderer.setRender(onetagRenderer);
   } catch (e) {
 
   }
   return renderer;
 }
 
-function ourRenderer(bidResponse) {
-  bidResponse.renderer.push(() => {
-    window.onetag.PlayerStandalone.init({
-      width: bidResponse.width,
-      height: bidResponse.height,
-      vastXml: bidResponse.vastXml,
-      nodeId: bidResponse.adUnitCode,
+function onetagRenderer({renderer, width, height, vastXml, adUnitCode}) {
+  renderer.push(() => {
+    window.onetag.Player.init({
+      width,
+      height,
+      vastXml,
+      nodeId: adUnitCode,
       config: bidResponse.renderer.getConfig()
     });
   });
@@ -251,12 +280,12 @@ function getSpaceCoords(id) {
   const space = document.getElementById(id);
   try {
     const { top, left, width, height } = space.getBoundingClientRect();
-    const coords = { top, left, width, height };
     let window = space.ownerDocument.defaultView;
+    const coords = { top: top + window.pageYOffset, left: left + window.pageXOffset, width, height };
     let frame = window.frameElement;
     while (frame != null) {
       const { top, left } = frame.getBoundingClientRect();
-      coords.top += top + window.pageXOffset;
+      coords.top += top + window.pageYOffset;
       coords.left += left + window.pageXOffset;
       window = window.parent;
       frame = window.frameElement;
