@@ -46,10 +46,10 @@ const MAX_BATCH_SIZE = 32
  */
 
 /**
- * // cpms, zoneIndexes, and zoneNames all have the same length
+ * // cpmms, zoneIndexes, and zoneNames all have the same length
  * @typedef {{
  *   auc: string
- *   cpms: number[]
+ *   cpmms: number[]
  *   zoneIndexes: number[]
  *   zoneNames: string[]
  * }} AuctionEndSummary
@@ -62,7 +62,7 @@ const MAX_BATCH_SIZE = 32
  */
 export function summarizeAuctionEnd(args, adapterConfig) {
   /** @type {{[code: string]: number}} */
-  const cpmsMap = {}
+  const cpmmsMap = {}
   const zoneNames = []
   const zoneIndexes = []
   const adUnitCodes = []
@@ -71,7 +71,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   let someZoneNameNonNull = false
   let allZoneNamesNonNull = true
   args.adUnits.forEach(adUnit => {
-    cpmsMap[adUnit.code] = 0
+    cpmmsMap[adUnit.code] = 0
     adUnitCodes.push(adUnit.code)
 
     const zoneConfig = zoneMap[adUnit.code] || {}
@@ -86,14 +86,14 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     allZoneNamesNonNull = allZoneNamesNonNull && zoneNameNonNull
   })
   args.bidsReceived.forEach(bid => {
-    cpmsMap[bid.adUnitCode] = Math.max(cpmsMap[bid.adUnitCode], bid.cpm || 0)
+    cpmmsMap[bid.adUnitCode] = Math.max(cpmmsMap[bid.adUnitCode], Math.round(bid.cpm * 1000 || 0))
   })
-  const cpms = args.adUnits.map(adUnit => cpmsMap[adUnit.code])
+  const cpmms = args.adUnits.map(adUnit => cpmmsMap[adUnit.code])
 
   /** @type {AuctionEndSummary} */
   const eventToSend = {
     auc: args.auctionId,
-    cpms: cpms,
+    cpmms: cpmms,
   }
   if (!allZoneNamesNonNull) eventToSend.codes = adUnitCodes
   if (someZoneNameNonNull) eventToSend.zoneNames = zoneNames
@@ -102,12 +102,17 @@ export function summarizeAuctionEnd(args, adapterConfig) {
 }
 
 /**
+ * Price is in microdollars
  * @param {AuctionEndSummary[]} batch
- * @return {{batch: string}}
+ * @return {{batch: string, price: number}}
  */
 export function createSendOptionsFromBatch(batch) {
   const batchJson = JSON.stringify(batch)
-  return { batch: batchJson }
+  let price = 0
+  batch.forEach(auctionEndSummary => {
+    auctionEndSummary.cpmms.forEach(cpmm => price += cpmm)
+  })
+  return { batch: batchJson, price: price }
 }
 
 const STATE_DOM_CONTENT_LOADING = 'wait-for-$p-to-be-defined'

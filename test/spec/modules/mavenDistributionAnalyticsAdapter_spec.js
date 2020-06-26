@@ -879,7 +879,7 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       const actualSummary = summarizeAuctionEnd(args, adapterConfig)
       const expectedSummary = {
         'auc': 'e0a2febe-dc05-4999-87ed-4c40022b6796',
-        cpms: [0],
+        cpmms: [0],
         zoneIndexes: [0],
         zoneNames: ['fixed_bottom'],
       }
@@ -2259,7 +2259,7 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       const actual = summarizeAuctionEnd(mavenArgs, adapterConfig)
       const expected = {
         auc: 'd01409e4-580d-4107-8d92-3c5dec19b41a',
-        cpms: [ 2.604162 ],
+        cpmms: [ 2604 ],
         codes: [ 'gpt-slot-channel-banner-top' ],
       }
       assert.deepEqual(actual, expected)
@@ -2267,13 +2267,16 @@ describe('MavenDistributionAnalyticsAdapter', function () {
   });
   describe('createSendOptionsFromBatch', () => {
     it('should create batch json', () => {
-      const actual = createSendOptionsFromBatch({
+      const actual = createSendOptionsFromBatch([{
         auc: 'aaa',
-        cpms: [0.04],
+        cpmms: [40],
         zoneIndexes: [3],
         zoneNames: ['sidebar']
-      })
-      const expected = {batch: '{"auc":"aaa","cpms":[0.04],"zoneIndexes":[3],"zoneNames":["sidebar"]}'}
+      }])
+      const expected = {
+        batch: '[{"auc":"aaa","cpmms":[40],"zoneIndexes":[3],"zoneNames":["sidebar"]}]',
+        price: 40,
+      }
       assert.deepEqual(actual, expected)
     })
   })
