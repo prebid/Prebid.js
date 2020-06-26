@@ -118,29 +118,12 @@ describe('MediaSquare bid adapter tests', function () {
     expect(won).to.equal(true);
   });
   it('Verifies user sync without cookie in bid response', function () {
-    var syncs = spec.getUserSyncs({
-      iframeEnabled: true,
-      pixelEnabled: false,
-    }, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    var syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.property('type').and.to.equal('iframe');
-    syncs = spec.getUserSyncs({
-      iframeEnabled: false,
-      pixelEnabled: true,
-    }, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
-    expect(syncs).to.have.property('type').and.to.equal('image');
-    syncs = spec.getUserSyncs({
-      iframeEnabled: false,
-      pixelEnabled: false,
-    }, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
-    expect(syncs).to.equal(false);
-    BID_RESPONSE.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
   });
   it('Verifies user sync with cookies in bid response', function () {
     BID_RESPONSE.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
-    var syncs = spec.getUserSyncs({
-      iframeEnabled: true,
-      pixelEnabled: false,
-    }, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
+    var syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0]).to.have.property('type').and.to.equal('image');
     expect(syncs[0]).to.have.property('url').and.to.equal('http://www.cookie.sync.org/');

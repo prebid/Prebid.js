@@ -119,23 +119,12 @@ export const spec = {
     if (serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
     } else {
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-        if (typeof gdprConsent.gdprApplies === 'boolean') { params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`; } else { params += `&gdpr_consent=${gdprConsent.consentString}`; }
-      }
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') { params += typeof gdprConsent.gdprApplies === 'boolean' ? `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}` : `&gdpr_consent=${gdprConsent.consentString}`; }
       if (uspConsent && typeof uspConsent === 'string') { params += '&uspConsent=' + uspConsent }
-      if (syncOptions.iframeEnabled) {
-        return {
-          type: 'iframe',
-          url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=iframe' + params
-        };
-      }
-      if (syncOptions.pixelEnabled) {
-        return {
-          type: 'image',
-          url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=pixel' + params
-        };
-      }
-      return false;
+      return {
+        type: 'iframe',
+        url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=iframe' + params
+      };
     }
   },
 
