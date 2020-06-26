@@ -81,7 +81,6 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       assert.equal(liftIgniterWrapper.checkIsLoaded(), true)
     })
     it('should work with LiftIgniter already loaded (synchronous $p(onload))', () => {
-      console.log('should work with LiftIgniter already loaded (synchronous $p(onload))')
       defineDollarPReal()
       const liftIgniterWrapper = new testables.LiftIgniterWrapper()
       assert.equal(liftIgniterWrapper._state, 'loaded')
