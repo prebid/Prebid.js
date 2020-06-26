@@ -190,6 +190,22 @@ describe('IndexexchangeAdapter', function () {
     v: 8.1
   };
 
+  const DEFAULT_USERID_DATA = {
+    idl_env: '1234-5678-9012-3456', // Liveramp
+  };
+
+  const DEFAULT_USERID_PAYLOAD = [
+    {
+      source: 'liveramp.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA.idl_env,
+        ext: {
+          rtiPartner: 'idl'
+        }
+      }]
+    }
+  ];
+
   describe('inherited functions', function () {
     it('should exists and is a function', function () {
       const adapter = newBidder(spec);
@@ -365,13 +381,16 @@ describe('IndexexchangeAdapter', function () {
       request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       query = request.data;
     });
+
     afterEach(function () {
       delete window.headertag;
     });
+
     describe('buildRequestSingleRTI', function () {
       before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
       });
+
       it('payload should have correct format and value (single identity partner)', function () {
         const payload = JSON.parse(query.r);
 
@@ -400,6 +419,7 @@ describe('IndexexchangeAdapter', function () {
           }
         );
       });
+
       it('payload should have correct format and value (single identity w/ multi ids)', function () {
         const payload = JSON.parse(query.r);
 
@@ -443,6 +463,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       });
+
       it('payload should have correct format and value (multiple identity partners)', function () {
         const payload = JSON.parse(query.r);
 
@@ -516,6 +537,177 @@ describe('IndexexchangeAdapter', function () {
         expect(payload.user).to.exist;
         expect(payload.user.eids).to.not.exist;
       });
+    });
+  });
+
+  describe('buildRequestsUserId', function () {
+    let validIdentityResponse;
+    let validUserIdPayload;
+
+    beforeEach(function () {
+      window.headertag = {};
+      window.headertag.getIdentityInfo = function () {
+        return validIdentityResponse;
+      };
+    });
+
+    afterEach(function () {
+      delete window.headertag;
+    });
+
+    it('IX adapter reads LiveRamp IDL envelope from Prebid and adds it to Video', function () {
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      expect(payload.user.eids).to.have.lengthOf(1);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+    });
+
+    it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {
+      validIdentityResponse = {
+        AdserverOrgIp: {
+          responsePending: false,
+          data: {
+            source: 'adserver.org',
+            uids: [
+              {
+                id: '1234-5678-9012-3456',
+                ext: {
+                  rtiPartner: 'TDID'
+                }
+              },
+              {
+                id: 'FALSE',
+                ext: {
+                  rtiPartner: 'TDID_LOOKUP'
+                }
+              },
+              {
+                id: '2020-06-24T14:43:48.860Z',
+                ext: {
+                  rtiPartner: 'TDID_CREATED_AT'
+                }
+              }
+            ]
+          }
+        },
+        MerkleIp: {
+          responsePending: false,
+          data: {
+            source: 'merkle.com',
+            uids: [{
+              id: '1234-5678-9012-3456',
+              ext: {
+                keyID: '1234-5678',
+                enc: 1
+              }
+            }]
+          }
+        },
+        LiveRampIp: {
+          source: 'liveramp.com',
+          uids: [
+            {
+              id: '0000-1234-4567-8901',
+              ext: {
+                rtiPartner: 'idl'
+              }
+            }
+          ]
+        }
+      };
+
+      const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA)
+
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      validUserIdPayload = utils.deepClone(DEFAULT_USERID_PAYLOAD);
+      validUserIdPayload.push({
+        source: 'merkle.com',
+        uids: [{
+          id: '1234-5678-9012-3456',
+          ext: {
+            keyID: '1234-5678',
+            enc: 1
+          }
+        }]
+      })
+      validUserIdPayload.push({
+        source: 'adserver.org',
+        uids: [
+          {
+            id: '1234-5678-9012-3456',
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          },
+          {
+            id: 'FALSE',
+            ext: {
+              rtiPartner: 'TDID_LOOKUP'
+            }
+          },
+          {
+            id: '2020-06-24T14:43:48.860Z',
+            ext: {
+              rtiPartner: 'TDID_CREATED_AT'
+            }
+          }
+        ]
+      })
+
+      expect(payload.user).to.exist;
+      expect(payload.user.eids).to.have.lengthOf(3);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
+    });
+
+    it('IXL and Prebid are mutually exclusive', function () {
+      validIdentityResponse = {
+        LiveIntentIp: {
+          responsePending: false,
+          data: {
+            source: 'liveintent.com',
+            uids: [{
+              id: '1234-5678-9012-3456',
+              ext: {
+                keyID: '1234-5678',
+                rtiPartner: 'LDID',
+                enc: 1
+              }
+            }]
+          }
+        }
+      };
+
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+
+      validUserIdPayload = utils.deepClone(DEFAULT_USERID_PAYLOAD);
+      validUserIdPayload.push({
+        source: 'liveintent.com',
+        uids: [{
+          id: '1234-5678-9012-3456',
+          ext: {
+            keyID: '1234-5678',
+            rtiPartner: 'LDID',
+            enc: 1
+          }
+        }]
+      });
+
+      const payload = JSON.parse(request.data.r);
+      expect(payload.user.eids).to.have.lengthOf(2);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
     });
   });
 

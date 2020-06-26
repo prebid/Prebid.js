@@ -195,6 +195,39 @@ function getBidRequest(id, impressions) {
 }
 
 /**
+ * Adds a User ID module's response into user Eids array.
+ *
+ * @param  {array}  userEids       An array of objects containing user ids,
+ *                                 will be attached to bid request later.
+ * @param  {object} seenIdPartners An object with Identity partners names already added,
+ *                                 updated with new partner name.
+ * @param  {*}      id             The id obtained from User ID module.
+ * @param  {string} source         The URL of the User ID module.
+ * @param  {string} ixlPartnerName The name of the Identity Partner in IX Library.
+ * @param  {string} rtiPartner     The name of the User ID provider in Prebid.
+ * @return {boolean}               True if successfully added the ID to the userEids, false otherwise.
+ */
+function addUserEids(userEids, seenIdPartners, id, source, ixlPartnerName, rtiPartner) {
+  if (id) {
+    // mark the partnername that IX RTI uses
+    seenIdPartners[ixlPartnerName] = 1;
+    userEids.push({
+      source: source,
+      uids: [{
+        id: id,
+        ext: {
+          rtiPartner: rtiPartner
+        }
+      }]
+    });
+    return true;
+  }
+
+  utils.logWarn('Tried to add a user ID from Prebid, the ID received was null');
+  return false;
+}
+
+/**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
  * @param  {array}  validBidRequests A list of valid bid request config objects.
@@ -210,6 +243,17 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
 
+  // Dict for identity partners already populated from prebid
+  let seenIdPartners = {};
+
+  // Get ids from Prebid User ID Modules
+  const userId = validBidRequests[0].userId;
+  if (userId && typeof userId === 'object') {
+    if (userId.idl_env) {
+      addUserEids(userEids, seenIdPartners, userId.idl_env, 'liveramp.com', 'LiveRampIp', 'idl');
+    }
+  }
+
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
   if (window.headertag && typeof window.headertag.getIdentityInfo === 'function') {
@@ -217,9 +261,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (identityInfo && typeof identityInfo === 'object') {
       for (const partnerName in identityInfo) {
         if (identityInfo.hasOwnProperty(partnerName)) {
-          let response = identityInfo[partnerName];
-          if (!response.responsePending && response.data && typeof response.data === 'object' && Object.keys(response.data).length) {
-            userEids.push(response.data);
+          // check if not already populated by prebid cache
+          if (!seenIdPartners.hasOwnProperty(partnerName)) {
+            let response = identityInfo[partnerName];
+            if (!response.responsePending && response.data && typeof response.data === 'object' && Object.keys(response.data).length) {
+              userEids.push(response.data);
+            }
           }
         }
       }
