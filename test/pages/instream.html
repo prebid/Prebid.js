@@ -1,127 +1,218 @@
-<!--
-  This page exists to test a video ad, end-to-end.
--->
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8" />
-    <title>Prebid.js video adUnit example</title>
+  <head>
+    <!-- Load Video Player -->
 
     <!-- videojs -->
-    <link rel="stylesheet" href="http://vjs.zencdn.net/5.9.2/video-js.css">
-    <script type="text/javascript" src="http://vjs.zencdn.net/5.9.2/video.js"></script>
+    <link rel="stylesheet" href="http://vjs.zencdn.net/5.9.2/video-js.css" />
+    <script
+      type="text/javascript"
+      src="http://vjs.zencdn.net/5.9.2/video.js"
+    ></script>
 
     <!-- videojs-vast-vpaid -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs.vast.vpaid.min.css" rel="stylesheet">
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs.vast.vpaid.min.css"
+      rel="stylesheet"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
 
-    <!-- prebid.js -->
-    <script src="../../build/dist/prebid.js" async=true></script>
+    <!-- Load Prebid and GPT -->
+    <link rel="icon" type="image/png" href="/public_html/favicon.png" />
+    <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
 
+    <script src="../../build/dev/prebid.js" async="true"></script>
+
+    <title>Prebid Display/Video Merged Auction</title>
 
     <script>
+      var div_1_sizes = [
+        [300, 250],
+        [300, 600],
+        [728, 90],
+        [970, 250],
+        [1, 1],
+        [2, 2],
+        [3, 3],
+      ];
+      var PREBID_TIMEOUT = 1200;
+      var FAILSAFE_TIMEOUT = 3000;
 
+      const tl_display_bid = {
+        bidder: "triplelift",
+        params: {
+          inventoryCode: "makersalley_wide_test",
+        },
+      };
+
+      const tl_instream_bid = {
+        bidder: "triplelift",
+        params: {
+          inventoryCode: "niice_main",
+          video: {
+            skippable: true,
+            playback_method: ["auto_play_sound_off"],
+            skip: 1,
+            width: 400,
+            height: 600,
+            api: [1, 2, 3],
+            protocols: [1, 2, 3],
+            mimes: ["video/mp4"], // required
+          },
+        },
+      };
+
+      var displayAdUnitCode = "/22979003/sdao_makersalley_main_1";
+
+      var adUnits = [
+        {
+          code: displayAdUnitCode,
+          mediaTypes: {
+            banner: {
+              sizes: div_1_sizes,
+            },
+          },
+          bids: [tl_display_bid],
+        },
+      ];
+
+      const video_code = "video1";
+
+      var videoAdUnit = {
+        code: video_code,
+        mediaTypes: {
+          video: {
+            playerSize: [640, 480],
+            context: "instream",
+          },
+        },
+        bids: [tl_instream_bid],
+      };
+
+      var googletag = googletag || {};
+      googletag.cmd = googletag.cmd || [];
+      googletag.cmd.push(function () {
+        googletag.pubads().disableInitialLoad();
+      });
+
+      // Init Prebid.js
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
 
-      /*
-       Prebid Video adUnit
-       */
-
-      var videoAdUnit = {
-        code: 'video1',
-        sizes: [640,480],
-        mediaTypes: {
-          video: {context: 'instream',  playerSize: [640, 480]}
-        },
-        bids: [
-          {
-            bidder: 'appnexus',
-            params: {
-              placementId: '13232361',
-              video: {
-                skipppable: false,
-                playback_methods: ['auto_play_sound_off']
-              }
-            }
-          }
-        ]
-      };
-
-      pbjs.que.push(function(){
-        pbjs.onEvent('auctionEnd', function() {
-          let pEl = document.createElement('p');
-          pEl.innerText = 'PREBID HAS FINISHED';
-          pEl.id = 'statusText';
-          let parDiv = document.getElementById('event-window');
-          parDiv.appendChild(pEl);
-        });
-        
+      pbjs.que.push(function () {
+        pbjs.addAdUnits(adUnits);
         pbjs.addAdUnits(videoAdUnit);
         pbjs.setConfig({
-                    debug: true,
-                    cache: {
-                        url: 'https://prebid.adnxs.com/pbc/v1/cache'
-                    }
-                });
-        pbjs.requestBids({
-          bidsBackHandler : function(bids) {
-            var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
-              adUnit: videoAdUnit,
-              params: {
-                iu: '/19968336/prebid_cache_video_adunit'
-              }
-            });
-
-            invokeVideoPlayer(videoUrl);
+          debug: true,
+          cache: {
+            url: "https://prebid.adnxs.com/pbc/v1/cache",
           }
         });
+        pbjs.requestBids({
+          timeout: PREBID_TIMEOUT,
+          bidsBackHandler: initAdserver,
+        });
       });
-      pbjs.bidderSettings = {
-        appnexus: {
-          bidCpmAdjustment: function() {
-            return 10.00;
-          }
-        }
-      };
+
+      function initAdserver(bids) {
+        if (pbjs.initAdserverSet) return;
+        pbjs.initAdserverSet = true;
+
+        // Get all of the adUnit codes for the display adUnits
+        var displayAdUnitCodes = [];
+        adUnits.forEach(function (adUnit) {
+          displayAdUnitCodes.push(adUnit.code);
+        });
+
+        // Set targeting for each display slot
+        googletag.cmd.push(function () {
+          pbjs.que.push(function () {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        });
+
+        console.log("bid back handler - bids", bids);
+
+        let url = "";
+        if (bids[video_code]) url = bids[video_code].bids[0].vastUrl;
+        invokeVideoPlayer(url);
+      }
+
+      googletag.cmd.push(function () {
+        googletag
+          .defineSlot(displayAdUnitCode, div_1_sizes, "div-1")
+          .addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+      googletag.cmd.push(function () {
+        googletag
+          .defineSlot("/19968336/header-bid-tag-1", div_1_sizes, "div-2")
+          .addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
     </script>
-</head>
+  </head>
+  <body>
+    <h2>Prebid Video -- video.js</h2>
 
-<body>
+    <div class="example-video-container">
+      <video
+        id="vid1"
+        class="video-js vjs-default-skin vjs-big-play-centered"
+        controls
+        data-setup="{}"
+        width="640"
+        height="480"
+      >
+        <source src="http://vjs.zencdn.net/v/oceans.mp4" type="video/mp4" />
+        <source src="http://vjs.zencdn.net/v/oceans.webm" type="video/webm" />
+        <source src="http://vjs.zencdn.net/v/oceans.ogv" type="video/ogg" />
+      </video>
+    </div>
 
-<h2>Prebid Video -- video.js</h2>
+    <script>
+      function invokeVideoPlayer(url) {
+        videojs("vid1").ready(function () {
+          this.vastClient({
+            adTagUrl: url,
+            playAdAlways: true,
+            verbosity: 4,
+            vpaidFlashLoaderPath:
+              "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
+            autoplay: true,
+          });
 
-<div id="event-window"></div>
-<div class="example-video-container">
+          this.muted(true);
+          this.play();
+        });
+      }
+    </script>
 
-    <video id="vid1" class="video-js vjs-default-skin vjs-big-play-centered" controls
-           data-setup='{}'
-           width='640'
-           height='480'
-    >
-        <source src="http://vjs.zencdn.net/v/oceans.mp4" type='video/mp4'/>
-        <source src="http://vjs.zencdn.net/v/oceans.webm" type='video/webm'/>
-        <source src="http://vjs.zencdn.net/v/oceans.ogv" type='video/ogg'/>
+    <!-- Basic Prebid Display Section - Body -->
+    <!-- ################################### -->
 
-    </video>
-</div>
+    <h2>Basic Prebid.js Example</h2>
+    <h5>Div-1</h5>
+    <div id="div-1">
+      <script type="text/javascript">
+        googletag.cmd.push(function () {
+          googletag.display("div-1");
+        });
+      </script>
+    </div>
 
-<script>
-  function invokeVideoPlayer(url) {
-    videojs("vid1").ready(function() {
-      this.vastClient({
-        adTagUrl: url,
-        playAdAlways: true,
-        verbosity: 4,
-        vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
-        autoplay: true
-      });
+    <br />
 
-      this.muted(true);
-      this.play();
-    });
-  }
-
-</script>
-</body>
+    <h5>Div-2</h5>
+    <div id="div-2">
+      <script type="text/javascript">
+        googletag.cmd.push(function () {
+          googletag.display("div-2");
+        });
+      </script>
+    </div>
+  </body>
 </html>
