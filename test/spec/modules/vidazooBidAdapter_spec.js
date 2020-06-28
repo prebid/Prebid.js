@@ -1,9 +1,10 @@
-import {expect} from 'chai';
-import {spec as adapter, URL} from 'modules/vidazooBidAdapter.js';
+import { expect } from 'chai';
+import { spec as adapter, URL, SUPPORTED_ID_SYSTEMS } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const BID = {
   'bidId': '2d52001cabd527',
+  'adUnitCode': 'div-gpt-ad-12345-0',
   'params': {
     'cId': '59db6b3b4ffaa70004f45cdc',
     'pId': '59ac17c192832d0011283fe3',
@@ -25,6 +26,7 @@ const BIDDER_REQUEST = {
     'consentString': 'consent_string',
     'gdprApplies': true
   },
+  'uspConsent': 'consent_string',
   'refererInfo': {
     'referer': 'https://www.greatsite.com'
   }
@@ -131,12 +133,16 @@ describe('VidazooBidAdapter', function () {
         data: {
           gdprConsent: 'consent_string',
           gdpr: 1,
+          usPrivacy: 'consent_string',
           sizes: ['300x250', '300x600'],
           url: 'https%3A%2F%2Fwww.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
+          adUnitCode: 'div-gpt-ad-12345-0',
           publisherId: '59ac17c192832d0011283fe3',
+          dealId: 1,
+          res: `${window.top.screen.width}x${window.top.screen.height}`,
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }
@@ -149,7 +155,7 @@ describe('VidazooBidAdapter', function () {
   });
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -158,7 +164,7 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.com',
@@ -174,12 +180,12 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
@@ -205,6 +211,30 @@ describe('VidazooBidAdapter', function () {
       const responses = adapter.interpretResponse(serverResponse, REQUEST);
       expect(responses).to.have.length(1);
       expect(responses[0].ttl).to.equal(300);
+    });
+  });
+
+  describe(`user id system`, function () {
+    Object.keys(SUPPORTED_ID_SYSTEMS).forEach((idSystemProvider) => {
+      const id = Date.now().toString();
+      const bid = utils.deepClone(BID);
+
+      const userId = (function () {
+        switch (idSystemProvider) {
+          case 'digitrustid': return { data: { id: id } };
+          case 'lipb': return { lipbid: id };
+          default: return id;
+        }
+      })();
+
+      bid.userId = {
+        [idSystemProvider]: userId
+      };
+
+      it(`should include 'uid.${idSystemProvider}' in request params`, function () {
+        const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
+      });
     });
   });
 });

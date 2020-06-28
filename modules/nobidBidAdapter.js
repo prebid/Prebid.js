@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.5';
+window.nobidVersion = '1.2.6';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -200,7 +200,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     var adType = 'banner';
     const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
     const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-    if (bid.mediaType === VIDEO || (videoMediaType && context === 'instream')) {
+    if (bid.mediaType === VIDEO || (videoMediaType && (context === 'instream' || context === 'outstream'))) {
       adType = 'video';
     }
 
@@ -287,6 +287,35 @@ window.nobid.renderTag = function(doc, id, win) {
   }
   log('nobid.renderTag() tag NOT FOUND *ERROR*', id);
 }
+window.addEventListener('message', function (event) {
+  let key = event.message ? 'message' : 'data';
+  var msg = '' + event[key];
+  if (msg.substring(0, 'nbTagRenderer.requestAdMarkup|'.length) === 'nbTagRenderer.requestAdMarkup|') {
+    log('Prebid received nbTagRenderer.requestAdMarkup event');
+    var adId = msg.substring(msg.indexOf('|') + 1);
+    if (window.nobid && window.nobid.bidResponses) {
+      var bid = window.nobid.bidResponses['' + adId];
+      if (bid && bid.adm2) {
+        var markup = null;
+        if (bid.is_combo && bid.adm_combo) {
+          for (var i in bid.adm_combo) {
+            var combo = bid.adm_combo[i];
+            if (!combo.done) {
+              markup = combo.adm;
+              combo.done = true;
+              break;
+            }
+          }
+        } else {
+          markup = bid.adm2;
+        }
+        if (markup) {
+          event.source.postMessage('nbTagRenderer.renderAdInSafeFrame|' + markup, '*');
+        }
+      }
+    }
+  }
+}, false);
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
