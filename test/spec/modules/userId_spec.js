@@ -348,14 +348,14 @@ describe('User ID', function() {
     });
 
     it('handles config with empty usersync object', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({userSync: {}});
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
     it('handles config with usersync and userIds that are empty objs', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -366,7 +366,7 @@ describe('User ID', function() {
     });
 
     it('handles config with usersync and userIds with empty names or that dont match a submodule.name', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -383,15 +383,15 @@ describe('User ID', function() {
     });
 
     it('config with 1 configurations should create 1 submodules', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['unifiedId', 'unifiedid', 'cookie']));
 
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 8 configurations should result in 8 submodules add', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule]);
+    it('config with 9 configurations should result in 9 submodules add', function () {
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -422,6 +422,9 @@ describe('User ID', function() {
           }, {
             name: 'intentIqId',
             storage: { name: 'intentIqId', type: 'cookie' }
+          }, {
+            name: 'sharedId',
+            storage: {name: 'sharedid', type: 'cookie'}
           }]
         }
       });
@@ -429,7 +432,7 @@ describe('User ID', function() {
     });
 
     it('config syncDelay updates module correctly', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -444,7 +447,7 @@ describe('User ID', function() {
     });
 
     it('config auctionDelay updates module correctly', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -459,7 +462,7 @@ describe('User ID', function() {
     });
 
     it('config auctionDelay defaults to 0 if not a number', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -1152,7 +1155,7 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
-    it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, intentIqId and netId have data to pass', function(done) {
+    it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, intentIqId, sharedId and netId have data to pass', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1160,8 +1163,9 @@ describe('User ID', function() {
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'testintentIqId'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('sharedid', JSON.stringify({'id': 'test_sharedId', 'ts': 1590525289611}), (new Date(Date.now() + 5000).toUTCString()));
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
         ['unifiedId', 'unifiedid', 'cookie'],
@@ -1169,6 +1173,7 @@ describe('User ID', function() {
         ['identityLink', 'idl_env', 'cookie'],
         ['britepoolId', 'britepoolid', 'cookie'],
         ['netId', 'netId', 'cookie'],
+    ['sharedId', 'sharedid', 'cookie'],        
         ['intentIqId', 'intentIqId', 'cookie']));
 
       requestBidsHook(function() {
@@ -1192,10 +1197,16 @@ describe('User ID', function() {
             // also check that netId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.netId');
             expect(bid.userId.netId).to.equal('testnetId');
+            expect(bid).to.have.deep.nested.property('userId.sharedid');
+            expect(bid.userId.sharedid).to.deep.equal({
+              id: 'test_sharedId',
+              third: 'test_sharedId'
+            });
+            expect(bid.userIdAsEids.length).to.equal(7);            
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
-            expect(bid.userIdAsEids.length).to.equal(7);
+            expect(bid.userIdAsEids.length).to.equal(8);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1204,18 +1215,20 @@ describe('User ID', function() {
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
 
-    it('test hook when pubCommonId, unifiedId, id5Id, britepoolId, intentIqId and netId have their modules added before and after init', function(done) {
+    it('test hook when pubCommonId, unifiedId, id5Id, britepoolId, intentIqId, sharedId and netId have their modules added before and after init', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('sharedid', JSON.stringify({'id': 'test_sharedId', 'ts': 1590525289611}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'testintentIqId'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([]);
@@ -1231,6 +1244,7 @@ describe('User ID', function() {
       attachIdSystem(identityLinkSubmodule);
       attachIdSystem(britepoolIdSubmodule);
       attachIdSystem(netIdSubmodule);
+      attachIdSystem(sharedIdSubmodule);
       attachIdSystem(intentIqIdSubmodule);
 
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
@@ -1239,6 +1253,7 @@ describe('User ID', function() {
         ['identityLink', 'idl_env', 'cookie'],
         ['britepoolId', 'britepoolid', 'cookie'],
         ['netId', 'netId', 'cookie'],
+        ['sharedId', 'sharedid', 'cookie'],
         ['intentIqId', 'intentIqId', 'cookie']));
 
       requestBidsHook(function() {
@@ -1262,10 +1277,16 @@ describe('User ID', function() {
             // also check that britepoolId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.netId');
             expect(bid.userId.netId).to.equal('testnetId');
+            expect(bid).to.have.deep.nested.property('userId.sharedid');
+            expect(bid.userId.sharedid).to.deep.equal({
+              id: 'test_sharedId',
+              third: 'test_sharedId'
+            });
+            expect(bid.userIdAsEids.length).to.equal(7);
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
-            expect(bid.userIdAsEids.length).to.equal(7);
+            expect(bid.userIdAsEids.length).to.equal(8);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1274,7 +1295,29 @@ describe('User ID', function() {
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
+    });
+
+    it('test hook when sharedId(opted out) have their modules added before and after init', function(done) {
+      coreStorage.setCookie('sharedid', JSON.stringify({'id': '00000000000000000000000000', 'ts': 1590525289611}), (new Date(Date.now() + 5000).toUTCString()));
+
+      setSubmoduleRegistry([]);
+      init(config);
+
+      attachIdSystem(sharedIdSubmodule);
+
+      config.setConfig(getConfigMock(['sharedId', 'sharedid', 'cookie']));
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid.userIdAsEids).to.be.undefined;
+          });
+        });
+        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -1286,10 +1329,11 @@ describe('User ID', function() {
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), new Date(Date.now() + 5000).toUTCString());
+      coreStorage.setCookie('sharedid', JSON.stringify({'id': 'test_sharedId', 'ts': 1590525289611}), new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'testintentIqId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
 
       config.setConfig({
@@ -1360,11 +1404,12 @@ describe('User ID', function() {
             });
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mid');
-            expect(bid.userId.mid).to.equal('123456778');
+            expect(bid.userId.mid).to.equal('123456778');   
+            expect(bid.userIdAsEids.length).to.equal(7);// mid is unknown for eids.js
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
-            expect(bid.userIdAsEids.length).to.equal(7);
+            expect(bid.userIdAsEids.length).to.equal(8);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1373,6 +1418,7 @@ describe('User ID', function() {
         coreStorage.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
         done();
