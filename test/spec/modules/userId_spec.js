@@ -422,13 +422,10 @@ describe('User ID', function() {
           }, {
             name: 'intentIqId',
             storage: { name: 'intentIqId', type: 'cookie' }
-          }, {
-            name: 'sharedId',
-            storage: {name: 'sharedid', type: 'cookie'}
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 8 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 9 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
@@ -1173,7 +1170,7 @@ describe('User ID', function() {
         ['identityLink', 'idl_env', 'cookie'],
         ['britepoolId', 'britepoolid', 'cookie'],
         ['netId', 'netId', 'cookie'],
-    ['sharedId', 'sharedid', 'cookie'],        
+        ['sharedId', 'sharedid', 'cookie'],
         ['intentIqId', 'intentIqId', 'cookie']));
 
       requestBidsHook(function() {
@@ -1202,7 +1199,6 @@ describe('User ID', function() {
               id: 'test_sharedId',
               third: 'test_sharedId'
             });
-            expect(bid.userIdAsEids.length).to.equal(7);            
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
@@ -1282,7 +1278,6 @@ describe('User ID', function() {
               id: 'test_sharedId',
               third: 'test_sharedId'
             });
-            expect(bid.userIdAsEids.length).to.equal(7);
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
@@ -1404,8 +1399,7 @@ describe('User ID', function() {
             });
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mid');
-            expect(bid.userId.mid).to.equal('123456778');   
-            expect(bid.userIdAsEids.length).to.equal(7);// mid is unknown for eids.js
+            expect(bid.userId.mid).to.equal('123456778');
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
