@@ -12,13 +12,24 @@ const REQUEST = {
       'key1': 'value1',
       'key2': 'value2'
     },
+    'customParams': {
+      'extraParam': true,
+      'foo': 'bar'
+    },
     'extId': 'abc'
   },
   'bidderRequestId': '143346cf0f1731',
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '2d925f27f5079f',
-  'sizes': [728, 90]
+  'sizes': [728, 90],
+  'userIdAsEids': [{
+    'source': 'netid.de',
+    'uids': [{
+      'id': 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
+      'atype': 1
+    }]
+  }]
 }
 
 const RESPONSE = {
@@ -75,6 +86,14 @@ describe('yieldlabBidAdapter', function () {
 
     it('passes targeting to bid request', function () {
       expect(request.url).to.include('t=key1%3Dvalue1%26key2%3Dvalue2')
+    })
+
+    it('passes userids to bid request', function () {
+      expect(request.url).to.include('ids=netid.de%3AfH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg')
+    })
+
+    it('passes extra params to bid request', function () {
+      expect(request.url).to.include('extraParam=true&foo=bar')
     })
 
     const gdprRequest = spec.buildRequests(bidRequests, {

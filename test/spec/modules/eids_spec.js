@@ -1,8 +1,8 @@
 import {createEidsArray} from 'modules/userId/eids.js';
 import {expect} from 'chai';
 
-// 	Note: In unit tets cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
-//			this way the request will stay consistent and unit test cases will not need lots of changes.
+//  Note: In unit tets cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
+//      this way the request will stay consistent and unit test cases will not need lots of changes.
 
 describe('eids array generation for known sub-modules', function() {
   it('pubCommonId', function() {
@@ -146,6 +146,42 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
+  it('Sharedid', function() {
+    const userId = {
+      sharedid: {
+        id: 'test_sharedId',
+        third: 'test_sharedId'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'sharedid.org',
+      uids: [{
+        id: 'test_sharedId',
+        atype: 1,
+        ext: {
+          third: 'test_sharedId'
+        }
+      }]
+    });
+  });
+  it('Sharedid: Not Synched', function() {
+    const userId = {
+      sharedid: {
+        id: 'test_sharedId'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'sharedid.org',
+      uids: [{
+        id: 'test_sharedId',
+        atype: 1
+      }]
+    });
+  });
 });
 
 describe('Negative case', function() {
@@ -158,12 +194,24 @@ describe('Negative case', function() {
     expect(newEids.length).to.equal(0);
   });
 
-  it('eids array generation for known sub-module with undefined value', function() {
+  it('eids array generation for known sub-module with non-string value', function() {
     // pubCommonId
-    const userId = {
+    let userId = {
       pubcid: undefined
     };
-    const newEids = createEidsArray(userId);
+    let newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(0);
+    userId.pubcid = 123;
+    newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(0);
+    userId.pubcid = [];
+    newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(0);
+    userId.pubcid = {};
+    newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(0);
+    userId.pubcid = null;
+    newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(0);
   });
 });

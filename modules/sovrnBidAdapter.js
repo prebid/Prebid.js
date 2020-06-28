@@ -1,5 +1,4 @@
 import * as utils from '../src/utils.js'
-import {parse} from '../src/url.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 
@@ -26,18 +25,13 @@ export const spec = {
       let sovrnImps = [];
       let iv;
       let schain;
-      let digitrust;
+      let unifiedID;
 
       utils._each(bidReqs, function (bid) {
-        if (!digitrust) {
-          const bidRequestDigitrust = utils.deepAccess(bid, 'userId.digitrustid.data');
-          if (bidRequestDigitrust && (!bidRequestDigitrust.privacy || !bidRequestDigitrust.privacy.optout)) {
-            digitrust = {
-              id: bidRequestDigitrust.id,
-              keyv: bidRequestDigitrust.keyv
-            }
-          }
+        if (!unifiedID) {
+          unifiedID = utils.deepAccess(bid, 'userId.tdid');
         }
+
         if (bid.schain) {
           schain = schain || bid.schain;
         }
@@ -48,6 +42,7 @@ export const spec = {
         bidSizes = bidSizes.filter(size => utils.isArray(size))
         const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
         sovrnImps.push({
+          adunitcode: bid.adUnitCode,
           id: bid.bidId,
           banner: {
             format: processedSizes,
@@ -62,7 +57,7 @@ export const spec = {
       const page = bidderRequest.refererInfo.referer
 
       // clever trick to get the domain
-      const domain = parse(page).hostname
+      const domain = utils.parseUrl(page).hostname
 
       const sovrnBidReq = {
         id: utils.getUniqueIdentifierStr(),
@@ -89,15 +84,22 @@ export const spec = {
         utils.deepSetValue(sovrnBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      if (digitrust) {
-        utils.deepSetValue(sovrnBidReq, 'user.ext.digitrust', {
-          id: digitrust.id,
-          keyv: digitrust.keyv
-        })
+      if (unifiedID) {
+        const idArray = [{
+          source: 'adserver.org',
+          uids: [
+            {
+              id: unifiedID,
+              ext: {
+                rtiPartner: 'TDID'
+              }
+            }
+          ]
+        }]
+        utils.deepSetValue(sovrnBidReq, 'user.ext.eids', idArray)
       }
 
-      let url = `https://ap.lijit.com/rtb/bid?` +
-        `src=$$REPO_AND_VERSION$$`;
+      let url = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
       if (iv) url += `&iv=${iv}`;
 
       return {
@@ -177,7 +179,6 @@ export const spec = {
             .forEach(url => tracks.push({ type: 'image', url }))
         }
       }
-
       return tracks
     } catch (e) {
       return []

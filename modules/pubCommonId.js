@@ -6,8 +6,10 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import events from '../src/events.js';
-import * as url from '../src/url.js';
 import CONSTANTS from '../src/constants.json';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const ID_NAME = '_pubcid';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -37,10 +39,10 @@ export function setStorageItem(key, val, expires) {
   try {
     if (expires !== undefined && expires != null) {
       const expStr = (new Date(Date.now() + (expires * 60 * 1000))).toUTCString();
-      utils.setDataInLocalStorage(key + EXP_SUFFIX, expStr);
+      storage.setDataInLocalStorage(key + EXP_SUFFIX, expStr);
     }
 
-    utils.setDataInLocalStorage(key, val);
+    storage.setDataInLocalStorage(key, val);
   } catch (e) {
     utils.logMessage(e);
   }
@@ -55,18 +57,18 @@ export function getStorageItem(key) {
   let val = null;
 
   try {
-    const expVal = utils.getDataFromLocalStorage(key + EXP_SUFFIX);
+    const expVal = storage.getDataFromLocalStorage(key + EXP_SUFFIX);
 
     if (!expVal) {
       // If there is no expiry time, then just return the item
-      val = utils.getDataFromLocalStorage(key);
+      val = storage.getDataFromLocalStorage(key);
     } else {
       // Only return the item if it hasn't expired yet.
       // Otherwise delete the item.
       const expDate = new Date(expVal);
       const isValid = (expDate.getTime() - Date.now()) > 0;
       if (isValid) {
-        val = utils.getDataFromLocalStorage(key);
+        val = storage.getDataFromLocalStorage(key);
       } else {
         removeStorageItem(key);
       }
@@ -84,8 +86,8 @@ export function getStorageItem(key) {
  */
 export function removeStorageItem(key) {
   try {
-    utils.removeDataFromLocalStorage(key + EXP_SUFFIX);
-    utils.removeDataFromLocalStorage(key);
+    storage.removeDataFromLocalStorage(key + EXP_SUFFIX);
+    storage.removeDataFromLocalStorage(key);
   } catch (e) {
     utils.logMessage(e);
   }
@@ -101,7 +103,7 @@ function readValue(name, type) {
   let value;
   if (!type) { type = pubcidConfig.typeEnabled; }
   if (type === COOKIE) {
-    value = utils.getCookie(name);
+    value = storage.getCookie(name);
   } else if (type === LOCAL_STORAGE) {
     value = getStorageItem(name);
   }
@@ -139,9 +141,9 @@ function queuePixelCallback(pixelUrl, id) {
   id = id || '';
 
   // Use pubcid as a cache buster
-  const urlInfo = url.parse(pixelUrl);
+  const urlInfo = utils.parseUrl(pixelUrl);
   urlInfo.search.id = encodeURIComponent('pubcid:' + id);
-  const targetUrl = url.format(urlInfo);
+  const targetUrl = utils.buildUrl(urlInfo);
 
   events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
     events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
@@ -223,12 +225,12 @@ export function requestBidHook(next, config) {
 export function setCookie(name, value, expires, sameSite) {
   let expTime = new Date();
   expTime.setTime(expTime.getTime() + expires * 1000 * 60);
-  utils.setCookie(name, value, expTime.toGMTString(), sameSite);
+  storage.setCookie(name, value, expTime.toGMTString(), sameSite);
 }
 
 // Helper to read a cookie
 export function getCookie(name) {
-  return utils.getCookie(name);
+  return storage.getCookie(name);
 }
 
 /**
@@ -263,12 +265,12 @@ export function setConfig({ enable, expInterval, type = 'html5,cookie', create, 
   for (let i = 0; i < typeArray.length; ++i) {
     const name = typeArray[i].trim();
     if (name === COOKIE) {
-      if (utils.cookiesAreEnabled()) {
+      if (storage.cookiesAreEnabled()) {
         pubcidConfig.typeEnabled = COOKIE;
         break;
       }
     } else if (name === LOCAL_STORAGE) {
-      if (utils.hasLocalStorage()) {
+      if (storage.hasLocalStorage()) {
         pubcidConfig.typeEnabled = LOCAL_STORAGE;
         break;
       }
@@ -282,8 +284,8 @@ export function setConfig({ enable, expInterval, type = 'html5,cookie', create, 
 export function initPubcid() {
   config.getConfig('pubcid', config => setConfig(config.pubcid));
 
-  const optout = (utils.cookiesAreEnabled() && readValue(OPTOUT_NAME, COOKIE)) ||
-    (utils.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE));
+  const optout = (storage.cookiesAreEnabled() && readValue(OPTOUT_NAME, COOKIE)) ||
+    (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE));
 
   if (!optout) {
     $$PREBID_GLOBAL$$.requestBids.before(requestBidHook);

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getAdagioScript, spec } from 'modules/adagioBidAdapter.js';
+import { adagioScriptFromLocalStorageCb, _features, spec } from 'modules/adagioBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
@@ -7,7 +7,7 @@ describe('adagioAdapter', () => {
   let utilsMock;
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
-  const VERSION = '2.1.0';
+  const VERSION = '2.2.2';
 
   beforeEach(function() {
     localStorage.removeItem('adagioScript');
@@ -51,7 +51,7 @@ describe('adagioAdapter', () => {
       sandbox.restore();
     });
 
-    let bid = {
+    const bid = {
       'bidder': 'adagio',
       'params': {
         organizationId: '0',
@@ -67,7 +67,7 @@ describe('adagioAdapter', () => {
       'auctionId': 'lel4fhp239i9km',
     };
 
-    let bidWithMediaTypes = {
+    const bidWithMediaTypes = {
       'bidder': 'adagio',
       'params': {
         organizationId: '0',
@@ -108,28 +108,41 @@ describe('adagioAdapter', () => {
     });
 
     it('should return false when organization params is not passed', () => {
-      let bidTest = Object.assign({}, bid);
+      const bidTest = utils.deepClone(bid);
       delete bidTest.params.organizationId;
       expect(spec.isBidRequestValid(bidTest)).to.equal(false);
     });
 
     it('should return false when site params is not passed', () => {
-      let bidTest = Object.assign({}, bid);
+      const bidTest = utils.deepClone(bid);
       delete bidTest.params.site;
       expect(spec.isBidRequestValid(bidTest)).to.equal(false);
     });
 
     it('should return false when placement params is not passed', () => {
-      let bidTest = Object.assign({}, bid);
+      const bidTest = utils.deepClone(bid);
       delete bidTest.params.placement;
       expect(spec.isBidRequestValid(bidTest)).to.equal(false);
     });
 
-    it('should return false when adUnit element id params is not passed', () => {
-      let bidTest = Object.assign({}, bid);
+    it('should add autodetected adUnitElementId and environment params', () => {
+      const bidTest = utils.deepClone(bid);
       delete bidTest.params.adUnitElementId;
-      expect(spec.isBidRequestValid(bidTest)).to.equal(false);
-    });
+      delete bidTest.params.environment;
+      sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').returns({divId: 'banner-atf'});
+      sandbox.stub(_features, 'getDevice').returns(4);
+      spec.isBidRequestValid(bidTest)
+      expect(bidTest.params.adUnitElementId).to.equal('banner-atf');
+      expect(bidTest.params.environment).to.equal('mobile');
+    })
+
+    it('should add autodetected tablet environment params', () => {
+      const bidTest = utils.deepClone(bid);
+      delete bidTest.params.environment;
+      sandbox.stub(_features, 'getDevice').returns(5);
+      spec.isBidRequestValid(bidTest)
+      expect(bidTest.params.environment).to.equal('tablet');
+    })
 
     it('should return false if not in the window.top', () => {
       sandbox.stub(utils, 'getWindowTop').throws();
@@ -301,7 +314,29 @@ describe('adagioAdapter', () => {
       'gdprConsent': {
         consentString: consentString,
         gdprApplies: true,
-        allowAuctionWithoutConsent: true
+        allowAuctionWithoutConsent: true,
+        apiVersion: 1,
+      },
+      'refererInfo': {
+        'numIframes': 0,
+        'reachedTop': true,
+        'referer': 'http://test.io/index.html?pbjs_debug=true'
+      }
+    };
+
+    let bidderRequestTCF2 = {
+      'bidderCode': 'adagio',
+      'auctionId': '12jejebn',
+      'bidderRequestId': 'hehehehbeheh',
+      'timeout': 3000,
+      'gdprConsent': {
+        consentString: consentString,
+        vendorData: {
+          tcString: consentString,
+          gdprApplies: true
+        },
+        gdprApplies: true,
+        apiVersion: 2
       },
       'refererInfo': {
         'numIframes': 0,
@@ -433,6 +468,17 @@ describe('adagioAdapter', () => {
       expect(request.data.gdpr).to.exist;
       expect(request.data.gdpr.consentString).to.exist.and.to.equal(consentString);
       expect(request.data.gdpr.consentRequired).to.exist.and.to.equal(1);
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(1);
+    });
+
+    it('GDPR consent is applied w/ TCF2', () => {
+      const requests = spec.buildRequests(bidRequests, bidderRequestTCF2);
+      expect(requests).to.have.lengthOf(2);
+      const request = requests[0];
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr.consentString).to.exist.and.to.equal(consentString);
+      expect(request.data.gdpr.consentRequired).to.exist.and.to.equal(1);
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(2);
     });
 
     it('GDPR consent is not applied', () => {
@@ -443,6 +489,18 @@ describe('adagioAdapter', () => {
       expect(request.data.gdpr).to.exist;
       expect(request.data.gdpr.consentString).to.exist.and.to.equal(consentString);
       expect(request.data.gdpr.consentRequired).to.exist.and.to.equal(0);
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(1);
+    });
+
+    it('GDPR consent is not applied w/ TCF2', () => {
+      bidderRequestTCF2.gdprConsent.gdprApplies = false;
+      const requests = spec.buildRequests(bidRequests, bidderRequestTCF2);
+      expect(requests).to.have.lengthOf(2);
+      const request = requests[0];
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr.consentString).to.exist.and.to.equal(consentString);
+      expect(request.data.gdpr.consentRequired).to.exist.and.to.equal(0);
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(2);
     });
 
     it('GDPR consent is undefined', () => {
@@ -456,6 +514,20 @@ describe('adagioAdapter', () => {
       expect(request.data.gdpr).to.not.have.property('consentString');
       expect(request.data.gdpr).to.not.have.property('gdprApplies');
       expect(request.data.gdpr).to.not.have.property('allowAuctionWithoutConsent');
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(1);
+    });
+
+    it('GDPR consent is undefined w/ TCF2', () => {
+      delete bidderRequestTCF2.gdprConsent.consentString;
+      delete bidderRequestTCF2.gdprConsent.gdprApplies;
+      delete bidderRequestTCF2.gdprConsent.vendorData;
+      const requests = spec.buildRequests(bidRequests, bidderRequestTCF2);
+      expect(requests).to.have.lengthOf(2);
+      const request = requests[0];
+      expect(request.data.gdpr).to.exist;
+      expect(request.data.gdpr).to.not.have.property('consentString');
+      expect(request.data.gdpr).to.not.have.property('gdprApplies');
+      expect(request.data.gdpr.apiVersion).to.exist.and.to.equal(2);
     });
 
     it('GDPR consent bidderRequest does not have gdprConsent', () => {
@@ -479,6 +551,40 @@ describe('adagioAdapter', () => {
         refererInfo: { reachedTop: false }
       });
       expect(requests).to.be.empty;
+    });
+
+    it('Should add the schain if available at bidder level', () => {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{
+            asi: 'ssp.test',
+            sid: '00001',
+            hp: 1
+          }]
+        }
+      });
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const request = requests[0];
+
+      expect(request.data.schain).to.exist;
+      expect(request.data.schain).to.deep.equal({
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'ssp.test',
+          sid: '00001',
+          hp: 1
+        }]
+      });
+    });
+
+    it('Schain should not be added to the request', () => {
+      const requests = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const request = requests[0];
+      expect(request.data.schain).to.not.exist;
     });
   });
 
@@ -645,7 +751,7 @@ describe('adagioAdapter', () => {
     });
   });
 
-  describe('getAdagioScript', () => {
+  describe('adagioScriptFromLocalStorageCb', () => {
     const VALID_HASH = 'Lddcw3AADdQDrPtbRJkKxvA+o1CtScGDIMNRpHB3NnlC/FYmy/9RKXelKrYj/sjuWusl5YcOpo+lbGSkk655i8EKuDiOvK6ae/imxSrmdziIp+S/TA6hTFJXcB8k1Q9OIp4CMCT52jjXgHwX6G0rp+uYoCR25B1jHaHnpH26A6I=';
     const INVALID_HASH = 'invalid';
     const VALID_SCRIPT_CONTENT = 'var _ADAGIO=function(){};(_ADAGIO)();\n';
@@ -659,7 +765,7 @@ describe('adagioAdapter', () => {
       utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
       utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').never();
 
-      getAdagioScript();
+      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
       expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.equals('// hash: ' + VALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
       utilsMock.verify();
@@ -672,7 +778,7 @@ describe('adagioAdapter', () => {
       utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
       utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').once();
 
-      getAdagioScript();
+      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
       expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
       utilsMock.verify();
@@ -685,7 +791,7 @@ describe('adagioAdapter', () => {
       utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
       utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').once();
 
-      getAdagioScript();
+      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
       expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
       utilsMock.verify();
@@ -698,7 +804,7 @@ describe('adagioAdapter', () => {
       utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').once();
       utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').never();
 
-      getAdagioScript();
+      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
 
       expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
       utilsMock.verify();

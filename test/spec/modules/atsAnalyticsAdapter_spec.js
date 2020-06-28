@@ -80,7 +80,7 @@ describe('ats analytics adapter', function () {
           'user_browser': (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari()),
           'user_platform': navigator.platform,
           'auction_start': '2020-02-03T14:14:25.161Z',
-          'domain': 'https://example.com/dev',
+          'domain': window.location.hostname,
           'pid': '10433394',
           'response_time_stamp': '2020-02-03T14:23:11.978Z',
           'currency': 'USD',

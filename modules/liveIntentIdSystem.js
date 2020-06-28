@@ -9,8 +9,10 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
 import { uspDataHandler } from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'liveIntentId';
+export const storage = getStorageManager(null, MODULE_NAME);
 
 let eventFired = false;
 let liveConnect = null;
@@ -19,6 +21,9 @@ let liveConnect = null;
  * This function is used in tests
  */
 export function reset() {
+  if (window && window.liQ) {
+    window.liQ = [];
+  }
   eventFired = false;
   liveConnect = null;
 }
@@ -43,16 +48,12 @@ function parseLiveIntentCollectorConfig(collectConfig) {
 }
 
 function initializeLiveConnect(configParams) {
+  configParams = configParams || {};
   if (liveConnect) {
     return liveConnect;
   }
 
-  const publisherId = configParams && configParams.publisherId;
-  if (!publisherId && typeof publisherId !== 'string') {
-    utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
-    return;
-  }
-
+  const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
     source: 'prebid',
     publisherId: publisherId
@@ -63,27 +64,18 @@ function initializeLiveConnect(configParams) {
   if (configParams.partner) {
     identityResolutionConfig.source = configParams.partner
   }
-  if (configParams.storage && configParams.storage.expires) {
-    identityResolutionConfig.expirationDays = configParams.storage.expires;
-  }
-  if (configParams.ajaxTimeout) {
-    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
-  }
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
-  if (configParams.providedIdentifierName) {
-    liveConnectConfig.providedIdentifierName = configParams.providedIdentifierName;
-  }
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
   }
 
   // The second param is the storage object, which means that all LS & Cookie manipulation will go through PBJS utils.
-  liveConnect = LiveConnect(liveConnectConfig, utils);
+  liveConnect = LiveConnect(liveConnectConfig, storage);
   return liveConnect;
 }
 
@@ -118,10 +110,10 @@ export const liveIntentIdSubmodule = {
       return { 'lipb': { ...base, ...value } };
     }
 
-    if (configParams) {
+    if (!liveConnect) {
       initializeLiveConnect(configParams);
-      tryFireEvent();
     }
+    tryFireEvent();
 
     return (value && typeof value['unifiedId'] === 'string') ? composeIdObject(value) : undefined;
   },
@@ -141,17 +133,24 @@ export const liveIntentIdSubmodule = {
     // Don't do the internal ajax call, but use the composed url and fire it via PBJS ajax module
     const url = liveConnect.resolutionCallUrl();
     const result = function (callback) {
-      ajax(url, response => {
-        let responseObj = {};
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            utils.logError(error);
+      const callbacks = {
+        success: response => {
+          let responseObj = {};
+          if (response) {
+            try {
+              responseObj = JSON.parse(response);
+            } catch (error) {
+              utils.logError(error);
+            }
           }
+          callback(responseObj);
+        },
+        error: error => {
+          utils.logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
+          callback();
         }
-        callback(responseObj);
-      }, undefined, { method: 'GET', withCredentials: true });
+      };
+      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
     };
     return {callback: result};
   }

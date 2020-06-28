@@ -25,6 +25,7 @@ const invalidBidReq = {
 };
 
 const bidReq = [{
+  adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,
   params: {
     placementId: '10433394',
@@ -35,6 +36,7 @@ const bidReq = [{
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
 },
 {
+  adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,
   params: {
     publisherId: 12345
@@ -54,6 +56,7 @@ const bidReqUserIds = [{
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
   userId: {
+    idl_env: '1111',
     tdid: '123456',
     digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}}
   }
@@ -145,6 +148,16 @@ const bidResArray = [
   }
 ];
 
+let element;
+let sandbox;
+
+let elementParent = {
+  offsetLeft: 100,
+  offsetTop: 100,
+  offsetHeight: 100,
+  getAttribute: function() {}
+};
+
 describe('Undertone Adapter', () => {
   describe('request', () => {
     it('should validate bid request', () => {
@@ -155,6 +168,23 @@ describe('Undertone Adapter', () => {
     });
   });
   describe('build request', function () {
+    beforeEach(function() {
+      element = {
+        id: 'div-gpt-ad-1460505748561-0',
+        offsetLeft: 100,
+        offsetTop: 100,
+        offsetWidth: 300,
+        offsetHeight: 250
+      };
+
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(document, 'getElementById').withArgs('div-gpt-ad-1460505748561-0').returns(element);
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
     it('should send request to correct url via POST not in GDPR or CCPA', function () {
       const request = spec.buildRequests(bidReq, bidderReq);
       const domainStart = bidderReq.refererInfo.referer.indexOf('//');
@@ -202,6 +232,7 @@ describe('Undertone Adapter', () => {
       expect(bid1.sizes.length).to.equal(2);
       expect(bid1.placementId).to.equal('10433394');
       expect(bid1.publisherId).to.equal(12345);
+      expect(bid1.coordinates).to.be.an('array');
       expect(bid1.params).to.be.an('object');
       const bid2 = JSON.parse(request.data)['x-ut-hb-params'][1];
       expect(bid2.bidRequestId).to.equal('453cf42d72bb3c');
@@ -216,7 +247,31 @@ describe('Undertone Adapter', () => {
       expect(bidCommons).to.be.an('object');
       expect(bidCommons.uids).to.be.an('object');
       expect(bidCommons.uids.tdid).to.equal('123456');
+      expect(bidCommons.uids.idl_env).to.equal('1111');
       expect(bidCommons.uids.digitrustid.data.id).to.equal('DTID');
+    });
+    it('should send page sizes sizes correctly', function () {
+      const request = spec.buildRequests(bidReqUserIds, bidderReq);
+      const bidCommons = JSON.parse(request.data)['commons'];
+      expect(bidCommons).to.be.an('object');
+      expect(bidCommons.pageSize).to.be.an('array');
+      expect(bidCommons.pageSize[0]).to.equal(window.innerWidth);
+      expect(bidCommons.pageSize[1]).to.equal(window.innerHeight);
+    });
+    it('should send banner coordinates', function() {
+      const request = spec.buildRequests(bidReq, bidderReq);
+      const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
+      expect(bid1.coordinates).to.be.an('array');
+      expect(bid1.coordinates[0]).to.equal(100);
+      expect(bid1.coordinates[1]).to.equal(100);
+    });
+    it('should send banner coordinates plus parent', function() {
+      element.offsetParent = elementParent;
+      const request = spec.buildRequests(bidReq, bidderReq);
+      const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
+      expect(bid1.coordinates).to.be.an('array');
+      expect(bid1.coordinates[0]).to.equal(200);
+      expect(bid1.coordinates[1]).to.equal(200);
     });
   });
 
