@@ -1702,6 +1702,28 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('cpm', 0.5);
       expect(response).to.not.have.property('vastUrl');
       expect(response).to.not.have.property('videoCacheKey');
+      expect(response).to.have.property('ttl', '60');
+    });
+    
+    
+    it('respects defaultS2sTtl', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        defaultS2sTtl: 30
+      });
+      config.setConfig({ s2sConfig });
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
+
+      sinon.assert.calledOnce(events.emit);
+      const event = events.emit.firstCall.args;
+      expect(event[0]).to.equal(CONSTANTS.EVENTS.BIDDER_DONE);
+      expect(event[1].bids[0]).to.have.property('serverResponseTimeMs', 8);
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('ttl', '30');
     });
 
     it('handles OpenRTB video responses', function () {
@@ -2161,7 +2183,7 @@ describe('S2S Adapter', function () {
           defaultS2sTtl: 30
         }
       });
-      expect(config.getConfig('s2sConfig').defaultS2sTtl).to.deep.equal(30)
+      expect(config.getConfig('s2sConfig').defaultS2sTtl).to.deep.equal(30);
     });
 
     it('should set syncUrlModifier', function () {
