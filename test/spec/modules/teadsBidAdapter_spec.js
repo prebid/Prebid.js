@@ -170,7 +170,7 @@ describe('teadsBidAdapter', () => {
       const request = spec.buildRequests(bidRequests, bidderResquestDefault);
       const payload = JSON.parse(request.data);
 
-      const bandwidth = window.navigator && window.navigator.connection && window.navigator.connection.downlink;
+      const bandwidth = window.navigation && window.navigation.connection && window.navigation.connection.downlink >= 0 ? window.navigation.connection.downlink.toString() : '';
 
       expect(payload.networkBandwidth).to.exist;
       expect(payload.networkBandwidth).to.deep.equal(bandwidth.toString());
