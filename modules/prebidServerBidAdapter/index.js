@@ -829,7 +829,8 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.creative_id = bid.crid;
           bidObject.creativeId = bid.crid;
           if (bid.burl) { bidObject.burl = bid.burl; }
-          bidObject.currency = (response.cur) ? response.cur : DEFAULT_S2S_CURRENCY;
+          bidObject.currency = (response.cur) ? response.cur : DEFAULT_S2S_CURRENCY
+          bidObject.meta = bidObject.meta || {};
           if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
 
           // TODO: Remove when prebid-server returns ttl and netRevenue
