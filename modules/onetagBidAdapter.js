@@ -46,33 +46,26 @@ export function isValid(type, bid) {
  * @return ServerRequest Info describing the request to the server.
  */
 function buildRequests(validBidRequests, bidderRequest) {
-  const bids = requestsToBids(validBidRequests);
-  const bidObject = {'bids': bids};
-  const pageInfo = getPageInfo();
-
-  const payload = Object.assign(bidObject, pageInfo);
-
+  const payload = {
+    bids: requestsToBids(validBidRequests),
+    ...getPageInfo()
+  };
   if (bidderRequest && bidderRequest.gdprConsent) {
     payload.gdprConsent = {
       consentString: bidderRequest.gdprConsent.consentString,
       consentRequired: bidderRequest.gdprConsent.gdprApplies
     };
   }
-
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
   }
-
   if (bidderRequest && bidderRequest.userId) {
     payload.userId = bidderRequest.userId;
   }
-
   if (window.localStorage) {
     payload.onetagSid = window.localStorage.getItem('onetag_sid');
   }
-
   const payloadString = JSON.stringify(payload);
-
   return {
     method: 'POST',
     url: ENDPOINT,
