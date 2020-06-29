@@ -213,26 +213,31 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
       if (!utils.isEmpty(userExt)) {
         requestPayload.user = { ext: userExt };
       }
-
-      // CUSTOM - Emetriq Targeting
-      var isemq = (bid.params.user[0].data.name) || 'empty';
-      if (isemq !== 'empty') {
-        var emqstring = (bid.params.user[0].data.segment[0].value) || 'empty';
-        requestPayload.user = {
-          ext: userExt,
-          data: [{
-            id: 'emq',
-            name: 'emq',
-            segment: {
-              name: 'emq',
-              value: emqstring,
-            }
-          }]
-        }
-      }
-
-      // CUSTOM -  Emetriq Targeting
-
+	  
+		//CUSTOM -  Targetingparameters
+		var dataarray =[];
+		for (var i = 0; i < bid.params.user.data.length; i++) {
+			var isemq = (bid.params.user.data[i].name) || 'empty';
+			if(isemq !== 'empty'){
+				var provider = bid.params.user.data[i].name;
+				var targetingstring = (bid.params.user.data[i].segment[0].value) || 'empty';
+				dataarray.push ({ 
+						id: provider,
+						name: provider,
+						segment: {
+							name : provider,
+							value: targetingstring,
+						}
+				})
+			}
+		}
+		requestPayload.user = {	
+			ext: userExt,
+			data: dataarray
+		}
+		//CUSTOM -  Targetingparameters
+	  
+	  
       return {
         method: 'POST',
         url: URL,
