@@ -191,11 +191,11 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
         if (isemq !== 'empty') {
           var provider = bid.params.user.data[i].name;
           var targetingstring = (bid.params.user.data[i].segment[0].value) || 'empty';
-          dataarray.push ({
+          dataarray.push({
             id: provider,
             name: provider,
             segment: {
-              name : provider,
+              name: provider,
               value: targetingstring,
             }
           })
