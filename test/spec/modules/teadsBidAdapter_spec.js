@@ -166,6 +166,24 @@ describe('teadsBidAdapter', () => {
       expect(payload.referrer).to.deep.equal('https://example.com/page.html')
     });
 
+    it('should add networkBandwidth info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const payload = JSON.parse(request.data);
+
+      const bandwidth = window.navigator && window.navigator.connection && window.navigator.connection.downlink;
+
+      expect(payload.networkBandwidth).to.exist;
+      expect(payload.networkBandwidth).to.deep.equal(bandwidth.toString());
+    });
+
+    it('should add pageReferrer info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.pageReferrer).to.exist;
+      expect(payload.pageReferrer).to.deep.equal(document.referrer);
+    });
+
     it('should send GDPR to endpoint with 11 status', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
