@@ -1704,8 +1704,7 @@ describe('S2S Adapter', function () {
       expect(response).to.not.have.property('videoCacheKey');
       expect(response).to.have.property('ttl', 60);
     });
-    
-    
+
     it('respects defaultS2sTtl', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
