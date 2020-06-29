@@ -32,7 +32,11 @@ Grid bid adapter supports Banner and Video (instream and outstream).
                        bidder: "grid",
                        params: {
                            uid: 2,
-                           priceType: 'gross'
+                           priceType: 'gross',
+                           keywords: {
+                               brandsafety: ['disaster'],
+                               topic: ['stress', 'fear']
+                           }
                        }
                    }
                ]

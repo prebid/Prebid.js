@@ -248,12 +248,12 @@ describe('AppNexusAdapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].video).to.deep.equal({
         skippable: true,
-        playback_method: ['auto_play_sound_off'],
+        playback_method: 2,
         custom_renderer_present: true
       });
       expect(payload.tags[1].video).to.deep.equal({
         skippable: true,
-        playback_method: ['auto_play_sound_off']
+        playback_method: 2
       });
     });
 
