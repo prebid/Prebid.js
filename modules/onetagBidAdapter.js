@@ -260,9 +260,6 @@ function setGeneralInfo(bidRequest) {
   if (params.dealId) {
     this['dealId'] = params.dealId;
   }
-  if (params.floor) {
-    this['floor'] = params.floor;
-  }
   const coords = getSpaceCoords(bidRequest.adUnitCode);
   if (coords) {
     this['coords'] = coords;
