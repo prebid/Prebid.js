@@ -4,7 +4,7 @@
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adapterManager.js';
 import adapter from '../src/AnalyticsAdapter.js';
-import { logError } from '../src/utils.js';
+import { logError, logInfo, logWarn } from '../src/utils.js';
 
 // Standard Analytics Adapter code
 const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END
@@ -14,6 +14,7 @@ const BATCH_MESSAGE_FREQUENCY = 1000; // Send results batched on a 1s delay
 
 const PROVIDER_CODE = 'mavenDistributionAnalyticsAdapter'
 const MAVEN_DISTRIBUTION_GLOBAL = '$p'
+const MAX_BATCH_SIZE = 32
 
 /**
  * We may add more fields in the future
@@ -45,10 +46,10 @@ const MAVEN_DISTRIBUTION_GLOBAL = '$p'
  */
 
 /**
- * // cpms, zoneIndexes, and zoneNames all have the same length
+ * // cpmms, zoneIndexes, and zoneNames all have the same length
  * @typedef {{
  *   auc: string
- *   cpms: number[]
+ *   cpmms: number[]
  *   zoneIndexes: number[]
  *   zoneNames: string[]
  * }} AuctionEndSummary
@@ -61,7 +62,7 @@ const MAVEN_DISTRIBUTION_GLOBAL = '$p'
  */
 export function summarizeAuctionEnd(args, adapterConfig) {
   /** @type {{[code: string]: number}} */
-  const cpmsMap = {}
+  const cpmmsMap = {}
   const zoneNames = []
   const zoneIndexes = []
   const adUnitCodes = []
@@ -70,7 +71,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   let someZoneNameNonNull = false
   let allZoneNamesNonNull = true
   args.adUnits.forEach(adUnit => {
-    cpmsMap[adUnit.code] = 0
+    cpmmsMap[adUnit.code] = 0
     adUnitCodes.push(adUnit.code)
 
     const zoneConfig = zoneMap[adUnit.code] || {}
@@ -85,14 +86,14 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     allZoneNamesNonNull = allZoneNamesNonNull && zoneNameNonNull
   })
   args.bidsReceived.forEach(bid => {
-    cpmsMap[bid.adUnitCode] = Math.max(cpmsMap[bid.adUnitCode], bid.cpm || 0)
+    cpmmsMap[bid.adUnitCode] = Math.max(cpmmsMap[bid.adUnitCode], Math.round(bid.cpm * 1000 || 0))
   })
-  const cpms = args.adUnits.map(adUnit => cpmsMap[adUnit.code])
+  const cpmms = args.adUnits.map(adUnit => cpmmsMap[adUnit.code])
 
   /** @type {AuctionEndSummary} */
   const eventToSend = {
     auc: args.auctionId,
-    cpms: cpms,
+    cpmms: cpmms,
   }
   if (!allZoneNamesNonNull) eventToSend.codes = adUnitCodes
   if (someZoneNameNonNull) eventToSend.zoneNames = zoneNames
@@ -101,12 +102,73 @@ export function summarizeAuctionEnd(args, adapterConfig) {
 }
 
 /**
+ * Price is in microdollars
  * @param {AuctionEndSummary[]} batch
- * @return {{batch: string}}
+ * @return {{batch: string, price: number}}
  */
 export function createSendOptionsFromBatch(batch) {
   const batchJson = JSON.stringify(batch)
-  return { batch: batchJson }
+  let price = 0
+  batch.forEach(auctionEndSummary => {
+    auctionEndSummary.cpmms.forEach(cpmm => price += cpmm)
+  })
+  return { batch: batchJson, price: price }
+}
+
+const STATE_DOM_CONTENT_LOADING = 'wait-for-$p-to-be-defined'
+const STATE_LIFTIGNITER_LOADING = 'waiting-$p(\'onload\')'
+const STATE_LIFTIGNITER_LOADED = 'loaded'
+/**
+ * Wrapper around $p that detects when $p is defined
+ * and then detects when the script is loaded
+ * so that the caller can discard events if the script never loads
+ */
+function LiftIgniterWrapper() {
+  this._state = null
+  this._onReadyStateChangeBound = this._onReadyStateChange.bind(this)
+  this._init()
+}
+LiftIgniterWrapper.prototype = {
+  _expectState(state) {
+    if (this._state != state) {
+      logError(`wrong state ${this._state}; expected ${state}`)
+      return false
+    } else {
+      return true
+    }
+  },
+  _init() {
+    this._state = STATE_DOM_CONTENT_LOADING
+    document.addEventListener('DOMContentLoaded', this._onReadyStateChangeBound)
+    this._onReadyStateChange()
+  },
+  _onReadyStateChange() {
+    if (!this._expectState(STATE_DOM_CONTENT_LOADING)) return
+    const found = window[MAVEN_DISTRIBUTION_GLOBAL] != null
+    logInfo(`wrap$p: onReadyStateChange; $p found = ${found}`)
+    if (found) {
+      document.removeEventListener('DOMContentLoaded', this._onReadyStateChangeBound)
+      this._state = STATE_LIFTIGNITER_LOADING
+      // note: $p('onload', cb) may synchronously call the callback
+      window[MAVEN_DISTRIBUTION_GLOBAL]('onload', this._onLiftIgniterLoad.bind(this))
+    }
+  },
+  _onLiftIgniterLoad() {
+    if (!this._expectState(STATE_LIFTIGNITER_LOADING)) return
+    this._state = STATE_LIFTIGNITER_LOADED
+    logInfo(`wrap$p: onLiftIgniterLoad`)
+  },
+  checkIsLoaded() {
+    if (this._state === STATE_DOM_CONTENT_LOADING) {
+      this._onReadyStateChange()
+    }
+    return this._state === STATE_LIFTIGNITER_LOADED
+  },
+  sendPrebid(obj) {
+    if (!this._expectState(STATE_LIFTIGNITER_LOADED)) return
+    window[MAVEN_DISTRIBUTION_GLOBAL]('send', 'prebid', obj)
+    logInfo(`wrap$p: $p('send')`)
+  },
 }
 
 /**
@@ -114,11 +176,13 @@ export function createSendOptionsFromBatch(batch) {
  * @property {object[] | null} batch
  * @property {number | null} batchTimeout
  * @property {MavenDistributionAdapterConfig} adapterConfig
+ * @property {LiftIgniterWrapper} liftIgniterWrapper
  */
-function MavenDistributionAnalyticsAdapterInner(adapterConfig) {
-  this.batch = null
+function MavenDistributionAnalyticsAdapterInner(adapterConfig, liftIgniterWrapper) {
+  this.batch = []
   this.batchTimeout = null
   this.adapterConfig = adapterConfig
+  this.liftIgniterWrapper = liftIgniterWrapper
 }
 MavenDistributionAnalyticsAdapterInner.prototype = {
   /**
@@ -128,22 +192,28 @@ MavenDistributionAnalyticsAdapterInner.prototype = {
     const {eventType, args} = typeAndArgs
     if (eventType === AUCTION_END) {
       const eventToSend = summarizeAuctionEnd(args, this.adapterConfig)
-      if (!this.batch) {
-        this.batch = []
+      if (this.timeout == null) {
         this.timeout = setTimeout(this._sendBatch.bind(this), BATCH_MESSAGE_FREQUENCY)
+        logInfo(`$p: added auctionEnd to new batch`)
+      } else {
+        logInfo(`$p: added auctionEnd to existing batch`)
       }
       this.batch.push(eventToSend)
     }
   },
 
   _sendBatch() {
-    const sendOptions = createSendOptionsFromBatch(this.batch)
-    if (window[MAVEN_DISTRIBUTION_GLOBAL]) {
-      window[MAVEN_DISTRIBUTION_GLOBAL]('send', 'prebid', sendOptions)
-      this.timeout = null
-      this.batch = null
-    } else {
-      this.timeout = setTimeout(this._sendBatch.bind(this), BATCH_MESSAGE_FREQUENCY)
+    this.timeout = null
+    const countToDiscard = this.batch.length - MAX_BATCH_SIZE
+    if (countToDiscard > 0) {
+      logWarn(`$p: Discarding ${countToDiscard} old items`)
+      this.batch.splice(0, countToDiscard)
+    }
+    if (this.liftIgniterWrapper.checkIsLoaded()) {
+      logInfo(`$p: Sending ${this.batch.length} items`)
+      const sendOptions = createSendOptionsFromBatch(this.batch)
+      this.liftIgniterWrapper.sendPrebid(sendOptions)
+      this.batch.length = 0
     }
   },
 }
@@ -169,7 +239,8 @@ MavenDistributionAnalyticsAdapter.prototype = {
     if (adapterConfig.options == null) {
       return logError(`Adapter ${PROVIDER_CODE}: options null; disabling`)
     }
-    const inner = new MavenDistributionAnalyticsAdapterInner(adapterConfig)
+    const liftIgniterWrapper = new LiftIgniterWrapper()
+    const inner = new MavenDistributionAnalyticsAdapterInner(adapterConfig, liftIgniterWrapper)
     const base = adapter({global: MAVEN_DISTRIBUTION_GLOBAL})
     base.track = inner.track.bind(inner)
     base.enableAnalytics(adapterConfig)
@@ -190,5 +261,10 @@ adaptermanager.registerAnalyticsAdapter({
   adapter: mavenDistributionAnalyticsAdapter,
   code: PROVIDER_CODE,
 });
+
+// export for unit test
+export const testables = {
+  LiftIgniterWrapper,
+}
 
 export default mavenDistributionAnalyticsAdapter;

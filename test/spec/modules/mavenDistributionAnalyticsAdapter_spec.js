@@ -1,8 +1,92 @@
-import { createSendOptionsFromBatch, summarizeAuctionEnd } from '../../../modules/mavenDistributionAnalyticsAdapter.js';
+import { createSendOptionsFromBatch, summarizeAuctionEnd, testables } from '../../../modules/mavenDistributionAnalyticsAdapter.js';
 
 var assert = require('assert');
 
 describe('MavenDistributionAnalyticsAdapter', function () {
+  describe('LiftIgniterWrapper', () => {
+    let addEventListener, removeEventListener
+    const domContentLoadListeners = []
+    const que = []
+    beforeEach(() => {
+      window.$p = null
+      addEventListener = sinon.stub(document, 'addEventListener').callsFake((type, fn) => {
+        if (type !== 'DOMContentLoaded') {
+          throw Error(`Unsupported type for stub; expected DOMContentLoaded; got ${type}`)
+        }
+        domContentLoadListeners.push(fn)
+      });
+      removeEventListener = sinon.stub(document, 'removeEventListener').callsFake((type, fn) => {
+        if (type !== 'DOMContentLoaded') {
+          throw Error(`Unsupported type for stub; expected DOMContentLoaded; got ${type}`)
+        }
+        for (let i = domContentLoadListeners.length; i-- > 0;) {
+          if (domContentLoadListeners[i] === fn) {
+            domContentLoadListeners.splice(i, 1)
+          }
+        }
+      });
+    })
+    afterEach(() => {
+      addEventListener.restore()
+      removeEventListener.restore()
+      domContentLoadListeners.length = 0
+      window.$p = null
+      que.length = 0
+    })
+    function defineDollarPStub() {
+      window.$p = (...args) => que.push(args)
+    }
+    function defineDollarPReal() {
+      window.$p = (name, arg) => {
+        if (name !== 'onload') {
+          throw new Error(`Only onload is supported`)
+        }
+        arg()
+      }
+      for (let i = 0; i < que.length; i++) {
+        window.$p.apply(window, que[i])
+      }
+      que.length = 0
+    }
+    it('should check for existence of $p and $p(onload) each time checkIsLoaded is called', () => {
+      const liftIgniterWrapper = new testables.LiftIgniterWrapper()
+      assert.equal(liftIgniterWrapper.checkIsLoaded(), false)
+      assert.equal(liftIgniterWrapper._state, 'wait-for-$p-to-be-defined')
+      defineDollarPStub()
+      assert.equal(liftIgniterWrapper.checkIsLoaded(), false)
+      assert.equal(liftIgniterWrapper._state, 'waiting-$p(\'onload\')')
+      assert.equal(que.length, 1)
+      const [firstCommand, cb] = que[0]
+      assert.equal(firstCommand, 'onload')
+      cb()
+      assert.equal(liftIgniterWrapper._state, 'loaded')
+      assert.equal(liftIgniterWrapper.checkIsLoaded(), true)
+    })
+    it('should check $p and $p(onload) when there is a DOMContentLoad event', () => {
+      assert.equal(window.$p, null)
+      const liftIgniterWrapper = new testables.LiftIgniterWrapper()
+      const listener = domContentLoadListeners[0]
+      assert.notEqual(listener, null)
+      assert.equal(liftIgniterWrapper._state, 'wait-for-$p-to-be-defined')
+      defineDollarPStub()
+
+      listener()
+      assert.equal(liftIgniterWrapper._state, 'waiting-$p(\'onload\')')
+      assert.equal(que.length, 1)
+      assert.equal(domContentLoadListeners.length, 0, 'should removeListener after $p is defined')
+      const [firstCommand, cb] = que[0]
+      assert.equal(firstCommand, 'onload')
+      cb()
+      assert.equal(liftIgniterWrapper._state, 'loaded')
+      assert.equal(liftIgniterWrapper.checkIsLoaded(), true)
+    })
+    it('should work with LiftIgniter already loaded (synchronous $p(onload))', () => {
+      defineDollarPReal()
+      const liftIgniterWrapper = new testables.LiftIgniterWrapper()
+      assert.equal(liftIgniterWrapper._state, 'loaded')
+      assert.equal(liftIgniterWrapper.checkIsLoaded(), true)
+    })
+  })
   describe('summarizeAuctionEnd', function () {
     it('should summarize', () => {
       const args = {
@@ -795,7 +879,7 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       const actualSummary = summarizeAuctionEnd(args, adapterConfig)
       const expectedSummary = {
         'auc': 'e0a2febe-dc05-4999-87ed-4c40022b6796',
-        cpms: [0],
+        cpmms: [0],
         zoneIndexes: [0],
         zoneNames: ['fixed_bottom'],
       }
@@ -2175,7 +2259,7 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       const actual = summarizeAuctionEnd(mavenArgs, adapterConfig)
       const expected = {
         auc: 'd01409e4-580d-4107-8d92-3c5dec19b41a',
-        cpms: [ 2.604162 ],
+        cpmms: [ 2604 ],
         codes: [ 'gpt-slot-channel-banner-top' ],
       }
       assert.deepEqual(actual, expected)
@@ -2183,13 +2267,16 @@ describe('MavenDistributionAnalyticsAdapter', function () {
   });
   describe('createSendOptionsFromBatch', () => {
     it('should create batch json', () => {
-      const actual = createSendOptionsFromBatch({
+      const actual = createSendOptionsFromBatch([{
         auc: 'aaa',
-        cpms: [0.04],
+        cpmms: [40],
         zoneIndexes: [3],
         zoneNames: ['sidebar']
-      })
-      const expected = {batch: '{"auc":"aaa","cpms":[0.04],"zoneIndexes":[3],"zoneNames":["sidebar"]}'}
+      }])
+      const expected = {
+        batch: '[{"auc":"aaa","cpmms":[40],"zoneIndexes":[3],"zoneNames":["sidebar"]}]',
+        price: 40,
+      }
       assert.deepEqual(actual, expected)
     })
   })
