@@ -250,9 +250,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     r.user.eids = userEids;
   }
 
-  if (document.referrer && document.referrer !== '') {
-    r.site.ref = document.referrer;
-  }
+  r.site.ref = _getPageUrl(validBidRequests[0], bidderRequest);
 
   // Apply GDPR information to the request if GDPR is enabled.
   if (bidderRequest) {
@@ -475,7 +473,23 @@ export const spec = {
       type: 'iframe',
       url: USER_SYNC_URL
     }] : [];
+  },
+
+  /**
+   * @param {BidRequest} bidRequest
+   * @param bidderRequest
+   * @returns {string}
+   */
+  _getPageUrl: function (bidRequest, bidderRequest) {
+    let pageUrl = config.getConfig('pageUrl');
+    if (bidRequest.params.referrer) {
+      pageUrl = bidRequest.params.referrer;
+    } else if (!pageUrl) {
+      pageUrl = bidderRequest.refererInfo.referer;
+    }
+    return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
   }
+
 };
 
 registerBidder(spec);
