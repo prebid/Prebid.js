@@ -1702,7 +1702,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('cpm', 0.5);
       expect(response).to.not.have.property('vastUrl');
       expect(response).to.not.have.property('videoCacheKey');
-      expect(response).to.have.property('ttl', '60');
+      expect(response).to.have.property('ttl', 60);
     });
     
     
@@ -1718,12 +1718,9 @@ describe('S2S Adapter', function () {
 
       sinon.assert.calledOnce(events.emit);
       const event = events.emit.firstCall.args;
-      expect(event[0]).to.equal(CONSTANTS.EVENTS.BIDDER_DONE);
-      expect(event[1].bids[0]).to.have.property('serverResponseTimeMs', 8);
-
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('ttl', '30');
+      expect(response).to.have.property('ttl', 30);
     });
 
     it('handles OpenRTB video responses', function () {
