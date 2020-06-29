@@ -344,12 +344,9 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     params += '&us_privacy=' + uspConsent;
   }
   if (syncOptions.iframeEnabled) {
-    const rnd = new Date().getTime();
-    params = '?cb=' + rnd + params;
-
     syncs.push({
       type: 'iframe',
-      url: USER_SYNC_ENDPOINT + params
+      url: USER_SYNC_ENDPOINT + '?cb=' + new Date().getTime() + params
     });
   }
   if (syncOptions.pixelEnabled) {
