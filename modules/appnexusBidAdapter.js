@@ -189,24 +189,25 @@ export const spec = {
       });
     }
 
+    let eids = [];
     const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
     if (criteoId) {
-      let tpuids = [];
-      tpuids.push({
-        'provider': 'criteo',
-        'user_id': criteoId
+      eids.push({
+        source: 'criteo.com',
+        id: criteoId
       });
-      payload.tpuids = tpuids;
     }
 
     const tdid = utils.deepAccess(bidRequests[0], `userId.tdid`);
     if (tdid) {
-      let eids = [];
       eids.push({
         source: 'adserver.org',
         id: tdid,
         rti_partner: 'TDID'
       });
+    }
+
+    if (eids.length) {
       payload.eids = eids;
     }
 

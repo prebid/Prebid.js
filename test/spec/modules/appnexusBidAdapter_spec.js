@@ -738,18 +738,6 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should populate tpids array when userId is available', function () {
-      const bidRequest = Object.assign({}, bidRequests[0], {
-        userId: {
-          criteoId: 'sample-userid'
-        }
-      });
-
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-      expect(payload.tpuids).to.deep.equal([{provider: 'criteo', user_id: 'sample-userid'}]);
-    });
-
     it('should populate schain if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         schain: {
@@ -820,20 +808,26 @@ describe('AppNexusAdapter', function () {
       expect(request.options).to.deep.equal({withCredentials: false});
     });
 
-    it('should populate eids array when ttd id is available', function () {
+    it('should populate eids array when ttd id and criteo is available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
-          tdid: 'sample-userid'
+          tdid: 'sample-userid',
+          criteoId: 'sample-criteo-userid'
         }
       });
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
-      expect(payload.eids).to.deep.equal([{
+      expect(payload.eids).to.deep.include({
         source: 'adserver.org',
         id: 'sample-userid',
         rti_partner: 'TDID'
-      }]);
+      });
+
+      expect(payload.eids).to.deep.include({
+        source: 'criteo.com',
+        id: 'sample-criteo-userid',
+      });
     });
   })
 
