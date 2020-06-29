@@ -201,7 +201,7 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
           })
         }
       }
-      requestPayload.user = {   
+      requestPayload.user = {
         ext: userExt,
         data: dataarray
       }
