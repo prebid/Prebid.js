@@ -2,15 +2,12 @@ import * as utils from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
-
 const BIDDER_CODE = 'smartx';
 const URL = '//bid.sxp.smartclip.net/bid/1000';
-
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['smartx'],
   supportedMediaTypes: [VIDEO],
-
   /**
    * Determines whether or not the given bid request is valid.
    * From Prebid.js: isBidRequestValid - Verify the the AdUnits.bids, respond with true (valid) or false (invalid).
@@ -23,40 +20,33 @@ export const spec = {
       utils.logError(BIDDER_CODE + ': params is not defined or is incorrect in the bidder settings.');
       return false;
     }
-
     if (!utils.deepAccess(bid, 'mediaTypes.video')) {
       utils.logError(BIDDER_CODE + ': mediaTypes.video is not present in the bidder settings.');
       return false;
     }
-
     const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
     if (!playerSize || !utils.isArray(playerSize)) {
       utils.logError(BIDDER_CODE + ': mediaTypes.video.playerSize is not defined in the bidder settings.');
       return false;
     }
-
     if (!utils.getBidIdParameter('tagId', bid.params)) {
       utils.logError(BIDDER_CODE + ': tagId is not present in bidder params');
       return false;
     }
-
     if (!utils.getBidIdParameter('publisherId', bid.params)) {
       utils.logError(BIDDER_CODE + ': publisherId is not present in bidder params');
       return false;
     }
-
     if (!utils.getBidIdParameter('siteId', bid.params)) {
       utils.logError(BIDDER_CODE + ': siteId is not present in bidder params');
       return false;
     }
-
     /*
 if (!utils.getBidIdParameter('domain', bid.params)) {
       utils.logError(BIDDER_CODE + ': domain is not present in bidder params');
       return false;
     }
     */
-
     if (utils.deepAccess(bid, 'mediaTypes.video.context') == 'outstream' || utils.deepAccess(bid, 'params.ad_unit') == 'outstream') {
       if (!utils.getBidIdParameter('outstream_function', bid.params)) {
         if (!utils.getBidIdParameter('outstream_options', bid.params)) {
@@ -69,10 +59,8 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
         }
       }
     }
-
     return true;
   },
-
   /**
    * Make a server request from the list of BidRequests.
    * from Prebid.js: buildRequests - Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
@@ -84,26 +72,20 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
     const page = bidderRequest.refererInfo.referer;
     const isPageSecure = !!page.match(/^https:/)
     // const domain = page.match(/:\/\/(.[^/]+)/)[1];
-
     const smartxRequests = bidRequests.map(function(bid) {
       const tagId = utils.getBidIdParameter('tagId', bid.params);
       const publisherId = utils.getBidIdParameter('publisherId', bid.params);
       const siteId = utils.getBidIdParameter('siteId', bid.params);
       const domain = utils.getBidIdParameter('domain', bid.params);
       const cat = utils.getBidIdParameter('cat', bid.params);
-
       let pubcid = null;
-
       const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
       const contentWidth = playerSize[0][0];
       const contentHeight = playerSize[0][1];
-
       const secure = +(isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0));
-
       const ext = {
         sdk_name: 'Prebid 1+'
       };
-
       const mimes = utils.getBidIdParameter('mimes', bid.params) || ['application/javascript', 'video/mp4', 'video/webm'];
       const linearity = utils.getBidIdParameter('linearity', bid.params) || 1;
       const minduration = utils.getBidIdParameter('minduration', bid.params) || 0;
@@ -120,7 +102,6 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
       if (contextcustom == 'outstream') {
         placement = 3;
       }
-
       let smartxReq = {
         id: bid.bidId,
         secure: secure,
@@ -146,19 +127,15 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
           'smart.bidpricetype': 1
         }
       };
-
       if (utils.getBidIdParameter('bidfloor', bid.params) != '') {
         smartxReq.bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
       }
-
       if (utils.getBidIdParameter('bidfloorcur', bid.params) != '') {
         smartxReq.bidfloorcur = utils.getBidIdParameter('bidfloorcur', bid.params);
       }
-
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
       }
-
       const language = navigator.language ? 'language' : 'userLanguage';
       const device = {
         h: screen.height,
@@ -168,7 +145,6 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
         make: navigator.vendor ? navigator.vendor : '',
         ua: navigator.userAgent
       };
-
       const at = utils.getBidIdParameter('at', bid.params) || 2;
       const cur = utils.getBidIdParameter('cur', bid.params) || ['EUR'];
       const requestPayload = {
@@ -188,13 +164,10 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
         at: at,
         cur: cur
       };
-
       const userExt = {};
-
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
         userExt.consent = bidderRequest.gdprConsent.consentString;
-
         if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
           requestPayload.regs = {
             ext: {
@@ -203,41 +176,36 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
           };
         }
       }
-
       // Add common id if available
       if (pubcid) {
         userExt.fpc = pubcid;
       }
-
       // Only add the user object if it's not empty
       if (!utils.isEmpty(userExt)) {
         requestPayload.user = { ext: userExt };
       }
-	  
-		//CUSTOM -  Targetingparameters
-		var dataarray =[];
-		for (var i = 0; i < bid.params.user.data.length; i++) {
-			var isemq = (bid.params.user.data[i].name) || 'empty';
-			if(isemq !== 'empty'){
-				var provider = bid.params.user.data[i].name;
-				var targetingstring = (bid.params.user.data[i].segment[0].value) || 'empty';
-				dataarray.push ({ 
-						id: provider,
-						name: provider,
-						segment: {
-							name : provider,
-							value: targetingstring,
-						}
-				})
-			}
-		}
-		requestPayload.user = {	
-			ext: userExt,
-			data: dataarray
-		}
-		//CUSTOM -  Targetingparameters
-	  
-	  
+      // CUSTOM - Targetingparameters
+      var dataarray = [];
+      for (var i = 0; i < bid.params.user.data.length; i++) {
+        var isemq = (bid.params.user.data[i].name) || 'empty';
+        if (isemq !== 'empty') {
+          var provider = bid.params.user.data[i].name;
+          var targetingstring = (bid.params.user.data[i].segment[0].value) || 'empty';
+          dataarray.push ({
+            id: provider,
+            name: provider,
+            segment: {
+              name : provider,
+              value: targetingstring,
+            }
+          })
+        }
+      }
+      requestPayload.user = {   
+        ext: userExt,
+        data: dataarray
+      }
+      // CUSTOM -  Targetingparameters
       return {
         method: 'POST',
         url: URL,
@@ -251,10 +219,8 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
         }
       };
     });
-
     return smartxRequests;
   },
-
   /**
    * Unpack the response from the server into a list of bids.
    *
@@ -264,7 +230,6 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
   interpretResponse: function(serverResponse, bidderRequest) {
     const bidResponses = [];
     const serverResponseBody = serverResponse.body;
-
     if (serverResponseBody && utils.isArray(serverResponseBody.seatbid)) {
       utils._each(serverResponseBody.seatbid, function(bids) {
         utils._each(bids.bid, function(smartxBid) {
@@ -274,7 +239,6 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
               currentBidRequest = bidderRequest.bidRequest.bids[i];
             }
           }
-
           /**
            * Make sure currency and price are the right ones
            * TODO: what about the pre_market_bid partners sizes?
@@ -285,7 +249,6 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
               serverResponseBody.cur = pmb.currency;
             }
           });
-
           const bid = {
             requestId: currentBidRequest.bidId,
             currency: serverResponseBody.cur || 'USD',
@@ -299,7 +262,6 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
             width: smartxBid.w,
             height: smartxBid.h
           };
-
           const context1 = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
           const context2 = utils.deepAccess(currentBidRequest, 'params.ad_unit');
           if (context1 == 'outstream' || context2 == 'outstream') {
@@ -318,7 +280,6 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
                 outstream_function: utils.deepAccess(currentBidRequest, 'params.outstream_function')
               }
             });
-
             try {
               renderer.setRender(outstreamRender);
               renderer.setEventHandlers({
@@ -337,20 +298,16 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
             }
             bid.renderer = renderer;
           }
-
           bidResponses.push(bid);
         })
       });
     }
-
     return bidResponses;
   }
 }
-
 function createOutstreamScript(bid) {
   // const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
   utils.logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
-
   const elementId = bid.adUnitCode;
   // eslint-disable-next-line camelcase
   var sc_smartIntxtStart;
@@ -368,7 +325,6 @@ function createOutstreamScript(bid) {
     onEndCallback: function(m, n) { try { sc_smartIntxtEnd(n); } catch (f) {} },
     debug: true
   };
-
   smartPlayObj.adResponse = bid.vastContent;
   const script = window.document.createElement('script');
   script.type = 'text/javascript';
@@ -381,10 +337,8 @@ function createOutstreamScript(bid) {
       SmartPlay(elementId, smartPlayObj);
     } catch (e) { utils.logError('error caught : ' + e); }
   };
-
   return script;
 }
-
 function outstreamRender(bid) {
   const script = createOutstreamScript(bid);
   if (bid.renderer.config.outstream_function != null && typeof bid.renderer.config.outstream_function === 'function') {
@@ -402,5 +356,4 @@ function outstreamRender(bid) {
     }
   }
 }
-
 registerBidder(spec);
