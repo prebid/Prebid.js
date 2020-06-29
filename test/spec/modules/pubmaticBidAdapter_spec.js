@@ -1350,47 +1350,6 @@ describe('PubMatic adapter', function () {
           });
         });
 
-        describe('Digitrust Id', function() {
-          it('send the digitrust id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.digitrustid = {data: {id: 'digitrust_user_id'}};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'digitru.st',
-              'uids': [{
-                'id': 'digitrust_user_id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.digitrustid = {data: {id: 1}};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.digitrustid = {data: {id: []}};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.digitrustid = {data: {id: null}};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.digitrustid = {data: {id: {}}};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
         describe('ID5 Id', function() {
           it('send the id5 id if it is present', function() {
             bidRequests[0].userId = {};
