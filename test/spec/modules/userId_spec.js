@@ -971,54 +971,6 @@ describe('User ID', function() {
         done();
       }, {adUnits});
     });
-    it('test hook from id5id cookies when refresh needed', function(done) {
-      // simulate existing browser local storage values
-      coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('id5id_last', (new Date(Date.now() - 7200 * 1000)).toUTCString(), (new Date(Date.now() + 5000).toUTCString()));
-
-      sinon.stub(utils, 'logError'); // getId should failed with a logError as it has no partnerId
-
-      setSubmoduleRegistry([id5IdSubmodule]);
-      init(config);
-      config.setConfig(getConfigMock(['id5Id', 'id5id', 'cookie', 10, 3600]));
-
-      requestBidsHook(function() {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.id5id');
-            expect(bid.userId.id5id).to.equal('testid5id');
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'id5-sync.com',
-              uids: [{id: 'testid5id', atype: 1}]
-            });
-          });
-        });
-        sinon.assert.calledOnce(utils.logError);
-        coreStorage.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
-        utils.logError.restore();
-        done();
-      }, {adUnits});
-    });
-
-    it('test hook from id5id value-based config', function(done) {
-      setSubmoduleRegistry([id5IdSubmodule]);
-      init(config);
-      config.setConfig(getConfigValueMock('id5Id', {'id5id': 'testid5id'}));
-
-      requestBidsHook(function() {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.id5id');
-            expect(bid.userId.id5id).to.equal('testid5id');
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'id5-sync.com',
-              uids: [{id: 'testid5id', atype: 1}]
-            });
-          });
-        });
-        done();
-      }, {adUnits});
-    });
 
     it('test hook from liveIntentId html5', function(done) {
       // simulate existing browser local storage values
@@ -1126,7 +1078,7 @@ describe('User ID', function() {
     it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, netId and sharedId have data to pass', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1203,7 +1155,7 @@ describe('User ID', function() {
     it('test hook when pubCommonId, unifiedId, id5Id, britepoolId, netId and sharedId have their modules added before and after init', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
-      coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1296,7 +1248,7 @@ describe('User ID', function() {
     it('should add new id system ', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
-      coreStorage.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('britepoolid', JSON.stringify({'primaryBPID': 'testbritepoolid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), new Date(Date.now() + 5000).toUTCString());
