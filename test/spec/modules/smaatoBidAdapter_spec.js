@@ -41,13 +41,13 @@ const ADTYPE_IMG = 'Img';
 const ADTYPE_RICHMEDIA = 'Richmedia';
 
 const context = {
-  keywords: ['power tools', 'drills']
+  keywords: 'power tools,drills'
 };
 
 const user = {
-  keywords: ['a', 'b'],
+  keywords: 'a,b',
   gender: 'M',
-  yob: '1984'
+  yob: 1984
 };
 
 const openRtbBidResponse = (adType) => {

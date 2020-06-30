@@ -71,8 +71,8 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     }
   };
 
-  Object.assign(request.user, parseUserFpd(config.getConfig('fpd.user')));
-  Object.assign(request.site, parseSiteFpd(config.getConfig('fpd.context')));
+  Object.assign(request.user, config.getConfig('fpd.user'));
+  Object.assign(request.site, config.getConfig('fpd.context'));
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
@@ -237,32 +237,4 @@ const createRichmediaAd = (adm) => {
   });
 
   return markup + '</div>';
-};
-
-const parseUserFpd = (userFpd) => {
-  let user = {};
-  if (typeof userFpd == 'undefined') {
-    return user
-  }
-  if (Array.isArray(userFpd.keywords)) {
-    user.keywords = userFpd.keywords.join(',');
-  }
-  if (typeof userFpd.yob === 'string') {
-    user.yob = parseInt(userFpd.yob);
-  }
-  if (typeof userFpd.gender === 'string') {
-    user.gender = userFpd.gender.toUpperCase();
-  }
-  return user;
-};
-
-const parseSiteFpd = (siteFpd) => {
-  let site = {}
-  if (typeof siteFpd == 'undefined') {
-    return site;
-  }
-  if (Array.isArray(siteFpd.keywords)) {
-    site.keywords = siteFpd.keywords.join(',');
-  }
-  return site;
 };
