@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-let spec = require('modules/proxistoreBidAdapter');
+let { spec } = require('modules/proxistoreBidAdapter');
 
 const BIDDER_CODE = 'proxistore';
 describe('ProxistoreBidAdapter', function () {

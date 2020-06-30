@@ -1,8 +1,10 @@
 /* eslint-disable no-console */
 
-const { registerBidder } = require('../src/adapters/bidderFactory.js');
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 var BIDDER_CODE = 'proxistore';
+const storage = getStorageManager();
 var PROXISTORE_VENDOR_ID = 418;
 
 function _createServerRequest(bidRequests, bidderRequest) {
@@ -82,12 +84,14 @@ function _createBidResponse(response) {
 
 function isBidRequestValid(bid) {
   const hasNoAd = function() {
-    const storedtime = new Date(localStorage.getItem(`PX_NoAds_${bid.params.website}`));
-    if (!storedtime) {
+    const pxNoAds = storage.getDataFromLocalStorage(`PX_NoAds_${bid.params.website}`);
+    if (!pxNoAds) {
       return false;
     } else {
+      const storedDate = new Date(pxNoAds);
       const now = new Date();
-      var diff = Math.abs(storedtime.getTime() - now.getTime()) / 30000;
+      // 5min = 300 0000 seconds
+      var diff = Math.abs(storedDate.getTime() - now.getTime()) / 300000;
       if (diff > 5) {
         return false;
       } else {
@@ -121,10 +125,10 @@ function buildRequests(bidRequests, bidderRequest) {
 function interpretResponse(serverResponse, bidRequest) {
   const itemName = `PX_NoAds_${websiteFromBidRequest(bidRequest)}`;
   if (serverResponse.body.length > 0) {
-    localStorage.removeItem(itemName, true);
+    storage.removeDataFromLocalStorage(itemName, true);
     return serverResponse.body.map(_createBidResponse);
   } else {
-    localStorage.setItem(itemName, new Date());
+    storage.setDataInLocalStorage(itemName, new Date());
     return [];
   }
 }
@@ -149,7 +153,7 @@ function getUserSyncs(syncOptions, serverResponses) {
   return [];
 }
 
-var spec = {
+export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
@@ -158,5 +162,3 @@ var spec = {
 };
 
 registerBidder(spec);
-
-module.exports = spec;
