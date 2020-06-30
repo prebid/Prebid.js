@@ -83,7 +83,7 @@ export const spec = {
           ad: bid.adm,
           ttl: DEFAULT_BID_TTL,
           creativeId: bid.crid,
-          meta: { advertiserDomains : bid.adomain },
+          meta: { advertiserDomains: bid.adomain },
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
         })
