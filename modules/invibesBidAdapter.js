@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-const storage = getStorageManager();
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -13,6 +12,8 @@ const CONSTANTS = {
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436
 };
+
+const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
