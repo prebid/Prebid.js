@@ -3,15 +3,15 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-var BIDDER_CODE = 'proxistore';
+const BIDDER_CODE = 'proxistore';
 const storage = getStorageManager();
-var PROXISTORE_VENDOR_ID = 418;
+const PROXISTORE_VENDOR_ID = 418;
 
 function _createServerRequest(bidRequests, bidderRequest) {
-  var sizeIds = [];
+  const sizeIds = [];
 
   bidRequests.forEach(function (bid) {
-    var sizeId = {
+    const sizeId = {
       id: bid.bidId,
       sizes: bid.sizes.map(function (size) {
         return {
@@ -22,7 +22,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
     };
     sizeIds.push(sizeId);
   });
-  var payload = {
+  const payload = {
     auctionId: bidRequests[0].auctionId,
     transactionId: bidRequests[0].auctionId,
     bids: sizeIds,
@@ -32,7 +32,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
       applies: false
     }
   };
-  var options = {
+  const options = {
     contentType: 'application/json',
     withCredentials: true
   };
@@ -91,7 +91,7 @@ function isBidRequestValid(bid) {
       const storedDate = new Date(pxNoAds);
       const now = new Date();
       // 5min = 300 0000 seconds
-      var diff = Math.abs(storedDate.getTime() - now.getTime()) / 300000;
+      const diff = Math.abs(storedDate.getTime() - now.getTime()) / 300000;
       if (diff > 5) {
         return false;
       } else {
@@ -111,7 +111,7 @@ function isBidRequestValid(bid) {
  */
 
 function buildRequests(bidRequests, bidderRequest) {
-  var request = _createServerRequest(bidRequests, bidderRequest);
+  const request = _createServerRequest(bidRequests, bidderRequest);
   return request;
 }
 /**
@@ -133,7 +133,7 @@ function interpretResponse(serverResponse, bidRequest) {
   }
 }
 
-var websiteFromBidRequest = function(bidR) {
+const websiteFromBidRequest = function(bidR) {
   if (bidR.data) {
     return JSON.parse(bidR.data).website
   } else if (bidR.params.website) {
