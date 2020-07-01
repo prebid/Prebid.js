@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
-export const URL = 'https://prebid.cootlogix.com';
 const DEFAULT_SUB_DOMAIN = "prebid";
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';

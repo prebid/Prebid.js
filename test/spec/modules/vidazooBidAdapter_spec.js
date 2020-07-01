@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec as adapter, URL, SUPPORTED_ID_SYSTEMS, createDomain } from 'modules/vidazooBidAdapter.js';
+import { spec as adapter, SUPPORTED_ID_SYSTEMS, createDomain } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const SUB_DOMAIN = "openrtb";
