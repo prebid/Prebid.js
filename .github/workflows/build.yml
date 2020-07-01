@@ -40,5 +40,6 @@ jobs:
       run: sed -i 's/location/originalLocation/g' ./build/dist/prebid.ww.js
 
     - name: 🚀 Publish
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       run: npm publish 
 
