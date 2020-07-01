@@ -220,6 +220,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
+  outputObj['tgId'] = config.getConfig('testGroupId') || 0;// todo: decide the key name!
 
   // GDPR support
   if (auctionCache.gdprConsent) {

@@ -299,6 +299,10 @@ describe('pubmatic analytics adapter', function () {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
       });
 
+      config.setConfig({
+        testGroupId: 15
+      });
+
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
@@ -324,6 +328,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tst).to.equal(1519767016);
       expect(data.cns).to.equal('here-goes-gdpr-consent-string');
       expect(data.gdpr).to.equal(1);
+      expect(data.tgId).to.equal(15);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1
@@ -424,6 +429,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.pid).to.equal('1111');
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
+      expect(data.tgId).to.equal(0);
       // slot 1
       expect(data.s[0].sn).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].sz).to.deep.equal(['640x480']);
