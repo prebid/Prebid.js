@@ -44,7 +44,7 @@ export const spec = {
       params = {};
     } else {
       url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
-      const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? encodeURIComponent(window.top.document.referrer) : encodeURIComponent(bidderRequest.refererInfo.referer);
+      const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? window.top.document.referrer : bidderRequest.refererInfo.referer;
 
       if (storage.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);
@@ -53,7 +53,7 @@ export const spec = {
       params = {
         rnd: rnd,
         e: spaces.str,
-        ur: encodeURIComponent(pageUrl || FILE),
+        ur: pageUrl || FILE,
         r: 'pbjs',
         pbv: '$prebid.version$',
         ncb: '1',
