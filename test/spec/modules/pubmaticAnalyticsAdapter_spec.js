@@ -31,6 +31,7 @@ const BID = {
   'mediaType': 'video',
   'statusMessage': 'Bid available',
   'bidId': '2ecff0db240757',
+  'piId': 'partnerImpressionID-1',
   'adId': 'fake_ad_id',
   'source': 's2s',
   'requestId': '2ecff0db240757',
@@ -69,6 +70,7 @@ const BID = {
 const BID2 = Object.assign({}, BID, {
   adUnitCode: '/19968336/header-bid-tag-1',
   bidId: '3bd4ebb1c900e2',
+  piId: 'partnerImpressionID-2',
   adId: 'fake_ad_id_2',
   requestId: '3bd4ebb1c900e2',
   width: 728,
@@ -331,6 +333,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps.length).to.equal(1);
       expect(data.s[0].ps[0].pn).to.equal('pubmatic');
       expect(data.s[0].ps[0].bidid).to.equal('2ecff0db240757');
+      expect(data.s[0].ps[0].piId).to.equal('partnerImpressionID-1');
       expect(data.s[0].ps[0].db).to.equal(0);
       expect(data.s[0].ps[0].kgpv).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].ps[0].kgpsv).to.equal('/19968336/header-bid-tag-0');
@@ -354,6 +357,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
       expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
+      expect(data.s[1].ps[0].piId).to.equal('partnerImpressionID-2');
       expect(data.s[1].ps[0].db).to.equal(0);
       expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
       expect(data.s[1].ps[0].kgpsv).to.equal('this-is-a-kgpv');
@@ -389,6 +393,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.pn).to.equal('pubmatic');
       expect(data.eg).to.equal('1.23');
       expect(data.en).to.equal('1.23');
+      expect(data.piId).to.equal('partnerImpressionID-1');
     });
 
     it('bidCpmAdjustment: USD: Logger: best case + win tracker', function() {
