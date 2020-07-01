@@ -152,7 +152,7 @@ function parseBidResponse(bid) {
     'mediaType',
     'params',
     'mi',
-    'piId', // partner impression ID
+    'partnerImpId', // partner impression ID
     'dimensions', () => utils.pick(bid, [
       'width',
       'height'
@@ -190,7 +190,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
       'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
       'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
-      'piId': bid.bidResponse ? (bid.bidResponse.piId || EMPTY_STRING) : EMPTY_STRING
+      'piId': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING
     });
     return partnerBids;
   }, [])
@@ -270,7 +270,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(winningBid.params.kgpv || adUnitId);
-  pixelURL += '&piId=' + enc(winningBid.bidResponse.piId || EMPTY_STRING);
+  pixelURL += '&piId=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
   ajax(
     pixelURL,
     null,

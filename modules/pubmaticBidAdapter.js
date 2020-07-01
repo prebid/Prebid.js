@@ -953,7 +953,7 @@ export const spec = {
                 ad: bid.adm,
                 pm_seat: seatbidder.seat || null,
                 pm_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null,
-                piId: bid.id || '' // partner impression Id
+                partnerImpId: bid.id || '' // partner impression Id
               };
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
                 parsedRequest.imp.forEach(req => {

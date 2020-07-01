@@ -31,7 +31,7 @@ const BID = {
   'mediaType': 'video',
   'statusMessage': 'Bid available',
   'bidId': '2ecff0db240757',
-  'piId': 'partnerImpressionID-1',
+  'partnerImpId': 'partnerImpressionID-1',
   'adId': 'fake_ad_id',
   'source': 's2s',
   'requestId': '2ecff0db240757',
@@ -70,7 +70,7 @@ const BID = {
 const BID2 = Object.assign({}, BID, {
   adUnitCode: '/19968336/header-bid-tag-1',
   bidId: '3bd4ebb1c900e2',
-  piId: 'partnerImpressionID-2',
+  partnerImpId: 'partnerImpressionID-2',
   adId: 'fake_ad_id_2',
   requestId: '3bd4ebb1c900e2',
   width: 728,
