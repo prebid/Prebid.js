@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -90,13 +89,8 @@ function isBidRequestValid(bid) {
     } else {
       const storedDate = new Date(pxNoAds);
       const now = new Date();
-      // 5min = 300 0000 seconds
-      const diff = Math.abs(storedDate.getTime() - now.getTime()) / 300000;
-      if (diff > 5) {
-        return false;
-      } else {
-        return true;
-      }
+      const diff = Math.abs(storedDate.getTime() - now.getTime()) / 60000;
+      return diff <= 5;
     }
   }
   return !!(bid.params.website && bid.params.language) && !hasNoAd();
