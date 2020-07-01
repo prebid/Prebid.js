@@ -525,6 +525,9 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
 export function executeStorageCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);
+  if (cbArray.length > 0) {
+    cbArray[0]();
+  }
   fn.call(this, reqBidsConfigObj);
   function runAll(queue) {
     var queued;
@@ -654,14 +657,21 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
  * @param {Object} config.options The options for this particular analytics adapter.  This will likely vary between adapters.
  * @alias module:pbjs.enableAnalytics
  */
-$$PREBID_GLOBAL$$.enableAnalytics = function (config) {
+
+const cbArray = [];
+
+const enableAnalyticsCb = hook('async', function (config) {
   if (config && !utils.isEmpty(config)) {
     utils.logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics for: ', config);
     adapterManager.enableAnalytics(config);
   } else {
     utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }
-};
+}, 'enableAnalyticsCb');
+
+$$PREBID_GLOBAL$$.enableAnalytics = hook('async', function (config) {
+  cbArray.push(enableAnalyticsCb.bind(this, config));
+});
 
 /**
  * @alias module:pbjs.aliasBidder

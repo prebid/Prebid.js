@@ -468,11 +468,11 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
   }
 };
 
-adapterManager.registerAnalyticsAdapter = function ({adapter, code}) {
+adapterManager.registerAnalyticsAdapter = function ({adapter, code, gvlid}) {
   if (adapter && code) {
     if (typeof adapter.enableAnalytics === 'function') {
       adapter.code = code;
-      _analyticsRegistry[code] = adapter;
+      _analyticsRegistry[code] = { adapter, gvlid };
     } else {
       utils.logError(`Prebid Error: Analytics adaptor error for analytics "${code}"
         analytics adapter must implement an enableAnalytics() function`);
@@ -482,13 +482,13 @@ adapterManager.registerAnalyticsAdapter = function ({adapter, code}) {
   }
 };
 
-adapterManager.enableAnalytics = hook('async', function (config) {
+adapterManager.enableAnalytics = function (config) {
   if (!utils.isArray(config)) {
     config = [config];
   }
 
   utils._each(config, adapterConfig => {
-    var adapter = _analyticsRegistry[adapterConfig.provider];
+    var adapter = _analyticsRegistry[adapterConfig.provider].adapter;
     if (adapter) {
       adapter.enableAnalytics(adapterConfig);
     } else {
@@ -496,13 +496,15 @@ adapterManager.enableAnalytics = hook('async', function (config) {
         ${adapterConfig.provider}.`);
     }
   });
-}, 'enableAnalytics');
-
-adapterManager.enableAnalytics =
+}
 
 adapterManager.getBidAdapter = function(bidder) {
   return _bidderRegistry[bidder];
 };
+
+adapterManager.getAnalyticsAdapter = function(code) {
+  return _analyticsRegistry[code];
+}
 
 // the s2sTesting module is injected when it's loaded rather than being imported
 // importing it causes the packager to include it even when it's not explicitly included in the build
