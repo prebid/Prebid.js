@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
@@ -26,16 +26,44 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
   }
 
   const imp = validBidRequests.map(br => {
-    const sizes = parseSizes(utils.getAdUnitSizes(br));
-    return {
-      id: br.bidId,
-      banner: {
-        w: sizes[0].w,
-        h: sizes[0].h,
-        format: sizes
-      },
-      tagid: utils.deepAccess(br, 'params.adspaceId')
-    };
+    const bannerMediaType = utils.deepAccess(br, 'mediaTypes.banner');
+    const videoMediaType = utils.deepAccess(br, 'mediaTypes.video');
+
+    if (bannerMediaType) {
+      const sizes = parseSizes(utils.getAdUnitSizes(br));
+      return {
+        id: br.bidId,
+        banner: {
+          w: sizes[0].w,
+          h: sizes[0].h,
+          format: sizes
+        },
+        tagid: utils.deepAccess(br, 'params.adspaceId')
+      }
+    }
+
+    if (videoMediaType) {
+      return {
+        id: br.bidId,
+        video: {
+          mimes: videoMediaType.mimes,
+          minduration: videoMediaType.minduration,
+          startdelay: videoMediaType.startdelay,
+          linearity: videoMediaType.linearity,
+          w: videoMediaType.playerSize[0],
+          h: videoMediaType.playerSize[1],
+          maxduration: videoMediaType.maxduration,
+          skip: videoMediaType.skip,
+          protocols: videoMediaType.protocols,
+          ext: {
+            rewarded: videoMediaType.ext.rewarded
+          },
+          skipmin: videoMediaType.skipmin,
+          api: videoMediaType.api
+        },
+        tagid: utils.deepAccess(br, 'params.adspaceId')
+      }
+    }
   });
 
   const request = {
@@ -89,7 +117,7 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
       * Determines whether or not the given bid request is valid.
@@ -152,39 +180,40 @@ export const spec = {
     if (res) {
       res.seatbid.forEach(sb => {
         sb.bid.forEach(b => {
-          let ad = '';
+          let resultingBid = {
+            requestId: b.impid,
+            cpm: b.price || 0,
+            width: b.w,
+            height: b.h,
+            ttl: ttlSec,
+            creativeId: b.crid,
+            dealId: b.dealid || null,
+            netRevenue: true,
+            currency: res.cur,
+            meta: {
+              advertiserDomains: b.adomain,
+              networkName: b.bidderName,
+              agencyId: sb.seat
+            }
+          };
+
           switch (smtAdType) {
             case 'Img':
-              ad = createImgAd(b.adm);
+              resultingBid.ad = createImgAd(b.adm);
+              bids.push(resultingBid);
               break;
             case 'Richmedia':
-              ad = createRichmediaAd(b.adm);
+              resultingBid.ad = createRichmediaAd(b.adm);
+              bids.push(resultingBid);
               break;
             case 'Video':
+              resultingBid.vastXml = b.adm;
+              bids.push(resultingBid);
+              break;
             default:
-              ad = '';
+              utils.logInfo('[SMAATO] Invalid ad type:', smtAdType);
           }
-
-          if (ad !== '') {
-            bids.push({
-              requestId: b.impid,
-              cpm: b.price || 0,
-              width: b.w,
-              height: b.h,
-              ad: ad,
-              ttl: ttlSec,
-              creativeId: b.crid,
-              dealId: b.dealid || null,
-              netRevenue: true,
-              currency: res.cur,
-              meta: {
-                advertiserDomains: b.adomain,
-                networkName: b.bidderName,
-                agencyId: sb.seat
-              }
-            })
-          }
-        })
+        });
       });
     }
 

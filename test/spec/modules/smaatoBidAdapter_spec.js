@@ -39,6 +39,7 @@ const richmediaAd = {
 
 const ADTYPE_IMG = 'Img';
 const ADTYPE_RICHMEDIA = 'Richmedia';
+const ADTYPE_VIDEO = 'Video';
 
 const context = {
   keywords: 'power tools,drills'
@@ -59,6 +60,9 @@ const openRtbBidResponse = (adType) => {
       break;
     case ADTYPE_RICHMEDIA:
       adm = JSON.stringify(richmediaAd);
+      break;
+    case ADTYPE_VIDEO:
+      adm = '<VAST version="2.0"></VAST>';
       break;
     default:
       throw Error('Invalid AdType');
@@ -152,6 +156,26 @@ const interpretedBidsRichmedia = [
   }
 ];
 
+const interpretedBidsVideo = [
+  {
+    requestId: '226416e6e6bf41',
+    cpm: 0.01,
+    width: 350,
+    height: 50,
+    vastXml: '<VAST version="2.0"></VAST>',
+    ttl: 300,
+    creativeId: 'CR69381',
+    dealId: '12345',
+    netRevenue: true,
+    currency: 'USD',
+    meta: {
+      advertiserDomains: ['smaato.com'],
+      agencyId: 'CM6523',
+      networkName: 'smaato'
+    }
+  }
+];
+
 const defaultBidderRequest = {
   gdprConsent: {
     consentString: 'HFIDUYFIUYIUYWIPOI87392DSU',
@@ -178,6 +202,40 @@ const singleBannerBidRequest = {
   mediaTypes: {
     banner: {
       sizes: [[300, 50]]
+    }
+  },
+  adUnitCode: '/19968336/header-bid-tag-0',
+  transactionId: 'transactionId',
+  sizes: [[300, 50]],
+  bidId: 'bidId',
+  bidderRequestId: 'bidderRequestId',
+  auctionId: 'auctionId',
+  src: 'client',
+  bidRequestsCount: 1,
+  bidderRequestsCount: 1,
+  bidderWinsCount: 0
+};
+
+const singleVideoBidRequest = {
+  bidder: 'smaato',
+  params: {
+    publisherId: 'publisherId',
+    adspaceId: 'adspaceId'
+  },
+  mediaTypes: {
+    video: {
+      context: 'outstream',
+      playerSize: [768, 1024],
+      mimes: ['video\/mp4', 'video\/quicktime', 'video\/3gpp', 'video\/x-m4v'],
+      minduration: 5,
+      maxduration: 30,
+      startdelay: 0,
+      linearity: 1,
+      protocols: [7],
+      skip: 1,
+      skipmin: 5,
+      api: [7],
+      ext: {rewarded: 0}
     }
   },
   adUnitCode: '/19968336/header-bid-tag-0',
@@ -292,6 +350,34 @@ describe('smaatoBidAdapterTest', () => {
     })
   });
 
+  describe('buildRequests for video imps', () => {
+    it('sends correct video imps', () => {
+      let req = JSON.parse(spec.buildRequests([singleVideoBidRequest], defaultBidderRequest).data);
+      expect(req.imp).to.deep.equal([
+        {
+          id: 'bidId',
+          video: {
+            mimes: ['video\/mp4', 'video\/quicktime', 'video\/3gpp', 'video\/x-m4v'],
+            minduration: 5,
+            startdelay: 0,
+            linearity: 1,
+            h: 1024,
+            maxduration: 30,
+            skip: 1,
+            protocols: [7],
+            ext: {
+              rewarded: 0
+            },
+            skipmin: 5,
+            api: [7],
+            w: 768
+          },
+          tagid: 'adspaceId'
+        }
+      ])
+    });
+  });
+
   describe('interpretResponse', () => {
     it('single image reponse', () => {
       const bids = spec.interpretResponse(openRtbBidResponse(ADTYPE_IMG), request);
@@ -300,6 +386,10 @@ describe('smaatoBidAdapterTest', () => {
     it('single richmedia reponse', () => {
       const bids = spec.interpretResponse(openRtbBidResponse(ADTYPE_RICHMEDIA), request);
       assert.deepStrictEqual(bids, interpretedBidsRichmedia);
+    });
+    it('single video reponse', () => {
+      const bids = spec.interpretResponse(openRtbBidResponse(ADTYPE_VIDEO), request);
+      assert.deepStrictEqual(bids, interpretedBidsVideo);
     });
     it('uses correct TTL when expire header exists', () => {
       const clock = sinon.useFakeTimers();
