@@ -1,6 +1,6 @@
 {
   "name": "@marfeel/adserver-providers-prebid-library",
-  "version": "3.23.0-pre",
+  "version": "3.23.0-pre-marfeel-1",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -115,7 +115,7 @@
     "url": "git+ssh://git@github.com/Marfeel/marfeel-releases.git"
   },
   "files": [
-    "dist/prebid.js",
-    "dist/prebid.ww.js"
+    "build/dist/prebid.js",
+    "build/dist/prebid.ww.js"
   ]
 }
