@@ -1,7 +1,6 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-
 const BIDDER_CODE = 'proxistore';
 const storage = getStorageManager();
 const PROXISTORE_VENDOR_ID = 418;
@@ -83,6 +82,9 @@ function _createBidResponse(response) {
 
 function isBidRequestValid(bid) {
   const hasNoAd = function() {
+    if (!storage.hasLocalStorage()) {
+      return false;
+    }
     const pxNoAds = storage.getDataFromLocalStorage(`PX_NoAds_${bid.params.website}`);
     if (!pxNoAds) {
       return false;
