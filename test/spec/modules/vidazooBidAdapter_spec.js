@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec as adapter, SUPPORTED_ID_SYSTEMS, createDomain } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 
-const SUB_DOMAIN = "openrtb";
+const SUB_DOMAIN = 'openrtb';
 
 const BID = {
   'bidId': '2d52001cabd527',
