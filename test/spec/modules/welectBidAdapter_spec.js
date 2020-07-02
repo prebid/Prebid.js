@@ -48,7 +48,7 @@ describe('WelectAdapter', function () {
       expect(adapter.isBidRequestValid(bid)).to.be.true;
     });
 
-    it('should be false because the placementAlias is missing', function () {
+    it('should be false because the placementId is missing', function () {
       expect(adapter.isBidRequestValid(bid2)).to.be.false;
     });
   });
@@ -107,13 +107,23 @@ describe('WelectAdapter', function () {
     let request1 = {
       method: 'POST',
       url: 'https://www.welect.de/api/v2/preflight/by_alias/exampleAlias',
-      data: data1
+      data: data1,
+      options: {
+        contentType: 'application/json',
+        withCredentials: false,
+        crossOrigin: true,
+      }
     };
 
     let request2 = {
       method: 'POST',
       url: 'https://www.welect2.de/api/v2/preflight/by_alias/exampleAlias',
-      data: data2
+      data: data2,
+      options: {
+        contentType: 'application/json',
+        withCredentials: false,
+        crossOrigin: true,
+      }
     }
 
     it('defaults to www.welect.de, without gdpr object', function () {
@@ -125,69 +135,74 @@ describe('WelectAdapter', function () {
     });
   });
 
-//   describe('Check interpretResponse method return', function () {
-//     // Server's response
-//     let response = {
-//       body: {
-//         valid: true
-//       }
-//     };
-//     // bid Request
-//     let bid = {
-//       data: {
-//         pub_id: '3',
-//         zone_id: '12345',
-//         bid_id: 'abdc',
-//         floor_price: 5.50, // optional
-//         adUnitCode: 'code'
-//       },
-//       method: 'POST',
-//       url: 'https://player.mediabong.net/prebid/request'
-//     };
-//     // Formatted reponse
-//     let result = {
-//       requestId: 'abdc',
-//       cpm: 5.00,
-//       width: '640',
-//       height: '360',
-//       ttl: 60,
-//       creativeId: '2468',
-//       dealId: 'MDB-TEST-1357',
-//       netRevenue: true,
-//       currency: 'USD',
-//       vastUrl: 'https//player.mediabong.net/prebid/ad/a1b2c3d4',
-//       mediaType: 'video'
-//     };
+  describe('Check interpretResponse method return', function () {
+    // invalid server response
+    let unavailableResponse = {
+      body: {
+        available: false
+      }
+    };
 
-//     it('should equal to the expected formatted result', function () {
-//       expect(adapter.interpretResponse(response, bid)).to.deep.equal([result]);
-//     });
+    let availableResponse = {
+      body: {
+        available: true,
+        bidResponse: {
+          ad: {
+            video: 'some vast url'
+          },
+          cpm: 17,
+          creativeId: 'svmpreview',
+          currency: 'EUR',
+          height: '640',
+          netRevenue: true,
+          requestId: 'some bid id',
+          ttl: 120,
+          vastUrl: 'some vast url',
+          width: '320'
+        }
+      }
+    }
+    // bid Request
+    let bid = {
+      data: {
+        bid_id: 'some bid id',
+        width: '640',
+        height: '360',
+        gdpr_consent: {
+          gdpr_applies: 1,
+          gdpr_consent: 'some_string'
+        }
+      },
+      method: 'POST',
+      url: 'https://www.welect.de/api/v2/preflight/by_alias/exampleAlias',
+      options: {
+        contentType: 'application/json',
+        withCredentials: false,
+        crossOrigin: true,
+      }
+    };
+    // Formatted reponse
+    let result = {
+      ad: {
+        video: 'some vast url'
+      },
+      cpm: 17,
+      creativeId: 'svmpreview',
+      currency: 'EUR',
+      height: '640',
+      netRevenue: true,
+      requestId: 'some bid id',
+      ttl: 120,
+      vastUrl: 'some vast url',
+      width: '320'
+    }
 
-//     it('should be empty because the status is missing or wrong', function () {
-//       let wrongResponse = utils.deepClone(response);
-//       wrongResponse.body.status = 'ko';
-//       expect(adapter.interpretResponse(wrongResponse, bid)).to.be.empty;
+    it('if response reflects unavailability, should be empty', function () {
+      expect(adapter.interpretResponse(unavailableResponse, bid)).to.deep.equal([]);
+    });
 
-//       wrongResponse = utils.deepClone(response);
-//       delete wrongResponse.body.status;
-//       expect(adapter.interpretResponse(wrongResponse, bid)).to.be.empty;
-//     });
-
-//     it('should be empty because the body is missing or wrong', function () {
-//       let wrongResponse = utils.deepClone(response);
-//       wrongResponse.body = [1, 2, 3];
-//       expect(adapter.interpretResponse(wrongResponse, bid)).to.be.empty;
-
-//       wrongResponse = utils.deepClone(response);
-//       delete wrongResponse.body;
-//       expect(adapter.interpretResponse(wrongResponse, bid)).to.be.empty;
-//     });
-
-//     it('should equal to the expected formatted result', function () {
-//       response.body.renderer_url = 'vuble_renderer.js';
-//       result.adUnitCode = 'code';
-//       let formattedResponses = adapter.interpretResponse(response, bid);
-//       expect(formattedResponses[0].adUnitCode).to.equal(result.adUnitCode);
-//     });
-//   });
+    it('if response reflects availability, should equal result', function() {
+      expect(adapter.interpretResponse(availableResponse, bid)).to.deep.equal([result])
+    })
+  });
 });
