@@ -179,9 +179,29 @@
                         name: 'idl_env',
                         expires: 30
                       }
+                    }, {
+                      name: "sharedId",
+                      params: {
+                        syncTime: 60 // in seconds, default is 24 hours
+                      },
+                      storage: {
+                        type: "cookie",
+                        name: "sharedid",
+                        expires: 28
+                      }
+                    }, {
+                      name: "liveIntentId",
+                      params: {
+                        publisherId: "9896876"
+                      },
+                      storage: {
+                        type: "cookie",
+                        name: "_li_pbid",
+                        expires: 28
+                      }
                     }],
                     syncDelay: 5000,
-                    auctionDelay: 1000 
+                    auctionDelay: 1000
                 }
             });
             pbjs.addAdUnits(adUnits);

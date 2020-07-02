@@ -25,12 +25,13 @@ pbjs.setConfig({
         }, {
             name: "id5Id",
             params: {
-                partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
+                partner: 173, //Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
+                pd: "some-pd-string" // See https://console.id5.io/docs/public/prebid for details
             },
             storage: {
                 type: "cookie",
                 name: "id5id",
-                expires: 5, // Expiration of cookies in days
+                expires: 90, // Expiration of cookies in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
@@ -59,6 +60,16 @@ pbjs.setConfig({
                 name: '_li_pbid',
                 expires: 60
             }
+        }, {
+             name: 'sharedId',
+              params: {
+                    syncTime: 60 // in seconds, default is 24 hours
+               },
+             storage: {
+                 type: 'cookie',
+                 name: 'sharedid',
+                 expires: 28
+              }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -107,6 +118,16 @@ pbjs.setConfig({
                  type: 'html5',
                  name: '_li_pbid',
                  expires: 60
+             }
+        }, {
+             name: 'sharedId',
+            params: {
+                  syncTime: 60 // in seconds, default is 24 hours
+               },
+             storage: {
+                type: 'cookie',
+                name: 'sharedid',
+                expires: 28
              }
         }],
         syncDelay: 5000

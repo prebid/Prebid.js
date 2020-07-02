@@ -1,9 +1,10 @@
 import { expect } from 'chai';
-import { spec as adapter, URL } from 'modules/vidazooBidAdapter.js';
+import { spec as adapter, URL, SUPPORTED_ID_SYSTEMS } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const BID = {
   'bidId': '2d52001cabd527',
+  'adUnitCode': 'div-gpt-ad-12345-0',
   'params': {
     'cId': '59db6b3b4ffaa70004f45cdc',
     'pId': '59ac17c192832d0011283fe3',
@@ -138,8 +139,10 @@ describe('VidazooBidAdapter', function () {
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
+          adUnitCode: 'div-gpt-ad-12345-0',
           publisherId: '59ac17c192832d0011283fe3',
           dealId: 1,
+          res: `${window.top.screen.width}x${window.top.screen.height}`,
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }
@@ -208,6 +211,30 @@ describe('VidazooBidAdapter', function () {
       const responses = adapter.interpretResponse(serverResponse, REQUEST);
       expect(responses).to.have.length(1);
       expect(responses[0].ttl).to.equal(300);
+    });
+  });
+
+  describe(`user id system`, function () {
+    Object.keys(SUPPORTED_ID_SYSTEMS).forEach((idSystemProvider) => {
+      const id = Date.now().toString();
+      const bid = utils.deepClone(BID);
+
+      const userId = (function () {
+        switch (idSystemProvider) {
+          case 'digitrustid': return { data: { id: id } };
+          case 'lipb': return { lipbid: id };
+          default: return id;
+        }
+      })();
+
+      bid.userId = {
+        [idSystemProvider]: userId
+      };
+
+      it(`should include 'uid.${idSystemProvider}' in request params`, function () {
+        const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
+        expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
+      });
     });
   });
 });
