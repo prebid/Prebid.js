@@ -190,7 +190,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
       'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
       'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
-      'piId': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING
+      'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING
     });
     return partnerBids;
   }, [])
@@ -220,7 +220,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
-  outputObj['tgId'] = config.getConfig('testGroupId') || 0;// todo: decide the key name!
+  outputObj['tgid'] = config.getConfig('testGroupId') || 0;// todo add parseInt and 0-15 logic
 
   // GDPR support
   if (auctionCache.gdprConsent) {
@@ -270,7 +270,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(winningBid.params.kgpv || adUnitId);
-  pixelURL += '&piId=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
+  pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
   ajax(
     pixelURL,
     null,

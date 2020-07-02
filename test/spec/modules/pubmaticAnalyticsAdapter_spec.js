@@ -328,7 +328,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tst).to.equal(1519767016);
       expect(data.cns).to.equal('here-goes-gdpr-consent-string');
       expect(data.gdpr).to.equal(1);
-      expect(data.tgId).to.equal(15);
+      expect(data.tgid).to.equal(15);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1
@@ -338,7 +338,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps.length).to.equal(1);
       expect(data.s[0].ps[0].pn).to.equal('pubmatic');
       expect(data.s[0].ps[0].bidid).to.equal('2ecff0db240757');
-      expect(data.s[0].ps[0].piId).to.equal('partnerImpressionID-1');
+      expect(data.s[0].ps[0].piid).to.equal('partnerImpressionID-1');
       expect(data.s[0].ps[0].db).to.equal(0);
       expect(data.s[0].ps[0].kgpv).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].ps[0].kgpsv).to.equal('/19968336/header-bid-tag-0');
@@ -362,7 +362,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps.length).to.equal(1);
       expect(data.s[1].ps[0].pn).to.equal('pubmatic');
       expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
-      expect(data.s[1].ps[0].piId).to.equal('partnerImpressionID-2');
+      expect(data.s[1].ps[0].piid).to.equal('partnerImpressionID-2');
       expect(data.s[1].ps[0].db).to.equal(0);
       expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
       expect(data.s[1].ps[0].kgpsv).to.equal('this-is-a-kgpv');
@@ -398,7 +398,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.pn).to.equal('pubmatic');
       expect(data.eg).to.equal('1.23');
       expect(data.en).to.equal('1.23');
-      expect(data.piId).to.equal('partnerImpressionID-1');
+      expect(data.piid).to.equal('partnerImpressionID-1');
     });
 
     it('bidCpmAdjustment: USD: Logger: best case + win tracker', function() {
@@ -429,7 +429,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.pid).to.equal('1111');
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
-      expect(data.tgId).to.equal(0);
+      expect(data.tgid).to.equal(0);
       // slot 1
       expect(data.s[0].sn).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].sz).to.deep.equal(['640x480']);
