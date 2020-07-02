@@ -21,7 +21,7 @@ describe('WelectAdapter', function () {
     let bid = {
       bidder: 'welect',
       params: {
-        placementAlias: 'exampleAlias',
+        placementId: 'exampleAlias',
         domain: 'www.welect.de'
       },
       sizes: [[640, 360]],
@@ -58,7 +58,7 @@ describe('WelectAdapter', function () {
     let bid1 = {
       bidder: 'welect',
       params: {
-        placementAlias: 'exampleAlias'
+        placementId: 'exampleAlias'
       },
       sizes: [[640, 360]],
       mediaTypes: {
@@ -71,7 +71,7 @@ describe('WelectAdapter', function () {
     let bid2 = {
       bidder: 'welect',
       params: {
-        placementAlias: 'exampleAlias',
+        placementId: 'exampleAlias',
         domain: 'www.welect2.de'
       },
       sizes: [[640, 360]],

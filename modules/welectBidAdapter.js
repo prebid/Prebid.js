@@ -15,7 +15,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return utils.deepAccess(bid, 'mediaTypes.video.context') == 'instream' && !!(bid.params.placementAlias);
+    return utils.deepAccess(bid, 'mediaTypes.video.context') == 'instream' && !!(bid.params.placementId);
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -30,7 +30,7 @@ export const spec = {
 
       let domain = bidRequest.params.domain || DEFAULT_DOMAIN;
 
-      let url = `https://${domain}/api/v2/preflight/by_alias/${bidRequest.params.placementAlias}`;
+      let url = `https://${domain}/api/v2/preflight/by_alias/${bidRequest.params.placementId}`;
 
       let gdprConsent = null;
 
