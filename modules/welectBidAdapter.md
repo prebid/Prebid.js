@@ -12,23 +12,19 @@ Module that connects to Welect's demand sources
 
 # Test Parameters
 ```
-    var adUnits = [
-        {
-            code: 'test-video-instream',
-            sizes: [[640, 360]],
-            mediaTypes: {
-                video: {
-                    context: 'instream'
-                }
-            },
-            bids: [
-                {
-                    bidder: "Welect",
-                    params: {
-                        placementAlias: "prebid-preview",
-                        domaint: "www.welect.de"
-                    }
-                }
-            ]
-        }
-    ];
+var adUnits = [
+  {
+    bidder: 'welect',
+    params: {
+      placementId: 'exampleId',
+      domain: 'www.welect.de'
+    },
+    sizes: [[640, 360]],
+    mediaTypes: {
+      video: {
+        context: 'instream'
+      }
+    },
+  };
+];
+```
