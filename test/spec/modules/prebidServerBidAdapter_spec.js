@@ -1705,10 +1705,10 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('ttl', 60);
     });
 
-    it('respects defaultS2sTtl', function () {
+    it('respects defaultTtl', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
-        defaultS2sTtl: 30
+        defaultTtl: 30
       });
       config.setConfig({ s2sConfig });
 
@@ -2176,7 +2176,7 @@ describe('S2S Adapter', function () {
     it('should set default s2s ttl', function () {
       config.setConfig({
         s2sConfig: {
-          defaultS2sTtl: 30
+          defaultTtl: 30
         }
       });
       expect(config.getConfig('s2sConfig').defaultS2sTtl).to.deep.equal(30);
