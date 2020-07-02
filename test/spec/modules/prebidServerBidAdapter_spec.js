@@ -2179,7 +2179,7 @@ describe('S2S Adapter', function () {
           defaultTtl: 30
         }
       });
-      expect(config.getConfig('s2sConfig').defaultS2sTtl).to.deep.equal(30);
+      expect(config.getConfig('s2sConfig').defaultTtl).to.deep.equal(30);
     });
 
     it('should set syncUrlModifier', function () {
