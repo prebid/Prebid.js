@@ -45,6 +45,15 @@ describe('OneVideoBidAdapter', function () {
           delivery: [2],
           playbackmethod: [1, 5],
           sid: 134,
+          schain: {
+            complete: 1,
+            nodes: [{
+              sid: 134,
+              rid: '30b3efwfwe1e',
+              asi: 'advertising.com',
+              hp: 1
+            }]
+          },
           rewarded: 1,
           placement: 1,
           hp: 1,
@@ -150,6 +159,16 @@ describe('OneVideoBidAdapter', function () {
             delivery: [2],
             playbackmethod: [1, 5],
             sid: 134,
+            schain: {
+              complete: 1,
+              nodes: [
+                {
+                  sid: '134',
+                  rid: '30b3efwfwe1e',
+                  asi: 'advertising.com',
+                  hp: 1
+                }]
+            },
             rewarded: 1,
             placement: 1,
             inventoryid: 123,
@@ -219,6 +238,7 @@ describe('OneVideoBidAdapter', function () {
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
       const VERSION = '3.0.3';
+      const schain = bidRequest.params.video.schain;
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
@@ -227,6 +247,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].ext.inventoryid).to.equal(inventoryid);
       expect(data.imp[0].ext.prebidver).to.equal('$prebid.version$');
       expect(data.imp[0].ext.adapterver).to.equal(VERSION);
+      expect(data.source.ext.schain).to.equal(schain);
     });
 
     it('must parse bid size from a nested array', function () {
@@ -238,6 +259,40 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
     });
+
+    it('should generate new schain object based on video.params.sid if video.params.schain is not passed', function () {
+      bidRequest.params.video.schain = null;
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      const nodes = data.source.ext.schain.nodes;
+      expect(nodes.length).to.equal(1);
+      expect(nodes[nodes.length - 1].sid).to.equal(bidRequest.params.video.sid);
+      expect(nodes[nodes.length - 1].rid).to.equal(bidRequest.bidId);
+    });
+
+    it('should not send video.params.schain if sid is missing', function () {
+      bidRequest.params.video.sid = null;
+      bidRequest.params.video.schain = { complete: 1, nodes: [{demoNode: 123}] };
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      expect(data.source.ext.schain).to.not.exist;
+    })
+
+    it('should generate new schain node based on sid, and append video.params.schain that is passed', function () {
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      const nodes = data.source.ext.schain.nodes;
+      expect(nodes.length).to.equal(2);
+      expect(nodes[nodes.length - 1].sid).to.equal(bidRequest.params.video.sid);
+      expect(nodes[nodes.length - 1].rid).to.equal(bidRequest.bidId);
+    })
+
+    it('should append hp to vssp schain if video.params.hp is passed', function () {
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      const nodes = data.source.ext.schain.nodes;
+      expect(nodes[nodes.length - 1].hp).to.equal(bidRequest.params.video.hp);
+    })
   });
 
   describe('spec.interpretResponse', function () {
@@ -279,7 +334,7 @@ describe('OneVideoBidAdapter', function () {
       };
       expect(bidResponse).to.deep.equal(o);
     });
-    // @abrowning14 check that banner DAP response is appended to o.ad + mediaType: 'banner'
+
     it('should return a valid DAP banner bid-response', function () {
       bidRequest = {
         mediaTypes: {
@@ -360,15 +415,8 @@ describe('OneVideoBidAdapter', function () {
       expect(request[0].data.regs.ext.gdpr).to.equal(1);
       expect(request[0].data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent);
     });
-
-    it('should send schain object', function () {
-      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
-      const data = requests[0].data;
-      expect(data.source.ext.schain.nodes[0].sid).to.equal(bidRequest.params.video.sid);
-      expect(data.source.ext.schain.nodes[0].rid).to.equal(data.id);
-      expect(data.source.ext.schain.nodes[0].hp).to.equal(bidRequest.params.video.hp);
-    });
   });
+
   describe('should send banner object', function () {
     it('should send banner object when display is 1 and context="instream" (DAP O&O)', function () {
       bidRequest = {
@@ -447,7 +495,7 @@ describe('OneVideoBidAdapter', function () {
             playbackmethod: [1, 5],
             placement: 123,
             sid: 134,
-            display: 12
+            display: 0
           },
           site: {
             id: 1,

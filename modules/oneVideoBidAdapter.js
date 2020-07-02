@@ -244,19 +244,29 @@ function getRequestData(bid, consentData, bidRequest) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
   }
   if (bid.params.video.sid) {
-    bidData.source = {
-      ext: {
-        schain: {
-          complete: 1,
-          nodes: [{
-            sid: bid.params.video.sid,
-            rid: bidData.id,
-          }]
-        }
-      }
+    let vsspNode = {
+      sid: bid.params.video.sid,
+      rid: bid.id
     }
     if (bid.params.video.hp == 1) {
-      bidData.source.ext.schain.nodes[0].hp = bid.params.video.hp;
+      vsspNode.hp = bid.params.video.hp;
+    }
+    if (bid.params.video.schain) {
+      bidData.source = {
+        ext: {
+          schain: bid.params.video.schain
+        }
+      }
+      bidData.source.ext.schain.nodes.push(vsspNode);
+    } else {
+      bidData.source = {
+        ext: {
+          schain: {
+            complete: 1,
+            nodes: [vsspNode]
+          }
+        }
+      }
     }
   }
   if (bid.params.site && bid.params.site.id) {
