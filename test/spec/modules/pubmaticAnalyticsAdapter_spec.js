@@ -457,6 +457,10 @@ describe('pubmatic analytics adapter', function () {
     });
 
     it('bidCpmAdjustment: JPY: Logger: best case + win tracker', function() {
+      config.setConfig({
+        testGroupId: 25
+      });
+
       setConfig({
         adServerCurrency: 'JPY',
         rates: {
@@ -490,6 +494,7 @@ describe('pubmatic analytics adapter', function () {
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
       expect(data.pid).to.equal('1111');
+      expect(data.tgid).to.equal(0);// test group id should be between 0-15 else set to 0
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1

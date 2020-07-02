@@ -220,7 +220,13 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
-  outputObj['tgid'] = config.getConfig('testGroupId') || 0;// todo add parseInt and 0-15 logic
+  outputObj['tgid'] = (function() {
+    var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
+    if (testGroupId <= 15 && testGroupId >= 0) {
+      return testGroupId;
+    }
+    return 0;
+  })();
 
   // GDPR support
   if (auctionCache.gdprConsent) {
