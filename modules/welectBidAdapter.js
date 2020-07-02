@@ -67,7 +67,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const responseBody = serverResponse.body;
 
-    if (typeof responseBody !== 'object' || responseBody.available !== 'true') {
+    if (typeof responseBody !== 'object' || responseBody.available !== true) {
       return [];
     }
 
