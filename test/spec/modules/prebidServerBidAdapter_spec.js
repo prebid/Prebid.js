@@ -925,7 +925,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.site.content.language).to.exist.and.to.be.a('string');
       expect(requestBid.site).to.deep.equal({
         publisher: {
-          id: '1',
+          id: '1234',
           domain: 'test.com'
         },
         content: {
@@ -1093,6 +1093,59 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.imp[0].ext.appnexus).to.haveOwnProperty('key');
       expect(requestBid.imp[0].ext.appnexus.key).to.be.equal('value')
+    });
+
+    describe('config site value is added to the oRTB request', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        adapterOptions: {
+          appnexus: {
+            key: 'value'
+          }
+        }
+      });
+      const device = {
+        ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+        ip: '75.97.0.47'
+      };
+
+      it('and overrides publisher and page', function () {
+        config.setConfig({
+          s2sConfig: s2sConfig,
+          site: {
+            domain: 'nytimes.com',
+            page: 'http://www.nytimes.com',
+            publisher: { id: '2' }
+          },
+          device: device
+        });
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        const requestBid = JSON.parse(server.requests[0].requestBody);
+
+        expect(requestBid.site).to.exist.and.to.be.a('object');
+        expect(requestBid.site.domain).to.equal('nytimes.com');
+        expect(requestBid.site.page).to.equal('http://www.nytimes.com');
+        expect(requestBid.site.publisher).to.exist.and.to.be.a('object');
+        expect(requestBid.site.publisher.id).to.equal('2');
+      });
+
+      it('and merges domain and page with the config site value', function () {
+        config.setConfig({
+          s2sConfig: s2sConfig,
+          site: {
+            foo: 'bar'
+          },
+          device: device
+        });
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+        const requestBid = JSON.parse(server.requests[0].requestBody);
+        expect(requestBid.site).to.exist.and.to.be.a('object');
+        expect(requestBid.site.foo).to.equal('bar');
+        expect(requestBid.site.page).to.equal('http://mytestpage.com');
+        expect(requestBid.site.publisher).to.exist.and.to.be.a('object');
+        expect(requestBid.site.publisher.id).to.equal('1');
+      });
     });
 
     it('when userId is defined on bids, it\'s properties should be copied to user.ext.tpid properties', function () {
