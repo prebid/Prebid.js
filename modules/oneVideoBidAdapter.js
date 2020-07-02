@@ -246,7 +246,7 @@ function getRequestData(bid, consentData, bidRequest) {
   if (bid.params.video.sid) {
     let vsspNode = {
       sid: bid.params.video.sid,
-      rid: bid.id
+      rid: bidData.id
     }
     if (bid.params.video.hp == 1) {
       vsspNode.hp = bid.params.video.hp;

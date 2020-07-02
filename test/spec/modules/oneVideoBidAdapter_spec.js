@@ -266,8 +266,8 @@ describe('OneVideoBidAdapter', function () {
       const data = requests[0].data;
       const nodes = data.source.ext.schain.nodes;
       expect(nodes.length).to.equal(1);
-      expect(nodes[nodes.length - 1].sid).to.equal(bidRequest.params.video.sid);
-      expect(nodes[nodes.length - 1].rid).to.equal(bidRequest.bidId);
+      expect(nodes[0].sid).to.equal(bidRequest.params.video.sid);
+      expect(nodes[0].rid).to.equal(data.id);
     });
 
     it('should not send video.params.schain if sid is missing', function () {
@@ -275,7 +275,7 @@ describe('OneVideoBidAdapter', function () {
       bidRequest.params.video.schain = { complete: 1, nodes: [{demoNode: 123}] };
       const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const data = requests[0].data;
-      expect(data.source.ext.schain).to.not.exist;
+      expect(data.source).to.not.exist
     })
 
     it('should generate new schain node based on sid, and append video.params.schain that is passed', function () {
@@ -284,7 +284,7 @@ describe('OneVideoBidAdapter', function () {
       const nodes = data.source.ext.schain.nodes;
       expect(nodes.length).to.equal(2);
       expect(nodes[nodes.length - 1].sid).to.equal(bidRequest.params.video.sid);
-      expect(nodes[nodes.length - 1].rid).to.equal(bidRequest.bidId);
+      expect(nodes[nodes.length - 1].rid).to.equal(data.id);
     })
 
     it('should append hp to vssp schain if video.params.hp is passed', function () {
