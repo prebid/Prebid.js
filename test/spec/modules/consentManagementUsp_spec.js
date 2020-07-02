@@ -185,7 +185,7 @@ describe('consentManagement', function () {
         resetConsentData();
       });
 
-      it('should bypass CMP and simply use previously stored consentData', function () {
+      it('should not bypass CMP and simply use previously stored consentData', function () {
         let testConsentData = {
           uspString: '1YY'
         };
@@ -208,7 +208,7 @@ describe('consentManagement', function () {
         let consent = uspDataHandler.getConsentData();
         expect(didHookReturn).to.be.true;
         expect(consent).to.equal(testConsentData.uspString);
-        sinon.assert.notCalled(uspStub);
+        sinon.assert.called(uspStub);
       });
     });
 
