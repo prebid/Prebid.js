@@ -1,8 +1,5 @@
-// import or require modules necessary for the test, e.g.:
-
 import {expect} from 'chai';
 import {spec as adapter} from 'modules/welectBidAdapter.js';
-// import * as utils from 'src/utils.js';
 
 describe('WelectAdapter', function () {
   describe('Check methods existance', function () {

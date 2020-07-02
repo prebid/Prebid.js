@@ -1,7 +1,9 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+
 const BIDDER_CODE = 'welect';
 const DEFAULT_DOMAIN = 'www.welect.de';
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['wlt'],
