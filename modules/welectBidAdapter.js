@@ -54,8 +54,13 @@ export const spec = {
       return {
         method: 'POST',
         url: url,
-        data: data
-      };
+        data: data,
+        options: {
+          contentType: 'application/json',
+          withCredentials: false,
+          crossOrigin: true,
+        }
+      }
     });
   },
   /**
