@@ -5,7 +5,7 @@ import { VIDEO } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'smartx';
 const URL = 'https://bid.sxp.smartclip.net/bid/1000';
 export const spec = {
-  code: BIDDER_CODE,  
+  code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
