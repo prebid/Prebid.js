@@ -141,7 +141,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
   function getSizeForAdUnit(code) {
     let adUnit = auctionManager.getAdUnits()
       .filter((adUnit) => adUnit.code === code)
-    let sizes = deepAccess(adUnit[0], 'mediaTypes.video.playerSize');
+    let sizes = deepAccess(adUnit, 'mediaTypes.video.playerSize');
     return parseSizesInput(sizes).join('|');
   }
 
