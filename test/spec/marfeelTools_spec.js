@@ -12,8 +12,8 @@
  * from Marfeel Solutions SL.
  */
 
-import { isBidSizeAllowed, getAllowedSizes, isBidAllowed } from './marfeelTools.js';
-import { auctionManager } from './auctionManager.js';
+import { isBidSizeAllowed, getAllowedSizes, isBidAllowed, attachDomainToSiteRequest } from 'src/marfeelTools.js';
+import { auctionManager } from 'src/auctionManager.js';
 
 describe('marfeelTools', function () {
   describe('isBidSizeAllowed', function() {
@@ -106,5 +106,15 @@ describe('marfeelTools', function () {
       assert.deepEqual(isBidAllowed(allowedBid1), true);
       assert.deepEqual(isBidAllowed(allowedBid2), true);
     });
+  });
+  it('attachDomainToSiteRequest attachs the domain of the given page to the request properly', function() {
+    const pageUrl = 'https://testpage.com/awesome';
+    const requestObj = {
+      site: {}
+    };
+
+    const res = attachDomainToSiteRequest(requestObj, pageUrl);
+
+    assert.equal(requestObj.site.domain, 'testpage.com');
   });
 });
