@@ -4,7 +4,7 @@ import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'boldwin';
 const AD_URL = 'https://ssp.videowalldirect.com/?c=o&m=multi';
-const SYNC_URL = 'http://cs.videowalldirect.com/?c=o&m=cookie'
+const SYNC_URL = 'https://cs.videowalldirect.com/?c=o&m=cookie'
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
