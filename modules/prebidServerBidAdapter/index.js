@@ -12,6 +12,7 @@ import includes from 'core-js-pure/features/array/includes.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import find from 'core-js-pure/features/array/find.js';
+import { attachDomainToSiteRequest } from '../../src/marfeelTools.js';
 
 const getConfig = config.getConfig;
 
@@ -274,6 +275,7 @@ function _appendSiteAppDevice(request, pageUrl) {
     }
     utils.deepSetValue(request.site, 'publisher.id', _s2sConfig.accountId);
     request.site.page = pageUrl;
+    request = attachDomainToSiteRequest(request, pageUrl);
   }
   if (typeof config.getConfig('device') === 'object') {
     request.device = config.getConfig('device');

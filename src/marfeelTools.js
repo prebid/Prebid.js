@@ -111,3 +111,11 @@ const isBidCached = (bid) => bid[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING][CONS
 const getBidName = (bid) => bid[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING][CONSTANTS.TARGETING_KEYS.BIDDER];
 
 export const isBidAllowed = (bid) => !(isBidCached(bid) && blacklistedCacheBidders.includes(getBidName(bid)));
+
+export const attachDomainToSiteRequest = (request, url) => {
+  if (request && request.site) {
+    request.site.domain = url.split('/')[2] || ''
+  }
+
+  return request;
+};
