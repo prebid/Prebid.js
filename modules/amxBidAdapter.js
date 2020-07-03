@@ -9,7 +9,6 @@ const VERSION = 'pba1.0';
 const xmlDTDRxp = /^\s*<\?xml[^\?]+\?>/;
 const VAST_RXP = /^\s*<\??(?:vast|xml)/i;
 const TRACKING_ENDPOINT = 'https://1x1.a-mo.net/hbx/';
-const flatMap = (f, arr) => arr.reduce((x, y) => [...x, ...f(y)], [])
 
 const getLocation = (request) =>
   parseUrl(deepAccess(request, 'refererInfo.canonicalUrl', location.href))
