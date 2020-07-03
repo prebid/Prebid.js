@@ -317,13 +317,13 @@ function getViewabilityTracker() {
   }
 
   function isNotHiddenByNonFriendlyIframe() {
-    try{ return (window === window.top) || window.frameElement; } catch(e) {}
+    try { return (window === window.top) || window.frameElement; } catch (e) {}
   }
 
   function defineContext(e) {
     try {
       context = e && window.document.body.contains(e) ? window : (window.top.document.body.contains(e) ? top : undefined);
-    } catch(err) {}
+    } catch (err) {}
     return context;
   }
 
@@ -359,7 +359,7 @@ function getViewabilityTracker() {
   }
 
   function itIsNotHiddenByTabFocus() {
-    try{ return getContext().top.document.hasFocus(); } catch(e) {}
+    try { return getContext().top.document.hasFocus(); } catch (e) {}
   }
 
   function isDefined(e) {
