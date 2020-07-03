@@ -107,7 +107,9 @@ function interpretResponse(serverResponse, bidderRequest) {
       dealId: dealId == null ? dealId : '',
       currency,
       netRevenue: false,
-      mediaType,
+      meta: {
+        mediaType
+      },
       ttl: ttl || 300
     };
     if (mediaType === BANNER) {

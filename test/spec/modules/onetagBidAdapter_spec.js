@@ -214,8 +214,8 @@ describe('onetag', function () {
       expect(interpretedResponse).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < interpretedResponse.length; i++) {
         let dataItem = interpretedResponse[i];
-        expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'dealId');
-        if (dataItem.mediaType === VIDEO) {
+        expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');
+        if (dataItem.meta.mediaType === VIDEO) {
           const {context} = find(requestData.bids, (item) => item.bidId === dataItem.requestId);
           if (context === INSTREAM) {
             expect(dataItem).to.include.all.keys('videoCacheKey', 'vastUrl');
@@ -227,7 +227,7 @@ describe('onetag', function () {
             expect(dataItem.vastUrl).to.be.a('string');
             expect(dataItem.vastXml).to.be.a('string');
           }
-        } else if (dataItem.mediaType === BANNER) {
+        } else if (dataItem.meta.mediaType === BANNER) {
           expect(dataItem).to.include.all.keys('ad');
           expect(dataItem.ad).to.be.a('string');
         }
