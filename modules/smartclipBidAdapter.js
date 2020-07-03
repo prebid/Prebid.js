@@ -3,10 +3,9 @@ import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'smartx';
-const URL = '//bid.sxp.smartclip.net/bid/1000';
+const URL = 'https://bid.sxp.smartclip.net/bid/1000';
 export const spec = {
-  code: BIDDER_CODE,
-  aliases: ['smartx'],
+  code: BIDDER_CODE,  
   supportedMediaTypes: [VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
@@ -41,12 +40,6 @@ export const spec = {
       utils.logError(BIDDER_CODE + ': siteId is not present in bidder params');
       return false;
     }
-    /*
-if (!utils.getBidIdParameter('domain', bid.params)) {
-      utils.logError(BIDDER_CODE + ': domain is not present in bidder params');
-      return false;
-    }
-    */
     if (utils.deepAccess(bid, 'mediaTypes.video.context') == 'outstream' || utils.deepAccess(bid, 'params.ad_unit') == 'outstream') {
       if (!utils.getBidIdParameter('outstream_function', bid.params)) {
         if (!utils.getBidIdParameter('outstream_options', bid.params)) {
@@ -71,7 +64,6 @@ if (!utils.getBidIdParameter('domain', bid.params)) {
   buildRequests: function(bidRequests, bidderRequest) {
     const page = bidderRequest.refererInfo.referer;
     const isPageSecure = !!page.match(/^https:/)
-    // const domain = page.match(/:\/\/(.[^/]+)/)[1];
     const smartxRequests = bidRequests.map(function(bid) {
       const tagId = utils.getBidIdParameter('tagId', bid.params);
       const publisherId = utils.getBidIdParameter('publisherId', bid.params);
@@ -329,7 +321,7 @@ function createOutstreamScript(bid) {
   const script = window.document.createElement('script');
   script.type = 'text/javascript';
   script.async = 'true';
-  script.src = '//dco.smartclip.net/?plc=7777777';
+  script.src = 'https://dco.smartclip.net/?plc=7777777';
   script.onload = script.onreadystatechange = function() {
     var rs = this.readyState;
     if (rs && rs != 'complete' && rs != 'loaded') return;
