@@ -28,42 +28,40 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
   const imp = validBidRequests.map(br => {
     const bannerMediaType = utils.deepAccess(br, 'mediaTypes.banner');
     const videoMediaType = utils.deepAccess(br, 'mediaTypes.video');
+    let result = {
+      id: br.bidId,
+      tagid: utils.deepAccess(br, 'params.adspaceId')
+    }
 
     if (bannerMediaType) {
       const sizes = parseSizes(utils.getAdUnitSizes(br));
-      return {
-        id: br.bidId,
-        banner: {
-          w: sizes[0].w,
-          h: sizes[0].h,
-          format: sizes
-        },
-        tagid: utils.deepAccess(br, 'params.adspaceId')
+      result.banner = {
+        w: sizes[0].w,
+        h: sizes[0].h,
+        format: sizes
       }
     }
 
     if (videoMediaType) {
-      return {
-        id: br.bidId,
-        video: {
-          mimes: videoMediaType.mimes,
-          minduration: videoMediaType.minduration,
-          startdelay: videoMediaType.startdelay,
-          linearity: videoMediaType.linearity,
-          w: videoMediaType.playerSize[0],
-          h: videoMediaType.playerSize[1],
-          maxduration: videoMediaType.maxduration,
-          skip: videoMediaType.skip,
-          protocols: videoMediaType.protocols,
-          ext: {
-            rewarded: videoMediaType.ext.rewarded
-          },
-          skipmin: videoMediaType.skipmin,
-          api: videoMediaType.api
+      result.video = {
+        mimes: videoMediaType.mimes,
+        minduration: videoMediaType.minduration,
+        startdelay: videoMediaType.startdelay,
+        linearity: videoMediaType.linearity,
+        w: videoMediaType.playerSize[0][0],
+        h: videoMediaType.playerSize[0][1],
+        maxduration: videoMediaType.maxduration,
+        skip: videoMediaType.skip,
+        protocols: videoMediaType.protocols,
+        ext: {
+          rewarded: videoMediaType.ext && videoMediaType.ext.rewarded ? videoMediaType.ext.rewarded : 0
         },
-        tagid: utils.deepAccess(br, 'params.adspaceId')
+        skipmin: videoMediaType.skipmin,
+        api: videoMediaType.api
       }
     }
+
+    return result;
   });
 
   const request = {
@@ -200,14 +198,17 @@ export const spec = {
           switch (smtAdType) {
             case 'Img':
               resultingBid.ad = createImgAd(b.adm);
+              resultingBid.mediaType = BANNER;
               bids.push(resultingBid);
               break;
             case 'Richmedia':
               resultingBid.ad = createRichmediaAd(b.adm);
+              resultingBid.mediaType = BANNER;
               bids.push(resultingBid);
               break;
             case 'Video':
               resultingBid.vastXml = b.adm;
+              resultingBid.mediaType = VIDEO;
               bids.push(resultingBid);
               break;
             default:

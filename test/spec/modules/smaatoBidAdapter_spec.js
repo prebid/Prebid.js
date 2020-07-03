@@ -119,6 +119,7 @@ const request = {
 const interpretedBidsImg = [
   {
     requestId: '226416e6e6bf41',
+    mediaType: 'banner',
     cpm: 0.01,
     width: 350,
     height: 50,
@@ -139,6 +140,7 @@ const interpretedBidsImg = [
 const interpretedBidsRichmedia = [
   {
     requestId: '226416e6e6bf41',
+    mediaType: 'banner',
     cpm: 0.01,
     width: 350,
     height: 50,
@@ -159,6 +161,7 @@ const interpretedBidsRichmedia = [
 const interpretedBidsVideo = [
   {
     requestId: '226416e6e6bf41',
+    mediaType: 'video',
     cpm: 0.01,
     width: 350,
     height: 50,
@@ -225,7 +228,44 @@ const singleVideoBidRequest = {
   mediaTypes: {
     video: {
       context: 'outstream',
-      playerSize: [768, 1024],
+      playerSize: [[768, 1024]],
+      mimes: ['video\/mp4', 'video\/quicktime', 'video\/3gpp', 'video\/x-m4v'],
+      minduration: 5,
+      maxduration: 30,
+      startdelay: 0,
+      linearity: 1,
+      protocols: [7],
+      skip: 1,
+      skipmin: 5,
+      api: [7],
+      ext: {rewarded: 0}
+    }
+  },
+  adUnitCode: '/19968336/header-bid-tag-0',
+  transactionId: 'transactionId',
+  sizes: [[300, 50]],
+  bidId: 'bidId',
+  bidderRequestId: 'bidderRequestId',
+  auctionId: 'auctionId',
+  src: 'client',
+  bidRequestsCount: 1,
+  bidderRequestsCount: 1,
+  bidderWinsCount: 0
+};
+
+const combinedBannerAndVideoBidRequest = {
+  bidder: 'smaato',
+  params: {
+    publisherId: 'publisherId',
+    adspaceId: 'adspaceId'
+  },
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 50]]
+    },
+    video: {
+      context: 'outstream',
+      playerSize: [[768, 1024]],
       mimes: ['video\/mp4', 'video\/quicktime', 'video\/3gpp', 'video\/x-m4v'],
       minduration: 5,
       maxduration: 30,
@@ -376,6 +416,45 @@ describe('smaatoBidAdapterTest', () => {
         }
       ])
     });
+    it('allows combines banner and video imp in single bid request', () => {
+      let req = JSON.parse(spec.buildRequests([combinedBannerAndVideoBidRequest], defaultBidderRequest).data);
+      expect(req.imp).to.deep.equal([
+        {
+          id: 'bidId',
+          banner: {
+            w: 300,
+            h: 50,
+            format: [
+              {
+                h: 50,
+                w: 300
+              }
+            ]
+          },
+          video: {
+            mimes: ['video\/mp4', 'video\/quicktime', 'video\/3gpp', 'video\/x-m4v'],
+            minduration: 5,
+            startdelay: 0,
+            linearity: 1,
+            h: 1024,
+            maxduration: 30,
+            skip: 1,
+            protocols: [7],
+            ext: {
+              rewarded: 0
+            },
+            skipmin: 5,
+            api: [7],
+            w: 768
+          },
+          tagid: 'adspaceId'
+        }
+      ])
+    });
+    it('allows two imps in the same bid request', () => {
+      let req = JSON.parse(spec.buildRequests([singleBannerBidRequest, singleBannerBidRequest], defaultBidderRequest).data);
+      expect(req.imp).to.have.length(2);
+    });
   });
 
   describe('interpretResponse', () => {
@@ -390,6 +469,16 @@ describe('smaatoBidAdapterTest', () => {
     it('single video reponse', () => {
       const bids = spec.interpretResponse(openRtbBidResponse(ADTYPE_VIDEO), request);
       assert.deepStrictEqual(bids, interpretedBidsVideo);
+    });
+    it('ignores bid response with invalid ad type', () => {
+      let resp = openRtbBidResponse(ADTYPE_IMG);
+      resp.headers.get = (header) => {
+        if (header === 'X-SMT-ADTYPE') {
+          return undefined;
+        }
+      }
+      const bids = spec.interpretResponse(resp, request);
+      expect(bids).to.be.empty
     });
     it('uses correct TTL when expire header exists', () => {
       const clock = sinon.useFakeTimers();
