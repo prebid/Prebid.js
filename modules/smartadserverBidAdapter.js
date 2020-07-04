@@ -9,6 +9,9 @@ import {
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
+import {
+  createEidsArray
+} from './userId/eids.js';
 const BIDDER_CODE = 'smartadserver';
 export const spec = {
   code: BIDDER_CODE,
@@ -97,6 +100,10 @@ export const spec = {
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
+      }
+
+      if (bid && bid.userId) {
+        payload.eids = createEidsArray(bid.userId);
       }
 
       if (bidderRequest && bidderRequest.uspConsent) {
