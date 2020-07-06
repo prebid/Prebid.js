@@ -110,6 +110,7 @@ const dealChannelValues = {
   6: 'PMPG'
 };
 
+// BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
     const config = {
@@ -120,7 +121,7 @@ const BB_RENDERER = {
     else if (bid.vastUrl) config.vastUrl = bid.vastUrl;
 
     if (!bid.vastXml && !bid.vastUrl) {
-      utils.logWarn(`Pubmatic: No vastXml or vastUrl on bid, bailing...`);
+      utils.logWarn(`${LOG_WARN_PREFIX}: No vastXml or vastUrl on bid, bailing...`);
       return;
     }
 
@@ -138,7 +139,7 @@ const BB_RENDERER = {
     }
 
     if (renderer) renderer.bootstrap(config, ele);
-    else utils.logWarn(`Pubmatic: Couldn't find a renderer with ${rendererId}`);
+    else utils.logWarn(`${LOG_WARN_PREFIX}: Couldn't find a renderer with ${rendererId}`);
   },
   newRenderer: function(rendererCode, adUnitCode) {
     var rendererUrl = RENDERER_URL.replace('$RENDERER', rendererCode);
@@ -151,7 +152,7 @@ const BB_RENDERER = {
     try {
       renderer.setRender(BB_RENDERER.outstreamRender);
     } catch (err) {
-      utils.logWarn(`Pubmatic: Error tying to setRender on renderer`, err);
+      utils.logWarn(`${LOG_WARN_PREFIX}: Error tying to setRender on renderer`, err);
     }
 
     return renderer;
@@ -894,19 +895,19 @@ function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
   }
 }
 
-function _assignRenderer(newBid, request) {
+function _assignRenderer(br, request) {
   let bidParams, context, adUnitCode;
   if (request.bidderRequest && request.bidderRequest.bids) {
     for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
-      if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === newBid.requestId) {
+      if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === br.requestId) {
         bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
-        context = request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO] ? request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO].context : '';
+        context = request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO].context;
         adUnitCode = request.bidderRequest.bids[bidderRequestBidsIndex].adUnitCode;
       }
     }
     if (context && context === 'outstream' && bidParams && bidParams.outstreamAU && adUnitCode) {
-      newBid.rendererCode = bidParams.outstreamAU;
-      newBid.renderer = BB_RENDERER.newRenderer(newBid.rendererCode, adUnitCode);
+      br.rendererCode = bidParams.outstreamAU;
+      br.renderer = BB_RENDERER.newRenderer(br.rendererCode, adUnitCode);
     }
   }
 };

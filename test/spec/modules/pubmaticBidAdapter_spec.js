@@ -861,7 +861,17 @@ describe('PubMatic adapter', function () {
   		  let request = spec.buildRequests(bidRequests);
         expect(request.url).to.equal('https://hbopenbid.pubmatic.com/translator?source=prebid-client');
         expect(request.method).to.equal('POST');
-  		});
+      });
+
+      it('should return bidderRequest property', function() {
+        let request = spec.buildRequests(bidRequests, validOutstreamBidRequest);
+        expect(request.bidderRequest).to.equal(validOutstreamBidRequest);
+      });
+
+      it('bidderRequest should be undefined if bidderRequest is not present', function() {
+        let request = spec.buildRequests(bidRequests);
+        expect(request.bidderRequest).to.be.undefined;
+      });
 
       it('test flag not sent when pubmaticTest=true is absent in page url', function() {
         let request = spec.buildRequests(bidRequests);
@@ -2835,7 +2845,31 @@ describe('PubMatic adapter', function () {
       let request = spec.buildRequests(outstreamBidRequest, validOutstreamBidRequest);
       let response = spec.interpretResponse(outstreamVideoBidResponse, request);
       expect(response[0].renderer).to.exist;
-    })
+    });
+
+    it('should not assign renderer if bidderRequest is not present', function() {
+      let request = spec.buildRequests(outstreamBidRequest);
+      let response = spec.interpretResponse(outstreamVideoBidResponse, request);
+      expect(response[0].renderer).to.not.exist;
+    });
+
+    it('should not assign renderer if bid is video and request is for instream', function() {
+      let request = spec.buildRequests(videoBidRequests);
+      let response = spec.interpretResponse(videoBidResponse, request);
+      expect(response[0].renderer).to.not.exist;
+    });
+
+    it('should not assign renderer if bid is native', function() {
+      let request = spec.buildRequests(nativeBidRequests);
+      let response = spec.interpretResponse(nativeBidResponse, request);
+      expect(response[0].renderer).to.not.exist;
+    });
+
+    it('should not assign renderer if bid is of banner', function() {
+      let request = spec.buildRequests(bidRequests);
+      let response = spec.interpretResponse(bidResponses, request);
+      expect(response[0].renderer).to.not.exist;
+    });
 
     describe('Response checking', function () {
       it('should check for valid response values', function () {
