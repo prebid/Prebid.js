@@ -441,7 +441,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {String} requestOptions.auctionId
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId } = {}) {
+$$PREBID_GLOBAL$$.requestBids = hook('sync', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId } = {}) {
   events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -523,11 +523,9 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
   auction.callBids();
 });
 
-export function executeStorageCallbacks(fn, reqBidsConfigObj) {
+export function executeCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);
-  if (cbArray.length > 0) {
-    cbArray[0]();
-  }
+  runAll(enableAnalyticsCallbacks);
   fn.call(this, reqBidsConfigObj);
   function runAll(queue) {
     var queued;
@@ -538,7 +536,7 @@ export function executeStorageCallbacks(fn, reqBidsConfigObj) {
 }
 
 // This hook will execute all storage callbacks which were registered before gdpr enforcement hook was added. Some bidders, user id modules use storage functions when module is parsed but gdpr enforcement hook is not added at that stage as setConfig callbacks are yet to be called. Hence for such calls we execute all the stored callbacks just before requestBids. At this hook point we will know for sure that gdprEnforcement module is added or not
-$$PREBID_GLOBAL$$.requestBids.before(executeStorageCallbacks, 49);
+$$PREBID_GLOBAL$$.requestBids.before(executeCallbacks, 49);
 
 /**
  *
@@ -658,7 +656,8 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
  * @alias module:pbjs.enableAnalytics
  */
 
-const cbArray = [];
+// Stores 'enableAnalytics' callbacks for later execution.
+const enableAnalyticsCallbacks = [];
 
 const enableAnalyticsCb = hook('async', function (config) {
   if (config && !utils.isEmpty(config)) {
@@ -669,9 +668,9 @@ const enableAnalyticsCb = hook('async', function (config) {
   }
 }, 'enableAnalyticsCb');
 
-$$PREBID_GLOBAL$$.enableAnalytics = hook('async', function (config) {
-  cbArray.push(enableAnalyticsCb.bind(this, config));
-});
+$$PREBID_GLOBAL$$.enableAnalytics = function (config) {
+  enableAnalyticsCallbacks.push(enableAnalyticsCb.bind(this, config));
+};
 
 /**
  * @alias module:pbjs.aliasBidder
