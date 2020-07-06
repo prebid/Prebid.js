@@ -141,7 +141,7 @@ const BB_RENDERER = {
     else utils.logWarn(`Pubmatic: Couldn't find a renderer with ${rendererId}`);
   },
   newRenderer: function(rendererCode, adUnitCode) {
-    var rendererUrl = RENDERER_URL.replace('$$RENDERER', rendererCode);
+    var rendererUrl = RENDERER_URL.replace('$RENDERER', rendererCode);
     const renderer = Renderer.install({
       url: rendererUrl,
       loaded: false,
