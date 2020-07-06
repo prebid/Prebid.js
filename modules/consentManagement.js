@@ -301,7 +301,8 @@ function processCmpData(consentObject, hookConfig) {
   }
 
   function checkV2Data() {
-    let gdprApplies = consentObject && consentObject.gdprApplies;
+    // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
+    let gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
     let tcString = consentObject && consentObject.tcString;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
@@ -372,7 +373,7 @@ function storeConsentData(cmpConsentObject) {
     consentData = {
       consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
       vendorData: (cmpConsentObject) || undefined,
-      gdprApplies: (cmpConsentObject) ? cmpConsentObject.gdprApplies : gdprScope
+      gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
     };
   }
   consentData.apiVersion = cmpVersion;

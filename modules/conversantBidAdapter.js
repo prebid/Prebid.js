@@ -7,7 +7,7 @@ const GVLID = 24;
 export const storage = getStorageManager(GVLID);
 
 const BIDDER_CODE = 'conversant';
-const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
+const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 export const spec = {
   code: BIDDER_CODE,
