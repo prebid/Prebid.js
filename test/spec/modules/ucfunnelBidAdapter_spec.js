@@ -250,4 +250,22 @@ describe('ucfunnel Adapter', function () {
       });
     });
   });
+
+  describe('cookie sync', function () {
+    describe('cookie sync iframe', function () {
+      const result = spec.getUserSyncs({'iframeEnabled': true});
+
+      it('should return cookie sync iframe info', function () {
+        expect(result[0].type).to.equal('iframe');
+        expect(result[0].url).to.equal('https://cdn.aralego.net/ucfad/cookie/sync.html');
+      });
+    });
+    describe('cookie sync image', function () {
+      const result = spec.getUserSyncs({'pixelEnabled': true});
+      it('should return cookie sync image info', function () {
+        expect(result[0].type).to.equal('image');
+        expect(result[0].url).to.equal('https://sync.aralego.com/idSync');
+      });
+    });
+  });
 });

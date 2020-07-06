@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-let spec = require('modules/proxistoreBidAdapter');
+let { spec } = require('modules/proxistoreBidAdapter');
 
 const BIDDER_CODE = 'proxistore';
 describe('ProxistoreBidAdapter', function () {
@@ -28,13 +28,27 @@ describe('ProxistoreBidAdapter', function () {
     transactionId: 511916005
   };
   describe('isBidRequestValid', function () {
-    it('it should be true if required params are presents', function () {
+    it('it should be true if required params are presents and there is no info in the local storage', function () {
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('it should be false if the value in the localstorage is less than 5minutes of the actual time', function() {
+      const date = new Date();
+      date.setMinutes(date.getMinutes() - 1)
+      localStorage.setItem(`PX_NoAds_${bid.params.website}`, date)
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('it should be true if the value in the localstorage is more than 5minutes of the actual time', function() {
+      const date = new Date();
+      date.setMinutes(date.getMinutes() - 10)
+      localStorage.setItem(`PX_NoAds_${bid.params.website}`, date)
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
   });
 
   describe('buildRequests', function () {
-    const url = 'https://abs.proxistore.com/fr/v3/rtb/prebid';
+    const url = 'https://abs.proxistore.com/fr/v3/rtb/prebid/multi';
     const request = spec.buildRequests([bid], bidderRequest);
     it('should return a valid object', function () {
       expect(request).to.be.an('object');
@@ -55,10 +69,14 @@ describe('ProxistoreBidAdapter', function () {
       expect(data.gdpr.applies).to.be.true;
       expect(data.gdpr.consentGiven).to.be.true;
     });
-    it('should have a property bidId if there is only one bid', function () {
+    it('should have a property a length of bids equal to one if there is only one bid', function () {
       const data = JSON.parse(request.data);
-      expect(data.hasOwnProperty('bidId')).to.be.true;
-    })
+      expect(data.hasOwnProperty('bids')).to.be.true;
+      expect(data.bids).to.be.an('array');
+      expect(data.bids.length).equal(1);
+      expect(data.bids[0].hasOwnProperty('id')).to.be.true;
+      expect(data.bids[0].sizes).to.be.an('array');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -93,7 +111,11 @@ describe('ProxistoreBidAdapter', function () {
       expect(interpretedResponse.requestId).equal('923756713');
       expect(interpretedResponse.netRevenue).to.be.true;
       expect(interpretedResponse.netRevenue).to.be.true;
-    })
+    });
+    it('should have a value in the local storage if the response is empty', function() {
+      spec.interpretResponse(badResponse, bid);
+      expect(localStorage.getItem(`PX_NoAds_${bid.params.website}`)).to.be.string;
+    });
   });
 
   describe('interpretResponse', function () {

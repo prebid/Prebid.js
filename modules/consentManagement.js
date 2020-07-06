@@ -7,8 +7,8 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import strIncludes from 'core-js/library/fn/string/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -17,6 +17,7 @@ const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 export let userCMP;
 export let consentTimeout;
 export let allowAuction;
+export let gdprScope;
 export let staticConsentData;
 
 let cmpVersion = 0;
@@ -98,7 +99,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     if (success) {
       if (tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         cmpSuccess(tcfData, hookConfig);
-      } else if (tcfData.eventStatus === 'cmpuishown' && tcfData.tcString.length > 0 && tcfData.purposeOneTreatment === true) {
+      } else if (tcfData.eventStatus === 'cmpuishown' && tcfData.tcString && tcfData.purposeOneTreatment === true) {
         cmpSuccess(tcfData, hookConfig);
       }
     } else {
@@ -300,7 +301,8 @@ function processCmpData(consentObject, hookConfig) {
   }
 
   function checkV2Data() {
-    let gdprApplies = consentObject && consentObject.gdprApplies;
+    // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
+    let gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
     let tcString = consentObject && consentObject.tcString;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
@@ -365,17 +367,16 @@ function storeConsentData(cmpConsentObject) {
     consentData = {
       consentString: (cmpConsentObject) ? cmpConsentObject.getConsentData.consentData : undefined,
       vendorData: (cmpConsentObject) ? cmpConsentObject.getVendorConsents : undefined,
-      gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : undefined
+      gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : gdprScope
     };
   } else {
     consentData = {
       consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
       vendorData: (cmpConsentObject) || undefined,
-      gdprApplies: (cmpConsentObject) ? cmpConsentObject.gdprApplies : undefined
+      gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
     };
   }
   consentData.apiVersion = cmpVersion;
-
   gdprDataHandler.setConsentData(consentData);
 }
 
@@ -434,7 +435,7 @@ export function resetConsentData() {
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
+ * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
   // if `config.gdpr` or `config.usp` exist, assume new config format.
@@ -464,6 +465,9 @@ export function setConsentConfig(config) {
     allowAuction = DEFAULT_ALLOW_AUCTION_WO_CONSENT;
     utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
   }
+
+  // if true, then gdprApplies should be set to true
+  gdprScope = config.defaultGdprScope === true;
 
   utils.logInfo('consentManagement module has been activated...');
 

@@ -1,12 +1,17 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const GVLID = 24;
+export const storage = getStorageManager(GVLID);
 
 const BIDDER_CODE = 'conversant';
-const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
+const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['cnvr'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -53,6 +58,7 @@ export const spec = {
     let requestId = '';
     let pubcid = null;
     let pubcidName = '_pubcid';
+    let bidurl = URL;
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
@@ -103,6 +109,9 @@ export const spec = {
         pubcid = bid.userId.pubcid;
       } else if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
+      }
+      if (bid.params.white_label_url) {
+        bidurl = bid.params.white_label_url;
       }
 
       return imp;
@@ -159,7 +168,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: URL,
+      url: bidurl,
       data: payload,
     };
   },
@@ -343,13 +352,13 @@ function readStoredValue(key) {
   let storedValue;
   try {
     // check cookies first
-    storedValue = utils.getCookie(key);
+    storedValue = storage.getCookie(key);
 
     if (!storedValue) {
       // check expiration time before reading local storage
-      const storedValueExp = utils.getDataFromLocalStorage(`${key}_exp`);
+      const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
       if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
-        storedValue = utils.getDataFromLocalStorage(key);
+        storedValue = storage.getDataFromLocalStorage(key);
         storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
       }
     }

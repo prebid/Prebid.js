@@ -1,9 +1,12 @@
 /* Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
 Updated : 2018-03-28 */
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const utils = require('../src/utils.js');
 
@@ -54,31 +57,31 @@ function buildSessionIdTimeoutLocalStorageKey() {
 function updateSessionId() {
   if (isSessionIdTimeoutExpired()) {
     let newSessionId = utils.generateUUID();
-    utils.setDataInLocalStorage(buildSessionIdLocalStorageKey(), newSessionId);
+    storage.setDataInLocalStorage(buildSessionIdLocalStorageKey(), newSessionId);
   }
   initOptions.sessionId = getSessionId();
   updateSessionIdTimeout();
 }
 
 function updateSessionIdTimeout() {
-  utils.setDataInLocalStorage(buildSessionIdTimeoutLocalStorageKey(), Date.now());
+  storage.setDataInLocalStorage(buildSessionIdTimeoutLocalStorageKey(), Date.now());
 }
 
 function isSessionIdTimeoutExpired() {
-  let cpmSessionTimestamp = utils.getDataFromLocalStorage(buildSessionIdTimeoutLocalStorageKey());
+  let cpmSessionTimestamp = storage.getDataFromLocalStorage(buildSessionIdTimeoutLocalStorageKey());
   return Date.now() - cpmSessionTimestamp > sessionTimeout;
 }
 
 function getSessionId() {
-  return utils.getDataFromLocalStorage(buildSessionIdLocalStorageKey()) ? utils.getDataFromLocalStorage(buildSessionIdLocalStorageKey()) : '';
+  return storage.getDataFromLocalStorage(buildSessionIdLocalStorageKey()) ? storage.getDataFromLocalStorage(buildSessionIdLocalStorageKey()) : '';
 }
 
 function updateUtmTimeout() {
-  utils.setDataInLocalStorage(buildUtmLocalStorageTimeoutKey(), Date.now());
+  storage.setDataInLocalStorage(buildUtmLocalStorageTimeoutKey(), Date.now());
 }
 
 function isUtmTimeoutExpired() {
-  let utmTimestamp = utils.getDataFromLocalStorage(buildUtmLocalStorageTimeoutKey());
+  let utmTimestamp = storage.getDataFromLocalStorage(buildUtmLocalStorageTimeoutKey());
   return (Date.now() - utmTimestamp) > utmTimeout;
 }
 
@@ -219,11 +222,11 @@ sigmoidAdapter.buildUtmTagData = function () {
   });
   utmTags.forEach(function(utmTagKey) {
     if (utmTagsDetected) {
-      utils.setDataInLocalStorage(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
+      storage.setDataInLocalStorage(buildUtmLocalStorageKey(utmTagKey), utmTagData[utmTagKey]);
       updateUtmTimeout();
     } else {
       if (!isUtmTimeoutExpired()) {
-        utmTagData[utmTagKey] = utils.getDataFromLocalStorage(buildUtmLocalStorageKey(utmTagKey)) ? utils.getDataFromLocalStorage(buildUtmLocalStorageKey(utmTagKey)) : '';
+        utmTagData[utmTagKey] = storage.getDataFromLocalStorage(buildUtmLocalStorageKey(utmTagKey)) ? storage.getDataFromLocalStorage(buildUtmLocalStorageKey(utmTagKey)) : '';
         updateUtmTimeout();
       }
     }
