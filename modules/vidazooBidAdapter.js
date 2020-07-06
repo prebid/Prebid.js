@@ -4,6 +4,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const DEFAULT_SUB_DOMAIN = 'prebid';
 const BIDDER_CODE = 'vidazoo';
+const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
 const INTERNAL_SYNC_TYPE = {
@@ -51,6 +52,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     publisherId: pId,
     sizes: sizes,
     dealId: dealId,
+    bidderVersion: BIDDER_VERSION,
+    prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`
   };
 
@@ -220,6 +223,7 @@ function setStorageItem(key, value) {
 
 export const spec = {
   code: BIDDER_CODE,
+  version: BIDDER_VERSION,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
