@@ -156,7 +156,7 @@ export const spec = {
    * @param {TimedOutBid} timeoutData
    */
   onTimeout: (timeoutData) => {
-    if (publisherTagAvailable() && timeoutData.length > 0) {
+    if (publisherTagAvailable() && Array.isArray(timeoutData)) {
       var auctionsIds = [];
       timeoutData.forEach((bid) => {
         if (auctionsIds.indexOf(bid.auctionId) === -1) {
