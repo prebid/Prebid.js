@@ -1,11 +1,14 @@
 import { expect } from 'chai';
-import { spec as adapter, URL, SUPPORTED_ID_SYSTEMS } from 'modules/vidazooBidAdapter.js';
+import { spec as adapter, SUPPORTED_ID_SYSTEMS, createDomain } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
+
+const SUB_DOMAIN = 'openrtb';
 
 const BID = {
   'bidId': '2d52001cabd527',
   'adUnitCode': 'div-gpt-ad-12345-0',
   'params': {
+    'subDomain': SUB_DOMAIN,
     'cId': '59db6b3b4ffaa70004f45cdc',
     'pId': '59ac17c192832d0011283fe3',
     'bidFloor': 0.1,
@@ -129,7 +132,7 @@ describe('VidazooBidAdapter', function () {
       expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
         method: 'POST',
-        url: `${URL}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
+        url: `${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
         data: {
           gdprConsent: 'consent_string',
           gdpr: 1,
