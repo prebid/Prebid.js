@@ -159,7 +159,7 @@ export const spec = {
     if (publisherTagAvailable() && timeoutData.length > 0) {
       var auctionsIds = [];
       timeoutData.forEach((bid) => {
-        if (!auctionsIds.includes(bid.auctionId)) {
+        if (auctionsIds.indexOf(bid.auctionId) === -1) {
           auctionsIds.push(bid.auctionId);
           // eslint-disable-next-line no-undef
           const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
