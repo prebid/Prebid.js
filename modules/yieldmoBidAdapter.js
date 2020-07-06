@@ -56,6 +56,11 @@ export const spec = {
           : '',
     };
 
+    const mtp = window.navigator.maxTouchPoints;
+    if (mtp) {
+      serverRequest.mtp = mtp;
+    }
+
     bidRequests.forEach(request => {
       serverRequest.p.push(addPlacement(request));
       const pubcid = getId(request, 'pubcid');
