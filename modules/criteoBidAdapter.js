@@ -156,10 +156,16 @@ export const spec = {
    * @param {TimedOutBid} timeoutData
    */
   onTimeout: (timeoutData) => {
-    if (publisherTagAvailable()) {
-      // eslint-disable-next-line no-undef
-      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(timeoutData.auctionId);
-      adapter.handleBidTimeout();
+    if (publisherTagAvailable() && timeoutData.length > 0) {
+      var auctionsIds = [];
+      timeoutData.forEach((bid) => {
+        if (!auctionsIds.includes(bid.auctionId)) {
+          auctionsIds.push(bid.auctionId);
+          // eslint-disable-next-line no-undef
+          const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
+          adapter.handleBidTimeout();
+        }
+      });
     }
   },
 
@@ -167,7 +173,7 @@ export const spec = {
    * @param {Bid} bid
    */
   onBidWon: (bid) => {
-    if (publisherTagAvailable()) {
+    if (publisherTagAvailable() && bid) {
       // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
       adapter.handleBidWon(bid);

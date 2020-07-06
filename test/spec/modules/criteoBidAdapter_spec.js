@@ -1418,14 +1418,14 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should forward bid to pubtag when calling onTimeout', () => {
-      const timeoutData = { auctionId: 123 };
+      const timeoutData = [{ auctionId: 123 }];
 
       const adapter = { handleBidTimeout: function() {} };
       const adapterMock = sinon.mock(adapter);
       adapterMock.expects('handleBidTimeout').once();
       const prebidAdapter = { GetAdapter: function() {} };
       const prebidAdapterMock = sinon.mock(prebidAdapter);
-      prebidAdapterMock.expects('GetAdapter').withExactArgs(timeoutData.auctionId).once().returns(adapter);
+      prebidAdapterMock.expects('GetAdapter').withExactArgs(timeoutData[0].auctionId).once().returns(adapter);
 
       global.Criteo = {
         PubTag: {
