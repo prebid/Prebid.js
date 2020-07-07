@@ -1,5 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
@@ -243,23 +244,26 @@ function getRequestData(bid, consentData, bidRequest) {
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
   }
-  if (bidData.source) {
-    bidData.debug = true;
-  }
-  if (bid.params.video.sid) {
-    bidData.source = {
-      ext: {
-        schain: {
-          complete: 1,
-          nodes: [{
-            sid: bid.params.video.sid,
-            rid: bidData.id,
-          }]
-        }
+  if (config.schain || bid.params.video.sid) {
+    let vsspSchain = {};
+    if (config.schain) {
+      vsspSchain.ver = config.schain.config.ver;
+      vsspSchain.complete = config.schain.config.complete;
+      vsspSchain.nodes = config.schain.config.nodes;
+    } else if (bid.params.video.sid) {
+      vsspSchain.complete = 1;
+      vsspSchain.nodes = [{
+        sid: bid.params.video.sid,
+        rid: bidData.id,
+      }];
+      if (bid.params.video.hp == 1) {
+        vsspSchain.nodes[0].hp = bid.params.video.hp;
       }
     }
-    if (bid.params.video.hp == 1) {
-      bidData.source.ext.schain.nodes[0].hp = bid.params.video.hp;
+    bidData.source = {
+      ext: {
+        schain: vsspSchain
+      }
     }
   }
   if (bid.params.site && bid.params.site.id) {
