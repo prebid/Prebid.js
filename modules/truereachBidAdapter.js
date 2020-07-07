@@ -69,6 +69,11 @@ export const spec = {
       creativeId: bidderBid.crid,
       netRevenue: false
     };
+    if (bidderBid.adomain && bidderBid.adomain.length) {
+      bidResponse.meta = {
+        advertiserDomains: bidderBid.adomain,
+      };
+    }
 
     bidResponses.push(bidResponse);
 

@@ -79,5 +79,6 @@ describe('truereachBidAdapterTests', function () {
     expect(bid.ttl).to.equal(180);
     expect(bid.creativeId).to.equal('0142010a-8400-1b01-72cb-afb296000012');
     expect(bid.netRevenue).to.equal(false);
+    expect(bid.meta.advertiserDomains[0]).to.equal('https://www.momagic.com/');
   });
 });
