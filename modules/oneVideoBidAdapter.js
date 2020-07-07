@@ -52,7 +52,7 @@ export const spec = {
     let consentData = bidRequest ? bidRequest.gdprConsent : null;
 
     return bids.map(bid => {
-      const pubId = bid.video.params.e2etest ? 'HBExchange' : bid.params.pubId;
+      const pubId = bid.params.video.e2etest ? 'HBExchange' : bid.params.pubId;
       return {
         method: 'POST',
         /** removing adding local protocal since we
@@ -284,15 +284,24 @@ function getRequestData(bid, consentData, bidRequest) {
     }
 
     if (bid.params.video.e2etest) {
-      bidData.imp[0].ext.e2etest = true;
-      bidData.imp[0].bidfloor = null;
-      bidData.imp[0].video.mimes = ['video/mp4', 'application/javascript'];
-      bidData.imp[0].video.api = [2];
-      bidData.imp[0].video.w = 300;
-      bidData.imp[0].video.h = 250;
-      bidData.site.page = 'https://verizonmedia.com';
-      bidData.site.ref = 'https://verizonmedia.com';
-      bidData.tmax = 1000;
+      bidData = {
+        imp: [
+          {
+            bidfloor: null,
+            video: {
+              mimes: ['video/mp4', 'application/javascript'],
+              api: [2],
+              w: 300,
+              h: 250,
+            }
+          }
+        ],
+        site: {
+          page: 'https://verizonmedia.com',
+          ref: 'https://verizonmedia.com'
+        },
+        tmax: 1000
+      }
     }
   }
 
