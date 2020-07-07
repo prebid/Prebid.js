@@ -1,8 +1,12 @@
 import config from '../src/config.js';
 import ajaxBuilder from '../src/ajax.js';
 import logError from '../src/utils.js';
+import getGlobal from '../src/prebidGlobal.js';
 
 const segCache = {};
+let pendingRequests = 0;
+let requestTimeout;
+let resumeBidRequest;
 
 function setup () {
   config.getConfig('jwpTargeting', (config) => {
@@ -12,10 +16,25 @@ function setup () {
       return;
     }
     const mediaIDs = targeting.mediaIDs;
+    pendingRequests = mediaIDs.length;
     mediaIDs.forEach(mediaID => {
       console.log(mediaID);
       fetchTargetingForMediaId(mediaID);
     })
+  });
+
+  getGlobal().requestBids.before(function(nextFn, reqBidsConfigObj) {
+    console.log('before requestBids');
+    if (pendingRequests <= 0) {
+      nextFn.apply(this, [reqBidsConfigObj]);
+      return;
+    }
+    requestTimeout = setTimeout(() => {
+      console.log('Request for targeting info timed out')
+      nextFn.apply(this, [reqBidsConfigObj]);
+    }, 1500);
+
+    resumeBidRequest = nextFn.bind(this, reqBidsConfigObj);
   });
 }
 
@@ -81,12 +100,29 @@ function fetchTargetingForMediaId(mediaId) {
         } catch (err) {
           logError('failed to parse response');
         }
+        onRequestCompleted();
       },
       error: function () {
         logError('failed to retrieve targeting information');
+        onRequestCompleted();
       }
     }
   );
+}
+
+function onRequestCompleted() {
+  pendingRequests--;
+  if (pendingRequests > 0) {
+    return;
+  }
+
+  if (requestTimeout) {
+    clearTimeout(requestTimeout);
+  }
+
+  if (resumeBidRequest) {
+    resumeBidRequest();
+  }
 }
 
 setup();
