@@ -662,8 +662,6 @@ describe('gdpr enforcement', function () {
       }], []);
 
       expect(logWarnSpy.calledOnce).to.equal(true);
-      expect(emitEventSpy.calledOnce).to.equal(true);
-      sinon.assert.calledWith(emitEventSpy, EVENTS.BIDDER_BLOCKED, 'bidder_2');
     });
 
     it('should skip validation checks if GDPR version is not equal to "2"', function () {

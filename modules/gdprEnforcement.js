@@ -259,12 +259,11 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
   const consentData = gdprDataHandler.getConsentData();
   if (consentData && consentData.gdprApplies) {
     if (consentData.apiVersion === 2) {
-      const disabledBidders = [];
       adUnits.forEach(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => {
           const currBidder = bid.bidder;
           const gvlId = getGvlid(currBidder);
-          if (includes(disabledBidders, currBidder)) return false;
+          if (includes(biddersBlocked, currBidder)) return false;
           const isAllowed = !!validateRules(purpose2Rule, consentData, currBidder, gvlId);
           if (!isAllowed) {
             utils.logWarn(`TCF2 blocked auction for ${currBidder}`);
