@@ -243,6 +243,9 @@ function getRequestData(bid, consentData, bidRequest) {
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
   }
+  if (bidData.source) {
+    bidData.debug = true;
+  }
   if (bid.params.video.sid) {
     bidData.source = {
       ext: {
