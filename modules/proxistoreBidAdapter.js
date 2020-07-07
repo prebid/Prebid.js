@@ -1,11 +1,23 @@
-const { registerBidder } = require('../src/adapters/bidderFactory.js');
+
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 const BIDDER_CODE = 'proxistore';
+const storage = getStorageManager();
 const PROXISTORE_VENDOR_ID = 418;
 
 function _createServerRequest(bidRequests, bidderRequest) {
   const sizeIds = [];
-  bidRequests.forEach(bid => {
-    const sizeId = {id: bid.bidId, sizes: bid.sizes.map(size => { return { width: size[0], height: size[1] } })};
+
+  bidRequests.forEach(function (bid) {
+    const sizeId = {
+      id: bid.bidId,
+      sizes: bid.sizes.map(function (size) {
+        return {
+          width: size[0],
+          height: size[1]
+        };
+      })
+    };
     sizeIds.push(sizeId);
   });
   const payload = {
@@ -18,22 +30,22 @@ function _createServerRequest(bidRequests, bidderRequest) {
       applies: false
     }
   };
-
   const options = {
     contentType: 'application/json',
     withCredentials: true
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    if ((typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') && bidderRequest.gdprConsent.gdprApplies) {
+    if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) {
       payload.gdpr.applies = true;
     }
-    if ((typeof bidderRequest.gdprConsent.consentString === 'string') && bidderRequest.gdprConsent.consentString) {
+
+    if (typeof bidderRequest.gdprConsent.consentString === 'string' && bidderRequest.gdprConsent.consentString) {
       payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
     }
-    if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
-      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
-      payload.gdpr.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)]);
+
+    if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents && typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
+      payload.gdpr.consentGiven = !!bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
     }
   }
 
@@ -59,17 +71,31 @@ function _createBidResponse(response) {
     vastUrl: response.vastUrl,
     vastXml: response.vastXml,
     dealId: response.dealId
-  }
+  };
 }
-
 /**
  * Determines whether or not the given bid request is valid.
  *
  * @param bid  The bid params to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
+
 function isBidRequestValid(bid) {
-  return !!(bid.params.website && bid.params.language);
+  const hasNoAd = function() {
+    if (!storage.hasLocalStorage()) {
+      return false;
+    }
+    const pxNoAds = storage.getDataFromLocalStorage(`PX_NoAds_${bid.params.website}`);
+    if (!pxNoAds) {
+      return false;
+    } else {
+      const storedDate = new Date(pxNoAds);
+      const now = new Date();
+      const diff = Math.abs(storedDate.getTime() - now.getTime()) / 60000;
+      return diff <= 5;
+    }
+  }
+  return !!(bid.params.website && bid.params.language) && !hasNoAd();
 }
 
 /**
@@ -79,11 +105,11 @@ function isBidRequestValid(bid) {
  * @param bidderRequest
  * @return ServerRequest Info describing the request to the server.
  */
+
 function buildRequests(bidRequests, bidderRequest) {
-  var request = _createServerRequest(bidRequests, bidderRequest);
+  const request = _createServerRequest(bidRequests, bidderRequest);
   return request;
 }
-
 /**
  * Unpack the response from the server into a list of bids.
  *
@@ -91,11 +117,23 @@ function buildRequests(bidRequests, bidderRequest) {
  * @param bidRequest Request original server request
  * @return  An array of bids which were nested inside the server.
  */
+
 function interpretResponse(serverResponse, bidRequest) {
+  const itemName = `PX_NoAds_${websiteFromBidRequest(bidRequest)}`;
   if (serverResponse.body.length > 0) {
+    storage.removeDataFromLocalStorage(itemName, true);
     return serverResponse.body.map(_createBidResponse);
   } else {
+    storage.setDataInLocalStorage(itemName, new Date());
     return [];
+  }
+}
+
+const websiteFromBidRequest = function(bidR) {
+  if (bidR.data) {
+    return JSON.parse(bidR.data).website
+  } else if (bidR.params.website) {
+    return bidR.params.website;
   }
 }
 
@@ -106,11 +144,12 @@ function interpretResponse(serverResponse, bidRequest) {
  * @param serverResponses List of server's responses.
  * @return The user syncs which should be dropped.
  */
+
 function getUserSyncs(syncOptions, serverResponses) {
   return [];
 }
 
-const spec = {
+export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
@@ -119,5 +158,3 @@ const spec = {
 };
 
 registerBidder(spec);
-
-module.exports = spec;
