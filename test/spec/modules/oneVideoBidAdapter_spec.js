@@ -238,6 +238,25 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
     });
+
+    it('should set pubId to HBExchange when bid.params.video.e2etest = true', function () {
+      bidRequest.params.video.e2etest = true;
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.equal(spec.ENDPOINT + 'HBExchange');
+    });
+    it('should attach End 2 End test data', function () {
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      expect(data.imp[0].bidfloor).to.not.exist;
+      expect(data.imp[0].video.w).to.equal(300);
+      expect(data.imp[0].video.h).to.equal(250);
+      expect(data.imp[0].video.mimes).to.equal(['video/mp4', 'application/javascript']);
+      expect(data.imp[0].video.api).to.equal(2);
+      expect(data.site.page).to.equal('https://verizonmedia.com');
+      expect(data.site.ref).to.equal('https://verizonmedia.com');
+      expect(data.tmax).to.equal(1000);
+    });
   });
 
   describe('spec.interpretResponse', function () {

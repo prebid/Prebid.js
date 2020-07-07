@@ -168,3 +168,35 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
     }
 ]
 ```
+
+# End 2 End Testing Mode
+By passing bid.params.video.e2etest = true you will be able to receive a test creative when connecting via VPN location U.S West Coast. This will allow you to trubleshoot how your player/ad-server parses and uses the VAST XML response.
+This automatically sets default values for the outbound bid-request to respond from our test exchange.
+No need to override the site/ref urls or change your pubId
+```
+var adUnits = [
+    {
+      code: 'video-1',
+      mediaTypes: {
+        video: {
+          context: "instream",
+          playerSize: [480, 640]
+        }
+      },
+      bids: [
+        {
+          bidder: 'oneVideo',
+          params: {
+            video: {
+              playerWidth: 300,
+              playerHeight: 250,
+              mimes: ['video/mp4', 'application/javascript'],
+              e2etest: true
+            }
+            pubId: 'YOUR_PUBLISHER_ID'
+          }
+        }
+      ]
+    }
+]
+```
