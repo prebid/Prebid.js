@@ -243,8 +243,9 @@ describe('OneVideoBidAdapter', function () {
       bidRequest.params.video.e2etest = true;
       const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(spec.ENDPOINT + 'HBExchange');
+      expect(requests[0].url).to.equal(spec.E2ETESTENDPOINT + 'HBExchange');
     });
+
     it('should attach End 2 End test data', function () {
       bidRequest.params.video.e2etest = true;
       const requests = spec.buildRequests([ bidRequest ], bidderRequest);
