@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
@@ -244,12 +243,12 @@ function getRequestData(bid, consentData, bidRequest) {
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
   }
-  if (config.schain || bid.params.video.sid) {
+  if (bid.schain || bid.params.video.sid) {
     let vsspSchain = {};
-    if (config.schain) {
-      vsspSchain.ver = config.schain.config.ver;
-      vsspSchain.complete = config.schain.config.complete;
-      vsspSchain.nodes = config.schain.config.nodes;
+    if (bid.schain) {
+      vsspSchain.ver = bid.schain.config.ver;
+      vsspSchain.complete = bid.schain.config.complete;
+      vsspSchain.nodes = bid.schain.config.nodes;
     } else if (bid.params.video.sid) {
       vsspSchain.complete = 1;
       vsspSchain.nodes = [{
