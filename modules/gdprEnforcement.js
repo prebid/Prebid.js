@@ -13,6 +13,7 @@ import { getHook } from '../src/hook.js';
 import { validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
+import $$PREBID_GLOBAL$$ from '../src/prebid.js';
 
 const TCF2 = {
   'purpose1': { id: 1, name: 'storage' },
@@ -40,6 +41,10 @@ export let purpose2Rule;
 export let purpose7Rule;
 
 export let enforcementRules;
+
+const storageBlocked = [];
+const biddersBlocked = [];
+const analyticsBlocked = [];
 
 let addedDeviceAccessHook = false;
 
@@ -171,6 +176,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
         } else {
           curModule && utils.logWarn(`TCF2 denied device access for ${curModule}`);
           result.valid = false;
+          storageBlocked.push(curModule);
           fn.call(this, gvlid, moduleName, result);
         }
       } else {
@@ -201,6 +207,7 @@ export function userSyncHook(fn, ...args) {
         fn.call(this, ...args);
       } else {
         utils.logWarn(`User sync not allowed for ${curBidder}`);
+        storageBlocked.push(curBidder);
       }
     } else {
       // The module doesn't enforce TCF1.1 strings
@@ -228,10 +235,11 @@ export function userIdHook(fn, submodules, consentData) {
           return submodule;
         } else {
           utils.logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
+          storageBlocked.push(moduleName);
         }
         return undefined;
       }).filter(module => module)
-      fn.call(this, userIdModules, {...consentData, hasValidated: true});
+      fn.call(this, userIdModules, { ...consentData, hasValidated: true });
     } else {
       // The module doesn't enforce TCF1.1 strings
       fn.call(this, submodules, consentData);
@@ -260,8 +268,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
           const isAllowed = !!validateRules(purpose2Rule, consentData, currBidder, gvlId);
           if (!isAllowed) {
             utils.logWarn(`TCF2 blocked auction for ${currBidder}`);
-            events.emit(EVENTS.BIDDER_BLOCKED, currBidder);
-            disabledBidders.push(currBidder);
+            biddersBlocked.push(currBidder);
           }
           return isAllowed;
         });
@@ -293,7 +300,8 @@ function enableAnalyticsHook(fn, config) {
         const gvlid = getGvlidForAnalyticsAdapter(analyticsAdapterCode);
         const isAllowed = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
         if (!isAllowed) {
-          utils.logWarn(`TCF2 blocked analytics adapter: ${conf.provider}`);
+          analyticsBlocked.push(analyticsAdapterCode);
+          utils.logWarn(`TCF2 blocked analytics adapter ${conf.provider}`);
         }
         return isAllowed;
       });
@@ -305,6 +313,20 @@ function enableAnalyticsHook(fn, config) {
   } else {
     fn.call(this, config);
   }
+}
+
+function requestBidsAfterHook(fn, ...args) {
+  const formatArray = function (arr) {
+    return arr.filter((i, k) => i !== null && arr.indexOf(i) === k);
+  }
+  const tcf2FinalResults = {
+    storageBlocked: formatArray(storageBlocked),
+    biddersBlocked: formatArray(biddersBlocked),
+    analyticsBlocked: formatArray(analyticsBlocked)
+  };
+
+  events.emit(EVENTS.TCF2_ENFORCEMENT, tcf2FinalResults);
+  fn.call(this, args)
 }
 
 /*
@@ -353,6 +375,7 @@ export function setEnforcementConfig(config) {
   if (purpose7Rule) {
     getHook('enableAnalyticsCb').before(enableAnalyticsHook);
   }
+  $$PREBID_GLOBAL$$.requestBids.after(requestBidsAfterHook);
 }
 
 config.getConfig('consentManagement', config => setEnforcementConfig(config.consentManagement));
