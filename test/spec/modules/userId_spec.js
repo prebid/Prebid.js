@@ -1195,7 +1195,7 @@ describe('User ID', function() {
       coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
-    })
+    });
 
     it('pubcid callback with url', function () {
       let adUnits = [getAdUnitMock()];
