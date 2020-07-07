@@ -57,7 +57,7 @@ export const spec = {
       let pubId = bid.params.pubId;
       if (bid.params.video.e2etest) {
         url = spec.E2ETESTENDPOINT;
-        pubId =  'HBExchange';
+        pubId = 'HBExchange';
       }
       return {
         method: 'POST',
