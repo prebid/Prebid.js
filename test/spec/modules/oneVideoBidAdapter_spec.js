@@ -257,13 +257,12 @@ describe('OneVideoBidAdapter', function () {
           }
         });
       let pbjsConfigSchain = config.getConfig();
-      pbjsConfigSchain = pbjsConfig.schain;
+      pbjsConfigSchain = pbjsConfigSchain.schain;
       const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const data = requests[0].data;
       const schain = data.source.ext.schain;
       expect(schain.nodes.length).to.equal(1);
-      expect(schain.complete).to.equal(1);
-      expect(schain.nodes[0]).to.equal(pbjsConfigSchain.nodes);
+      expect(schain).to.equal(pbjsConfigSchain.config);
     });
 
     it('it should create new schain and send it if video.params.sid exists', function () {
@@ -292,7 +291,7 @@ describe('OneVideoBidAdapter', function () {
           }
         });
       let pbjsConfigSchain = config.getConfig();
-      pbjsConfigSchain = pbjsConfig.schain;
+      pbjsConfigSchain = pbjsConfigSchain.schain;
       const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const data = requests[0].data;
       const schain = data.source.ext.schain;
