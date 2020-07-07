@@ -4,6 +4,21 @@ import logError from '../src/utils.js';
 
 const segCache = {};
 
+function setup () {
+  config.getConfig('jwpTargeting', (config) => {
+    // fetch media ids
+    const targeting = config.jwpTargeting;
+    if (!targeting) {
+      return;
+    }
+    const mediaIDs = targeting.mediaIDs;
+    mediaIDs.forEach(mediaID => {
+      console.log(mediaID);
+      fetchTargetingForMediaId(mediaID);
+    })
+  });
+}
+
 /**
  * @param bidRequest {object} - the bid which is passed to a prebid adapter for use in `buildRequests`
  * @returns {Array<string>} - an array of jwpseg targeting segments found for the given bidRequest information
@@ -35,26 +50,21 @@ export function getTargetingForBid(bidRequest) {
 }
 
 function getPlayer(playerID) {
-  return null;
-}
-
-function setup () {
-  config.getConfig('jwpTargeting', (config) => {
-    // fetch media ids
-    const targeting = config.jwpTargeting;
-    if (!targeting) {
-      return;
-    }
-    const mediaIDs = targeting.mediaIDs;
-    mediaIDs.forEach(mediaID => {
-      console.log(mediaID);
-      fetchTargetingForMediaId(mediaID);
-    })
-  });
+  var jwplayer = window.jwplayer;
+  if (!jwplayer) {
+    logError('jwplayer.js was not found on page');
+    return;
+  }
+  const player = jwplayer(playerID);
+  if (!player || !player.getPlaylist) {
+    logError('player ID did not match any players');
+    return;
+  }
+  return player;
 }
 
 function fetchTargetingForMediaId(mediaId) {
-  let ajax = ajaxBuilder(1500);
+  const ajax = ajaxBuilder(1500);
   ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`,
     {
       success: function (response) {
