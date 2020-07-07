@@ -1,5 +1,7 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
@@ -158,6 +160,7 @@ function isConsentRequired(consentData) {
 }
 
 function getRequestData(bid, consentData, bidRequest) {
+  let pbjsConfig = config.getConfig();
   let loc = bidRequest.refererInfo.referer;
   let page = (bid.params.site && bid.params.site.page) ? (bid.params.site.page) : (loc.href);
   let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : bidRequest.refererInfo.referer;
@@ -243,27 +246,28 @@ function getRequestData(bid, consentData, bidRequest) {
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
   }
-  if (bid.schain || bid.params.video.sid) {
-    let vsspSchain = {};
-    if (bid.schain) {
-      vsspSchain.ver = bid.schain.config.ver;
-      vsspSchain.complete = bid.schain.config.complete;
-      vsspSchain.nodes = bid.schain.config.nodes;
-    } else if (bid.params.video.sid) {
-      vsspSchain.complete = 1;
-      vsspSchain.nodes = [{
-        sid: bid.params.video.sid,
-        rid: bidData.id,
-      }];
-      if (bid.params.video.hp == 1) {
-        vsspSchain.nodes[0].hp = bid.params.video.hp;
-      }
-    }
+  if (bid.params.video.sid) {
     bidData.source = {
       ext: {
-        schain: vsspSchain
+        schain: {
+          complete: 1,
+          nodes: [{
+            sid: bid.params.video.sid,
+            rid: bidData.id,
+          }]
+        }
       }
     }
+    if (bid.params.video.hp == 1) {
+      bidData.source.ext.schain.nodes[0].hp = bid.params.video.hp;
+    }
+  } else if (pbjsConfig.schain) {
+    bidData.source = {
+      ext: {
+        schain: pbjsConfig.schain.config
+      }
+    }
+    bidData.source.ext.schain.nodes[0].rid = bidData.id;
   }
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
