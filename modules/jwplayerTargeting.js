@@ -1,7 +1,7 @@
-import config from '../src/config.js';
-import ajaxBuilder from '../src/ajax.js';
-import logError from '../src/utils.js';
-import getGlobal from '../src/prebidGlobal.js';
+import { config } from '../src/config.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { logError } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const segCache = {};
 let pendingRequests = 0;
@@ -24,16 +24,18 @@ function setup () {
   });
 
   getGlobal().requestBids.before(function(nextFn, reqBidsConfigObj) {
-    console.log('before requestBids');
+    console.error('karim before requestBids', reqBidsConfigObj);
     if (pendingRequests <= 0) {
+      console.log('karim no pending reqs');
       nextFn.apply(this, [reqBidsConfigObj]);
       return;
     }
     requestTimeout = setTimeout(() => {
-      console.log('Request for targeting info timed out')
+      console.log('karim Request for targeting info timed out')
       nextFn.apply(this, [reqBidsConfigObj]);
     }, 1500);
 
+    console.log('karim storing req');
     resumeBidRequest = nextFn.bind(this, reqBidsConfigObj);
   });
 }
@@ -46,26 +48,40 @@ export function getTargetingForBid(bidRequest) {
   console.log('karim getTargetingForBid');
   const jwpTargeting = bidRequest.jwpTargeting;
   if (!jwpTargeting) {
+    console.log('karim no targeting');
     return [];
   }
   const { mediaID, playerID } = jwpTargeting;
   let segments = segCache[mediaID];
   if (segments) {
+    console.log('karim got segs from cache');
     return segments;
   }
 
   const player = getPlayer(playerID);
   if (!player) {
+    console.log('karim no player');
     return [];
   }
+  console.log('karim playlist ? ', player.getPlaylist());
 
-  let item = player.getPlaylist().filter(item => item.mediaid === mediaID);
+  const playlist = player.getPlaylist();
+  let item = playlist.find(item => item.mediaid === mediaID);
   if (item) {
     segments = item.jwpseg;
     segCache[mediaID] = segments;
-    return segments;
+    console.log('karim mediaId: ', item);
+    console.log('karim got seg from playlist');
+    return segments || [];
   }
-  return player.getPlaylistItem().jwpseg;
+
+  item = player.getPlaylistItem();
+  if (item) {
+    console.log('karim got seg from current item');
+    console.log('karim getPlaylistItem ? ', player.getPlaylistItem());
+    return item.jwpseg || [];
+  }
+  return [];
 }
 
 function getPlayer(playerID) {
@@ -117,10 +133,12 @@ function onRequestCompleted() {
   }
 
   if (requestTimeout) {
+    console.log('karim clear Timeout bid req');
     clearTimeout(requestTimeout);
   }
 
   if (resumeBidRequest) {
+    console.log('karim resume bid req');
     resumeBidRequest();
   }
 }
