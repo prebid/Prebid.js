@@ -85,6 +85,17 @@ export const spec = {
       }
     });
 
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      if (!openRtbBidRequest.regs) {
+        openRtbBidRequest.regs = {};
+      }
+      if (!openRtbBidRequest.regs.ext) {
+        openRtbBidRequest.regs.ext = {};
+      }
+      openRtbBidRequest.regs.ext.us_privacy = bidderRequest.uspConsent;
+    }
+
     if (openRtbBidRequest.imp.length && seatId) {
       return {
         method: 'POST',
