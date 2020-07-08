@@ -13,7 +13,6 @@ import { getHook } from '../src/hook.js';
 import { validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
-import $$PREBID_GLOBAL$$ from '../src/prebid.js';
 
 const TCF2 = {
   'purpose1': { id: 1, name: 'storage' },
@@ -250,8 +249,8 @@ export function userIdHook(fn, submodules, consentData) {
 }
 
 /**
- * Checks if a bidder is allowed in Auction.
- * Enforces "purpose 2 (basic ads)" of TCF v2.0 spec
+ * Checks if bidders are allowed in the auction.
+ * Enforces "purpose 2 (Basic Ads)" of TCF v2.0 spec
  * @param {Function} fn - Function reference to the original function.
  * @param {Array<adUnits>} adUnits
  */
@@ -283,11 +282,12 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
 }
 
 /**
- * Checks if Analytics Adapters are allowed to send data to their servers.
+ * Checks if Analytics adapters are allowed to send data to their servers for furhter processing.
+ * Enforces "purpose 7 (Measurement)" of TCF v2.0 spec
  * @param {Function} fn - Function reference to the original function.
- * @param {Array<analyticsAdapterConfig>} config
+ * @param {Array<AnalyticsAdapterConfig>} config - Configuration object passed to pbjs.enableAnalytics()
  */
-function enableAnalyticsHook(fn, config) {
+export function enableAnalyticsHook(fn, config) {
   const consentData = gdprDataHandler.getConsentData();
   if (consentData && consentData.gdprApplies) {
     if (consentData.apiVersion === 2) {
@@ -314,7 +314,11 @@ function enableAnalyticsHook(fn, config) {
   }
 }
 
-function requestBidsAfterHook(fn, ...args) {
+/**
+ * Compiles the TCF2.0 enforcement results into an object, which is emitted as an event payload to "tcf2Enforcement" event.
+ */
+function emitTCF2FinalResults() {
+  // remove null and duplicate values
   const formatArray = function (arr) {
     return arr.filter((i, k) => i !== null && arr.indexOf(i) === k);
   }
@@ -325,11 +329,12 @@ function requestBidsAfterHook(fn, ...args) {
   };
 
   events.emit(EVENTS.TCF2_ENFORCEMENT, tcf2FinalResults);
-  fn.call(this, args)
 }
 
+events.on(EVENTS.AUCTION_END, emitTCF2FinalResults);
+
 /*
-  Set of callback functions used to detect presend of a TCF rule, passed as the second argument to find().
+  Set of callback functions used to detect presence of a TCF rule, passed as the second argument to find().
 */
 const hasPurpose1 = (rule) => { return rule.purpose === TCF2.purpose1.name }
 const hasPurpose2 = (rule) => { return rule.purpose === TCF2.purpose2.name }
@@ -374,7 +379,6 @@ export function setEnforcementConfig(config) {
   if (purpose7Rule) {
     getHook('enableAnalyticsCb').before(enableAnalyticsHook);
   }
-  $$PREBID_GLOBAL$$.requestBids.after(requestBidsAfterHook);
 }
 
 config.getConfig('consentManagement', config => setEnforcementConfig(config.consentManagement));
