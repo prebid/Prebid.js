@@ -1,4 +1,4 @@
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
@@ -11,9 +11,12 @@ let consentString = null;
 export const tripleliftAdapterSpec = {
 
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
-  isBidRequestValid: function(bid) {
-    return (typeof bid.params.inventoryCode !== 'undefined');
+  supportedMediaTypes: [BANNER, VIDEO],
+  isBidRequestValid: function (bid) {
+    if (bid.mediaTypes.video) {
+      if (!bid.params.video) return false;
+    }
+    return typeof bid.params.inventoryCode !== 'undefined';
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
@@ -108,14 +111,18 @@ function _buildPostBody(bidRequests) {
   let data = {};
   let { schain } = bidRequests[0];
   data.imp = bidRequests.map(function(bid, index) {
-    return {
+    let imp = {
       id: index,
       tagid: bid.params.inventoryCode,
-      floor: _getFloor(bid),
-      banner: {
-        format: _sizes(bid.sizes)
-      }
+      floor: _getFloor(bid)
     };
+
+    if (bid.mediaTypes.video) {
+      imp.video = bid.params.video;
+    } else if (bid.mediaTypes.banner) {
+      imp.banner = { format: _sizes(bid.sizes) };
+    };
+    return imp;
   });
 
   let eids = [
@@ -207,10 +214,11 @@ function _buildResponseObject(bidderRequest, bid) {
   let height = bid.height || 1;
   let dealId = bid.deal_id || '';
   let creativeId = bid.crid || '';
+  let breq = bidderRequest.bids[bid.imp_id];
 
   if (bid.cpm != 0 && bid.ad) {
     bidResponse = {
-      requestId: bidderRequest.bids[bid.imp_id].bidId,
+      requestId: breq.bidId,
       cpm: bid.cpm,
       width: width,
       height: height,
@@ -220,7 +228,12 @@ function _buildResponseObject(bidderRequest, bid) {
       dealId: dealId,
       currency: 'USD',
       ttl: 300,
-      tl_source: bid.tl_source,
+      tl_source: bid.tl_source
+    };
+
+    if (breq.mediaTypes.video) {
+      bidResponse.vastXml = bid.ad;
+      bidResponse.mediaType = 'video';
     };
   };
   return bidResponse;
