@@ -18,8 +18,11 @@ function mapMediaType(seedtagMediaType) {
   else return seedtagMediaType;
 }
 
-function getMediaTypeFromBid(bid) {
-  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0]
+function hasVideoMediaType(bid) {
+  return Object.keys(bid.mediaTypes)
+    .some(function(mt) {
+      return mt === VIDEO;
+    });
 }
 
 function hasMandatoryParams(params) {
@@ -34,7 +37,7 @@ function hasMandatoryParams(params) {
   );
 }
 
-function hasVideoMandatoryParams(mediaTypes) {
+function hasMandatoryVideoParams(mediaTypes) {
   const isVideoInStream =
     !!mediaTypes.video && mediaTypes.video.context === 'instream';
   const isPlayerSize =
@@ -65,7 +68,7 @@ function buildBidRequests(validBidRequests) {
       bidRequest.adPosition = params.adPosition;
     }
 
-    if (params.video) {
+    if (hasVideoMediaType(validBidRequest)) {
       bidRequest.videoParams = params.video || {};
       bidRequest.videoParams.w =
         validBidRequest.mediaTypes.video.playerSize[0][0];
@@ -124,8 +127,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return getMediaTypeFromBid(bid) === VIDEO
-      ? hasMandatoryParams(bid.params) && hasVideoMandatoryParams(bid.mediaTypes)
+    return hasVideoMediaType(bid)
+      ? hasMandatoryParams(bid.params) && hasMandatoryVideoParams(bid.mediaTypes)
       : hasMandatoryParams(bid.params);
   },
 
