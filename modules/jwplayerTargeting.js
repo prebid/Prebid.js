@@ -1,22 +1,20 @@
 import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { logError } from '../src/utils.js';
+import { logError, isPlainObject } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { module } from '../src/hook.js';
 
 const segCache = {};
-let pendingRequests = 0;
+let requestCount = 0;
 let requestTimeout;
 let resumeBidRequest;
 
 function setup () {
   config.getConfig('jwpTargeting', (config) => {
     // fetch media ids
-    const targeting = config.jwpTargeting;
-    if (!targeting) {
-      return;
-    }
-    const mediaIDs = targeting.mediaIDs;
-    pendingRequests = mediaIDs.length;
+    console.log('karim config');
+    const mediaIDs = config.jwpTargeting.mediaIDs;
+    requestCount = mediaIDs.length;
     mediaIDs.forEach(mediaID => {
       console.log(mediaID);
       fetchTargetingForMediaId(mediaID);
@@ -25,7 +23,7 @@ function setup () {
 
   getGlobal().requestBids.before(function(nextFn, reqBidsConfigObj) {
     console.error('karim before requestBids', reqBidsConfigObj);
-    if (pendingRequests <= 0) {
+    if (requestCount <= 0) {
       console.log('karim no pending reqs');
       nextFn.apply(this, [reqBidsConfigObj]);
       return;
@@ -127,8 +125,8 @@ function fetchTargetingForMediaId(mediaId) {
 }
 
 function onRequestCompleted() {
-  pendingRequests--;
-  if (pendingRequests > 0) {
+  requestCount--;
+  if (requestCount > 0) {
     return;
   }
 
@@ -144,3 +142,21 @@ function onRequestCompleted() {
 }
 
 setup();
+
+const sharedMethods = {
+  'getTargetingForBid': getTargetingForBid
+}
+Object.freeze(sharedMethods);
+
+module('jwplayer', function shareJWPlayerUtilities(...args) {
+  if (!isPlainObject(args[0])) {
+    logError('JW Player module requires plain object to share methods with submodule');
+    return;
+  }
+  function addMethods(object, func) {
+    for (let name in func) {
+      object[name] = func[name];
+    }
+  }
+  addMethods(args[0], sharedMethods);
+});
