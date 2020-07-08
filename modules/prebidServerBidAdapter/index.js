@@ -71,6 +71,7 @@ config.setDefaults({
  * @property {string} endpoint endpoint to contact
  *  === optional params below ===
  * @property {number} [timeout] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
+ * @property {number} [defaultTtl] ttl for S2S bidders when pbs does not return a ttl on the response - defaults to 60`
  * @property {boolean} [cacheMarkup] whether to cache the adm result
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
@@ -832,7 +833,8 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.currency = (response.cur) ? response.cur : DEFAULT_S2S_CURRENCY;
 
           // TODO: Remove when prebid-server returns ttl and netRevenue
-          bidObject.ttl = (bid.ttl) ? bid.ttl : DEFAULT_S2S_TTL;
+          const configTtl = _s2sConfig.defaultTtl || DEFAULT_S2S_TTL;
+          bidObject.ttl = (bid.ttl) ? bid.ttl : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
           bids.push({ adUnit: bid.impid, bid: bidObject });

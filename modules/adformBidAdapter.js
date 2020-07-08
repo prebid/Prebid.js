@@ -20,6 +20,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     var i, l, j, k, bid, _key, _value, reqParams, netRevenue, gdprObject;
     const currency = config.getConfig('currency.adServerCurrency');
+    const eids = getEncodedEIDs(utils.deepAccess(validBidRequests, '0.userIdAsEids'));
 
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
@@ -64,6 +65,10 @@ export const spec = {
       request.push('us_privacy=' + bidderRequest.uspConsent);
     }
 
+    if (eids) {
+      request.push('eids=' + eids);
+    }
+
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];
       _value = globalParams[i][1];
@@ -90,6 +95,28 @@ export const spec = {
       }
 
       return encodeURIComponent(btoa(url.join('').slice(0, -1)));
+    }
+
+    function getEncodedEIDs(eids) {
+      if (utils.isArray(eids) && eids.length > 0) {
+        const parsed = parseEIDs(eids);
+        return encodeURIComponent(btoa(JSON.stringify(parsed)));
+      }
+    }
+
+    function parseEIDs(eids) {
+      return eids.reduce((result, eid) => {
+        const source = eid.source;
+        result[source] = result[source] || {};
+
+        eid.uids.forEach(value => {
+          const id = value.id + '';
+          result[source][id] = result[source][id] || [];
+          result[source][id].push(value.atype);
+        });
+
+        return result;
+      }, {});
     }
   },
   interpretResponse: function (serverResponse, bidRequest) {
