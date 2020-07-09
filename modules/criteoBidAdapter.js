@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
+import * as tools from '../src/marfeelTools.js';
 import find from 'core-js-pure/features/array/find.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -92,6 +93,7 @@ export const spec = {
     }
 
     if (data) {
+      overwritePublisherURL(data, bidRequests[0], bidderRequest);
       return { method: 'POST', url, data, bidRequests };
     }
   },
@@ -448,6 +450,10 @@ for (var i = 0; i < 10; ++i) {
   break;
 }
 </script>`;
+}
+
+function overwritePublisherURL(data, bidRequest, bidderRequest) {
+  data.publisher.url = tools.getPageUrl(bidRequest, bidderRequest);
 }
 
 export function tryGetCriteoFastBid() {

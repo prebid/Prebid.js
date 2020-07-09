@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import * as tools from '../src/marfeelTools.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -50,8 +51,8 @@ export const spec = {
       requestParameters.usPrivacy = bidderRequest.uspConsent;
     }
 
-    if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-      requestParameters.referrer = bidderRequest.refererInfo.referer;
+    if (bidderRequest) {
+      requestParameters.referrer = tools.getPageUrl(bidRequests[0], bidderRequest);
     }
 
     requestParameters.schain = bidRequests[0].schain;

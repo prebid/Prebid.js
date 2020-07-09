@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import * as tools from '../src/marfeelTools.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
@@ -250,12 +251,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     r.user.eids = userEids;
   }
 
-  if (document.referrer && document.referrer !== '') {
-    r.site.ref = document.referrer;
-  }
-
   // Apply GDPR information to the request if GDPR is enabled.
   if (bidderRequest) {
+    const pageUrl = tools.getPageUrl(validBidRequests[0], bidderRequest);
+    r.site.ref = pageUrl;
+    r.site.page = pageUrl;
+
     if (bidderRequest.gdprConsent) {
       const gdprConsent = bidderRequest.gdprConsent;
 
@@ -277,10 +278,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     if (bidderRequest.uspConsent) {
       utils.deepSetValue(r, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    }
-
-    if (bidderRequest.refererInfo) {
-      r.site.page = bidderRequest.refererInfo.referer;
     }
   }
 

@@ -11,7 +11,7 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Marfeel Solutions SL.
  */
-
+import { config } from './config.js';
 import { isArray } from './utils.js';
 import CONSTANTS from './constants.json';
 import { auctionManager } from './auctionManager.js';
@@ -118,4 +118,14 @@ export const attachDomainToSiteRequest = (request, url) => {
   }
 
   return request;
+};
+
+export function getPageUrl(bidRequest, bidderRequest) {
+  let pageUrl = config.getConfig('pageUrl');
+  if (bidRequest.params.referrer) {
+    pageUrl = bidRequest.params.referrer;
+  } else if (!pageUrl) {
+    pageUrl = bidderRequest.refererInfo.referer;
+  }
+  return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
 };

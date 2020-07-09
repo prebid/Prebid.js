@@ -1,5 +1,6 @@
 import { Renderer } from '../src/Renderer.js';
 import * as utils from '../src/utils.js';
+import * as tools from '../src/marfeelTools.js';
 import { config } from '../src/config.js';
 import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
@@ -171,7 +172,7 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        rd_ref: encodeURIComponent(tools.getPageUrl(bidRequests[0], bidderRequest)),
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')

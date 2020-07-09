@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import * as tools from '../src/marfeelTools.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -509,7 +510,7 @@ export const spec = {
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
       'p_geo.longitude': isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4),
       'tg_fl.eid': bidRequest.code,
-      'rf': _getPageUrl(bidRequest, bidderRequest)
+      'rf': tools.getPageUrl(bidRequest, bidderRequest)
     };
 
     // If floors module is enabled and we get USD floor back, send it in rp_hard_floor else undfined
@@ -859,21 +860,6 @@ function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
   return digiTrustQueryParams;
 }
 
-/**
- * @param {BidRequest} bidRequest
- * @param bidderRequest
- * @returns {string}
- */
-function _getPageUrl(bidRequest, bidderRequest) {
-  let pageUrl = config.getConfig('pageUrl');
-  if (bidRequest.params.referrer) {
-    pageUrl = bidRequest.params.referrer;
-  } else if (!pageUrl) {
-    pageUrl = bidderRequest.refererInfo.referer;
-  }
-  return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
-}
-
 function _renderCreative(script, impId) {
   return `<html>
 <head><script type='text/javascript'>inDapIF=true;</script></head>
@@ -931,7 +917,7 @@ function appendSiteAppDevice(data, bidRequest, bidderRequest) {
     data.app = config.getConfig('app');
   } else {
     data.site = {
-      page: _getPageUrl(bidRequest, bidderRequest)
+      page: tools.getPageUrl(bidRequest, bidderRequest)
     }
   }
   if (typeof config.getConfig('device') === 'object') {
