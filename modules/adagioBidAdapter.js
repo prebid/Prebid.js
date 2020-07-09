@@ -214,7 +214,7 @@ export const _features = {
       const sfGeom = ws.$sf.ext.geom().self;
       position.x = Math.round(sfGeom.t);
       position.y = Math.round(sfGeom.l);
-    } else {
+    } else if (canAccessTopWindow()) {
       // window.top based computing
       const wt = utils.getWindowTop();
       const d = wt.document;
@@ -222,10 +222,11 @@ export const _features = {
       let domElement;
 
       if (postBid === true) {
-        const currentElement = window.document.getElementById(adUnitElementId);
-        domElement = internal.getElementFromTopWindow(currentElement, window);
+        const ws = utils.getWindowSelf();
+        const currentElement = ws.document.getElementById(adUnitElementId);
+        domElement = internal.getElementFromTopWindow(currentElement, ws);
       } else {
-        domElement = window.top.document.getElementById(adUnitElementId);
+        domElement = wt.document.getElementById(adUnitElementId);
       }
 
       if (!domElement) {
@@ -253,6 +254,8 @@ export const _features = {
       }
       position.x = Math.round(box.left + scrollLeft - clientLeft);
       position.y = Math.round(box.top + scrollTop - clientTop);
+    } else {
+      return '';
     }
 
     return `${position.x}x${position.y}`;
@@ -405,10 +408,18 @@ function getElementFromTopWindow(element, currentWindow) {
       return element;
     } else {
       const frame = currentWindow.frameElement;
-      return this.getElementFromTopWindow(frame, currentWindow.parent);
+      const frameClientRect = frame.getBoundingClientRect();
+      const elementClientRect = element.getBoundingClientRect();
+
+      if (frameClientRect.width !== elementClientRect.width || frameClientRect.height !== elementClientRect.height) {
+        return false;
+      }
+
+      return getElementFromTopWindow(frame, currentWindow.parent);
     }
   } catch (err) {
-    utils.logWarn(err);
+    utils.logWarn(`${LOG_PREFIX}`, err);
+    return false;
   }
 };
 
