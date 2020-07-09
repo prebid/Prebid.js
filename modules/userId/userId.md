@@ -30,7 +30,7 @@ pbjs.setConfig({
             },
             storage: {
                 type: "cookie",
-                name: "id5id",
+                name: "id5id.1st",
                 expires: 90, // Expiration of cookies in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
