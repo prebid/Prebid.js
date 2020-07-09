@@ -1,6 +1,6 @@
 {
   "name": "@marfeel/adserver-providers-prebid-library",
-  "version": "3.23.0-pre-marfeel-3",
+  "version": "3.23.0-pre-marfeel-4",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {

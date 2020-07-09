@@ -7,7 +7,7 @@ import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
-const SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
+const SECURE_BID_URL = 'https://htlb.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BANNER_ENDPOINT_VERSION = 7.2;
 const VIDEO_ENDPOINT_VERSION = 8.1;
