@@ -67,7 +67,7 @@ export function browserIsChrome() {
 }
 
 export function browserIsSafari() {
-  if (navigator.vendor.indexOf('Apple')) {
+  if (navigator.vendor.indexOf('Apple') !== -1) {
     return 'Safari'
   } else {
     return false;
