@@ -769,10 +769,9 @@ describe('Adagio bid adapter', () => {
       });
 
       it('should compute the page dimensions based on body and viewport dimensions', function() {
-        sandbox.stub(global.top.document, 'querySelector').withArgs('body').returns({ scrollHeight: 1000, offsetHeight: 2000 });
-        sandbox.stub(_features, 'getViewPortDimensions').returns('960x800');
+        sandbox.stub(global.top.document, 'querySelector').withArgs('body').returns({ scrollWidth: 1360, offsetWidth: 1280, scrollHeight: 2000, offsetHeight: 1000 });
         const result = _features.getPageDimensions();
-        expect(result).to.eq('960x2000');
+        expect(result).to.eq('1360x2000');
       });
     });
 

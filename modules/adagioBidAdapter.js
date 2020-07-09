@@ -116,24 +116,18 @@ export const _features = {
       return '';
     }
 
-    // the page dimension can be properly computed when window.top
-    // is accessible.
+    // the page dimension can be computed on window.top only.
     const wt = utils.getWindowTop();
-    const viewportDims = _features.getViewPortDimensions().split('x');
     const body = wt.document.querySelector('body');
 
     if (!body) {
       return '';
     }
-
-    const pageDims = { w: 0, h: 0 };
     const html = wt.document.documentElement;
+    const pageWidth = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
     const pageHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
-    pageDims.w = viewportDims[0];
-    pageDims.h = pageHeight;
-
-    return `${pageDims.w}x${pageDims.h}`;
+    return `${pageWidth}x${pageHeight}`;
   },
 
   getViewPortDimensions() {
