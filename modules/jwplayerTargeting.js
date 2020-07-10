@@ -145,7 +145,7 @@ const jwplayerUtilities = {
   'getTargetingForBid': getTargetingForBid
 };
 
-module('jwplayer', function shareJWPlayerUtilities() {
+module('jwplayerTargeting', function shareJWPlayerUtilities() {
   const host = arguments[0];
   if (!isPlainObject(host)) {
     logError('JW Player module requires plain object to share methods with submodule');
