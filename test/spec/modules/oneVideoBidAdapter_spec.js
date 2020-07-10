@@ -238,7 +238,6 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.h).to.equal(height);
     });
 
-
     it('should set pubId to HBExchange when bid.params.video.e2etest = true', function () {
       bidRequest.params.video.e2etest = true;
       const requests = spec.buildRequests([ bidRequest ], bidderRequest);
