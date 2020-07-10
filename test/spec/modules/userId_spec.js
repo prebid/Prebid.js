@@ -1546,6 +1546,7 @@ describe('User ID', function() {
 
       // init consent management
       window.__cmp = function () { };
+      delete window.__tcfapi;
       testConsentData = {
         gdprApplies: true,
         consentData: 'xyz',
