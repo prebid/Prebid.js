@@ -159,17 +159,23 @@ export function setSubmoduleRegistry(submodules) {
 }
 
 /**
- * @param {SubmoduleStorage} storage
+ * @param {SubmoduleContainer} submodule
  * @param {(Object|string)} value
  */
-function setStoredValue(storage, value) {
+function setStoredValue(submodule, value) {
+  /**
+   * @type {SubmoduleStorage}
+   */
+  const storage = submodule.config.storage;
+  const domainOverride = (typeof submodule.submodule.domainOverride === 'function') ? submodule.submodule.domainOverride() : null;
+
   try {
     const valueStr = utils.isPlainObject(value) ? JSON.stringify(value) : value;
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     if (storage.type === COOKIE) {
-      coreStorage.setCookie(storage.name, valueStr, expiresStr, 'Lax');
+      coreStorage.setCookie(storage.name, valueStr, expiresStr, 'Lax', domainOverride);
       if (typeof storage.refreshInSeconds === 'number') {
-        coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr);
+        coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr, '/', domainOverride);
       }
     } else if (storage.type === LOCAL_STORAGE) {
       coreStorage.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
@@ -246,7 +252,8 @@ function processSubmoduleCallbacks(submodules, cb) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         if (submodule.config.storage) {
-          setStoredValue(submodule.config.storage, idObj);
+          // setStoredValue(submodule.config.storage, idObj);
+          setStoredValue(submodule, idObj);
         }
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj);
@@ -437,7 +444,8 @@ function initSubmodules(submodules, consentData) {
       if (utils.isPlainObject(response)) {
         if (response.id) {
           // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
-          setStoredValue(submodule.config.storage, response.id);
+          // setStoredValue(submodule.config.storage, response.id);
+          setStoredValue(submodule, response.id);
           storedId = response.id;
         }
 
