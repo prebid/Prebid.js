@@ -22,9 +22,9 @@ Performax bid adapter supports Banner.
             sizes: [[300, 300]],
             bids: [
                 {
-                    bidder: "otm",
+                    bidder: "performax",
                     params: {
-                        slotId: 2   // required
+                        slotId: 28   // required
                     }
                 }
             ]
