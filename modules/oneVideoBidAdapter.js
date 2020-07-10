@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
@@ -160,7 +159,6 @@ function isConsentRequired(consentData) {
 }
 
 function getRequestData(bid, consentData, bidRequest) {
-  let pbjsConfig = config.getConfig();
   let loc = bidRequest.refererInfo.referer;
   let page = (bid.params.site && bid.params.site.page) ? (bid.params.site.page) : (loc.href);
   let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : bidRequest.refererInfo.referer;
@@ -261,10 +259,10 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.hp == 1) {
       bidData.source.ext.schain.nodes[0].hp = bid.params.video.hp;
     }
-  } else if (pbjsConfig.schain) {
+  } else if (bid.schain) {
     bidData.source = {
       ext: {
-        schain: pbjsConfig.schain.config
+        schain: bid.schain
       }
     }
     bidData.source.ext.schain.nodes[0].rid = bidData.id;
