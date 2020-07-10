@@ -147,18 +147,12 @@ describe('ats analytics adapter', function () {
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
     })
     it('check browser is not safari', function () {
-      Object.defineProperty(window.navigator, 'vendor', {
-        value: 'Google Inc.',
-        writable: true
-      });
+      window.safari = undefined;
       let browser = browserIsSafari();
       expect(browser).to.equal(false);
     })
     it('check browser is safari', function () {
-      Object.defineProperty(window.navigator, 'vendor', {
-        value: 'Apple Computer, Inc.',
-        writable: true
-      });
+      window.safari = {};
       let browser = browserIsSafari();
       expect(browser).to.equal('Safari');
     })
