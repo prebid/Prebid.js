@@ -12,25 +12,30 @@ let resumeBidRequest;
 function setup () {
   config.getConfig('jwpTargeting', (config) => {
     // fetch media ids
-    const mediaIDs = config.jwpTargeting.mediaIDs;
-    requestCount = mediaIDs.length;
-    mediaIDs.forEach(mediaID => {
-      console.log(mediaID);
-      fetchTargetingForMediaId(mediaID);
-    })
+    fetchTargetingInformation(config.jwpTargeting)
   });
 
-  getGlobal().requestBids.before(function(nextFn, reqBidsConfigObj) {
-    if (requestCount <= 0) {
-      nextFn.apply(this, [reqBidsConfigObj]);
-      return;
-    }
-    requestTimeout = setTimeout(() => {
-      nextFn.apply(this, [reqBidsConfigObj]);
-    }, 1500);
+  getGlobal().requestBids.before(onFetchCompetion);
+}
 
-    resumeBidRequest = nextFn.bind(this, reqBidsConfigObj);
+export function fetchTargetingInformation(jwTargeting) {
+  const mediaIDs = jwTargeting.mediaIDs;
+  requestCount = mediaIDs.length;
+  mediaIDs.forEach(mediaID => {
+    fetchTargetingForMediaId(mediaID);
   });
+}
+
+export function onFetchCompetion(nextFn, reqBidsConfigObj) {
+  if (requestCount <= 0) {
+    nextFn.apply(this, [reqBidsConfigObj]);
+    return;
+  }
+  requestTimeout = setTimeout(() => {
+    nextFn.apply(this, [reqBidsConfigObj]);
+  }, 1500);
+
+  resumeBidRequest = nextFn.bind(this, reqBidsConfigObj);
 }
 
 /**
@@ -43,7 +48,9 @@ export function getTargetingForBid(bidRequest) {
     return [];
   }
 
-  const { mediaID, playerID } = jwpTargeting;
+  const playerID = jwpTargeting.playerID;
+  let mediaID = jwpTargeting.mediaID;
+  // const { mediaID, playerID } = jwpTargeting;
   let segments = segCache[mediaID];
   if (segments) {
     return segments;
@@ -54,7 +61,14 @@ export function getTargetingForBid(bidRequest) {
     return [];
   }
 
-  let item = mediaID ? player.getPlaylist().find(item => item.mediaid === mediaID) : player.getPlaylistItem();
+  let item;
+  if (mediaID) {
+    item = player.getPlaylist().find(item => item.mediaid === mediaID);
+  } else {
+    item = player.getPlaylistItem();
+    mediaID = item.mediaid;
+  }
+
   if (item) {
     segments = item.jwpseg;
   }
@@ -67,21 +81,24 @@ export function getTargetingForBid(bidRequest) {
 }
 
 function getPlayer(playerID) {
+  // console.log('window: ', window, this);
   var jwplayer = window.jwplayer;
   if (!jwplayer) {
+    console.log('karim no player.js');
     logError('jwplayer.js was not found on page');
     return;
   }
 
   const player = jwplayer(playerID);
   if (!player || !player.getPlaylist) {
+    console.log('karim no player instance');
     logError('player ID did not match any players');
     return;
   }
   return player;
 }
 
-function fetchTargetingForMediaId(mediaId) {
+export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder(1500);
   ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`,
     {
