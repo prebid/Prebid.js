@@ -8,10 +8,6 @@ import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 import { getStorageManager } from '../src/storageManager.js';
-// import {getTargetingForBid} from './jwplayerTargeting.js';
-import { submodule } from '../src/hook.js';
-
-export const jwplayerUtils = {};
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -226,24 +222,6 @@ export const spec = {
     }
 
     const request = formatRequest(payload, bidderRequest);
-    request.jwpTargeting = {
-      playerID: 'karim',
-      mediaID: '2XZFlRuo'
-    };
-    const targ = jwplayerUtils.getTargetingForBid(request);
-    console.log('karim target Info: ', targ);
-    request.jwpTargeting = {
-      playerID: 'karim',
-      mediaID: 'kmoSeg'
-    };
-    const targ2 = jwplayerUtils.getTargetingForBid(request);
-    console.log('karim target Info 2: ', targ2);
-    request.jwpTargeting = {
-      playerID: 'karim',
-      mediaID: 'kmoNoSeg'
-    };
-    const targ3 = jwplayerUtils.getTargetingForBid(request);
-    console.log('karim target Info 3: ', targ3);
     return request;
   },
 
@@ -967,4 +945,3 @@ function parseMediaType(rtbBid) {
 }
 
 registerBidder(spec);
-submodule('jwplayer', jwplayerUtils);
