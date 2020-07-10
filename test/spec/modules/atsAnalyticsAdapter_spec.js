@@ -146,5 +146,44 @@ describe('ats analytics adapter', function () {
       expect(atsAnalyticsAdapter.context.host).to.equal(initOptions.host);
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
     })
+    it('check browser is not safari', function () {
+      let browser = browserIsSafari();
+      expect(browser).to.equal(false);
+    })
+    it('check browser is safari', function () {
+      Object.defineProperty(window.navigator, 'vendor', {
+        value: 'Apple Computer, Inc.',
+        writable: true
+      });
+      let browser = browserIsSafari();
+      expect(browser).to.equal('Safari');
+    })
+    it('check browser is not chrome', function () {
+      let browser = browserIsChrome();
+      expect(browser).to.equal(false);
+    })
+    it('check browser is chrome', function () {
+      window.chrome = {
+        app: {},
+        webstore: {},
+        runtime: {}
+      };
+      let browser = browserIsChrome();
+      expect(browser).to.equal('Chrome');
+    })
+    it('check browser is edge', function () {
+      Object.defineProperty(window, 'StyleMedia', {
+        value: {},
+        writable: true
+      });
+      document.documentMode = undefined;
+      let browser = browserIsEdge();
+      expect(browser).to.equal('Edge');
+    })
+    it('check browser is not edge', function () {
+      document.documentMode = {};
+      let browser = browserIsEdge();
+      expect(browser).to.equal(false);
+    })
   })
 })
