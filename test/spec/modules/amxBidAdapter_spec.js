@@ -1,10 +1,7 @@
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/amxBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { formatQS } from 'src/utils';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 const sampleRequestId = '82c91e127a9b93e';
 const sampleDisplayAd = (additionalImpressions) => `<script src='https://assets.a-mo.net/tmode.v1.js'></script>${additionalImpressions}`;
@@ -190,17 +187,19 @@ describe('AmxBidAdapter', () => {
       expect(method).to.equal('POST');
       expect(Object.keys(data.m).length).to.equal(2);
       expect(data.m[sampleRequestId]).to.deep.equal({
-        av: false,
+        av: true,
         aw: 300,
         ah: 250,
-        tf: 0
+        tf: 0,
+        vr: false
       });
       expect(data.m[sampleRequestId + '_2']).to.deep.equal({
-        av: false,
+        av: true,
         aw: 300,
         i: 'example',
         ah: 250,
-        tf: 0
+        tf: 0,
+        vr: false,
       });
     });
 
@@ -211,7 +210,8 @@ describe('AmxBidAdapter', () => {
         av: true,
         aw: 360,
         ah: 250,
-        tf: 0
+        tf: 0,
+        vr: true
       });
     });
   });
@@ -330,7 +330,7 @@ describe('AmxBidAdapter', () => {
       try {
         const parsed = new URL(firedPixels[0]);
         const nestedData = parsed.searchParams.get('c2');
-        expect(nestedData).to.equal(formatQS({
+        expect(nestedData).to.equal(utils.formatQS({
           hb_pb: '1.23',
           hb_adid: 'ad-id',
           hb_bidder: 'example'
