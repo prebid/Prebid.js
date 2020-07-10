@@ -10,9 +10,9 @@ let requestTimeout;
 let resumeBidRequest;
 
 function setup () {
-  config.getConfig('jwpTargeting', (config) => {
+  config.getConfig('jwTargeting', (config) => {
     // fetch media ids
-    fetchTargetingInformation(config.jwpTargeting)
+    fetchTargetingInformation(config.jwTargeting)
   });
 
   getGlobal().requestBids.before(onFetchCompetion);
@@ -44,13 +44,13 @@ export function onFetchCompetion(nextFn, reqBidsConfigObj) {
  * @returns {Array<string>} - an array of jwpseg targeting segments found for the given bidRequest information
  */
 export function getTargetingForBid(bidRequest) {
-  const jwpTargeting = bidRequest.jwpTargeting;
-  if (!jwpTargeting) {
+  const jwTargeting = bidRequest.jwTargeting;
+  if (!jwTargeting) {
     return [];
   }
 
-  const playerID = jwpTargeting.playerID;
-  let mediaID = jwpTargeting.mediaID;
+  const playerID = jwTargeting.playerID;
+  let mediaID = jwTargeting.mediaID;
   let segments = segCache[mediaID];
   if (segments) {
     return segments;

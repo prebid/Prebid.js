@@ -44,7 +44,7 @@ describe('jwplayer', function() {
       );
 
       const targetingInfo = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           mediaID: testID
         }
       });
@@ -57,7 +57,7 @@ describe('jwplayer', function() {
       const request = server.requests[0]
       request.respond('{]');
       const targetingInfo = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           mediaID: testID2
         }
       });
@@ -69,7 +69,7 @@ describe('jwplayer', function() {
       const request = server.requests[0]
       request.respond({});
       const targetingInfo = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           mediaID: testID2
         }
       });
@@ -91,7 +91,7 @@ describe('jwplayer', function() {
         })
       );
       const targetingInfo = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           mediaID: testID2
         }
       });
@@ -103,7 +103,7 @@ describe('jwplayer', function() {
       const request = server.requests[0]
       request.error();
       const targetingInfo = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           mediaID: testID2
         }
       });
@@ -154,7 +154,7 @@ describe('jwplayer', function() {
 
     it('returns empty array when jwplayer.js is absent from page', function () {
       const targeting = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           playerID: invalidPlayerID,
           mediaID: 'media_test_ID'
         }
@@ -165,7 +165,7 @@ describe('jwplayer', function() {
     it('returns empty array when player ID does not match player on page', function () {
       window.jwplayer = jwplayerMock;
       const targeting = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           playerID: invalidPlayerID,
           mediaID: 'media_test_ID'
         }
@@ -176,7 +176,7 @@ describe('jwplayer', function() {
     it('returns segments when media ID matches a playlist item with segments', function () {
       window.jwplayer = jwplayerMock;
       const targeting = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           playerID: validPlayerID,
           mediaID: 'media_ID_1'
         }
@@ -188,7 +188,7 @@ describe('jwplayer', function() {
       // console.log('test window: ', window, this);
       window.jwplayer = jwplayerMock;
       const targeting = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           playerID: validPlayerID,
           mediaID: 'media_ID_1'
         }
@@ -196,7 +196,7 @@ describe('jwplayer', function() {
 
       window.jwplayer = null;
       const targeting2 = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           playerID: invalidPlayerID,
           mediaID: 'media_ID_1'
         }
@@ -207,7 +207,7 @@ describe('jwplayer', function() {
     it('returns segments of current item when media ID is missing', function () {
       window.jwplayer = jwplayerMock;
       const targeting = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           playerID: validPlayerID
         }
       });
@@ -216,15 +216,15 @@ describe('jwplayer', function() {
 
     it('caches segments from the current item', function () {
       window.jwplayer = jwplayerMock;
-      const targeting = getTargetingForBid({
-        jwpTargeting: {
+      getTargetingForBid({
+        jwTargeting: {
           playerID: validPlayerID
         }
       });
 
       window.jwplayer = null;
       const targeting2 = getTargetingForBid({
-        jwpTargeting: {
+        jwTargeting: {
           playerID: invalidPlayerID,
           mediaID: 'media_ID_current'
         }
