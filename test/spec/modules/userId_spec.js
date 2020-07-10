@@ -1496,18 +1496,18 @@ describe('User ID', function() {
   });
 
   describe('Consent changes determine getId refreshes', function() {
-    const mockIdCookieName = 'MOCKID';
     let expStr;
     let adUnits;
+
+    const mockIdCookieName = 'MOCKID';
     let mockGetId = sinon.stub();
     let mockDecode = sinon.stub();
     let mockExtendId = sinon.stub();
-    let cmpStub;
-    let testConsentData;
-    const consentConfig = {
-      cmpApi: 'iab',
-      timeout: 7500,
-      allowAuctionWithoutConsent: false
+    const mockIdSystem = {
+      name: 'mockId',
+      getId: mockGetId,
+      decode: mockDecode,
+      extendId: mockExtendId
     };
     const userIdConfig = {
       userSync: {
@@ -1522,14 +1522,16 @@ describe('User ID', function() {
         auctionDelay: 5
       }
     };
-    const mockIdSystem = {
-      name: 'mockId',
-      getId: mockGetId,
-      decode: mockDecode,
-      extendId: mockExtendId
+
+    let cmpStub;
+    let testConsentData;
+    const consentConfig = {
+      cmpApi: 'iab',
+      timeout: 7500,
+      allowAuctionWithoutConsent: false
     };
 
-    beforeEach(function () {
+    const sharedBeforeFunction = function() {
       // clear cookies
       expStr = (new Date(Date.now() + 25000).toUTCString());
       coreStorage.setCookie(mockIdCookieName, '', EXPIRED_COOKIE_DATE);
@@ -1543,143 +1545,154 @@ describe('User ID', function() {
       // init id system
       attachIdSystem(mockIdSystem);
       config.setConfig(userIdConfig);
-
-      // init consent management
-      window.__cmp = function () { };
+    }
+    const sharedAfterFunction = function () {
+      config.resetConfig();
+      mockGetId.reset();
+      mockDecode.reset();
+      mockExtendId.reset();
+      cmpStub.restore();
+      resetConsentData();
+      delete window.__cmp;
       delete window.__tcfapi;
+    };
+
+    describe('TCF v1', function() {
       testConsentData = {
         gdprApplies: true,
         consentData: 'xyz',
         apiVersion: 1
       };
-      cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-        args[2](testConsentData);
-      });
-      setConsentConfig(consentConfig);
-    });
 
-    afterEach(function () {
-      config.resetConfig();
-      mockGetId.reset();
-      mockDecode.reset();
-      mockExtendId.reset();
-      delete window.__cmp;
-      cmpStub.restore();
-      resetConsentData();
-    });
+      beforeEach(function () {
+        sharedBeforeFunction();
 
-    it('does not call getId if no stored consent data and refresh is not needed', function () {
-      coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-      coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
-
-      let innerAdUnits;
-      consentManagementRequestBidsHook(() => { }, { });
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
-
-      sinon.assert.notCalled(mockGetId);
-      sinon.assert.calledOnce(mockDecode);
-      sinon.assert.calledOnce(mockExtendId);
-
-      let consent = gdprDataHandler.getConsentData();
-      let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
-      expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
-      expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
-      expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
-      expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
-    });
-
-    it('calls getId if no stored consent data but refresh is needed', function () {
-      coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-      coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 60 * 1000).toUTCString()), expStr);
-
-      let innerAdUnits;
-      consentManagementRequestBidsHook(() => { }, { });
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
-
-      sinon.assert.calledOnce(mockGetId);
-      sinon.assert.calledOnce(mockDecode);
-      sinon.assert.notCalled(mockExtendId);
-
-      let consent = gdprDataHandler.getConsentData();
-      let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
-      expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
-      expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
-      expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
-      expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
-    });
-
-    it('calls getId if empty stored consent and refresh not needed', function () {
-      coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-      coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
-
-      setStoredConsentData();
-
-      let innerAdUnits;
-      consentManagementRequestBidsHook(() => { }, { });
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
-
-      sinon.assert.calledOnce(mockGetId);
-      sinon.assert.calledOnce(mockDecode);
-      sinon.assert.notCalled(mockExtendId);
-
-      let consent = gdprDataHandler.getConsentData();
-      let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
-      expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
-      expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
-      expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
-      expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
-    });
-
-    it('calls getId if stored consent does not match current consent and refresh not needed', function () {
-      coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-      coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
-
-      setStoredConsentData({
-        gdprApplies: testConsentData.gdprApplies,
-        consentString: 'abc',
-        apiVersion: testConsentData.apiVersion
+        // init v1 consent management
+        window.__cmp = function () { };
+        delete window.__tcfapi;
+        cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
+          args[2](testConsentData);
+        });
+        setConsentConfig(consentConfig);
       });
 
-      let innerAdUnits;
-      consentManagementRequestBidsHook(() => { }, { });
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
-
-      sinon.assert.calledOnce(mockGetId);
-      sinon.assert.calledOnce(mockDecode);
-      sinon.assert.notCalled(mockExtendId);
-
-      let consent = gdprDataHandler.getConsentData();
-      let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
-      expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
-      expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
-      expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
-      expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
-    });
-
-    it('does not call getId if stored consent matches current consent and refresh not needed', function () {
-      coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-      coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
-
-      setStoredConsentData({
-        gdprApplies: testConsentData.gdprApplies,
-        consentString: testConsentData.consentData,
-        apiVersion: testConsentData.apiVersion
+      afterEach(function() {
+        sharedAfterFunction();
       });
 
-      let innerAdUnits;
-      consentManagementRequestBidsHook(() => { }, { });
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      it('does not call getId if no stored consent data and refresh is not needed', function () {
+        coreStorage.setCookie(mockIdCookieName, JSON.stringify({ id: '1234' }), expStr);
+        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
 
-      sinon.assert.notCalled(mockGetId);
-      sinon.assert.calledOnce(mockDecode);
-      sinon.assert.calledOnce(mockExtendId);
+        let innerAdUnits;
+        consentManagementRequestBidsHook(() => { }, {});
+        requestBidsHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
 
-      let consent = gdprDataHandler.getConsentData();
-      let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
-      expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
-      expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
-      expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
-      expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
+        sinon.assert.notCalled(mockGetId);
+        sinon.assert.calledOnce(mockDecode);
+        sinon.assert.calledOnce(mockExtendId);
+
+        let consent = gdprDataHandler.getConsentData();
+        let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
+        expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
+        expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
+        expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
+        expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
+      });
+
+      it('calls getId if no stored consent data but refresh is needed', function () {
+        coreStorage.setCookie(mockIdCookieName, JSON.stringify({ id: '1234' }), expStr);
+        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 60 * 1000).toUTCString()), expStr);
+
+        let innerAdUnits;
+        consentManagementRequestBidsHook(() => { }, {});
+        requestBidsHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
+
+        sinon.assert.calledOnce(mockGetId);
+        sinon.assert.calledOnce(mockDecode);
+        sinon.assert.notCalled(mockExtendId);
+
+        let consent = gdprDataHandler.getConsentData();
+        let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
+        expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
+        expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
+        expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
+        expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
+      });
+
+      it('calls getId if empty stored consent and refresh not needed', function () {
+        coreStorage.setCookie(mockIdCookieName, JSON.stringify({ id: '1234' }), expStr);
+        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
+
+        setStoredConsentData();
+
+        let innerAdUnits;
+        consentManagementRequestBidsHook(() => { }, {});
+        requestBidsHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
+
+        sinon.assert.calledOnce(mockGetId);
+        sinon.assert.calledOnce(mockDecode);
+        sinon.assert.notCalled(mockExtendId);
+
+        let consent = gdprDataHandler.getConsentData();
+        let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
+        expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
+        expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
+        expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
+        expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
+      });
+
+      it('calls getId if stored consent does not match current consent and refresh not needed', function () {
+        coreStorage.setCookie(mockIdCookieName, JSON.stringify({ id: '1234' }), expStr);
+        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
+
+        setStoredConsentData({
+          gdprApplies: testConsentData.gdprApplies,
+          consentString: 'abc',
+          apiVersion: testConsentData.apiVersion
+        });
+
+        let innerAdUnits;
+        consentManagementRequestBidsHook(() => { }, {});
+        requestBidsHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
+
+        sinon.assert.calledOnce(mockGetId);
+        sinon.assert.calledOnce(mockDecode);
+        sinon.assert.notCalled(mockExtendId);
+
+        let consent = gdprDataHandler.getConsentData();
+        let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
+        expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
+        expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
+        expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
+        expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
+      });
+
+      it('does not call getId if stored consent matches current consent and refresh not needed', function () {
+        coreStorage.setCookie(mockIdCookieName, JSON.stringify({ id: '1234' }), expStr);
+        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
+
+        setStoredConsentData({
+          gdprApplies: testConsentData.gdprApplies,
+          consentString: testConsentData.consentData,
+          apiVersion: testConsentData.apiVersion
+        });
+
+        let innerAdUnits;
+        consentManagementRequestBidsHook(() => { }, {});
+        requestBidsHook((config) => { innerAdUnits = config.adUnits }, { adUnits });
+
+        sinon.assert.notCalled(mockGetId);
+        sinon.assert.calledOnce(mockDecode);
+        sinon.assert.calledOnce(mockExtendId);
+
+        let consent = gdprDataHandler.getConsentData();
+        let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
+        expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
+        expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
+        expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
+        expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
+      });
     });
   });
 });
