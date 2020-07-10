@@ -59,6 +59,60 @@ var adUnits = [{
 <!-- End Prebid Config section -->
 ```
 
+# Ad Unit and Setup: For Testing (Video Instream)
+
+```html
+<!-- Prebid Config section -->
+ <script>
+    var adUnits = [{
+        code: 'div-gpt-ad-1460505748561-0',
+        sizes: [640, 480],
+        mediaTypes: {
+            video: {
+                context: "instream",
+                playerSize: [640, 480]
+            }
+        },
+        bids: [{
+            bidder: 'medianet',
+            params: {
+                cid: '8CUX0H51C',
+                video: {
+                    mimes: ['video/mp4']
+                }
+            }
+        }]
+    }];
+</script>
+<!-- End Prebid Config section -->
+```
+# Ad Unit and Setup: For Testing (Video Outstream)
+
+```html
+ <!-- Prebid Config section -->
+ <script>
+    var adUnits = [{
+        code: 'div-gpt-ad-1460505748561-0',
+        sizes: [640, 480],
+        mediaTypes: {
+            video: {
+                context: "outstream",
+                playerSize: [640, 480]
+            }
+        },
+        bids: [{
+            bidder: 'medianet',
+            params: {
+                cid: '8CUX0H51C',
+                video: {
+                    mimes: ['video/mp4']
+                }
+            }
+        }]
+    }];
+</script>
+<!-- End Prebid Config section -->
+```
 
 # Ad Unit and Setup: For Testing (Native)
 
@@ -101,3 +155,4 @@ var adUnits = [{
     ];        
 </script>
 <!-- End Prebid Config section -->
+
