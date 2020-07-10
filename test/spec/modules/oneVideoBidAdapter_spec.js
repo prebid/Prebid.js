@@ -238,6 +238,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.h).to.equal(height);
     });
 
+
     it('should set pubId to HBExchange when bid.params.video.e2etest = true', function () {
       bidRequest.params.video.e2etest = true;
       const requests = spec.buildRequests([ bidRequest ], bidderRequest);
@@ -258,6 +259,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.site.ref).to.equal('https://verizonmedia.com');
       expect(data.tmax).to.equal(1000);
     });
+
     it('it should create new schain and send it if video.params.sid exists', function () {
       const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const data = requests[0].data;

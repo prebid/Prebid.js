@@ -198,6 +198,8 @@ var adUnits = [
       ]
     }
 ]
+```
+
 # Supply Chain Object Support
 The oneVideoBidAdapter supports 2 methods for passing/creating an schain object.
 1. By passing your Video SSP Org ID in the bid.video.params.sid - The adapter will create a new schain object and our ad-server will fill in the data for you.
