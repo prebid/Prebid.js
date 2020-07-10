@@ -147,6 +147,10 @@ describe('ats analytics adapter', function () {
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
     })
     it('check browser is not safari', function () {
+      Object.defineProperty(window.navigator, 'vendor', {
+        value: 'Google Inc.',
+        writable: true
+      });
       let browser = browserIsSafari();
       expect(browser).to.equal(false);
     })
@@ -159,6 +163,11 @@ describe('ats analytics adapter', function () {
       expect(browser).to.equal('Safari');
     })
     it('check browser is not chrome', function () {
+      window.chrome = {
+        app: undefined,
+        webstore: undefined,
+        runtime: undefined
+      };
       let browser = browserIsChrome();
       expect(browser).to.equal(false);
     })
@@ -176,12 +185,18 @@ describe('ats analytics adapter', function () {
         value: {},
         writable: true
       });
-      document.documentMode = undefined;
+      Object.defineProperty(document, 'documentMode', {
+        value: undefined,
+        writable: true
+      });
       let browser = browserIsEdge();
       expect(browser).to.equal('Edge');
     })
     it('check browser is not edge', function () {
-      document.documentMode = {};
+      Object.defineProperty(document, 'documentMode', {
+        value: {},
+        writable: true
+      });
       let browser = browserIsEdge();
       expect(browser).to.equal(false);
     })
