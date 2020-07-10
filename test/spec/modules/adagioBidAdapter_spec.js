@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { _features, internal as adagio, adagioScriptFromLocalStorageCb, getAdagioScript, storage, spec, ENDPOINT, VERSION } from '../../../modules/adagioBidAdapter.js';
-import * as utils from 'src/utils.js';
+import { loadExternalScript } from '../../../src/adloader.js';
+import * as utils from '../../../src/utils.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -1068,6 +1069,30 @@ describe('Adagio bid adapter', () => {
         sinon.assert.callCount(getDataFromLocalStorageStub, 1);
         sinon.assert.callCount(adagio.adagioScriptFromLocalStorageCb, 1);
       });
+
+      it('should load external script if the user consent', function() {
+        sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, true);
+        getAdagioScript();
+
+        expect(loadExternalScript.called).to.be.true;
+      });
+
+      it('should not load external script if the user does not consent', function() {
+        sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, false);
+        getAdagioScript();
+
+        expect(loadExternalScript.called).to.be.false;
+      });
+
+      it('should remove the localStorage key if exists and the user does not consent', function() {
+        sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, false);
+        localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, 'the script');
+
+        getAdagioScript();
+
+        expect(loadExternalScript.called).to.be.false;
+        expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
+      })
     });
 
     it('should verify valid hash with valid script', function () {

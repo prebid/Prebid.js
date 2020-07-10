@@ -64,6 +64,17 @@ export function getAdagioScript() {
   storage.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY, (ls) => {
     internal.adagioScriptFromLocalStorageCb(ls)
   });
+
+  storage.localStorageIsEnabled(isValid => {
+    if (isValid) {
+      loadExternalScript(ADAGIO_TAG_URL, BIDDER_CODE);
+    } else {
+      // ensure adagio removing for next time.
+      // It's an antipattern regarding the TCF2 enforcement logic
+      // but it's the only way to respect the user choice update.
+      window.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
+    }
+  });
 }
 
 function canAccessTopWindow() {
@@ -101,8 +112,6 @@ function initAdagio() {
   w.ADAGIO.isSafeFrameWindow = isSafeFrameWindow();
 
   getAdagioScript();
-
-  loadExternalScript(ADAGIO_TAG_URL, BIDDER_CODE);
 }
 
 export const _features = {
