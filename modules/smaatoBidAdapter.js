@@ -69,6 +69,7 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     at: 1,
     imp,
     cur: ['USD'],
+    tmax: bidderRequest.timeout,
     site: {
       id: window.location.hostname,
       publisher: {
@@ -198,17 +199,17 @@ export const spec = {
           switch (smtAdType) {
             case 'Img':
               resultingBid.ad = createImgAd(b.adm);
-              resultingBid.mediaType = BANNER;
+              resultingBid.meta.mediaType = BANNER;
               bids.push(resultingBid);
               break;
             case 'Richmedia':
               resultingBid.ad = createRichmediaAd(b.adm);
-              resultingBid.mediaType = BANNER;
+              resultingBid.meta.mediaType = BANNER;
               bids.push(resultingBid);
               break;
             case 'Video':
               resultingBid.vastXml = b.adm;
-              resultingBid.mediaType = VIDEO;
+              resultingBid.meta.mediaType = VIDEO;
               bids.push(resultingBid);
               break;
             default:

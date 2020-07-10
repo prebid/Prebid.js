@@ -119,7 +119,6 @@ const request = {
 const interpretedBidsImg = [
   {
     requestId: '226416e6e6bf41',
-    mediaType: 'banner',
     cpm: 0.01,
     width: 350,
     height: 50,
@@ -132,7 +131,8 @@ const interpretedBidsImg = [
     meta: {
       advertiserDomains: ['smaato.com'],
       agencyId: 'CM6523',
-      networkName: 'smaato'
+      networkName: 'smaato',
+      mediaType: 'banner'
     }
   }
 ];
@@ -140,7 +140,6 @@ const interpretedBidsImg = [
 const interpretedBidsRichmedia = [
   {
     requestId: '226416e6e6bf41',
-    mediaType: 'banner',
     cpm: 0.01,
     width: 350,
     height: 50,
@@ -153,7 +152,8 @@ const interpretedBidsRichmedia = [
     meta: {
       advertiserDomains: ['smaato.com'],
       agencyId: 'CM6523',
-      networkName: 'smaato'
+      networkName: 'smaato',
+      mediaType: 'banner'
     }
   }
 ];
@@ -161,7 +161,6 @@ const interpretedBidsRichmedia = [
 const interpretedBidsVideo = [
   {
     requestId: '226416e6e6bf41',
-    mediaType: 'video',
     cpm: 0.01,
     width: 350,
     height: 50,
@@ -174,7 +173,8 @@ const interpretedBidsVideo = [
     meta: {
       advertiserDomains: ['smaato.com'],
       agencyId: 'CM6523',
-      networkName: 'smaato'
+      networkName: 'smaato',
+      mediaType: 'video'
     }
   }
 ];
@@ -187,7 +187,8 @@ const defaultBidderRequest = {
   uspConsent: 'uspConsentString',
   refererInfo: {
     referer: 'http://example.com/page.html',
-  }
+  },
+  timeout: 1200
 };
 
 const minimalBidderRequest = {
@@ -362,6 +363,10 @@ describe('smaatoBidAdapterTest', () => {
 
     it('sends usp if exists', () => {
       expect(this.req.regs.ext.us_privacy).to.equal('uspConsentString');
+    });
+
+    it('sends tmax', () => {
+      expect(this.req.tmax).to.equal(1200);
     });
 
     it('sends no usp if no usp exists', () => {
