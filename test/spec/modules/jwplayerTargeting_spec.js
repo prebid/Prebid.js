@@ -1,5 +1,5 @@
 import { fetchTargetingForMediaId, getTargetingForBid,
-  onFetchCompetion, fetchTargetingInformation } from 'modules/jwplayerTargeting.js';
+  onFetchCompletion, fetchTargetingInformation } from 'modules/jwplayerTargeting.js';
 import { server } from 'test/mocks/xhr.js';
 
 const responseHeader = {'Content-Type': 'application/json'};
@@ -9,105 +9,98 @@ describe('jwplayer', function() {
 
   describe('Fetch targeting for mediaID tests', function () {
     let request;
-    const testID = 'testID';
-    const testID2 = 'testID2';
+    const testIdForSuccess = 'test_id_for_success';
+    const testIdForFailure = 'test_id_for_failure';
 
-    beforeEach(function () {
-      // fetchTargetingForMediaId(testID);
-      // request = server.requests[0];
-    });
-
-    afterEach(function () {
-      // logErrorStub.restore();
-    });
-
-    it('should reach out to media endpoint', function () {
-      fetchTargetingForMediaId(testID);
-      const request = server.requests[0];
-      expect(request.url).to.be.eq(`https://cdn.jwplayer.com/v2/media/${testID}`);
-    });
-
-    it('should write to cache when successful', function () {
-      fetchTargetingForMediaId(testID);
-      const request = server.requests[0];
-      request.respond(
-        200,
-        responseHeader,
-        JSON.stringify({
-          playlist: [
-            {
-              file: 'test.mp4',
-              jwpseg: validSegments1
-            }
-          ]
-        })
-      );
-
-      const targetingInfo = getTargetingForBid({
-        jwTargeting: {
-          mediaID: testID
-        }
+    describe('Fetch succeeds', function () {
+      beforeEach(function () {
+        fetchTargetingForMediaId(testIdForSuccess);
+        request = server.requests[0];
       });
 
-      expect(targetingInfo).to.deep.equal(validSegments1);
+      it('should reach out to media endpoint', function () {
+        expect(request.url).to.be.eq(`https://cdn.jwplayer.com/v2/media/${testIdForSuccess}`);
+      });
+
+      it('should write to cache when successful', function () {
+        request.respond(
+          200,
+          responseHeader,
+          JSON.stringify({
+            playlist: [
+              {
+                file: 'test.mp4',
+                jwpseg: validSegments1
+              }
+            ]
+          })
+        );
+
+        const targetingInfo = getTargetingForBid({
+          jwTargeting: {
+            mediaID: testIdForSuccess
+          }
+        });
+
+        expect(targetingInfo).to.deep.equal(validSegments1);
+      });
     });
 
-    it('should not write to cache when response is malformed', function() {
-      fetchTargetingForMediaId(testID2);
-      const request = server.requests[0]
-      request.respond('{]');
-      const targetingInfo = getTargetingForBid({
-        jwTargeting: {
-          mediaID: testID2
-        }
+    describe('Fetch fails', function () {
+      beforeEach(function () {
+        fetchTargetingForMediaId(testIdForFailure);
+        request = server.requests[0]
       });
-      expect(targetingInfo).to.deep.equal([]);
-    });
 
-    it('should not write to cache when playlist is absent', function() {
-      fetchTargetingForMediaId(testID2);
-      const request = server.requests[0]
-      request.respond({});
-      const targetingInfo = getTargetingForBid({
-        jwTargeting: {
-          mediaID: testID2
-        }
+      it('should not write to cache when response is malformed', function() {
+        request.respond('{]');
+        const targetingInfo = getTargetingForBid({
+          jwTargeting: {
+            mediaID: testIdForFailure
+          }
+        });
+        expect(targetingInfo).to.deep.equal([]);
       });
-      expect(targetingInfo).to.deep.equal([]);
-    });
 
-    it('should not write to cache when segments are absent', function() {
-      fetchTargetingForMediaId(testID2);
-      const request = server.requests[0]
-      request.respond(
-        200,
-        responseHeader,
-        JSON.stringify({
-          playlist: [
-            {
-              file: 'test.mp4'
-            }
-          ]
-        })
-      );
-      const targetingInfo = getTargetingForBid({
-        jwTargeting: {
-          mediaID: testID2
-        }
+      it('should not write to cache when playlist is absent', function() {
+        request.respond({});
+        const targetingInfo = getTargetingForBid({
+          jwTargeting: {
+            mediaID: testIdForFailure
+          }
+        });
+        expect(targetingInfo).to.deep.equal([]);
       });
-      expect(targetingInfo).to.deep.equal([]);
-    });
 
-    it('should not write to cache when request errors', function() {
-      fetchTargetingForMediaId(testID2);
-      const request = server.requests[0]
-      request.error();
-      const targetingInfo = getTargetingForBid({
-        jwTargeting: {
-          mediaID: testID2
-        }
+      it('should not write to cache when segments are absent', function() {
+        request.respond(
+          200,
+          responseHeader,
+          JSON.stringify({
+            playlist: [
+              {
+                file: 'test.mp4'
+              }
+            ]
+          })
+        );
+        const targetingInfo = getTargetingForBid({
+          jwTargeting: {
+            mediaID: testIdForFailure
+          }
+        });
+        expect(targetingInfo).to.deep.equal([]);
       });
-      expect(targetingInfo).to.deep.equal([]);
+
+      it('should not write to cache when request errors', function() {
+        request.error();
+        const targetingInfo = getTargetingForBid({
+          jwTargeting: {
+            mediaID: testIdForFailure
+          }
+        });
+        expect(targetingInfo).to.deep.equal([]);
+      });
     });
   });
 
@@ -241,7 +234,7 @@ describe('jwplayer', function() {
         mediaIDs: []
       });
       let bidRequestSpy = sinon.spy();
-      onFetchCompetion(bidRequestSpy, {});
+      onFetchCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.calledOnce).to.be.true;
     });
 
@@ -256,7 +249,7 @@ describe('jwplayer', function() {
         mediaIDs: validMediaIDs
       });
       let bidRequestSpy = sinon.spy();
-      onFetchCompetion(bidRequestSpy, {});
+      onFetchCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
       clock.tick(1500);
       expect(bidRequestSpy.calledOnce).to.be.true;
@@ -274,7 +267,7 @@ describe('jwplayer', function() {
         mediaIDs: validMediaIDs
       });
       let bidRequestSpy = sinon.spy();
-      onFetchCompetion(bidRequestSpy, {});
+      onFetchCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
       clock.tick(1500);
       expect(bidRequestSpy.calledOnce).to.be.true;
@@ -293,7 +286,7 @@ describe('jwplayer', function() {
         mediaIDs: validMediaIDs
       });
       let bidRequestSpy = sinon.spy();
-      onFetchCompetion(bidRequestSpy, {});
+      onFetchCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
 
       const req1 = serv.requests[0];
