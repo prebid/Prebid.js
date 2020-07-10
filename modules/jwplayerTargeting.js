@@ -15,7 +15,7 @@ function setup () {
     fetchTargetingInformation(config.jwTargeting)
   });
 
-  getGlobal().requestBids.before(onFetchCompetion);
+  getGlobal().requestBids.before(onFetchCompletion);
 }
 
 export function fetchTargetingInformation(jwTargeting) {
@@ -26,7 +26,7 @@ export function fetchTargetingInformation(jwTargeting) {
   });
 }
 
-export function onFetchCompetion(nextFn, reqBidsConfigObj) {
+export function onFetchCompletion(nextFn, reqBidsConfigObj) {
   if (requestCount <= 0) {
     nextFn.apply(this, [reqBidsConfigObj]);
     return;
