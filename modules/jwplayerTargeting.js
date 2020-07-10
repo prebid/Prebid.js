@@ -31,11 +31,12 @@ export function onFetchCompetion(nextFn, reqBidsConfigObj) {
     nextFn.apply(this, [reqBidsConfigObj]);
     return;
   }
-  requestTimeout = setTimeout(() => {
-    nextFn.apply(this, [reqBidsConfigObj]);
-  }, 1500);
-
   resumeBidRequest = nextFn.bind(this, reqBidsConfigObj);
+  requestTimeout = setTimeout(function() {
+    resumeBidRequest();
+    resumeBidRequest = null;
+    requestTimeout = null;
+  }, 1500);
 }
 
 /**
@@ -50,7 +51,6 @@ export function getTargetingForBid(bidRequest) {
 
   const playerID = jwpTargeting.playerID;
   let mediaID = jwpTargeting.mediaID;
-  // const { mediaID, playerID } = jwpTargeting;
   let segments = segCache[mediaID];
   if (segments) {
     return segments;
@@ -61,18 +61,13 @@ export function getTargetingForBid(bidRequest) {
     return [];
   }
 
-  let item;
-  if (mediaID) {
-    item = player.getPlaylist().find(item => item.mediaid === mediaID);
-  } else {
-    item = player.getPlaylistItem();
-    mediaID = item.mediaid;
+  let item = mediaID ? player.getPlaylist().find(item => item.mediaid === mediaID) : player.getPlaylistItem();
+  if (!item) {
+    return [];
   }
 
-  if (item) {
-    segments = item.jwpseg;
-  }
-
+  mediaID = mediaID || item.mediaid;
+  segments = item.jwpseg;
   if (segments && mediaID) {
     segCache[mediaID] = segments;
   }
@@ -81,17 +76,14 @@ export function getTargetingForBid(bidRequest) {
 }
 
 function getPlayer(playerID) {
-  // console.log('window: ', window, this);
   var jwplayer = window.jwplayer;
   if (!jwplayer) {
-    console.log('karim no player.js');
     logError('jwplayer.js was not found on page');
     return;
   }
 
   const player = jwplayer(playerID);
   if (!player || !player.getPlaylist) {
-    console.log('karim no player instance');
     logError('player ID did not match any players');
     return;
   }
@@ -136,13 +128,14 @@ function onRequestCompleted() {
   if (requestCount > 0) {
     return;
   }
-
   if (requestTimeout) {
     clearTimeout(requestTimeout);
+    requestTimeout = null;
   }
 
   if (resumeBidRequest) {
     resumeBidRequest();
+    resumeBidRequest = null;
   }
 }
 
