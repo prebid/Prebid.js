@@ -3,7 +3,7 @@
 ```
 Module Name: Rich Audience Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: cert@richaudience.com 
+Maintainer: cert@richaudience.com
 ```
 
 # Description
@@ -15,7 +15,7 @@ Please reach out to your account manager for more information.
 
 # Test Parameters
 
-## Web
+## Web - DISPLAY
 ```
     var adUnits = [
                 {
@@ -43,6 +43,33 @@ Please reach out to your account manager for more information.
                     }]
                 }
             ];
+```
+
+## Web - VIDEO
+```
+            var adUnits = [{
+              code: 'video1',
+              mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480]
+                }
+              },
+
+              bids: [{
+                bidder: 'richaudience',
+                params: {
+                  pid: 'OjUW9KhuQV',
+                  supplyType: 'site',
+                  player: {
+                     init: "open",
+                     end: "close",
+                     skin: "light"
+                 }
+                }
+              }]
+
+            }];
 ```
 
 ## In-app

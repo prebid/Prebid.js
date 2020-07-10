@@ -45,7 +45,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     const bidRequest = validBidRequests[i];
     const placementId = utils.getBidIdParameter('placementId', bidRequest.params);
     const bidDomain = bidRequest.params.domain || BIDDER_DOMAIN;
-    const bidUrl = `https://${bidDomain}/vast/v1/out/bid/${placementId}`;
+    const bidUrl = `https://${bidDomain}/bid/v1/prebid/${placementId}`;
     const uuid = getUuid();
     const mediaType = getMediaType(bidRequest);
 
