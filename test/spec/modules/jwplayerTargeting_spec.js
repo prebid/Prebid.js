@@ -1,4 +1,5 @@
-import { fetchTargetingForMediaId, getTargetingForBid } from 'modules/jwplayerTargeting.js';
+import { fetchTargetingForMediaId, getTargetingForBid,
+  onFetchCompetion, fetchTargetingInformation } from 'modules/jwplayerTargeting.js';
 import { server } from 'test/mocks/xhr.js';
 
 const responseHeader = {'Content-Type': 'application/json'};
@@ -9,10 +10,11 @@ describe('jwplayer', function() {
   describe('Fetch targeting for mediaID tests', function () {
     let request;
     const testID = 'testID';
+    const testID2 = 'testID2';
 
     beforeEach(function () {
-      fetchTargetingForMediaId(testID);
-      request = server.requests[0];
+      // fetchTargetingForMediaId(testID);
+      // request = server.requests[0];
     });
 
     afterEach(function () {
@@ -20,10 +22,14 @@ describe('jwplayer', function() {
     });
 
     it('should reach out to media endpoint', function () {
+      fetchTargetingForMediaId(testID);
+      const request = server.requests[0];
       expect(request.url).to.be.eq(`https://cdn.jwplayer.com/v2/media/${testID}`);
     });
 
     it('should write to cache when successful', function () {
+      fetchTargetingForMediaId(testID);
+      const request = server.requests[0];
       request.respond(
         200,
         responseHeader,
@@ -46,27 +52,63 @@ describe('jwplayer', function() {
       expect(targetingInfo).to.deep.equal(validSegments1);
     });
 
-    it('', function() {
-
+    it('should not write to cache when response is malformed', function() {
+      fetchTargetingForMediaId(testID2);
+      const request = server.requests[0]
+      request.respond('{]');
+      const targetingInfo = getTargetingForBid({
+        jwpTargeting: {
+          mediaID: testID2
+        }
+      });
+      expect(targetingInfo).to.deep.equal([]);
     });
-    //
-    // it('should fake', function () {
-    //   let callBackSpy = sinon.spy();
-    //   let consentData = {
-    //     gdprApplies: true,
-    //     consentString: 'BOkIpDSOkIpDSADABAENCc-AAAApOAFAAMAAsAMIAcAA_g'
-    //   };
-    //   let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData).callback;
-    //   submoduleCallback(callBackSpy);
-    //   let request = server.requests[0];
-    //   expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&ct=1&cv=BOkIpDSOkIpDSADABAENCc-AAAApOAFAAMAAsAMIAcAA_g');
-    //   request.respond(
-    //     200,
-    //     responseHeader,
-    //     JSON.stringify({})
-    //   );
-    //   expect(callBackSpy.calledOnce).to.be.true;
-    // });
+
+    it('should not write to cache when playlist is absent', function() {
+      fetchTargetingForMediaId(testID2);
+      const request = server.requests[0]
+      request.respond({});
+      const targetingInfo = getTargetingForBid({
+        jwpTargeting: {
+          mediaID: testID2
+        }
+      });
+      expect(targetingInfo).to.deep.equal([]);
+    });
+
+    it('should not write to cache when segments are absent', function() {
+      fetchTargetingForMediaId(testID2);
+      const request = server.requests[0]
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({
+          playlist: [
+            {
+              file: 'test.mp4'
+            }
+          ]
+        })
+      );
+      const targetingInfo = getTargetingForBid({
+        jwpTargeting: {
+          mediaID: testID2
+        }
+      });
+      expect(targetingInfo).to.deep.equal([]);
+    });
+
+    it('should not write to cache when request errors', function() {
+      fetchTargetingForMediaId(testID2);
+      const request = server.requests[0]
+      request.error();
+      const targetingInfo = getTargetingForBid({
+        jwpTargeting: {
+          mediaID: testID2
+        }
+      });
+      expect(targetingInfo).to.deep.equal([]);
+    });
   });
 
   describe('Get targeting for bid', function() {
@@ -192,6 +234,80 @@ describe('jwplayer', function() {
   });
 
   describe('Blocking mechanism for bid requests', function () {
+    const validMediaIDs = ['media_ID_1', 'media_ID_2', 'media_ID_3'];
 
+    it('executes the bidRequest immediately when no requests are pending', function () {
+      fetchTargetingInformation({
+        mediaIDs: []
+      });
+      let bidRequestSpy = sinon.spy();
+      onFetchCompetion(bidRequestSpy, {});
+      expect(bidRequestSpy.calledOnce).to.be.true;
+    });
+
+    it('executes the bidRequest after timeout if requests are still pending', function () {
+      let serv = sinon.createFakeServer();
+      serv.respondImmediately = false;
+      serv.autoRespond = false;
+      const clock = sinon.useFakeTimers({
+        toFake: ['setTimeout']
+      });
+      fetchTargetingInformation({
+        mediaIDs: validMediaIDs
+      });
+      let bidRequestSpy = sinon.spy();
+      onFetchCompetion(bidRequestSpy, {});
+      expect(bidRequestSpy.notCalled).to.be.true;
+      clock.tick(1500);
+      expect(bidRequestSpy.calledOnce).to.be.true;
+      clock.restore();
+    });
+
+    it('executes the bidRequest only once if requests succeed after timeout', function () {
+      let serv = sinon.createFakeServer();
+      serv.respondImmediately = false;
+      serv.autoRespond = false;
+      const clock = sinon.useFakeTimers({
+        toFake: ['setTimeout']
+      });
+      fetchTargetingInformation({
+        mediaIDs: validMediaIDs
+      });
+      let bidRequestSpy = sinon.spy();
+      onFetchCompetion(bidRequestSpy, {});
+      expect(bidRequestSpy.notCalled).to.be.true;
+      clock.tick(1500);
+      expect(bidRequestSpy.calledOnce).to.be.true;
+
+      serv.respond();
+      expect(bidRequestSpy.calledOnce).to.be.true;
+      clock.restore();
+    });
+
+    it('executes the bidRequest when all pending jwpseg requests are done', function () {
+      let serv = sinon.createFakeServer();
+      serv.respondImmediately = false;
+      serv.autoRespond = false;
+
+      fetchTargetingInformation({
+        mediaIDs: validMediaIDs
+      });
+      let bidRequestSpy = sinon.spy();
+      onFetchCompetion(bidRequestSpy, {});
+      expect(bidRequestSpy.notCalled).to.be.true;
+
+      const req1 = serv.requests[0];
+      const req2 = serv.requests[1];
+      const req3 = serv.requests[2];
+
+      req1.respond();
+      expect(bidRequestSpy.notCalled).to.be.true;
+
+      req2.respond();
+      expect(bidRequestSpy.notCalled).to.be.true;
+
+      req3.respond();
+      expect(bidRequestSpy.calledOnce).to.be.true;
+    });
   });
 });
