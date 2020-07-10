@@ -105,40 +105,13 @@ describe('jwplayer', function() {
   });
 
   describe('Get targeting for bid', function() {
+    const mediaIdWithSegment = 'media_ID_1';
+    const mediaIdNoSegment = 'media_ID_2';
+    const mediaIdForCurrentItem = 'media_ID_current';
+    const mediaIdNotCached = 'media_test_ID';
+
     const validPlayerID = 'player_test_ID_valid';
     const invalidPlayerID = 'player_test_ID_invalid';
-    const jwplayerMock = function(playerID) {
-      if (playerID === validPlayerID) {
-        return playerInstanceMock;
-      } else {
-        return {};
-      }
-    };
-
-    const playlistItemWithSegmentMock = {
-      mediaid: 'media_ID_1',
-      jwpseg: validSegments1
-    };
-
-    const playlistItemNoSegmentMock = {
-      mediaid: 'media_ID_2'
-    };
-
-    const currentItemSegments = ['test_seg_3', 'test_seg_4'];
-    const currentPlaylistItemMock = {
-      mediaid: 'media_ID_current',
-      jwpseg: currentItemSegments
-    };
-
-    const playerInstanceMock = {
-      getPlaylist: function () {
-        return [playlistItemWithSegmentMock, playlistItemNoSegmentMock];
-      },
-
-      getPlaylistItem: function () {
-        return currentPlaylistItemMock;
-      }
-    };
 
     it('returns empty array when targeting block is missing', function () {
       const targeting = getTargetingForBid({});
@@ -149,80 +122,113 @@ describe('jwplayer', function() {
       const targeting = getTargetingForBid({
         jwTargeting: {
           playerID: invalidPlayerID,
-          mediaID: 'media_test_ID'
+          mediaID: mediaIdNotCached
         }
       });
       expect(targeting).to.deep.equal([]);
     });
 
-    it('returns empty array when player ID does not match player on page', function () {
-      window.jwplayer = jwplayerMock;
-      const targeting = getTargetingForBid({
-        jwTargeting: {
-          playerID: invalidPlayerID,
-          mediaID: 'media_test_ID'
-        }
-      });
-      expect(targeting).to.deep.equal([]);
-    });
+    describe('When jwplayer.js is on page', function () {
+      const playlistItemWithSegmentMock = {
+        mediaid: mediaIdWithSegment,
+        jwpseg: validSegments1
+      };
 
-    it('returns segments when media ID matches a playlist item with segments', function () {
-      window.jwplayer = jwplayerMock;
-      const targeting = getTargetingForBid({
-        jwTargeting: {
-          playerID: validPlayerID,
-          mediaID: 'media_ID_1'
-        }
-      });
-      expect(targeting).to.deep.equal(validSegments1);
-    });
+      const playlistItemNoSegmentMock = {
+        mediaid: mediaIdNoSegment
+      };
 
-    it('caches segments media ID matches a playist item with segments', function () {
-      // console.log('test window: ', window, this);
-      window.jwplayer = jwplayerMock;
-      const targeting = getTargetingForBid({
-        jwTargeting: {
-          playerID: validPlayerID,
-          mediaID: 'media_ID_1'
-        }
-      });
+      const currentItemSegments = ['test_seg_3', 'test_seg_4'];
+      const currentPlaylistItemMock = {
+        mediaid: mediaIdForCurrentItem,
+        jwpseg: currentItemSegments
+      };
 
-      window.jwplayer = null;
-      const targeting2 = getTargetingForBid({
-        jwTargeting: {
-          playerID: invalidPlayerID,
-          mediaID: 'media_ID_1'
-        }
-      });
-      expect(targeting2).to.deep.equal(validSegments1);
-    });
+      const playerInstanceMock = {
+        getPlaylist: function () {
+          return [playlistItemWithSegmentMock, playlistItemNoSegmentMock];
+        },
 
-    it('returns segments of current item when media ID is missing', function () {
-      window.jwplayer = jwplayerMock;
-      const targeting = getTargetingForBid({
-        jwTargeting: {
-          playerID: validPlayerID
+        getPlaylistItem: function () {
+          return currentPlaylistItemMock;
         }
-      });
-      expect(targeting).to.deep.equal(currentItemSegments);
-    });
+      };
 
-    it('caches segments from the current item', function () {
-      window.jwplayer = jwplayerMock;
-      getTargetingForBid({
-        jwTargeting: {
-          playerID: validPlayerID
+      const jwplayerMock = function(playerID) {
+        if (playerID === validPlayerID) {
+          return playerInstanceMock;
+        } else {
+          return {};
         }
+      };
+
+      beforeEach(function () {
+        window.jwplayer = jwplayerMock;
       });
 
-      window.jwplayer = null;
-      const targeting2 = getTargetingForBid({
-        jwTargeting: {
-          playerID: invalidPlayerID,
-          mediaID: 'media_ID_current'
-        }
+      it('returns empty array when player ID does not match player on page', function () {
+        const targeting = getTargetingForBid({
+          jwTargeting: {
+            playerID: invalidPlayerID,
+            mediaID: mediaIdNotCached
+          }
+        });
+        expect(targeting).to.deep.equal([]);
       });
-      expect(targeting2).to.deep.equal(currentItemSegments);
+
+      it('returns segments when media ID matches a playlist item with segments', function () {
+        const targeting = getTargetingForBid({
+          jwTargeting: {
+            playerID: validPlayerID,
+            mediaID: mediaIdWithSegment
+          }
+        });
+        expect(targeting).to.deep.equal(validSegments1);
+      });
+
+      it('caches segments media ID matches a playist item with segments', function () {
+        getTargetingForBid({
+          jwTargeting: {
+            playerID: validPlayerID,
+            mediaID: mediaIdWithSegment
+          }
+        });
+
+        window.jwplayer = null;
+        const targeting2 = getTargetingForBid({
+          jwTargeting: {
+            playerID: invalidPlayerID,
+            mediaID: mediaIdWithSegment
+          }
+        });
+        expect(targeting2).to.deep.equal(validSegments1);
+      });
+
+      it('returns segments of current item when media ID is missing', function () {
+        const targeting = getTargetingForBid({
+          jwTargeting: {
+            playerID: validPlayerID
+          }
+        });
+        expect(targeting).to.deep.equal(currentItemSegments);
+      });
+
+      it('caches segments from the current item', function () {
+        getTargetingForBid({
+          jwTargeting: {
+            playerID: validPlayerID
+          }
+        });
+
+        window.jwplayer = null;
+        const targeting2 = getTargetingForBid({
+          jwTargeting: {
+            playerID: invalidPlayerID,
+            mediaID: mediaIdForCurrentItem
+          }
+        });
+        expect(targeting2).to.deep.equal(currentItemSegments);
+      });
     });
   });
 
