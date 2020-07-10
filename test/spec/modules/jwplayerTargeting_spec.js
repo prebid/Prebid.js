@@ -5,7 +5,7 @@ import { server } from 'test/mocks/xhr.js';
 const responseHeader = {'Content-Type': 'application/json'};
 
 describe('jwplayer', function() {
-  const validSegments1 = ['test_seg_1', 'test_seg_2'];
+  const validSegments = ['test_seg_1', 'test_seg_2'];
 
   describe('Fetch targeting for mediaID tests', function () {
     let request;
@@ -30,7 +30,7 @@ describe('jwplayer', function() {
             playlist: [
               {
                 file: 'test.mp4',
-                jwpseg: validSegments1
+                jwpseg: validSegments
               }
             ]
           })
@@ -42,7 +42,7 @@ describe('jwplayer', function() {
           }
         });
 
-        expect(targetingInfo).to.deep.equal(validSegments1);
+        expect(targetingInfo).to.deep.equal(validSegments);
       });
     });
 
@@ -131,7 +131,7 @@ describe('jwplayer', function() {
     describe('When jwplayer.js is on page', function () {
       const playlistItemWithSegmentMock = {
         mediaid: mediaIdWithSegment,
-        jwpseg: validSegments1
+        jwpseg: validSegments
       };
 
       const playlistItemNoSegmentMock = {
@@ -183,7 +183,7 @@ describe('jwplayer', function() {
             mediaID: mediaIdWithSegment
           }
         });
-        expect(targeting).to.deep.equal(validSegments1);
+        expect(targeting).to.deep.equal(validSegments);
       });
 
       it('caches segments media ID matches a playist item with segments', function () {
@@ -201,7 +201,7 @@ describe('jwplayer', function() {
             mediaID: mediaIdWithSegment
           }
         });
-        expect(targeting2).to.deep.equal(validSegments1);
+        expect(targeting2).to.deep.equal(validSegments);
       });
 
       it('returns segments of current item when media ID is missing', function () {
@@ -234,70 +234,67 @@ describe('jwplayer', function() {
 
   describe('Blocking mechanism for bid requests', function () {
     const validMediaIDs = ['media_ID_1', 'media_ID_2', 'media_ID_3'];
+    let bidRequestSpy;
+    let fakeServer;
+    let clock;
+
+    beforeEach(function () {
+      bidRequestSpy = sinon.spy();
+
+      fakeServer = sinon.createFakeServer();
+      fakeServer.respondImmediately = false;
+      fakeServer.autoRespond = false;
+
+      clock = sinon.useFakeTimers({
+        toFake: ['setTimeout']
+      });
+    });
+
+    afterEach(function () {
+      clock.restore();
+    });
 
     it('executes the bidRequest immediately when no requests are pending', function () {
       fetchTargetingInformation({
         mediaIDs: []
       });
-      let bidRequestSpy = sinon.spy();
       onFetchCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.calledOnce).to.be.true;
     });
 
     it('executes the bidRequest after timeout if requests are still pending', function () {
-      let serv = sinon.createFakeServer();
-      serv.respondImmediately = false;
-      serv.autoRespond = false;
-      const clock = sinon.useFakeTimers({
-        toFake: ['setTimeout']
-      });
       fetchTargetingInformation({
         mediaIDs: validMediaIDs
       });
-      let bidRequestSpy = sinon.spy();
       onFetchCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
       clock.tick(1500);
       expect(bidRequestSpy.calledOnce).to.be.true;
-      clock.restore();
     });
 
     it('executes the bidRequest only once if requests succeed after timeout', function () {
-      let serv = sinon.createFakeServer();
-      serv.respondImmediately = false;
-      serv.autoRespond = false;
-      const clock = sinon.useFakeTimers({
-        toFake: ['setTimeout']
-      });
       fetchTargetingInformation({
         mediaIDs: validMediaIDs
       });
-      let bidRequestSpy = sinon.spy();
       onFetchCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
       clock.tick(1500);
       expect(bidRequestSpy.calledOnce).to.be.true;
 
-      serv.respond();
+      fakeServer.respond();
       expect(bidRequestSpy.calledOnce).to.be.true;
-      clock.restore();
     });
 
     it('executes the bidRequest when all pending jwpseg requests are done', function () {
-      let serv = sinon.createFakeServer();
-      serv.respondImmediately = false;
-      serv.autoRespond = false;
-
       fetchTargetingInformation({
         mediaIDs: validMediaIDs
       });
-      let bidRequestSpy = sinon.spy();
       onFetchCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
 
-      const req1 = serv.requests[0];
-      const req2 = serv.requests[1];
-      const req3 = serv.requests[2];
+      const req1 = fakeServer.requests[0];
+      const req2 = fakeServer.requests[1];
+      const req3 = fakeServer.requests[2];
 
       req1.respond();
       expect(bidRequestSpy.notCalled).to.be.true;
