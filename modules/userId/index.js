@@ -252,7 +252,6 @@ function processSubmoduleCallbacks(submodules, cb) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         if (submodule.config.storage) {
-          // setStoredValue(submodule.config.storage, idObj);
           setStoredValue(submodule, idObj);
         }
         // cache decoded value (this is copied to every adUnit bid)
@@ -444,7 +443,6 @@ function initSubmodules(submodules, consentData) {
       if (utils.isPlainObject(response)) {
         if (response.id) {
           // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
-          // setStoredValue(submodule.config.storage, response.id);
           setStoredValue(submodule, response.id);
           storedId = response.id;
         }
