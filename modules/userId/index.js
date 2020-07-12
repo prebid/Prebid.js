@@ -175,7 +175,7 @@ function setStoredValue(submodule, value) {
     if (storage.type === COOKIE) {
       coreStorage.setCookie(storage.name, valueStr, expiresStr, 'Lax', domainOverride);
       if (typeof storage.refreshInSeconds === 'number') {
-        coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr, '/', domainOverride);
+        coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr, 'Lax', domainOverride);
       }
     } else if (storage.type === LOCAL_STORAGE) {
       coreStorage.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
