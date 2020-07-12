@@ -124,15 +124,18 @@ export const spec = {
       };
       const videoMediaType = deepAccess(bidReq, 'mediaTypes.video');
       if (videoMediaType) {
+        bid.video = {
+          playerSize: deepAccess(bidReq, 'mediaTypes.video.playerSize') || null,
+          streamType: deepAccess(bidReq, 'mediaTypes.video.context') || null,
+          playbackMethod: deepAccess(bidReq, 'params.video.playbackMethod') || null,
+          maxDuration: deepAccess(bidReq, 'params.video.maxDuration') || null,
+          skippable: deepAccess(bidReq, 'params.video.skippable') || null
+        };
         bid.mediaType = 'video';
-        bid.video = videoMediaType;
-        let videoParams = deepAccess(bidReq, 'params.video');
-        if (videoParams) {
-          bid.video.params = videoParams;
-        }
       }
       payload['x-ut-hb-params'].push(bid);
     });
+
     return {
       method: 'POST',
       url: reqUrl,
@@ -159,7 +162,7 @@ export const spec = {
           };
           if (bidRes.mediaType && bidRes.mediaType === 'video') {
             bid.vastXml = bidRes.ad;
-            bid.mediaType = 'video';
+            bid.mediaType = bidRes.mediaType;
           } else {
             bid.ad = bidRes.ad
           }
