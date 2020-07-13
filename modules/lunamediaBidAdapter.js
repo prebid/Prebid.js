@@ -379,5 +379,4 @@ function createBannerRequestData(bid, bidderRequest) {
 
   return o;
 }
-
 registerBidder(spec);
