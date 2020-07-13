@@ -41,6 +41,8 @@ export const spec = {
     const bids = validBidRequests.map(buildRequestObject);
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
+      pageReferrer: document.referrer,
+      networkBandwidth: getConnectionDownLink(window.navigator),
       data: bids,
       deviceWidth: screen.width,
       hb_version: '$prebid.version$'
@@ -115,6 +117,10 @@ function getReferrerInfo(bidderRequest) {
     ref = bidderRequest.refererInfo.referer;
   }
   return ref;
+}
+
+function getConnectionDownLink(nav) {
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }
 
 function findGdprStatus(gdprApplies, gdprData, apiVersion) {
