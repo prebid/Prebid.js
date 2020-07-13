@@ -59,7 +59,7 @@ export function getTargetingForBid(bidRequest) {
     return [];
   }
 
-  let item = mediaID ? player.getPlaylist().find(item => item.mediaid === mediaID) : player.getPlaylistItem();
+  const item = mediaID ? player.getPlaylist().find(item => item.mediaid === mediaID) : player.getPlaylistItem();
   if (!item) {
     return [];
   }
@@ -74,7 +74,7 @@ export function getTargetingForBid(bidRequest) {
 }
 
 function getPlayer(playerID) {
-  var jwplayer = window.jwplayer;
+  const jwplayer = window.jwplayer;
   if (!jwplayer) {
     logError('jwplayer.js was not found on page');
     return;
@@ -96,12 +96,12 @@ export function fetchTargetingForMediaId(mediaId) {
         try {
           const data = JSON.parse(response);
           if (!data) {
-            return;
+            throw ('Empty response');
           }
 
           const playlist = data.playlist;
           if (!playlist || !playlist.length) {
-            return;
+            throw ('Empty playlist');
           }
 
           const jwpseg = playlist[0].jwpseg;
@@ -109,7 +109,7 @@ export function fetchTargetingForMediaId(mediaId) {
             segCache[mediaId] = jwpseg;
           }
         } catch (err) {
-          logError('failed to parse response');
+          logError(err);
         }
         onRequestCompleted();
       },
