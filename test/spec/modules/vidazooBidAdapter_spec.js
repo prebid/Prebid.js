@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec as adapter, SUPPORTED_ID_SYSTEMS, createDomain } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { version } from 'package.json';
 
 const SUB_DOMAIN = 'openrtb';
 
@@ -145,6 +146,8 @@ describe('VidazooBidAdapter', function () {
           adUnitCode: 'div-gpt-ad-12345-0',
           publisherId: '59ac17c192832d0011283fe3',
           dealId: 1,
+          bidderVersion: adapter.version,
+          prebidVersion: version,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
