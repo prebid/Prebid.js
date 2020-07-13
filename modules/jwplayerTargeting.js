@@ -14,7 +14,7 @@ config.getConfig('jwTargeting', (config) => {
   fetchTargetingInformation(config.jwTargeting)
 });
 
-getGlobal().requestBids.before(onFetchCompletion);
+getGlobal().requestBids.before(ensureFeedRequestCompletion);
 
 export function fetchTargetingInformation(jwTargeting) {
   const mediaIDs = jwTargeting.mediaIDs;
@@ -24,12 +24,12 @@ export function fetchTargetingInformation(jwTargeting) {
   });
 }
 
-export function onFetchCompletion(nextFn, reqBidsConfigObj) {
+export function ensureFeedRequestCompletion(requestBids, bidRequestConfig) {
   if (requestCount <= 0) {
-    nextFn.apply(this, [reqBidsConfigObj]);
+    requestBids.apply(this, [bidRequestConfig]);
     return;
   }
-  resumeBidRequest = nextFn.bind(this, reqBidsConfigObj);
+  resumeBidRequest = requestBids.bind(this, bidRequestConfig);
   requestTimeout = setTimeout(function() {
     resumeBidRequest();
     resumeBidRequest = null;
