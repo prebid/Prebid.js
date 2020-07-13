@@ -22,13 +22,11 @@ describe('33acrossBidAdapter:', function () {
           format: [
             {
               w: 300,
-              h: 250,
-              ext: {}
+              h: 250
             },
             {
               w: 728,
-              h: 90,
-              ext: {}
+              h: 90
             }
           ],
           ext: {
@@ -56,7 +54,8 @@ describe('33acrossBidAdapter:', function () {
       },
       regs: {
         ext: {
-          gdpr: 0
+          gdpr: 0,
+          us_privacy: null
         }
       },
       ext: {
@@ -92,9 +91,27 @@ describe('33acrossBidAdapter:', function () {
       });
       Object.assign(ttxRequest, {
         regs: {
-          ext: { gdpr }
+          ext: Object.assign(
+            {},
+            ttxRequest.regs.ext,
+            { gdpr }
+          )
         }
       });
+      return this;
+    };
+
+    this.withUspConsent = (consent) => {
+      Object.assign(ttxRequest, {
+        regs: {
+          ext: Object.assign(
+            {},
+            ttxRequest.regs.ext,
+            { us_privacy: consent }
+          )
+        }
+      });
+
       return this;
     };
 
@@ -107,6 +124,34 @@ describe('33acrossBidAdapter:', function () {
       Object.assign(ttxRequest.site, {
         page: pageUrl
       });
+
+      return this;
+    };
+
+    this.withSchain = schain => {
+      Object.assign(ttxRequest, {
+        source: {
+          ext: {
+            schain
+          }
+        }
+      });
+
+      return this;
+    };
+
+    this.withFormatFloors = floors => {
+      const format = ttxRequest.imp[0].banner.format.map((fm, i) => {
+        return Object.assign(fm, {
+          ext: {
+            ttx: {
+              bidfloors: [ floors[i] ]
+            }
+          }
+        })
+      });
+
+      ttxRequest.imp[0].banner.format = format;
 
       return this;
     };
@@ -320,7 +365,7 @@ describe('33acrossBidAdapter:', function () {
     context('when width or height of the element is zero', function() {
       it('try to use alternative values', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withSizes([{ w: 800, h: 2400, ext: {} }])
+          .withSizes([{ w: 800, h: 2400 }])
           .withViewability({amount: 25})
           .build();
         const serverRequest = new ServerRequestBuilder()
@@ -454,6 +499,84 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
+    context('when us_privacy consent data exists', function() {
+      let bidderRequest;
+
+      beforeEach(function() {
+        bidderRequest = {
+          uspConsent: 'foo'
+        }
+      });
+
+      it('returns corresponding server requests with us_privacy consent data', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withUspConsent('foo')
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('returns corresponding test server requests with us_privacy consent data', function() {
+        sandbox.stub(config, 'getConfig').callsFake(() => {
+          return {
+            'url': 'https://foo.com/hb/'
+          }
+        });
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withUspConsent('foo')
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .withUrl('https://foo.com/hb/')
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when us_privacy consent data does not exist', function() {
+      let bidderRequest;
+
+      beforeEach(function() {
+        bidderRequest = {};
+      });
+
+      it('returns corresponding server requests with default us_privacy data', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('returns corresponding test server requests with default us_privacy consent data', function() {
+        sandbox.stub(config, 'getConfig').callsFake(() => {
+          return {
+            'url': 'https://foo.com/hb/'
+          }
+        });
+
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .withUrl('https://foo.com/hb/')
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
     context('when referer value is available', function() {
       it('returns corresponding server requests with site.page set', function() {
         const bidderRequest = {
@@ -488,6 +611,125 @@ describe('33acrossBidAdapter:', function () {
           .build();
 
         const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when there is schain object in the bidRequest', function() {
+      it('builds request with schain info in source', function() {
+        const schainValues = [
+          {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [
+              {
+                'asi': 'bidderA.com',
+                'sid': '00001',
+                'hp': 1
+              }
+            ]
+          },
+          {
+            'ver': '1.0',
+            'complete': 1,
+          },
+          {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': []
+          },
+          {
+            'ver': '1.0',
+            'complete': '1',
+            'nodes': [
+              {
+                'asi': 'bidderA.com',
+                'sid': '00001',
+                'hp': 1
+              }
+            ]
+          }
+        ];
+
+        schainValues.forEach((schain) => {
+          bidRequests[0].schain = schain;
+
+          const ttxRequest = new TtxRequestBuilder()
+            .withSchain(schain)
+            .build();
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+
+          const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+          expect(builtServerRequests).to.deep.equal([serverRequest]);
+        });
+      });
+    });
+
+    context('when there no schain object is passed', function() {
+      it('does not set source field', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when price floor module is not enabled in bidRequest', function() {
+      it('does not set any bidfloors in ttxRequest', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when price floor module is enabled in bidRequest', function() {
+      it('does not set any bidfloors in ttxRequest if there is no floor', function() {
+        bidRequests[0].getFloor = () => ({});
+
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('sets bidfloors in ttxRequest if there is a floor', function() {
+        bidRequests[0].getFloor = ({size, currency, mediaType}) => {
+          const floor = (size[0] === 300 && size[1] === 250) ? 1.0 : 0.10
+          return (
+            {
+              floor,
+              currency: 'USD'
+            }
+          );
+        };
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withFormatFloors([ 1.0, 0.10 ])
+          .build();
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
@@ -693,11 +935,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=undefined`
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=undefined`
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined`
             }
           ]
 
@@ -713,11 +955,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=undefined&gdpr=1`
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined&gdpr=1`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=undefined&gdpr=1`
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gdpr=1`
             }
           ];
 
@@ -733,11 +975,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=consent123A&gdpr=1`
+              url: `${syncs[0].url}&gdpr_consent=consent123A&us_privacy=undefined&gdpr=1`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=consent123A&gdpr=1`
+              url: `${syncs[1].url}&gdpr_consent=consent123A&us_privacy=undefined&gdpr=1`
             }
           ];
 
@@ -753,11 +995,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=undefined&gdpr=0`
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined&gdpr=0`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=undefined&gdpr=0`
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gdpr=0`
             }
           ];
           expect(syncResults).to.deep.equal(expectedSyncs);
@@ -772,11 +1014,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=consent123A`
+              url: `${syncs[0].url}&gdpr_consent=consent123A&us_privacy=undefined`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=consent123A`
+              url: `${syncs[1].url}&gdpr_consent=consent123A&us_privacy=undefined`
             }
           ];
           expect(syncResults).to.deep.equal(expectedSyncs);
@@ -791,14 +1033,62 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=consent123A&gdpr=0`
+              url: `${syncs[0].url}&gdpr_consent=consent123A&us_privacy=undefined&gdpr=0`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=consent123A&gdpr=0`
+              url: `${syncs[1].url}&gdpr_consent=consent123A&us_privacy=undefined&gdpr=0`
             }
           ];
           expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when there is no usPrivacy data', function() {
+        it('returns sync urls with undefined consent string as param', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined`
+            }
+          ]
+
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        })
+      });
+
+      context('when there is usPrivacy data', function() {
+        it('returns sync urls with consent string as param', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {}, 'foo');
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=foo`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=foo`
+            }
+          ];
+
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when user sync is invoked without a bid request phase', function() {
+        it('results in an empty syncs array', function() {
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {}, 'foo');
+
+          expect(syncResults).to.deep.equal([]);
         });
       });
     });

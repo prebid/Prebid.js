@@ -1,5 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
@@ -25,14 +26,12 @@ export const spec = {
       return false;
     }
 
-    // Prevend DAP Outstream validation
+    // Prevend DAP Outstream validation, Banner DAP validation & Multi-Format adUnit support
     if (bid.mediaTypes.video) {
       if (bid.mediaTypes.video.context === 'outstream' && bid.params.video.display === 1) {
         return false;
       }
-    }
-    // Banner DAP validation
-    if (bid.mediaTypes.banner && (!bid.params.video.display)) {
+    } else if (bid.mediaTypes.banner && !bid.params.video.display) {
       return false;
     }
 
@@ -260,6 +259,13 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.hp == 1) {
       bidData.source.ext.schain.nodes[0].hp = bid.params.video.hp;
     }
+  } else if (bid.schain) {
+    bidData.source = {
+      ext: {
+        schain: bid.schain
+      }
+    }
+    bidData.source.ext.schain.nodes[0].rid = bidData.id;
   }
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
