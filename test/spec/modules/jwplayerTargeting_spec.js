@@ -1,5 +1,5 @@
 import { fetchTargetingForMediaId, getTargetingForBid,
-  onFetchCompletion, fetchTargetingInformation } from 'modules/jwplayerTargeting.js';
+  ensureFeedRequestCompletion, fetchTargetingInformation } from 'modules/jwplayerTargeting.js';
 import { server } from 'test/mocks/xhr.js';
 
 const responseHeader = {'Content-Type': 'application/json'};
@@ -258,7 +258,7 @@ describe('jwplayer', function() {
       fetchTargetingInformation({
         mediaIDs: []
       });
-      onFetchCompletion(bidRequestSpy, {});
+      ensureFeedRequestCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.calledOnce).to.be.true;
     });
 
@@ -266,7 +266,7 @@ describe('jwplayer', function() {
       fetchTargetingInformation({
         mediaIDs: validMediaIDs
       });
-      onFetchCompletion(bidRequestSpy, {});
+      ensureFeedRequestCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
       clock.tick(1500);
       expect(bidRequestSpy.calledOnce).to.be.true;
@@ -276,7 +276,7 @@ describe('jwplayer', function() {
       fetchTargetingInformation({
         mediaIDs: validMediaIDs
       });
-      onFetchCompletion(bidRequestSpy, {});
+      ensureFeedRequestCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
       clock.tick(1500);
       expect(bidRequestSpy.calledOnce).to.be.true;
@@ -289,7 +289,7 @@ describe('jwplayer', function() {
       fetchTargetingInformation({
         mediaIDs: validMediaIDs
       });
-      onFetchCompletion(bidRequestSpy, {});
+      ensureFeedRequestCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
 
       const req1 = fakeServer.requests[0];
