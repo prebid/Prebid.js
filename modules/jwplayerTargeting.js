@@ -9,14 +9,12 @@ let requestCount = 0;
 let requestTimeout;
 let resumeBidRequest;
 
-function setup () {
-  config.getConfig('jwTargeting', (config) => {
-    // fetch media ids
-    fetchTargetingInformation(config.jwTargeting)
-  });
+config.getConfig('jwTargeting', (config) => {
+  // fetch media ids
+  fetchTargetingInformation(config.jwTargeting)
+});
 
-  getGlobal().requestBids.before(onFetchCompletion);
-}
+getGlobal().requestBids.before(onFetchCompletion);
 
 export function fetchTargetingInformation(jwTargeting) {
   const mediaIDs = jwTargeting.mediaIDs;
@@ -139,20 +137,11 @@ function onRequestCompleted() {
   }
 }
 
-setup();
-
-const jwplayerUtilities = {
-  'getTargetingForBid': getTargetingForBid
-};
-
 module('jwplayerTargeting', function shareJWPlayerUtilities() {
   const host = arguments[0];
   if (!isPlainObject(host)) {
     logError('JW Player module requires plain object to share methods with submodule');
     return;
   }
-
-  for (let method in jwplayerUtilities) {
-    host[method] = jwplayerUtilities[method];
-  }
+  host.getTargetingForBid = getTargetingForBid;
 });
