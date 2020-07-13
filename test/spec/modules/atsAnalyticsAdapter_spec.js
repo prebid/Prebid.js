@@ -2,7 +2,7 @@ import atsAnalyticsAdapter from '../../../modules/atsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import {server} from '../../mocks/xhr.js';
-import {browserIsChrome, browserIsEdge, browserIsFirefox, browserIsSafari} from '../../../modules/atsAnalyticsAdapter.js';
+import {checkUserBrowser, browserIsChrome, browserIsEdge, browserIsSafari} from '../../../modules/atsAnalyticsAdapter.js';
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -77,7 +77,7 @@ describe('ats analytics adapter', function () {
           'bidder': 'appnexus',
           'bid_id': '30c77d079cdf17',
           'auction_id': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
-          'user_browser': (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari()),
+          'user_browser': checkUserBrowser(),
           'user_platform': navigator.platform,
           'auction_start': '2020-02-03T14:14:25.161Z',
           'domain': window.location.hostname,
@@ -149,7 +149,7 @@ describe('ats analytics adapter', function () {
     it('check browser is not safari', function () {
       window.safari = undefined;
       let browser = browserIsSafari();
-      expect(browser).to.equal('Unknown');
+      expect(browser).to.equal(false);
     })
     it('check browser is safari', function () {
       window.safari = {};
@@ -163,7 +163,7 @@ describe('ats analytics adapter', function () {
         runtime: undefined
       };
       let browser = browserIsChrome();
-      expect(browser).to.equal('Unknown');
+      expect(browser).to.equal(false);
     })
     it('check browser is chrome', function () {
       window.chrome = {
@@ -192,7 +192,7 @@ describe('ats analytics adapter', function () {
         writable: true
       });
       let browser = browserIsEdge();
-      expect(browser).to.equal('Unknown');
+      expect(browser).to.equal(false);
     })
   })
 })

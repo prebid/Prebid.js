@@ -18,7 +18,7 @@ function bidRequestedHandler(args) {
       bidder: bid.bidder,
       bid_id: bid.bidId,
       auction_id: args.auctionId,
-      user_browser: (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari()),
+      user_browser: checkUserBrowser(),
       user_platform: navigator.platform,
       auction_start: new Date(args.auctionStart).toJSON(),
       domain: window.location.hostname,
@@ -38,11 +38,29 @@ function bidResponseHandler(args) {
   };
 }
 
+export function checkUserBrowser() {
+  let firefox = browserIsFirefox();
+  let chrome = browserIsChrome();
+  let edge = browserIsEdge();
+  let safari = browserIsSafari();
+  if (firefox) {
+    return firefox;
+  } if (chrome) {
+    return chrome;
+  } if (edge) {
+    return edge;
+  } if (safari) {
+    return safari;
+  } else {
+    return 'Unknown'
+  }
+}
+
 export function browserIsFirefox() {
   if (typeof InstallTrigger !== 'undefined') {
     return 'Firefox';
   } else {
-    return 'Unknown';
+    return false;
   }
 }
 
@@ -54,7 +72,7 @@ export function browserIsEdge() {
   if (!browserIsIE() && !!window.StyleMedia) {
     return 'Edge';
   } else {
-    return 'Unknown';
+    return false;
   }
 }
 
@@ -62,7 +80,7 @@ export function browserIsChrome() {
   if ((!!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime)) || (/Android/i.test(navigator.userAgent) && !!window.chrome)) {
     return 'Chrome';
   } else {
-    return 'Unknown';
+    return false;
   }
 }
 
@@ -70,7 +88,7 @@ export function browserIsSafari() {
   if (window.safari !== undefined) {
     return 'Safari'
   } else {
-    return 'Unknown';
+    return false;
   }
 }
 
