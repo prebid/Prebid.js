@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec as adapter, SUPPORTED_ID_SYSTEMS, createDomain } from 'modules/vidazooBidAdapter.js';
+import { spec as adapter, SUPPORTED_ID_SYSTEMS, createDomain, hashCode } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { version } from 'package.json';
 
@@ -129,6 +129,9 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should build request for each size', function () {
+
+      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.referer);
+
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
@@ -146,6 +149,7 @@ describe('VidazooBidAdapter', function () {
           adUnitCode: 'div-gpt-ad-12345-0',
           publisherId: '59ac17c192832d0011283fe3',
           dealId: 1,
+          uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           bidderVersion: adapter.version,
           prebidVersion: version,
           res: `${window.top.screen.width}x${window.top.screen.height}`,

@@ -42,6 +42,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const { bidFloor, cId, pId, ext, subDomain } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
+  const uniqueDealId = getUniqueDealId(hashUrl);
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
@@ -52,6 +53,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     publisherId: pId,
     sizes: sizes,
     dealId: dealId,
+    uniqueDealId: uniqueDealId,
     bidderVersion: BIDDER_VERSION,
     prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`
@@ -182,7 +184,7 @@ function getUserSyncs(syncOptions, responses) {
   return [];
 }
 
-function hashCode(s, prefix = '_') {
+export function hashCode(s, prefix = '_') {
   const l = s.length;
   let h = 0
   let i = 0;
@@ -201,6 +203,18 @@ function getNextDealId(key) {
   } catch (e) {
     return 0;
   }
+}
+
+function getUniqueDealId(key) {
+  const storageKey = `u_${key}`;
+  let uniqueId = getStorageItem(storageKey);
+
+  if (!uniqueId) {
+    uniqueId = `${key}_${Date.now().toString()}`;
+    setStorageItem(storageKey, uniqueId);
+  }
+
+  return uniqueId;
 }
 
 function getStorage() {
