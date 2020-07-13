@@ -51,7 +51,15 @@ adapters.json.
       }
     ]
   };
-
+  pbjs.que.push(function() {
+    pbjs.enableAnalytics({
+      provider: 'conversant',
+      options: {
+        site_id: '119041',
+        sampleRate: 100
+      }
+    })
+  });
   pbjs.que.push(function(){
     pbjs.addAdUnits(videoAdUnit);
     pbjs.requestBids({
