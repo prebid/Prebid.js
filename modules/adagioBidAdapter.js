@@ -1,4 +1,4 @@
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { loadExternalScript } from '../src/adloader.js'
@@ -7,14 +7,14 @@ import sha256 from 'crypto-js/sha256.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adagio';
-const VERSION = '2.2.0';
+const VERSION = '2.2.2';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
 const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 const GVLID = 617;
-const storage = getStorageManager(GVLID);
+const storage = getStorageManager(GVLID, 'adagio');
 
 export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9el0+OEn6fvEh1RdVHQu4cnT0
@@ -23,10 +23,8 @@ t0b0lsHN+W4n9kitS/DZ/xnxWK/9vxhv0ZtL1LL/rwR5Mup7rmJbNtDoNBw4TIGj
 pV6EP3MTLosuUEpLaQIDAQAB
 -----END PUBLIC KEY-----`;
 
-export function getAdagioScript() {
+export function adagioScriptFromLocalStorageCb(ls) {
   try {
-    const ls = storage.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
-
     if (!ls) {
       utils.logWarn('Adagio Script not found');
       return;
@@ -58,6 +56,12 @@ export function getAdagioScript() {
   }
 }
 
+export function getAdagioScript() {
+  storage.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY, (ls) => {
+    adagioScriptFromLocalStorageCb(ls)
+  });
+}
+
 function canAccessTopWindow() {
   try {
     if (utils.getWindowTop().location.href) {
@@ -85,7 +89,7 @@ if (canAccessTopWindow()) {
   initAdagio();
 }
 
-const _features = {
+export const _features = {
   getPrintNumber: function (adUnitCode) {
     const adagioAdUnit = _getOrAddAdagioAdUnit(adUnitCode);
     return adagioAdUnit.printNumber || 1;
@@ -270,6 +274,34 @@ function _getElementFromTopWindow(element, currentWindow) {
   }
 }
 
+export function _autoDetectAdUnitElementId(adUnitCode) {
+  const autoDetectedAdUnit = utils.getGptSlotInfoForAdUnitCode(adUnitCode)
+  let adUnitElementId = null;
+
+  if (autoDetectedAdUnit && autoDetectedAdUnit.divId) {
+    adUnitElementId = autoDetectedAdUnit.divId;
+  }
+
+  return adUnitElementId;
+}
+
+function _autoDetectEnvironment() {
+  const device = _features.getDevice();
+  let environment;
+  switch (device) {
+    case 2:
+      environment = 'desktop'
+      break;
+    case 4:
+      environment = 'mobile'
+      break;
+    case 5:
+      environment = 'tablet'
+      break;
+  };
+  return environment
+}
+
 /**
  * Returns all features for a specific adUnit element
  *
@@ -279,22 +311,26 @@ function _getElementFromTopWindow(element, currentWindow) {
 function _getFeatures(bidRequest) {
   if (!canAccessTopWindow()) return;
   const w = utils.getWindowTop();
-  const adUnitElementId = bidRequest.params.adUnitElementId;
   const adUnitCode = bidRequest.adUnitCode;
+  const adUnitElementId = bidRequest.params.adUnitElementId || _autoDetectAdUnitElementId(adUnitCode);
+  let element;
 
-  let element = window.document.getElementById(adUnitElementId);
-
-  if (bidRequest.params.postBid === true) {
-    element = _getElementFromTopWindow(element, window);
-    w.ADAGIO.pbjsAdUnits.map((adUnit) => {
-      if (adUnit.code === adUnitCode) {
-        const outerElementId = element.getAttribute('id');
-        adUnit.outerAdUnitElementId = outerElementId;
-        bidRequest.params.outerAdUnitElementId = outerElementId;
-      }
-    });
+  if (!adUnitElementId) {
+    utils.logWarn('Unable to detect adUnitElementId. Adagio measures won\'t start');
   } else {
-    element = w.document.getElementById(adUnitElementId);
+    if (bidRequest.params.postBid === true) {
+      window.document.getElementById(adUnitElementId);
+      element = _getElementFromTopWindow(element, window);
+      w.ADAGIO.pbjsAdUnits.map((adUnit) => {
+        if (adUnit.code === adUnitCode) {
+          const outerElementId = element.getAttribute('id');
+          adUnit.outerAdUnitElementId = outerElementId;
+          bidRequest.params.outerAdUnitElementId = outerElementId;
+        }
+      });
+    } else {
+      element = w.document.getElementById(adUnitElementId);
+    }
   }
 
   const features = {
@@ -312,6 +348,7 @@ function _getFeatures(bidRequest) {
   };
 
   const adUnitFeature = {};
+
   adUnitFeature[adUnitElementId] = {
     features: features,
     version: FEATURES_VERSION
@@ -358,8 +395,12 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     const { adUnitCode, auctionId, sizes, bidder, params, mediaTypes } = bid;
-    const { organizationId, site, placement, adUnitElementId } = bid.params;
+    const { organizationId, site, placement } = bid.params;
+    const adUnitElementId = bid.params.adUnitElementId || _autoDetectAdUnitElementId(adUnitCode);
+    const environment = bid.params.environment || _autoDetectEnvironment();
     let isValid = false;
+
+    utils.logInfo('adUnitElementId', adUnitElementId)
 
     try {
       if (canAccessTopWindow()) {
@@ -367,8 +408,16 @@ export const spec = {
         w.ADAGIO = w.ADAGIO || {};
         w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
         w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
-        isValid = !!(organizationId && site && placement && adUnitElementId);
+        isValid = !!(organizationId && site && placement);
+
         const tempAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
+
+        bid.params = {
+          ...bid.params,
+          adUnitElementId,
+          environment
+        }
+
         tempAdUnits.push({
           code: adUnitCode,
           sizes: (mediaTypes && mediaTypes.banner && Array.isArray(mediaTypes.banner.sizes)) ? mediaTypes.banner.sizes : sizes,

@@ -1,7 +1,8 @@
 
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {VIDEO, BANNER} from '../src/mediaTypes.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'cpmstar';
 
@@ -17,12 +18,12 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   pageID: Math.floor(Math.random() * 10e6),
 
-  getMediaType: function(bidRequest) {
+  getMediaType: function (bidRequest) {
     if (bidRequest == null) return BANNER;
     return !utils.deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
   },
 
-  getPlayerSize: function(bidRequest) {
+  getPlayerSize: function (bidRequest) {
     var playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
     if (playerSize == null) return [640, 440];
     if (playerSize[0] != null) playerSize = playerSize[0];
@@ -46,9 +47,33 @@ export const spec = {
       var mediaType = spec.getMediaType(bidRequest);
       var playerSize = spec.getPlayerSize(bidRequest);
       var videoArgs = '&fv=0' + (playerSize ? ('&w=' + playerSize[0] + '&h=' + playerSize[1]) : '');
+
+      var url = ENDPOINT + '?media=' + mediaType + (mediaType == VIDEO ? videoArgs : '') +
+        '&json=c_b&mv=1&poolid=' + utils.getBidIdParameter('placementId', bidRequest.params) +
+        '&reachedTop=' + encodeURIComponent(bidderRequest.refererInfo.reachedTop) +
+        '&requestid=' + bidRequest.bidId +
+        '&referer=' + encodeURIComponent(referer);
+
+      if (bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent.consentString != null) {
+          url += '&gdpr_consent=' + bidderRequest.gdprConsent.consentString;
+        }
+        if (bidderRequest.gdprConsent.gdprApplies != null) {
+          url += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+        }
+      }
+
+      if (bidderRequest.uspConsent != null) {
+        url += '&us_privacy=' + bidderRequest.uspConsent;
+      }
+
+      if (config.getConfig('coppa')) {
+        url += '&tfcd=' + (config.getConfig('coppa') ? 1 : 0);
+      }
+
       requests.push({
         method: 'GET',
-        url: ENDPOINT + '?media=' + mediaType + (mediaType == VIDEO ? videoArgs : '') + '&json=c_b&mv=1&poolid=' + utils.getBidIdParameter('placementId', bidRequest.params) + '&reachedTop=' + encodeURIComponent(bidderRequest.refererInfo.reachedTop) + '&requestid=' + bidRequest.bidId + '&referer=' + referer,
+        url: url,
         bidRequest: bidRequest,
       });
     }

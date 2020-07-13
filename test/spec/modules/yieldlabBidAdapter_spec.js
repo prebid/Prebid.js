@@ -12,6 +12,10 @@ const REQUEST = {
       'key1': 'value1',
       'key2': 'value2'
     },
+    'customParams': {
+      'extraParam': true,
+      'foo': 'bar'
+    },
     'extId': 'abc'
   },
   'bidderRequestId': '143346cf0f1731',
@@ -86,6 +90,10 @@ describe('yieldlabBidAdapter', function () {
 
     it('passes userids to bid request', function () {
       expect(request.url).to.include('ids=netid.de%3AfH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg')
+    })
+
+    it('passes extra params to bid request', function () {
+      expect(request.url).to.include('extraParam=true&foo=bar')
     })
 
     const gdprRequest = spec.buildRequests(bidRequests, {

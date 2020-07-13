@@ -107,7 +107,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
     });
 
@@ -126,7 +127,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_us_privacy).to.exist.and.to.be.a('string');
       expect(payload._fw_us_privacy).to.equal(uspConsentString);
@@ -145,7 +147,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
@@ -178,7 +181,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
     });
 
@@ -197,7 +201,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_us_privacy).to.exist.and.to.be.a('string');
       expect(payload._fw_us_privacy).to.equal(uspConsentString);
@@ -216,7 +221,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
       expect(payload.zoneId).to.equal('277225');
-      expect(payload.componentId).to.equal('mustang');
+      expect(payload.componentId).to.equal('prebid');
+      expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
@@ -290,6 +296,8 @@ describe('freewheelSSP BidAdapter Test', () => {
     '<Ad id=\'AdswizzAd28517153\'>' +
     '  <InLine>' +
     '   <AdSystem>Adswizz</AdSystem>' +
+    '   <Impression id="dmp-1617899169-2513"></Impression>' +
+    '   <Impression id="user-sync-1617899169-1">https://ads.stickyadstv.com/auto-user-sync?dealId=NRJ-PRO-00008</Impression>' +
     '   <Creatives>' +
     '    <Creative id=\'28517153\' sequence=\'1\'>' +
     '     <Linear>' +
@@ -323,12 +331,14 @@ describe('freewheelSSP BidAdapter Test', () => {
           currency: 'EUR',
           netRevenue: true,
           ttl: 360,
+          dealId: 'NRJ-PRO-00008',
           ad: ad
         }
       ];
 
       let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].dealId).to.equal('NRJ-PRO-00008');
     });
 
     it('should get correct bid response with formated ad', () => {
@@ -344,12 +354,14 @@ describe('freewheelSSP BidAdapter Test', () => {
           currency: 'EUR',
           netRevenue: true,
           ttl: 360,
+          dealId: 'NRJ-PRO-00008',
           ad: formattedAd
         }
       ];
 
       let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].dealId).to.equal('NRJ-PRO-00008');
     });
 
     it('handles nobid responses', () => {
@@ -421,6 +433,8 @@ describe('freewheelSSP BidAdapter Test', () => {
     '<Ad id=\'AdswizzAd28517153\'>' +
     '  <InLine>' +
     '   <AdSystem>Adswizz</AdSystem>' +
+    '   <Impression id="dmp-1617899169-2513"></Impression>' +
+    '   <Impression id="user-sync-1617899169-1">https://ads.stickyadstv.com/auto-user-sync?dealId=NRJ-PRO-00008</Impression>' +
     '   <Creatives>' +
     '    <Creative id=\'28517153\' sequence=\'1\'>' +
     '     <Linear>' +
@@ -454,6 +468,7 @@ describe('freewheelSSP BidAdapter Test', () => {
           currency: 'EUR',
           netRevenue: true,
           ttl: 360,
+          dealId: 'NRJ-PRO-00008',
           vastXml: response,
           mediaType: 'video',
           ad: ad
@@ -462,6 +477,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
       let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].dealId).to.equal('NRJ-PRO-00008');
     });
 
     it('should get correct bid response with formated ad', () => {
@@ -477,6 +493,7 @@ describe('freewheelSSP BidAdapter Test', () => {
           currency: 'EUR',
           netRevenue: true,
           ttl: 360,
+          dealId: 'NRJ-PRO-00008',
           vastXml: response,
           mediaType: 'video',
           ad: formattedAd
@@ -485,6 +502,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
       let result = spec.interpretResponse(response, request[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].dealId).to.equal('NRJ-PRO-00008');
     });
 
     it('handles nobid responses', () => {
