@@ -42,7 +42,7 @@ export function browserIsFirefox() {
   if (typeof InstallTrigger !== 'undefined') {
     return 'Firefox';
   } else {
-    return false;
+    return 'Unknown';
   }
 }
 
@@ -54,7 +54,7 @@ export function browserIsEdge() {
   if (!browserIsIE() && !!window.StyleMedia) {
     return 'Edge';
   } else {
-    return false;
+    return 'Unknown';
   }
 }
 
@@ -62,7 +62,7 @@ export function browserIsChrome() {
   if ((!!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime)) || (/Android/i.test(navigator.userAgent) && !!window.chrome)) {
     return 'Chrome';
   } else {
-    return false;
+    return 'Unknown';
   }
 }
 
@@ -70,7 +70,7 @@ export function browserIsSafari() {
   if (window.safari !== undefined) {
     return 'Safari'
   } else {
-    return false;
+    return 'Unknown';
   }
 }
 

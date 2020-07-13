@@ -149,7 +149,7 @@ describe('ats analytics adapter', function () {
     it('check browser is not safari', function () {
       window.safari = undefined;
       let browser = browserIsSafari();
-      expect(browser).to.equal(false);
+      expect(browser).to.equal('Unknown');
     })
     it('check browser is safari', function () {
       window.safari = {};
@@ -163,7 +163,7 @@ describe('ats analytics adapter', function () {
         runtime: undefined
       };
       let browser = browserIsChrome();
-      expect(browser).to.equal(false);
+      expect(browser).to.equal('Unknown');
     })
     it('check browser is chrome', function () {
       window.chrome = {
@@ -192,7 +192,7 @@ describe('ats analytics adapter', function () {
         writable: true
       });
       let browser = browserIsEdge();
-      expect(browser).to.equal(false);
+      expect(browser).to.equal('Unknown');
     })
   })
 })
