@@ -15,10 +15,18 @@ Prebid auctions timeout at 200ms.
 let feedFetchTimeout = 150;
 
 config.getConfig('jwTargeting', config => {
+  const targeting = config.jwTargeting;
   // fetch media ids
-  fetchTargetingInformation(config.jwTargeting)
+  fetchTargetingInformation(targeting);
 
-  const timeout = config.bidderTimeout;
+  const prefetchTimeout = targeting.prefetchTimeout;
+  if (prefetchTimeout) {
+    // prefetch timeout supersedes our default and our adjustment for bidderTimeout.
+    feedFetchTimeout = prefetchTimeout;
+    return;
+  }
+
+  const timeout = config.bidderTimeout; 
   if (timeout < 200) {
     // 3/4 is the ratio between 150 and 200, where 150 is our default and 200 is prebid's default auction timeout.
     // Note auction will close at 200ms even if bidderTimeout is greater.
@@ -29,8 +37,7 @@ config.getConfig('jwTargeting', config => {
 getGlobal().requestBids.before(ensureFeedRequestCompletion);
 
 export function fetchTargetingInformation(jwTargeting) {
-  const { mediaIDs, prefetchTimeout } = jwTargeting.mediaIDs;
-  feedFetchTimeout = prefetchTimeout || feedFetchTimeout;
+  const mediaIDs = jwTargeting.mediaIDs;
   requestCount = mediaIDs.length;
   mediaIDs.forEach(mediaID => {
     fetchTargetingForMediaId(mediaID);
