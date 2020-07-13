@@ -646,7 +646,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     });
     try {
       if (rtbBid.rtb.trackers) {
-        const url = rtbBid.rtb.trackers[0].impression_urls[0] : null;
+        const url = rtbBid.rtb.trackers[0].impression_urls[0];
         const tracker = utils.createTrackPixelHtml(url);
         bid.ad += tracker;
       }
