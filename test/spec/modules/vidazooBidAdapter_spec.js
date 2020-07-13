@@ -129,9 +129,7 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should build request for each size', function () {
-
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.referer);
-
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
