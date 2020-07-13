@@ -392,7 +392,7 @@ function createOutstreamScript(bid) {
 
   utils.logMessage('[SPOTX][renderer] Default beahavior');
   if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
-    dataSpotXParams['data-spotx_ad_mute'] = '0';
+    dataSpotXParams['data-spotx_ad_mute'] = '1';
   }
   dataSpotXParams['data-spotx_collapse'] = '0';
   dataSpotXParams['data-spotx_autoplay'] = '1';
