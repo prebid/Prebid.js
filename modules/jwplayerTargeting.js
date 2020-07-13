@@ -9,15 +9,28 @@ let requestCount = 0;
 let requestTimeout;
 let resumeBidRequest;
 
-config.getConfig('jwTargeting', (config) => {
+/*
+Prebid auctions timeout at 200ms.
+ */
+let feedFetchTimeout = 150;
+
+config.getConfig('jwTargeting', config => {
   // fetch media ids
   fetchTargetingInformation(config.jwTargeting)
+
+  const timeout = config.bidderTimeout;
+  if (timeout < 200) {
+    // 3/4 is the ratio between 150 and 200, where 150 is our default and 200 is prebid's default auction timeout.
+    // Note auction will close at 200ms even if bidderTimeout is greater.
+    feedFetchTimeout = timeout * 3 / 4;
+  }
 });
 
 getGlobal().requestBids.before(ensureFeedRequestCompletion);
 
 export function fetchTargetingInformation(jwTargeting) {
-  const mediaIDs = jwTargeting.mediaIDs;
+  const { mediaIDs, prefetchTimeout } = jwTargeting.mediaIDs;
+  feedFetchTimeout = prefetchTimeout || feedFetchTimeout;
   requestCount = mediaIDs.length;
   mediaIDs.forEach(mediaID => {
     fetchTargetingForMediaId(mediaID);
@@ -34,7 +47,7 @@ export function ensureFeedRequestCompletion(requestBids, bidRequestConfig) {
     resumeBidRequest();
     resumeBidRequest = null;
     requestTimeout = null;
-  }, 1500);
+  }, feedFetchTimeout);
 }
 
 /**

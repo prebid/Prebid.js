@@ -268,7 +268,7 @@ describe('jwplayer', function() {
       });
       ensureFeedRequestCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
-      clock.tick(1500);
+      clock.tick(150);
       expect(bidRequestSpy.calledOnce).to.be.true;
     });
 
@@ -278,7 +278,7 @@ describe('jwplayer', function() {
       });
       ensureFeedRequestCompletion(bidRequestSpy, {});
       expect(bidRequestSpy.notCalled).to.be.true;
-      clock.tick(1500);
+      clock.tick(150);
       expect(bidRequestSpy.calledOnce).to.be.true;
 
       fakeServer.respond();
