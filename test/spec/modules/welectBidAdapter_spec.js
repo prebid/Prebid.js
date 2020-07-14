@@ -86,14 +86,14 @@ describe('WelectAdapter', function () {
 
     let data1 = {
       bid_id: 'abdc',
-      width: '640',
-      height: '360'
+      width: 640,
+      height: 360
     }
 
     let data2 = {
       bid_id: 'abdc',
-      width: '640',
-      height: '360',
+      width: 640,
+      height: 360,
       gdpr_consent: {
         gdpr_applies: 1,
         gdpr_consent: 'some_string'
@@ -150,12 +150,12 @@ describe('WelectAdapter', function () {
           cpm: 17,
           creativeId: 'svmpreview',
           currency: 'EUR',
-          height: '640',
           netRevenue: true,
           requestId: 'some bid id',
           ttl: 120,
           vastUrl: 'some vast url',
-          width: '320'
+          height: 640,
+          width: 320
         }
       }
     }
@@ -163,8 +163,8 @@ describe('WelectAdapter', function () {
     let bid = {
       data: {
         bid_id: 'some bid id',
-        width: '640',
-        height: '360',
+        width: 640,
+        height: 320,
         gdpr_consent: {
           gdpr_applies: 1,
           gdpr_consent: 'some_string'
@@ -186,12 +186,12 @@ describe('WelectAdapter', function () {
       cpm: 17,
       creativeId: 'svmpreview',
       currency: 'EUR',
-      height: '640',
+      height: 640,
       netRevenue: true,
       requestId: 'some bid id',
       ttl: 120,
       vastUrl: 'some vast url',
-      width: '320'
+      width: 320
     }
 
     it('if response reflects unavailability, should be empty', function () {

@@ -27,8 +27,8 @@ export const spec = {
    */
   buildRequests: function (validBidRequests) {
     return validBidRequests.map(bidRequest => {
-      let rawSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
-      let size = utils.parseSizesInput(rawSize)[0].split('x');
+      let rawSizes = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
+      let size = rawSizes[0]
 
       let domain = bidRequest.params.domain || DEFAULT_DOMAIN;
 
