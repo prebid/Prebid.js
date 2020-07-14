@@ -17,7 +17,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return utils.deepAccess(bid, 'mediaTypes.video.context') == 'instream' && !!(bid.params.placementId);
+    return utils.deepAccess(bid, 'mediaTypes.video.context') === 'instream' && !!(bid.params.placementId);
   },
   /**
    * Make a server request from the list of BidRequests.
