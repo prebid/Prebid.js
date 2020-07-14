@@ -83,7 +83,6 @@ export const spec = {
 
       const ext = {
         sdk_name: 'Prebid 1+',
-        player_vendor: 'SpotXJW',
         versionOrtb: ORTB_VERSION
       };
 
