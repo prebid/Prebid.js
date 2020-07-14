@@ -139,7 +139,6 @@ export function checkAdUnitSetupHook(adUnits) {
             // Either 'sizes' or 'playerSize' is not declared as an array, which makes it invalid by default.
             isValid = false;
             showError = true;
-            return;
           }
           if (showError) {
             utils.logError(`Ad unit ${adUnitCode}: Invalid declaration of '${propertyName}' in 'mediaTypes.${mediaType}.sizeConfig[${index}]'. ${conditionalLogMessages[mediaType]}`);
