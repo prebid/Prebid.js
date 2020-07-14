@@ -42,6 +42,45 @@ describe('Smart bid adapter tests', function () {
     transactionId: 'zsfgzzg'
   }];
 
+  var DEFAULT_PARAMS_WITH_EIDS = [{
+    adUnitCode: 'sas_42',
+    bidId: 'abcd1234',
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250],
+          [300, 200]
+        ]
+      }
+    },
+    bidder: 'smartadserver',
+    params: {
+      domain: 'https://prg.smartadserver.com',
+      siteId: '1234',
+      pageId: '5678',
+      formatId: '90',
+      target: 'test=prebid',
+      bidfloor: 0.420,
+      buId: '7569',
+      appName: 'Mozilla',
+      ckId: 42
+    },
+    requestId: 'efgh5678',
+    transactionId: 'zsfgzzg',
+    userId: {
+      britepoolid: '1111',
+      criteoId: '1111',
+      digitrustid: { data: { id: 'DTID', keyv: 4, privacy: { optout: false }, producer: 'ABC', version: 2 } },
+      id5id: '1111',
+      idl_env: '1111',
+      lipbid: '1111',
+      parrableid: 'eidVersion.encryptionKeyReference.encryptedValue',
+      pubcid: '1111',
+      tdid: '1111',
+      netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
+    }
+  }];
+
   // Default params without optional ones
   var DEFAULT_PARAMS_WO_OPTIONAL = [{
     adUnitCode: 'sas_42',
@@ -431,6 +470,33 @@ describe('Smart bid adapter tests', function () {
       }, INSTREAM_DEFAULT_PARAMS[0]]);
       expect(request[0]).to.be.empty;
       expect(request[1]).to.not.be.empty;
+    });
+  });
+
+  describe('External ids tests', function () {
+    it('Verify external ids in request and ids found', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        }
+      });
+      const request = spec.buildRequests(DEFAULT_PARAMS_WITH_EIDS);
+      expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+      expect(request[0]).to.have.property('method').and.to.equal('POST');
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('eids');
+      expect(requestContent.eids).to.not.equal(null).and.to.not.be.undefined;
+      expect(requestContent.eids.length).to.greaterThan(0);
+      for (let index in requestContent.eids) {
+        let eid = requestContent.eids[index];
+        expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
+        expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
+        for (let uidsIndex in eid.uids) {
+          let uid = eid.uids[uidsIndex];
+          expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
+        }
+      }
     });
   });
 

@@ -82,6 +82,12 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // lotamePanoramaId
+  lotamePanoramaId: {
+    source: 'crwdcntrl.net',
+    atype: 1,
+  },
+
   // DigiTrust
   'digitrustid': {
     getValue: function (data) {
