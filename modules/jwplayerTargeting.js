@@ -12,7 +12,7 @@ let resumeBidRequest;
 /*
 Prebid auctions timeout at 200ms.
  */
-let feedFetchTimeout = 150;
+let bidPauseTimeout = 150;
 
 config.getConfig('jwTargeting', config => {
   const targeting = config.jwTargeting;
@@ -22,15 +22,15 @@ config.getConfig('jwTargeting', config => {
   const prefetchTimeout = targeting.prefetchTimeout;
   if (prefetchTimeout) {
     // prefetch timeout supersedes our default and our adjustment for bidderTimeout.
-    feedFetchTimeout = prefetchTimeout;
+    bidPauseTimeout = prefetchTimeout;
     return;
   }
 
-  const timeout = config.bidderTimeout; 
+  const timeout = config.bidderTimeout;
   if (timeout < 200) {
     // 3/4 is the ratio between 150 and 200, where 150 is our default and 200 is prebid's default auction timeout.
     // Note auction will close at 200ms even if bidderTimeout is greater.
-    feedFetchTimeout = timeout * 3 / 4;
+    bidPauseTimeout = timeout * 3 / 4;
   }
 });
 
@@ -54,7 +54,7 @@ export function ensureFeedRequestCompletion(requestBids, bidRequestConfig) {
     resumeBidRequest();
     resumeBidRequest = null;
     requestTimeout = null;
-  }, feedFetchTimeout);
+  }, bidPauseTimeout);
 }
 
 /**
