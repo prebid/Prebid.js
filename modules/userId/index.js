@@ -251,7 +251,7 @@ function processSubmoduleCallbacks(submodules, cb) {
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj);
       } else {
-        utils.logError(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
+        utils.logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
       done();
     });
@@ -449,7 +449,7 @@ function initSubmodules(submodules, consentData) {
 
       if (storedId) {
         // cache decoded value (this is copied to every adUnit bid)
-        submodule.idObj = submodule.submodule.decode(storedId, submodule.config);
+        submodule.idObj = submodule.submodule.decode(storedId, submodule.config.params);
       }
     } else if (submodule.config.value) {
       // cache decoded value (this is copied to every adUnit bid)
@@ -458,7 +458,7 @@ function initSubmodules(submodules, consentData) {
       const response = submodule.submodule.getId(submodule.config.params, consentData, undefined);
       if (utils.isPlainObject(response)) {
         if (typeof response.callback === 'function') { submodule.callback = response.callback; }
-        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
+        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config.params); }
       }
     }
     carry.push(submodule);

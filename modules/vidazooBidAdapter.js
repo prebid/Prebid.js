@@ -2,8 +2,9 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
-export const URL = 'https://prebid.cootlogix.com';
+const DEFAULT_SUB_DOMAIN = 'prebid';
 const BIDDER_CODE = 'vidazoo';
+const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
 const INTERNAL_SYNC_TYPE = {
@@ -14,6 +15,22 @@ const EXTERNAL_SYNC_TYPE = {
   IFRAME: 'iframe',
   IMAGE: 'image'
 };
+export const SUPPORTED_ID_SYSTEMS = {
+  'britepoolid': 1,
+  'criteoId': 1,
+  'digitrustid': 1,
+  'id5id': 1,
+  'idl_env': 1,
+  'lipb': 1,
+  'netId': 1,
+  'parrableid': 1,
+  'pubcid': 1,
+  'tdid': 1,
+};
+
+export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
+  return `https://${subDomain}.cootlogix.com`;
+}
 
 function isBidRequestValid(bid) {
   const params = bid.params || {};
@@ -21,8 +38,8 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const { params, bidId } = bid;
-  const { bidFloor, cId, pId, ext } = params;
+  const { params, bidId, userId, adUnitCode } = bid;
+  const { bidFloor, cId, pId, ext, subDomain } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
 
@@ -31,10 +48,17 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     cb: Date.now(),
     bidFloor: bidFloor,
     bidId: bidId,
+    adUnitCode: adUnitCode,
     publisherId: pId,
     sizes: sizes,
     dealId: dealId,
+    bidderVersion: BIDDER_VERSION,
+    prebidVersion: '$prebid.version$',
+    res: `${screen.width}x${screen.height}`
   };
+
+  appendUserIdsToRequestPayload(data, userId);
+
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.consentString) {
       data.gdprConsent = bidderRequest.gdprConsent.consentString;
@@ -48,7 +72,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   }
   const dto = {
     method: 'POST',
-    url: `${URL}/prebid/multi/${cId}`,
+    url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
     data: data
   };
 
@@ -57,6 +81,26 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   });
 
   return dto;
+}
+
+function appendUserIdsToRequestPayload(payloadRef, userIds) {
+  let key;
+  utils._each(userIds, (userId, idSystemProviderName) => {
+    if (SUPPORTED_ID_SYSTEMS[idSystemProviderName]) {
+      key = `uid.${idSystemProviderName}`;
+
+      switch (idSystemProviderName) {
+        case 'digitrustid':
+          payloadRef[key] = utils.deepAccess(userId, 'data.id');
+          break;
+        case 'lipb':
+          payloadRef[key] = userId.lipbid;
+          break;
+        default:
+          payloadRef[key] = userId;
+      }
+    }
+  });
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
@@ -179,6 +223,7 @@ function setStorageItem(key, value) {
 
 export const spec = {
   code: BIDDER_CODE,
+  version: BIDDER_VERSION,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
