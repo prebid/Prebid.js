@@ -18,7 +18,7 @@ This module connects web publishers to AMX RTB video and display demand.
 | --- | -------- | ------- | ----------- |
 | `endpoint`  | **yes** | `https://prebid.a-mo.net/a/c` | The url including https:// and any path |
 | `testMode` | no | `true` | this will activate test mode / 100% fill with sample ads |
-| `tagId` | no | `"eh3hffb"` | can be used for more specific targeting of inventory. Your account manager will provide this ID if needed |
+| `tagId` | no | `"cHJlYmlkLm9yZw"` | can be used for more specific targeting of inventory. Your account manager will provide this ID if needed |
 
 # Test Parameters
 
@@ -30,7 +30,7 @@ var adUnits = [{
     bidder: 'amx',
     params: {
       testMode: true,
-      endpoint: 'https://prebid.a-mo.net/a/c',
+      tagId: 'cHJlYmlkLm9yZw'
     },
   }]
 }]

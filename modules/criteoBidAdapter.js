@@ -8,7 +8,7 @@ import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 91;
-export const ADAPTER_VERSION = 31;
+export const ADAPTER_VERSION = 32;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
@@ -156,10 +156,16 @@ export const spec = {
    * @param {TimedOutBid} timeoutData
    */
   onTimeout: (timeoutData) => {
-    if (publisherTagAvailable()) {
-      // eslint-disable-next-line no-undef
-      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(timeoutData.auctionId);
-      adapter.handleBidTimeout();
+    if (publisherTagAvailable() && Array.isArray(timeoutData)) {
+      var auctionsIds = [];
+      timeoutData.forEach((bid) => {
+        if (auctionsIds.indexOf(bid.auctionId) === -1) {
+          auctionsIds.push(bid.auctionId);
+          // eslint-disable-next-line no-undef
+          const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
+          adapter.handleBidTimeout();
+        }
+      });
     }
   },
 
@@ -167,7 +173,7 @@ export const spec = {
    * @param {Bid} bid
    */
   onBidWon: (bid) => {
-    if (publisherTagAvailable()) {
+    if (publisherTagAvailable() && bid) {
       // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
       adapter.handleBidWon(bid);
@@ -471,10 +477,7 @@ export function tryGetCriteoFastBid() {
 
         if (verify(publisherTag, publisherTagHash, FAST_BID_PUBKEY_N, FAST_BID_PUBKEY_E)) {
           utils.logInfo('Using Criteo FastBid');
-          const script = document.createElement('script');
-          script.type = 'text/javascript';
-          script.text = publisherTag;
-          utils.insertElement(script);
+          eval(publisherTag); // eslint-disable-line no-eval
         } else {
           utils.logWarn('Invalid Criteo FastBid found');
           storage.removeDataFromLocalStorage(fastBidStorageKey);
