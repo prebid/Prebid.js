@@ -1,3 +1,12 @@
+/**
+ * The JW Player Targeting module provides functions which allow Ad Bidders to obtain JW Player's
+ * Video Ad Targeting information.
+ * The module can be used as a submodule for prebid adapters, allowing them to use the getTargetingForBid() function.
+ * The module will fetch segments for the media ids present in the prebid config when the module loads. If any bid
+ * requests are made while the segments are being fetched, they will be blocked until all requests complete, or the
+ * 150ms timeout expires.
+ */
+
 import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { logError, isPlainObject } from '../src/utils.js';
@@ -58,7 +67,9 @@ export function ensureFeedRequestCompletion(requestBids, bidRequestConfig) {
 }
 
 /**
- * @param bidRequest {object} - the bid which is passed to a prebid adapter for use in `buildRequests`
+ * Retrieves the targeting information pertaining to a bid request.
+ * @param bidRequest {object} - the bid which is passed to a prebid adapter for use in `buildRequests`. It must contain
+ * a jwTargeting property.
  * @returns {Array<string>} - an array of jwpseg targeting segments found for the given bidRequest information
  */
 export function getTargetingForBid(bidRequest) {
