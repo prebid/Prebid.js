@@ -5,8 +5,6 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 
 /** @type {Submodule} */
@@ -23,18 +21,18 @@ export const haloIdSubmodule = {
    * @returns {{haloid:string}}
    */
   getHaloId(callback) {
-    var script = document.createElement("script")
-    script.type = "text/javascript";
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
 
     script.onload = function() {
       callback(window.localStorage.getItem('auHalo'));
     }
 
-    script.src = "https://id.halo.dev.ad.gt/api/v1/haloid";
-    document.getElementsByTagName("head")[0].appendChild(script);
+    script.src = 'https://id.halo.dev.ad.gt/api/v1/haloid';
+    document.getElementsByTagName('head')[0].appendChild(script);
   },
   decode(value) {
-    return (value && typeof value['auHalo'] === 'string') ? { 'auHalo': value['auHalo'] } : null;
+    return (value && typeof value['haloId'] === 'string') ? { 'haloId': value['haloId'] } : null;
   },
   /**
    * Performs action to obtain id and return a value in the callback's response argument
@@ -43,8 +41,13 @@ export const haloIdSubmodule = {
    * @returns {function(callback:function)}
    */
   getId(submoduleConfigParams, consentData) {
+    if (typeof submoduleConfigParams.getter == 'function') {
+      let haloId = submoduleConfigParams.getter()
+      return {id: haloId}
+    }
+
     haloIdSubmodule.getHaloId(function(haloId) {
-        return {id: haloId}
+      return {id: haloId}
     });
   }
 };
