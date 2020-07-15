@@ -2,8 +2,9 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
-export const URL = 'https://prebid.cootlogix.com';
+const DEFAULT_SUB_DOMAIN = 'prebid';
 const BIDDER_CODE = 'vidazoo';
+const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
 const INTERNAL_SYNC_TYPE = {
@@ -27,6 +28,10 @@ export const SUPPORTED_ID_SYSTEMS = {
   'tdid': 1,
 };
 
+export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
+  return `https://${subDomain}.cootlogix.com`;
+}
+
 function isBidRequestValid(bid) {
   const params = bid.params || {};
   return !!(params.cId && params.pId);
@@ -34,7 +39,7 @@ function isBidRequestValid(bid) {
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const { params, bidId, userId, adUnitCode } = bid;
-  const { bidFloor, cId, pId, ext } = params;
+  const { bidFloor, cId, pId, ext, subDomain } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
 
@@ -47,6 +52,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     publisherId: pId,
     sizes: sizes,
     dealId: dealId,
+    bidderVersion: BIDDER_VERSION,
+    prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`
   };
 
@@ -65,7 +72,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   }
   const dto = {
     method: 'POST',
-    url: `${URL}/prebid/multi/${cId}`,
+    url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
     data: data
   };
 
@@ -216,6 +223,7 @@ function setStorageItem(key, value) {
 
 export const spec = {
   code: BIDDER_CODE,
+  version: BIDDER_VERSION,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
