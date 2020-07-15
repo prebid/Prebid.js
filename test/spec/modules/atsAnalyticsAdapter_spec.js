@@ -2,7 +2,7 @@ import atsAnalyticsAdapter from '../../../modules/atsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import {server} from '../../mocks/xhr.js';
-import {checkUserBrowser, browserIsChrome, browserIsEdge, browserIsSafari} from '../../../modules/atsAnalyticsAdapter.js';
+import {checkUserBrowser, browserIsChrome, browserIsEdge, browserIsSafari, browserIsFirefox} from '../../../modules/atsAnalyticsAdapter.js';
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -192,6 +192,16 @@ describe('ats analytics adapter', function () {
         writable: true
       });
       let browser = browserIsEdge();
+      expect(browser).to.equal(false);
+    })
+    it('check browser is firefox', function () {
+      global.InstallTrigger = {};
+      let browser = browserIsFirefox();
+      expect(browser).to.equal('Firefox');
+    })
+    it('check browser is not firefox', function () {
+      global.InstallTrigger = undefined;
+      let browser = browserIsFirefox();
       expect(browser).to.equal(false);
     })
   })
