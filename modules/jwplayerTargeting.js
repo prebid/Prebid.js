@@ -12,6 +12,7 @@ import { ajaxBuilder } from '../src/ajax.js';
 import { logError, isPlainObject } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { module } from '../src/hook.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const segCache = {};
 let requestCount = 0;
@@ -90,7 +91,7 @@ export function getTargetingForBid(bidRequest) {
     return [];
   }
 
-  const item = mediaID ? player.getPlaylist().find(item => item.mediaid === mediaID) : player.getPlaylistItem();
+  const item = mediaID ? find(player.getPlaylist(), item => item.mediaid === mediaID) : player.getPlaylistItem();
   if (!item) {
     return [];
   }
