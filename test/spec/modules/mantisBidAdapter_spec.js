@@ -47,6 +47,24 @@ describe('MantisAdapter', function () {
       }
     ];
 
+    it('gdpr consent not required', function () {
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {gdprApplies: false}});
+
+      expect(request.url).not.to.include('consent=false');
+    });
+
+    it('gdpr consent required', function () {
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {gdprApplies: true}});
+
+      expect(request.url).to.include('consent=false');
+    });
+
+    it('usp consent', function () {
+      const request = spec.buildRequests(bidRequests, {uspConsent: 'foobar'});
+
+      expect(request.url).to.include('usp=foobar');
+    });
+
     it('domain override', function () {
       window.mantis_domain = 'https://foo';
       const request = spec.buildRequests(bidRequests);

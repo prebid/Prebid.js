@@ -215,11 +215,11 @@ function buildMantisUrl(path, data, domain) {
 
 const spec = {
   code: 'mantis',
-  supportedMediaTypes: ['banner', 'video', 'native'],
+  supportedMediaTypes: ['banner'],
   isBidRequestValid: function (bid) {
     return !!(bid.params.property && (bid.params.code || bid.params.zoneId || bid.params.zone));
   },
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     var property = null;
     validBidRequests.some(function (bid) {
       if (bid.params.property) {
@@ -229,6 +229,7 @@ const spec = {
     });
     const query = {
       measurable: true,
+      usp: bidderRequest && bidderRequest.uspConsent,
       bids: validBidRequests.map(function (bid) {
         return {
           bidId: bid.bidId,
@@ -240,6 +241,11 @@ const spec = {
       }),
       property: property
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+      query.consent = false;
+    }
+
     return {
       method: 'GET',
       url: buildMantisUrl('/prebid/display', query) + '&foo',
@@ -262,17 +268,17 @@ const spec = {
       };
     });
   },
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: buildMantisUrl('/prebid/iframe')
+        url: buildMantisUrl('/prebid/iframe', {gdpr: gdprConsent, uspConsent: uspConsent})
       }];
     }
     if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: buildMantisUrl('/prebid/pixel')
+        url: buildMantisUrl('/prebid/pixel', {gdpr: gdprConsent, uspConsent: uspConsent})
       }];
     }
   }
