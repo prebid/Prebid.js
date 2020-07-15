@@ -1,3 +1,4 @@
+import find from 'core-js-pure/features/array/find.js';
 import { expect } from 'chai';
 import { _features, internal as adagio, adagioScriptFromLocalStorageCb, getAdagioScript, storage, spec, ENDPOINT, VERSION } from '../../../modules/adagioBidAdapter.js';
 import { loadExternalScript } from '../../../src/adloader.js';
@@ -94,13 +95,13 @@ describe('Adagio bid adapter', () => {
   };
 
   beforeEach(() => {
-    global.ADAGIO = {};
-    global.ADAGIO.adUnits = {};
-    global.ADAGIO.pbjsAdUnits = [];
-    global.ADAGIO.queue = [];
-    global.ADAGIO.versions = {};
-    global.ADAGIO.versions.adagioBidderAdapter = VERSION;
-    global.ADAGIO.pageviewId = 'dda61753-4059-4f75-b0bf-3f60bd2c4d9a';
+    window.ADAGIO = {};
+    window.ADAGIO.adUnits = {};
+    window.ADAGIO.pbjsAdUnits = [];
+    window.ADAGIO.queue = [];
+    window.ADAGIO.versions = {};
+    window.ADAGIO.versions.adagioBidderAdapter = VERSION;
+    window.ADAGIO.pageviewId = 'dda61753-4059-4f75-b0bf-3f60bd2c4d9a';
 
     adagioMock = sinon.mock(adagio);
     utilsMock = sinon.mock(utils);
@@ -109,7 +110,7 @@ describe('Adagio bid adapter', () => {
   });
 
   afterEach(() => {
-    global.ADAGIO = undefined;
+    window.ADAGIO = undefined;
 
     adagioMock.restore();
     utilsMock.restore();
@@ -251,17 +252,15 @@ describe('Adagio bid adapter', () => {
 
         // replace by the values defined in beforeEach
         window.top.ADAGIO = {
-          ...global.ADAGIO
+          ...window.ADAGIO
         }
 
         spec.isBidRequestValid(bid01);
         spec.isBidRequestValid(bid02);
         spec.isBidRequestValid(bid03);
 
-        expect(window.top.ADAGIO.pbjsAdUnits
-          .find(aU => aU.code === 'adunit-code-01')).to.deep.eql(expected[0]);
-        expect(window.top.ADAGIO.pbjsAdUnits
-          .find(aU => aU.code === 'adunit-code-02')).to.deep.eql(expected[1]);
+        expect(find(window.top.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-01')).to.deep.eql(expected[0]);
+        expect(find(window.top.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-02')).to.deep.eql(expected[1]);
       });
 
       it('should store bids config once by bid in current window', function() {
@@ -271,10 +270,8 @@ describe('Adagio bid adapter', () => {
         spec.isBidRequestValid(bid02);
         spec.isBidRequestValid(bid03);
 
-        expect(global.ADAGIO.pbjsAdUnits
-          .find(aU => aU.code === 'adunit-code-01')).to.deep.eql(expected[0]);
-        expect(global.ADAGIO.pbjsAdUnits
-          .find(aU => aU.code === 'adunit-code-02')).to.deep.eql(expected[1]);
+        expect(find(window.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-01')).to.deep.eql(expected[0]);
+        expect(find(window.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-02')).to.deep.eql(expected[1]);
       });
     });
   });
@@ -316,7 +313,6 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should send bid request to ENDPOINT_PB via POST', function() {
-      sandbox.stub(global.location, 'protocol').returns(1);
       sandbox.stub(adagio, 'getDevice').returns({ a: 'a' });
       sandbox.stub(adagio, 'getSite').returns({ domain: 'adagio.io', 'page': 'https://adagio.io/hb' });
       sandbox.stub(adagio, 'getPageviewId').returns('1234-567');
@@ -664,10 +660,10 @@ describe('Adagio bid adapter', () => {
 
   describe('Adagio features', function() {
     it('should return all expected features when all expected bidder params are available', function() {
-      sandbox.stub(global.top.document, 'getElementById').returns(
+      sandbox.stub(window.top.document, 'getElementById').returns(
         fixtures.getElementById()
       );
-      sandbox.stub(global.top, 'getComputedStyle').returns({ display: 'block' });
+      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
 
       const bidRequest = new BidRequestBuilder({
         'mediaTypes': {
@@ -748,7 +744,7 @@ describe('Adagio bid adapter', () => {
 
     describe('getPageDimensions feature', function() {
       afterEach(() => {
-        delete global.$sf;
+        delete window.$sf;
       });
 
       it('should not compute the page dimensions in cross-origin iframe', function() {
@@ -758,19 +754,19 @@ describe('Adagio bid adapter', () => {
       });
 
       it('should not compute the page dimensions even with safeFrame api', function() {
-        global.$sf = $sf;
+        window.$sf = $sf;
         const result = _features.getPageDimensions();
         expect(result).to.eq('');
       });
 
       it('should not compute the page dimensions if <body> is not in the DOM', function() {
-        sandbox.stub(global.top.document, 'querySelector').withArgs('body').returns(null);
+        sandbox.stub(window.top.document, 'querySelector').withArgs('body').returns(null);
         const result = _features.getPageDimensions();
         expect(result).to.eq('');
       });
 
       it('should compute the page dimensions based on body and viewport dimensions', function() {
-        sandbox.stub(global.top.document, 'querySelector').withArgs('body').returns({ scrollWidth: 1360, offsetWidth: 1280, scrollHeight: 2000, offsetHeight: 1000 });
+        sandbox.stub(window.top.document, 'querySelector').withArgs('body').returns({ scrollWidth: 1360, offsetWidth: 1280, scrollHeight: 2000, offsetHeight: 1000 });
         const result = _features.getPageDimensions();
         expect(result).to.eq('1360x2000');
       });
@@ -778,7 +774,7 @@ describe('Adagio bid adapter', () => {
 
     describe('getViewPortDimensions feature', function() {
       afterEach(() => {
-        delete global.$sf;
+        delete window.$sf;
       });
 
       it('should not compute the viewport dimensions in cross-origin iframe', function() {
@@ -788,8 +784,8 @@ describe('Adagio bid adapter', () => {
       });
 
       it('should compute the viewport dimensions in cross-origin iframe w/ safeFrame api', function() {
-        global.$sf = $sf;
-        sandbox.stub(global.$sf.ext, 'geom').returns({
+        window.$sf = $sf;
+        sandbox.stub(window.$sf.ext, 'geom').returns({
           win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
           self: {t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250},
         });
@@ -798,7 +794,7 @@ describe('Adagio bid adapter', () => {
       });
 
       it('should not compute the viewport dimensions if safeFrame api is misimplemented', function() {
-        global.$sf = {
+        window.$sf = {
           ext: { geom: 'nothing' }
         };
         const result = _features.getViewPortDimensions();
@@ -841,14 +837,14 @@ describe('Adagio bid adapter', () => {
       let getComputedStyleStub;
 
       beforeEach(() => {
-        getElementByIdStub = sandbox.stub(global.top.document, 'getElementById');
+        getElementByIdStub = sandbox.stub(window.top.document, 'getElementById');
         getElementByIdStub.returns(fixtures.getElementById());
-        getComputedStyleStub = sandbox.stub(global.top, 'getComputedStyle');
+        getComputedStyleStub = sandbox.stub(window.top, 'getComputedStyle');
         getComputedStyleStub.returns({ display: 'block' });
       });
 
       afterEach(() => {
-        delete global.$sf;
+        delete window.$sf;
         getElementByIdStub.restore();
         getComputedStyleStub.restore();
       });
@@ -860,8 +856,8 @@ describe('Adagio bid adapter', () => {
       });
 
       it('should compute the slot position in cross-origin iframe w/ safeFrame api', function() {
-        global.$sf = $sf;
-        sandbox.stub(global.$sf.ext, 'geom').returns({
+        window.$sf = $sf;
+        sandbox.stub(window.$sf.ext, 'geom').returns({
           win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
           self: {t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250},
         });
@@ -870,7 +866,7 @@ describe('Adagio bid adapter', () => {
       });
 
       it('should not compute the slot position if safeFrame api is misimplemented', function() {
-        global.$sf = {
+        window.$sf = {
           ext: { geom: 'nothing' }
         };
         utilsMock.expects('logWarn').once();
