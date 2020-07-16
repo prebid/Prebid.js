@@ -690,171 +690,171 @@ describe('targeting tests', function () {
   describe('sortByDealAndPriceBucketOrCpm', function() {
     it('will properly sort bids when some bids have deals and some do not', function () {
       let bids = [{
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'abc',
           hb_pb: '1.00',
           hb_deal: '1234'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'def',
           hb_pb: '0.50',
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'ghi',
           hb_pb: '20.00',
           hb_deal: '4532'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'jkl',
           hb_pb: '9.00',
           hb_deal: '9864'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'mno',
           hb_pb: '50.00',
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'pqr',
           hb_pb: '100.00',
         }
       }];
       bids.sort(sortByDealAndPriceBucketOrCpm());
-      expect(bids[0].adUnitTargeting.hb_adid).to.equal('ghi');
-      expect(bids[1].adUnitTargeting.hb_adid).to.equal('jkl');
-      expect(bids[2].adUnitTargeting.hb_adid).to.equal('abc');
-      expect(bids[3].adUnitTargeting.hb_adid).to.equal('pqr');
-      expect(bids[4].adUnitTargeting.hb_adid).to.equal('mno');
-      expect(bids[5].adUnitTargeting.hb_adid).to.equal('def');
+      expect(bids[0].adserverTargeting.hb_adid).to.equal('ghi');
+      expect(bids[1].adserverTargeting.hb_adid).to.equal('jkl');
+      expect(bids[2].adserverTargeting.hb_adid).to.equal('abc');
+      expect(bids[3].adserverTargeting.hb_adid).to.equal('pqr');
+      expect(bids[4].adserverTargeting.hb_adid).to.equal('mno');
+      expect(bids[5].adserverTargeting.hb_adid).to.equal('def');
     });
 
     it('will properly sort bids when all bids have deals', function () {
       let bids = [{
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'abc',
           hb_pb: '1.00',
           hb_deal: '1234'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'def',
           hb_pb: '0.50',
           hb_deal: '4321'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'ghi',
           hb_pb: '2.50',
           hb_deal: '4532'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'jkl',
           hb_pb: '2.00',
           hb_deal: '9864'
         }
       }];
       bids.sort(sortByDealAndPriceBucketOrCpm());
-      expect(bids[0].adUnitTargeting.hb_adid).to.equal('ghi');
-      expect(bids[1].adUnitTargeting.hb_adid).to.equal('jkl');
-      expect(bids[2].adUnitTargeting.hb_adid).to.equal('abc');
-      expect(bids[3].adUnitTargeting.hb_adid).to.equal('def');
+      expect(bids[0].adserverTargeting.hb_adid).to.equal('ghi');
+      expect(bids[1].adserverTargeting.hb_adid).to.equal('jkl');
+      expect(bids[2].adserverTargeting.hb_adid).to.equal('abc');
+      expect(bids[3].adserverTargeting.hb_adid).to.equal('def');
     });
 
     it('will properly sort bids when no bids have deals', function () {
       let bids = [{
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'abc',
           hb_pb: '1.00'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'def',
           hb_pb: '0.10'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'ghi',
           hb_pb: '10.00'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'jkl',
           hb_pb: '10.01'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'mno',
           hb_pb: '1.00'
         }
       }, {
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'pqr',
           hb_pb: '100.00'
         }
       }];
       bids.sort(sortByDealAndPriceBucketOrCpm());
-      expect(bids[0].adUnitTargeting.hb_adid).to.equal('pqr');
-      expect(bids[1].adUnitTargeting.hb_adid).to.equal('jkl');
-      expect(bids[2].adUnitTargeting.hb_adid).to.equal('ghi');
-      expect(bids[3].adUnitTargeting.hb_adid).to.equal('abc');
-      expect(bids[4].adUnitTargeting.hb_adid).to.equal('mno');
-      expect(bids[5].adUnitTargeting.hb_adid).to.equal('def');
+      expect(bids[0].adserverTargeting.hb_adid).to.equal('pqr');
+      expect(bids[1].adserverTargeting.hb_adid).to.equal('jkl');
+      expect(bids[2].adserverTargeting.hb_adid).to.equal('ghi');
+      expect(bids[3].adserverTargeting.hb_adid).to.equal('abc');
+      expect(bids[4].adserverTargeting.hb_adid).to.equal('mno');
+      expect(bids[5].adserverTargeting.hb_adid).to.equal('def');
     });
 
     it('will properly sort bids when some bids have deals and some do not and by cpm when flag is set to true', function () {
       let bids = [{
         cpm: 1.04,
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'abc',
           hb_pb: '1.00',
           hb_deal: '1234'
         }
       }, {
         cpm: 0.50,
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'def',
           hb_pb: '0.50',
           hb_deal: '4532'
         }
       }, {
         cpm: 0.53,
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'ghi',
           hb_pb: '0.50',
           hb_deal: '4532'
         }
       }, {
         cpm: 9.04,
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'jkl',
           hb_pb: '9.00',
           hb_deal: '9864'
         }
       }, {
         cpm: 50.00,
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'mno',
           hb_pb: '50.00',
         }
       }, {
         cpm: 100.00,
-        adUnitTargeting: {
+        adserverTargeting: {
           hb_adid: 'pqr',
           hb_pb: '100.00',
         }
       }];
       bids.sort(sortByDealAndPriceBucketOrCpm(true));
-      expect(bids[0].adUnitTargeting.hb_adid).to.equal('jkl');
-      expect(bids[1].adUnitTargeting.hb_adid).to.equal('abc');
-      expect(bids[2].adUnitTargeting.hb_adid).to.equal('ghi');
-      expect(bids[3].adUnitTargeting.hb_adid).to.equal('def');
-      expect(bids[4].adUnitTargeting.hb_adid).to.equal('pqr');
-      expect(bids[5].adUnitTargeting.hb_adid).to.equal('mno');
+      expect(bids[0].adserverTargeting.hb_adid).to.equal('jkl');
+      expect(bids[1].adserverTargeting.hb_adid).to.equal('abc');
+      expect(bids[2].adserverTargeting.hb_adid).to.equal('ghi');
+      expect(bids[3].adserverTargeting.hb_adid).to.equal('def');
+      expect(bids[4].adserverTargeting.hb_adid).to.equal('pqr');
+      expect(bids[5].adserverTargeting.hb_adid).to.equal('mno');
     });
   });
 
