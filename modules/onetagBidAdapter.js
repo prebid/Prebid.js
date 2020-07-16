@@ -228,7 +228,7 @@ function getPageInfo() {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '0.0.1'
+      adapter: '1.0.0'
     }
   };
 }
