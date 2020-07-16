@@ -1,4 +1,4 @@
-import {logWarn, logInfo} from '../src/utils.js';
+import {logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const CLIENT = 'hellboy:v0.0.1'
@@ -51,28 +51,6 @@ export const spec = {
       bidResponses.push(serverResponse.body[i]);
     }
     return bidResponses;
-  },
-
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    logInfo('performax.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
-    return [];
-  },
-
-  onTimeout: function (timeoutData) {
-    // The onTimeout function will be called when an adpater timed out for an auction.
-    // Adapter can fire a ajax or pixel call to register a timeout at thier end.
-    logInfo('performax.onTimeout', timeoutData);
-  },
-
-  onBidWon: function (bid) {
-    // The onBidWon function will be called when a bid from the adapter won the auction.
-    logInfo('performax.onBidWon', bid);
-  },
-
-  onSetTargeting: function (bid) {
-    // The onSetTargeting function will be called when the adserver targeting
-    // has been set for a bid from the adapter.
-    logInfo('performax.onSetTargeting', bid);
   }
 }
 registerBidder(spec);
