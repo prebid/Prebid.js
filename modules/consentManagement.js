@@ -200,13 +200,12 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
 
     /* Setup up a __cmp function to do the postMessage and stash the callback.
       This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
-    window[apiName] = function (cmd, arg, callback) {
+    window[apiName] = function (cmd, callback) {
       let callId = Math.random() + '';
       let callName = `${apiName}Call`;
       let msg = {
         [callName]: {
           command: cmd,
-          parameter: arg,
           callId: callId
         }
       };
@@ -220,7 +219,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     window.addEventListener('message', readPostMessageResponse, false);
 
     // call CMP
-    window[apiName](commandName, null, moduleCallback);
+    window[apiName](commandName, moduleCallback);
 
     function readPostMessageResponse(event) {
       let cmpDataPkgName = `${apiName}Return`;
