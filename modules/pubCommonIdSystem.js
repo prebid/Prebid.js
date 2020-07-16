@@ -7,13 +7,13 @@
 
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
-import {getCoreStorageManager} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
 
 const MODULE_NAME = 'pubCommonId';
 
-const coreStorage = getCoreStorageManager('userid');
+const storage = getStorageManager(null, 'pubCommonId');
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {
@@ -107,12 +107,12 @@ export const pubCommonIdSubmodule = {
       const nextDomain = domainElements.slice(i).join('.');
 
       // write test cookie
-      coreStorage.setCookie(cookieName, '1', undefined, undefined, nextDomain);
+      storage.setCookie(cookieName, '1', undefined, undefined, nextDomain);
 
       // read test cookie to verify domain was valid
-      if (coreStorage.getCookie(cookieName) === '1') {
+      if (storage.getCookie(cookieName) === '1') {
         // delete test cookie
-        coreStorage.setCookie(cookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, nextDomain);
+        storage.setCookie(cookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, nextDomain);
         // cookie was written successfully using test domain so the topDomain is updated
         topDomain = nextDomain;
       } else {
