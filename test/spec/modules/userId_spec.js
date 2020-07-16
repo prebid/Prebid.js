@@ -1486,5 +1486,20 @@ describe('User ID', function() {
       setStoredValue(submodule, 'bar');
       expect(coreStorage.setCookie.getCall(0).args[4]).to.equal('foo.com');
     });
+
+    it('should pass null for domain if submodule does not override the domain', function () {
+      const submodule = {
+        submodule: {
+
+        },
+        config: {
+          storage: {
+            type: 'cookie'
+          }
+        }
+      }
+      setStoredValue(submodule, 'bar');
+      expect(coreStorage.setCookie.getCall(0).args[4]).to.equal(null);
+    });
   });
 });
