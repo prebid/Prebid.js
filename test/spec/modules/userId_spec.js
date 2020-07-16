@@ -5,7 +5,8 @@ import {
   requestBidsHook,
   setSubmoduleRegistry,
   syncDelay,
-  coreStorage
+  coreStorage,
+  setStoredValue
 } from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
@@ -1458,6 +1459,47 @@ describe('User ID', function() {
       expect(server.requests).to.be.empty;
       events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
       expect(server.requests[0].url).to.equal('https://match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
+    });
+  });
+
+  describe('Set cookie behavior', function() {
+    let coreStorageSpy;
+    beforeEach(function() {
+      coreStorageSpy = sinon.spy(coreStorage, 'setCookie');
+    });
+    afterEach(function() {
+      coreStorageSpy.restore();
+    });
+    it('should allow submodules to override the domain', function () {
+      const submodule = {
+        submodule: {
+          domainOverride: function() {
+            return 'foo.com'
+          }
+        },
+        config: {
+          storage: {
+            type: 'cookie'
+          }
+        }
+      }
+      setStoredValue(submodule, 'bar');
+      expect(coreStorage.setCookie.getCall(0).args[4]).to.equal('foo.com');
+    });
+
+    it('should pass null for domain if submodule does not override the domain', function () {
+      const submodule = {
+        submodule: {
+
+        },
+        config: {
+          storage: {
+            type: 'cookie'
+          }
+        }
+      }
+      setStoredValue(submodule, 'bar');
+      expect(coreStorage.setCookie.getCall(0).args[4]).to.equal(null);
     });
   });
 });
