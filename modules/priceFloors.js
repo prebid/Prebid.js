@@ -295,11 +295,29 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
   });
 }
 
+export function pickRandomModel(modelGroups, weightSum) {
+  // we loop through the models subtracting the current model weight from our random number
+  // once we are at or below zero, we return the associated model
+  let random = Math.floor(Math.random() * weightSum + 1)
+  for (let i = 0; i < modelGroups.length; i++) {
+    random -= modelGroups[i].modelWeight;
+    if (random <= 0) {
+      return modelGroups[i];
+    }
+  }
+};
+
 /**
  * @summary Updates the adUnits accordingly and returns the necessary floorsData for the current auction
  */
 export function createFloorsDataForAuction(adUnits, auctionId) {
   let resolvedFloorsData = utils.deepClone(_floorsConfig);
+  // if using schema 2 pick a model here:
+  if (utils.deepAccess(resolvedFloorsData, 'data.floorsSchemaVersion') === 2) {
+    // merge the models specific stuff into the top level data settings (now it looks like floorsSchemaVersion 1!)
+    let { modelGroups, ...rest } = resolvedFloorsData.data;
+    resolvedFloorsData.data = Object.assign(rest, pickRandomModel(modelGroups, rest.modelWeightSum));
+  }
 
   // if we do not have a floors data set, we will try to use data set on adUnits
   let useAdUnitData = Object.keys(utils.deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0;
@@ -372,6 +390,36 @@ function validateRules(floorsData, numFields, delimiter) {
   return Object.keys(floorsData.values).length > 0;
 }
 
+function modelIsValid(model) {
+  // schema.fields has only allowed attributes
+  if (!validateSchemaFields(utils.deepAccess(model, 'schema.fields'))) {
+    return false;
+  }
+  return validateRules(model, model.schema.fields.length, model.schema.delimiter || '|')
+}
+
+/**
+ * @summary Mapping of floor schema version to it's corresponding validation
+ */
+const floorsSchemaValidation = {
+  1: data => modelIsValid(data),
+  2: data => {
+    // model groups should be an array with at least one element
+    if (!Array.isArray(data.modelGroups) || data.modelGroups.length === 0) {
+      return false;
+    }
+    // every model should have valid schema, as well as an accompanying modelWeight
+    data.modelWeightSum = 0;
+    return data.modelGroups.every(model => {
+      if (typeof model.modelWeight === 'number' && modelIsValid(model)) {
+        data.modelWeightSum += model.modelWeight;
+        return true;
+      }
+      return false;
+    });
+  }
+};
+
 /**
  * @summary Fields array should have at least one entry and all should match allowed fields
  * Each rule in the values array should have a 'key' and 'floor' param
@@ -382,11 +430,12 @@ export function isFloorsDataValid(floorsData) {
   if (typeof floorsData !== 'object') {
     return false;
   }
-  // schema.fields has only allowed attributes
-  if (!validateSchemaFields(utils.deepAccess(floorsData, 'schema.fields'))) {
+  floorsData.floorsSchemaVersion = floorsData.floorsSchemaVersion || 1;
+  if (typeof floorsSchemaValidation[floorsData.floorsSchemaVersion] !== 'function') {
+    utils.logError(`${MODULE_NAME}: Unknown floorsSchemaVersion: `, floorsData.floorsSchemaVersion);
     return false;
   }
-  return validateRules(floorsData, floorsData.schema.fields.length, floorsData.schema.delimiter || '|')
+  return floorsSchemaValidation[floorsData.floorsSchemaVersion](floorsData);
 }
 
 /**
@@ -458,7 +507,13 @@ export function handleFetchResponse(fetchResponse) {
     floorResponse = fetchResponse;
   }
   // Update the global floors object according to the fetched data
-  _floorsConfig.data = parseFloorData(floorResponse, 'fetch') || _floorsConfig.data;
+  const fetchData = parseFloorData(floorResponse, 'fetch');
+  if (fetchData) {
+    // set .data to it
+    _floorsConfig.data = fetchData;
+    // set skipRate override if necessary
+    _floorsConfig.skipRate = utils.isNumber(fetchData.skipRate) ? fetchData.skipRate : _floorsConfig.skipRate;
+  }
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
   resumeDelayedAuctions();
@@ -532,8 +587,10 @@ export function handleSetFloorsConfig(config) {
 
     if (!addedFloorsHook) {
       // register hooks / listening events
-      // when auction finishes remove it's associated floor data
-      events.on(CONSTANTS.EVENTS.AUCTION_END, (args) => delete _floorDataForAuction[args.auctionId]);
+      // when auction finishes remove it's associated floor data after 3 seconds so we stil have it for latent responses
+      events.on(CONSTANTS.EVENTS.AUCTION_END, (args) => {
+        setTimeout(() => delete _floorDataForAuction[args.auctionId], 3000);
+      });
 
       // we want our hooks to run after the currency hooks
       getGlobal().requestBids.before(requestBidsHook, 50);
