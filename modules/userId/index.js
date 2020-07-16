@@ -162,7 +162,7 @@ export function setSubmoduleRegistry(submodules) {
  * @param {SubmoduleContainer} submodule
  * @param {(Object|string)} value
  */
-function setStoredValue(submodule, value) {
+export function setStoredValue(submodule, value) {
   /**
    * @type {SubmoduleStorage}
    */
