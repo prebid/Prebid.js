@@ -270,7 +270,7 @@ export const spec = {
   }
 };
 
-export function sfPostMessage($sf, width, height, callback){
+export function sfPostMessage ($sf, width, height, callback) {
   var viewed = false;
   // eslint-disable-next-line no-undef
   $sf.ext.register(width, height, function () {
@@ -283,7 +283,7 @@ export function sfPostMessage($sf, width, height, callback){
   });
 };
 
-export function iframePostMessage(win, name, callback){
+export function iframePostMessage (win, name, callback) {
   var frames = document.getElementsByTagName('iframe');
   for (var i = 0; i < frames.length; i++) {
     var frame = frames[i];

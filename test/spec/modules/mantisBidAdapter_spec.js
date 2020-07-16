@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/mantisBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {sfPostMessage, iframePostMessage} from "modules/mantisBidAdapter";
+import {sfPostMessage, iframePostMessage} from 'modules/mantisBidAdapter';
 
 describe('MantisAdapter', function () {
   const adapter = newBidder(spec);
@@ -61,7 +61,7 @@ describe('MantisAdapter', function () {
         }
       ]);
 
-      iframePostMessage({innerHeight: 500, innerWidth: 500},'mantis', () => viewed = true);
+      iframePostMessage({innerHeight: 500, innerWidth: 500}, 'mantis', () => viewed = true);
 
       sandbox.clock.runAll();
 
