@@ -201,13 +201,13 @@ export const spec = {
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
-          type: 'image',
-          url: PIXEL_USER_SYNC_1 + pixelPrivacyParams
-        },
-        {
-          type: 'image',
-          url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
-        });
+        type: 'image',
+        url: PIXEL_USER_SYNC_1 + pixelPrivacyParams
+      },
+      {
+        type: 'image',
+        url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
+      });
     }
     return syncs;
   }
