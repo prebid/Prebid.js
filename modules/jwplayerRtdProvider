@@ -7,11 +7,10 @@ const SUBMODULE_NAME = 'jwplayer';
 let requestCount = 0;
 let requestTimeout = 1500;
 const segCache = {};
-// const pendingMediaIReqs = {};
+let resumeBidRequest;
 
 export function fetchTargetingInformation(jwTargeting) {
   const mediaIDs = jwTargeting.mediaIDs;
-  // pendingMediaIDs = mediaIDs;
   requestCount = mediaIDs.length;
   mediaIDs.forEach(mediaID => {
     fetchTargetingForMediaId(mediaID);
@@ -51,8 +50,7 @@ export function fetchTargetingForMediaId(mediaId) {
   );
 }
 
-function onRequestCompleted(mediaID) {
-  // pendingMediaIDs.remove(mediaID);
+function onRequestCompleted() {
   requestCount--;
   if (requestCount > 0) {
     return;
@@ -65,19 +63,28 @@ function onRequestCompleted(mediaID) {
 }
 
 function getSegments(adUnits, onDone) {
-  adUnits.forEach(adUnit => {
-    const targeting = adUnit.jwTargeting;
-    const seg = getTargetingForBid(targeting);
-  });
-  let dataToReturn = adUnits.reduce((acc, adUnit) => {
-    const jwTargeting = adUnit.jwTargeting;
-    if (!jwTargeting) {
+  executeAfterPrefetch(() => {
+    const dataToReturn = adUnits.reduce((acc, adUnit) => {
+      const code = adUnit.code;
+      if (!code) {
+        return acc;
+      }
+      const targetingInfo = getTargetingForBid(adUnit);
+      if (targetingInfo.length) {
+        acc[code] = targetingInfo;
+      }
       return acc;
-    }
-    const adUnitCode = adUnit.code;
-    acc[adUnitCode] = getTargetingForBid(jwTargeting);
-    return acc;
-  }, {});
+    }, {});
+    onDone(dataToReturn);
+  });
+}
+
+function executeAfterPrefetch(callback) {
+  if (requestCount > 0) {
+    resumeBidRequest = callback;
+  } else {
+    callback();
+  }
 }
 
 /**
