@@ -1,10 +1,7 @@
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/amxBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { formatQS } from 'src/utils';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 const sampleRequestId = '82c91e127a9b93e';
 const sampleDisplayAd = (additionalImpressions) => `<script src='https://assets.a-mo.net/tmode.v1.js'></script>${additionalImpressions}`;
@@ -171,29 +168,9 @@ describe('AmxBidAdapter', () => {
     it('handles referer data and GDPR, USP Consent', () => {
       const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
       delete data.m; // don't deal with "m" in this test
-
-      expect(data).to.deep.equal({
-        a: sampleBidderRequest.auctionId,
-        B: 0,
-        b: 'www.prebid.org',
-        tm: 0,
-        V: '$prebid.version$',
-        i: btoa('prebid.org').replace(/=+$/, ''),
-        l: {},
-        f: 0.01,
-        cv: 'pba1.0',
-        st: 'prebid',
-        h: screen.height,
-        w: screen.width,
-        gs: sampleBidderRequest.gdprConsent.gdprApplies,
-        gc: sampleBidderRequest.gdprConsent.consentString,
-        u: sampleBidderRequest.refererInfo.canonicalUrl,
-        do: 'www.prebid.org',
-        re: sampleBidderRequest.refererInfo.referer,
-        usp: sampleBidderRequest.uspConsent,
-        smt: 9,
-        d: '',
-      })
+      expect(data.gs).to.equal(sampleBidderRequest.gdprConsent.gdprApplies)
+      expect(data.gc).to.equal(sampleBidderRequest.gdprConsent.consentString)
+      expect(data.usp).to.equal(sampleBidderRequest.uspConsent)
     });
 
     it('can build a banner request', () => {
@@ -210,17 +187,19 @@ describe('AmxBidAdapter', () => {
       expect(method).to.equal('POST');
       expect(Object.keys(data.m).length).to.equal(2);
       expect(data.m[sampleRequestId]).to.deep.equal({
-        av: false,
+        av: true,
         aw: 300,
         ah: 250,
-        tf: 0
+        tf: 0,
+        vr: false
       });
       expect(data.m[sampleRequestId + '_2']).to.deep.equal({
-        av: false,
+        av: true,
         aw: 300,
         i: 'example',
         ah: 250,
-        tf: 0
+        tf: 0,
+        vr: false,
       });
     });
 
@@ -231,7 +210,8 @@ describe('AmxBidAdapter', () => {
         av: true,
         aw: 360,
         ah: 250,
-        tf: 0
+        tf: 0,
+        vr: true
       });
     });
   });
@@ -290,6 +270,12 @@ describe('AmxBidAdapter', () => {
       expect(parsed.length).to.equal(2)
 
       // we should have display, video, display
+      const xml = parsed[1].vastXml
+      delete parsed[1].vastXml
+
+      expect(xml).to.have.string(`<Impression><![CDATA[${sampleNurl}]]></Impression>`)
+      expect(xml).to.have.string(`<Impression><![CDATA[${embeddedTrackingPixel}]]></Impression>`)
+
       expect(parsed[1]).to.deep.equal({
         ...baseBidResponse,
         meta: {
@@ -299,10 +285,6 @@ describe('AmxBidAdapter', () => {
         width: 300,
         height: 250,
         ttl: 90,
-        vastXml: sampleVideoAd(
-          `<Impression><![CDATA[${sampleNurl}]]></Impression>` +
-          `<Impression><![CDATA[${embeddedTrackingPixel}]]></Impression>`
-        ),
       });
     });
   });
@@ -345,13 +327,20 @@ describe('AmxBidAdapter', () => {
       });
       expect(firedPixels.length).to.equal(1)
       expect(firedPixels[0]).to.match(/\/hbx\/g_pbst/)
-      const parsed = new URL(firedPixels[0]);
-      const nestedData = parsed.searchParams.get('c2');
-      expect(nestedData).to.equal(formatQS({
-        hb_pb: '1.23',
-        hb_adid: 'ad-id',
-        hb_bidder: 'example'
-      }));
+      try {
+        const parsed = new URL(firedPixels[0]);
+        const nestedData = parsed.searchParams.get('c2');
+        expect(nestedData).to.equal(utils.formatQS({
+          hb_pb: '1.23',
+          hb_adid: 'ad-id',
+          hb_bidder: 'example'
+        }));
+      } catch (e) {
+        // unsupported browser; try testing for string
+        const pixel = firedPixels[0];
+        expect(pixel).to.have.string(encodeURIComponent('hb_pb=1.23'))
+        expect(pixel).to.have.string(encodeURIComponent('hb_adid=ad-id'))
+      }
     });
 
     it('will log an event for timeout', () => {
@@ -382,9 +371,14 @@ describe('AmxBidAdapter', () => {
       expect(firedPixels[0]).to.match(/\/hbx\/g_pbwin/)
 
       const pixel = firedPixels[0];
-      const url = new URL(pixel);
-      expect(url.searchParams.get('C')).to.equal('1')
-      expect(url.searchParams.get('np')).to.equal('1.34')
+      try {
+        const url = new URL(pixel);
+        expect(url.searchParams.get('C')).to.equal('1')
+        expect(url.searchParams.get('np')).to.equal('1.34')
+      } catch (e) {
+        expect(pixel).to.have.string('C=1')
+        expect(pixel).to.have.string('np=1.34')
+      }
     });
   });
 });

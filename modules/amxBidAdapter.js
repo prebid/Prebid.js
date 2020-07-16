@@ -21,6 +21,14 @@ const largestSize = (sizes, mediaTypes) => {
   return allSizes.sort((a, b) => (b[0] * b[1]) - (a[0] * a[1]))[0];
 }
 
+function flatMap(input, mapFn) {
+  if (input == null) {
+    return []
+  }
+  return input.map(mapFn)
+    .reduce((acc, item) => item != null && acc.concat(item), [])
+}
+
 const generateDTD = (xmlDocument) =>
   `<?xml version="${xmlDocument.xmlVersion}" encoding="${xmlDocument.xmlEncoding}" ?>`;
 
@@ -50,9 +58,9 @@ function nestedQs (qsData) {
 
 function createBidMap(bids) {
   const out = {};
-  for (const bid of bids) {
+  _each(bids, (bid) => {
     out[bid.bidId] = convertRequest(bid)
-  }
+  })
   return out;
 }
 
@@ -65,11 +73,13 @@ const trackEvent = (eventName, data) =>
 
 function convertRequest(bid) {
   const size = largestSize(bid.sizes, bid.mediaTypes) || [0, 0];
-  const av = bid.mediaType === VIDEO || VIDEO in bid.mediaTypes;
+  const isVideoBid = bid.mediaType === VIDEO || VIDEO in bid.mediaTypes
+  const av = isVideoBid || size[1] > 100;
   const tid = deepAccess(bid, 'params.tagId')
 
   const params = {
     av,
+    vr: isVideoBid,
     aw: size[0],
     ah: size[1],
     tf: 0,
@@ -90,9 +100,30 @@ function decorateADM(bid) {
   return bid.adm + impressions;
 }
 
+function transformXmlSimple(bid) {
+  const pixels = []
+  _each([bid.nurl].concat(bid.ext != null && bid.ext.himp != null ? bid.ext.himp : []), (pixel) => {
+    if (pixel != null) {
+      pixels.push(`<Impression><![CDATA[${pixel}]]></Impression>`)
+    }
+  });
+  // find the current "Impression" here & slice ours in
+  const impressionIndex = bid.adm.indexOf('<Impression')
+  return bid.adm.slice(0, impressionIndex) + pixels.join('') + bid.adm.slice(impressionIndex)
+}
+
+function getOuterHTML(node) {
+  return 'outerHTML' in node && node.outerHTML != null
+    ? node.outerHTML : (new XMLSerializer()).serializeToString(node)
+}
+
 function decorateVideoADM(bid) {
+  if (typeof DOMParser === 'undefined' || DOMParser.prototype.parseFromString == null) {
+    return transformXmlSimple(bid)
+  }
+
   const doc = new DOMParser().parseFromString(bid.adm, 'text/xml');
-  if (doc.querySelector('parsererror') != null) {
+  if (doc == null || doc.querySelector('parsererror') != null) {
     return null;
   }
 
@@ -101,7 +132,7 @@ function decorateVideoADM(bid) {
     return null;
   }
 
-  const pixels = [bid.nurl].concat(bid.ext.himp || [])
+  const pixels = [bid.nurl].concat(bid.ext != null && bid.ext.himp != null ? bid.ext.himp : [])
     .filter((url) => url != null);
 
   _each(pixels, (pxl) => {
@@ -112,7 +143,7 @@ function decorateVideoADM(bid) {
   });
 
   const dtdMatch = xmlDTDRxp.exec(bid.adm);
-  return (dtdMatch != null ? dtdMatch[0] : generateDTD(doc)) + doc.documentElement.outerHTML;
+  return (dtdMatch != null ? dtdMatch[0] : generateDTD(doc)) + getOuterHTML(doc.documentElement);
 }
 
 function resolveSize(bid, request, bidId) {
@@ -162,7 +193,7 @@ export const spec = {
       do: loc.host,
       re: deepAccess(bidderRequest, 'refererInfo.referer'),
       usp: bidderRequest.uspConsent || '1---',
-      smt: 9,
+      smt: 1,
       d: '',
       m: createBidMap(bidRequests),
     };
@@ -176,17 +207,24 @@ export const spec = {
   },
 
   getUserSyncs(syncOptions, serverResponses) {
-    return (serverResponses || [])
-      .flatMap(({ body: response }) =>
-        response != null && response.p != null ? (response.p.hreq || []) : [])
-      .map((syncPixel) =>
-        ({
-          type: syncPixel.indexOf('__st=iframe') !== -1 ? 'iframe' : 'image',
-          url: syncPixel
-        })
-      ).filter(({
-        type
-      }) => syncOptions.iframeEnabled || type === 'image')
+    if (serverResponses == null || serverResponses.length === 0) {
+      return []
+    }
+    const output = []
+    _each(serverResponses, function ({ body: response }) {
+      if (response != null && response.p != null && response.p.hreq) {
+        _each(response.p.hreq, function (syncPixel) {
+          const pixelType = syncPixel.indexOf('__st=iframe') !== -1 ? 'iframe' : 'image';
+          if (syncOptions.iframeEnabled || pixelType === 'image') {
+            output.push({
+              url: syncPixel,
+              type: pixelType,
+            });
+          }
+        });
+      }
+    });
+    return output;
   },
 
   interpretResponse(serverResponse, request) {
@@ -196,12 +234,12 @@ export const spec = {
       return [];
     }
 
-    return Object.keys(response.r).flatMap((bidID) => {
-      const biddata = response.r[bidID];
-      return biddata.flatMap((siteBid) =>
+    return flatMap(Object.keys(response.r), (bidID) => {
+      return flatMap(response.r[bidID], (siteBid) =>
         siteBid.b.map((bid) => {
           const mediaType = getMediaType(bid);
-          const ad = mediaType === BANNER ? decorateADM(bid) : decorateVideoADM(bid);
+          // let ad = null;
+          let ad = mediaType === BANNER ? decorateADM(bid) : decorateVideoADM(bid);
           if (ad == null) {
             return null;
           }
