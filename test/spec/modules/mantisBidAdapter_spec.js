@@ -1,9 +1,21 @@
 import {expect} from 'chai';
 import {spec} from 'modules/mantisBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import {sfPostMessage, iframePostMessage} from "modules/mantisBidAdapter";
 
 describe('MantisAdapter', function () {
   const adapter = newBidder(spec);
+  let sandbox;
+  let clock;
+
+  beforeEach(function() {
+    sandbox = sinon.sandbox.create();
+    clock = sandbox.useFakeTimers();
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
 
   describe('isBidRequestValid', function () {
     let bid = {
@@ -28,6 +40,68 @@ describe('MantisAdapter', function () {
       delete bid.params;
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
+
+  describe('viewability', function() {
+    it('iframe (viewed)', () => {
+      let viewed = false;
+
+      sandbox.stub(document, 'getElementsByTagName').withArgs('iframe').returns([
+        {
+          name: 'mantis',
+          getBoundingClientRect: () => ({
+            top: 10,
+            bottom: 260,
+            left: 10,
+            right: 190,
+            width: 300,
+            height: 250
+          })
+        }
+      ]);
+
+      iframePostMessage({innerHeight: 500, innerWidth: 500},'mantis', () => viewed = true);
+
+      sandbox.clock.runAll();
+
+      expect(viewed).to.equal(true);
+    });
+
+    it('safeframe (viewed)', () => {
+      let viewed = false;
+
+      sfPostMessage({
+        ext: {
+          register: (width, height, callback) => {
+            expect(width).to.equal(100);
+            expect(height).to.equal(200);
+
+            callback();
+          },
+          inViewPercentage: () => 60
+        }
+      }, 100, 200, () => viewed = true);
+
+      expect(viewed).to.equal(true);
+    });
+
+    it('safeframe (unviewed)', () => {
+      let viewed = false;
+
+      sfPostMessage({
+        ext: {
+          register: (width, height, callback) => {
+            expect(width).to.equal(100);
+            expect(height).to.equal(200);
+
+            callback();
+          },
+          inViewPercentage: () => 30
+        }
+      }, 100, 200, () => viewed = true);
+
+      expect(viewed).to.equal(false);
     });
   });
 
