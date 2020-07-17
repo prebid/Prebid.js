@@ -5,7 +5,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'truereach';
-const BIDDER_URL = '//ads.momagic.com/exchange/openrtb25/';
+const BIDDER_URL = 'https://ads.momagic.com/exchange/openrtb25/';
 
 export const spec = {
   code: BIDDER_CODE,
