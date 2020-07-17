@@ -655,7 +655,7 @@ describe('User ID', function() {
     it('does not delay auction if there are no ids to fetch', function() {
       coreStorage.getCookie.withArgs('MOCKID').returns('123456778');
       config.setConfig({
-        usersync: {
+        userSync: {
           auctionDelay: 33,
           syncDelay: 77,
           userIds: [{
