@@ -2344,6 +2344,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
         expect(response[0].pm_seat).to.equal(bidResponses.body.seatbid[0].seat);
         expect(response[0].pm_dspid).to.equal(bidResponses.body.seatbid[0].bid[0].ext.dspid);
+        expect(response[0].partnerImpId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
 
         expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
         expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
@@ -2366,6 +2367,7 @@ describe('PubMatic adapter', function () {
         expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
         expect(response[1].pm_seat).to.equal(bidResponses.body.seatbid[1].seat || null);
         expect(response[1].pm_dspid).to.equal(bidResponses.body.seatbid[1].bid[0].ext.dspid);
+        expect(response[0].partnerImpId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
       });
 
       it('should check for dealChannel value selection', function () {
