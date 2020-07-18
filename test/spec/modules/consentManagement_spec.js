@@ -1,4 +1,4 @@
-import { setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction, staticConsentData, gdprScope } from 'modules/consentManagement.js';
+import { setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction, staticConsentData, gdprScope, cacheConsentData } from 'modules/consentManagement.js';
 import { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -26,6 +26,7 @@ describe('consentManagement', function () {
         expect(consentTimeout).to.be.equal(10000);
         expect(allowAuction).to.be.true;
         expect(gdprScope).to.be.equal(false);
+        expect(cacheConsentData).to.be.equal(true);
         sinon.assert.callCount(utils.logInfo, 4);
       });
 
@@ -52,7 +53,8 @@ describe('consentManagement', function () {
           cmpApi: 'iab',
           timeout: 7500,
           allowAuctionWithoutConsent: false,
-          defaultGdprScope: true
+          defaultGdprScope: true,
+          cacheConsentData: false
         };
 
         setConsentConfig(allConfig);
@@ -60,6 +62,7 @@ describe('consentManagement', function () {
         expect(consentTimeout).to.be.equal(7500);
         expect(allowAuction).to.be.false;
         expect(gdprScope).to.be.true;
+        expect(cacheConsentData).to.be.false;
       });
 
       it('should use new consent manager config structure for gdpr', function () {
@@ -264,6 +267,13 @@ describe('consentManagement', function () {
       allowAuctionWithoutConsent: true
     };
 
+    let goodConfigWithAllowAuctionWithoutCache = {
+      cmpApi: 'iab',
+      timeout: 7500,
+      allowAuctionWithoutConsent: true,
+      cacheConsentData: false
+    };
+
     let didHookReturn;
 
     afterEach(function () {
@@ -382,6 +392,79 @@ describe('consentManagement', function () {
         let consent = gdprDataHandler.getConsentData();
 
         expect(consent.gdprApplies).to.be.false;
+      });
+    });
+
+    describe('already known consentData but cache disabled:', function () {
+      let cmpStub = sinon.stub();
+
+      beforeEach(function () {
+        didHookReturn = false;
+        window.__cmp = function () { };
+      });
+
+      afterEach(function () {
+        config.resetConfig();
+        cmpStub.restore();
+        delete window.__cmp;
+        resetConsentData();
+      });
+
+      it('should reread CMP and ignore previously stored consentData', function () {
+        let testConsentData = {
+          gdprApplies: true,
+          consentData: 'xyz'
+        };
+
+        cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
+          args[2](testConsentData);
+        });
+        setConsentConfig(goodConfigWithAllowAuctionWithoutCache);
+        requestBidsHook(() => { }, {});
+        cmpStub.restore();
+
+        let testConsentData2ndCall = {
+          gdprApplies: true,
+          consentData: 'abc'
+        };
+        // reset the stub to ensure it wasn't called during the second round of calls
+        cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
+          args[2](testConsentData2ndCall);
+        });
+
+        requestBidsHook(() => {
+          didHookReturn = true;
+        }, {});
+        let consent = gdprDataHandler.getConsentData();
+
+        expect(didHookReturn).to.be.true;
+        expect(consent.consentString).to.equal(testConsentData2ndCall.consentData);
+        expect(consent.gdprApplies).to.be.true;
+      });
+
+      it('should not set consent.gdprApplies to true if defaultGdprScope is true', function () {
+        let testConsentData = {
+          gdprApplies: true,
+          consentData: 'xyz'
+        };
+
+        cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
+          args[2](testConsentData);
+        });
+
+        setConsentConfig({
+          cmpApi: 'iab',
+          timeout: 7500,
+          defaultGdprScope: true
+        });
+
+        requestBidsHook(() => {
+          didHookReturn = true;
+        }, {});
+
+        let consent = gdprDataHandler.getConsentData();
+
+        expect(consent.gdprApplies).to.be.true;
       });
     });
 

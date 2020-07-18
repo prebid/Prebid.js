@@ -13,12 +13,14 @@ import strIncludes from 'core-js-pure/features/string/includes.js';
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
+const DEFAULT_CACHE_CONSENT_DATA = true;
 
 export let userCMP;
 export let consentTimeout;
 export let allowAuction;
 export let gdprScope;
 export let staticConsentData;
+export let cacheConsentData;
 
 let cmpVersion = 0;
 let consentData;
@@ -257,7 +259,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   };
 
   // in case we already have consent (eg during bid refresh)
-  if (consentData) {
+  if (consentData && cacheConsentData) {
     utils.logInfo('User consent information already known.  Pulling internally stored information...');
     return exitModule(null, hookConfig);
   }
@@ -479,6 +481,13 @@ export function setConsentConfig(config) {
       utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
+
+  if (utils.isBoolean(config.cacheConsentData)) {
+    cacheConsentData = config.cacheConsentData;
+  } else {
+    cacheConsentData = DEFAULT_CACHE_CONSENT_DATA;
+  }
+
   if (!addedConsentHook) {
     $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
   }
