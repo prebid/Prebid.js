@@ -190,6 +190,22 @@ describe('IndexexchangeAdapter', function () {
     v: 8.1
   };
 
+  const DEFAULT_USERID_DATA = {
+    idl_env: '1234-5678-9012-3456', // Liveramp
+  };
+
+  const DEFAULT_USERID_PAYLOAD = [
+    {
+      source: 'liveramp.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA.idl_env,
+        ext: {
+          rtiPartner: 'idl'
+        }
+      }]
+    }
+  ];
+
   describe('inherited functions', function () {
     it('should exists and is a function', function () {
       const adapter = newBidder(spec);
@@ -365,13 +381,16 @@ describe('IndexexchangeAdapter', function () {
       request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       query = request.data;
     });
+
     afterEach(function () {
       delete window.headertag;
     });
+
     describe('buildRequestSingleRTI', function () {
       before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
       });
+
       it('payload should have correct format and value (single identity partner)', function () {
         const payload = JSON.parse(query.r);
 
@@ -400,6 +419,7 @@ describe('IndexexchangeAdapter', function () {
           }
         );
       });
+
       it('payload should have correct format and value (single identity w/ multi ids)', function () {
         const payload = JSON.parse(query.r);
 
@@ -443,6 +463,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       });
+
       it('payload should have correct format and value (multiple identity partners)', function () {
         const payload = JSON.parse(query.r);
 
@@ -519,6 +540,177 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
+  describe('buildRequestsUserId', function () {
+    let validIdentityResponse;
+    let validUserIdPayload;
+
+    beforeEach(function () {
+      window.headertag = {};
+      window.headertag.getIdentityInfo = function () {
+        return validIdentityResponse;
+      };
+    });
+
+    afterEach(function () {
+      delete window.headertag;
+    });
+
+    it('IX adapter reads LiveRamp IDL envelope from Prebid and adds it to Video', function () {
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      expect(payload.user.eids).to.have.lengthOf(1);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+    });
+
+    it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {
+      validIdentityResponse = {
+        AdserverOrgIp: {
+          responsePending: false,
+          data: {
+            source: 'adserver.org',
+            uids: [
+              {
+                id: '1234-5678-9012-3456',
+                ext: {
+                  rtiPartner: 'TDID'
+                }
+              },
+              {
+                id: 'FALSE',
+                ext: {
+                  rtiPartner: 'TDID_LOOKUP'
+                }
+              },
+              {
+                id: '2020-06-24T14:43:48.860Z',
+                ext: {
+                  rtiPartner: 'TDID_CREATED_AT'
+                }
+              }
+            ]
+          }
+        },
+        MerkleIp: {
+          responsePending: false,
+          data: {
+            source: 'merkle.com',
+            uids: [{
+              id: '1234-5678-9012-3456',
+              ext: {
+                keyID: '1234-5678',
+                enc: 1
+              }
+            }]
+          }
+        },
+        LiveRampIp: {
+          source: 'liveramp.com',
+          uids: [
+            {
+              id: '0000-1234-4567-8901',
+              ext: {
+                rtiPartner: 'idl'
+              }
+            }
+          ]
+        }
+      };
+
+      const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA)
+
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      validUserIdPayload = utils.deepClone(DEFAULT_USERID_PAYLOAD);
+      validUserIdPayload.push({
+        source: 'merkle.com',
+        uids: [{
+          id: '1234-5678-9012-3456',
+          ext: {
+            keyID: '1234-5678',
+            enc: 1
+          }
+        }]
+      })
+      validUserIdPayload.push({
+        source: 'adserver.org',
+        uids: [
+          {
+            id: '1234-5678-9012-3456',
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          },
+          {
+            id: 'FALSE',
+            ext: {
+              rtiPartner: 'TDID_LOOKUP'
+            }
+          },
+          {
+            id: '2020-06-24T14:43:48.860Z',
+            ext: {
+              rtiPartner: 'TDID_CREATED_AT'
+            }
+          }
+        ]
+      })
+
+      expect(payload.user).to.exist;
+      expect(payload.user.eids).to.have.lengthOf(3);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
+    });
+
+    it('IXL and Prebid are mutually exclusive', function () {
+      validIdentityResponse = {
+        LiveIntentIp: {
+          responsePending: false,
+          data: {
+            source: 'liveintent.com',
+            uids: [{
+              id: '1234-5678-9012-3456',
+              ext: {
+                keyID: '1234-5678',
+                rtiPartner: 'LDID',
+                enc: 1
+              }
+            }]
+          }
+        }
+      };
+
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+
+      validUserIdPayload = utils.deepClone(DEFAULT_USERID_PAYLOAD);
+      validUserIdPayload.push({
+        source: 'liveintent.com',
+        uids: [{
+          id: '1234-5678-9012-3456',
+          ext: {
+            keyID: '1234-5678',
+            rtiPartner: 'LDID',
+            enc: 1
+          }
+        }]
+      });
+
+      const payload = JSON.parse(request.data.r);
+      expect(payload.user.eids).to.have.lengthOf(2);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
+    });
+  });
+
   describe('buildRequests', function () {
     const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
     const requestUrl = request.url;
@@ -561,7 +753,7 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.exist;
       expect(payload.imp).to.be.an('array');
-      expect(payload.imp).to.have.lengthOf(1);
+      expect(payload.imp).to.have.lengthOf(2);
     });
 
     it('payload should not include schain when not provided', function () {
@@ -735,6 +927,7 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_VIDEO_VALID_BID[0]]);
 
       const bannerImp = JSON.parse(request[0].data.r).imp[0];
+      expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(2);
       expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
       expect(bannerImp.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
       expect(bannerImp.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
@@ -748,6 +941,80 @@ describe('IndexexchangeAdapter', function () {
       expect(videoImp.video).to.exist;
       expect(videoImp.video.w).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[0]);
       expect(videoImp.video.h).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[1]);
+    });
+
+    it('request should contain the extra banner ad sizes that IX is not configured for using the first site id in the ad unit', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.sizes.push([336, 280], [970, 90]);
+      bid.mediaTypes.banner.sizes.push([336, 280], [970, 90]);
+      const bid2 = utils.deepClone(bid);
+      bid2.params.siteId = '124';
+      bid2.params.size = [300, 600];
+      bid2.params.bidId = '2b3c4d5e';
+
+      const request = spec.buildRequests([bid, bid2], DEFAULT_OPTION)[0];
+      const impressions = JSON.parse(request.data.r).imp;
+
+      expect(impressions).to.be.an('array');
+      expect(impressions).to.have.lengthOf(4);
+
+      expect(impressions[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
+      expect(impressions[1].ext.siteID).to.equal(bid2.params.siteId)
+      expect(impressions[2].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
+      expect(impressions[3].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
+
+      expect(impressions[0].banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(impressions[0].banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+      expect(impressions[1].banner.w).to.equal(bid2.params.size[0]);
+      expect(impressions[1].banner.h).to.equal(bid2.params.size[1]);
+      expect(impressions[2].banner.w).to.equal(bid.mediaTypes.banner.sizes[2][0]);
+      expect(impressions[2].banner.h).to.equal(bid.mediaTypes.banner.sizes[2][1]);
+      expect(impressions[3].banner.w).to.equal(bid.mediaTypes.banner.sizes[3][0]);
+      expect(impressions[3].banner.h).to.equal(bid.mediaTypes.banner.sizes[3][1]);
+    });
+
+    it('request should contain the extra banner ad sizes and their corresponding site ids when there is multiple ad units', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.params.siteId = '124';
+      bid.adUnitCode = 'div-gpt-ad-156456451554-1'
+      bid.transactionId = '152e36d1-1241-4242-t35e-y1dv34d12315';
+      bid.bidId = '2f6g5s5e';
+      bid.params.size = [336, 280]
+      bid.sizes = [[336, 280], [970, 90]]
+      bid.mediaTypes.banner.sizes = [[336, 280], [970, 90]]
+
+      const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], bid], DEFAULT_OPTION)[0];
+
+      const impressions = JSON.parse(request.data.r).imp;
+      expect(impressions).to.be.an('array');
+      expect(impressions).to.have.lengthOf(4);
+
+      expect(impressions[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
+      expect(impressions[1].ext.siteID).to.equal(bid.params.siteId)
+      expect(impressions[2].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
+      expect(impressions[3].ext.siteID).to.equal(bid.params.siteId)
+
+      expect(impressions[0].banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(impressions[0].banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+      expect(impressions[1].banner.w).to.equal(bid.params.size[0]);
+      expect(impressions[1].banner.h).to.equal(bid.params.size[1]);
+      expect(impressions[2].banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][0]);
+      expect(impressions[2].banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][1]);
+      expect(impressions[3].banner.w).to.equal(bid.mediaTypes.banner.sizes[1][0]);
+      expect(impressions[3].banner.h).to.equal(bid.mediaTypes.banner.sizes[1][1]);
+
+      expect(impressions[0].ext.sid).to.equal(`${DEFAULT_BANNER_VALID_BID[0].params.size[0].toString()}x${DEFAULT_BANNER_VALID_BID[0].params.size[1].toString()}`);
+      expect(impressions[1].ext.sid).to.equal(`${bid.params.size[0].toString()}x${bid.params.size[1].toString()}`);
+      expect(impressions[2].ext.sid).to.equal(`${DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][0].toString()}x${DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][1].toString()}`);
+      expect(impressions[3].ext.sid).to.equal(`${bid.mediaTypes.banner.sizes[1][0].toString()}x${bid.mediaTypes.banner.sizes[1][1].toString()}`);
+    });
+
+    it('request should not contain the extra video ad sizes that IX is not configured for', function () {
+      const request = spec.buildRequests(DEFAULT_VIDEO_VALID_BID, DEFAULT_OPTION);
+      const impressions = JSON.parse(request[0].data.r).imp;
+
+      expect(impressions).to.be.an('array');
+      expect(impressions).to.have.lengthOf(1);
     });
   });
 
