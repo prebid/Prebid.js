@@ -1,6 +1,9 @@
-import * as utils from '../src/utils';
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
@@ -59,6 +62,12 @@ export const spec = {
     const bidResponses = [];
     for (let bidId in bids) {
       let adUnit = bids[bidId];
+      let meta;
+      if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
+        meta = {
+          clickUrl: adUnit.metadata.landingPageDomain
+        };
+      }
       bidResponses.push({
         requestId: bidId,
         cpm: Number(adUnit.cpm),
@@ -69,7 +78,8 @@ export const spec = {
         creativeId: adUnit.id,
         dealId: adUnit.targetingCustom,
         netRevenue: true,
-        currency: bidRequest.currency
+        currency: bidRequest.currency,
+        meta: meta
       });
     }
     return bidResponses;
@@ -91,6 +101,9 @@ export const spec = {
 
   // PRIVATE
   _readCookie(name) {
+    if (!storage.cookiesAreEnabled()) {
+      return null;
+    }
     let nameEquals = `${name}=`;
     let cookies = document.cookie.split(';');
 
@@ -163,7 +176,7 @@ export const spec = {
 
   _getLocalStorageSafely(key) {
     try {
-      return localStorage.getItem(key);
+      return storage.getDataFromLocalStorage(key);
     } catch (e) {
       return null;
     }

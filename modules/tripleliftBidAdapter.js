@@ -1,6 +1,7 @@
-import { BANNER } from '../src/mediaTypes';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
@@ -44,6 +45,10 @@ export const tripleliftAdapterSpec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       tlCall = utils.tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
+    }
+
+    if (config.getConfig('coppa') === true) {
+      tlCall = utils.tryAppendQueryString(tlCall, 'coppa', true);
     }
 
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
@@ -106,7 +111,7 @@ function _buildPostBody(bidRequests) {
     return {
       id: index,
       tagid: bid.params.inventoryCode,
-      floor: bid.params.floor,
+      floor: _getFloor(bid),
       banner: {
         format: _sizes(bid.sizes)
       }
@@ -131,6 +136,22 @@ function _buildPostBody(bidRequests) {
     }
   }
   return data;
+}
+
+function _getFloor (bid) {
+  let floor = null;
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: 'banner',
+      size: _sizes(bid.sizes)
+    });
+    if (typeof floorInfo === 'object' &&
+    floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor !== null ? floor : bid.params.floor;
 }
 
 function getUnifiedIdEids(bidRequests) {
@@ -198,7 +219,8 @@ function _buildResponseObject(bidderRequest, bid) {
       creativeId: creativeId,
       dealId: dealId,
       currency: 'USD',
-      ttl: 33,
+      ttl: 300,
+      tl_source: bid.tl_source,
     };
   };
   return bidResponse;

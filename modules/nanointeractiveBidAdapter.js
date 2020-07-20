@@ -1,6 +1,9 @@
-import * as utils from '../src/utils';
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 export const BIDDER_CODE = 'nanointeractive';
 export const END_POINT_URL = 'https://ad.audiencemanager.de';
@@ -97,7 +100,7 @@ function createSingleBidRequest(bid, bidderRequest) {
 
 function createSingleBidResponse(serverBid) {
   if (serverBid.userId) {
-    localStorage.setItem('lsUserId', serverBid.userId);
+    storage.setDataInLocalStorage('lsUserId', serverBid.userId);
   }
   return {
     requestId: serverBid.id,
@@ -147,8 +150,8 @@ function getEndpointUrl() {
 }
 
 function getLsUserId() {
-  if (localStorage.getItem('lsUserId') != null) {
-    return localStorage.getItem('lsUserId');
+  if (storage.getDataFromLocalStorage('lsUserId') != null) {
+    return storage.getDataFromLocalStorage('lsUserId');
   }
   return null;
 }

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec } from 'modules/justpremiumBidAdapter'
+import { spec } from 'modules/justpremiumBidAdapter.js'
 
 describe('justpremium adapter', function () {
   let sandbox;
