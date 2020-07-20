@@ -251,7 +251,7 @@ function processSubmoduleCallbacks(submodules, cb) {
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj);
       } else {
-        utils.logError(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
+        utils.logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
       done();
     });

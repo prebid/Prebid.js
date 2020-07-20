@@ -170,7 +170,7 @@ function includesSize(sizeArray, size) {
  *
  * @param  {*}       bidFloor    The bidFloor parameter inside bid request config.
  * @param  {*}       bidFloorCur The bidFloorCur parameter inside bid request config.
- * @return {boolean}             True if this is a valid biFfloor parameters format, and false
+ * @return {boolean}             True if this is a valid bidFloor parameters format, and false
  *                               otherwise.
  */
 function isValidBidFloorParams(bidFloor, bidFloorCur) {
@@ -374,6 +374,67 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   };
 }
 
+/**
+ *
+ * @param  {array}   bannerSizeList list of banner sizes
+ * @param  {array}   bannerSize the size to be removed
+ * @return {boolean} true if succesfully removed, false if not found
+ */
+
+function removeFromSizes(bannerSizeList, bannerSize) {
+  for (let i = 0; i < bannerSizeList.length; i++) {
+    if (bannerSize[0] == bannerSizeList[i][0] && bannerSize[1] == bannerSizeList[i][1]) {
+      bannerSizeList.splice(i, 1);
+      return true;
+    }
+  }
+  // size not found
+  return false;
+}
+
+/**
+ * Updates the Object to track missing banner sizes.
+ *
+ * @param {object} validBidRequest    The bid request for an ad unit's with a configured size.
+ * @param {object} missingBannerSizes The object containing missing banner sizes
+ * @param {object} imp                The impression for the bidrequest
+ */
+function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
+  const transactionID = validBidRequest.transactionId;
+  if (missingBannerSizes.hasOwnProperty(transactionID)) {
+    let currentSizeList = [];
+    if (missingBannerSizes[transactionID].hasOwnProperty('missingSizes')) {
+      currentSizeList = missingBannerSizes[transactionID].missingSizes;
+    }
+    removeFromSizes(currentSizeList, validBidRequest.params.size);
+    missingBannerSizes[transactionID].missingSizes = currentSizeList;
+  } else {
+    // New Ad Unit
+    if (utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes')) {
+      let sizeList = utils.deepClone(validBidRequest.mediaTypes.banner.sizes);
+      removeFromSizes(sizeList, validBidRequest.params.size);
+      let newAdUnitEntry = { 'missingSizes': sizeList,
+        'impression': imp
+      };
+      missingBannerSizes[transactionID] = newAdUnitEntry;
+    }
+  }
+}
+
+/**
+ *
+ * @param  {object} imp      Impression object to be modified
+ * @param  {array}  newSize  The new size to be applied
+ * @return {object} newImp   Updated impression object
+ */
+function createMissingBannerImp(imp, newSize) {
+  const newImp = utils.deepClone(imp);
+  newImp.ext.sid = `${newSize[0]}x${newSize[1]}`;
+  newImp.banner.w = newSize[0];
+  newImp.banner.h = newSize[1];
+  return newImp;
+}
+
 export const spec = {
 
   code: BIDDER_CODE,
@@ -436,6 +497,9 @@ export const spec = {
     let videoImps = [];
     let validBidRequest = null;
 
+    // To capture the missing sizes i.e not configured for ix
+    let missingBannerSizes = {};
+
     for (let i = 0; i < validBidRequests.length; i++) {
       validBidRequest = validBidRequests[i];
 
@@ -446,10 +510,22 @@ export const spec = {
           utils.logError('Bid size is not included in video playerSize')
         }
       }
-
       if (validBidRequest.mediaType === BANNER || utils.deepAccess(validBidRequest, 'mediaTypes.banner') ||
           (!validBidRequest.mediaType && !validBidRequest.mediaTypes)) {
-        bannerImps.push(bidToBannerImp(validBidRequest));
+        let imp = bidToBannerImp(validBidRequest);
+        bannerImps.push(imp);
+        updateMissingSizes(validBidRequest, missingBannerSizes, imp);
+      }
+    }
+    // Finding the missing banner sizes ,and making impressions for them
+    for (var transactionID in missingBannerSizes) {
+      if (missingBannerSizes.hasOwnProperty(transactionID)) {
+        let missingSizes = missingBannerSizes[transactionID].missingSizes;
+        for (let i = 0; i < missingSizes.length; i++) {
+          let origImp = missingBannerSizes[transactionID].impression;
+          let newImp = createMissingBannerImp(origImp, missingSizes[i]);
+          bannerImps.push(newImp);
+        }
       }
     }
 

@@ -1,10 +1,12 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
   VERSION: '3.0.3',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
+  E2ETESTENDPOINT: 'https://ads-wc.v.ssp.yahoo.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
   SYNC_ENDPOINT3: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
@@ -52,11 +54,17 @@ export const spec = {
     let consentData = bidRequest ? bidRequest.gdprConsent : null;
 
     return bids.map(bid => {
+      let url = spec.ENDPOINT
+      let pubId = bid.params.pubId;
+      if (bid.params.video.e2etest) {
+        url = spec.E2ETESTENDPOINT;
+        pubId = 'HBExchange';
+      }
       return {
         method: 'POST',
         /** removing adding local protocal since we
          * can get cookie data only if we call with https. */
-        url: spec.ENDPOINT + bid.params.pubId,
+        url: url + pubId,
         data: getRequestData(bid, consentData, bidRequest),
         bidRequest: bid
       }
@@ -258,6 +266,13 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.hp == 1) {
       bidData.source.ext.schain.nodes[0].hp = bid.params.video.hp;
     }
+  } else if (bid.schain) {
+    bidData.source = {
+      ext: {
+        schain: bid.schain
+      }
+    }
+    bidData.source.ext.schain.nodes[0].rid = bidData.id;
   }
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
@@ -282,7 +297,16 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.regs.ext.us_privacy = bidRequest.uspConsent
     }
   }
-
+  if (bid.params.video.e2etest) {
+    bidData.imp[0].bidfloor = null;
+    bidData.imp[0].video.w = 300;
+    bidData.imp[0].video.h = 250;
+    bidData.imp[0].video.mimes = ['video/mp4', 'application/javascript'];
+    bidData.imp[0].video.api = [2];
+    bidData.site.page = 'https://verizonmedia.com';
+    bidData.site.ref = 'https://verizonmedia.com';
+    bidData.tmax = 1000;
+  }
   return bidData;
 }
 

@@ -1350,47 +1350,6 @@ describe('PubMatic adapter', function () {
           });
         });
 
-        describe('Digitrust Id', function() {
-          it('send the digitrust id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.digitrustid = {data: {id: 'digitrust_user_id'}};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'digitru.st',
-              'uids': [{
-                'id': 'digitrust_user_id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.digitrustid = {data: {id: 1}};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.digitrustid = {data: {id: []}};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.digitrustid = {data: {id: null}};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.digitrustid = {data: {id: {}}};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
         describe('ID5 Id', function() {
           it('send the id5 id if it is present', function() {
             bidRequests[0].userId = {};
@@ -2347,6 +2306,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
         expect(response[0].pm_seat).to.equal(bidResponses.body.seatbid[0].seat);
         expect(response[0].pm_dspid).to.equal(bidResponses.body.seatbid[0].bid[0].ext.dspid);
+        expect(response[0].partnerImpId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
 
         expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
         expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
@@ -2369,6 +2329,7 @@ describe('PubMatic adapter', function () {
         expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
         expect(response[1].pm_seat).to.equal(bidResponses.body.seatbid[1].seat || null);
         expect(response[1].pm_dspid).to.equal(bidResponses.body.seatbid[1].bid[0].ext.dspid);
+        expect(response[0].partnerImpId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
       });
 
       it('should check for dealChannel value selection', function () {
