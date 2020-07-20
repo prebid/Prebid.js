@@ -212,17 +212,15 @@ function createVideoRequestData(bid, bidderRequest) {
   let topReferrer = getTopWindowReferrer();
 
   // if size is explicitly given via adapter params
-  var paramSize = getVideoBidParam(bid, 'size');
-
-  var firstSize = [];
-  var sizes = [];
+  let paramSize = getVideoBidParam(bid, 'size');
+  let sizes = [];
 
   if (typeof paramSize !== 'undefined' && paramSize != '') {
     sizes = parseSizes(paramSize);
   } else {
     sizes = getVideoSizes(bid);
   }
-  firstSize = getFirstSize(sizes);
+  const firstSize = getFirstSize(sizes);
 
   let video = getVideoTargetingParams(bid);
   const o = {
@@ -314,8 +312,8 @@ function createBannerRequestData(bid, bidderRequest) {
 
   // if size is explicitly given via adapter params
 
-  var paramSize = getBannerBidParam(bid, 'size');
-  var sizes = [];
+  let paramSize = getBannerBidParam(bid, 'size');
+  let sizes = [];
   if (typeof paramSize !== 'undefined' && paramSize != '') {
     sizes = parseSizes(paramSize);
   } else {

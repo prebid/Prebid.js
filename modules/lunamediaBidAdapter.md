@@ -30,7 +30,7 @@ var displayAdUnit = [
         params: {
             pubid: '121ab139faf7ac67428a23f1d0a9a71b',
 			placement: 1234,
-			size="320x50"
+			size: "320x50"
         }
     }]
 }];
@@ -54,7 +54,7 @@ var videoAdUnit = {
       	params: {
         	pubid: '121ab139faf7ac67428a23f1d0a9a71b',
 			placement: 1234,
-			size="320x480",
+			size: "320x480",
         	video: {
             	id: 123,
             	skip: 1,
