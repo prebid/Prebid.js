@@ -3,18 +3,19 @@
    access to a publisher page from creative payloads.
  */
 
-import events from './events';
-import { fireNativeTrackers, getAssetMessage } from './native';
-import { EVENTS } from './constants';
-import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils';
-import { auctionManager } from './auctionManager';
-import find from 'core-js/library/fn/array/find';
-import { isRendererRequired, executeRenderer } from './Renderer';
+import events from './events.js';
+import { fireNativeTrackers, getAssetMessage } from './native.js';
+import { EVENTS } from './constants.json';
+import { logWarn, replaceAuctionPrice } from './utils.js';
+import { auctionManager } from './auctionManager.js';
+import find from 'core-js-pure/features/array/find.js';
+import { isRendererRequired, executeRenderer } from './Renderer.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const BID_WON = EVENTS.BID_WON;
 
 export function listenMessagesFromCreative() {
-  addEventListener('message', receiveMessage, false);
+  window.addEventListener('message', receiveMessage, false);
 }
 
 function receiveMessage(ev) {
@@ -32,7 +33,7 @@ function receiveMessage(ev) {
     });
 
     if (adObject && data.message === 'Prebid Request') {
-      _sendAdToCreative(adObject, data.adServerDomain, ev.source);
+      _sendAdToCreative(adObject, ev);
 
       // save winning bids
       auctionManager.addWinningBid(adObject);
@@ -61,25 +62,25 @@ function receiveMessage(ev) {
   }
 }
 
-export function _sendAdToCreative(adObject, remoteDomain, source) {
+export function _sendAdToCreative(adObject, ev) {
   const { adId, ad, adUrl, width, height, renderer, cpm } = adObject;
   // rendering for outstream safeframe
   if (isRendererRequired(renderer)) {
     executeRenderer(renderer, adObject);
   } else if (adId) {
     resizeRemoteCreative(adObject);
-    source.postMessage(JSON.stringify({
+    ev.source.postMessage(JSON.stringify({
       message: 'Prebid Response',
       ad: replaceAuctionPrice(ad, cpm),
       adUrl: replaceAuctionPrice(adUrl, cpm),
       adId,
       width,
       height
-    }), remoteDomain);
+    }), ev.origin);
   }
 }
 
-function resizeRemoteCreative({ adUnitCode, width, height }) {
+function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render
@@ -94,14 +95,14 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
   });
 
   function getElementByAdUnit(elmType) {
-    let id = getElementIdBasedOnAdServer(adUnitCode);
+    let id = getElementIdBasedOnAdServer(adId, adUnitCode);
     let parentDivEle = document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
-  function getElementIdBasedOnAdServer(adUnitCode) {
+  function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (window.googletag) {
-      return getDfpElementId(adUnitCode)
+      return getDfpElementId(adId)
     } else if (window.apntag) {
       return getAstElementId(adUnitCode)
     } else {
@@ -109,8 +110,12 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
     }
   }
 
-  function getDfpElementId(adUnitCode) {
-    return find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot).getSlotElementId()
+  function getDfpElementId(adId) {
+    return find(window.googletag.pubads().getSlots(), slot => {
+      return find(slot.getTargetingKeys(), key => {
+        return includes(slot.getTargeting(key), adId);
+      });
+    }).getSlotElementId();
   }
 
   function getAstElementId(adUnitCode) {

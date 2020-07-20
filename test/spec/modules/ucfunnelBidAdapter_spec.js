@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/ucfunnelBidAdapter';
-import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes';
+import { spec } from 'modules/ucfunnelBidAdapter.js';
+import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes.js';
 
 const URL = 'https://hb.aralego.com/header';
 const BIDDER_CODE = 'ucfunnel';
@@ -247,6 +247,24 @@ describe('ucfunnel Adapter', function () {
         expect(bid.height).to.equal(1);
         expect(bid.native.clickUrl).to.equal('https://www.ucfunnel.com');
         expect(bid.native.clickTrackers[0]).to.equal('https://dev-ad-track.aralego.com/v1/nat/click?iid=72165d02-408a-470c-bb52-ae7d7b0a4549');
+      });
+    });
+  });
+
+  describe('cookie sync', function () {
+    describe('cookie sync iframe', function () {
+      const result = spec.getUserSyncs({'iframeEnabled': true});
+
+      it('should return cookie sync iframe info', function () {
+        expect(result[0].type).to.equal('iframe');
+        expect(result[0].url).to.equal('https://cdn.aralego.net/ucfad/cookie/sync.html');
+      });
+    });
+    describe('cookie sync image', function () {
+      const result = spec.getUserSyncs({'pixelEnabled': true});
+      it('should return cookie sync image info', function () {
+        expect(result[0].type).to.equal('image');
+        expect(result[0].url).to.equal('https://sync.aralego.com/idSync');
       });
     });
   });

@@ -1,10 +1,10 @@
-import {ajax} from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
+import {ajax} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import { targeting } from '../src/targeting';
-import { auctionManager } from '../src/auctionManager';
-import * as utils from '../src/utils';
+import adapterManager from '../src/adapterManager.js';
+import { targeting } from '../src/targeting.js';
+import { auctionManager } from '../src/auctionManager.js';
+import * as utils from '../src/utils.js';
 
 const ANALYTICS_CODE = 'yieldone';
 const analyticsType = 'endpoint';
@@ -13,6 +13,10 @@ const defaultUrl = 'https://pool.tsukiji.iponweb.net/hba';
 const requestedBidders = {};
 const requestedBids = {};
 const referrers = {};
+const ignoredEvents = {};
+ignoredEvents[CONSTANTS.EVENTS.BID_ADJUSTMENT] = true;
+ignoredEvents[CONSTANTS.EVENTS.BIDDER_DONE] = true;
+ignoredEvents[CONSTANTS.EVENTS.AUCTION_END] = true;
 
 let currentAuctionId = '';
 let url = defaultUrl;
@@ -108,7 +112,9 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
             return res;
           });
         }
-        eventsStorage[currentAuctionId].events.push({eventType, params});
+        if (!ignoredEvents[eventType]) {
+          eventsStorage[currentAuctionId].events.push({eventType, params});
+        }
 
         if (
           eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON
@@ -121,12 +127,12 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
             yieldoneAnalytics.eventsStorage[currentAuctionId].page = {url: referrers[currentAuctionId]};
             yieldoneAnalytics.eventsStorage[currentAuctionId].pubId = pubId;
             yieldoneAnalytics.eventsStorage[currentAuctionId].wrapper_version = '$prebid.version$';
-            yieldoneAnalytics.eventsStorage[currentAuctionId].events.forEach((it) => {
-              const adUnitNameMap = makeAdUnitNameMap();
-              if (adUnitNameMap) {
+            const adUnitNameMap = makeAdUnitNameMap();
+            if (adUnitNameMap) {
+              yieldoneAnalytics.eventsStorage[currentAuctionId].events.forEach((it) => {
                 addAdUnitName(it.params, adUnitNameMap);
-              }
-            });
+              });
+            }
           }
           yieldoneAnalytics.sendStat(yieldoneAnalytics.eventsStorage[currentAuctionId], currentAuctionId);
         }

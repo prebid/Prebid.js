@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import { VIDEO, BANNER } from '../src/mediaTypes';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'ebdr';
 export const spec = {
   code: BIDDER_CODE,

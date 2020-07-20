@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/datablocksBidAdapter';
+import { spec } from '../../../modules/datablocksBidAdapter.js';
 
 let bid = {
   bidId: '2dd581a2b6281d',

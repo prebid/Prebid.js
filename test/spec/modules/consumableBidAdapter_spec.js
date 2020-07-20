@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/consumableBidAdapter';
-import {createBid} from 'src/bidfactory';
+import {spec} from 'modules/consumableBidAdapter.js';
+import {createBid} from 'src/bidfactory.js';
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
 const SMARTSYNC_CALLBACK = 'serverbidCallBids';
