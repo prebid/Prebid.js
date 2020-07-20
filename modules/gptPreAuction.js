@@ -1,6 +1,7 @@
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 import { getHook } from '../src/hook.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const MODULE_NAME = 'GPT Pre-Auction';
@@ -86,7 +87,7 @@ const handleSetGptConfig = moduleConfig => {
 
   if (_currentConfig.enabled) {
     if (!hooksAdded) {
-      getHook('makeBidRequests').before(makeBidRequestsHook);
+      getGlobal().requestBids.before(makeBidRequestsHook, 41);
       hooksAdded = true;
     }
   } else {
