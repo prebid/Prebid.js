@@ -416,6 +416,10 @@ function generateVideoParameters(bid, bidderRequest) {
     queryParams.vmimes = oxVideoConfig.mimes;
   }
 
+  if (bid.params.test) {
+    queryParams.vtest = 1;
+  }
+
   return queryParams;
 }
 
