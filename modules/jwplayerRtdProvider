@@ -2,6 +2,7 @@ import {submodule} from '../src/hook.js';
 import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { logError } from '../src/utils.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const SUBMODULE_NAME = 'jwplayer';
 let requestCount = 0;
@@ -71,7 +72,9 @@ function getSegments(adUnits, onDone) {
       }
       const targetingInfo = getTargetingForBid(adUnit);
       if (targetingInfo.length) {
-        acc[code] = targetingInfo;
+        acc[code] = {
+          jwTargeting: JSON.stringify(targetingInfo)
+        };
       }
       return acc;
     }, {});
@@ -98,7 +101,6 @@ export function getTargetingForBid(bidRequest) {
   if (!jwTargeting) {
     return [];
   }
-
   const playerID = jwTargeting.playerID;
   let mediaID = jwTargeting.mediaID;
   let segments = segCache[mediaID];
@@ -158,7 +160,12 @@ export const jwplayerSubmodule = {
 
 export function init(config) {
   config.getConfig('realTimeData', ({realTimeData}) => {
-    const params = realTimeData.dataProviders && realTimeData.dataProviders.filter(pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME)[0].params;
+    const providers = realTimeData.dataProviders;
+    const jwplayerProvider = providers && find(providers, (pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME));
+    const params = jwplayerProvider && jwplayerProvider.params;
+    if (!params) {
+      return;
+    }
     requestTimeout = params.auctionDelay || params.timeout || requestTimeout;
     fetchTargetingInformation(params);
   });
