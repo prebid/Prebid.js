@@ -7,8 +7,8 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { gdprDataHandler } from '../src/adapterManager.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import strIncludes from 'core-js/library/fn/string/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -301,7 +301,8 @@ function processCmpData(consentObject, hookConfig) {
   }
 
   function checkV2Data() {
-    let gdprApplies = consentObject && consentObject.gdprApplies;
+    // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
+    let gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
     let tcString = consentObject && consentObject.tcString;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
@@ -372,7 +373,7 @@ function storeConsentData(cmpConsentObject) {
     consentData = {
       consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
       vendorData: (cmpConsentObject) || undefined,
-      gdprApplies: (cmpConsentObject) ? cmpConsentObject.gdprApplies : gdprScope
+      gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
     };
   }
   consentData.apiVersion = cmpVersion;

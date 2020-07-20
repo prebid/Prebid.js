@@ -3,7 +3,7 @@
 ```
 Module Name: Rich Audience Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: cert@richaudience.com 
+Maintainer: cert@richaudience.com
 ```
 
 # Description
@@ -15,7 +15,7 @@ Please reach out to your account manager for more information.
 
 # Test Parameters
 
-## Web
+## Web - DISPLAY
 ```
     var adUnits = [
                 {
@@ -45,12 +45,43 @@ Please reach out to your account manager for more information.
             ];
 ```
 
+## Web - VIDEO
+```
+            var adUnits = [{
+              code: 'video1',
+              mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480]
+                }
+              },
+
+              bids: [{
+                bidder: 'richaudience',
+                params: {
+                  pid: 'OjUW9KhuQV',
+                  supplyType: 'site',
+                  player: {
+                     init: "open",
+                     end: "close",
+                     skin: "light"
+                 }
+                }
+              }]
+
+            }];
+```
+
 ## In-app
 ```
     var adUnits = [
                     {
                         code: 'test-div1',
-                        sizes: [[300, 250],[300, 600]],
+                        mediaTypes: {
+                            banner: {
+                                sizes: [[300, 250], [300, 600]]
+                            }
+                         },
                         bids: [{
                             bidder: 'richaudience',
                             params: {
@@ -85,7 +116,18 @@ Rich Audience strongly recommends enabling user syncing through iframes. Be sure
 ```javascript
 pbjs.setConfig({
    userSync: {
-      iframeEnabled: true
-   }
+     filterSettings: {
+         iframe: {
+             bidders: '*',
+             filter: 'include'
+          },
+          image: {
+             bidders: '*',
+             filter: 'include'
+          }
+     },
+     syncsPerBidder: 3,
+     syncDelay: 6000,
+  }
 });
 ```

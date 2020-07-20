@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
@@ -48,7 +48,7 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentString: bidderRequest.gdprConsent.consentString,
-        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : null
       };
     }
 
@@ -80,7 +80,7 @@ export const spec = {
 
     try {
       bidRequests = JSON.parse(request.data).Bids;
-    } catch (e) {
+    } catch (err) {
       // json error initial request can't be read
     }
 
