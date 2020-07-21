@@ -87,7 +87,7 @@ const handleSetGptConfig = moduleConfig => {
 
   if (_currentConfig.enabled) {
     if (!hooksAdded) {
-      getGlobal().requestBids.before(makeBidRequestsHook, 41);
+      getGlobal().requestBids.before(makeBidRequestsHook);
       hooksAdded = true;
     }
   } else {
