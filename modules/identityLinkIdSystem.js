@@ -42,38 +42,48 @@ export const identityLinkSubmodule = {
     // use protocol relative urls for http or https
     const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}${hasGdpr ? '&ct=1&cv=' + gdprConsentString : ''}`;
     let resp;
-    // if ats library is initialised, use it to retrieve envelope. If not use standard third party endpoint
-    if (window.ats) {
-      resp = function(callback) {
+    resp = function(callback) {
+      // Check ats during callback so it has a chance to initialise.
+      // If ats library is available, use it to retrieve envelope. If not use standard third party endpoint
+      if (window.ats) {
+        utils.logInfo('ATS exists!');
         window.ats.retrieveEnvelope(function (envelope) {
           if (envelope) {
+            utils.logInfo('An envelope can be retrieved from ATS!');
             callback(JSON.parse(envelope).envelope);
           } else {
             getEnvelope(url, callback);
           }
         });
-      }
-    } else {
-      resp = function (callback) {
+      } else {
         getEnvelope(url, callback);
       }
-    }
+    };
+
     return {callback: resp};
   }
-}
+};
 // return envelope from third party endpoint
 function getEnvelope(url, callback) {
-  ajax(url, response => {
-    let responseObj;
-    if (response) {
-      try {
-        responseObj = JSON.parse(response);
-      } catch (error) {
-        utils.logError(error);
+  utils.logInfo('A 3P retrieval is attempted!');
+  const callbacks = {
+    success: response => {
+      let responseObj;
+      if (response) {
+        try {
+          responseObj = JSON.parse(response);
+        } catch (error) {
+          utils.logInfo(error);
+        }
       }
+      callback((responseObj && responseObj.envelope) ? responseObj.envelope : '');
+    },
+    error: error => {
+      utils.logInfo(`identityLink: ID fetch encountered an error`, error);
+      callback();
     }
-    callback(responseObj.envelope);
-  }, undefined, {method: 'GET', withCredentials: true});
+  };
+  ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
 }
 
 submodule('userId', identityLinkSubmodule);
