@@ -1,6 +1,6 @@
 import { config } from './config.js';
 import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 let sizeConfig = [];
 
