@@ -155,10 +155,11 @@ export const jwplayerSubmodule = {
    * @param {adUnit[]} adUnits
    * @param {function} onDone
    */
-  getData: getSegments
+  getData: getSegments,
+  init
 };
 
-export function init(config) {
+export function beforeInit(config) {
   config.getConfig('realTimeData', ({realTimeData}) => {
     const providers = realTimeData.dataProviders;
     const jwplayerProvider = providers && find(providers, (pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME));
@@ -171,5 +172,9 @@ export function init(config) {
   });
 }
 
+function init(config, gdpr, usp) {
+  return true;
+}
+
 submodule('realTimeData', jwplayerSubmodule);
-init(config);
+beforeInit(config);
