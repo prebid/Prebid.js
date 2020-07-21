@@ -1700,6 +1700,9 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('cpm', 0.5);
+      expect(response).to.have.property('meta');
+      expect(response.meta).to.have.property('advertiserDomains');
+      expect(response.meta.advertiserDomains[0]).to.equal('appnexus.com');
       expect(response).to.not.have.property('vastUrl');
       expect(response).to.not.have.property('videoCacheKey');
       expect(response).to.have.property('ttl', 60);
