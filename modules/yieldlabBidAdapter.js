@@ -37,7 +37,7 @@ export const spec = {
     utils._each(validBidRequests, function (bid) {
       adslotIds.push(bid.params.adslotId)
       if (bid.params.targeting) {
-        query.t = createQueryString(bid.params.targeting)
+        query.t = createTargetingString(bid.params.targeting)
       }
       if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
         query.ids = createUserIdString(bid.userIdAsEids)
@@ -193,6 +193,23 @@ function createQueryString (obj) {
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
       str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]))
+    }
+  }
+  return str.join('&')
+}
+
+/**
+ * Creates an unencoded targeting string out of an object with key-values
+ * @param {Object} obj
+ * @returns {String}
+ */
+function createTargetingString (obj) {
+  let str = []
+  for (var p in obj) {
+    if (obj.hasOwnProperty(p)) {
+      let key = p
+      let val = obj[p]
+      str.push(key + '=' + val)
     }
   }
   return str.join('&')
