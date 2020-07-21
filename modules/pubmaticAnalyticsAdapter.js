@@ -152,6 +152,7 @@ function parseBidResponse(bid) {
     'mediaType',
     'params',
     'mi',
+    'partnerImpId', // partner impression ID
     'dimensions', () => utils.pick(bid, [
       'width',
       'height'
@@ -188,7 +189,8 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
       'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
       'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
-      'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD
+      'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
+      'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING
     });
     return partnerBids;
   }, [])
@@ -218,6 +220,13 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
+  outputObj['tgid'] = (function() {
+    var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
+    if (testGroupId <= 15 && testGroupId >= 0) {
+      return testGroupId;
+    }
+    return 0;
+  })();
 
   // GDPR support
   if (auctionCache.gdprConsent) {
@@ -267,6 +276,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(winningBid.params.kgpv || adUnitId);
+  pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
   ajax(
     pixelURL,
     null,

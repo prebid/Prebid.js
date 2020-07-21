@@ -107,6 +107,18 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('lotamePanoramaId', function () {
+    const userId = {
+      lotamePanoramaId: 'some-random-id-value',
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'crwdcntrl.net',
+      uids: [{ id: 'some-random-id-value', atype: 1 }],
+    });
+  });
+
   it('criteo', function() {
     const userId = {
       criteoId: 'some-random-id-value'
