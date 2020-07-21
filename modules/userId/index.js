@@ -576,8 +576,8 @@ export function init(config) {
   }
   // listen for config userSyncs to be set
   config.getConfig(conf => {
-    // Note: support for both 'userSync' and 'usersync' will be deprecated with Prebid.js 3.0
-    const userSync = conf.userSync || conf.usersync;
+    // Note: support for 'usersync' was dropped as part of Prebid.js 4.0
+    const userSync = conf.userSync;
     if (userSync && userSync.userIds) {
       configRegistry = userSync.userIds;
       syncDelay = utils.isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
