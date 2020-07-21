@@ -5,6 +5,12 @@ const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // intentIqId
+  'intentIqId': {
+    source: 'intentiq.com',
+    atype: 1
+  },
+
   // pubCommonId
   'pubcid': {
     source: 'pubcid.org',
@@ -60,6 +66,12 @@ const USER_IDS_CONFIG = {
   'britepoolid': {
     source: 'britepool.com',
     atype: 1
+  },
+
+  // lotamePanoramaId
+  lotamePanoramaId: {
+    source: 'crwdcntrl.net',
+    atype: 1,
   },
 
   // DigiTrust
