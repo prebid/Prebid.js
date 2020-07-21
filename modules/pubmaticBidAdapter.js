@@ -16,8 +16,7 @@ const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
-const RENDERER = 'renderer_test_pubmatic';
-const RENDERER_URL = `https://pubmatic.bbvms.com/r/${RENDERER}.js`; // URL of the renderer application
+const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -108,6 +107,7 @@ const dealChannelValues = {
   5: 'PREF',
   6: 'PMPG'
 };
+// BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
     const config = {
@@ -118,7 +118,7 @@ const BB_RENDERER = {
     else if (bid.vastUrl) config.vastUrl = bid.vastUrl;
 
     if (!bid.vastXml && !bid.vastUrl) {
-      utils.logWarn(`Pubmatic: No vastXml or vastUrl on bid, bailing...`);
+      utils.logWarn(`${LOG_WARN_PREFIX}: No vastXml or vastUrl on bid, bailing...`);
       return;
     }
 
@@ -136,10 +136,10 @@ const BB_RENDERER = {
     }
 
     if (renderer) renderer.bootstrap(config, ele);
-    else utils.logWarn(`Pubmatic: Couldn't find a renderer with ${rendererId}`);
+    else utils.logWarn(`${LOG_WARN_PREFIX}: Couldn't find a renderer with ${rendererId}`);
   },
   newRenderer: function(rendererCode, adUnitCode) {
-    var rendererUrl = RENDERER_URL.replace('$$RENDERER', rendererCode);
+    var rendererUrl = RENDERER_URL.replace('$RENDERER', rendererCode);
     const renderer = Renderer.install({
       url: rendererUrl,
       loaded: false,
@@ -149,7 +149,7 @@ const BB_RENDERER = {
     try {
       renderer.setRender(BB_RENDERER.outstreamRender);
     } catch (err) {
-      utils.logWarn(`Pubmatic: Error tying to setRender on renderer`, err);
+      utils.logWarn(`${LOG_WARN_PREFIX}: Error tying to setRender on renderer`, err);
     }
 
     return renderer;
@@ -818,20 +818,19 @@ function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
 }
 
 function _assignRenderer(newBid, request) {
-  let bidParams, context;
+  let bidParams, context, adUnitCode;
   if (request.bidderRequest && request.bidderRequest.bids) {
     for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
-      if (request.bidderRequest && request.bidderRequest.bids && request.bidderRequest.bids[bidderRequestBidsIndex].bidId === newBid.bidId) {
+      if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === newBid.requestId) {
         bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
-        context = request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO] ? request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO].context : '';
+        context = request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO].context;
+        adUnitCode = request.bidderRequest.bids[bidderRequestBidsIndex].adUnitCode;
       }
     }
-  }
-  if (context && context === 'outstream' && newBid.rendererCode) {
-    if (bidParams) {
+    if (context && context === 'outstream' && bidParams && bidParams.outstreamAU && adUnitCode) {
       newBid.rendererCode = bidParams.outstreamAU;
+      newBid.renderer = BB_RENDERER.newRenderer(newBid.rendererCode, adUnitCode);
     }
-    newBid.renderer = BB_RENDERER.newRenderer(newBid.rendererCode, newBid.adUnitCode);
   }
 };
 
@@ -1004,7 +1003,8 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: JSON.stringify(payload)
+      data: JSON.stringify(payload),
+      bidderRequest: bidderRequest
     };
   },
 
