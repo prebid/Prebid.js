@@ -47,6 +47,9 @@ export const spec = {
           query[prop] = bid.params.customParams[prop]
         }
       }
+      if (bid.schain && utils.isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
+        query.schain = createSchainString(bid.schain)
+      }
     })
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -192,10 +195,45 @@ function createQueryString (obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
-      str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]))
+      let param = p
+      let val = obj[p]
+      if (param !== 'schain') {
+        str.push(encodeURIComponent(param) + '=' + encodeURIComponent(val))
+      } else {
+        str.push(param + '=' + val)
+      }
     }
   }
   return str.join('&')
+}
+
+/**
+ * Creates a string out of a schain object
+ * @param {Object} schain
+ * @returns {String}
+ */
+function createSchainString (schain) {
+  let ver = schain.ver ? schain.ver : ''
+  let complete = schain.complete ? schain.complete : ''
+  let nodes = []
+  for (let i = 0; i < schain.nodes.length; i++) {
+    let node = []
+    node.push(schain.nodes[i].asi, schain.nodes[i].sid, schain.nodes[i].hp, schain.nodes[i].rid, schain.nodes[i].name, schain.nodes[i].domain, schain.nodes[i].ext)
+    let filteredAndEncodedNode = node.map(x => x === undefined ? '' : encodeURIComponentWithBangIncluded(x))
+    let nodeString = filteredAndEncodedNode.join(',')
+    nodes.push(nodeString)
+  }
+  let nodesString = nodes.join('!')
+  return `${ver},${complete}!${nodesString}`
+}
+
+/**
+ * Encodes URI Component with exlamation mark included. Needed for schain object.
+ * @param {String} str
+ * @returns {String}
+ */
+function encodeURIComponentWithBangIncluded(str) {
+  return encodeURIComponent(str).replace(/!/g, '%21');
 }
 
 /**
