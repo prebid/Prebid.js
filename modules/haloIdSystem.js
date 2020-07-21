@@ -25,7 +25,7 @@ export const haloIdSubmodule = {
     script.type = 'text/javascript';
 
     script.onload = function() {
-      callback(window.localStorage.getItem('auHalo'));
+      callback(window.localStorage.getItem('auHaloId'));
     }
 
     script.src = 'https://id.halo.dev.ad.gt/api/v1/haloid';
@@ -41,7 +41,8 @@ export const haloIdSubmodule = {
    * @returns {function(callback:function)}
    */
   getId(submoduleConfigParams, consentData) {
-    if (typeof submoduleConfigParams.getter == 'function') {
+    if (submoduleConfigParams &&
+        typeof submoduleConfigParams['getter'] == 'function') {
       let haloId = submoduleConfigParams.getter()
       return {id: haloId}
     }
