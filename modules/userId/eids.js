@@ -123,6 +123,11 @@ const USER_IDS_CONFIG = {
         third: data.third
       } : undefined;
     }
+  },
+  // zeotapId+
+  'IDP': {
+    source: 'zeotap.com',
+    atype: 1
   }
 };
 
