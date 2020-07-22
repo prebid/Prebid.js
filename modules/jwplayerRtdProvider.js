@@ -1,4 +1,4 @@
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { logError } from '../src/utils.js';
