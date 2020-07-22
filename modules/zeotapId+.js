@@ -4,13 +4,11 @@
  * @module modules/zeotapId+
  * @requires module:modules/userId
  */
-
 import * as utils from '../src/utils.js'
 import {submodule} from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
-
 const storage = getStorageManager();
 
 function isValidConfig(configParams) {
@@ -35,7 +33,8 @@ function readFromLocalStorage() {
 
 function fetchId(configParams) {
   if (!isValidConfig(configParams)) return undefined;
-  return readCookie() || readFromLocalStorage();
+  const id = readCookie() || readFromLocalStorage();
+  return { id };
 };
 
 /** @type {Submodule} */
@@ -48,24 +47,22 @@ export const zeotapIdPlusSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param { Object | string } value
-   * @return { Object | undefined }
+   * @param { Object | string | undefined } value
+   * @return { Object | string | undefined }
    */
   decode(value) {
     return value ? {
       'IDP': utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined
     } : undefined;
   },
-
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleParams} configParams
-   * @return {string}
+   * @return {{id: string | undefined} | undefined}
    */
   getId(configParams) {
     return fetchId(configParams);
   }
 };
-
 submodule('userId', zeotapIdPlusSubmodule);
