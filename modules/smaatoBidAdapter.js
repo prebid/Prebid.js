@@ -172,52 +172,49 @@ export const spec = {
     }
 
     const res = serverResponse.body;
-
     utils.logInfo('[SMAATO] OpenRTB Response:', res);
 
-    var bids = []
-    if (res) {
-      res.seatbid.forEach(sb => {
-        sb.bid.forEach(b => {
-          let resultingBid = {
-            requestId: b.impid,
-            cpm: b.price || 0,
-            width: b.w,
-            height: b.h,
-            ttl: ttlSec,
-            creativeId: b.crid,
-            dealId: b.dealid || null,
-            netRevenue: true,
-            currency: res.cur,
-            meta: {
-              advertiserDomains: b.adomain,
-              networkName: b.bidderName,
-              agencyId: sb.seat
-            }
-          };
-
-          switch (smtAdType) {
-            case 'Img':
-              resultingBid.ad = createImgAd(b.adm);
-              resultingBid.meta.mediaType = BANNER;
-              bids.push(resultingBid);
-              break;
-            case 'Richmedia':
-              resultingBid.ad = createRichmediaAd(b.adm);
-              resultingBid.meta.mediaType = BANNER;
-              bids.push(resultingBid);
-              break;
-            case 'Video':
-              resultingBid.vastXml = b.adm;
-              resultingBid.meta.mediaType = VIDEO;
-              bids.push(resultingBid);
-              break;
-            default:
-              utils.logInfo('[SMAATO] Invalid ad type:', smtAdType);
+    var bids = [];
+    res.seatbid.forEach(sb => {
+      sb.bid.forEach(b => {
+        let resultingBid = {
+          requestId: b.impid,
+          cpm: b.price || 0,
+          width: b.w,
+          height: b.h,
+          ttl: ttlSec,
+          creativeId: b.crid,
+          dealId: b.dealid || null,
+          netRevenue: true,
+          currency: res.cur,
+          meta: {
+            advertiserDomains: b.adomain,
+            networkName: b.bidderName,
+            agencyId: sb.seat
           }
-        });
+        };
+
+        switch (smtAdType) {
+          case 'Img':
+            resultingBid.ad = createImgAd(b.adm);
+            resultingBid.meta.mediaType = BANNER;
+            bids.push(resultingBid);
+            break;
+          case 'Richmedia':
+            resultingBid.ad = createRichmediaAd(b.adm);
+            resultingBid.meta.mediaType = BANNER;
+            bids.push(resultingBid);
+            break;
+          case 'Video':
+            resultingBid.vastXml = b.adm;
+            resultingBid.meta.mediaType = VIDEO;
+            bids.push(resultingBid);
+            break;
+          default:
+            utils.logInfo('[SMAATO] Invalid ad type:', smtAdType);
+        }
       });
-    }
+    });
 
     utils.logInfo('[SMAATO] Prebid bids:', bids);
     return bids;
