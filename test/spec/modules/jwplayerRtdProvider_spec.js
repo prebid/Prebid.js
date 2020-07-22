@@ -4,11 +4,11 @@ import { server } from 'test/mocks/xhr.js';
 
 describe('jwplayerRtdProvider', function() {
   const validSegments = ['test_seg_1', 'test_seg_2'];
+  const testIdForSuccess = 'test_id_for_success';
   const responseHeader = {'Content-Type': 'application/json'};
 
   describe('Fetch targeting for mediaID tests', function () {
     let request;
-    const testIdForSuccess = 'test_id_for_success';
     const testIdForFailure = 'test_id_for_failure';
 
     describe('Fetch succeeds', function () {
@@ -311,7 +311,22 @@ describe('jwplayerRtdProvider', function() {
       });
 
       it('returns data in proper structure', function () {
-
+        const adUnitCode = 'test_ad_unit';
+        const adUnitWithMediaId = {
+          code: adUnitCode,
+          mediaID: testIdForSuccess
+        };
+        const adUnitEmpty = {
+          code: 'test_ad_unit_empty'
+        };
+        const expectedData = {};
+        expectedData[adUnitCode] = {
+          jwTargeting: {
+            segments: validSegments
+          }
+        };
+        jwplayerSubmodule.getData([adUnitWithMediaId, adUnitEmpty], bidRequestSpy);
+        bidRequestSpy.calledOnceWithExactly(expectedData);
       });
     });
   });
