@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -16,6 +17,8 @@ const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
+const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
+const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js');
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -105,6 +108,61 @@ const dealChannelValues = {
   1: 'PMP',
   5: 'PREF',
   6: 'PMPG'
+};
+
+// BB stands for Blue BillyWig
+const BB_RENDERER = {
+  bootstrapPlayer: function(bid) {
+    const config = {
+      code: bid.adUnitCode,
+    };
+
+    if (bid.vastXml) config.vastXml = bid.vastXml;
+    else if (bid.vastUrl) config.vastUrl = bid.vastUrl;
+
+    if (!bid.vastXml && !bid.vastUrl) {
+      utils.logWarn(`${LOG_WARN_PREFIX}: No vastXml or vastUrl on bid, bailing...`);
+      return;
+    }
+
+    const rendererId = BB_RENDERER.getRendererId(PUBLICATION, bid.rendererCode);
+
+    const ele = document.getElementById(bid.adUnitCode); // NB convention
+
+    let renderer;
+
+    for (let rendererIndex = 0; rendererIndex < window.bluebillywig.renderers.length; rendererIndex++) {
+      if (window.bluebillywig.renderers[rendererIndex]._id === rendererId) {
+        renderer = window.bluebillywig.renderers[rendererIndex];
+        break;
+      }
+    }
+
+    if (renderer) renderer.bootstrap(config, ele);
+    else utils.logWarn(`${LOG_WARN_PREFIX}: Couldn't find a renderer with ${rendererId}`);
+  },
+  newRenderer: function(rendererCode, adUnitCode) {
+    var rendererUrl = RENDERER_URL.replace('$RENDERER', rendererCode);
+    const renderer = Renderer.install({
+      url: rendererUrl,
+      loaded: false,
+      adUnitCode
+    });
+
+    try {
+      renderer.setRender(BB_RENDERER.outstreamRender);
+    } catch (err) {
+      utils.logWarn(`${LOG_WARN_PREFIX}: Error tying to setRender on renderer`, err);
+    }
+
+    return renderer;
+  },
+  outstreamRender: function(bid) {
+    bid.renderer.push(function() { BB_RENDERER.bootstrapPlayer(bid) });
+  },
+  getRendererId: function(pub, renderer) {
+    return `${pub}-${renderer}`; // NB convention!
+  }
 };
 
 let publisherId = 0;
@@ -837,6 +895,23 @@ function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
   }
 }
 
+function _assignRenderer(br, request) {
+  let bidParams, context, adUnitCode;
+  if (request.bidderRequest && request.bidderRequest.bids) {
+    for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
+      if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === br.requestId) {
+        bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
+        context = request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO].context;
+        adUnitCode = request.bidderRequest.bids[bidderRequestBidsIndex].adUnitCode;
+      }
+    }
+    if (context && context === 'outstream' && bidParams && bidParams.outstreamAU && adUnitCode) {
+      br.rendererCode = bidParams.outstreamAU;
+      br.renderer = BB_RENDERER.newRenderer(br.rendererCode, adUnitCode);
+    }
+  }
+};
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
@@ -858,6 +933,19 @@ export const spec = {
       if (bid.params.hasOwnProperty('video')) {
         if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
           utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
+          return false;
+        }
+        if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
+          if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
+            utils.logError(`${LOG_WARN_PREFIX}: no context specified in bid. Rejecting bid: `, bid);
+            return false;
+          }
+          if (bid.mediaTypes[VIDEO].context === 'outstream' && !utils.isStr(bid.params.outstreamAU)) {
+            utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids outstreamAU is required. Rejecting bid: `, bid);
+            return false;
+          }
+        } else {
+          utils.logError(`${LOG_WARN_PREFIX}: mediaTypes or mediaTypes.video is not specified. Rejecting bid: `, bid);
           return false;
         }
       }
@@ -994,7 +1082,8 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: JSON.stringify(payload)
+      data: JSON.stringify(payload),
+      bidderRequest: bidderRequest
     };
   },
 
@@ -1061,6 +1150,7 @@ export const spec = {
                             br.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
                             br.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
                             br.vastXml = bid.adm;
+                            _assignRenderer(br, request);
                             break;
                           case NATIVE:
                             _parseNativeResponse(bid, br);
