@@ -169,7 +169,8 @@ export function beforeInit(config) {
     if (!params) {
       return;
     }
-    requestTimeout = params.auctionDelay || params.timeout || requestTimeout;
+    const rtdModuleTimeout = params.auctionDelay || params.timeout;
+    requestTimeout = rtdModuleTimeout === undefined ? requestTimeout : Math.max(rtdModuleTimeout - 1, 0);
     fetchTargetingInformation(params);
   });
 }
