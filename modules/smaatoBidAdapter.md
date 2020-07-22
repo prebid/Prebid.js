@@ -25,8 +25,8 @@ var adUnits = [{
     "bids": [{
         "bidder": "smaato",
         "params": {
-            "publisherId": "1100012345",
-            "adspaceId": "11002234"
+            "publisherId": "1100042525",
+            "adspaceId": "130563103"
         }
     }]
 }];
@@ -56,8 +56,8 @@ var adUnits = [{
     "bids": [{
         "bidder": "smaato",
         "params": {
-            "publisherId": "1100012345",
-            "adspaceId": "11002234"
+            "publisherId": "1100042525",
+            "adspaceId": "130563103"
         }
     }]
 }];
