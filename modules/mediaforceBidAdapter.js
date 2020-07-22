@@ -82,6 +82,7 @@ const NATIVE_PARAMS = {
     type: 8
   }
 };
+
 Object.keys(NATIVE_PARAMS).forEach((key) => {
   NATIVE_ID_MAP[NATIVE_PARAMS[key].id] = key;
 });
@@ -236,7 +237,8 @@ export const spec = {
       utils.triggerPixel(bid.burl);
     }
   },
-}
+};
+
 registerBidder(spec);
 
 function getLanguage() {
@@ -267,6 +269,7 @@ function parseNative(native) {
     impressionTrackers: imptrackers || [],
     javascriptTrackers: jstracker ? [jstracker] : []
   };
+
   (assets || []).forEach((asset) => {
     const {id, img, data, title} = asset;
     const key = NATIVE_ID_MAP[id];
