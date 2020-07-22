@@ -4,7 +4,10 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
-const { registerBidder } = require('../src/adapters/bidderFactory.js');
+import { getStorageManager } from '../src/storageManager.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+
+const storage = getStorageManager();
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -63,8 +66,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     payload.userId = bidderRequest.userId;
   }
   try {
-    if (window.localStorage) {
-      payload.onetagSid = window.localStorage.getItem('onetag_sid');
+    if (storage.hasLocalStorage()) {
+      payload.onetagSid = storage.getDataFromLocalStorage('onetag_sid');
     }
   } catch (e) {}
   return {
