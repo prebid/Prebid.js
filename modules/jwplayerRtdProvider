@@ -73,7 +73,9 @@ function getSegments(adUnits, onDone) {
       const targetingInfo = getTargetingForBid(adUnit);
       if (targetingInfo.length) {
         acc[code] = {
-          jwTargeting: JSON.stringify(targetingInfo)
+          jwTargeting: {
+            segments: targetingInfo
+          }
         };
       }
       return acc;
