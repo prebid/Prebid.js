@@ -194,96 +194,97 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   }
   const refererInfo = getRefererInfo();
 
-  const s2sConfig = (Array.isArray(_s2sConfigs) ? _s2sConfigs : []).find(i => (Array.isArray(i.bidders) ? i.bidders : []).some(i => bidderCodes.indexOf(i) !== -1));
+  (Array.isArray(_s2sConfigs) ? _s2sConfigs : []).forEach(function (s2sConfig) {
+    let clientBidderCodes = bidderCodes;
+    let clientTestAdapters = [];
 
-  let clientBidderCodes = bidderCodes;
-  let clientTestAdapters = [];
+    if (s2sConfig && s2sConfig.enabled) {
+      // if s2sConfig.bidderControl testing is turned on
+      if (doingS2STesting(s2sConfig)) {
+        // get all adapters doing client testing
+        const bidderMap = s2sTestingModule.getSourceBidderMap(adUnits);
+        clientTestAdapters = bidderMap[s2sTestingModule.CLIENT];
+      }
 
-  if (s2sConfig && s2sConfig.enabled) {
-    // if s2sConfig.bidderControl testing is turned on
-    if (doingS2STesting(s2sConfig)) {
-      // get all adapters doing client testing
-      const bidderMap = s2sTestingModule.getSourceBidderMap(adUnits);
-      clientTestAdapters = bidderMap[s2sTestingModule.CLIENT];
+      // these are called on the s2s adapter
+      let adaptersServerSide = s2sConfig.bidders;
+
+      // don't call these client side (unless client request is needed for testing)
+      clientBidderCodes = bidderCodes.filter(elm =>
+        !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm)
+      );
+
+      const adUnitsContainServerRequests = (adUnits, s2sConf) => Boolean(
+        find(adUnits, adUnit => find(adUnit.bids, bid => (
+          bid.bidSource ||
+          (s2sConf.bidderControl && s2sConf.bidderControl[bid.bidder])
+        ) && bid.finalSource === s2sTestingModule.SERVER))
+      );
+
+      if (isTestingServerOnly(s2sConfig) && adUnitsContainServerRequests(adUnits, s2sConfig)) {
+        clientBidderCodes.length = 0;
+      }
+
+      let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
+      let tid = utils.generateUUID();
+      adaptersServerSide.forEach(bidderCode => {
+        const bidderRequestId = utils.getUniqueIdentifierStr();
+        const bidderRequest = {
+          bidderCode,
+          auctionId,
+          bidderRequestId,
+          tid,
+          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
+          auctionStart: auctionStart,
+          timeout: s2sConfig.timeout,
+          src: CONSTANTS.S2S.SRC,
+          refererInfo
+        };
+        if (bidderRequest.bids.length !== 0) {
+          bidRequests.push(bidderRequest);
+        }
+      });
+
+      // update the s2sAdUnits object and remove all bids that didn't pass sizeConfig/label checks from getBids()
+      // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
+      adUnitsS2SCopy.forEach((adUnitCopy) => {
+        let validBids = adUnitCopy.bids.filter((adUnitBid) => {
+          return find(bidRequests, request => {
+            return find(request.bids, (reqBid) => reqBid.bidId === adUnitBid.bid_id);
+          });
+        });
+        adUnitCopy.bids = validBids;
+      });
+
+      bidRequests.forEach(request => {
+        request.adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnitCopy => adUnitCopy.bids.length > 0);
+      });
     }
 
-    // these are called on the s2s adapter
-    let adaptersServerSide = s2sConfig.bidders;
+    // client adapters
+    let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits, s2sConfig);
 
-    // don't call these client side (unless client request is needed for testing)
-    clientBidderCodes = bidderCodes.filter(elm =>
-      !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm)
-    );
-
-    const adUnitsContainServerRequests = (adUnits, s2sConf) => Boolean(
-      find(adUnits, adUnit => find(adUnit.bids, bid => (
-        bid.bidSource ||
-        (s2sConf.bidderControl && s2sConf.bidderControl[bid.bidder])
-      ) && bid.finalSource === s2sTestingModule.SERVER))
-    );
-
-    if (isTestingServerOnly(s2sConfig) && adUnitsContainServerRequests(adUnits, s2sConfig)) {
-      clientBidderCodes.length = 0;
-    }
-
-    let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
-    let tid = utils.generateUUID();
-    adaptersServerSide.forEach(bidderCode => {
+    clientBidderCodes.forEach(bidderCode => {
       const bidderRequestId = utils.getUniqueIdentifierStr();
       const bidderRequest = {
         bidderCode,
         auctionId,
         bidderRequestId,
-        tid,
-        bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
+        bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
         auctionStart: auctionStart,
-        timeout: s2sConfig.timeout,
-        src: CONSTANTS.S2S.SRC,
+        timeout: cbTimeout,
         refererInfo
       };
-      if (bidderRequest.bids.length !== 0) {
+      const adapter = _bidderRegistry[bidderCode];
+      if (!adapter) {
+        utils.logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
+      }
+
+      if (adapter && bidderRequest.bids && bidderRequest.bids.length !== 0) {
         bidRequests.push(bidderRequest);
       }
     });
-
-    // update the s2sAdUnits object and remove all bids that didn't pass sizeConfig/label checks from getBids()
-    // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
-    adUnitsS2SCopy.forEach((adUnitCopy) => {
-      let validBids = adUnitCopy.bids.filter((adUnitBid) => {
-        return find(bidRequests, request => {
-          return find(request.bids, (reqBid) => reqBid.bidId === adUnitBid.bid_id);
-        });
-      });
-      adUnitCopy.bids = validBids;
-    });
-
-    bidRequests.forEach(request => {
-      request.adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnitCopy => adUnitCopy.bids.length > 0);
-    });
-  }
-
-  // client adapters
-  let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits, s2sConfig);
-  clientBidderCodes.forEach(bidderCode => {
-    const bidderRequestId = utils.getUniqueIdentifierStr();
-    const bidderRequest = {
-      bidderCode,
-      auctionId,
-      bidderRequestId,
-      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
-      auctionStart: auctionStart,
-      timeout: cbTimeout,
-      refererInfo
-    };
-    const adapter = _bidderRegistry[bidderCode];
-    if (!adapter) {
-      utils.logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
-    }
-
-    if (adapter && bidderRequest.bids && bidderRequest.bids.length !== 0) {
-      bidRequests.push(bidderRequest);
-    }
-  });
+  })
 
   if (gdprDataHandler.getConsentData()) {
     bidRequests.forEach(bidRequest => {
