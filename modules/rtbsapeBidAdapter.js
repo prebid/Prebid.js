@@ -68,7 +68,7 @@ export const spec = {
       let requestBid = bids[bid.requestId];
       let context = utils.deepAccess(requestBid, 'mediaTypes.video.context');
 
-      if (bid.meta && context === OUTSTREAM && (bid.vastUrl || bid.vastXml)) {
+      if (context === OUTSTREAM && (bid.vastUrl || bid.vastXml)) {
         let renderer = Renderer.install({
           id: bid.requestId,
           url: RENDERER_SRC,
@@ -131,14 +131,12 @@ function setOutstreamRenderer(bid) {
   if (bid.vastXml) {
     props.xml = bid.vastXml;
   }
-  if (props) {
-    bid.renderer.push(() => {
-      let player = window.sapeRtbPlayerHandler(bid.adUnitCode, bid.width, bid.height, bid.playerMuted, {singleton: true});
-      props.onComplete = () => player.destroy();
-      props.onError = () => player.destroy();
-      player.addSlot(props);
-    });
-  }
+  bid.renderer.push(() => {
+    let player = window.sapeRtbPlayerHandler(bid.adUnitCode, bid.width, bid.height, bid.playerMuted, {singleton: true});
+    props.onComplete = () => player.destroy();
+    props.onError = () => player.destroy();
+    player.addSlot(props);
+  });
 }
 
 registerBidder(spec);
