@@ -249,9 +249,7 @@ describe('jwplayerRtdProvider', function() {
         fakeServer.respondImmediately = false;
         fakeServer.autoRespond = false;
 
-        clock = sinon.useFakeTimers({
-          toFake: ['setTimeout']
-        });
+        clock = sinon.useFakeTimers();
       });
 
       afterEach(function () {
