@@ -1,9 +1,10 @@
-import { fetchTargetingForMediaId, getTargetingForBid, fetchTargetingInformation } from 'modules/jwplayerRtdProvider.js';
-import * as rtdModule from 'modules/rtdModule/index.js';
+import { fetchTargetingForMediaId, getTargetingForBid,
+  fetchTargetingInformation, jwplayerSubmodule } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
 describe('jwplayerRtdProvider', function() {
   const validSegments = ['test_seg_1', 'test_seg_2'];
+  const responseHeader = {'Content-Type': 'application/json'};
 
   describe('Fetch targeting for mediaID tests', function () {
     let request;
@@ -14,7 +15,6 @@ describe('jwplayerRtdProvider', function() {
       beforeEach(function () {
         fetchTargetingForMediaId(testIdForSuccess);
         request = server.requests[0];
-        rtdModule.getProviderData;
       });
 
       it('should reach out to media endpoint', function () {
@@ -231,78 +231,88 @@ describe('jwplayerRtdProvider', function() {
     });
   });
 
-  describe('Blocking mechanism for bid requests', function () {
-    const validMediaIDs = ['media_ID_1', 'media_ID_2', 'media_ID_3'];
-    let bidRequestSpy;
-    let fakeServer;
-    let clock;
-
-    beforeEach(function () {
-      bidRequestSpy = sinon.spy();
-
-      fakeServer = sinon.createFakeServer();
-      fakeServer.respondImmediately = false;
-      fakeServer.autoRespond = false;
-
-      clock = sinon.useFakeTimers({
-        toFake: ['setTimeout']
-      });
+  describe('jwplayerSubmodule', function () {
+    it('successfully instantiates', function () {
+      expect(jwplayerSubmodule.init()).to.equal(true);
     });
 
-    afterEach(function () {
-      clock.restore();
-    });
+    describe('getData', function () {
+      const validMediaIDs = ['media_ID_1', 'media_ID_2', 'media_ID_3'];
+      let bidRequestSpy;
+      let fakeServer;
+      let clock;
 
-    it('executes the bidRequest immediately when no requests are pending', function () {
-      fetchTargetingInformation({
-        mediaIDs: []
+      beforeEach(function () {
+        bidRequestSpy = sinon.spy();
+
+        fakeServer = sinon.createFakeServer();
+        fakeServer.respondImmediately = false;
+        fakeServer.autoRespond = false;
+
+        clock = sinon.useFakeTimers({
+          toFake: ['setTimeout']
+        });
       });
-      // ensureFeedRequestCompletion(bidRequestSpy, {});
-      expect(bidRequestSpy.calledOnce).to.be.true;
-    });
 
-    it('executes the bidRequest after timeout if requests are still pending', function () {
-      fetchTargetingInformation({
-        mediaIDs: validMediaIDs
+      afterEach(function () {
+        clock.restore();
       });
-      // ensureFeedRequestCompletion(bidRequestSpy, {});
-      expect(bidRequestSpy.notCalled).to.be.true;
-      clock.tick(150);
-      expect(bidRequestSpy.calledOnce).to.be.true;
-    });
 
-    it('executes the bidRequest only once if requests succeed after timeout', function () {
-      fetchTargetingInformation({
-        mediaIDs: validMediaIDs
+      it('executes callback immediately when no requests are pending', function () {
+        fetchTargetingInformation({
+          mediaIDs: []
+        });
+        jwplayerSubmodule.getData([], bidRequestSpy);
+        expect(bidRequestSpy.calledOnce).to.be.true;
       });
-      // ensureFeedRequestCompletion(bidRequestSpy, {});
-      expect(bidRequestSpy.notCalled).to.be.true;
-      clock.tick(150);
-      expect(bidRequestSpy.calledOnce).to.be.true;
 
-      fakeServer.respond();
-      expect(bidRequestSpy.calledOnce).to.be.true;
-    });
+      it('executes callback after requests complete', function() {
+        fetchTargetingInformation({
+          mediaIDs: validMediaIDs
+        });
+        jwplayerSubmodule.getData([], bidRequestSpy);
+        expect(bidRequestSpy.notCalled).to.be.true;
 
-    it('executes the bidRequest when all pending jwpseg requests are done', function () {
-      fetchTargetingInformation({
-        mediaIDs: validMediaIDs
+        const req1 = fakeServer.requests[0];
+        const req2 = fakeServer.requests[1];
+        const req3 = fakeServer.requests[2];
+
+        req1.respond();
+        expect(bidRequestSpy.notCalled).to.be.true;
+
+        req2.respond();
+        expect(bidRequestSpy.notCalled).to.be.true;
+
+        req3.respond();
+        expect(bidRequestSpy.calledOnce).to.be.true;
       });
-      // ensureFeedRequestCompletion(bidRequestSpy, {});
-      expect(bidRequestSpy.notCalled).to.be.true;
 
-      const req1 = fakeServer.requests[0];
-      const req2 = fakeServer.requests[1];
-      const req3 = fakeServer.requests[2];
+      it('executes callback after timeout', function () {
+        fetchTargetingInformation({
+          mediaIDs: validMediaIDs
+        });
+        jwplayerSubmodule.getData([], bidRequestSpy);
+        expect(bidRequestSpy.notCalled).to.be.true;
+        clock.tick(150);
+        expect(bidRequestSpy.calledOnce).to.be.true;
+      });
 
-      req1.respond();
-      expect(bidRequestSpy.notCalled).to.be.true;
+      it('executes callback only once if requests succeed after timeout', function () {
+        fetchTargetingInformation({
+          mediaIDs: validMediaIDs
+        });
+        jwplayerSubmodule.getData([], bidRequestSpy);
+        expect(bidRequestSpy.notCalled).to.be.true;
+        clock.tick(150);
+        expect(bidRequestSpy.calledOnce).to.be.true;
 
-      req2.respond();
-      expect(bidRequestSpy.notCalled).to.be.true;
+        fakeServer.respond();
+        expect(bidRequestSpy.calledOnce).to.be.true;
+      });
 
-      req3.respond();
-      expect(bidRequestSpy.calledOnce).to.be.true;
+      it('returns data in proper structure', function () {
+
+      });
     });
   });
 });

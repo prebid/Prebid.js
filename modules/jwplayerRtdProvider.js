@@ -6,7 +6,7 @@ import find from 'core-js-pure/features/array/find.js';
 
 const SUBMODULE_NAME = 'jwplayer';
 let requestCount = 0;
-let requestTimeout = 1500;
+let requestTimeout = 150;
 const segCache = {};
 let resumeBidRequest;
 
@@ -164,7 +164,7 @@ export const jwplayerSubmodule = {
 export function beforeInit(config) {
   config.getConfig('realTimeData', ({realTimeData}) => {
     const providers = realTimeData.dataProviders;
-    const jwplayerProvider = providers && find(providers, (pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME));
+    const jwplayerProvider = providers && find(providers, pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
     const params = jwplayerProvider && jwplayerProvider.params;
     if (!params) {
       return;
