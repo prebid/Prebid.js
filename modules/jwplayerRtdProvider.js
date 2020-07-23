@@ -114,24 +114,24 @@ function getSegments(adUnits, onDone) {
   executeAfterPrefetch(() => {
     const realTimeData = adUnits.reduce((data, adUnit) => {
       const code = adUnit.code;
-      if (!code) {
-        return data;
-      }
-      const vat = getTargetingForBid(adUnit);
+      const vat = code && getTargetingForBid(adUnit);
       if (!vat) {
         return data;
       }
+
       const { segments, mediaID } = vat;
       const jwTargeting = {};
       if (segments && segments.length) {
         jwTargeting.segments = segments;
       }
+
       if (mediaID) {
         const id = 'jw_' + mediaID;
         jwTargeting.content = {
           id
         }
       }
+
       data[code] = {
         jwTargeting
       };
