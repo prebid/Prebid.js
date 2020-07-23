@@ -290,6 +290,38 @@ describe('OpenxAdapter', function () {
           expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(false);
         });
       });
+
+      describe('and request config uses test', () => {
+        const videoBidWithTest = {
+          bidder: 'openx',
+          params: {
+            unit: '12345678',
+            delDomain: 'test-del-domain',
+            test: true
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            video: {
+              playerSize: [640, 480]
+            }
+          },
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
+        };
+
+        let mockBidderRequest = {refererInfo: {}};
+
+        it('should return true when required params found', function () {
+          expect(spec.isBidRequestValid(videoBidWithTest)).to.equal(true);
+        });
+
+        it('should send video bid request to openx url via GET, with vtest=1 video parameter', function () {
+          const request = spec.buildRequests([videoBidWithTest], mockBidderRequest);
+          expect(request[0].data.vtest).to.equal(1);
+        });
+      });
     });
   });
 
@@ -1124,6 +1156,11 @@ describe('OpenxAdapter', function () {
       expect(dataParams.auid).to.equal('12345678');
       expect(dataParams.vht).to.equal(480);
       expect(dataParams.vwd).to.equal(640);
+    });
+
+    it('shouldn\'t have the test parameter', function () {
+      const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+      expect(request[0].data.vtest).to.be.undefined;
     });
 
     it('should send a bc parameter', function () {
