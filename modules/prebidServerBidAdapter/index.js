@@ -298,7 +298,7 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
     }
     // set publisher.id if not already defined
     if (!utils.deepAccess(request.site, 'publisher.id')) {
-      utils.deepSetValue(request.site, 'publisher.id', _s2sConfig.accountId);
+      utils.deepSetValue(request.site, 'publisher.id', accountId);
     }
     // set site.page if not already defined
     if (!request.site.page) {
@@ -700,7 +700,7 @@ const OPEN_RTB_PROTOCOL = {
     return request;
   },
 
-  interpretResponse(response, bidderRequests) {
+  interpretResponse(response, bidderRequests, s2sConfig) {
     const bids = [];
 
     if (response.seatbid) {
@@ -853,7 +853,7 @@ const OPEN_RTB_PROTOCOL = {
           if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
 
           // TODO: Remove when prebid-server returns ttl and netRevenue
-          const configTtl = _s2sConfig.defaultTtl || DEFAULT_S2S_TTL;
+          const configTtl = s2sConfig.defaultTtl || DEFAULT_S2S_TTL;
           bidObject.ttl = (bid.ttl) ? bid.ttl : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
@@ -902,7 +902,7 @@ export function PrebidServer() {
       .reduce(utils.flatten)
       .filter(utils.uniques);
 
-    if (Array.isArray(_s2sConfigs)) {
+    if (Array.isArray(_s2xsConfigs)) {
       _s2sConfigs.forEach(s2sConfig => {
         if (s2sConfig && s2sConfig.syncEndpoint) {
           let gdprConsent, uspConsent;
@@ -924,7 +924,7 @@ export function PrebidServer() {
           ajax(
             s2sConfig.endpoint,
             {
-              success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done),
+              success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done, s2sConfig),
               error: done
             },
             requestJson,
@@ -936,7 +936,7 @@ export function PrebidServer() {
   };
 
   /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response, requestedBidders, bidderRequests, addBidResponse, done) {
+  function handleResponse(response, requestedBidders, bidderRequests, addBidResponse, done, s2sConfig) {
     let result;
     let bids = [];
 
@@ -946,7 +946,8 @@ export function PrebidServer() {
       bids = OPEN_RTB_PROTOCOL.interpretResponse(
         result,
         bidderRequests,
-        requestedBidders
+        requestedBidders,
+        s2sConfig
       );
 
       bids.forEach(({adUnit, bid}) => {
