@@ -3,8 +3,8 @@ import { fetchTargetingForMediaId, getTargetingForBid,
 import { server } from 'test/mocks/xhr.js';
 
 describe('jwplayerRtdProvider', function() {
-  const validSegments = ['test_seg_1', 'test_seg_2'];
   const testIdForSuccess = 'test_id_for_success';
+  const validSegments = ['test_seg_1', 'test_seg_2'];
   const responseHeader = {'Content-Type': 'application/json'};
 
   describe('Fetch targeting for mediaID tests', function () {
@@ -45,7 +45,12 @@ describe('jwplayerRtdProvider', function() {
           }
         });
 
-        expect(targetingInfo).to.deep.equal(validSegments);
+        const validTargeting = {
+          segments: validSegments,
+          mediaID: testIdForSuccess
+        };
+
+        expect(targetingInfo).to.deep.equal(validTargeting);
       });
     });
 
@@ -62,7 +67,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: testIdForFailure
           }
         });
-        expect(targetingInfo).to.deep.equal([]);
+        expect(targetingInfo).to.deep.equal({});
       });
 
       it('should not write to cache when playlist is absent', function() {
@@ -72,7 +77,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: testIdForFailure
           }
         });
-        expect(targetingInfo).to.deep.equal([]);
+        expect(targetingInfo).to.deep.equal({});
       });
 
       it('should not write to cache when segments are absent', function() {
@@ -92,7 +97,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: testIdForFailure
           }
         });
-        expect(targetingInfo).to.deep.equal([]);
+        expect(targetingInfo).to.deep.equal({});
       });
 
       it('should not write to cache when request errors', function() {
@@ -102,7 +107,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: testIdForFailure
           }
         });
-        expect(targetingInfo).to.deep.equal([]);
+        expect(targetingInfo).to.deep.equal({});
       });
     });
   });
@@ -116,25 +121,30 @@ describe('jwplayerRtdProvider', function() {
     const validPlayerID = 'player_test_ID_valid';
     const invalidPlayerID = 'player_test_ID_invalid';
 
-    it('returns empty array when targeting block is missing', function () {
+    it('returns empty object when targeting block is missing', function () {
       const targeting = getTargetingForBid({});
-      expect(targeting).to.deep.equal([]);
+      expect(targeting).to.deep.equal({});
     });
 
-    it('returns empty array when jwplayer.js is absent from page', function () {
+    it('returns empty object when jwplayer.js is absent from page', function () {
       const targeting = getTargetingForBid({
         jwTargeting: {
           playerID: invalidPlayerID,
           mediaID: mediaIdNotCached
         }
       });
-      expect(targeting).to.deep.equal([]);
+      expect(targeting).to.deep.equal({});
     });
 
     describe('When jwplayer.js is on page', function () {
       const playlistItemWithSegmentMock = {
         mediaid: mediaIdWithSegment,
         jwpseg: validSegments
+      };
+
+      const targetingForMediaWithSegment = {
+        segments: validSegments,
+        mediaID: mediaIdWithSegment
       };
 
       const playlistItemNoSegmentMock = {
@@ -145,6 +155,10 @@ describe('jwplayerRtdProvider', function() {
       const currentPlaylistItemMock = {
         mediaid: mediaIdForCurrentItem,
         jwpseg: currentItemSegments
+      };
+      const targetingForCurrentItem = {
+        segments: currentItemSegments,
+        mediaID: mediaIdForCurrentItem
       };
 
       const playerInstanceMock = {
@@ -169,14 +183,14 @@ describe('jwplayerRtdProvider', function() {
         window.jwplayer = jwplayerMock;
       });
 
-      it('returns empty array when player ID does not match player on page', function () {
+      it('returns empty object when player ID does not match player on page', function () {
         const targeting = getTargetingForBid({
           jwTargeting: {
             playerID: invalidPlayerID,
             mediaID: mediaIdNotCached
           }
         });
-        expect(targeting).to.deep.equal([]);
+        expect(targeting).to.deep.equal({});
       });
 
       it('returns segments when media ID matches a playlist item with segments', function () {
@@ -186,7 +200,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: mediaIdWithSegment
           }
         });
-        expect(targeting).to.deep.equal(validSegments);
+        expect(targeting).to.deep.equal(targetingForMediaWithSegment);
       });
 
       it('caches segments media ID matches a playist item with segments', function () {
@@ -204,7 +218,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: mediaIdWithSegment
           }
         });
-        expect(targeting2).to.deep.equal(validSegments);
+        expect(targeting2).to.deep.equal(targetingForMediaWithSegment);
       });
 
       it('returns segments of current item when media ID is missing', function () {
@@ -213,7 +227,7 @@ describe('jwplayerRtdProvider', function() {
             playerID: validPlayerID
           }
         });
-        expect(targeting).to.deep.equal(currentItemSegments);
+        expect(targeting).to.deep.equal(targetingForCurrentItem);
       });
 
       it('caches segments from the current item', function () {
@@ -230,7 +244,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: mediaIdForCurrentItem
           }
         });
-        expect(targeting2).to.deep.equal(currentItemSegments);
+        expect(targeting2).to.deep.equal(targetingForCurrentItem);
       });
     });
   });
@@ -323,9 +337,13 @@ describe('jwplayerRtdProvider', function() {
           code: 'test_ad_unit_empty'
         };
         const expectedData = {};
+        const expectedContentId = 'jw_' + testIdForSuccess;
         expectedData[adUnitCode] = {
           jwTargeting: {
-            segments: validSegments
+            segments: validSegments,
+            content: {
+              id: expectedContentId
+            }
           }
         };
         jwplayerSubmodule.getData([adUnitWithMediaId, adUnitEmpty], bidRequestSpy);

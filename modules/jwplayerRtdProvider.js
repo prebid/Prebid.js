@@ -117,14 +117,20 @@ function getSegments(adUnits, onDone) {
       if (!code) {
         return data;
       }
-      const segments = getTargetingForBid(adUnit);
-      if (segments.length) {
-        data[code] = {
-          jwTargeting: {
-            segments
-          }
-        };
+      const { segments, mediaID } = getTargetingForBid(adUnit);
+      const jwTargeting = {};
+      if (segments && segments.length) {
+        jwTargeting.segments = segments;
       }
+      if (mediaID) {
+        const id = 'jw_' + mediaID;
+        jwTargeting.content = {
+          id
+        }
+      }
+      data[code] = {
+        jwTargeting
+      };
       return data;
     }, {});
     onDone(realTimeData);
@@ -148,23 +154,26 @@ function executeAfterPrefetch(callback) {
 export function getTargetingForBid(bidRequest) {
   const jwTargeting = bidRequest.jwTargeting;
   if (!jwTargeting) {
-    return [];
+    return {};
   }
   const playerID = jwTargeting.playerID;
   let mediaID = jwTargeting.mediaID;
   let segments = segCache[mediaID];
   if (segments) {
-    return segments;
+    return {
+      segments,
+      mediaID
+    };
   }
 
   const player = getPlayer(playerID);
   if (!player) {
-    return [];
+    return {};
   }
 
   const item = mediaID ? find(player.getPlaylist(), item => item.mediaid === mediaID) : player.getPlaylistItem();
   if (!item) {
-    return [];
+    return {};
   }
 
   mediaID = mediaID || item.mediaid;
@@ -173,7 +182,10 @@ export function getTargetingForBid(bidRequest) {
     segCache[mediaID] = segments;
   }
 
-  return segments || [];
+  return {
+    segments,
+    mediaID
+  };
 }
 
 function getPlayer(playerID) {
