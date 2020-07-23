@@ -246,6 +246,19 @@ describe('jwplayerRtdProvider', function() {
         });
         expect(targeting2).to.deep.equal(targetingForCurrentItem);
       });
+
+      it('returns undefined segments when segments are absent', function () {
+        const targeting = getTargetingForBid({
+          jwTargeting: {
+            playerID: validPlayerID,
+            mediaID: mediaIdNoSegment
+          }
+        });
+        expect(targeting).to.deep.equal({
+          mediaID: mediaIdNoSegment,
+          segments: undefined
+        });
+      });
     });
   });
 
