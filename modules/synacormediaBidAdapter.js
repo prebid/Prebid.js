@@ -194,21 +194,27 @@ export const spec = {
           let width = bid.w;
           const isVideo = impType == 'v';
           const isBanner = impType === 'b';
-          if (isVideo) {
-            if (bidRequest.data && bidRequest.data.imp && bidRequest.data.imp.length > 0) {
-              bidRequest.data.imp.forEach(req => {
-                if (bid.impid === req.id) {
-                  height = bid.h || req.video.h || req.video.playerHeight;
-                  width = bid.w || req.video.w || req.video.playerHeight;
+          if ((!height || !width) && bidRequest.data && bidRequest.data.imp && bidRequest.data.imp.length > 0) {
+            bidRequest.data.imp.forEach(req => {
+              if (bid.impid === req.id) {
+                if (isVideo) {
+                  height = bid.h || req.video.h;
+                  width = bid.w || req.video.w;
+                } else if (isBanner) {
+                  let bannerHeight = 1;
+                  let bannerWidth = 1;
+                  if (req.banner.format && req.banner.format.length > 0) {
+                    bannerHeight = req.banner.format[0].h;
+                    bannerWidth = req.banner.format[0].w;
+                  }
+                  height = bid.h || bannerHeight;
+                  width = bid.w || bannerWidth;
+                } else {
+                  height = 1;
+                  width = 1;
                 }
-              });
-            }
-          } else if (isBanner) {
-            height = bid.h || 1;
-            width = bid.w || 1;
-          } else {
-            height = 1;
-            width = 1;
+              }
+            });
           }
           const bidObj = {
             requestId: impid,
