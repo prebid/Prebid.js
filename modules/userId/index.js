@@ -159,17 +159,23 @@ export function setSubmoduleRegistry(submodules) {
 }
 
 /**
- * @param {SubmoduleStorage} storage
+ * @param {SubmoduleContainer} submodule
  * @param {(Object|string)} value
  */
-function setStoredValue(storage, value) {
+export function setStoredValue(submodule, value) {
+  /**
+   * @type {SubmoduleStorage}
+   */
+  const storage = submodule.config.storage;
+  const domainOverride = (typeof submodule.submodule.domainOverride === 'function') ? submodule.submodule.domainOverride() : null;
+
   try {
     const valueStr = utils.isPlainObject(value) ? JSON.stringify(value) : value;
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     if (storage.type === COOKIE) {
-      coreStorage.setCookie(storage.name, valueStr, expiresStr, 'Lax');
+      coreStorage.setCookie(storage.name, valueStr, expiresStr, 'Lax', domainOverride);
       if (typeof storage.refreshInSeconds === 'number') {
-        coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr);
+        coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr, 'Lax', domainOverride);
       }
     } else if (storage.type === LOCAL_STORAGE) {
       coreStorage.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
@@ -246,12 +252,12 @@ function processSubmoduleCallbacks(submodules, cb) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         if (submodule.config.storage) {
-          setStoredValue(submodule.config.storage, idObj);
+          setStoredValue(submodule, idObj);
         }
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj);
       } else {
-        utils.logError(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
+        utils.logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
       done();
     });
@@ -426,10 +432,6 @@ function initSubmodules(submodules, consentData) {
         refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
       }
 
-      if (CONSTANTS.SUBMODULES_THAT_ALWAYS_REFRESH_ID[submodule.config.name] === true) {
-        refreshNeeded = true;
-      }
-
       if (!storedId || refreshNeeded) {
         // No previously saved id.  Request one from submodule.
         response = submodule.submodule.getId(submodule.config.params, consentData, storedId);
@@ -441,7 +443,7 @@ function initSubmodules(submodules, consentData) {
       if (utils.isPlainObject(response)) {
         if (response.id) {
           // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
-          setStoredValue(submodule.config.storage, response.id);
+          setStoredValue(submodule, response.id);
           storedId = response.id;
         }
 
@@ -453,7 +455,7 @@ function initSubmodules(submodules, consentData) {
 
       if (storedId) {
         // cache decoded value (this is copied to every adUnit bid)
-        submodule.idObj = submodule.submodule.decode(storedId, submodule.config);
+        submodule.idObj = submodule.submodule.decode(storedId, submodule.config.params);
       }
     } else if (submodule.config.value) {
       // cache decoded value (this is copied to every adUnit bid)
@@ -462,7 +464,7 @@ function initSubmodules(submodules, consentData) {
       const response = submodule.submodule.getId(submodule.config.params, consentData, undefined);
       if (utils.isPlainObject(response)) {
         if (typeof response.callback === 'function') { submodule.callback = response.callback; }
-        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
+        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config.params); }
       }
     }
     carry.push(submodule);
@@ -574,8 +576,8 @@ export function init(config) {
   }
   // listen for config userSyncs to be set
   config.getConfig(conf => {
-    // Note: support for both 'userSync' and 'usersync' will be deprecated with Prebid.js 3.0
-    const userSync = conf.userSync || conf.usersync;
+    // Note: support for 'usersync' was dropped as part of Prebid.js 4.0
+    const userSync = conf.userSync;
     if (userSync && userSync.userIds) {
       configRegistry = userSync.userIds;
       syncDelay = utils.isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
