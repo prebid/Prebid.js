@@ -172,7 +172,7 @@ export const spec = {
       .filter(param => includes(VIDEO_PARAMS, param) && sourceObj[param] !== null && (!isNaN(parseInt(sourceObj[param], 10)) || !(sourceObj[param].length < 1)))
       .forEach(param => destObj[param] = Array.isArray(sourceObj[param]) ? sourceObj[param] : parseInt(sourceObj[param], 10));
   },
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, bidRequest) {
     const updateMacros = (bid, r) => {
       return r ? r.replace(/\${AUCTION_PRICE}/g, bid.price) : r;
     };
@@ -189,8 +189,27 @@ export const spec = {
         seatbid.bid.forEach(bid => {
           const creative = updateMacros(bid, bid.adm);
           const nurl = updateMacros(bid, bid.nurl);
-          const [, impType, impid, width, height] = bid.impid.match(/^([vb])(.*)-(.*)x(.*)$/);
+          const [, impType, impid] = bid.impid.match(/^([vb])(.*)$/);
+          let height = bid.h;
+          let width = bid.w;
           const isVideo = impType == 'v';
+          const isBanner = impType === 'b';
+          if (isVideo) {
+            if (bidRequest.data && bidRequest.data.imp && bidRequest.data.imp.length > 0) {
+              bidRequest.data.imp.forEach(req => {
+                if (bid.impid === req.id) {
+                  height = bid.h || req.video.h || req.video.playerHeight;
+                  width = bid.w || req.video.w || req.video.playerHeight;
+                }
+              });
+            }
+          } else if (isBanner) {
+            height = bid.h || 1;
+            width = bid.w || 1;
+          } else {
+            height = 1;
+            width = 1;
+          }
           const bidObj = {
             requestId: impid,
             adId: bid.id.replace(/~/g, '-'),
