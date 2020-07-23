@@ -200,9 +200,9 @@ function _getVidParams (attributes) {
 
 /**
  * Gets bidfloor
- * @param {Object} mediaTypes 
- * @param {Number} bidfloor 
- * @param {Object} bid 
+ * @param {Object} mediaTypes
+ * @param {Number} bidfloor
+ * @param {Object} bid
  * @returns {Number} floor
  */
 function _getFloor (mediaTypes, bidfloor, bid) {
@@ -217,7 +217,7 @@ function _getFloor (mediaTypes, bidfloor, bid) {
     });
 
     if (typeof floorInfo === 'object' &&
-    floorInfo.currency === 'USD' && 
+    floorInfo.currency === 'USD' &&
     !isNaN(parseFloat(floorInfo.floor))) {
       floor = Math.max(floor, parseFloat(floorInfo.floor));
     }
