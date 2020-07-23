@@ -58,7 +58,9 @@ function init(config, gdpr, usp) {
 
 export function fetchTargetingInformation(jwTargeting) {
   const mediaIDs = jwTargeting.mediaIDs;
-  requestCount = mediaIDs.length;
+  console.log('karim new req count: ', requestCount);
+  requestCount += mediaIDs.length;
+  console.log('karim prev req count: ', requestCount);
   mediaIDs.forEach(mediaID => {
     fetchTargetingForMediaId(mediaID);
   });
@@ -96,7 +98,8 @@ export function fetchTargetingForMediaId(mediaId) {
 }
 
 function onRequestCompleted() {
-  requestCount--;
+  requestCount = Math.max(requestCount - 1, 0)
+  console.log('karim req complete: ', requestCount);
   if (requestCount > 0) {
     return;
   }
