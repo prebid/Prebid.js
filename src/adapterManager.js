@@ -311,59 +311,58 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     return partitions;
   }, [[], []]);
 
-  let bidderCodes = getBidderCodes(adUnits);
-  const s2sConfig = (Array.isArray(_s2sConfigs) ? _s2sConfigs : []).find(i => (Array.isArray(i.bidders) ? i.bidders : []).some(i => bidderCodes.indexOf(i) !== -1));
+  (Array.isArray(_s2sConfigs) ? _s2sConfigs : []).forEach(function (s2sConfig) {
+    if (s2sConfig && serverBidRequests.length) {
+      // s2s should get the same client side timeout as other client side requests.
+      const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+        request: requestCallbacks.request.bind(null, 's2s'),
+        done: requestCallbacks.done
+      } : undefined);
+      let adaptersServerSide = s2sConfig.bidders;
+      const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
+      let tid = serverBidRequests[0].tid;
+      let adUnitsS2SCopy = serverBidRequests[0].adUnitsS2SCopy;
 
-  if (s2sConfig && serverBidRequests.length) {
-    // s2s should get the same client side timeout as other client side requests.
-    const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
-      request: requestCallbacks.request.bind(null, 's2s'),
-      done: requestCallbacks.done
-    } : undefined);
-    let adaptersServerSide = s2sConfig.bidders;
-    const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
-    let tid = serverBidRequests[0].tid;
-    let adUnitsS2SCopy = serverBidRequests[0].adUnitsS2SCopy;
+      if (s2sAdapter) {
+        let s2sBidRequest = {tid, 'ad_units': adUnitsS2SCopy};
+        if (s2sBidRequest.ad_units.length) {
+          let doneCbs = serverBidRequests.map(bidRequest => {
+            bidRequest.start = timestamp();
+            return doneCb.bind(bidRequest);
+          });
 
-    if (s2sAdapter) {
-      let s2sBidRequest = {tid, 'ad_units': adUnitsS2SCopy};
-      if (s2sBidRequest.ad_units.length) {
-        let doneCbs = serverBidRequests.map(bidRequest => {
-          bidRequest.start = timestamp();
-          return doneCb.bind(bidRequest);
-        });
+          // only log adapters that actually have adUnit bids
+          let allBidders = s2sBidRequest.ad_units.reduce((adapters, adUnit) => {
+            return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => { return adapters.concat(bid.bidder) }, []));
+          }, []);
+          utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => {
+            return includes(allBidders, adapter);
+          }).join(',')}`);
 
-        // only log adapters that actually have adUnit bids
-        let allBidders = s2sBidRequest.ad_units.reduce((adapters, adUnit) => {
-          return adapters.concat((adUnit.bids || []).reduce((adapters, bid) => { return adapters.concat(bid.bidder) }, []));
-        }, []);
-        utils.logMessage(`CALLING S2S HEADER BIDDERS ==== ${adaptersServerSide.filter(adapter => {
-          return includes(allBidders, adapter);
-        }).join(',')}`);
+          // fire BID_REQUESTED event for each s2s bidRequest
+          serverBidRequests.forEach(bidRequest => {
+            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+          });
 
-        // fire BID_REQUESTED event for each s2s bidRequest
-        serverBidRequests.forEach(bidRequest => {
-          events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-        });
-
-        // make bid requests
-        s2sAdapter.callBids(
-          s2sBidRequest,
-          serverBidRequests,
-          function(adUnitCode, bid) {
-            let bidderRequest = getBidderRequest(serverBidRequests, bid.bidderCode, adUnitCode);
-            if (bidderRequest) {
-              addBidResponse.call(bidderRequest, adUnitCode, bid)
-            }
-          },
-          () => doneCbs.forEach(done => done()),
-          s2sAjax
-        );
+          // make bid requests
+          s2sAdapter.callBids(
+            s2sBidRequest,
+            serverBidRequests,
+            function(adUnitCode, bid) {
+              let bidderRequest = getBidderRequest(serverBidRequests, bid.bidderCode, adUnitCode);
+              if (bidderRequest) {
+                addBidResponse.call(bidderRequest, adUnitCode, bid)
+              }
+            },
+            () => doneCbs.forEach(done => done()),
+            s2sAjax
+          );
+        }
+      } else {
+        utils.logError('missing ' + s2sConfig.adapter);
       }
-    } else {
-      utils.logError('missing ' + s2sConfig.adapter);
     }
-  }
+  });
 
   // handle client adapter requests
   clientBidRequests.forEach(bidRequest => {
