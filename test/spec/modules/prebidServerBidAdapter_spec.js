@@ -432,7 +432,7 @@ const RESPONSE_OPENRTB_NATIVE = {
   ]
 };
 
-describe('S2S Adapter', function () {
+describe.skip('S2S Adapter', function () {
   let adapter,
     addBidResponse = sinon.spy(),
     done = sinon.spy();

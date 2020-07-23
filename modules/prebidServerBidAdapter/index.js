@@ -140,7 +140,9 @@ function setS2sConfig(options) {
           array[i]['bidders'] = option['bidders'].filter(bidder => {
             if (activeBidders.indexOf(bidder) === -1) {
               activeBidders.push(bidder);
+              return true;
             }
+            return false;
           });
         }
         return true;
@@ -648,7 +650,7 @@ const OPEN_RTB_PROTOCOL = {
       request.cur = [adServerCur[0]];
     }
 
-    _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer, accountId);
+    _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer, s2sConfig.accountId);
 
     // pass schain object if it is present
     const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
@@ -902,7 +904,7 @@ export function PrebidServer() {
       .reduce(utils.flatten)
       .filter(utils.uniques);
 
-    if (Array.isArray(_s2xsConfigs)) {
+    if (Array.isArray(_s2sConfigs)) {
       _s2sConfigs.forEach(s2sConfig => {
         if (s2sConfig && s2sConfig.syncEndpoint) {
           let gdprConsent, uspConsent;

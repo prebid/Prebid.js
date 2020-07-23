@@ -24,7 +24,7 @@ let _aliasRegistry = adapterManager.aliasRegistry = {};
 
 let _s2sConfigs = [];
 config.getConfig('s2sConfig', config => {
-  if (utils.isPlainObject(config)) {
+  if (config && config.s2sConfig) {
     _s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
   }
 });
@@ -193,9 +193,9 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     bidderCodes = shuffle(bidderCodes);
   }
   const refererInfo = getRefererInfo();
+  let clientBidderCodes = bidderCodes;
 
-  (Array.isArray(_s2sConfigs) ? _s2sConfigs : []).forEach(function (s2sConfig) {
-    let clientBidderCodes = bidderCodes;
+  (Array.isArray(_s2sConfigs) ? _s2sConfigs : [_s2sConfigs]).forEach(function (s2sConfig) {
     let clientTestAdapters = [];
 
     if (s2sConfig && s2sConfig.enabled) {
