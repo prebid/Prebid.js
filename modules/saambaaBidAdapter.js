@@ -68,7 +68,7 @@ export const spec = {
           ttl: response.seatbid[0].bid[0].ttl || 60,
           creativeId: response.seatbid[0].bid[0].crid,
           currency: response.cur,
-          meta: { advertiserDomains: bid.adomain },
+          meta: { advertiserDomains: response.adomain },
           mediaType: VIDEO,
           netRevenue: true
         }
@@ -94,7 +94,7 @@ export const spec = {
           ttl: response.seatbid[0].bid[0].ttl || 60,
           creativeId: response.seatbid[0].bid[0].crid,
           currency: response.cur,
-          meta: { advertiserDomains: bid.adomain },
+          meta: { advertiserDomains: response.adomain },
           mediaType: BANNER,
           netRevenue: true
         }
