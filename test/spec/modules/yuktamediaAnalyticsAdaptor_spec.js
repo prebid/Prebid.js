@@ -1,24 +1,18 @@
-import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter';
+import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
-import * as utils from 'src/utils';
+import * as utils from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 
 let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('yuktamedia analytics adapter', function () {
-  let xhr;
-  let requests;
-
   beforeEach(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
     sinon.stub(events, 'getEvents').returns([]);
   });
 
   afterEach(function () {
-    xhr.restore();
     events.getEvents.restore();
   });
 
@@ -775,18 +769,18 @@ describe('yuktamedia analytics adapter', function () {
       // Step 5: Send auction end event
       events.emit(constants.EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
 
-      expect(requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(1);
 
-      let realAfterBid = JSON.parse(requests[0].requestBody);
+      let realAfterBid = JSON.parse(server.requests[0].requestBody);
 
       expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
       // Step 6: Send auction bid won event
       events.emit(constants.EVENTS.BID_WON, prebidEvent['bidWon']);
 
-      expect(requests.length).to.equal(2);
+      expect(server.requests.length).to.equal(2);
 
-      let winEventData = JSON.parse(requests[1].requestBody);
+      let winEventData = JSON.parse(server.requests[1].requestBody);
 
       expect(winEventData).to.deep.equal(expectedAfterBidWon);
     });

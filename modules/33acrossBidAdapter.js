@@ -1,12 +1,16 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
+const MEDIA_TYPE = 'banner';
+const CURRENCY = 'USD';
 
-const adapterState = {};
+const adapterState = {
+  uniqueSiteIds: []
+};
 
 const NON_MEASURABLE = 'nm';
 
@@ -38,6 +42,7 @@ function _getViewability(element, topWin, { w, h } = {}) {
 
 function _mapAdUnitPathToElementId(adUnitCode) {
   if (utils.isGptPubadsDefined()) {
+    // eslint-disable-next-line no-undef
     const adSlots = googletag.pubads().getSlots();
     const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(adUnitCode);
 
@@ -64,11 +69,27 @@ function _getAdSlotHTMLElement(adUnitCode) {
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
-function _createServerRequest(bidRequest, gdprConsent = {}) {
+function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl}) {
   const ttxRequest = {};
   const params = bidRequest.params;
   const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
   const sizes = _transformSizes(bidRequest.sizes);
+
+  let format;
+
+  // We support size based bidfloors so obtain one if there's a rule associated
+  if (typeof bidRequest.getFloor === 'function') {
+    let getFloor = bidRequest.getFloor.bind(bidRequest);
+
+    format = sizes.map((size) => {
+      const formatExt = _getBidFloors(getFloor, size);
+
+      return Object.assign({}, size, formatExt);
+    });
+  } else {
+    format = sizes;
+  }
+
   const minSize = _getMinSize(sizes);
 
   const viewabilityAmount = _isViewabilityMeasurable(element)
@@ -83,7 +104,7 @@ function _createServerRequest(bidRequest, gdprConsent = {}) {
   ttxRequest.imp = [];
   ttxRequest.imp[0] = {
     banner: {
-      format: sizes.map(size => Object.assign(size, {ext: {}}))
+      format
     },
     ext: {
       ttx: {
@@ -92,6 +113,10 @@ function _createServerRequest(bidRequest, gdprConsent = {}) {
     }
   };
   ttxRequest.site = { id: params.siteId };
+
+  if (pageUrl) {
+    ttxRequest.site.page = pageUrl;
+  }
 
   // Go ahead send the bidId in request to 33exchange so it's kept track of in the bid response and
   // therefore in ad targetting process
@@ -105,18 +130,27 @@ function _createServerRequest(bidRequest, gdprConsent = {}) {
   };
   ttxRequest.regs = {
     ext: {
-      gdpr: (gdprConsent.gdprApplies === true) ? 1 : 0
+      gdpr: (gdprConsent.gdprApplies === true) ? 1 : 0,
+      us_privacy: uspConsent || null
     }
   };
   ttxRequest.ext = {
     ttx: {
       prebidStartedAt: Date.now(),
-      caller: [{
+      caller: [ {
         'name': 'prebidjs',
         'version': '$prebid.version$'
-      }]
+      } ]
     }
   };
+
+  if (bidRequest.schain) {
+    ttxRequest.source = {
+      ext: {
+        schain: bidRequest.schain
+      }
+    }
+  }
 
   // Finally, set the openRTB 'test' param if this is to be a test bid
   if (params.test === 1) {
@@ -130,6 +164,7 @@ function _createServerRequest(bidRequest, gdprConsent = {}) {
     contentType: 'text/plain',
     withCredentials: true
   };
+
   // Allow the ability to configure the HB endpoint for testing purposes.
   const ttxSettings = config.getConfig('ttxSettings');
   const url = (ttxSettings && ttxSettings.url) || END_POINT;
@@ -144,15 +179,15 @@ function _createServerRequest(bidRequest, gdprConsent = {}) {
 }
 
 // Sync object will always be of type iframe for TTX
-function _createSync({siteId = 'zzz000000000003zzz', gdprConsent = {}}) {
+function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent }) {
   const ttxSettings = config.getConfig('ttxSettings');
   const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
 
-  const {consentString, gdprApplies} = gdprConsent;
+  const { consentString, gdprApplies } = gdprConsent;
 
   const sync = {
     type: 'iframe',
-    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}`
+    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}`
   };
 
   if (typeof gdprApplies === 'boolean') {
@@ -160,6 +195,24 @@ function _createSync({siteId = 'zzz000000000003zzz', gdprConsent = {}}) {
   }
 
   return sync;
+}
+
+function _getBidFloors(getFloor, size) {
+  const bidFloors = getFloor({
+    currency: CURRENCY,
+    mediaType: MEDIA_TYPE,
+    size: [ size.w, size.h ]
+  });
+
+  if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
+    return {
+      ext: {
+        ttx: {
+          bidfloors: [ bidFloors.floor ]
+        }
+      }
+    }
+  }
 }
 
 function _getSize(size) {
@@ -188,7 +241,7 @@ function _getBoundingBox(element, { w, h } = {}) {
 
 function _transformSizes(sizes) {
   if (utils.isArray(sizes) && sizes.length === 2 && !utils.isArray(sizes[0])) {
-    return [_getSize(sizes)];
+    return [ _getSize(sizes) ];
   }
 
   return sizes.map(_getSize);
@@ -235,7 +288,8 @@ function _getPercentInView(element, topWin, { w, h } = {}) {
     bottom: topWin.innerHeight
   }, elementBoundingBox ]);
 
-  let elementInViewArea, elementTotalArea;
+  let elementInViewArea,
+    elementTotalArea;
 
   if (elementInViewBoundingBox !== null) {
     // Some or all of the element is in view
@@ -297,9 +351,19 @@ function buildRequests(bidRequests, bidderRequest) {
     gdprApplies: false
   }, bidderRequest && bidderRequest.gdprConsent);
 
+  const uspConsent = bidderRequest && bidderRequest.uspConsent;
+  const pageUrl = (bidderRequest && bidderRequest.refererInfo) ? (bidderRequest.refererInfo.referer) : (undefined);
+
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
 
-  return bidRequests.map(req => _createServerRequest(req, gdprConsent));
+  return bidRequests.map(bidRequest => _createServerRequest(
+    {
+      bidRequest,
+      gdprConsent,
+      uspConsent,
+      pageUrl
+    })
+  );
 }
 
 // NOTE: At this point, the response from 33exchange will only ever contain one bid i.e. the highest bid
@@ -318,8 +382,17 @@ function interpretResponse(serverResponse, bidRequest) {
 // Else no syncs
 // For logic on how we handle gdpr data see _createSyncs and module's unit tests
 // '33acrossBidAdapter#getUserSyncs'
-function getUserSyncs(syncOptions, responses, gdprConsent) {
-  return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map((siteId) => _createSync({gdprConsent, siteId})) : ([]);
+function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
+  const syncUrls = (
+    (syncOptions.iframeEnabled)
+      ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, siteId }))
+      : ([])
+  );
+
+  // Clear adapter state of siteID's since we don't need this info anymore.
+  adapterState.uniqueSiteIds = [];
+
+  return syncUrls;
 }
 
 export const spec = {

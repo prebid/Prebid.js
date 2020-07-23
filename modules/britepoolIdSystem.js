@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils'
-import {ajax} from '../src/ajax';
-import {submodule} from '../src/hook';
+import * as utils from '../src/utils.js'
+import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook.js';
 
 /** @type {Submodule} */
 export const britepoolIdSubmodule = {
@@ -89,7 +89,7 @@ export const britepoolIdSubmodule = {
     if (params.getter) {
       // Custom getter will not require other params
       if (typeof params.getter !== 'function') {
-        errors.push(`${MODULE_NAME} - britepoolId submodule requires getter to be a function`);
+        errors.push(`userIdTargeting - britepoolId submodule requires getter to be a function`);
         return { errors };
       }
     } else {

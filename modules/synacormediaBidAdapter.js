@@ -1,9 +1,10 @@
 'use strict';
 
-import { getAdUnitSizes, logWarn } from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import includes from 'core-js/library/fn/array/includes';
+import { getAdUnitSizes, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import {config} from '../src/config.js';
 
 const BID_HOST = 'https://prebid.technoratimedia.com';
 const USER_SYNC_HOST = 'https://ad-cdn.technoratimedia.com';
@@ -44,6 +45,12 @@ export const spec = {
       },
       imp: []
     };
+
+    const schain = validBidReqs[0].schain;
+    if (schain) {
+      openRtbBidRequest.source = { ext: { schain } };
+    }
+
     let seatId = null;
 
     validBidReqs.forEach((bid, i) => {
@@ -58,44 +65,24 @@ export const spec = {
       if (isNaN(bidFloor)) {
         logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
       }
-      let pos = parseInt(bid.params.pos);
+      let pos = parseInt(bid.params.pos, 10);
       if (isNaN(pos)) {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;
       }
       const videoOrBannerKey = this.isVideoBid(bid) ? 'video' : 'banner';
-      getAdUnitSizes(bid)
-        .filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1)
-        .forEach((size, i) => {
-          if (!size || size.length != 2) {
-            return;
-          }
-          const size0 = size[0];
-          const size1 = size[1];
-          const imp = {
-            id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
-            tagid: placementId
-          };
-          if (bidFloor !== null && !isNaN(bidFloor)) {
-            imp.bidfloor = bidFloor;
-          }
+      const adSizes = getAdUnitSizes(bid)
+        .filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1);
 
-          const videoOrBannerValue = {
-            w: size0,
-            h: size1,
-            pos
-          };
-          if (videoOrBannerKey === 'video') {
-            if (bid.mediaTypes.video) {
-              this.setValidVideoParams(bid.mediaTypes.video, bid.params.video);
-            }
-            if (bid.params.video) {
-              this.setValidVideoParams(bid.params.video, videoOrBannerValue);
-            }
-          }
-          imp[videoOrBannerKey] = videoOrBannerValue;
-          openRtbBidRequest.imp.push(imp);
-        });
+      let imps = [];
+      if (videoOrBannerKey === 'banner') {
+        imps = this.buildBannerImpressions(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey);
+      } else if (videoOrBannerKey === 'video') {
+        imps = this.buildVideoImpressions(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey);
+      }
+      if (imps.length > 0) {
+        imps.forEach(i => openRtbBidRequest.imp.push(i));
+      }
     });
 
     if (openRtbBidRequest.imp.length && seatId) {
@@ -109,6 +96,70 @@ export const spec = {
         }
       };
     }
+  },
+
+  buildBannerImpressions: function(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey) {
+    let format = [];
+    let imps = [];
+    adSizes.forEach((size, i) => {
+      if (!size || size.length !== 2) {
+        return;
+      }
+
+      format.push({
+        w: size[0],
+        h: size[1],
+      });
+    });
+
+    if (format.length > 0) {
+      const imp = {
+        id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}`,
+        banner: {
+          format,
+          pos
+        },
+        tagid: placementId,
+      };
+      if (bidFloor !== null && !isNaN(bidFloor)) {
+        imp.bidfloor = bidFloor;
+      }
+      imps.push(imp);
+    }
+    return imps;
+  },
+
+  buildVideoImpressions: function(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey) {
+    let imps = [];
+    adSizes.forEach((size, i) => {
+      if (!size || size.length != 2) {
+        return;
+      }
+      const size0 = size[0];
+      const size1 = size[1];
+      const imp = {
+        id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
+        tagid: placementId
+      };
+      if (bidFloor !== null && !isNaN(bidFloor)) {
+        imp.bidfloor = bidFloor;
+      }
+
+      const videoOrBannerValue = {
+        w: size0,
+        h: size1,
+        pos
+      };
+      if (bid.mediaTypes.video) {
+        this.setValidVideoParams(bid.mediaTypes.video, bid.params.video);
+      }
+      if (bid.params.video) {
+        this.setValidVideoParams(bid.params.video, videoOrBannerValue);
+      }
+      imp[videoOrBannerKey] = videoOrBannerValue;
+      imps.push(imp);
+    });
+    return imps;
   },
 
   setValidVideoParams: function (sourceObj, destObj) {
@@ -150,7 +201,9 @@ export const spec = {
           };
           if (isVideo) {
             const [, uuid] = nurl.match(/ID=([^&]*)&?/);
-            bidObj.videoCacheKey = encodeURIComponent(uuid);
+            if (!config.getConfig('cache.url')) {
+              bidObj.videoCacheKey = encodeURIComponent(uuid);
+            }
             bidObj.vastUrl = nurl;
           }
           bids.push(bidObj);

@@ -3,11 +3,12 @@ import {
   requestBidsHook,
   resetConsentData,
   consentAPI,
-  consentTimeout
-} from 'modules/consentManagementUsp';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { uspDataHandler } from 'src/adapterManager';
+  consentTimeout,
+  staticConsentData
+} from 'modules/consentManagementUsp.js';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { uspDataHandler } from 'src/adapterManager.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -82,6 +83,31 @@ describe('consentManagement', function () {
         setConsentConfig(allConfig);
         expect(consentAPI).to.be.equal('daa');
         expect(consentTimeout).to.be.equal(7500);
+      });
+    });
+
+    describe('static consent string setConsentConfig value', () => {
+      afterEach(() => {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+      });
+      it('results in user settings overriding system defaults', () => {
+        let staticConfig = {
+          usp: {
+            cmpApi: 'static',
+            timeout: 7500,
+            consentData: {
+              getUSPData: {
+                uspString: '1YYY'
+              }
+            }
+          }
+        };
+
+        setConsentConfig(staticConfig);
+        expect(consentAPI).to.be.equal('static');
+        expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
+        expect(staticConsentData.usPrivacy).to.be.equal(staticConfig.usp.consentData.getUSPData.uspString);
       });
     });
   });
@@ -159,7 +185,10 @@ describe('consentManagement', function () {
         resetConsentData();
       });
 
-      it('should bypass CMP and simply use previously stored consentData', function () {
+      // from prebid 4425 - "the USP (CCPA) api function __uspapi() always responds synchronously, whether or not privacy data is available, while the GDPR CMP may respond asynchronously
+      // Because the USP API does not wait for a user response, if it was not successfully obtained before the first auction, we should try again to retrieve privacy data before each subsequent auction.
+
+      it('should not bypass CMP and simply use previously stored consentData', function () {
         let testConsentData = {
           uspString: '1YY'
         };
@@ -182,7 +211,7 @@ describe('consentManagement', function () {
         let consent = uspDataHandler.getConsentData();
         expect(didHookReturn).to.be.true;
         expect(consent).to.equal(testConsentData.uspString);
-        sinon.assert.notCalled(uspStub);
+        sinon.assert.called(uspStub);
       });
     });
 
