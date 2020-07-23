@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec as adapter, SUPPORTED_ID_SYSTEMS, createDomain, extractPID, extractCID, extractSubDomain } from 'modules/vidazooBidAdapter.js';
+import { spec as adapter, SUPPORTED_ID_SYSTEMS, createDomain } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { version } from 'package.json';
 
@@ -220,7 +220,7 @@ describe('VidazooBidAdapter', function () {
     });
   });
 
-  describe('user id system', function () {
+  describe(`user id system`, function () {
     Object.keys(SUPPORTED_ID_SYSTEMS).forEach((idSystemProvider) => {
       const id = Date.now().toString();
       const bid = utils.deepClone(BID);
@@ -241,26 +241,6 @@ describe('VidazooBidAdapter', function () {
         const requests = adapter.buildRequests([bid], BIDDER_REQUEST);
         expect(requests[0].data[`uid.${idSystemProvider}`]).to.equal(id);
       });
-    });
-  });
-
-  describe('alternate param names extractors', function () {
-    it('should return undefined when param not supported', function () {
-      const cid = extractCID({ 'c_id': '1' });
-      const pid = extractPID({ 'p_id': '1' });
-      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
-      expect(cid).to.be.undefined;
-      expect(pid).to.be.undefined;
-      expect(subDomain).to.be.undefined;
-    });
-
-    it('should return value when param supported', function () {
-      const cid = extractCID({ 'cID': '1' });
-      const pid = extractPID({ 'Pid': '2' });
-      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' });
-      expect(cid).to.be.equal('1');
-      expect(pid).to.be.equal('2');
-      expect(subDomain).to.be.equal('prebid');
     });
   });
 });
