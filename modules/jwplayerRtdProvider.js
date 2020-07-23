@@ -117,7 +117,11 @@ function getSegments(adUnits, onDone) {
       if (!code) {
         return data;
       }
-      const { segments, mediaID } = getTargetingForBid(adUnit);
+      const vat = getTargetingForBid(adUnit);
+      if (!vat) {
+        return data;
+      }
+      const { segments, mediaID } = vat;
       const jwTargeting = {};
       if (segments && segments.length) {
         jwTargeting.segments = segments;
@@ -154,7 +158,7 @@ function executeAfterPrefetch(callback) {
 export function getTargetingForBid(bidRequest) {
   const jwTargeting = bidRequest.jwTargeting;
   if (!jwTargeting) {
-    return {};
+    return null;
   }
   const playerID = jwTargeting.playerID;
   let mediaID = jwTargeting.mediaID;
@@ -168,12 +172,12 @@ export function getTargetingForBid(bidRequest) {
 
   const player = getPlayer(playerID);
   if (!player) {
-    return {};
+    return null;
   }
 
   const item = mediaID ? find(player.getPlaylist(), item => item.mediaid === mediaID) : player.getPlaylistItem();
   if (!item) {
-    return {};
+    return null;
   }
 
   mediaID = mediaID || item.mediaid;

@@ -4,12 +4,12 @@ import { server } from 'test/mocks/xhr.js';
 
 describe('jwplayerRtdProvider', function() {
   const testIdForSuccess = 'test_id_for_success';
+  const testIdForFailure = 'test_id_for_failure';
   const validSegments = ['test_seg_1', 'test_seg_2'];
   const responseHeader = {'Content-Type': 'application/json'};
 
   describe('Fetch targeting for mediaID tests', function () {
     let request;
-    const testIdForFailure = 'test_id_for_failure';
 
     describe('Fetch succeeds', function () {
       beforeEach(function () {
@@ -67,7 +67,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: testIdForFailure
           }
         });
-        expect(targetingInfo).to.deep.equal({});
+        expect(targetingInfo).to.be.null;
       });
 
       it('should not write to cache when playlist is absent', function() {
@@ -77,7 +77,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: testIdForFailure
           }
         });
-        expect(targetingInfo).to.deep.equal({});
+        expect(targetingInfo).to.be.null;
       });
 
       it('should not write to cache when segments are absent', function() {
@@ -97,7 +97,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: testIdForFailure
           }
         });
-        expect(targetingInfo).to.deep.equal({});
+        expect(targetingInfo).to.be.null;
       });
 
       it('should not write to cache when request errors', function() {
@@ -107,7 +107,7 @@ describe('jwplayerRtdProvider', function() {
             mediaID: testIdForFailure
           }
         });
-        expect(targetingInfo).to.deep.equal({});
+        expect(targetingInfo).to.be.null;
       });
     });
   });
@@ -121,19 +121,19 @@ describe('jwplayerRtdProvider', function() {
     const validPlayerID = 'player_test_ID_valid';
     const invalidPlayerID = 'player_test_ID_invalid';
 
-    it('returns empty object when targeting block is missing', function () {
+    it('returns null when targeting block is missing', function () {
       const targeting = getTargetingForBid({});
-      expect(targeting).to.deep.equal({});
+      expect(targeting).to.be.null;
     });
 
-    it('returns empty object when jwplayer.js is absent from page', function () {
+    it('returns null when jwplayer.js is absent from page', function () {
       const targeting = getTargetingForBid({
         jwTargeting: {
           playerID: invalidPlayerID,
           mediaID: mediaIdNotCached
         }
       });
-      expect(targeting).to.deep.equal({});
+      expect(targeting).to.be.null;
     });
 
     describe('When jwplayer.js is on page', function () {
@@ -183,14 +183,14 @@ describe('jwplayerRtdProvider', function() {
         window.jwplayer = jwplayerMock;
       });
 
-      it('returns empty object when player ID does not match player on page', function () {
+      it('returns null when player ID does not match player on page', function () {
         const targeting = getTargetingForBid({
           jwTargeting: {
             playerID: invalidPlayerID,
             mediaID: mediaIdNotCached
           }
         });
-        expect(targeting).to.deep.equal({});
+        expect(targeting).to.be.null;
       });
 
       it('returns segments when media ID matches a playlist item with segments', function () {
@@ -344,7 +344,9 @@ describe('jwplayerRtdProvider', function() {
         const adUnitCode = 'test_ad_unit';
         const adUnitWithMediaId = {
           code: adUnitCode,
-          mediaID: testIdForSuccess
+          jwTargeting: {
+            mediaID: testIdForSuccess
+          }
         };
         const adUnitEmpty = {
           code: 'test_ad_unit_empty'
@@ -360,7 +362,37 @@ describe('jwplayerRtdProvider', function() {
           }
         };
         jwplayerSubmodule.getData([adUnitWithMediaId, adUnitEmpty], bidRequestSpy);
-        bidRequestSpy.calledOnceWithExactly(expectedData);
+        expect(bidRequestSpy.calledOnceWithExactly(expectedData)).to.be.true;
+      });
+
+      it('returns an empty object when media id is invalid', function () {
+        const adUnitCode = 'test_ad_unit';
+        const adUnitWithMediaId = {
+          code: adUnitCode,
+          jwTargeting: {
+            mediaID: testIdForFailure
+          }
+        };
+        const adUnitEmpty = {
+          code: 'test_ad_unit_empty'
+        };
+
+        jwplayerSubmodule.getData([adUnitWithMediaId, adUnitEmpty], bidRequestSpy);
+        expect(bidRequestSpy.calledOnceWithExactly({})).to.be.true;
+      });
+
+      it('returns an empty object when jwTargeting block is absent', function () {
+        const adUnitCode = 'test_ad_unit';
+        const adUnitWithMediaId = {
+          code: adUnitCode,
+          mediaID: testIdForSuccess
+        };
+        const adUnitEmpty = {
+          code: 'test_ad_unit_empty'
+        };
+
+        jwplayerSubmodule.getData([adUnitWithMediaId, adUnitEmpty], bidRequestSpy);
+        expect(bidRequestSpy.calledOnceWithExactly({})).to.be.true;
       });
     });
   });
