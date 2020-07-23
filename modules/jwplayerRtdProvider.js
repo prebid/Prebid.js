@@ -1,3 +1,14 @@
+/**
+ * This module adds the jwplayer provider to the Real Time Data module (rtdModule)
+ * The {@link module:modules/realTimeData} module is required
+ * The module will allow Ad Bidders to obtain JW Player's Video Ad Targeting information
+ * The module will fetch segments for the media ids present in the prebid config when the module loads. If any bid
+ * requests are made while the segments are being fetched, they will be blocked until all requests complete, or the
+ * timeout expires.
+ * @module modules/jwplayerRtdProvider
+ * @requires module:modules/realTimeData
+ */
+
 import { submodule } from '../src/hook.js';
 import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';
@@ -10,6 +21,41 @@ let requestTimeout = 150;
 const segCache = {};
 let resumeBidRequest;
 
+/** @type {RtdSubmodule} */
+export const jwplayerSubmodule = {
+  /**
+     * used to link submodule with realTimeData
+     * @type {string}
+     */
+  name: SUBMODULE_NAME,
+  /**
+     * get data and send back to realTimeData module
+     * @function
+     * @param {adUnit[]} adUnits
+     * @param {function} onDone
+     */
+  getData: getSegments,
+  init
+};
+
+config.getConfig('realTimeData', ({realTimeData}) => {
+  const providers = realTimeData.dataProviders;
+  const jwplayerProvider = providers && find(providers, pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
+  const params = jwplayerProvider && jwplayerProvider.params;
+  if (!params) {
+    return;
+  }
+  const rtdModuleTimeout = params.auctionDelay || params.timeout;
+  requestTimeout = rtdModuleTimeout === undefined ? requestTimeout : Math.max(rtdModuleTimeout - 1, 0);
+  fetchTargetingInformation(params);
+});
+
+submodule('realTimeData', jwplayerSubmodule);
+
+function init(config, gdpr, usp) {
+  return true;
+}
+
 export function fetchTargetingInformation(jwTargeting) {
   const mediaIDs = jwTargeting.mediaIDs;
   requestCount = mediaIDs.length;
@@ -20,35 +66,33 @@ export function fetchTargetingInformation(jwTargeting) {
 
 export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder(requestTimeout);
-  ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`,
-    {
-      success: function (response) {
-        try {
-          const data = JSON.parse(response);
-          if (!data) {
-            throw ('Empty response');
-          }
-
-          const playlist = data.playlist;
-          if (!playlist || !playlist.length) {
-            throw ('Empty playlist');
-          }
-
-          const jwpseg = playlist[0].jwpseg;
-          if (jwpseg) {
-            segCache[mediaId] = jwpseg;
-          }
-        } catch (err) {
-          logError(err);
+  ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
+    success: function (response) {
+      try {
+        const data = JSON.parse(response);
+        if (!data) {
+          throw ('Empty response');
         }
-        onRequestCompleted();
-      },
-      error: function () {
-        logError('failed to retrieve targeting information');
-        onRequestCompleted();
+
+        const playlist = data.playlist;
+        if (!playlist || !playlist.length) {
+          throw ('Empty playlist');
+        }
+
+        const jwpseg = playlist[0].jwpseg;
+        if (jwpseg) {
+          segCache[mediaId] = jwpseg;
+        }
+      } catch (err) {
+        logError(err);
       }
+      onRequestCompleted();
+    },
+    error: function () {
+      logError('failed to retrieve targeting information');
+      onRequestCompleted();
     }
-  );
+  });
 }
 
 function onRequestCompleted() {
@@ -65,22 +109,22 @@ function onRequestCompleted() {
 
 function getSegments(adUnits, onDone) {
   executeAfterPrefetch(() => {
-    const dataToReturn = adUnits.reduce((acc, adUnit) => {
+    const realTimeData = adUnits.reduce((data, adUnit) => {
       const code = adUnit.code;
       if (!code) {
-        return acc;
+        return data;
       }
-      const targetingInfo = getTargetingForBid(adUnit);
-      if (targetingInfo.length) {
-        acc[code] = {
+      const segments = getTargetingForBid(adUnit);
+      if (segments.length) {
+        data[code] = {
           jwTargeting: {
-            segments: targetingInfo
+            segments
           }
         };
       }
-      return acc;
+      return data;
     }, {});
-    onDone(dataToReturn);
+    onDone(realTimeData);
   });
 }
 
@@ -143,41 +187,3 @@ function getPlayer(playerID) {
   }
   return player;
 }
-
-/** @type {RtdSubmodule} */
-export const jwplayerSubmodule = {
-  /**
-   * used to link submodule with realTimeData
-   * @type {string}
-   */
-  name: SUBMODULE_NAME,
-  /**
-   * get data and send back to realTimeData module
-   * @function
-   * @param {adUnit[]} adUnits
-   * @param {function} onDone
-   */
-  getData: getSegments,
-  init
-};
-
-export function beforeInit(config) {
-  config.getConfig('realTimeData', ({realTimeData}) => {
-    const providers = realTimeData.dataProviders;
-    const jwplayerProvider = providers && find(providers, pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
-    const params = jwplayerProvider && jwplayerProvider.params;
-    if (!params) {
-      return;
-    }
-    const rtdModuleTimeout = params.auctionDelay || params.timeout;
-    requestTimeout = rtdModuleTimeout === undefined ? requestTimeout : Math.max(rtdModuleTimeout - 1, 0);
-    fetchTargetingInformation(params);
-  });
-}
-
-function init(config, gdpr, usp) {
-  return true;
-}
-
-submodule('realTimeData', jwplayerSubmodule);
-beforeInit(config);
