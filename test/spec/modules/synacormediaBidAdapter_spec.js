@@ -68,9 +68,13 @@ describe('synacormediaBidAdapter ', function () {
       },
       mediaTypes: {
         banner: {
-          h: 600,
-          pos: 0,
-          w: 300,
+          format: [
+            {
+              w: 300,
+              h: 600
+            }
+          ],
+          pos: 0
         }
       },
     };
@@ -171,23 +175,29 @@ describe('synacormediaBidAdapter ', function () {
       }
     };
 
+    let bidderRequestWithCCPA = {
+      auctionId: 'xyz123',
+      refererInfo: {
+        referer: 'https://test.com/foo/bar'
+      },
+      uspConsent: '1YYY'
+    };
+
     let expectedDataImp1 = {
       banner: {
-        h: 250,
-        pos: 0,
-        w: 300,
+        format: [
+          {
+            h: 250,
+            w: 300
+          },
+          {
+            h: 600,
+            w: 300
+          }
+        ],
+        pos: 0
       },
-      id: 'b9876abcd-300x250',
-      tagid: '1234',
-      bidfloor: 0.5
-    };
-    let expectedDataImp2 = {
-      banner: {
-        h: 600,
-        pos: 0,
-        w: 300,
-      },
-      id: 'b9876abcd-300x600',
+      id: 'b9876abcd',
       tagid: '1234',
       bidfloor: 0.5
     };
@@ -201,7 +211,7 @@ describe('synacormediaBidAdapter ', function () {
       expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
       expect(req.data).to.exist.and.to.be.an('object');
       expect(req.data.id).to.equal('xyz123');
-      expect(req.data.imp).to.eql([expectedDataImp1, expectedDataImp2]);
+      expect(req.data.imp).to.eql([expectedDataImp1]);
 
       // video test
       let reqVideo = spec.buildRequests([validBidRequestVideo], bidderRequestVideo);
@@ -230,13 +240,17 @@ describe('synacormediaBidAdapter ', function () {
       expect(req).to.have.property('url');
       expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
       expect(req.data.id).to.equal('xyz123');
-      expect(req.data.imp).to.eql([expectedDataImp1, expectedDataImp2, {
+      expect(req.data.imp).to.eql([expectedDataImp1, {
         banner: {
-          h: 600,
-          pos: 0,
-          w: 300,
+          format: [
+            {
+              h: 600,
+              w: 300
+            }
+          ],
+          pos: 0
         },
-        id: 'bfoobar-300x600',
+        id: 'bfoobar',
         tagid: '5678',
         bidfloor: 0.5
       }]);
@@ -260,11 +274,15 @@ describe('synacormediaBidAdapter ', function () {
       expect(req.data.imp).to.eql([
         {
           banner: {
-            h: 250,
-            pos: 0,
-            w: 300,
+            format: [
+              {
+                h: 250,
+                w: 300
+              }
+            ],
+            pos: 0
           },
-          id: 'bfoobar-300x250',
+          id: 'bfoobar',
           tagid: '5678',
           bidfloor: 0.5
         }
@@ -289,11 +307,15 @@ describe('synacormediaBidAdapter ', function () {
       expect(req.data.imp).to.eql([
         {
           banner: {
-            h: 250,
-            pos: 0,
-            w: 300,
+            format: [
+              {
+                h: 250,
+                w: 300
+              }
+            ],
+            pos: 0
           },
-          id: 'b9876abcd-300x250',
+          id: 'b9876abcd',
           tagid: '1234',
         }
       ]);
@@ -316,11 +338,15 @@ describe('synacormediaBidAdapter ', function () {
       expect(req.data.imp).to.eql([
         {
           banner: {
-            h: 250,
-            pos: 0,
-            w: 300,
+            format: [
+              {
+                h: 250,
+                w: 300
+              }
+            ],
+            pos: 0
           },
-          id: 'b9876abcd-300x250',
+          id: 'b9876abcd',
           tagid: '1234',
         }
       ]);
@@ -344,11 +370,15 @@ describe('synacormediaBidAdapter ', function () {
       expect(req.data.imp).to.eql([
         {
           banner: {
-            h: 250,
-            w: 300,
-            pos: 1,
+            format: [
+              {
+                h: 250,
+                w: 300
+              }
+            ],
+            pos: 1
           },
-          id: 'b9876abcd-300x250',
+          id: 'b9876abcd',
           tagid: '1234'
         }
       ]);
@@ -371,11 +401,15 @@ describe('synacormediaBidAdapter ', function () {
       expect(req.data.imp).to.eql([
         {
           banner: {
-            h: 250,
-            w: 300,
-            pos: 0,
+            format: [
+              {
+                h: 250,
+                w: 300
+              }
+            ],
+            pos: 0
           },
-          id: 'b9876abcd-300x250',
+          id: 'b9876abcd',
           tagid: '1234'
         }
       ]);
@@ -534,6 +568,18 @@ describe('synacormediaBidAdapter ', function () {
         }
       ]);
     });
+    it('should contain the CCPA privacy string when UspConsent is in bidder request', function() {
+      // banner test
+      let req = spec.buildRequests([validBidRequest], bidderRequestWithCCPA);
+      expect(req).be.an('object');
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
+      expect(req.data).to.exist.and.to.be.an('object');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.regs.ext.us_privacy).to.equal('1YYY');
+      expect(req.data.imp).to.eql([expectedDataImp1]);
+    })
   });
 
   describe('Bid Requests with schain object ', function() {

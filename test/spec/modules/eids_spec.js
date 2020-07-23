@@ -107,6 +107,18 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('lotamePanoramaId', function () {
+    const userId = {
+      lotamePanoramaId: 'some-random-id-value',
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'crwdcntrl.net',
+      uids: [{ id: 'some-random-id-value', atype: 1 }],
+    });
+  });
+
   it('DigiTrust; getValue call', function() {
     const userId = {
       digitrustid: {
@@ -144,6 +156,42 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids[0]).to.deep.equal({
       source: 'netid.de',
       uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+  it('Sharedid', function() {
+    const userId = {
+      sharedid: {
+        id: 'test_sharedId',
+        third: 'test_sharedId'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'sharedid.org',
+      uids: [{
+        id: 'test_sharedId',
+        atype: 1,
+        ext: {
+          third: 'test_sharedId'
+        }
+      }]
+    });
+  });
+  it('Sharedid: Not Synched', function() {
+    const userId = {
+      sharedid: {
+        id: 'test_sharedId'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'sharedid.org',
+      uids: [{
+        id: 'test_sharedId',
+        atype: 1
+      }]
     });
   });
 });

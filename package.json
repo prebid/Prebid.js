@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "3.24.0-pre",
+  "version": "3.27.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -112,6 +112,6 @@
     "fun-hooks": "^0.9.9",
     "jsencrypt": "^3.0.0-rc.1",
     "just-clone": "^1.0.2",
-    "live-connect-js": "1.1.1"
+    "live-connect-js": "1.1.10"
   }
 }
