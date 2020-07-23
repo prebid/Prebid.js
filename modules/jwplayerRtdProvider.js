@@ -153,7 +153,8 @@ function executeAfterPrefetch(callback) {
  * Retrieves the targeting information pertaining to a bid request.
  * @param bidRequest {object} - the bid which is passed to a prebid adapter for use in `buildRequests`. It must contain
  * a jwTargeting property.
- * @returns {Array<string>} - an array of jwpseg targeting segments found for the given bidRequest information
+ * @returns targetingInformation {object} nullable - contains the media ID as well as the jwpseg targeting segments
+ * found for the given bidRequest information
  */
 export function getTargetingForBid(bidRequest) {
   const jwTargeting = bidRequest.jwTargeting;
