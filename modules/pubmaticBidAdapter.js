@@ -952,7 +952,8 @@ export const spec = {
                 referrer: parsedReferrer,
                 ad: bid.adm,
                 pm_seat: seatbidder.seat || null,
-                pm_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null
+                pm_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null,
+                partnerImpId: bid.id || '' // partner impression Id
               };
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
                 parsedRequest.imp.forEach(req => {
@@ -985,6 +986,7 @@ export const spec = {
                 newBid.meta.buyerId = bid.ext.advid;
               }
               if (bid.adomain && bid.adomain.length > 0) {
+                newBid.meta.advertiserDomains = bid.adomain;
                 newBid.meta.clickUrl = bid.adomain[0];
               }
 

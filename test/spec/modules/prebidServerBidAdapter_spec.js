@@ -712,40 +712,6 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('adds digitrust id is present and user is not optout', function () {
-      let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-
-      let consentConfig = { s2sConfig: ortb2Config };
-      config.setConfig(consentConfig);
-
-      let digiTrustObj = {
-        privacy: {
-          optout: false
-        },
-        id: 'testId',
-        keyv: 'testKeyV'
-      };
-
-      let digiTrustBidRequest = utils.deepClone(BID_REQUESTS);
-      digiTrustBidRequest[0].bids[0].userId = { digitrustid: { data: digiTrustObj } };
-
-      adapter.callBids(REQUEST, digiTrustBidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(server.requests[0].requestBody);
-
-      expect(requestBid.user.ext.digitrust).to.deep.equal({
-        id: digiTrustObj.id,
-        keyv: digiTrustObj.keyv
-      });
-
-      digiTrustObj.privacy.optout = true;
-
-      adapter.callBids(REQUEST, digiTrustBidRequest, addBidResponse, done, ajax);
-      requestBid = JSON.parse(server.requests[1].requestBody);
-
-      expect(requestBid.user && request.user.ext && requestBid.user.ext.digitrust).to.not.exist;
-    });
-
     it('adds device and app objects to request', function () {
       const _config = {
         s2sConfig: CONFIG,
@@ -1700,8 +1666,29 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('cpm', 0.5);
+      expect(response).to.have.property('meta');
+      expect(response.meta).to.have.property('advertiserDomains');
+      expect(response.meta.advertiserDomains[0]).to.equal('appnexus.com');
       expect(response).to.not.have.property('vastUrl');
       expect(response).to.not.have.property('videoCacheKey');
+      expect(response).to.have.property('ttl', 60);
+    });
+
+    it('respects defaultTtl', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        defaultTtl: 30
+      });
+      config.setConfig({ s2sConfig });
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
+
+      sinon.assert.calledOnce(events.emit);
+      const event = events.emit.firstCall.args;
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('ttl', 30);
     });
 
     it('handles OpenRTB video responses', function () {
@@ -2153,6 +2140,15 @@ describe('S2S Adapter', function () {
           foo: 'bar'
         }
       })
+    });
+
+    it('should set default s2s ttl', function () {
+      config.setConfig({
+        s2sConfig: {
+          defaultTtl: 30
+        }
+      });
+      expect(config.getConfig('s2sConfig').defaultTtl).to.deep.equal(30);
     });
 
     it('should set syncUrlModifier', function () {
