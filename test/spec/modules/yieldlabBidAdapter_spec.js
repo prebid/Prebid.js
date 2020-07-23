@@ -96,6 +96,20 @@ describe('yieldlabBidAdapter', function () {
       expect(request.url).to.include('extraParam=true&foo=bar')
     })
 
+    const refererRequest = spec.buildRequests(bidRequests, {
+      refererInfo: {
+        canonicalUrl: undefined,
+        numIframes: 0,
+        reachedTop: true,
+        referer: 'https://www.yieldlab.de/test?with=querystring',
+        stack: ['https://www.yieldlab.de/test?with=querystring']
+      }
+    })
+
+    it('passes encoded referer to bid request', function () {
+      expect(refererRequest.url).to.include('pubref=https%3A%2F%2Fwww.yieldlab.de%2Ftest%3Fwith%3Dquerystring')
+    })
+
     const gdprRequest = spec.buildRequests(bidRequests, {
       gdprConsent: {
         consentString: 'BN5lERiOMYEdiAKAWXEND1AAAAE6DABACMA',

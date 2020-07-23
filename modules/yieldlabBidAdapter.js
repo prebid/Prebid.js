@@ -49,10 +49,16 @@ export const spec = {
       }
     })
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
-      if (query.gdpr) {
-        query.consent = bidderRequest.gdprConsent.consentString
+    if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        query.pubref = bidderRequest.refererInfo.referer
+      }
+
+      if (bidderRequest.gdprConsent) {
+        query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        if (query.gdpr) {
+          query.consent = bidderRequest.gdprConsent.consentString
+        }
       }
     }
 
