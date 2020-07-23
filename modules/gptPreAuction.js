@@ -1,7 +1,6 @@
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 import { getHook } from '../src/hook.js';
-import { getGlobal } from '../src/prebidGlobal.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const MODULE_NAME = 'GPT Pre-Auction';
@@ -69,12 +68,12 @@ export const appendPbAdSlot = adUnit => {
   context.pbAdSlot = adUnit.code;
 };
 
-export const makeBidRequestsHook = (fn, adUnits) => {
+export const makeBidRequestsHook = (fn, adUnits, ...args) => {
   appendGptSlots(adUnits);
   adUnits.forEach(adUnit => {
     appendPbAdSlot(adUnit);
   });
-  return fn.call(this, adUnits);
+  return fn.call(this, adUnits, ...args);
 };
 
 const handleSetGptConfig = moduleConfig => {
@@ -87,7 +86,7 @@ const handleSetGptConfig = moduleConfig => {
 
   if (_currentConfig.enabled) {
     if (!hooksAdded) {
-      getGlobal().requestBids.before(makeBidRequestsHook);
+      getHook('makeBidRequests').before(makeBidRequestsHook);
       hooksAdded = true;
     }
   } else {
