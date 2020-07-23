@@ -17,6 +17,10 @@ describe('jwplayerRtdProvider', function() {
         request = server.requests[0];
       });
 
+      afterEach(function () {
+        server.respond();
+      });
+
       it('should reach out to media endpoint', function () {
         expect(request.url).to.be.eq(`https://cdn.jwplayer.com/v2/media/${testIdForSuccess}`);
       });
@@ -254,6 +258,7 @@ describe('jwplayerRtdProvider', function() {
 
       afterEach(function () {
         clock.restore();
+        fakeServer.respond();
       });
 
       it('executes callback immediately when no requests are pending', function () {

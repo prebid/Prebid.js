@@ -58,9 +58,9 @@ function init(config, gdpr, usp) {
 
 export function fetchTargetingInformation(jwTargeting) {
   const mediaIDs = jwTargeting.mediaIDs;
-  console.log('karim new req count: ', requestCount);
-  requestCount += mediaIDs.length;
-  console.log('karim prev req count: ', requestCount);
+  if (!mediaIDs) {
+    return;
+  }
   mediaIDs.forEach(mediaID => {
     fetchTargetingForMediaId(mediaID);
   });
@@ -68,6 +68,7 @@ export function fetchTargetingInformation(jwTargeting) {
 
 export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder(requestTimeout);
+  requestCount++;
   ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
     success: function (response) {
       try {
@@ -98,8 +99,7 @@ export function fetchTargetingForMediaId(mediaId) {
 }
 
 function onRequestCompleted() {
-  requestCount = Math.max(requestCount - 1, 0)
-  console.log('karim req complete: ', requestCount);
+  requestCount--;
   if (requestCount > 0) {
     return;
   }
