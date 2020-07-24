@@ -3,7 +3,7 @@
 ```
 Module Name: Saambaa Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: lokesh@advangelists.com
+Maintainer: matt.voigt@saambaa.com
 ```
 
 # Description
