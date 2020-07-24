@@ -28,6 +28,7 @@ var sizeMap = {
   1: '468x60',
   2: '728x90',
   5: '120x90',
+  7: '125x125',
   8: '120x600',
   9: '160x600',
   10: '300x600',
@@ -338,6 +339,9 @@ export const spec = {
       if (bidRequest.storedAuctionResponse) {
         utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
       }
+
+      // set ext.prebid.auctiontimestamp using auction time
+      utils.deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
 
       return {
         method: 'POST',

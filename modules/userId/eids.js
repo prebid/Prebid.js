@@ -5,6 +5,12 @@ const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // intentIqId
+  'intentIqId': {
+    source: 'intentiq.com',
+    atype: 1
+  },
+
   // pubCommonId
   'pubcid': {
     source: 'pubcid.org',
@@ -62,13 +68,10 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // DigiTrust
-  'digitrustid': {
-    getValue: function(data) {
-      return data.data.id;
-    },
-    source: 'digitru.st',
-    atype: 1
+  // lotamePanoramaId
+  lotamePanoramaId: {
+    source: 'crwdcntrl.net',
+    atype: 1,
   },
 
   // criteo
@@ -81,6 +84,19 @@ const USER_IDS_CONFIG = {
   'netId': {
     source: 'netid.de',
     atype: 1
+  },
+  // sharedid
+  'sharedid': {
+    source: 'sharedid.org',
+    atype: 1,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      return (data && data.third) ? {
+        third: data.third
+      } : undefined;
+    }
   }
 };
 

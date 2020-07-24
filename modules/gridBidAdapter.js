@@ -2,10 +2,11 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hb';
-const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=iow_labs';
+const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -47,6 +48,7 @@ export const spec = {
     const slotsMapByUid = {};
     const sizeMap = {};
     const bids = validBidRequests || [];
+    let pageKeywords = null;
     let reqId;
 
     bids.forEach(bid => {
@@ -54,6 +56,10 @@ export const spec = {
       const {params: {uid}, adUnitCode, mediaTypes} = bid;
       auids.push(uid);
       const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!pageKeywords && !utils.isEmpty(bid.params.keywords)) {
+        pageKeywords = utils.transformBidderParamKeywords(bid.params.keywords);
+      }
 
       const addedSizes = {};
       sizesId.forEach((sizeId) => {
@@ -94,6 +100,19 @@ export const spec = {
       });
     });
 
+    const configKeywords = utils.transformBidderParamKeywords({
+      'user': utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || null,
+      'context': utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || null
+    });
+
+    if (configKeywords.length) {
+      pageKeywords = (pageKeywords || []).concat(configKeywords);
+    }
+
+    if (pageKeywords && pageKeywords.length > 0) {
+      pageKeywords.forEach(deleteValues);
+    }
+
     const payload = {
       auids: auids.join(','),
       sizes: utils.getKeys(sizeMap).join(','),
@@ -101,6 +120,10 @@ export const spec = {
       wrapperType: 'Prebid_js',
       wrapperVersion: '$prebid.version$'
     };
+
+    if (pageKeywords) {
+      payload.keywords = JSON.stringify(pageKeywords);
+    }
 
     if (bidderRequest) {
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -179,6 +202,16 @@ export const spec = {
     }
   }
 };
+
+function isPopulatedArray(arr) {
+  return !!(utils.isArray(arr) && arr.length > 0);
+}
+
+function deleteValues(keyPairObj) {
+  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
+    delete keyPairObj.value;
+  }
+}
 
 function _getBidFromResponse(respItem) {
   if (!respItem) {

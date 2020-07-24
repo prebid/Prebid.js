@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { adagioScriptFromLocalStorageCb, spec } from 'modules/adagioBidAdapter.js';
+import { adagioScriptFromLocalStorageCb, _features, spec } from 'modules/adagioBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 
@@ -7,7 +7,7 @@ describe('adagioAdapter', () => {
   let utilsMock;
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
-  const VERSION = '2.2.1';
+  const VERSION = '2.2.2';
 
   beforeEach(function() {
     localStorage.removeItem('adagioScript');
@@ -51,7 +51,7 @@ describe('adagioAdapter', () => {
       sandbox.restore();
     });
 
-    let bid = {
+    const bid = {
       'bidder': 'adagio',
       'params': {
         organizationId: '0',
@@ -67,7 +67,7 @@ describe('adagioAdapter', () => {
       'auctionId': 'lel4fhp239i9km',
     };
 
-    let bidWithMediaTypes = {
+    const bidWithMediaTypes = {
       'bidder': 'adagio',
       'params': {
         organizationId: '0',
@@ -108,28 +108,41 @@ describe('adagioAdapter', () => {
     });
 
     it('should return false when organization params is not passed', () => {
-      let bidTest = Object.assign({}, bid);
+      const bidTest = utils.deepClone(bid);
       delete bidTest.params.organizationId;
       expect(spec.isBidRequestValid(bidTest)).to.equal(false);
     });
 
     it('should return false when site params is not passed', () => {
-      let bidTest = Object.assign({}, bid);
+      const bidTest = utils.deepClone(bid);
       delete bidTest.params.site;
       expect(spec.isBidRequestValid(bidTest)).to.equal(false);
     });
 
     it('should return false when placement params is not passed', () => {
-      let bidTest = Object.assign({}, bid);
+      const bidTest = utils.deepClone(bid);
       delete bidTest.params.placement;
       expect(spec.isBidRequestValid(bidTest)).to.equal(false);
     });
 
-    it('should return false when adUnit element id params is not passed', () => {
-      let bidTest = Object.assign({}, bid);
+    it('should add autodetected adUnitElementId and environment params', () => {
+      const bidTest = utils.deepClone(bid);
       delete bidTest.params.adUnitElementId;
-      expect(spec.isBidRequestValid(bidTest)).to.equal(false);
-    });
+      delete bidTest.params.environment;
+      sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').returns({divId: 'banner-atf'});
+      sandbox.stub(_features, 'getDevice').returns(4);
+      spec.isBidRequestValid(bidTest)
+      expect(bidTest.params.adUnitElementId).to.equal('banner-atf');
+      expect(bidTest.params.environment).to.equal('mobile');
+    })
+
+    it('should add autodetected tablet environment params', () => {
+      const bidTest = utils.deepClone(bid);
+      delete bidTest.params.environment;
+      sandbox.stub(_features, 'getDevice').returns(5);
+      spec.isBidRequestValid(bidTest)
+      expect(bidTest.params.environment).to.equal('tablet');
+    })
 
     it('should return false if not in the window.top', () => {
       sandbox.stub(utils, 'getWindowTop').throws();
