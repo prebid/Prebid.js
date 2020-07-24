@@ -540,25 +540,6 @@ describe('OpenxAdapter', function () {
       expect(dataParams.tps).to.equal(btoa('test1=testval1.&test2=testval2_,testval3'));
     });
 
-    it('should send out custom floors on bids that have customFloors specified', function () {
-      const bidRequest = Object.assign({},
-        bidRequestsWithMediaTypes[0],
-        {
-          params: {
-            'unit': '12345678',
-            'delDomain': 'test-del-domain',
-            'customFloor': 1.500001
-          }
-        }
-      );
-
-      const request = spec.buildRequests([bidRequest], mockBidderRequest);
-      const dataParams = request[0].data;
-
-      expect(dataParams.aumfs).to.exist;
-      expect(dataParams.aumfs).to.equal('1500');
-    });
-
     it('should send out custom bc parameter, if override is present', function () {
       const bidRequest = Object.assign({},
         bidRequestsWithMediaTypes[0],
@@ -1121,6 +1102,59 @@ describe('OpenxAdapter', function () {
         });
       });
     });
+
+    context('floors', function () {
+      it('should send out custom floors on bids that have customFloors specified', function () {
+        const bidRequest = Object.assign({},
+          bidRequestsWithMediaTypes[0],
+          {
+            params: {
+              'unit': '12345678',
+              'delDomain': 'test-del-domain',
+              'customFloor': 1.500001
+            }
+          }
+        );
+
+        const request = spec.buildRequests([bidRequest], mockBidderRequest);
+        const dataParams = request[0].data;
+
+        expect(dataParams.aumfs).to.exist;
+        expect(dataParams.aumfs).to.equal('1500');
+      });
+
+      it('should send out floors on bids when there', function () {
+        const bidRequest1 = Object.assign({},
+          bidRequestsWithMediaTypes[0],
+          {
+            getFloor: () => {
+              return {
+                currency: 'AUS',
+                floor: 9.99
+              }
+            }
+          }
+        );
+
+        const bidRequest2 = Object.assign({},
+          bidRequestsWithMediaTypes[1],
+          {
+            getFloor: () => {
+              return {
+                currency: 'AUS',
+                floor: 18.881
+              }
+            }
+          }
+        );
+
+        const request = spec.buildRequests([bidRequest1, bidRequest2], mockBidderRequest);
+        const dataParams = request[0].data;
+
+        expect(dataParams.aumfs).to.exist;
+        expect(dataParams.aumfs).to.equal('9990,18881');
+      });
+    })
   });
 
   describe('buildRequests for video', function () {
