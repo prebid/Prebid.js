@@ -160,15 +160,14 @@ function slotParams(bidRequest) {
     },
     all: bidRequest.params
   };
-  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes || [];
+  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
 
   const videoInMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
   const videoInParams = utils.deepAccess(bidRequest, 'params.video') || {};
-  let videoCombinedObj = Object.assign({}, videoInMediaType);
-  videoCombinedObj = Object.assign(videoCombinedObj, videoInParams);
+  const videoCombinedObj = Object.assign({}, videoInMediaType, videoInParams);
 
   if (!utils.isEmpty(videoCombinedObj)) {
-    params.video = JSON.stringify(videoCombinedObj);
+    params.video = videoCombinedObj;
   }
 
   if (bannerSizes.length > 0) {
