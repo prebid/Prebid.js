@@ -37,6 +37,7 @@ describe('the price floors module', function () {
   const basicFloorConfig = {
     enabled: true,
     auctionDelay: 0,
+    floorProvider: '',
     endpoint: {},
     enforcement: {
       enforceJS: true,
@@ -315,6 +316,7 @@ describe('the price floors module', function () {
         skipped: true,
         modelVersion: undefined,
         location: 'noData',
+        skipRate: undefined,
         fetchStatus: undefined
       });
     });
@@ -346,6 +348,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'adUnit Model Version',
         location: 'adUnit',
+        skipRate: undefined,
         fetchStatus: undefined
       });
     });
@@ -356,6 +359,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: undefined,
         fetchStatus: undefined
       });
     });
@@ -400,6 +404,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: undefined,
         fetchStatus: undefined
       });
     });
@@ -460,6 +465,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'model-1',
         location: 'setConfig',
+        skipRate: undefined,
         fetchStatus: undefined
       });
 
@@ -470,6 +476,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'model-2',
         location: 'setConfig',
+        skipRate: undefined,
         fetchStatus: undefined
       });
 
@@ -480,6 +487,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'model-3',
         location: 'setConfig',
+        skipRate: undefined,
         fetchStatus: undefined
       });
     });
@@ -506,6 +514,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: undefined,
         fetchStatus: undefined
       });
     });
@@ -582,6 +591,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: undefined,
         fetchStatus: 'timeout'
       });
       fakeFloorProvider.respond();
@@ -617,6 +627,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'fetch model name',
         location: 'fetch',
+        skipRate: undefined,
         fetchStatus: 'success'
       });
     });
@@ -674,6 +685,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: undefined,
         fetchStatus: 'error'
       });
     });
@@ -695,6 +707,7 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: undefined,
         fetchStatus: 'success'
       });
     });

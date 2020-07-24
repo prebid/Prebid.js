@@ -286,12 +286,10 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
       bid.auctionId = auctionId;
       bid.floorData = {
         skipped: floorData.skipped,
+        skipRate: floorData.skipRate,
         modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
         location: utils.deepAccess(floorData, 'data.location', 'noData'),
         fetchStatus: _floorsConfig.fetchStatus
-      }
-      if (floorData.skipRate) {
-        bid.floorData.skipRate = floorData.skipRate;
       }
     });
   });
@@ -570,6 +568,7 @@ export function handleSetFloorsConfig(config) {
   _floorsConfig = utils.pick(config, [
     'enabled', enabled => enabled !== false, // defaults to true
     'auctionDelay', auctionDelay => auctionDelay || 0,
+    'floorProvider', floorProvider => String(floorProvider) || '',
     'endpoint', endpoint => endpoint || {},
     'skipRate', () => !isNaN(utils.deepAccess(config, 'data.skipRate')) ? config.data.skipRate : config.skipRate || undefined,
     'enforcement', enforcement => utils.pick(enforcement || {}, [
