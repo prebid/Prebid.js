@@ -10,6 +10,265 @@ const CONSTANTS = {
 };
 const storage = getStorageManager(CONSTANTS.GVLID, CONSTANTS.BIDDER_CODE);
 
+var dsuModule = (function() {
+  'use strict';
+
+  var DSU_KEY = 'apr_dsu';
+  var DSU_VERSION_NUMBER = '1';
+  var SIGNATURE_SALT = 'YicAu6ZpNG';
+  var DSU_CREATOR = {'USERREPORT': '1'};
+
+  function stringToU8(str) {
+    if (typeof TextEncoder === 'function') {
+      return new TextEncoder().encode(str);
+    }
+    str = unescape(encodeURIComponent(str));
+    var bytes = new Uint8Array(str.length);
+    for (var i = 0, j = str.length; i < j; i++) {
+      bytes[i] = str.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  function _add(a, b) {
+    var rl = a.l + b.l;
+    var a2 = {
+      h: a.h + b.h + (rl / 2 >>> 31) >>> 0,
+      l: rl >>> 0
+    };
+    a.h = a2.h;
+    a.l = a2.l;
+  }
+  function _xor(a, b) {
+    a.h ^= b.h;
+    a.h >>>= 0;
+    a.l ^= b.l;
+    a.l >>>= 0;
+  }
+  function _rotl(a, n) {
+    var a2 = {
+      h: a.h << n | a.l >>> (32 - n),
+      l: a.l << n | a.h >>> (32 - n)
+    };
+    a.h = a2.h;
+    a.l = a2.l;
+  }
+  function _rotl32(a) {
+    var al = a.l;
+    a.l = a.h;
+    a.h = al;
+  }
+
+  function _compress(v0, v1, v2, v3) {
+    _add(v0, v1);
+    _add(v2, v3);
+    _rotl(v1, 13);
+    _rotl(v3, 16);
+    _xor(v1, v0);
+    _xor(v3, v2);
+    _rotl32(v0);
+    _add(v2, v1);
+    _add(v0, v3);
+    _rotl(v1, 17);
+    _rotl(v3, 21);
+    _xor(v1, v2);
+    _xor(v3, v0);
+    _rotl32(v2);
+  }
+  function _getInt(a, offset) {
+    return a[offset + 3] << 24 |
+          a[offset + 2] << 16 |
+          a[offset + 1] << 8 |
+          a[offset];
+  }
+
+  function hash(key, m) {
+    if (typeof m === 'string') {
+      m = stringToU8(m);
+    }
+    var k0 = {
+      h: key[1] >>> 0,
+      l: key[0] >>> 0
+    };
+    var k1 = {
+      h: key[3] >>> 0,
+      l: key[2] >>> 0
+    };
+    var v0 = {
+      h: k0.h,
+      l: k0.l
+    };
+    var v2 = k0;
+    var v1 = {
+      h: k1.h,
+      l: k1.l
+    };
+    var v3 = k1;
+    var ml = m.length;
+    var ml7 = ml - 7;
+    var buf = new Uint8Array(new ArrayBuffer(8));
+    _xor(v0, {
+      h: 0x736f6d65,
+      l: 0x70736575
+    });
+    _xor(v1, {
+      h: 0x646f7261,
+      l: 0x6e646f6d
+    });
+    _xor(v2, {
+      h: 0x6c796765,
+      l: 0x6e657261
+    });
+    _xor(v3, {
+      h: 0x74656462,
+      l: 0x79746573
+    });
+    var mp = 0;
+    while (mp < ml7) {
+      var mi = {
+        h: _getInt(m, mp + 4),
+        l: _getInt(m, mp)
+      };
+      _xor(v3, mi);
+      _compress(v0, v1, v2, v3);
+      _compress(v0, v1, v2, v3);
+      _xor(v0, mi);
+      mp += 8;
+    }
+    buf[7] = ml;
+    var ic = 0;
+    while (mp < ml) {
+      buf[ic++] = m[mp++];
+    }
+    while (ic < 7) {
+      buf[ic++] = 0;
+    }
+    var mil = {
+      h: buf[7] << 24 | buf[6] << 16 | buf[5] << 8 | buf[4],
+      l: buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0]
+    };
+    _xor(v3, mil);
+    _compress(v0, v1, v2, v3);
+    _compress(v0, v1, v2, v3);
+    _xor(v0, mil);
+    _xor(v2, {
+      h: 0,
+      l: 0xff
+    });
+    _compress(v0, v1, v2, v3);
+    _compress(v0, v1, v2, v3);
+    _compress(v0, v1, v2, v3);
+    _compress(v0, v1, v2, v3);
+    var h = v0;
+    _xor(h, v1);
+    _xor(h, v2);
+    _xor(h, v3);
+    return h;
+  }
+
+  function hashHex(key, m) {
+    var r = hash(key, m);
+    return ('0000000' + r.h.toString(16)).substr(-8) +
+            ('0000000' + r.l.toString(16)).substr(-8);
+  }
+
+  var SIPHASH_KEY = [0x86395a57, 0x6b5ba7f7, 0x69732c07, 0x2a6ef48d];
+  var hashWithKey = hashHex.bind(null, SIPHASH_KEY);
+
+  var parseUrlRegex = new RegExp('^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?');
+  var overwrite = null;
+  var cache = {};
+  function parseUrl(url) {
+    var addscheme =
+    url.indexOf('/') !== 0 &&
+    url.indexOf('/') !== -1 &&
+    (url.indexOf(':') === -1 || url.indexOf(':') > url.indexOf('/'));
+
+    var match = parseUrlRegex.exec(addscheme ? 'noscheme://' + url : url);
+    var res = {
+      scheme: addscheme ? '' : match[2] || '',
+      host: match[4] || '',
+      hostname: match[4] ? match[4].split(':')[0] : '',
+      pathname: match[5] || '',
+      search: match[7] || '',
+      hash: match[9] || '',
+      toString: function () {
+        return url;
+      }
+    };
+
+    res.origin = res.scheme + '://' + res.host;
+    return res;
+  }
+
+  function location() {
+    var url = overwrite || window.location.toString();
+    url = url.replace(/\.demo\.audienceproject\.com\//, '/');
+
+    if (cache.url === url) {
+      return cache.parsed;
+    }
+    var parsed = parseUrl(url);
+    cache.url = url;
+    cache.parsed = parsed;
+    return parsed;
+  }
+
+  function getDaysSinceApEpoch() {
+    var timeDiff = (new Date()).getTime() - (new Date(2019, 0, 1)).getTime();
+    var daysSinceApEpoch = Math.floor(timeDiff / (1000 * 3600 * 24));
+    return daysSinceApEpoch;
+  }
+
+  function generateDsu() {
+    var dsuId = utils.generateUUID();
+    var loc = location();
+
+    var dsuIdSuffix = hashWithKey(dsuId + loc.toString());
+    var suffix4 = dsuIdSuffix.substr(0, 4);
+    var suffix8 = dsuIdSuffix.substr(4);
+
+    dsuId = dsuId.substr(0, 19) + suffix4 + '-' + suffix8;
+
+    var daysSinceApEpoch = getDaysSinceApEpoch();
+    var originHash = hashWithKey(loc.origin);
+
+    var metadata = [
+      DSU_CREATOR.USERREPORT,
+      daysSinceApEpoch,
+      originHash
+    ].join('.');
+    var signature = hashWithKey(dsuId + metadata + SIGNATURE_SALT);
+
+    return [DSU_VERSION_NUMBER, signature, dsuId, metadata].join('.');
+  }
+
+  function readOrCreateDsu() {
+    var dsu;
+    try {
+      dsu = storage.getDataFromLocalStorage(DSU_KEY);
+    } catch (err) {
+      return null;
+    }
+
+    if (!dsu) {
+      dsu = generateDsu();
+    }
+
+    try {
+      storage.setDataInLocalStorage(DSU_KEY, dsu);
+    } catch (err) {
+      return null;
+    }
+
+    return dsu;
+  }
+
+  return {
+    readOrCreateDsu: readOrCreateDsu
+  }
+})();
+
 function serializeSizes(sizes) {
   if (Array.isArray(sizes[0]) === false) {
     sizes = [sizes];
@@ -156,7 +415,7 @@ function buildRequests(bidRequests, bidderRequest) {
     med: encodeURIComponent(window.location.href),
     auid: bidderRequest.auctionId,
     ref: document.referrer,
-    dnt: Number(window.navigator.doNotTrack) || 0,
+    dnt: utils.getDNT() ? 1 : 0,
     sr: getScreenParams()
   };
 
@@ -169,9 +428,6 @@ function buildRequests(bidRequests, bidderRequest) {
 
   const isConsent = getIabConsentString(bidderRequest);
   if (isConsent) {
-    // eslint-disable-next-line
-    const dsuModule=function(){"use strict";var n="apr_dsu",r="1",e="YicAu6ZpNG",t={USERREPORT:"1"};function o(n,r){var e=n.l+r.l,t={h:n.h+r.h+(e/2>>>31)>>>0,l:e>>>0};n.h=t.h,n.l=t.l}function x(n,r){n.h^=r.h,n.h>>>=0,n.l^=r.l,n.l>>>=0}function a(n,r){var e={h:n.h<<r|n.l>>>32-r,l:n.l<<r|n.h>>>32-r};n.h=e.h,n.l=e.l}function u(n){var r=n.l;n.l=n.h,n.h=r}function i(n,r,e,t){o(n,r),o(e,t),a(r,13),a(t,16),x(r,n),x(t,e),u(n),o(e,r),o(n,t),a(r,17),a(t,21),x(r,e),x(t,n),u(e)}function l(n,r){return n[r+3]<<24|n[r+2]<<16|n[r+1]<<8|n[r]}function c(n,r){"string"==typeof r&&(r=function(n){if("function"==typeof TextEncoder)return(new TextEncoder).encode(n);n=unescape(encodeURIComponent(n));for(var r=new Uint8Array(n.length),e=0,t=n.length;e<t;e++)r[e]=n.charCodeAt(e);return r}(r));var e={h:n[1]>>>0,l:n[0]>>>0},t={h:n[3]>>>0,l:n[2]>>>0},o={h:e.h,l:e.l},a=e,u={h:t.h,l:t.l},c=t,f=r.length,h=f-7,s=new Uint8Array(new ArrayBuffer(8));x(o,{h:1936682341,l:1886610805}),x(u,{h:1685025377,l:1852075885}),x(a,{h:1819895653,l:1852142177}),x(c,{h:1952801890,l:2037671283});for(var d=0;d<h;){var v={h:l(r,d+4),l:l(r,d)};x(c,v),i(o,u,a,c),i(o,u,a,c),x(o,v),d+=8}s[7]=f;for(var p=0;d<f;)s[p++]=r[d++];for(;p<7;)s[p++]=0;var g={h:s[7]<<24|s[6]<<16|s[5]<<8|s[4],l:s[3]<<24|s[2]<<16|s[1]<<8|s[0]};x(c,g),i(o,u,a,c),i(o,u,a,c),x(o,g),x(a,{h:0,l:255}),i(o,u,a,c),i(o,u,a,c),i(o,u,a,c),i(o,u,a,c);var y=o;return x(y,u),x(y,a),x(y,c),y}var f=function(n,r){var e=c(n,r);return("0000000"+e.h.toString(16)).substr(-8)+("0000000"+e.l.toString(16)).substr(-8)}.bind(null,[2251905623,1801168887,1769155591,711914637]),h=new RegExp("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?"),s=null,d={};function v(){var n=s||window.location.toString();if(n=n.replace(/\.demo\.audienceproject\.com\//,"/"),d.url===n)return d.parsed;var r=function(n){var r=0!==n.indexOf("/")&&-1!==n.indexOf("/")&&(-1===n.indexOf(":")||n.indexOf(":")>n.indexOf("/")),e=h.exec(r?"noscheme://"+n:n),t={scheme:r?"":e[2]||"",host:e[4]||"",hostname:e[4]?e[4].split(":")[0]:"",pathname:e[5]||"",search:e[7]||"",hash:e[9]||"",toString:function(){return n}};return t.origin=t.scheme+"://"+t.host,t}(n);return d.url=n,d.parsed=r,r}function p(){var n=function(){if("function"==typeof Uint32Array&&"undefined"!=typeof crypto&&void 0!==crypto.getRandomValues){var n=new Uint32Array(4);crypto.getRandomValues(n);var r=-1;return"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(e){var t=n[++r>>3]>>r%8*4&15;return("x"===e?t:3&t|8).toString(16)})}var e=(new Date).getTime();return"undefined"!=typeof performance&&"function"==typeof performance.now&&(e+=performance.now()),"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(n){var r=(e+16*Math.random())%16|0;return e=Math.floor(e/16),("x"===n?r:3&r|8).toString(16)})}(),o=v(),x=f(n+o.toString()),a=x.substr(0,4),u=x.substr(4);n=n.substr(0,19)+a+"-"+u;var i,l=(i=(new Date).getTime()-new Date(2019,0,1).getTime(),Math.floor(i/864e5)),c=f(o.origin),h=[t.USERREPORT,l,c].join("."),s=f(n+h+e);return[r,s,n,h].join(".")}return{readOrCreateDsu:function(){var r;try{r=storage.getDataFromLocalStorage(n)}catch(n){return null}r||(r=p());try{storage.setDataInLocalStorage(n,r)}catch(n){return null}return r}}}();
-
     data.dsu = dsuModule.readOrCreateDsu();
   } else {
     data.dsu = '';
