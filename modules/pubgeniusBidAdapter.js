@@ -65,7 +65,7 @@ export const spec = {
       deepSetValue(data, 'regs.ext.us_privacy', usp);
     }
 
-    const schain = bidderRequest.schain;
+    const schain = bidRequests[0].schain;
     if (schain) {
       deepSetValue(data, 'source.ext.schain', schain);
     }

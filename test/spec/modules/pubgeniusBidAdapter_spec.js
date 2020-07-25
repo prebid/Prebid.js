@@ -256,7 +256,7 @@ describe('pubGENIUS adapter', () => {
           }
         ]
       };
-      bidderRequest.schain = deepClone(schain);
+      bidRequest.schain = deepClone(schain);
       expectedRequest.data.source = {
         ext: { schain: deepClone(schain) },
       };
