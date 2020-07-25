@@ -85,10 +85,12 @@ where:
   
 **Example:**
 
-To view an example, in your CL run:
+To view an example:
+ 
+- in your cli run:
 
 `gulp serve --modules=jwplayerRtdProvider`
 
-and then point your browser at:
+- in your browser, navigate to:
 
-`http://localhost:9999/integrationExamples/gpt/audigentSegments_example.html`
+`http://localhost:9999/integrationExamples/gpt/jwplayerRtdProvider_example.html`
