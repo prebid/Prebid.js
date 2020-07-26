@@ -10,7 +10,8 @@ const REQUEST = {
     'adSize': '728x90',
     'targeting': {
       'key1': 'value1',
-      'key2': 'value2'
+      'key2': 'value2',
+      'notDoubleEncoded': 'value3,value4'
     },
     'customParams': {
       'extraParam': true,
@@ -84,8 +85,8 @@ describe('yieldlabBidAdapter', function () {
       expect(request.validBidRequests).to.eql([REQUEST])
     })
 
-    it('passes targeting to bid request', function () {
-      expect(request.url).to.include('t=key1%3Dvalue1%26key2%3Dvalue2')
+    it('passes single-encoded targeting to bid request', function () {
+      expect(request.url).to.include('t=key1%3Dvalue1%26key2%3Dvalue2%26notDoubleEncoded%3Dvalue3%2Cvalue4')
     })
 
     it('passes userids to bid request', function () {
@@ -94,6 +95,20 @@ describe('yieldlabBidAdapter', function () {
 
     it('passes extra params to bid request', function () {
       expect(request.url).to.include('extraParam=true&foo=bar')
+    })
+
+    const refererRequest = spec.buildRequests(bidRequests, {
+      refererInfo: {
+        canonicalUrl: undefined,
+        numIframes: 0,
+        reachedTop: true,
+        referer: 'https://www.yieldlab.de/test?with=querystring',
+        stack: ['https://www.yieldlab.de/test?with=querystring']
+      }
+    })
+
+    it('passes encoded referer to bid request', function () {
+      expect(refererRequest.url).to.include('pubref=https%3A%2F%2Fwww.yieldlab.de%2Ftest%3Fwith%3Dquerystring')
     })
 
     const gdprRequest = spec.buildRequests(bidRequests, {
