@@ -240,27 +240,6 @@ function doClientSideSyncs(bidders) {
   });
 }
 
-function _getDigiTrustQueryParams(bidRequest = {}) {
-  function getDigiTrustId(bidRequest) {
-    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'bids.0.userId.digitrustid.data');
-    if (bidRequestDigitrust) {
-      return bidRequestDigitrust;
-    }
-
-    const digiTrustUser = config.getConfig('digiTrustId');
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-  let digiTrustId = getDigiTrustId(bidRequest);
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-  return {
-    id: digiTrustId.id,
-    keyv: digiTrustId.keyv
-  };
-}
-
 function _appendSiteAppDevice(request, pageUrl) {
   if (!request) return;
 
@@ -626,11 +605,6 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     _appendSiteAppDevice(request, firstBidRequest.refererInfo.referer);
-
-    const digiTrust = _getDigiTrustQueryParams(firstBidRequest);
-    if (digiTrust) {
-      utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
-    }
 
     // pass schain object if it is present
     const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
