@@ -290,6 +290,38 @@ describe('OpenxAdapter', function () {
           expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(false);
         });
       });
+
+      describe('and request config uses test', () => {
+        const videoBidWithTest = {
+          bidder: 'openx',
+          params: {
+            unit: '12345678',
+            delDomain: 'test-del-domain',
+            test: true
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            video: {
+              playerSize: [640, 480]
+            }
+          },
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
+        };
+
+        let mockBidderRequest = {refererInfo: {}};
+
+        it('should return true when required params found', function () {
+          expect(spec.isBidRequestValid(videoBidWithTest)).to.equal(true);
+        });
+
+        it('should send video bid request to openx url via GET, with vtest=1 video parameter', function () {
+          const request = spec.buildRequests([videoBidWithTest], mockBidderRequest);
+          expect(request[0].data.vtest).to.equal(1);
+        });
+      });
     });
   });
 
@@ -506,25 +538,6 @@ describe('OpenxAdapter', function () {
 
       expect(dataParams.tps).to.exist;
       expect(dataParams.tps).to.equal(btoa('test1=testval1.&test2=testval2_,testval3'));
-    });
-
-    it('should send out custom floors on bids that have customFloors specified', function () {
-      const bidRequest = Object.assign({},
-        bidRequestsWithMediaTypes[0],
-        {
-          params: {
-            'unit': '12345678',
-            'delDomain': 'test-del-domain',
-            'customFloor': 1.500001
-          }
-        }
-      );
-
-      const request = spec.buildRequests([bidRequest], mockBidderRequest);
-      const dataParams = request[0].data;
-
-      expect(dataParams.aumfs).to.exist;
-      expect(dataParams.aumfs).to.equal('1500');
     });
 
     it('should send out custom bc parameter, if override is present', function () {
@@ -1089,6 +1102,59 @@ describe('OpenxAdapter', function () {
         });
       });
     });
+
+    context('floors', function () {
+      it('should send out custom floors on bids that have customFloors specified', function () {
+        const bidRequest = Object.assign({},
+          bidRequestsWithMediaTypes[0],
+          {
+            params: {
+              'unit': '12345678',
+              'delDomain': 'test-del-domain',
+              'customFloor': 1.500001
+            }
+          }
+        );
+
+        const request = spec.buildRequests([bidRequest], mockBidderRequest);
+        const dataParams = request[0].data;
+
+        expect(dataParams.aumfs).to.exist;
+        expect(dataParams.aumfs).to.equal('1500');
+      });
+
+      it('should send out floors on bids when there', function () {
+        const bidRequest1 = Object.assign({},
+          bidRequestsWithMediaTypes[0],
+          {
+            getFloor: () => {
+              return {
+                currency: 'AUS',
+                floor: 9.99
+              }
+            }
+          }
+        );
+
+        const bidRequest2 = Object.assign({},
+          bidRequestsWithMediaTypes[1],
+          {
+            getFloor: () => {
+              return {
+                currency: 'AUS',
+                floor: 18.881
+              }
+            }
+          }
+        );
+
+        const request = spec.buildRequests([bidRequest1, bidRequest2], mockBidderRequest);
+        const dataParams = request[0].data;
+
+        expect(dataParams.aumfs).to.exist;
+        expect(dataParams.aumfs).to.equal('9990,18881');
+      });
+    })
   });
 
   describe('buildRequests for video', function () {
@@ -1124,6 +1190,11 @@ describe('OpenxAdapter', function () {
       expect(dataParams.auid).to.equal('12345678');
       expect(dataParams.vht).to.equal(480);
       expect(dataParams.vwd).to.equal(640);
+    });
+
+    it('shouldn\'t have the test parameter', function () {
+      const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+      expect(request[0].data.vtest).to.be.undefined;
     });
 
     it('should send a bc parameter', function () {
