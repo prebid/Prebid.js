@@ -39,6 +39,7 @@
     "body-parser": "^1.19.0",
     "chai": "^4.2.0",
     "coveralls": "^3.1.0",
+    "deep-equal": "^2.0.3",
     "documentation": "^5.2.2",
     "es5-shim": "^4.5.14",
     "eslint-config-standard": "^10.2.1",
