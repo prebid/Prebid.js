@@ -192,14 +192,14 @@ export const spec = {
           const [, impType, impid] = bid.impid.match(/^([vb])(.*)$/);
           let height = bid.h;
           let width = bid.w;
-          const isVideo = impType == 'v';
+          const isVideo = impType === 'v';
           const isBanner = impType === 'b';
           if ((!height || !width) && bidRequest.data && bidRequest.data.imp && bidRequest.data.imp.length > 0) {
             bidRequest.data.imp.forEach(req => {
               if (bid.impid === req.id) {
                 if (isVideo) {
-                  height = bid.h || req.video.h;
-                  width = bid.w || req.video.w;
+                  height = req.video.h;
+                  width = req.video.w;
                 } else if (isBanner) {
                   let bannerHeight = 1;
                   let bannerWidth = 1;
@@ -207,8 +207,8 @@ export const spec = {
                     bannerHeight = req.banner.format[0].h;
                     bannerWidth = req.banner.format[0].w;
                   }
-                  height = bid.h || bannerHeight;
-                  width = bid.w || bannerWidth;
+                  height = bannerHeight;
+                  width = bannerWidth;
                 } else {
                   height = 1;
                   width = 1;
