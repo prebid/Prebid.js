@@ -6,7 +6,7 @@ import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hb';
-const NEW_ENDPOINT_URL = 'http://dev.verona.iponweb.net/hbjson';
+const NEW_ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
 const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
@@ -320,6 +320,7 @@ function buildOldRequest(validBidRequests, bidderRequest) {
 function buildNewRequest(validBidRequests, bidderRequest) {
   let pageKeywords = null;
   let jwpseg = null;
+  let content = null;
   let schain = null;
   let userId = null;
   let user = null;
@@ -343,13 +344,18 @@ function buildNewRequest(validBidRequests, bidderRequest) {
     if (!userId) {
       userId = bid.userId;
     }
-    const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode} = bid;
+    const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, realTimeData} = bid;
     bidsMap[bidId] = bid;
     if (!pageKeywords && !utils.isEmpty(keywords)) {
       pageKeywords = utils.transformBidderParamKeywords(keywords);
     }
-    if (!jwpseg && keywords && keywords.jwpseg) {
-      jwpseg = keywords.jwpseg;
+    if (realTimeData && realTimeData.jwTargeting) {
+      if (!jwpseg && realTimeData.jwTargeting.segments) {
+        jwpseg = realTimeData.segments;
+      }
+      if (!content && realTimeData.content) {
+        content = realTimeData.content;
+      }
     }
     let impObj = {
       id: bidId,
@@ -400,6 +406,10 @@ function buildNewRequest(validBidRequests, bidderRequest) {
     source,
     imp
   };
+
+  if (content) {
+    request.site.content = content;
+  }
 
   if (jwpseg && jwpseg.length) {
     user = {
@@ -463,7 +473,7 @@ function buildNewRequest(validBidRequests, bidderRequest) {
   if (gdprConsent && gdprConsent.gdprApplies) {
     request.regs = {
       ext: {
-        gdpr: !!gdprConsent.gdprApplies
+        gdpr: gdprConsent.gdprApplies ? 1 : 0
       }
     }
   }
