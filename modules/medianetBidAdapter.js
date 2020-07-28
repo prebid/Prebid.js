@@ -164,7 +164,7 @@ function slotParams(bidRequest) {
 
   const videoInMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
   const videoInParams = utils.deepAccess(bidRequest, 'params.video') || {};
-  const videoCombinedObj = Object.assign({}, videoInMediaType, videoInParams);
+  const videoCombinedObj = Object.assign({}, videoInParams, videoInMediaType);
 
   if (!utils.isEmpty(videoCombinedObj)) {
     params.video = videoCombinedObj;
