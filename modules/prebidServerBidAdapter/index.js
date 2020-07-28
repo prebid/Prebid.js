@@ -547,7 +547,16 @@ const OPEN_RTB_PROTOCOL = {
        */
       const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.context.data.adslot', pbAdSlot);
+        utils.deepSetValue(imp, 'ext.context.data.pbadslot', pbAdSlot);
+      }
+
+      /**
+       * GAM Ad Unit
+       * @type {(string|undefined)}
+       */
+      const gamAdUnit = utils.deepAccess(adUnit, 'fpd.context.adServer.adSlot');
+      if (typeof gamAdUnit === 'string' && gamAdUnit) {
+        utils.deepSetValue(imp, 'ext.context.data.adslot', gamAdUnit);
       }
 
       Object.assign(imp, mediaTypes);
