@@ -205,6 +205,44 @@ describe('ProjectLimeLightAdapter', function () {
       expect(spec.isBidRequestValid(bidFailed)).to.equal(false);
     });
   });
+  describe('interpretResponse', function() {
+    let resObject = {
+      requestId: '123',
+      mediaType: 'banner',
+      cpm: 0.3,
+      width: 320,
+      height: 50,
+      ad: '<h1>Hello ad</h1>',
+      ttl: 1000,
+      creativeId: '123asd',
+      netRevenue: true,
+      currency: 'USD'
+    };
+    it('should skip responses which do not contain required params', function() {
+      let bidResponses = {
+        body: [ {
+          mediaType: 'banner',
+          cpm: 0.3,
+          ttl: 1000,
+          currency: 'USD'
+        }, resObject ]
+      }
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+    });
+    it('should skip responses which do not contain expected mediaType', function() {
+      let bidResponses = {
+        body: [ {
+          requestId: '123',
+          mediaType: 'native',
+          cpm: 0.3,
+          creativeId: '123asd',
+          ttl: 1000,
+          currency: 'USD'
+        }, resObject ]
+      }
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+    });
+  });
 });
 
 function validateAdUnit(adUnit, bid) {
