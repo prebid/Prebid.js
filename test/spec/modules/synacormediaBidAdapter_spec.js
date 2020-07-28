@@ -175,6 +175,14 @@ describe('synacormediaBidAdapter ', function () {
       }
     };
 
+    let bidderRequestWithCCPA = {
+      auctionId: 'xyz123',
+      refererInfo: {
+        referer: 'https://test.com/foo/bar'
+      },
+      uspConsent: '1YYY'
+    };
+
     let expectedDataImp1 = {
       banner: {
         format: [
@@ -560,6 +568,18 @@ describe('synacormediaBidAdapter ', function () {
         }
       ]);
     });
+    it('should contain the CCPA privacy string when UspConsent is in bidder request', function() {
+      // banner test
+      let req = spec.buildRequests([validBidRequest], bidderRequestWithCCPA);
+      expect(req).be.an('object');
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
+      expect(req.data).to.exist.and.to.be.an('object');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.regs.ext.us_privacy).to.equal('1YYY');
+      expect(req.data.imp).to.eql([expectedDataImp1]);
+    })
   });
 
   describe('Bid Requests with schain object ', function() {

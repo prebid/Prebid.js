@@ -219,8 +219,14 @@ function buildRequests (validBidRequests, bidderRequest) {
       transactionId,
       userId = {}
     } = bidRequest;
-    const bannerSizes = mediaTypes.banner && mediaTypes.banner.sizes;
+    let sizes = [1, 1];
     let data = {};
+
+    if (mediaTypes.banner) {
+      sizes = mediaTypes.banner.sizes;
+    } else if (mediaTypes.video) {
+      sizes = mediaTypes.video.playerSize;
+    }
 
     if (pageViewId) {
       data.pv = pageViewId;
@@ -278,7 +284,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bannerSizes,
+      sizes,
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
