@@ -11,7 +11,7 @@ pbjs.setConfig({
       enforceJS: true //defaults to true
     },
     auctionDelay: 150, // in milliseconds defaults to 0
-    floorProvider: '', //defaults to en empty string
+    floorProvider: 'awesomeFloorProviderName', // name of the floor provider (optional)
     endpoint: {
       url: 'http://localhost:1500/floor-domains',
       method: 'GET' // Only get supported for now
