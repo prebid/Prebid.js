@@ -75,9 +75,8 @@ export const spec = {
     return bidResponses;
   },
   onBidWon: function (bid) {
-    if (!bid['nurl']) { return false; }
-    ajax(bid['nurl'], null);
-    return true;
+    if (!bid['nurl']) { return; }
+    utils.triggerPixel(bid['nurl']);
   }
 };
 
