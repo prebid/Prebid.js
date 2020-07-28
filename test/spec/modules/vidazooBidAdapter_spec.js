@@ -16,6 +16,7 @@ import {
 } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { version } from 'package.json';
+import { useFakeTimers } from 'sinon';
 
 const SUB_DOMAIN = 'openrtb';
 
@@ -338,12 +339,17 @@ describe('VidazooBidAdapter', function () {
   describe('storage utils', function () {
     it('should get value from storage with create param', function () {
       const now = Date.now();
+      const clock = useFakeTimers({
+        shouldAdvanceTime: true,
+        now
+      });
       setStorageItem('myKey', 2020);
       const { value, created } = getStorageItem('myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
       expect(typeof created).to.be.equal('number');
+      clock.restore();
     });
 
     it('should get external stored value', function () {
