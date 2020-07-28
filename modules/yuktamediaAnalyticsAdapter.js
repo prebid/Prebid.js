@@ -10,10 +10,6 @@ const storage = getStorageManager();
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const yuktamediaAnalyticsVersion = 'v3.0.0';
-const reduce = Function.bind.call(Function.call, Array.prototype.reduce);
-const isEnumerable = Function.bind.call(Function.call, Object.prototype.propertyIsEnumerable);
-const concat = Function.bind.call(Function.call, Array.prototype.concat);
-const keys = Reflect.ownKeys;
 
 let initOptions;
 let auctionTimestamp;
@@ -23,18 +19,6 @@ const events = {
 };
 const localStoragePrefix = 'yuktamediaAnalytics_';
 const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-
-if (!Object.values) {
-  Object.values = function values(O) {
-    return reduce(keys(O), (v, k) => concat(v, typeof k === 'string' && isEnumerable(O, k) ? [O[k]] : []), []);
-  };
-}
-
-if (!Object.entries) {
-  Object.entries = function entries(O) {
-    return reduce(keys(O), (e, k) => concat(e, typeof k === 'string' && isEnumerable(O, k) ? [[k, O[k]]] : []), []);
-  };
-}
 
 function getParameterByName(param) {
   let vars = {};
@@ -162,7 +146,6 @@ function detectBrowserAndOS() {
   const nAgt = navigator.userAgent;
   let browserName = navigator.appName;
   let fullVersion = '' + parseFloat(navigator.appVersion);
-  let majorVersion = parseInt(navigator.appVersion, 10);
   let nameOffset, verOffset, ix;
   let OSName = 'Unknown OS';
   if (navigator.appVersion.indexOf('Win') != -1) { OSName = 'Windows'; }
@@ -207,10 +190,9 @@ function detectBrowserAndOS() {
     fullVersion = fullVersion.substring(0, ix);
   }
 
-  majorVersion = parseInt('' + fullVersion, 10);
+  const majorVersion = parseInt('' + fullVersion, 10);
   if (isNaN(majorVersion)) {
     fullVersion = '' + parseFloat(navigator.appVersion);
-    majorVersion = parseInt(navigator.appVersion, 10);
   }
   return {
     browserName,
