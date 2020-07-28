@@ -13,7 +13,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
-const BASE_NB_COOKIE_NAME = 'pbjs-id5id';
+const BASE_NB_COOKIE_NAME = 'id5id.1st';
 const NB_COOKIE_EXP_DAYS = (30 * 24 * 60 * 60 * 1000); // 30 days
 
 const storage = getStorageManager(GVLID, MODULE_NAME);
@@ -128,7 +128,7 @@ function hasRequiredParams(configParams) {
   return true;
 }
 function nbCookieName(configParams) {
-  return hasRequiredParams(configParams) ? `${BASE_NB_COOKIE_NAME}-${configParams.partner}-nb` : undefined;
+  return hasRequiredParams(configParams) ? `${BASE_NB_COOKIE_NAME}_${configParams.partner}_nb` : undefined;
 }
 function nbCookieExpStr(expDays) {
   return (new Date(Date.now() + expDays)).toUTCString();

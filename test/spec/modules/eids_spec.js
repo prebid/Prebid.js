@@ -107,19 +107,15 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('DigiTrust; getValue call', function() {
+  it('lotamePanoramaId', function () {
     const userId = {
-      digitrustid: {
-        data: {
-          id: 'some-random-id-value'
-        }
-      }
+      lotamePanoramaId: 'some-random-id-value',
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
-      source: 'digitru.st',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      source: 'crwdcntrl.net',
+      uids: [{ id: 'some-random-id-value', atype: 1 }],
     });
   });
 

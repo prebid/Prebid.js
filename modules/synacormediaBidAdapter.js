@@ -1,6 +1,6 @@
 'use strict';
 
-import { getAdUnitSizes, logWarn } from '../src/utils.js';
+import { getAdUnitSizes, logWarn, deepSetValue } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js';
@@ -84,6 +84,11 @@ export const spec = {
         imps.forEach(i => openRtbBidRequest.imp.push(i));
       }
     });
+
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
 
     if (openRtbBidRequest.imp.length && seatId) {
       return {
