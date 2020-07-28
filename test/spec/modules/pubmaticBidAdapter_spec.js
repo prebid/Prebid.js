@@ -776,6 +776,23 @@ describe('PubMatic adapter', function () {
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
 
+      it('Set content from config, set site.content', function() {
+        let sandbox = sinon.sandbox.create();
+        const content = {
+          'id': 'alpha-numeric-id'
+        };
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            content: content
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.site.content).to.deep.equal({});
+        sandbox.restore();
+      });
+
       it('Merge the device info from config', function() {
         let sandbox = sinon.sandbox.create();
         sandbox.stub(config, 'getConfig').callsFake((key) => {
