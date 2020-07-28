@@ -37,7 +37,6 @@ describe('the price floors module', function () {
   const basicFloorConfig = {
     enabled: true,
     auctionDelay: 0,
-    floorProvider: '',
     endpoint: {},
     enforcement: {
       enforceJS: true,
@@ -316,8 +315,9 @@ describe('the price floors module', function () {
         skipped: true,
         modelVersion: undefined,
         location: 'noData',
-        skipRate: undefined,
-        fetchStatus: undefined
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined
       });
     });
     it('should use adUnit level data if not setConfig or fetch has occured', function () {
@@ -348,19 +348,21 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'adUnit Model Version',
         location: 'adUnit',
-        skipRate: undefined,
-        fetchStatus: undefined
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined
       });
     });
     it('bidRequests should have getFloor function and flooring meta data when setConfig occurs', function () {
-      handleSetFloorsConfig({...basicFloorConfig});
+      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider'});
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
-        skipRate: undefined,
-        fetchStatus: undefined
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: 'floorprovider'
       });
     });
     it('should take the right skipRate depending on input', function () {
@@ -381,7 +383,8 @@ describe('the price floors module', function () {
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 50,
-        fetchStatus: undefined
+        fetchStatus: undefined,
+        floorProvider: undefined
       });
 
       // if that does not exist uses topLevel skipRate setting
@@ -393,7 +396,8 @@ describe('the price floors module', function () {
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 10,
-        fetchStatus: undefined
+        fetchStatus: undefined,
+        floorProvider: undefined
       });
 
       // if that is not there defaults to zero
@@ -404,13 +408,15 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
-        skipRate: undefined,
-        fetchStatus: undefined
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined
       });
     });
     it('should randomly pick a model if floorsSchemaVersion is 2', function () {
       let inputFloors = {
         ...basicFloorConfig,
+        floorProvider: 'floorprovider',
         data: {
           floorsSchemaVersion: 2,
           currency: 'USD',
@@ -465,8 +471,9 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'model-1',
         location: 'setConfig',
-        skipRate: undefined,
-        fetchStatus: undefined
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: 'floorprovider'
       });
 
       // 11 - 50 should use second model
@@ -476,8 +483,9 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'model-2',
         location: 'setConfig',
-        skipRate: undefined,
-        fetchStatus: undefined
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: 'floorprovider'
       });
 
       // 51 - 100 should use third model
@@ -487,8 +495,9 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'model-3',
         location: 'setConfig',
-        skipRate: undefined,
-        fetchStatus: undefined
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: 'floorprovider'
       });
     });
     it('should not overwrite previous data object if the new one is bad', function () {
@@ -514,8 +523,9 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
-        skipRate: undefined,
-        fetchStatus: undefined
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined
       });
     });
     it('should dynamically add new schema fileds and functions if added via setConfig', function () {
@@ -591,8 +601,9 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
-        skipRate: undefined,
-        fetchStatus: 'timeout'
+        skipRate: 0,
+        fetchStatus: 'timeout',
+        floorProvider: undefined
       });
       fakeFloorProvider.respond();
     });
@@ -605,7 +616,7 @@ describe('the price floors module', function () {
       fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
 
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider', auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
 
       // floor provider should be called
       expect(fakeFloorProvider.requests.length).to.equal(1);
@@ -627,8 +638,9 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'fetch model name',
         location: 'fetch',
-        skipRate: undefined,
-        fetchStatus: 'success'
+        skipRate: 0,
+        fetchStatus: 'success',
+        floorProvider: 'floorprovider'
       });
     });
     it('it should correctly overwrite skipRate with fetch skipRate', function () {
@@ -643,7 +655,7 @@ describe('the price floors module', function () {
       fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
 
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider', auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
 
       // floor provider should be called
       expect(fakeFloorProvider.requests.length).to.equal(1);
@@ -666,7 +678,8 @@ describe('the price floors module', function () {
         modelVersion: 'fetch model name',
         location: 'fetch',
         skipRate: 95,
-        fetchStatus: 'success'
+        fetchStatus: 'success',
+        floorProvider: 'floorprovider'
       });
     });
     it('Should not break if floor provider returns 404', function () {
@@ -685,8 +698,9 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
-        skipRate: undefined,
-        fetchStatus: 'error'
+        skipRate: 0,
+        fetchStatus: 'error',
+        floorProvider: undefined
       });
     });
     it('Should not break if floor provider returns non json', function () {
@@ -707,8 +721,9 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
-        skipRate: undefined,
-        fetchStatus: 'success'
+        skipRate: 0,
+        fetchStatus: 'success',
+        floorProvider: undefined
       });
     });
     it('should handle not using fetch correctly', function () {
