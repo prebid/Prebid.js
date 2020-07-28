@@ -215,7 +215,7 @@ describe('invibesBidAdapter:', function () {
         }
       };
       let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.p1).to.equal(true);
+      expect(request.data.purposes.split(',')[0]).to.equal('true');
     });
 
     it('should send purpose 2 & 7', function () {
@@ -243,7 +243,7 @@ describe('invibesBidAdapter:', function () {
         }
       };
       let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.p2and7).to.equal(true);
+      expect(request.data.purposes.split(',')[1] && request.data.purposes.split(',')[6]).to.equal('true');
     });
 
     it('should send purpose 9', function () {
@@ -271,35 +271,7 @@ describe('invibesBidAdapter:', function () {
         }
       };
       let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.p9).to.equal(true);
-    });
-
-    it('should send purpose oneMissing', function () {
-      let bidderRequest = {
-        gdprConsent: {
-          vendorData: {
-            gdprApplies: true,
-            hasGlobalConsent: false,
-            vendor: {consents: {436: true}},
-            purpose: {
-              consents: {
-                1: true,
-                2: true,
-                3: true,
-                4: true,
-                5: false,
-                6: true,
-                7: true,
-                8: true,
-                9: true,
-                10: true
-              }
-            }
-          }
-        }
-      };
-      let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.onePMissing).to.equal(false);
+      expect(request.data.purposes.split(',')[9]).to.equal('true');
     });
 
     it('should send oi = 0 when vendorData is null', function () {

@@ -117,10 +117,7 @@ function buildRequest(bidRequests, bidderRequest) {
     oi: invibes.optIn,
 
     kw: keywords,
-    p1: invibes.purposes[0],
-    p2and7: invibes.purposes[1] && invibes.purposes[6],
-    p9: invibes.purposes[8],
-    onePMissing: invibes.purposes.every(Boolean)
+    purposes: invibes.purposes.toString()
   };
 
   if (lid) {
