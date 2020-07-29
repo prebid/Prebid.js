@@ -519,7 +519,7 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.user.ext).to.have.property('consent', 'AAA');
       expect(payload).to.have.property('regs');
       expect(payload.regs).to.have.property('ext');
-      expect(payload.regs.ext).to.have.property('gdpr', true);
+      expect(payload.regs.ext).to.have.property('gdpr', 1);
     });
 
     it('if usPrivacy is present payload must have us_privacy param', function () {
@@ -530,6 +530,53 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload).to.have.property('regs');
       expect(payload.regs).to.have.property('ext');
       expect(payload.regs.ext).to.have.property('us_privacy', '1YNN');
+    });
+
+    it('if userId is present payload must have user.ext param with right keys', function () {
+      const bidRequestsWithUserIds = bidRequests.map((bid) => {
+        return Object.assign({
+          userId: {
+            id5id: 'id5id_1',
+            tdid: 'tdid_1',
+            digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
+            lipb: {lipbid: 'lipb_1'}
+          }
+        }, bid);
+      });
+      const [request] = spec.buildRequests(bidRequestsWithUserIds, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('user');
+      expect(payload.user).to.have.property('ext');
+      expect(payload.user.ext).to.have.property('unifiedid', 'tdid_1');
+      expect(payload.user.ext).to.have.property('id5id', 'id5id_1');
+      expect(payload.user.ext).to.have.property('digitrustid', 'DTID');
+      expect(payload.user.ext).to.have.property('liveintentid', 'lipb_1');
+    });
+
+    it('if schain is present payload must have source.ext.schain param', function () {
+      const schain = {
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
+          }
+        ]
+      };
+      const bidRequestsWithSChain = bidRequests.map((bid) => {
+        return Object.assign({
+          schain: schain
+        }, bid);
+      });
+      const [request] = spec.buildRequests(bidRequestsWithSChain, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('source');
+      expect(payload.source).to.have.property('ext');
+      expect(payload.source.ext).to.have.property('schain');
+      expect(payload.source.ext.schain).to.deep.equal(schain);
     });
   });
 
