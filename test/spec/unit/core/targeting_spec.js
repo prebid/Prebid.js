@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { targeting as targetingInstance, filters, sortByDealAndPriceBucketOrCpm } from 'src/targeting.js';
+import { targeting as targetingInstance, filters, getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm } from 'src/targeting.js';
 import { config } from 'src/config.js';
 import { getAdUnits, createBidReceived } from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
@@ -338,9 +338,42 @@ describe('targeting tests', function () {
         bid4 = utils.deepClone(bid1);
         bid4.adserverTargeting['hb_bidder'] = bid4.bidder = bid4.bidderCode = 'appnexus';
         bid4.cpm = 2.25;
+        bid4.adId = '8383838';
         enableSendAllBids = true;
 
         bidsReceived.push(bid4);
+      });
+
+      it('when sendBidsControl.bidLimit is set greater than 0 in getHighestCpmBidsFromBidPool', function () {
+        config.setConfig({
+          sendBidsControl: {
+            bidLimit: 2,
+            dealPrioritization: true
+          }
+        });
+
+        const bids = getHighestCpmBidsFromBidPool(bidsReceived, utils.getHighestCpm, 2);
+
+        expect(bids.length).to.equal(3);
+        expect(bids[0].adId).to.equal('8383838');
+        expect(bids[1].adId).to.equal('148018fe5e');
+        expect(bids[2].adId).to.equal('48747745');
+      });
+
+      it('when sendBidsControl.bidLimit is set greater than 0 and deal priortization is false in getHighestCpmBidsFromBidPool', function () {
+        config.setConfig({
+          sendBidsControl: {
+            bidLimit: 2,
+            dealPrioritization: false
+          }
+        });
+
+        const bids = getHighestCpmBidsFromBidPool(bidsReceived, utils.getHighestCpm, 2);
+
+        expect(bids.length).to.equal(3);
+        expect(bids[0].adId).to.equal('8383838');
+        expect(bids[1].adId).to.equal('148018fe5e');
+        expect(bids[2].adId).to.equal('48747745');
       });
 
       it('selects the top n number of bids when enableSendAllBids is true and and bitLimit is set', function () {
@@ -369,7 +402,7 @@ describe('targeting tests', function () {
         expect(limitedBids.length).to.equal(2);
       });
 
-      it('Sends all bids when enableSendAllBids is true and and bitLimit is set to 0', function () {
+      it('Sends all bids when enableSendAllBids is true and and bidLimit is set to 0', function () {
         config.setConfig({
           sendBidsControl: {
             bidLimit: 0
