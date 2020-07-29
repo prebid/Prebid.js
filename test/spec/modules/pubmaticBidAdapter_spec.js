@@ -789,7 +789,7 @@ describe('PubMatic adapter', function () {
         });
         let request = spec.buildRequests(bidRequests);
         let data = JSON.parse(request.data);
-        expect(data.site.content).to.deep.equal({});
+        expect(data.site.content).to.deep.equal(content);
         sandbox.restore();
       });
 

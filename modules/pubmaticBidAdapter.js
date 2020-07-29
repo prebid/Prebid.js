@@ -867,7 +867,7 @@ export const spec = {
 
     // add the content object from config in request
     if (typeof config.getConfig('content') === 'object') {
-      payload.device = Object.assign(payload.site.content, config.getConfig('content'));
+      payload.site.content = config.getConfig('content');
     }
 
     // merge the device from config.getConfig('device')
