@@ -857,6 +857,62 @@ describe('PubMatic adapter', function () {
         sandbox.restore();
       });
 
+      it('Set app, content from config, copy publisher and ext from site, unset site, config.content in app.content', function() {
+        let sandbox = sinon.sandbox.create();
+        const content = {
+          'id': 'alpha-numeric-id'
+        };
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            content: content,
+            app: {
+              bundle: 'org.prebid.mobile.demoapp',
+              domain: 'prebid.org'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.app.bundle).to.equal('org.prebid.mobile.demoapp');
+        expect(data.app.domain).to.equal('prebid.org');
+        expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
+        expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+        expect(data.app.content).to.deep.equal(content);
+        expect(data.site).to.not.exist;
+        sandbox.restore();
+      });
+
+      it('Set app.content, content from config, copy publisher and ext from site, unset site, config.app.content in app.content', function() {
+        let sandbox = sinon.sandbox.create();
+        const content = {
+          'id': 'alpha-numeric-id'
+        };
+        const appContent = {
+          id: 'app-content-id-2'
+        };
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            content: content,
+            app: {
+              bundle: 'org.prebid.mobile.demoapp',
+              domain: 'prebid.org',
+              content: appContent
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.app.bundle).to.equal('org.prebid.mobile.demoapp');
+        expect(data.app.domain).to.equal('prebid.org');
+        expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
+        expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+        expect(data.app.content).to.deep.equal(appContent);
+        expect(data.site).to.not.exist;
+        sandbox.restore();
+      });
+
       it('Request params check: without adSlot', function () {
         delete bidRequests[0].params.adSlot;
         let request = spec.buildRequests(bidRequests);
