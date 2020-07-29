@@ -307,7 +307,7 @@ function getIabConsentString(bidderRequest) {
     return getConsentStringFromPrebid(bidderRequest.gdprConsent);
   }
 
-  return null;
+  return 'disabled';
 }
 
 function injectPixels(ad, pixels, scripts) {
@@ -431,6 +431,9 @@ function buildRequests(bidRequests, bidderRequest) {
     data.dsu = dsuModule.readOrCreateDsu();
   } else {
     data.dsu = '';
+  }
+
+  if (!isConsent || isConsent === 'disabled') {
     options.withCredentials = false;
   }
 

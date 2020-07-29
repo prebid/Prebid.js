@@ -171,12 +171,6 @@ describe('AP Stream adapter', function() {
     });
 
     describe('dsu', function() {
-      it('should pass empty DSU if no consent', function() {
-        const request = spec.buildRequests(validBidRequests, {})[0].data;
-
-        assert.isEmpty(request.dsu);
-      });
-
       it('should pass DSU from local storage if set', function() {
         let dsu = 'some_dsu';
         localStorage.setItem('apr_dsu', dsu);
