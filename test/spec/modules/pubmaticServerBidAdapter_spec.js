@@ -7,9 +7,9 @@ describe('PubMaticServer adapter', () => {
   let bidRequests;
   let bidResponses;
   let errorCodeBidResponses;
-  window.PWT = {};
 
   beforeEach(() => {
+    window.PWT = {};
     window.PWT.bidMap = {
       '/19968336/header-bid-tag-1': {
         name: '/19968336/header-bid-tag-1',
@@ -96,7 +96,14 @@ describe('PubMaticServer adapter', () => {
                 'bid': 1.3,
                 'width': 300,
                 'height': 250
-              }]
+              }],
+              'prebid': {
+                'targeting': {
+                  'pwtbuyid_pubmatic': '15',
+                  'pwtpb': '6.60'
+                },
+                'type': ''
+              }
             }
           }],
           'seat': 'pubmatic'
@@ -135,6 +142,10 @@ describe('PubMaticServer adapter', () => {
         }]
       }
     };
+  });
+
+  afterEach(() => {
+    delete window.PWT;
   });
 
   describe('implementation', () => {
@@ -433,10 +444,11 @@ describe('PubMaticServer adapter', () => {
         expect(response[0].netRevenue).to.equal(true);
         expect(response[0].ttl).to.equal(300);
         expect(response[0].serverSideResponseTime).to.equal(47);
-        expect(response[0].referrer).to.include(utils.getTopWindowUrl());
+        expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
         expect(response[0].originalBidder).to.equal(bidResponses.body.seatbid[0].bid[0].ext.summary[0].bidder);
         expect(response[0].bidderCode).to.equal(spec.code);
+        expect(response[0].adserverTargeting.pwtbuyid_pubmatic).to.equal('15');
       });
     });
 

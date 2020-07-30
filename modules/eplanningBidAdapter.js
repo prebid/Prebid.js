@@ -1,11 +1,14 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 const BIDDER_CODE = 'eplanning';
 const rnd = Math.random();
 const DEFAULT_SV = 'ads.us.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
-const PARAMS = ['ci', 'sv', 't'];
+const PARAMS = ['ci', 'sv', 't', 'ml'];
 const DOLLARS = 'USD';
 const NET_REVENUE = true;
 const TTL = 120;
@@ -21,7 +24,7 @@ export const spec = {
     return Boolean(bid.params.ci) || Boolean(bid.params.t);
   },
 
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     const method = 'GET';
     const dfpClientId = '1';
     const sec = 'ROS';
@@ -29,34 +32,52 @@ export const spec = {
     let params;
     const urlConfig = getUrlConfig(bidRequests);
     const pcrs = getCharset();
-    const spaces = getSpaces(bidRequests);
+    const spaces = getSpaces(bidRequests, urlConfig.ml);
+    const pageUrl = bidderRequest.refererInfo.referer;
+    const getDomain = (url) => {
+      let anchor = document.createElement('a');
+      anchor.href = url;
+      return anchor.hostname;
+    }
     if (urlConfig.t) {
-      url = urlConfig.isv + '/layers/t_pbjs_2.json';
+      url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
       params = {};
     } else {
-      url = '//' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + (utils.getTopWindowLocation().hostname || FILE) + '/' + sec;
-      const referrerUrl = utils.getTopWindowReferrer();
+      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
+      const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? encodeURIComponent(window.top.document.referrer) : encodeURIComponent(bidderRequest.refererInfo.referer);
 
-      if (utils.hasLocalStorage()) {
+      if (storage.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);
       }
 
       params = {
         rnd: rnd,
         e: spaces.str,
-        ur: utils.getTopWindowUrl() || FILE,
+        ur: encodeURIComponent(pageUrl || FILE),
         r: 'pbjs',
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
       };
-
       if (pcrs) {
         params.crs = pcrs;
       }
 
       if (referrerUrl) {
         params.fr = referrerUrl;
+      }
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
+          params.gdpr = bidderRequest.gdprConsent.gdprApplies ? '1' : '0';
+          if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
+            params.gdprcs = bidderRequest.gdprConsent.consentString;
+          }
+        }
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        params.ccpa = bidderRequest.uspConsent;
       }
     }
 
@@ -133,10 +154,6 @@ function getUrlConfig(bidRequests) {
     });
   });
 
-  if (config.sv) {
-    config.sv = '//' + config.sv;
-  }
-
   return config;
 }
 function isTestRequest(bidRequests) {
@@ -152,7 +169,7 @@ function getTestConfig(bidRequests) {
   bidRequests.forEach(br => isv = isv || br.params.isv);
   return {
     t: true,
-    isv: '//' + (isv || DEFAULT_ISV)
+    isv: (isv || DEFAULT_ISV)
   };
 }
 
@@ -171,12 +188,16 @@ function getSpacesStruct(bids) {
   return e;
 }
 
-function getSpaces(bidRequests) {
+function cleanName(name) {
+  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function getSpaces(bidRequests, ml) {
   let spacesStruct = getSpacesStruct(bidRequests);
   let es = {str: '', vs: '', map: {}};
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
-    let name = getSize(bid, true) + '_' + i;
+    let name = ml ? cleanName(bid.adUnitCode) : getSize(bid, true) + '_' + i;
     es.map[name] = bid.bidId;
     return name + ':' + getSize(bid);
   }).join('+')).join('+');
@@ -186,7 +207,7 @@ function getSpaces(bidRequests) {
 function getVs(bid) {
   let s;
   let vs = '';
-  if (utils.hasLocalStorage()) {
+  if (storage.hasLocalStorage()) {
     s = getViewabilityData(bid);
     vs += s.render >= 4 ? s.ratio.toString(16) : 'F';
   } else {
@@ -196,14 +217,15 @@ function getVs(bid) {
 }
 
 function getViewabilityData(bid) {
-  let r = utils.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
-  let v = utils.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
+  let r = storage.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
+  let v = storage.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
   let ratio = r > 0 ? (v / r) : 0;
   return {
     render: r,
     ratio: window.parseInt(ratio * 10, 10)
   };
 }
+
 function getCharset() {
   try {
     return window.top.document.charset || window.top.document.characterSet;
@@ -231,8 +253,14 @@ function waitForElementsPresent(elements) {
       });
     }
   });
-  const config = {childList: true, subtree: true, characterData: true, attributes: true, attributeOldValue: true};
-  observer.observe(document.body, config);
+  document.addEventListener('DOMContentLoaded', function (event) {
+    var config = {
+      childList: true,
+      subtree: true,
+      characterData: true
+    };
+    observer.observe(document.body, config);
+  });
 }
 
 function registerViewability(div) {
@@ -383,9 +411,9 @@ function visibilityHandler(obj) {
 function registerAuction(storageID) {
   let value;
   try {
-    value = utils.getDataFromLocalStorage(storageID);
+    value = storage.getDataFromLocalStorage(storageID);
     value = value ? window.parseInt(value, 10) + 1 : 1;
-    utils.setDataInLocalStorage(storageID, value);
+    storage.setDataInLocalStorage(storageID, value);
   } catch (exc) {
     return false;
   }

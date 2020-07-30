@@ -5,11 +5,12 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils';
-import * as url from '../src/url';
-import { submodule } from '../src/hook';
+import * as utils from '../src/utils.js';
+import {submodule} from '../src/hook.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
+
+const MODULE_NAME = 'pubCommonId';
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {
@@ -17,7 +18,7 @@ export const pubCommonIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'pubCommonId',
+  name: MODULE_NAME,
   /**
    * Return a callback function that calls the pixelUrl with id as a query parameter
    * @param pixelUrl
@@ -30,9 +31,9 @@ export const pubCommonIdSubmodule = {
     }
 
     // Use pubcid as a cache buster
-    const urlInfo = url.parse(pixelUrl);
+    const urlInfo = utils.parseUrl(pixelUrl);
     urlInfo.search.id = encodeURIComponent('pubcid:' + id);
-    const targetUrl = url.format(urlInfo);
+    const targetUrl = utils.buildUrl(urlInfo);
 
     return function () {
       utils.triggerPixel(targetUrl);
@@ -62,7 +63,7 @@ export const pubCommonIdSubmodule = {
     } catch (e) {
     }
 
-    const newId = (create) ? utils.generateUUID() : undefined;
+    const newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
     return {
       id: newId,
       callback: this.makeCallback(pixelUrl, newId)

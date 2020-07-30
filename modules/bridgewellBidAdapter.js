@@ -1,10 +1,10 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, NATIVE} from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const BIDDER_CODE = 'bridgewell';
-const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
+const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
 const BIDDER_VERSION = '0.0.2';
 
 export const spec = {
@@ -17,23 +17,11 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     let valid = false;
-    let typeOfCpmWeight;
 
-    if (bid && bid.params) {
-      if (bid.params.ChannelID) {
-        // cpmWeight is optinal parameter and should above than zero
-        typeOfCpmWeight = typeof bid.params.cpmWeight;
-        if (typeOfCpmWeight === 'undefined') {
-          bid.params.cpmWeight = 1;
-          valid = true;
-        } else if (typeOfCpmWeight === 'number' && bid.params.cpmWeight > 0) {
-          valid = true;
-        } else {
-          valid = false;
-        }
-      }
+    if (bid && bid.params && bid.params.ChannelID) {
+      valid = true;
     }
 
     return valid;
@@ -45,11 +33,12 @@ export const spec = {
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const adUnits = [];
-    utils._each(validBidRequests, function(bid) {
+    utils._each(validBidRequests, function (bid) {
       adUnits.push({
         ChannelID: bid.params.ChannelID,
+        adUnitCode: bid.adUnitCode,
         mediaTypes: bid.mediaTypes || {
           banner: {
             sizes: bid.sizes
@@ -57,6 +46,11 @@ export const spec = {
         }
       });
     });
+
+    let topUrl = '';
+    if (bidderRequest && bidderRequest.refererInfo) {
+      topUrl = bidderRequest.refererInfo.referer;
+    }
 
     return {
       method: 'POST',
@@ -67,8 +61,8 @@ export const spec = {
           bridgewell: BIDDER_VERSION
         },
         inIframe: utils.inIframe(),
-        url: utils.getTopWindowUrl(),
-        referrer: utils.getTopWindowReferrer(),
+        url: topUrl,
+        referrer: getTopWindowReferrer(),
         adUnits: adUnits
       },
       validBidRequests: validBidRequests
@@ -82,40 +76,41 @@ export const spec = {
    * @param {*} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
 
     // map responses to requests
-    utils._each(bidRequest.validBidRequests, function(req) {
+    utils._each(bidRequest.validBidRequests, function (req) {
       const bidResponse = {};
 
       if (!serverResponse.body) {
         return;
       }
 
-      let matchedResponse = find(serverResponse.body, function(res) {
+      let matchedResponse = find(serverResponse.body, function (res) {
         let valid = false;
 
-        if (!!res && !res.consumed) { // response exists and not consumed
-          if (res.width && res.height) {
-            let mediaTypes = req.mediaTypes;
-            // for prebid 1.0 and later usage, mediaTypes.banner.sizes
-            let sizes = mediaTypes && mediaTypes.banner && mediaTypes.banner.sizes ? mediaTypes.banner.sizes : req.sizes;
-            if (sizes) {
-              let sizeValid;
-              let width = res.width;
-              let height = res.height;
-              // check response size validation
-              if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
-                sizeValid = width === sizes[0] && height === sizes[1];
-              } else { // for format Array[Array[Number]] check
-                sizeValid = find(sizes, function(size) {
-                  return (width === size[0] && height === size[1]);
-                });
-              }
-
-              if (sizeValid || (mediaTypes && mediaTypes.native)) { // dont care native sizes
-                valid = true;
+        if (res && !res.consumed) {
+          let mediaTypes = req.mediaTypes;
+          let adUnitCode = req.adUnitCode;
+          if (res.adUnitCode) {
+            return res.adUnitCode === adUnitCode;
+          } else if (res.width && res.height && mediaTypes) {
+            if (mediaTypes.native) { // dont care native sizes
+              valid = true;
+            } else if (mediaTypes.banner) {
+              if (mediaTypes.banner.sizes) {
+                let width = res.width;
+                let height = res.height;
+                let sizes = mediaTypes.banner.sizes;
+                // check response size validation
+                if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
+                  valid = width === sizes[0] && height === sizes[1];
+                } else { // for format Array[Array[Number]] check
+                  valid = !!find(sizes, function (size) {
+                    return (width === size[0] && height === size[1]);
+                  });
+                }
               }
             }
           }
@@ -139,7 +134,7 @@ export const spec = {
         }
 
         bidResponse.requestId = req.bidId;
-        bidResponse.cpm = matchedResponse.cpm * req.params.cpmWeight;
+        bidResponse.cpm = matchedResponse.cpm;
         bidResponse.width = matchedResponse.width;
         bidResponse.height = matchedResponse.height;
         bidResponse.ttl = matchedResponse.ttl;
@@ -265,5 +260,13 @@ export const spec = {
     return bidResponses;
   }
 };
+
+function getTopWindowReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return '';
+  }
+}
 
 registerBidder(spec);

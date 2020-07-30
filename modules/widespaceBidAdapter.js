@@ -1,18 +1,16 @@
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {
-  cookiesAreEnabled,
   parseQueryStringParameters,
-  parseSizesInput,
-  getTopWindowReferrer
-} from '../src/utils';
-import includes from 'core-js/library/fn/array/includes';
-import find from 'core-js/library/fn/array/find';
+  parseSizesInput
+} from '../src/utils.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js/library/fn/array/find.js';
+import { getStorageManager } from '../src/storageManager.js';
+export const storage = getStorageManager();
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
-const LOCAL_STORAGE_AVAILABLE = window.localStorage;
-const COOKIE_ENABLED = cookiesAreEnabled();
 const LS_KEYS = {
   PERF_DATA: 'wsPerfData',
   LC_UID: 'wsLcuid',
@@ -26,14 +24,14 @@ export const spec = {
 
   supportedMediaTypes: ['banner'],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (bid.params && bid.params.sid) {
       return true;
     }
     return false;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let serverRequests = [];
     const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
@@ -104,7 +102,7 @@ export const spec = {
 
       // GDPR Consent info
       if (data.gdprCmp) {
-        const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent;
+        const {gdprApplies, consentString, vendorData} = bidderRequest.gdprConsent;
         const hasGlobalScope = vendorData && vendorData.hasGlobalScope;
         data.gdprApplies = gdprApplies ? 1 : gdprApplies === undefined ? '' : 0;
         data.gdprConsentData = consentString;
@@ -131,7 +129,7 @@ export const spec = {
     return serverRequests;
   },
 
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     const responseTime = Date.now() - preReqTime;
     const successBids = serverResponse.body || [];
     let bidResponses = [];
@@ -160,7 +158,7 @@ export const spec = {
     return bidResponses
   },
 
-  getUserSyncs: function(syncOptions, serverResponses = []) {
+  getUserSyncs: function (syncOptions, serverResponses = []) {
     let userSyncs = [];
     userSyncs = serverResponses.reduce((allSyncPixels, response) => {
       if (response && response.body && response.body[0]) {
@@ -176,37 +174,37 @@ export const spec = {
 
 function storeData(data, name, stringify = true) {
   const value = stringify ? JSON.stringify(data) : data;
-  if (LOCAL_STORAGE_AVAILABLE) {
-    localStorage.setItem(name, value);
+  if (storage.hasLocalStorage()) {
+    storage.setDataInLocalStorage(name, value);
     return true;
-  } else if (COOKIE_ENABLED) {
+  } else if (storage.cookiesAreEnabled()) {
     const theDate = new Date();
     const expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString();
-    window.document.cookie = `${name}=${value};path=/;expires=${expDate}`;
+    storage.setCookie(name, value, expDate);
     return true;
   }
 }
 
 function getData(name, remove = true) {
   let data = [];
-  if (LOCAL_STORAGE_AVAILABLE) {
+  if (storage.hasLocalStorage()) {
     Object.keys(localStorage).filter((key) => {
       if (key.indexOf(name) > -1) {
-        data.push(localStorage.getItem(key));
+        data.push(storage.getDataFromLocalStorage(key));
         if (remove) {
-          localStorage.removeItem(key);
+          storage.removeDataFromLocalStorage(key);
         }
       }
     });
   }
 
-  if (COOKIE_ENABLED) {
+  if (storage.cookiesAreEnabled()) {
     document.cookie.split(';').forEach((item) => {
       let value = item.split('=');
       if (value[0].indexOf(name) > -1) {
         data.push(value[1]);
         if (remove) {
-          document.cookie = `${value[0]}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+          storage.setCookie(value[0], '', 'Thu, 01 Jan 1970 00:00:01 GMT');
         }
       }
     });
@@ -223,7 +221,8 @@ function visibleOnLoad(element) {
   if (element && element.getBoundingClientRect) {
     const topPos = element.getBoundingClientRect().top;
     return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
-  };
+  }
+  ;
   return '';
 }
 
@@ -245,6 +244,14 @@ function encodedParamValue(value) {
 function getEngineUrl() {
   const ENGINE_URL = 'https://engine.widespace.com/map/engine/dynadreq';
   return window.wisp && window.wisp.ENGINE_URL ? window.wisp.ENGINE_URL : ENGINE_URL;
+}
+
+function getTopWindowReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return '';
+  }
 }
 
 registerBidder(spec);
