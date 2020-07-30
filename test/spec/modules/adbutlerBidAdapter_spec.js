@@ -13,7 +13,10 @@ describe('AdButler adapter', function () {
           zoneID: '210093',
           keyword: 'red',
           minCPM: '1.00',
-          maxCPM: '5.00'
+          maxCPM: '5.00',
+          extra: {
+            foo: 'bar',
+          }
         },
         placementCode: '/19968336/header-bid-tag-1',
         mediaTypes: {
@@ -91,6 +94,13 @@ describe('AdButler adapter', function () {
           requestURL = requests[0].url;
 
         expect(requestURL).to.have.string(';kw=red;');
+      });
+
+      it('should set the extra parameter', () => {
+        let requests = spec.buildRequests(bidRequests);
+        let requestURL = requests[0].url;
+
+        expect(requestURL).to.have.string(';foo=bar;');
       });
 
       it('should increment the count for the same zone', function () {
