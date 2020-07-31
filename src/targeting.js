@@ -182,6 +182,48 @@ export function newTargeting(auctionManager) {
   };
 
   /**
+   * Returns filtered ad server targeting for custom and allowed keys.
+   * @param {targetingArray} targeting
+   * @param {string[]} allowedKeys
+   * @return {targetingArray} filtered targeting
+   */
+  function getAllowedTargetingKeyValues(targeting, allowedKeys) {
+    logInfo(`Allowed default targeting keys [ ${allowedKeys.join(', ')}]`);
+    const defaultKeyring = Object.assign({}, CONSTANTS.TARGETING_KEYS, CONSTANTS.NATIVE_KEYS);
+    const defaultKeys = Object.keys(defaultKeyring);
+    targeting.map(adUnit => {
+      const adUnitCode = Object.keys(adUnit)[0];
+      const keyring = adUnit[adUnitCode];
+      const keys = keyring.filter(kvPair => {
+        const key = Object.keys(kvPair)[0];
+        // check if key is in default keys, if not, it's custom, we won't remove it.
+        const isCustom = defaultKeys.filter(defaultKey => key.indexOf(defaultKeyring[defaultKey]) === 0).length === 0;
+        // check if key explicitly allowed, if not, we'll remove it.
+        const found = isCustom || allowedKeys.find(allowedKey => {
+          const allowedKeyName = defaultKeyring[allowedKey];
+          // we're looking to see if the key exactly starts with one of our default keys.
+          // (which hopefully means it's not custom)
+          const found = key.indexOf(allowedKeyName) === 0;
+          return found;
+        });
+        const keyDisposition = found ? 'Keeping' : 'Removing';
+        const keyType = isCustom ? 'custom' : 'default';
+        logInfo(`${keyDisposition} ${keyType} targeting key ${key} for ${adUnitCode} adserverTargeting object`);
+        return found;
+      });
+      adUnit[adUnitCode] = keys;
+    });
+    const filteredTargeting = targeting.filter(adUnit => {
+      const adUnitCode = Object.keys(adUnit)[0];
+      const keyring = adUnit[adUnitCode];
+      const targetingObjectDisposition = keyring.length > 0 ? 'Keeping populated' : 'Removing empty';
+      logInfo(`${targetingObjectDisposition} ${adUnitCode} adserverTargeting object`);
+      return keyring.length > 0;
+    });
+    return filteredTargeting
+  }
+
+  /**
    * Returns all ad server targeting for all ad units.
    * @param {string=} adUnitCode
    * @return {Object.<string,targeting>} targeting
@@ -205,6 +247,11 @@ export function newTargeting(auctionManager) {
         });
       });
     });
+
+    const allowedKeys = config.getConfig('targetingControls.allowTargetingKeys');
+    if (Array.isArray(allowedKeys) && allowedKeys.length > 0) {
+      targeting = getAllowedTargetingKeyValues(targeting, allowedKeys);
+    }
 
     targeting = flattenTargeting(targeting);
 
