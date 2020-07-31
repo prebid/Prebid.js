@@ -36,7 +36,7 @@ describe('Pubperf Analytics Adapter', function() {
     it('track event without errors', function() {
       sinon.spy(pubperfAnalytics, 'track');
 
-      window['pubperf_pbjs'] = 'pubperf_pbjs';
+      window['pubperf_pbjs'] = function() {};
 
       pubperfAnalytics.enableAnalytics({
         provider: 'pubperf'

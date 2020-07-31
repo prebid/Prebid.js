@@ -4,35 +4,12 @@
 
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils.js';
 
-const prebidVersion = '$prebid.version$';
-const events = Object.keys(CONSTANTS.EVENTS).map(key => CONSTANTS.EVENTS[key]);
-
-const handleEvent = function(payload) {
-  try {
-    // pass event payload into pubperf
-    window['pubperf_pbjs'](
-      payload
-    );
-  } catch (e) {
-    utils.logError(e);
-  }
-};
-
-var pubperfAdapter = Object.assign(adapter({
-  analyticsType: 'bundle'
-}), {
-  track({ eventType, eventArgs }) {
-    if (typeof eventArgs !== 'undefined' && events.indexOf(eventType) !== -1) {
-      eventArgs = eventArgs ? JSON.parse(JSON.stringify(eventArgs)) : {};
-      Object.assign(eventArgs, {
-        'prebidVersion': prebidVersion
-      });
-      handleEvent({ event: eventType, args: eventArgs });
-    }
-  }
+var pubperfAdapter = adapter({
+  global: 'pubperf_pbjs',
+  analyticsType: 'bundle',
+  handler: 'on'
 });
 
 pubperfAdapter.originEnableAnalytics = pubperfAdapter.enableAnalytics;
