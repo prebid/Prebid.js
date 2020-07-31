@@ -124,9 +124,8 @@ const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const DEFAULT_SYNC_DELAY = 500;
 const NO_AUCTION_DELAY = 0;
-const CONSENT_DATA_STORAGE_CONFIG = {
-  type: COOKIE,
-  name: '_pbjs_id_consent_data',
+const CONSENT_DATA_COOKIE_STORAGE_CONFIG = {
+  name: '_pbjs_userid_consent_data',
   expires: 30 // 30 days expiration, which should match how often consent is refreshed by CMPs
 };
 export const coreStorage = getCoreStorageManager('userid');
@@ -250,11 +249,16 @@ function makeStoredConsentDataObject(consentData) {
 }
 
 /**
- * puts the current consent data into local storage
+ * puts the current consent data into cookie storage
  * @param consentData
  */
 export function setStoredConsentData(consentData) {
-  setStoredValue(CONSENT_DATA_STORAGE_CONFIG, makeStoredConsentDataObject(consentData));
+  try {
+    const expiresStr = (new Date(Date.now() + (CONSENT_DATA_COOKIE_STORAGE_CONFIG.expires * (60 * 60 * 24 * 1000)))).toUTCString();
+    coreStorage.setCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name, JSON.stringify(makeStoredConsentDataObject(consentData)), expiresStr, 'Lax');
+  } catch (error) {
+    utils.logError(error);
+  }
 }
 
 /**
@@ -262,7 +266,13 @@ export function setStoredConsentData(consentData) {
  * @returns {string}
  */
 function getStoredConsentData() {
-  return getStoredValue(CONSENT_DATA_STORAGE_CONFIG);
+  let storedValue;
+  try {
+    storedValue = JSON.parse(coreStorage.getCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name));
+  } catch (e) {
+    utils.logError(e);
+  }
+  return storedValue;
 }
 
 /**
