@@ -29,7 +29,7 @@ const invalidSM = {
 
 const failureSM = {
   name: 'failureSM',
-  init: () => { return 'failure' }
+  init: () => { return false }
 };
 
 const nonConfSM = {
@@ -76,13 +76,17 @@ describe('Real time module', function () {
     config.setConfig(conf);
   });
 
-  it('should use only valid modules', function () {
+  it('should use only valid modules', function (done) {
     rtdModule.attachRealTimeDataProvider(validSM);
     rtdModule.attachRealTimeDataProvider(invalidSM);
     rtdModule.attachRealTimeDataProvider(failureSM);
     rtdModule.attachRealTimeDataProvider(nonConfSM);
     rtdModule.attachRealTimeDataProvider(validSMWait);
-    expect(rtdModule.initSubModules([validSM, invalidSM, failureSM, nonConfSM, validSMWait])).to.eql([validSMWait, validSM])
+    rtdModule.initSubModules(afterInitSubModules);
+    function afterInitSubModules() {
+      expect(rtdModule.subModules).to.eql([validSMWait, validSM]);
+      done();
+    }
     rtdModule.init(config);
   });
 

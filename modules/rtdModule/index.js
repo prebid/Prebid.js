@@ -36,7 +36,7 @@
  * @param {Object} config
  * @param {Object} gdpr settings
  * @param {Object} usp settings
- * @return {string|boolean} "failure" to remove sub module
+ * @return {boolean} false to remove sub module
  */
 
 /**
@@ -129,13 +129,14 @@ import * as utils from '../../src/utils.js';
 import events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
+import find from 'core-js-pure/features/array/find.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 /** @type {number} */
 const DEF_TIMEOUT = 1000;
 /** @type {RtdSubmodule[]} */
-let subModules = [];
+export let subModules = [];
 /** @type {ModuleConfig} */
 let _moduleConfig;
 /** @type {SubmoduleConfig[]} */
@@ -158,7 +159,7 @@ export function init(config) {
     confListener(); // unsubscribe config listener
     _moduleConfig = realTimeData;
     _dataProviders = realTimeData.dataProviders;
-    subModules = initSubModules(subModules);
+    getHook('makeBidRequests').before(initSubModules);
     setEventsListeners();
     if (typeof (_moduleConfig.auctionDelay) === 'undefined') {
       _moduleConfig.auctionDelay = 0;
@@ -176,16 +177,17 @@ export function init(config) {
  * call each sub module init function by config order
  * if no init function / init return failure / module not configured - remove it from submodules list
  */
-export function initSubModules(subModules) {
+export function initSubModules(next, adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let subModulesByOrder = [];
   _dataProviders.forEach(provider => {
-    const sm = subModules.find(s => s.name === provider.name);
-    const initResponse = sm && sm.init && sm.init(provider, gdprDataHandler.getConsentData(), uspDataHandler.getConsentData()) !== 'failure';
+    const sm = find(subModules, s => s.name === provider.name);
+    const initResponse = sm && sm.init && sm.init(provider, gdprDataHandler.getConsentData(), uspDataHandler.getConsentData());
     if (initResponse) {
       subModulesByOrder.push(Object.assign(sm, {config: provider}));
     }
   });
-  return subModulesByOrder;
+  subModules = subModulesByOrder;
+  next(adUnits, auctionStart, auctionId, cbTimeout, labels)
 }
 
 /**
@@ -212,9 +214,16 @@ function setEventsListeners() {
  * @param {function} callback callback function on data received
  */
 export function getProviderData(adUnits, callback) {
-  const mustWaitSubModulesLength = subModules.filter(sm => sm.config && sm.config.waitForIt).length;
-  let callbackExpected = mustWaitSubModulesLength || subModules.length;
-  const mustHaveModules = mustWaitSubModulesLength > 0;
+  /**
+   * invoke callback if one of the conditions met:
+   * timeout reached
+   * all submodules answered
+   * all sub modules configured "waitForIt:true" answered (as long as there is at least one configured)
+   */
+
+  const waitForSubModulesLength = subModules.filter(sm => sm.config && sm.config.waitForIt).length;
+  let callbacksExpected = waitForSubModulesLength || subModules.length;
+  const shouldWaitForAllSubModules = waitForSubModulesLength === 0;
   let dataReceived = {};
   let processDone = false;
   const dataWaitTimeout = setTimeout(done, _moduleConfig.auctionDelay || _moduleConfig.timeout || DEF_TIMEOUT);
@@ -227,10 +236,10 @@ export function getProviderData(adUnits, callback) {
       return
     }
     dataReceived[this.name] = data;
-    if (!mustHaveModules || (this.config && this.config.waitForIt)) {
-      callbackExpected--
+    if (shouldWaitForAllSubModules || (this.config && this.config.waitForIt)) {
+      callbacksExpected--
     }
-    if (callbackExpected <= 0) {
+    if (callbacksExpected <= 0) {
       clearTimeout(dataWaitTimeout);
       done();
     }
@@ -268,7 +277,7 @@ export function setTargetsAfterRequestBids(next, adUnits) {
  */
 function setDataOrderByProvider(modules, data) {
   let rd = [];
-  for (let i = modules.length; i--; i >= 0) {
+  for (let i = modules.length; i--; i > 0) {
     if (data[modules[i].name]) {
       rd.push(data[modules[i].name])
     }
