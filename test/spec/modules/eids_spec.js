@@ -121,22 +121,6 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('DigiTrust; getValue call', function() {
-    const userId = {
-      digitrustid: {
-        data: {
-          id: 'some-random-id-value'
-        }
-      }
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'digitru.st',
-      uids: [{id: 'some-random-id-value', atype: 1}]
-    });
-  });
-
   it('criteo', function() {
     const userId = {
       criteoId: 'some-random-id-value'
