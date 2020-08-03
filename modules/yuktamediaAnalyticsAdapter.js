@@ -55,7 +55,9 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter(
             isBid: false,
             won: false,
             timeout: false,
-            renderStatus: 'bid-requested'
+            renderStatus: 'bid-requested',
+            bidId: bidRequest.bidId,
+            auctionId: args.auctionId
           }
           if (typeof initOptions.enableUserIdCollection !== 'undefined' && initOptions.enableUserIdCollection && typeof bidRequest['userId'] !== 'undefined') {
             for (let [userIdProvider, userId] in Object.entries(bidRequest['userId'])) {
