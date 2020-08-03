@@ -37,7 +37,8 @@
     "REQUEST_BIDS": "requestBids",
     "ADD_AD_UNITS": "addAdUnits",
     "AD_RENDER_FAILED" : "adRenderFailed",
-    "BIDDER_BLOCKED": "bidderBlocked"
+    "BIDDER_BLOCKED": "bidderBlocked",
+    "AUCTION_ERROR": "auctionError"
   },
   "AD_RENDER_FAILED_REASON" : {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocuemnt",
