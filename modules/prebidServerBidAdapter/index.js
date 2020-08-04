@@ -71,6 +71,7 @@ config.setDefaults({
  * @property {string} endpoint endpoint to contact
  *  === optional params below ===
  * @property {number} [timeout] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
+ * @property {number} [defaultTtl] ttl for S2S bidders when pbs does not return a ttl on the response - defaults to 60`
  * @property {boolean} [cacheMarkup] whether to cache the adm result
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
@@ -237,27 +238,6 @@ function doClientSideSyncs(bidders) {
       clientAdapter.registerSyncs([]);
     }
   });
-}
-
-function _getDigiTrustQueryParams(bidRequest = {}) {
-  function getDigiTrustId(bidRequest) {
-    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'bids.0.userId.digitrustid.data');
-    if (bidRequestDigitrust) {
-      return bidRequestDigitrust;
-    }
-
-    const digiTrustUser = config.getConfig('digiTrustId');
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-  let digiTrustId = getDigiTrustId(bidRequest);
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-  return {
-    id: digiTrustId.id,
-    keyv: digiTrustId.keyv
-  };
 }
 
 function _appendSiteAppDevice(request, pageUrl) {
@@ -567,7 +547,16 @@ const OPEN_RTB_PROTOCOL = {
        */
       const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.context.data.adslot', pbAdSlot);
+        utils.deepSetValue(imp, 'ext.context.data.pbadslot', pbAdSlot);
+      }
+
+      /**
+       * GAM Ad Unit
+       * @type {(string|undefined)}
+       */
+      const gamAdUnit = utils.deepAccess(adUnit, 'fpd.context.adServer.adSlot');
+      if (typeof gamAdUnit === 'string' && gamAdUnit) {
+        utils.deepSetValue(imp, 'ext.context.data.adslot', gamAdUnit);
       }
 
       Object.assign(imp, mediaTypes);
@@ -625,11 +614,6 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     _appendSiteAppDevice(request, firstBidRequest.refererInfo.referer);
-
-    const digiTrust = _getDigiTrustQueryParams(firstBidRequest);
-    if (digiTrust) {
-      utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
-    }
 
     // pass schain object if it is present
     const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
@@ -830,9 +814,12 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.creativeId = bid.crid;
           if (bid.burl) { bidObject.burl = bid.burl; }
           bidObject.currency = (response.cur) ? response.cur : DEFAULT_S2S_CURRENCY;
+          bidObject.meta = bidObject.meta || {};
+          if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
 
           // TODO: Remove when prebid-server returns ttl and netRevenue
-          bidObject.ttl = (bid.ttl) ? bid.ttl : DEFAULT_S2S_TTL;
+          const configTtl = _s2sConfig.defaultTtl || DEFAULT_S2S_TTL;
+          bidObject.ttl = (bid.ttl) ? bid.ttl : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
           bids.push({ adUnit: bid.impid, bid: bidObject });

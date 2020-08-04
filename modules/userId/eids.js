@@ -5,6 +5,12 @@ const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // intentIqId
+  'intentIqId': {
+    source: 'intentiq.com',
+    atype: 1
+  },
+
   // pubCommonId
   'pubcid': {
     source: 'pubcid.org',
@@ -82,17 +88,10 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // DigiTrust
-  'digitrustid': {
-    getValue: function (data) {
-      var id = null;
-      if (data && data.data && data.data.id != null) {
-        id = data.data.id;
-      }
-      return id;
-    },
-    source: 'digitru.st',
-    atype: 1
+  // lotamePanoramaId
+  lotamePanoramaId: {
+    source: 'crwdcntrl.net',
+    atype: 1,
   },
 
   // criteo

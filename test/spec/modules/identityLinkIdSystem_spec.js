@@ -86,7 +86,6 @@ describe('IdentityLinkId tests', function () {
       responseHeader,
       'Unavailable'
     );
-    expect(logErrorStub.calledOnce).to.be.true;
     expect(callBackSpy.calledOnce).to.be.true;
   });
 });

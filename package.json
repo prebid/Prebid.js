@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "3.24.0-pre",
+  "version": "4.2.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -39,6 +39,7 @@
     "body-parser": "^1.19.0",
     "chai": "^4.2.0",
     "coveralls": "^3.1.0",
+    "deep-equal": "^2.0.3",
     "documentation": "^5.2.2",
     "es5-shim": "^4.5.14",
     "eslint-config-standard": "^10.2.1",
@@ -105,13 +106,12 @@
     "core-js-pure": "^3.6.5",
     "criteo-direct-rsa-validate": "^1.1.0",
     "crypto-js": "^3.3.0",
-    "deep-equal": "^1.0.1",
     "dlv": "1.1.3",
     "dset": "2.0.1",
     "express": "^4.15.4",
     "fun-hooks": "^0.9.9",
     "jsencrypt": "^3.0.0-rc.1",
     "just-clone": "^1.0.2",
-    "live-connect-js": "1.1.1"
+    "live-connect-js": "1.1.10"
   }
 }
