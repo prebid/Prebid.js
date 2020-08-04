@@ -199,6 +199,34 @@ function _getVidParams (attributes) {
 }
 
 /**
+ * Gets bidfloor
+ * @param {Object} mediaTypes
+ * @param {Number} bidfloor
+ * @param {Object} bid
+ * @returns {Number} floor
+ */
+function _getFloor (mediaTypes, bidfloor, bid) {
+  const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
+  let floor = bidfloor || 0;
+
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: curMediaType,
+      size: '*'
+    });
+
+    if (typeof floorInfo === 'object' &&
+    floorInfo.currency === 'USD' &&
+    !isNaN(parseFloat(floorInfo.floor))) {
+      floor = Math.max(floor, parseFloat(floorInfo.floor));
+    }
+  }
+
+  return floor;
+}
+
+/**
  * Make a server request from the list of BidRequests.
  *
  * @param {validBidRequests[]} - an array of bids
@@ -219,15 +247,24 @@ function buildRequests (validBidRequests, bidderRequest) {
       transactionId,
       userId = {}
     } = bidRequest;
-    const bannerSizes = mediaTypes.banner && mediaTypes.banner.sizes;
+    const bidFloor = _getFloor(mediaTypes, params.bidfloor, bidRequest);
+    let sizes = [1, 1];
     let data = {};
+
+    if (mediaTypes.banner) {
+      sizes = mediaTypes.banner.sizes;
+    } else if (mediaTypes.video) {
+      sizes = mediaTypes.video.playerSize;
+    }
 
     if (pageViewId) {
       data.pv = pageViewId;
     }
-    if (params.bidfloor) {
-      data.fp = params.bidfloor;
+
+    if (bidFloor) {
+      data.fp = bidFloor;
     }
+
     if (params.inScreenPubID) {
       data.pubId = params.inScreenPubID;
       data.pi = 2;
@@ -278,7 +315,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bannerSizes,
+      sizes,
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))

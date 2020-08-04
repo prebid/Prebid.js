@@ -23,7 +23,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'idl_env': 1,
   'lipb': 1,
   'netId': 1,
-  'parrableid': 1,
+  'parrableId': 1,
   'pubcid': 1,
   'tdid': 1,
 };
@@ -32,16 +32,31 @@ export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
 }
 
+export function extractCID(params) {
+  return params.cId || params.CID || params.cID || params.CId || params.cid || params.ciD || params.Cid || params.CiD;
+}
+
+export function extractPID(params) {
+  return params.pId || params.PID || params.pID || params.PId || params.pid || params.piD || params.Pid || params.PiD;
+}
+
+export function extractSubDomain(params) {
+  return params.subDomain || params.SubDomain || params.Subdomain || params.subdomain || params.SUBDOMAIN || params.subDOMAIN;
+}
+
 function isBidRequestValid(bid) {
   const params = bid.params || {};
-  return !!(params.cId && params.pId);
+  return !!(extractCID(params) && extractPID(params));
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const { params, bidId, userId, adUnitCode } = bid;
-  const { bidFloor, cId, pId, ext, subDomain } = params;
+  const { bidFloor, ext } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
+  const cId = extractCID(params);
+  const pId = extractPID(params);
+  const subDomain = extractSubDomain(params);
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
@@ -70,6 +85,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   if (bidderRequest.uspConsent) {
     data.usPrivacy = bidderRequest.uspConsent
   }
+
   const dto = {
     method: 'POST',
     url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
@@ -95,6 +111,9 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
           break;
         case 'lipb':
           payloadRef[key] = userId.lipbid;
+          break;
+        case 'parrableId':
+          payloadRef[key] = userId.eid;
           break;
         default:
           payloadRef[key] = userId;
