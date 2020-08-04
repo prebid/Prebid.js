@@ -276,6 +276,9 @@ const spec = {
               height: serverBid.h,
               bidderCode: BIDDER_CODE,
               mediaType: 'banner',
+              meta: {
+                advertiserDomains: serverBid.adomain,
+              },
               netRevenue: true,
               ad: renderCreative(site, response.id, serverBid, seat, request.bidderRequest),
             };

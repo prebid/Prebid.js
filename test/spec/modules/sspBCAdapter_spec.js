@@ -240,7 +240,7 @@ describe('SSPBC adapter', function () {
 
       expect(result.length).to.equal(bids.length);
       expect(resultSingle.length).to.equal(1);
-      expect(resultSingle[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'bidderCode', 'mediaType', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl');
+      expect(resultSingle[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'bidderCode', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl');
     });
 
     it('should handle a partial response', function () {
