@@ -1517,7 +1517,7 @@ describe('PubMatic adapter', function () {
         describe('Parrable Id', function() {
           it('send the Parrable id if it is present', function() {
             bidRequests[0].userId = {};
-            bidRequests[0].userId.parrableid = 'parrable-user-id';
+            bidRequests[0].userId.parrableId = { eid: 'parrable-user-id' };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
@@ -1530,7 +1530,7 @@ describe('PubMatic adapter', function () {
             }]);
           });
 
-          it('do not pass if not string', function() {
+          it('do not pass if not object with eid key', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.parrableid = 1;
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
@@ -2302,6 +2302,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
         expect(response[0].meta.buyerId).to.equal(976);
         expect(response[0].meta.clickUrl).to.equal('blackrock.com');
+        expect(response[0].meta.advertiserDomains[0]).to.equal('blackrock.com');
         expect(response[0].referrer).to.include(data.site.ref);
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
         expect(response[0].pm_seat).to.equal(bidResponses.body.seatbid[0].seat);
@@ -2325,6 +2326,7 @@ describe('PubMatic adapter', function () {
         expect(response[1].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-789');
         expect(response[1].meta.buyerId).to.equal(832);
         expect(response[1].meta.clickUrl).to.equal('hivehome.com');
+        expect(response[1].meta.advertiserDomains[0]).to.equal('hivehome.com');
         expect(response[1].referrer).to.include(data.site.ref);
         expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
         expect(response[1].pm_seat).to.equal(bidResponses.body.seatbid[1].seat || null);
