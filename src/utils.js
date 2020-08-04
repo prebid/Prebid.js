@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
-import deepequal from 'deep-equal';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
@@ -1169,13 +1168,28 @@ export function buildUrl(obj) {
 }
 
 /**
- * This function compares two objects for checking their equivalence.
+ * This function deeply compares two objects checking for their equivalence.
  * @param {Object} obj1
  * @param {Object} obj2
  * @returns {boolean}
  */
 export function deepEqual(obj1, obj2) {
-  return deepequal(obj1, obj2);
+  if (obj1 === obj2) return true;
+  else if ((typeof obj1 === 'object' && obj1 !== null) && (typeof obj2 === 'object' && obj2 !== null)) {
+    if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
+    for (let prop in obj1) {
+      if (obj2.hasOwnProperty(prop)) {
+        if (!deepEqual(obj1[prop], obj2[prop])) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    return false;
+  }
 }
 
 export function mergeDeep(target, ...sources) {

@@ -25,12 +25,13 @@ pbjs.setConfig({
         }, {
             name: "id5Id",
             params: {
-                partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
+                partner: 173, //Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
+                pd: "some-pd-string" // See https://console.id5.io/docs/public/prebid for details
             },
             storage: {
                 type: "cookie",
-                name: "id5id",
-                expires: 5, // Expiration of cookies in days
+                name: "id5id.1st",
+                expires: 90, // Expiration of cookies in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
@@ -38,11 +39,6 @@ pbjs.setConfig({
             params: {
                 // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
                 partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
-            },
-            storage: {
-                type: 'cookie',
-                name: '_parrable_eid',
-                expires: 365
             }
         }, {
             name: 'identityLink',
@@ -64,6 +60,16 @@ pbjs.setConfig({
                 name: '_li_pbid',
                 expires: 60
             }
+        }, {
+             name: 'sharedId',
+              params: {
+                    syncTime: 60 // in seconds, default is 24 hours
+               },
+             storage: {
+                 type: 'cookie',
+                 name: 'sharedid',
+                 expires: 28
+              }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -74,7 +80,7 @@ pbjs.setConfig({
 Example showing `localStorage` for user id data for some submodules
 ```
 pbjs.setConfig({
-    usersync: {
+    userSync: {
         userIds: [{
             name: "unifiedId",
             params: {
@@ -113,6 +119,16 @@ pbjs.setConfig({
                  name: '_li_pbid',
                  expires: 60
              }
+        }, {
+             name: 'sharedId',
+            params: {
+                  syncTime: 60 // in seconds, default is 24 hours
+               },
+             storage: {
+                type: 'cookie',
+                name: 'sharedid',
+                expires: 28
+             }
         }],
         syncDelay: 5000
     }
@@ -122,7 +138,7 @@ pbjs.setConfig({
 Example showing how to configure a `value` object to pass directly to bid adapters
 ```
 pbjs.setConfig({
-    usersync: {
+    userSync: {
         userIds: [{
             name: "pubCommonId",
             value: {

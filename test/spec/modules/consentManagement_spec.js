@@ -24,9 +24,8 @@ describe('consentManagement', function () {
         setConsentConfig({});
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(10000);
-        expect(allowAuction).to.be.true;
         expect(gdprScope).to.be.equal(false);
-        sinon.assert.callCount(utils.logInfo, 4);
+        sinon.assert.callCount(utils.logInfo, 3);
       });
 
       it('should exit consent manager if config is not an object', function () {
@@ -58,7 +57,10 @@ describe('consentManagement', function () {
         setConsentConfig(allConfig);
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(7500);
-        expect(allowAuction).to.be.false;
+        expect(allowAuction).to.deep.equal({
+          value: false,
+          definedInConfig: true
+        });
         expect(gdprScope).to.be.true;
       });
 
@@ -110,7 +112,10 @@ describe('consentManagement', function () {
 
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(3333);
-        expect(allowAuction).to.be.equal(false);
+        expect(allowAuction).to.deep.equal({
+          value: false,
+          definedInConfig: true
+        });
         expect(gdprScope).to.be.equal(false);
       });
     });
@@ -164,7 +169,10 @@ describe('consentManagement', function () {
         setConsentConfig(staticConfig);
         expect(userCMP).to.be.equal('static');
         expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
-        expect(allowAuction).to.be.false;
+        expect(allowAuction).to.deep.equal({
+          value: false,
+          definedInConfig: true
+        });
         expect(staticConsentData).to.be.equal(staticConfig.consentData);
       });
 
@@ -244,7 +252,10 @@ describe('consentManagement', function () {
         setConsentConfig(staticConfig);
         expect(userCMP).to.be.equal('static');
         expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
-        expect(allowAuction).to.be.false;
+        expect(allowAuction).to.deep.equal({
+          value: false,
+          definedInConfig: true
+        });
         expect(gdprScope).to.be.equal(false);
         expect(staticConsentData).to.be.equal(staticConfig.consentData);
       });
@@ -423,7 +434,6 @@ describe('consentManagement', function () {
           setConsentConfig(goodConfigWithAllowAuction);
           requestBidsHook(() => {
             let consent = gdprDataHandler.getConsentData();
-            sinon.assert.notCalled(utils.logWarn);
             sinon.assert.notCalled(utils.logError);
             expect(consent.consentString).to.equal(tarConsentString);
             expect(consent.gdprApplies).to.be.true;
@@ -626,7 +636,6 @@ describe('consentManagement', function () {
             didHookReturn = true;
           }, {});
           let consent = gdprDataHandler.getConsentData();
-          sinon.assert.notCalled(utils.logWarn);
           sinon.assert.notCalled(utils.logError);
           expect(didHookReturn).to.be.true;
           expect(consent.consentString).to.equal(testConsentData.tcString);
@@ -634,29 +643,9 @@ describe('consentManagement', function () {
           expect(consent.apiVersion).to.equal(2);
         });
 
-        it('throws an error when processCmpData check failed while config had allowAuction set to false', function () {
+        it('throws an error when processCmpData check fails + does not call requestBids callbcack even when allowAuction is true', function () {
           let testConsentData = {};
           let bidsBackHandlerReturn = false;
-
-          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
-            args[2](testConsentData);
-          });
-
-          setConsentConfig(goodConfigWithCancelAuction);
-
-          requestBidsHook(() => {
-            didHookReturn = true;
-          }, { bidsBackHandler: () => bidsBackHandlerReturn = true });
-          let consent = gdprDataHandler.getConsentData();
-
-          sinon.assert.calledOnce(utils.logError);
-          expect(didHookReturn).to.be.false;
-          expect(bidsBackHandlerReturn).to.be.true;
-          expect(consent).to.be.null;
-        });
-
-        it('throws a warning + stores consentData + calls callback when processCmpData check failed while config had allowAuction set to true', function () {
-          let testConsentData = {};
 
           cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
             args[2](testConsentData);
@@ -666,13 +655,41 @@ describe('consentManagement', function () {
 
           requestBidsHook(() => {
             didHookReturn = true;
-          }, {});
+          }, { bidsBackHandler: () => bidsBackHandlerReturn = true });
           let consent = gdprDataHandler.getConsentData();
 
-          sinon.assert.calledOnce(utils.logWarn);
+          sinon.assert.calledOnce(utils.logError);
+          sinon.assert.notCalled(utils.logWarn);
+          expect(didHookReturn).to.be.false;
+          expect(bidsBackHandlerReturn).to.be.true;
+          expect(consent).to.be.null;
+        });
+
+        it('It still considers it a valid cmp response if gdprApplies is not a boolean', function () {
+          // gdprApplies is undefined, should just still store consent response but use whatever defaultGdprScope was
+          let testConsentData = {
+            tcString: 'abc12345234',
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded'
+          };
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          setConsentConfig({
+            cmpApi: 'iab',
+            timeout: 7500,
+            defaultGdprScope: true
+          });
+
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+          let consent = gdprDataHandler.getConsentData();
+          sinon.assert.notCalled(utils.logError);
           expect(didHookReturn).to.be.true;
-          expect(consent.consentString).to.be.undefined;
-          expect(consent.gdprApplies).to.be.false;
+          expect(consent.consentString).to.equal(testConsentData.tcString);
+          expect(consent.gdprApplies).to.be.true;
           expect(consent.apiVersion).to.equal(2);
         });
       });

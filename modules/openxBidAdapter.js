@@ -336,8 +336,10 @@ function buildOXBannerRequest(bids, bidderRequest) {
   let customFloorsForAllBids = [];
   let hasCustomFloor = false;
   bids.forEach(function (bid) {
-    if (bid.params.customFloor) {
-      customFloorsForAllBids.push((Math.round(bid.params.customFloor * 100) / 100) * 1000);
+    let floor = getBidFloor(bid, BANNER);
+
+    if (floor) {
+      customFloorsForAllBids.push(floor);
       hasCustomFloor = true;
     } else {
       customFloorsForAllBids.push(0);
@@ -416,13 +418,17 @@ function generateVideoParameters(bid, bidderRequest) {
     queryParams.vmimes = oxVideoConfig.mimes;
   }
 
+  if (bid.params.test) {
+    queryParams.vtest = 1;
+  }
+
   return queryParams;
 }
 
 function createVideoBidResponses(response, {bid, startTime}) {
   let bidResponses = [];
 
-  if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
+  if (response !== undefined && response.vastUrl !== '' && response.pub_rev > 0) {
     let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
@@ -431,9 +437,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     // true is net, false is gross
     bidResponse.netRevenue = true;
     bidResponse.currency = response.currency;
-    bidResponse.cpm = Number(response.pub_rev) / 1000;
-    bidResponse.width = response.width;
-    bidResponse.height = response.height;
+    bidResponse.cpm = parseInt(response.pub_rev, 10) / 1000;
+    bidResponse.width = parseInt(response.width, 10);
+    bidResponse.height = parseInt(response.height, 10);
     bidResponse.creativeId = response.adid;
     bidResponse.vastUrl = response.vastUrl;
     bidResponse.mediaType = VIDEO;
@@ -447,6 +453,20 @@ function createVideoBidResponses(response, {bid, startTime}) {
   }
 
   return bidResponses;
+}
+
+function getBidFloor(bidRequest, mediaType) {
+  let floorInfo = {};
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: 'USD',
+      mediaType: mediaType,
+      size: '*'
+    });
+  }
+  let floor = floorInfo.floor || bidRequest.params.customFloor || 0;
+
+  return Math.round(floor * 1000); // normalize to microCpm
 }
 
 registerBidder(spec);

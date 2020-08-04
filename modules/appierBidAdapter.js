@@ -16,6 +16,7 @@ const BIDDER_API_ENDPOINT = '/v1/prebid/bid';
 
 export const spec = {
   code: 'appier',
+  aliases: ['appierBR', 'appierExt', 'appierGM'],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
