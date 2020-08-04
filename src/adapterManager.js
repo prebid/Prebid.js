@@ -7,8 +7,8 @@ import { newBidder } from './adapters/bidderFactory.js';
 import { ajaxBuilder } from './ajax.js';
 import { config, RANDOM } from './config.js';
 import { hook } from './hook.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
 
@@ -426,7 +426,7 @@ adapterManager.registerBidAdapter = function (bidAdaptor, bidderCode, {supported
   }
 };
 
-adapterManager.aliasBidAdapter = function (bidderCode, alias) {
+adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
   let existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === 'undefined') {
@@ -452,7 +452,8 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias) {
           newAdapter.setBidderCode(alias);
         } else {
           let spec = bidAdaptor.getSpec();
-          newAdapter = newBidder(Object.assign({}, spec, { code: alias }));
+          let gvlid = options && options.gvlid;
+          newAdapter = newBidder(Object.assign({}, spec, { code: alias, gvlid }));
           _aliasRegistry[alias] = bidderCode;
         }
         adapterManager.registerBidAdapter(newAdapter, alias, {

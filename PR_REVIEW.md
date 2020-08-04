@@ -15,12 +15,15 @@ For modules and core platform updates, the initial reviewer should request an ad
 - If the change is a new feature / change to core prebid.js - review the change with a Tech Lead on the project and make sure they agree with the nature of change.
 - If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
   - Below are some examples of bidder specific updates that should require docs update (in their dev-docs/bidders/bidder.md file):
-    - Add support for GDPR consentManagement module > add `gdpr_supported: true`
-    - Add support for US Privacy consentManagement module > add `usp_supported: true`
-    - Add support for userId module > add `userId: pubCommon, digitrust, newProviderHere`
-    - Add support for video and/or native mediaTypes > add `media_types: video, native`
-    - Add support for COPPA > add `coppa_supported: true`
-    - Add support for SChain > add `schain_supported: true`
+    - If they support the GDPR consentManagement module and TCF1, add `gdpr_supported: true`
+    - If they support the GDPR consentManagement module and TCF2, add `tcf2_supported: true`
+    - If they support the US Privacy consentManagementUsp module, add `usp_supported: true`
+    - If they support one or more userId modules, add `userId: (list of supported vendors)`
+    - If they support video and/or native mediaTypes add `media_types: video, native`. Note that display is added by default. If you don't support display, add "no-display" as the first entry, e.g. `media_types: no-display, native`
+    - If they support COPPA, add `coppa_supported: true`
+    - If they support SChain, add `schain_supported: true`
+    - If their bidder doesn't work well with safeframed creatives, add `safeframes_ok: false`. This will alert publishers to not use safeframed creatives when creating the ad server entries for their bidder.
+    - If they're a member of Prebid.org, add `prebid_member: true`
 - If all above is good, add a `LGTM` comment and request 1 additional core member to review.
 - Once there is 2 `LGTM` on the PR, merge to master
 - Ask the submitter to add a PR for documentation if applicable.
@@ -38,6 +41,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 - Requests to the bidder should support HTTPS
 - Responses from the bidder should be compressed (such as gzip, compress, deflate)
 - Bid responses may not use JSONP: All requests must be AJAX with JSON responses
+- Video openrtb params should be read from the ad unit when available; however bidder config can override the ad unit. 
 - All user-sync (aka pixel) activity must be registered via the provided functions
 - Adapters may not use the $$PREBID_GLOBAL$$ variable
 - All adapters must support the creation of multiple concurrent instances. This means, for example, that adapters cannot rely on mutable global variables.
@@ -46,11 +50,16 @@ For modules and core platform updates, the initial reviewer should request an ad
 
 ## Ticket Coordinator
 
-Each week, Prebid Org assigns one person to keep an eye on incoming issues and PRs. That person should:
+Each week, Prebid Org assigns one person to keep an eye on incoming issues and PRs. Every Monday morning a reminder is
+sent to the prebid-js slack channel with a link to the spreadsheet. If you're on rotation, please check that list each
+Monday to see if you're on-duty.
+
+When on-duty:
 - Review issues and PRs at least once per weekday for new items. Encourage a 48 "SLA" on PRs/issues assigned. Aim for touchpoint once every 48/hours. 
-- For PRs: assign PRs to individuals on the PR review list. Try to be equitable -- not all PRs are created equally. Use the "Assigned" field and add the "Needs Review" label.
+- For PRs: assign PRs to individuals on the **PR review list**. Try to be equitable -- not all PRs are created equally. Use the "Assigned" field and add the "Needs Review" label.
 - For Issues: try to address questions and troubleshooting requests on your own, assigning them to others as needed. Please add labels as appropriate (I.E. bug, question, backlog etc).
 - Issues that are questions or troubleshooting requests may be closed if the originator doesn't respond within a week to requests for confirmation or details.
 - Issues that are bug reports should be left open and assigned to someone in PR rotation to confirm or deny the bug status.
-- It's polite to check with others before assigning them large tasks.
-- If possible, check in on older items and see if they can be unstuck.
+- It's polite to check with others before assigning them extra-large tasks.
+- If possible, check in on older PRs and Issues and see if they can be unstuck.
+- Perform the weekly Prebid.js release per instructions at https://github.com/prebid/Prebid.js/blob/master/RELEASE_SCHEDULE.md . This generally takes place on Tues or Weds.
