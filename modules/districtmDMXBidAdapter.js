@@ -8,7 +8,7 @@ const DMXURI = 'https://dmx.districtm.io/b/v1';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedFormat: ['banner'],
+  supportedFormat: ['banner', 'video'],
   isBidRequestValid(bid) {
     return !!(bid.params.dmxid && bid.params.memberid);
   },
@@ -122,14 +122,32 @@ export const spec = {
       obj.id = dmx.bidId;
       obj.tagid = String(dmx.params.dmxid);
       obj.secure = 1;
-      obj.banner = {
-        topframe: 1,
-        w: cleanSizes(dmx.sizes, 'w'),
-        h: cleanSizes(dmx.sizes, 'h'),
-        format: cleanSizes(dmx.sizes).map(s => {
-          return {w: s[0], h: s[1]};
-        }).filter(obj => typeof obj.w === 'number' && typeof obj.h === 'number')
-      };
+      if (dmx.mediaTypes && dmx.mediaTypes.video) {
+        obj.video = {
+          topframe: 1,
+          skip: 0,
+          linearity: 1,
+          minduration: 10,
+          maxduration: 30,
+          api: getApi(dmx.mediaTypes.video),
+          mimes: ['video/mp4'],
+          protocols: getProtocols(dmx.mediaTypes.video),
+          w: dmx.mediaTypes.video.playerSize[0][0],
+          h: dmx.mediaTypes.video.playerSize[0][1],
+          format: dmx.mediaTypes.video.playerSize.map(s => {
+            return {w: s[0], h: s[1]};
+          }).filter(obj => typeof obj.w === 'number' && typeof obj.h === 'number')
+        };
+      } else {
+        obj.banner = {
+          topframe: 1,
+          w: cleanSizes(dmx.sizes, 'w'),
+          h: cleanSizes(dmx.sizes, 'h'),
+          format: cleanSizes(dmx.sizes).map(s => {
+            return {w: s[0], h: s[1]};
+          }).filter(obj => typeof obj.w === 'number' && typeof obj.h === 'number')
+        };
+      }
       return obj;
     });
 
@@ -308,6 +326,41 @@ export function bindUserId(eids, value, source, atype) {
         }
       ]
     })
+  }
+}
+
+export function getApi({protocols}) {
+  let defaultValue = [1, 2];
+  let listProtocols = [
+    {key: 'VPAID_1_0', value: 1},
+    {key: 'VPAID_2_0', value: 2}
+  ];
+  if (protocols) {
+    return listProtocols.filter(p => {
+      return protocols.includes(p.key);
+    }).map(p => p.value)
+  } else {
+    return defaultValue;
+  }
+}
+export function getProtocols({protocols}) {
+  let defaultValue = [2, 3, 5, 6, 7, 8];
+  let listProtocols = [
+    {key: 'VAST_1_0', value: 1},
+    {key: 'VAST_2_0', value: 2},
+    {key: 'VAST_3_0', value: 3},
+    {key: 'VAST_1_0_WRAPPER', value: 4},
+    {key: 'VAST_2_0_WRAPPER', value: 5},
+    {key: 'VAST_3_0_WRAPPER', value: 6},
+    {key: 'VAST_4_0', value: 7},
+    {key: 'VAST_4_0_WRAPPER', value: 8}
+  ];
+  if (protocols) {
+    return listProtocols.filter(p => {
+      return protocols.includes(p.key)
+    }).map(p => p.value);
+  } else {
+    return defaultValue;
   }
 }
 registerBidder(spec);
