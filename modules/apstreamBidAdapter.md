@@ -83,3 +83,15 @@ Module that connects to AP Stream source
       }
     ];
 ```
+
+# DSU
+
+To disable DSU use config option:
+
+```
+    pbjs.setConfig({
+        apstream: {
+            noDsu: true
+        }
+    });
+```

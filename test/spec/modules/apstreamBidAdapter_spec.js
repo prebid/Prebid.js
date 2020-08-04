@@ -216,6 +216,30 @@ describe('AP Stream adapter', function() {
     });
   });
 
+  describe('dsu config', function() {
+    let mockConfig;
+    beforeEach(function () {
+      mockConfig = {
+        apstream: {
+          noDsu: true
+        }
+      };
+      sinon.stub(config, 'getConfig').callsFake((key) => {
+        return utils.deepAccess(mockConfig, key);
+      });
+    });
+
+    afterEach(function () {
+      config.getConfig.restore();
+    });
+
+    it('should not send DSU if it is disabled in config', function() {
+      const request = spec.buildRequests(validBidRequests, { })[0];
+
+      assert.equal(request.data.dsu, '');
+    });
+  });
+
   describe('interpretResponse', function () {
     it('should return empty array if no body in response', function () {
       const serverResponse = {};

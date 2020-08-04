@@ -422,15 +422,16 @@ function buildRequests(bidRequests, bidderRequest) {
   const consentData = getRawConsentString(bidderRequest.gdprConsent);
   data.iab_consent = consentData;
 
-  let options = {
+  const options = {
     withCredentials: true
   };
 
   const isConsent = getIabConsentString(bidderRequest);
-  if (isConsent) {
-    data.dsu = dsuModule.readOrCreateDsu();
-  } else {
+  const noDsu = config.getConfig('apstream.noDsu');
+  if (!isConsent || noDsu) {
     data.dsu = '';
+  } else {
+    data.dsu = dsuModule.readOrCreateDsu();
   }
 
   if (!isConsent || isConsent === 'disabled') {
