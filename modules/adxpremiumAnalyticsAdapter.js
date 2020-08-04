@@ -237,7 +237,7 @@ function sendEvent(completeObject) {
     let mutation = `mutation {createEvent(input: {event: {eventData: "${responseEvents}"}}) {event {createTime } } }`;
     let dataToSend = JSON.stringify({ query: mutation });
     let ajaxEndpoint = defaultUrl;
-    if (adxpremiumAnalyticsAdapter.initOptions.sid) {
+    if (adxpremiumAnalyticsAdapter.initOptions && adxpremiumAnalyticsAdapter.initOptions.sid) {
       ajaxEndpoint = 'https://' + adxpremiumAnalyticsAdapter.initOptions.sid + '.adxpremium.services/graphql'
     }
     ajax(ajaxEndpoint, function () { utils.logInfo('AdxPremium Analytics - Sending complete events at ' + Date.now()) }, dataToSend, {

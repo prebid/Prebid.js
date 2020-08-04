@@ -195,7 +195,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   const refererInfo = getRefererInfo();
   let clientBidderCodes = bidderCodes;
 
-  (Array.isArray(_s2sConfigs) ? _s2sConfigs : [_s2sConfigs]).forEach(function (s2sConfig) {
+  (_s2sConfigs || []).forEach(function (s2sConfig) {
     let clientTestAdapters = [];
 
     if (s2sConfig && s2sConfig.enabled) {
@@ -311,7 +311,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     return partitions;
   }, [[], []]);
 
-  (Array.isArray(_s2sConfigs) ? _s2sConfigs : []).forEach(function (s2sConfig) {
+  (_s2sConfigs || []).forEach(function (s2sConfig) {
     if (s2sConfig && serverBidRequests.length) {
       // s2s should get the same client side timeout as other client side requests.
       const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
