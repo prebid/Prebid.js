@@ -23,7 +23,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'idl_env': 1,
   'lipb': 1,
   'netId': 1,
-  'parrableid': 1,
+  'parrableId': 1,
   'pubcid': 1,
   'tdid': 1,
 };
@@ -111,6 +111,9 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
           break;
         case 'lipb':
           payloadRef[key] = userId.lipbid;
+          break;
+        case 'parrableId':
+          payloadRef[key] = userId.eid;
           break;
         default:
           payloadRef[key] = userId;

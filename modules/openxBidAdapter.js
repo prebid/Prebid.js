@@ -16,7 +16,7 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   idl_env: 'lre', // LiveRamp IdentityLink
   lipb: 'lipbid', // LiveIntent ID
   netId: 'netid', // netID
-  parrableid: 'parrableid', // Parrable ID
+  parrableId: 'parrableid', // Parrable ID
   pubcid: 'pubcid', // PubCommon ID
   tdid: 'ttduuid', // The Trade Desk Unified ID
 };
@@ -275,6 +275,9 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
           break;
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
+          break;
+        case 'parrableId':
+          queryParams[key] = userIdObjectOrValue.eid;
           break;
         default:
           queryParams[key] = userIdObjectOrValue;
