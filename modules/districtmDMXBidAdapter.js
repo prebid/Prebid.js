@@ -1,14 +1,34 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'districtmDMX';
 
 const DMXURI = 'https://dmx.districtm.io/b/v1';
 
+const VIDEO_MAPPING = {
+  playback_method: {
+    'unknown': 0,
+    'auto_play_sound_on': 1,
+    'auto_play_sound_off': 2,
+    'click_to_play': 3,
+    'mouse_over': 4,
+    'auto_play_sound_unknown': 5
+  },
+  context: {
+    'unknown': 0,
+    'pre_roll': 1,
+    'mid_roll': 2,
+    'post_roll': 3,
+    'outstream': 4,
+    'in-banner': 5
+  }
+};
 export const spec = {
   code: BIDDER_CODE,
-  supportedFormat: ['banner', 'video'],
+  supportedFormat: [BANNER, VIDEO],
+  supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid(bid) {
     return !!(bid.params.dmxid && bid.params.memberid);
   },
@@ -83,12 +103,13 @@ export const spec = {
     }
 
     let eids = [];
-    if (bidRequest && bidRequest.userId) {
-      bindUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
-      bindUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
-      bindUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
-      bindUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid.org', 1);
-      bindUserId(eids, utils.deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 1);
+    console.log(44,bidRequest)
+    if (bidRequest[0] && bidRequest[0].userId) {
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.idl_env`), 'liveramp.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.digitrustid.data.id`), 'digitru.st', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.id5id`), 'id5-sync.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.pubcid`), 'pubcid.org', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.tdid`), 'adserver.org', 1);
       dmxRequest.user = dmxRequest.user || {};
       dmxRequest.user.ext = dmxRequest.user.ext || {};
       dmxRequest.user.ext.eids = eids;
