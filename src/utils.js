@@ -262,7 +262,7 @@ export function logError() {
   if (debugTurnedOn() && consoleErrorExists) {
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
-  events.emit(CONSTANTS.EVENTS.AUCTION_ERROR, arguments);
+  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
 }
 
 function decorateLog(args, prefix) {
