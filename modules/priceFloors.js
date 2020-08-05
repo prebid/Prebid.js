@@ -514,6 +514,7 @@ export function handleFetchResponse(fetchResponse) {
     _floorsConfig.data = fetchData;
     // set skipRate override if necessary
     _floorsConfig.skipRate = utils.isNumber(fetchData.skipRate) ? fetchData.skipRate : _floorsConfig.skipRate;
+    _floorsConfig.floorProvider = fetchData.floorProvider || _floorsConfig.floorProvider;
   }
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
@@ -569,7 +570,7 @@ export function handleSetFloorsConfig(config) {
   _floorsConfig = utils.pick(config, [
     'enabled', enabled => enabled !== false, // defaults to true
     'auctionDelay', auctionDelay => auctionDelay || 0,
-    'floorProvider',
+    'floorProvider', floorProvider => utils.deepAccess(config, 'data.floorProvider', floorProvider),
     'endpoint', endpoint => endpoint || {},
     'skipRate', () => !isNaN(utils.deepAccess(config, 'data.skipRate')) ? config.data.skipRate : config.skipRate || 0,
     'enforcement', enforcement => utils.pick(enforcement || {}, [
