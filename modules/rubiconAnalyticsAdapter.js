@@ -40,6 +40,8 @@ const cache = {
   timeouts: {},
 };
 
+const validFloorProviders = ['rubicon', 'rubi', 'magnite', 'mgni'];
+
 export function getHostNameFromReferer(referer) {
   try {
     rubiconAdapter.referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
@@ -195,15 +197,22 @@ function sendMessage(auctionId, bidWonId) {
 
     // pick our of top level floor data we want to send!
     if (auctionCache.floorData) {
-      auction.floors = utils.pick(auctionCache.floorData, [
-        'location',
-        'modelName', () => auctionCache.floorData.modelVersion,
-        'skipped',
-        'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
-        'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),
-        'skipRate', skipRate => !isNaN(skipRate) ? skipRate : 0,
-        'fetchStatus'
-      ]);
+      if (auctionCache.floorData.location === 'noData') {
+        auction.floors = utils.pick(auctionCache.floorData, [
+          'location',
+          'fetchStatus'
+        ]);
+      } else {
+        auction.floors = utils.pick(auctionCache.floorData, [
+          'location',
+          'modelName', () => auctionCache.floorData.modelVersion,
+          'skipped',
+          'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
+          'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),
+          'skipRate',
+          'fetchStatus'
+        ]);
+      }
     }
 
     if (serverConfig) {
@@ -269,14 +278,14 @@ function getBidPrice(bid) {
   }
 }
 
-export function parseBidResponse(bid, previousBidResponse) {
+export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
   // The current bidResponse for this matching requestId/bidRequestId
   let responsePrice = getBidPrice(bid)
   // we need to compare it with the previous one (if there was one)
   if (previousBidResponse && previousBidResponse.bidPriceUSD > responsePrice) {
     return previousBidResponse;
   }
-  return utils.pick(bid, [
+  let bidResponse = utils.pick(bid, [
     'bidPriceUSD', () => responsePrice,
     'dealId',
     'status',
@@ -286,9 +295,12 @@ export function parseBidResponse(bid, previousBidResponse) {
       'height'
     ]),
     'seatBidId',
-    'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
-    'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined
   ]);
+  if (auctionFloorData) {
+    bidResponse.floorValue = utils.deepAccess(bid, 'floorData.floorValue');
+    bidResponse.floorRule = utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined
+  }
+  return bidResponse;
 }
 
 let samplingFactor = 1;
@@ -368,8 +380,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
         cacheEntry.referrer = args.bidderRequests[0].refererInfo.referer;
-        if (utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData')) {
-          cacheEntry.floorData = {...utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData')};
+        const floorProvider = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData.floorProvider');
+        if (validFloorProviders.indexOf(floorProvider) !== -1) {
+          cacheEntry.floorData = {...args.bidderRequests[0].bids[0].floorData};
         }
         cache.auctions[args.auctionId] = cacheEntry;
         break;
@@ -455,7 +468,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           bid.adUnit.adSlot = args.floorData.matchedFields.gptSlot;
         }
         // if we have not set enforcements yet set it
-        if (!utils.deepAccess(auctionEntry, 'floorData.enforcements') && utils.deepAccess(args, 'floorData.enforcements')) {
+        if (auctionEntry.floorData && !auctionEntry.floorData.enforcements && utils.deepAccess(args, 'floorData.enforcements')) {
           auctionEntry.floorData.enforcements = {...args.floorData.enforcements};
         }
         if (!bid) {
@@ -479,7 +492,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             };
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
-        bid.bidResponse = parseBidResponse(args, bid.bidResponse);
+        bid.bidResponse = parseBidResponse(args, bid.bidResponse, auctionEntry.floorData);
         break;
       case BIDDER_DONE:
         args.bids.forEach(bid => {

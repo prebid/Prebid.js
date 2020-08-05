@@ -1590,7 +1590,7 @@ describe('PubMatic adapter', function () {
         describe('Parrable Id', function() {
           it('send the Parrable id if it is present', function() {
             bidRequests[0].userId = {};
-            bidRequests[0].userId.parrableid = 'parrable-user-id';
+            bidRequests[0].userId.parrableId = { eid: 'parrable-user-id' };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
@@ -1603,7 +1603,7 @@ describe('PubMatic adapter', function () {
             }]);
           });
 
-          it('do not pass if not string', function() {
+          it('do not pass if not object with eid key', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.parrableid = 1;
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
