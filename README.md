@@ -14,6 +14,8 @@ This README is for developers who want to contribute to Prebid.js.
 Additional documentation can be found at [the Prebid homepage](http://prebid.org).
 Working examples can be found in [the developer docs](http://prebid.org/dev-docs/getting-started.html).
 
+Prebid.js is open source software that is offered for free as a convenience. While it is designed to help companies address legal requirements associated with header bidding, we cannot and do not warrant that your use of Prebid.js will satisfy legal requirements. You are solely responsible for ensuring that your use of Prebid.js complies with all applicable laws.  We strongly encourage you to obtain legal advice when using Prebid.js to ensure your implementation complies with all laws where you operate.
+
 **Table of Contents**
 
 - [Usage](#Usage)
