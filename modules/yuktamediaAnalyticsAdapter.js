@@ -31,102 +31,6 @@ function getParameterByName(param) {
   return vars[param] ? vars[param] : '';
 }
 
-var yuktamediaAnalyticsAdapter = Object.assign(adapter(
-  {
-    emptyUrl,
-    analyticsType
-  }), {
-  track({ eventType, args }) {
-    switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_INIT:
-        utils.logInfo(localStoragePrefix + 'AUCTION_INIT:', JSON.stringify(args));
-        events.auctions[args.auctionId] = { bids: {} };
-        auctionTimestamp = args.timestamp;
-        break;
-      case CONSTANTS.EVENTS.BID_REQUESTED:
-        utils.logInfo(localStoragePrefix + 'BID_REQUESTED:', JSON.stringify(args));
-        events.auctions[args.auctionId].timeStamp = args.start;
-
-        args.bids.forEach(function (bidRequest) {
-          events.auctions[args.auctionId].bids[bidRequest.bidId] = {
-            bidder: bidRequest.bidder,
-            adUnit: bidRequest.adUnitCode,
-            sizes: utils.parseSizesInput(bidRequest.mediaTypes.banner.sizes).toString(),
-            isBid: false,
-            won: false,
-            timeout: false,
-            renderStatus: 'bid-requested',
-            bidId: bidRequest.bidId,
-            auctionId: args.auctionId
-          }
-          if (typeof initOptions.enableUserIdCollection !== 'undefined' && initOptions.enableUserIdCollection && typeof bidRequest['userId'] !== 'undefined') {
-            for (let [userIdProvider, userId] in Object.entries(bidRequest['userId'])) {
-              userIdProvider = typeof userIdProvider !== 'string' ? JSON.stringify(userIdProvider) : userIdProvider;
-              userId = typeof userId !== 'string' ? JSON.stringify(userId) : userId;
-              events.auctions[args.auctionId].bids[bidRequest.bidId]['userID-'.concat(userIdProvider)] = userId;
-            }
-          }
-        });
-        break;
-      case CONSTANTS.EVENTS.BID_RESPONSE:
-        utils.logInfo(localStoragePrefix + 'BID_RESPONSE:', JSON.stringify(args));
-
-        let bidResponse = events.auctions[args.auctionId].bids[args.requestId];
-        bidResponse.isBid = args.getStatusCode() === CONSTANTS.STATUS.GOOD;
-        bidResponse.cpm = args.cpm;
-        bidResponse.currency = args.currency;
-        bidResponse.netRevenue = args.netRevenue;
-        bidResponse.mediaType = args.mediaType;
-        if (bidResponse.mediaType === 'native') {
-          bidResponse.nativeTitle = typeof args['native']['title'] !== 'undefined' ? args['native']['title'] : '';
-          bidResponse.nativeSponsoredBy = typeof args['native']['sponsoredBy'] !== 'undefined' ? args['native']['sponsoredBy'] : '';
-        }
-        bidResponse.timeToRespond = args.timeToRespond;
-        bidResponse.requestTimestamp = args.requestTimestamp;
-        bidResponse.responseTimestamp = args.responseTimestamp;
-        bidResponse.bidForSize = args.size;
-        for (const [adserverTargetingKey, adserverTargetingValue] of Object.entries(args.adserverTargeting)) {
-          if (['body', 'icon', 'image', 'linkurl', 'host', 'path'].every((ele) => !adserverTargetingKey.includes(ele))) {
-            bidResponse['adserverTargeting-' + adserverTargetingKey] = adserverTargetingValue;
-          }
-        }
-        bidResponse.renderStatus = 'bid-response-received';
-        break;
-      case CONSTANTS.EVENTS.NO_BID:
-        utils.logInfo(localStoragePrefix + 'NO_BID:', JSON.stringify(args));
-        const noBid = events.auctions[args.auctionId].bids[args.bidId];
-        noBid.renderStatus = 'no-bid';
-        break;
-      case CONSTANTS.EVENTS.BID_WON:
-        utils.logInfo(localStoragePrefix + 'BID_WON:', JSON.stringify(args));
-        if (typeof initOptions.enableSession !== 'undefined' && initOptions.enableSession) {
-          updateSessionId();
-        }
-        const wonBid = events.auctions[args.auctionId].bids[args.requestId];
-        wonBid.won = true;
-        wonBid.renderStatus = 'bid-won';
-        send({'bids': [ wonBid ]}, 'won');
-        break;
-      case CONSTANTS.EVENTS.BID_TIMEOUT:
-        utils.logInfo(localStoragePrefix + 'BID_TIMEOUT:', JSON.stringify(args));
-        args.forEach(timeout => {
-          const timeoutBid = events.auctions[timeout.auctionId].bids[timeout.bidId];
-          timeoutBid.timeout = true;
-          timeoutBid.renderStatus = 'bid-timedout';
-        });
-        break;
-      case CONSTANTS.EVENTS.AUCTION_END:
-        utils.logInfo(localStoragePrefix + 'AUCTION_END:', JSON.stringify(args));
-        if (typeof initOptions.enableSession !== 'undefined' && initOptions.enableSession) {
-          updateSessionId();
-        }
-        const bids = Object.values(events.auctions[args.auctionId].bids);
-        send({'bids': bids}, 'auctionEnd');
-        break;
-    }
-  }
-});
-
 function isNavigatorSendBeaconSupported() {
   return ('navigator' in window) && ('sendBeacon' in window.navigator);
 }
@@ -142,65 +46,6 @@ function updateSessionId() {
 
 function updateSessionIdTimeout() {
   storage.setDataInLocalStorage(localStoragePrefix.concat('session_timeout'), Date.now());
-}
-
-function detectBrowserAndOS() {
-  const nAgt = navigator.userAgent;
-  let browserName = navigator.appName;
-  let fullVersion = '' + parseFloat(navigator.appVersion);
-  let nameOffset, verOffset, ix;
-  let OSName = 'Unknown OS';
-  if (navigator.appVersion.indexOf('Win') != -1) { OSName = 'Windows'; }
-  if (navigator.appVersion.indexOf('Mac') != -1) { OSName = 'MacOS'; }
-  if (navigator.appVersion.indexOf('X11') != -1) { OSName = 'UNIX'; }
-  if (navigator.appVersion.indexOf('Linux') != -1) { OSName = 'Linux'; }
-
-  if ((verOffset = nAgt.indexOf('Opera')) != -1) {
-    browserName = 'Opera';
-    fullVersion = nAgt.substring(verOffset + 6);
-    if ((verOffset = nAgt.indexOf('Version')) != -1) {
-      fullVersion = nAgt.substring(verOffset + 8);
-    }
-  } else if ((verOffset = nAgt.indexOf('MSIE')) != -1) {
-    browserName = 'Microsoft Internet Explorer';
-    fullVersion = nAgt.substring(verOffset + 5);
-  } else if ((verOffset = nAgt.indexOf('Chrome')) != -1) {
-    browserName = 'Chrome';
-    fullVersion = nAgt.substring(verOffset + 7);
-  } else if ((verOffset = nAgt.indexOf('Safari')) != -1) {
-    browserName = 'Safari';
-    fullVersion = nAgt.substring(verOffset + 7);
-    if ((verOffset = nAgt.indexOf('Version')) != -1) {
-      fullVersion = nAgt.substring(verOffset + 8);
-    }
-  } else if ((verOffset = nAgt.indexOf('Firefox')) != -1) {
-    browserName = 'Firefox';
-    fullVersion = nAgt.substring(verOffset + 8);
-  } else if ((nameOffset = nAgt.lastIndexOf(' ') + 1) <
-    (verOffset = nAgt.lastIndexOf('/'))) {
-    browserName = nAgt.substring(nameOffset, verOffset);
-    fullVersion = nAgt.substring(verOffset + 1);
-    if (browserName.toLowerCase() == browserName.toUpperCase()) {
-      browserName = navigator.appName;
-    }
-  }
-  // trim the fullVersion string at semicolon/space if present
-  if ((ix = fullVersion.indexOf(';')) != -1) {
-    fullVersion = fullVersion.substring(0, ix);
-  }
-  if ((ix = fullVersion.indexOf(' ')) != -1) {
-    fullVersion = fullVersion.substring(0, ix);
-  }
-
-  const majorVersion = parseInt('' + fullVersion, 10);
-  if (isNaN(majorVersion)) {
-    fullVersion = '' + parseFloat(navigator.appVersion);
-  }
-  return {
-    browserName,
-    fullVersion,
-    OSName
-  }
 }
 
 function isSessionIdTimeoutExpired() {
@@ -219,7 +64,7 @@ function isUtmTimeoutExpired() {
 
 function send(data, status) {
   const location = utils.getWindowLocation();
-  data.initOptions = Object.assign({ host: location.host, path: location.pathname, search: location.search }, initOptions, detectBrowserAndOS());
+  data.initOptions = Object.assign({ host: location.host, path: location.pathname, search: location.search }, initOptions);
 
   const yuktamediaAnalyticsRequestUrl = utils.buildUrl({
     protocol: 'https',
@@ -238,6 +83,137 @@ function send(data, status) {
     ajax(yuktamediaAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/plain' });
   }
 }
+
+var yuktamediaAnalyticsAdapter = Object.assign(adapter(
+  {
+    emptyUrl,
+    analyticsType
+  }), {
+  track({ eventType, args }) {
+    if (typeof args !== 'undefined') {
+      switch (eventType) {
+        case CONSTANTS.EVENTS.AUCTION_INIT:
+          utils.logInfo(localStoragePrefix + 'AUCTION_INIT:', JSON.stringify(args));
+          if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
+            events.auctions[args.auctionId] = { bids: {} };
+            auctionTimestamp = args.timestamp;
+          }
+          break;
+        case CONSTANTS.EVENTS.BID_REQUESTED:
+          utils.logInfo(localStoragePrefix + 'BID_REQUESTED:', JSON.stringify(args));
+          if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
+            if (typeof events.auctions[args.auctionId] === 'undefined') {
+              events.auctions[args.auctionId] = { bids: {} };
+            }
+            events.auctions[args.auctionId]['timeStamp'] = args.start;
+            args.bids.forEach(function (bidRequest) {
+              events.auctions[args.auctionId]['bids'][bidRequest.bidId] = {
+                bidder: bidRequest.bidder,
+                adUnit: bidRequest.adUnitCode,
+                sizes: utils.parseSizesInput(bidRequest.sizes).toString(),
+                isBid: false,
+                won: false,
+                timeout: false,
+                renderStatus: 'bid-requested',
+                bidId: bidRequest.bidId,
+                auctionId: args.auctionId
+              }
+              if (typeof initOptions.enableUserIdCollection !== 'undefined' && initOptions.enableUserIdCollection && typeof bidRequest['userId'] !== 'undefined') {
+                for (let [userIdProvider, userId] in Object.entries(bidRequest['userId'])) {
+                  userIdProvider = typeof userIdProvider !== 'string' ? JSON.stringify(userIdProvider) : userIdProvider;
+                  userId = typeof userId !== 'string' ? JSON.stringify(userId) : userId;
+                  events.auctions[args.auctionId]['bids'][bidRequest.bidId]['userID-'.concat(userIdProvider)] = userId;
+                }
+              }
+            });
+          }
+          break;
+        case CONSTANTS.EVENTS.BID_RESPONSE:
+          utils.logInfo(localStoragePrefix + 'BID_RESPONSE:', JSON.stringify(args));
+          if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
+            if (typeof events.auctions[args.auctionId] === 'undefined') {
+              events.auctions[args.auctionId] = { bids: {} };
+            } else if (Object.keys(events.auctions[args.auctionId]['bids']).length) {
+              let bidResponse = events.auctions[args.auctionId]['bids'][args.requestId];
+              bidResponse.isBid = args.getStatusCode() === CONSTANTS.STATUS.GOOD;
+              bidResponse.cpm = args.cpm;
+              bidResponse.currency = args.currency;
+              bidResponse.netRevenue = args.netRevenue;
+              bidResponse.mediaType = args.mediaType;
+              if (bidResponse.mediaType === 'native') {
+                bidResponse.nativeTitle = typeof args['native']['title'] !== 'undefined' ? args['native']['title'] : '';
+                bidResponse.nativeSponsoredBy = typeof args['native']['sponsoredBy'] !== 'undefined' ? args['native']['sponsoredBy'] : '';
+              }
+              bidResponse.timeToRespond = args.timeToRespond;
+              bidResponse.requestTimestamp = args.requestTimestamp;
+              bidResponse.responseTimestamp = args.responseTimestamp;
+              bidResponse.bidForSize = args.size;
+              for (const [adserverTargetingKey, adserverTargetingValue] of Object.entries(args.adserverTargeting)) {
+                if (['body', 'icon', 'image', 'linkurl', 'host', 'path'].every((ele) => !adserverTargetingKey.includes(ele))) {
+                  bidResponse['adserverTargeting-' + adserverTargetingKey] = adserverTargetingValue;
+                }
+              }
+              bidResponse.renderStatus = 'bid-response-received';
+            }
+          }
+          break;
+        case CONSTANTS.EVENTS.NO_BID:
+          utils.logInfo(localStoragePrefix + 'NO_BID:', JSON.stringify(args));
+          if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
+            if (typeof events.auctions[args.auctionId] === 'undefined') {
+              events.auctions[args.auctionId] = { bids: {} };
+            } else if (Object.keys(events.auctions[args.auctionId]['bids']).length) {
+              const noBid = events.auctions[args.auctionId]['bids'][args.bidId];
+              noBid.renderStatus = 'no-bid';
+            }
+          }
+          break;
+        case CONSTANTS.EVENTS.BID_WON:
+          utils.logInfo(localStoragePrefix + 'BID_WON:', JSON.stringify(args));
+          if (typeof initOptions.enableSession !== 'undefined' && initOptions.enableSession) {
+            updateSessionId();
+          }
+          if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
+            if (typeof events.auctions[args.auctionId] === 'undefined') {
+              events.auctions[args.auctionId] = { bids: {} };
+            } else if (Object.keys(events.auctions[args.auctionId]['bids']).length) {
+              const wonBid = events.auctions[args.auctionId]['bids'][args.requestId];
+              wonBid.won = true;
+              wonBid.renderStatus = 'bid-won';
+              send({ 'bids': [wonBid] }, 'won');
+            }
+          }
+          break;
+        case CONSTANTS.EVENTS.BID_TIMEOUT:
+          utils.logInfo(localStoragePrefix + 'BID_TIMEOUT:', JSON.stringify(args));
+          if (args.length) {
+            args.forEach(timeout => {
+              if (typeof timeout !== 'undefined' && typeof timeout.auctionId !== 'undefined' && timeout.auctionId.length) {
+                if (typeof events.auctions[args.auctionId] === 'undefined') {
+                  events.auctions[args.auctionId] = { bids: {} };
+                } else if (Object.keys(events.auctions[args.auctionId]['bids']).length) {
+                  const timeoutBid = events.auctions[timeout.auctionId].bids[timeout.bidId];
+                  timeoutBid.timeout = true;
+                  timeoutBid.renderStatus = 'bid-timedout';
+                }
+              }
+            });
+          }
+          break;
+        case CONSTANTS.EVENTS.AUCTION_END:
+          utils.logInfo(localStoragePrefix + 'AUCTION_END:', JSON.stringify(args));
+          if (typeof initOptions.enableSession !== 'undefined' && initOptions.enableSession) {
+            updateSessionId();
+          }
+          if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
+            const bids = Object.values(events.auctions[args.auctionId]['bids']);
+            send({ 'bids': bids }, 'auctionEnd');
+          }
+          break;
+      }
+    }
+  }
+});
 
 yuktamediaAnalyticsAdapter.buildUtmTagData = function (options) {
   let utmTagData = {};
