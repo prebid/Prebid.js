@@ -55,6 +55,21 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('merkleId', function() {
+    const userId = {
+      merkleId: {
+        eid: 'some-random-id-value'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'merkleinc.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+
   it('identityLink', function() {
     const userId = {
       idl_env: 'some-random-id-value'
