@@ -40,7 +40,7 @@ export const merkleIdSubmodule = {
       return;
     }
 
-    if (!configParams || typeof configParams.ptk !== 'string') {
+    if (typeof configParams.ptk !== 'string') {
       utils.logError('User ID - merkleId submodule requires a valid ptk string to be defined');
       return;
     }
