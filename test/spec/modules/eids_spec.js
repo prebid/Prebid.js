@@ -69,7 +69,6 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-
   it('identityLink', function() {
     const userId = {
       idl_env: 'some-random-id-value'
