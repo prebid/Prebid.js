@@ -83,7 +83,7 @@ FEATURE: Analytics Adapters API
       let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({args: {call: 'adRenderFailed'}, eventType: 'adRenderFailed'});
     });
-    
+
     it('SHOULD call global when an auction debug event occurs', function () {
       const eventType = AUCTION_DEBUG;
       const args = { call: 'auctionDebug' };
