@@ -1,3 +1,4 @@
+import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -16,7 +17,10 @@ export const spec = {
    * @returns {boolean} True if this is a valid bid, and false otherwise
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.pid && bid.params.supplyType);
+    if (bid.bidder !== BIDDER_CODE) {
+      return false;
+    }
+    return true;
   },
 
   /**
@@ -26,41 +30,31 @@ export const spec = {
    * @returns {ServerRequest} Info describing the request to the server
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    return validBidRequests.map(bid => {
-      var payload = {
-        bidfloor: bid.params.bidfloor,
-        ifa: bid.params.ifa,
-        pid: bid.params.pid,
-        supplyType: bid.params.supplyType,
-        currencyCode: config.getConfig('currency.adServerCurrency'),
-        auctionId: bid.auctionId,
-        bidId: bid.bidId,
-        bidRequestsCount: bid.bidRequestsCount,
-        bidder: bid.bidder,
-        bidderRequestId: bid.bidderRequestId,
-        tagId: bid.adUnitCode,
-        sizes: getBannerSizes(bid),
-        referer: (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null),
-        numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
-        transactionId: bid.transactionId,
-        timeout: config.getConfig('bidderTimeout'),
-        demand: isDemandTypeVideo(bid) ? 'video' : 'display',
-        videoData: getVideoInfo(bid)
-      };
+    var payload = {
+      bidderCode: bidderRequest.bidderCode,
+      auctionId: bidderRequest.auctionId,
+      bidderRequestId: bidderRequest.bidderRequestId,
+      bidRequests: validBidRequests,
+      auctionStart: bidderRequest.auctionStart,
+      timeout: bidderRequest.timeout,
+      referer: (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null),
+      start: bidderRequest.start,
+      gdprConsent: bidderRequest.gdprConsent,
+      uspConsent: bidderRequest.uspConsent,
+      currencyCode: config.getConfig('currency.adServerCurrency'),
+      domain: config.getConfig('publisherDomain'),
+      coppa: config.getConfig('coppa'),
+      firstPartyData: config.getConfig('fpd'),
+      prebidVersion: '$prebid.version$'
+    };
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-        payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
-      }
+    var payloadString = JSON.stringify(payload);
 
-      var payloadString = JSON.stringify(payload);
-
-      return {
-        method: 'POST',
+    return {
+      method: 'POST',
         url: 'https://prebid.owneriq.net:8443/bidder/pb/bid',
-        data: payloadString,
-      };
-    });
+      data: payloadString,
+    };
   },
 
   /**
@@ -71,31 +65,32 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
-    // try catch
     var response = serverResponse.body;
-    if (response) {
-      var bidResponse = {
-        requestId: JSON.parse(bidRequest.data).bidId,
-        cpm: response.cpm,
-        width: response.width,
-        height: response.height,
-        creativeId: response.creativeId,
-        mediaType: response.mediaType,
-        netRevenue: response.netRevenue,
-        currency: response.currency,
-        ttl: response.ttl,
-        dealId: response.dealId,
-      };
 
-      if (response.mediaType === 'video') {
-        bidResponse.vastXml = response.vastXML;
-      } else {
-        bidResponse.ad = response.adm
+    try {
+      if (response) {
+        var bidResponse = {
+          requestId: response.requestId,
+          cpm: response.cpm,
+          currency: response.currency,
+          width: response.width,
+          height: response.height,
+          ad: response.ad,
+          ttl: response.ttl,
+          creativeId: response.creativeId,
+          netRevenue: response.netRevenue,
+          vastUrl: response.vastUrl,
+          vastXml: response.vastXml,
+          dealId: response.dealId,
+          mediaType: response.mediaType
+        };
+
+        bidResponses.push(bidResponse);
       }
-
-      bidResponses.push(bidResponse);
+    } catch (error) {
+      utils.logError('Error while parsing inmar response', error);
     }
-    return bidResponses
+    return bidResponses;
   },
 
   /**
@@ -113,40 +108,8 @@ export const spec = {
         url: 'https://px.owneriq.net/eucm/p/pb'
       });
     }
-    return syncs
-  },
+    return syncs;
+  }
 };
 
 registerBidder(spec);
-
-function getBannerSizes(bid) {
-  let newSizes;
-  if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) {
-    newSizes = bid.mediaTypes.banner.sizes
-  }
-  if (newSizes != null) {
-    return newSizes.map(size => ({
-      w: size[0],
-      h: size[1]
-    }));
-  }
-}
-
-function isDemandTypeVideo(bid) {
-  if (bid.mediaTypes != undefined && bid.mediaTypes.video != undefined) {
-    return true;
-  }
-  return false;
-}
-
-function getVideoInfo(bid) {
-  let videoData;
-  if (isDemandTypeVideo(bid)) {
-    videoData = {
-      format: bid.mediaTypes.video.context,
-      playerSize: bid.mediaTypes.video.playerSize,
-      mimes: bid.mediaTypes.video.mimes
-    };
-  }
-  return videoData;
-}

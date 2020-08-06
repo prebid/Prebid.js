@@ -16,11 +16,6 @@ describe('Inmar adapter tests', function () {
       }
     },
     bidder: 'inmar',
-    params: {
-      bidfloor: 0.5,
-      pid: 'ADb1f40rmi',
-      supplyType: 'site'
-    },
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
     bidderRequestId: '1858b7382993ca',
@@ -39,38 +34,11 @@ describe('Inmar adapter tests', function () {
       }
     },
     bidder: 'inmar',
-    params: {
-      bidfloor: 0.5,
-      pid: 'ADb1f40rmi',
-      supplyType: 'site'
-    },
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
     bidderRequestId: '1858b7382993ca',
     transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
     user: {}
-  }];
-
-  var DEFAULT_PARAMS_APP = [{
-    adUnitCode: 'test-div',
-    bidId: '2c7c8e9c900244',
-    sizes: [
-      [300, 250],
-      [300, 600],
-      [728, 90],
-      [970, 250]
-    ],
-    bidder: 'inmar',
-    params: {
-      bidfloor: 0.5,
-      ifa: 'AAAAAAAAA-BBBB-CCCC-1111-222222220000',
-      pid: 'ADb1f40rmi',
-      supplyType: 'app',
-    },
-    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
-    bidRequestsCount: 1,
-    bidderRequestId: '1858b7382993ca',
-    transactionId: '29df2112-348b-4961-8863-1b33684d95e6'
   }];
 
   var DEFAULT_PARAMS_WO_OPTIONAL = [{
@@ -83,10 +51,6 @@ describe('Inmar adapter tests', function () {
       [970, 250]
     ],
     bidder: 'inmar',
-    params: {
-      pid: 'ADb1f40rmi',
-      supplyType: 'site',
-    },
     auctionId: '851adee7-d843-48f9-a7e9-9ff00573fcbf',
     bidRequestsCount: 1,
     bidderRequestId: '1858b7382993ca',
@@ -96,7 +60,7 @@ describe('Inmar adapter tests', function () {
   var BID_RESPONSE = {
     body: {
       cpm: 1.50,
-      adm: '<!-- script -->',
+      ad: '<!-- script -->',
       mediaType: 'js',
       width: 300,
       height: 250,
@@ -119,7 +83,7 @@ describe('Inmar adapter tests', function () {
       netRevenue: true,
       currency: 'USD',
       ttl: 300,
-      vastXML: '<VAST></VAST>',
+      vastXml: '<VAST></VAST>',
       dealId: 'dealId'
     }
   };
@@ -136,30 +100,21 @@ describe('Inmar adapter tests', function () {
       }
     });
 
-    expect(request[0]).to.have.property('method').and.to.equal('POST');
-    const requestContent = JSON.parse(request[0].data);
-    expect(requestContent).to.have.property('bidfloor').and.to.equal(0.5);
-    expect(requestContent).to.have.property('pid').and.to.equal('ADb1f40rmi');
-    expect(requestContent).to.have.property('supplyType').and.to.equal('site');
-    expect(requestContent).to.have.property('auctionId').and.to.equal('0cb3144c-d084-4686-b0d6-f5dbe917c563');
-    expect(requestContent).to.have.property('bidId').and.to.equal('2c7c8e9c900244');
-    expect(requestContent).to.have.property('bidRequestsCount').and.to.equal(1);
-    expect(requestContent).to.have.property('bidder').and.to.equal('inmar');
-    expect(requestContent).to.have.property('bidderRequestId').and.to.equal('1858b7382993ca');
-    expect(requestContent).to.have.property('tagId').and.to.equal('test-div');
+    expect(request).to.have.property('method').and.to.equal('POST');
+    const requestContent = JSON.parse(request.data);
+    expect(requestContent.bidRequests[0]).to.have.property('auctionId').and.to.equal('0cb3144c-d084-4686-b0d6-f5dbe917c563');
+    expect(requestContent.bidRequests[0]).to.have.property('bidId').and.to.equal('2c7c8e9c900244');
+    expect(requestContent.bidRequests[0]).to.have.property('bidRequestsCount').and.to.equal(1);
+    expect(requestContent.bidRequests[0]).to.have.property('bidder').and.to.equal('inmar');
+    expect(requestContent.bidRequests[0]).to.have.property('bidderRequestId').and.to.equal('1858b7382993ca');
+    expect(requestContent.bidRequests[0]).to.have.property('adUnitCode').and.to.equal('test-div');
     expect(requestContent).to.have.property('referer').and.to.equal('https%3A%2F%2Fdomain.com');
-    expect(requestContent).to.have.property('sizes');
-    expect(requestContent.sizes[0]).to.have.property('w').and.to.equal(300);
-    expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(250);
-    expect(requestContent.sizes[1]).to.have.property('w').and.to.equal(300);
-    expect(requestContent.sizes[1]).to.have.property('h').and.to.equal(600);
-    expect(requestContent.sizes[2]).to.have.property('w').and.to.equal(728);
-    expect(requestContent.sizes[2]).to.have.property('h').and.to.equal(90);
-    expect(requestContent.sizes[3]).to.have.property('w').and.to.equal(970);
-    expect(requestContent.sizes[3]).to.have.property('h').and.to.equal(250);
-    expect(requestContent).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
-    expect(requestContent).to.have.property('timeout').and.to.equal(3000);
-    expect(requestContent).to.have.property('numIframes').and.to.equal(0);
+    expect(requestContent.bidRequests[0].mediaTypes.banner).to.have.property('sizes');
+    expect(requestContent.bidRequests[0].mediaTypes.banner.sizes[0]).to.have.ordered.members([300, 250]);
+    expect(requestContent.bidRequests[0].mediaTypes.banner.sizes[1]).to.have.ordered.members([300, 600]);
+    expect(requestContent.bidRequests[0].mediaTypes.banner.sizes[2]).to.have.ordered.members([728, 90]);
+    expect(requestContent.bidRequests[0].mediaTypes.banner.sizes[3]).to.have.ordered.members([970, 250]);
+    expect(requestContent.bidRequests[0]).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
   })
 
   it('Verify interprete response', function () {
@@ -174,7 +129,7 @@ describe('Inmar adapter tests', function () {
       }
     });
 
-    const bids = spec.interpretResponse(BID_RESPONSE, request[0]);
+    const bids = spec.interpretResponse(BID_RESPONSE, request);
     expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
     expect(bid.cpm).to.equal(1.50);
@@ -201,7 +156,7 @@ describe('Inmar adapter tests', function () {
       }
     });
 
-    const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request[0]);
+    const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request);
     const bid = bids[0];
     expect(bid.vastXml).to.equal('<VAST></VAST>');
   });
@@ -222,60 +177,6 @@ describe('Inmar adapter tests', function () {
     expect(spec.isBidRequestValid({
       params: {}
     })).to.equal(false);
-    expect(spec.isBidRequestValid({
-      params: {
-        pid: 'ADb1f40rmi'
-      }
-    })).to.equal(false);
-    expect(spec.isBidRequestValid({
-      params: {
-        supplyType: 'site'
-      }
-    })).to.equal(false);
-    expect(spec.isBidRequestValid({
-      params: {
-        supplyType: 'app'
-      }
-    })).to.equal(false);
-    expect(spec.isBidRequestValid({
-      params: {
-        pid: 'ADb1f40rmi',
-        supplyType: 'site'
-      }
-    })).to.equal(true);
-    expect(spec.isBidRequestValid({
-      params: {
-        pid: ['1gCB5ZC4XL', '1a40xk8qSV'],
-        supplyType: 'site'
-      }
-    })).to.equal(true);
-    expect(spec.isBidRequestValid({
-      params: {
-        pid: 'ADb1f40rmi',
-        supplyType: 'site'
-      }
-    })).to.equal(true);
-    expect(spec.isBidRequestValid({
-      params: {
-        pid: 'ADb1f40rmi',
-        supplyType: 'app',
-        ifa: 'AAAAAAAAA-BBBB-CCCC-1111-222222220000',
-      }
-    })).to.equal(true);
-    expect(spec.isBidRequestValid({
-      params: {
-        pid: 'ADb1f40rmi',
-        supplyType: 'site',
-        bidfloor: 0.50,
-      }
-    })).to.equal(true);
-    expect(spec.isBidRequestValid({
-      params: {
-        pid: 'ADb1f40rmi',
-        supplyType: 'site',
-        bidfloor: 0.50,
-      }
-    })).to.equal(true);
   });
 
   it('Verifies user syncs image', function () {
