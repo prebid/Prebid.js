@@ -45,7 +45,7 @@ export const merkleIdSubmodule = {
     }
 
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
-      utils.logError('User ID - merkleId submodule doesn't currently handle consent strings');
+      utils.logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
     }
 
