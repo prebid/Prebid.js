@@ -1109,7 +1109,7 @@ describe('User ID', function() {
 
     it('test hook from merkleId cookies', function(done) {
       // simulate existing browser local storage values
-      coreStorage.setCookie('merkleId', JSON.stringify({'ppid':{'id':'testmerkleId'}}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('merkleId', JSON.stringify({'ppid': {'id': 'testmerkleId'}}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([merkleIdSubmodule]);
       init(config);
