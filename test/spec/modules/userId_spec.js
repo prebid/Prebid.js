@@ -1109,7 +1109,7 @@ describe('User ID', function() {
 
     it('test hook from merkleId cookies', function(done) {
       // simulate existing browser local storage values
-      coreStorage.setCookie('merkleId', JSON.stringify({'merkleId': 'abcdefghijk'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('merkleId', JSON.stringify({'merkleId': 'testmerkleId'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([merkleIdSubmodule]);
       init(config);
@@ -1121,7 +1121,7 @@ describe('User ID', function() {
             expect(bid).to.have.deep.nested.property('userId.merkleId');
             expect(bid.userId.merkleId).to.equal('abcdefghijk');
             expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'merkle.com',
+              source: 'merkleinc.com',
               uids: [{id: 'testmerkleId', atype: 1}]
             });
           });
