@@ -25,7 +25,7 @@ export const merkleIdSubmodule = {
    * @returns {{merkleId:string}}
    */
   decode(value) {
-    return (value && typeof value['merkleId'] === 'string') ? { 'merkleId': value['merkleId'] } : undefined;
+    return (value && value.ppid && value.ppid.id) ? { 'merkleId': value.ppid.id } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
