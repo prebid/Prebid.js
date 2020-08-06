@@ -56,7 +56,7 @@ userIdAsEids = [
     },
 
     {
-        source: 'merkle.com',
+        source: 'merkleinc.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
