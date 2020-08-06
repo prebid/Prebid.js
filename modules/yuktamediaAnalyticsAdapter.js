@@ -139,6 +139,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter(
               bidResponse.cpm = args.cpm;
               bidResponse.currency = args.currency;
               bidResponse.netRevenue = args.netRevenue;
+              bidResponse.dealId = typeof args.dealId !== 'undefined' ? args.dealId : '';
               bidResponse.mediaType = args.mediaType;
               if (bidResponse.mediaType === 'native') {
                 bidResponse.nativeTitle = typeof args['native']['title'] !== 'undefined' ? args['native']['title'] : '';
