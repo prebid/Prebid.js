@@ -5,7 +5,7 @@ import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'gridNM';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbnm';
-const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=iponweblabs';
+const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 

@@ -63,12 +63,12 @@ describe('Utils', function () {
   describe('parseQueryStringParameters', function () {
     it('should append query string to existing using the input obj', function () {
       var obj = {
-        a: '1',
-        b: '2'
+        a: 'http://example.com/?foo=bar&bar=foo',
+        b: 'abc["def"]'
       };
 
       var output = utils.parseQueryStringParameters(obj);
-      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2');
+      var expectedResult = 'a=' + encodeURIComponent('http://example.com/?foo=bar&bar=foo') + '&b=' + encodeURIComponent('abc["def"]');
       assert.equal(output, expectedResult);
     });
 
@@ -1113,6 +1113,69 @@ describe('Utils', function () {
           depth1_D: true,
         }
       });
+    });
+  });
+
+  describe('deepEqual', function() {
+    it('should return "true" if comparing the same object', function() {
+      const obj1 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      const obj2 = obj1;
+      expect(utils.deepEqual(obj1, obj2)).to.equal(true);
+    });
+    it('should return "true" if two deeply nested objects are equal', function() {
+      const obj1 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      const obj2 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      expect(utils.deepEqual(obj1, obj2)).to.equal(true);
+    });
+    it('should return "true" if comparting the same primitive values', function() {
+      const primitive1 = 'Prebid.js';
+      const primitive2 = 'Prebid.js';
+      expect(utils.deepEqual(primitive1, primitive2)).to.equal(true);
+    });
+    it('should return "false" if comparing two different primitive values', function() {
+      const primitive1 = 12;
+      const primitive2 = 123;
+      expect(utils.deepEqual(primitive1, primitive2)).to.equal(false);
+    });
+    it('should return "false" if comparing two different deeply nested objects', function() {
+      const obj1 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      const obj2 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [728, 90]] },
+          ],
+        },
+      }
+      expect(utils.deepEqual(obj1, obj2)).to.equal(false);
     });
   });
 });

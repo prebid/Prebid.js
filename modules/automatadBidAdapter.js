@@ -29,15 +29,18 @@ export const spec = {
     const siteId = validBidRequests[0].params.siteId
     const placementId = validBidRequests[0].params.placementId
 
-    const impressions = validBidRequests.map(bidRequest => ({
-      id: bidRequest.bidId,
-      banner: {
-        format: bidRequest.sizes.map(sizeArr => ({
-          w: sizeArr[0],
-          h: sizeArr[1],
-        }))
-      },
-    }))
+    const impressions = validBidRequests.map(bidRequest => {
+      return {
+        id: bidRequest.bidId,
+        adUnitCode: bidRequest.adUnitCode,
+        banner: {
+          format: bidRequest.sizes.map(sizeArr => ({
+            w: sizeArr[0],
+            h: sizeArr[1],
+          }))
+        },
+      }
+    })
 
     // params from bid request
     const openrtbRequest = {
@@ -99,15 +102,17 @@ export const spec = {
   },
   onBidWon: function(bid) {
     if (!bid.nurl) { return }
+    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm
+    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
-      bid.cpm
+      winCpm
     ).replace(
       /\$\{AUCTION_IMP_ID\}/,
       bid.requestId
     ).replace(
       /\$\{AUCTION_CURRENCY\}/,
-      bid.currency
+      winCurr
     ).replace(
       /\$\{AUCTION_ID\}/,
       bid.auctionId

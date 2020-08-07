@@ -14,9 +14,12 @@ const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 
+export const allowAuction = {
+  value: DEFAULT_ALLOW_AUCTION_WO_CONSENT,
+  definedInConfig: false
+}
 export let userCMP;
 export let consentTimeout;
-export let allowAuction;
 export let gdprScope;
 export let staticConsentData;
 
@@ -301,7 +304,8 @@ function processCmpData(consentObject, hookConfig) {
   }
 
   function checkV2Data() {
-    let gdprApplies = consentObject && consentObject.gdprApplies;
+    // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
+    let gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
     let tcString = consentObject && consentObject.tcString;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
@@ -320,6 +324,13 @@ function processCmpData(consentObject, hookConfig) {
 
   // determine which set of checks to run based on cmpVersion
   let checkFn = (cmpVersion === 1) ? checkV1Data : (cmpVersion === 2) ? checkV2Data : null;
+
+  // Raise deprecation warning if 'allowAuctionWithoutConsent' is used with TCF 2.
+  if (allowAuction.definedInConfig && cmpVersion === 2) {
+    utils.logWarn(`'allowAuctionWithoutConsent' ignored for TCF 2`);
+  } else if (!allowAuction.definedInConfig && cmpVersion === 1) {
+    utils.logInfo(`'allowAuctionWithoutConsent' using system default: (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
+  }
 
   if (utils.isFn(checkFn)) {
     if (checkFn(consentObject)) {
@@ -351,7 +362,7 @@ function cmpFailed(errMsg, hookConfig, extraArgs) {
   clearTimeout(hookConfig.timer);
 
   // still set the consentData to undefined when there is a problem as per config options
-  if (allowAuction) {
+  if (allowAuction.value && cmpVersion === 1) {
     storeConsentData(undefined);
   }
   exitModule(errMsg, hookConfig, extraArgs);
@@ -372,7 +383,7 @@ function storeConsentData(cmpConsentObject) {
     consentData = {
       consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
       vendorData: (cmpConsentObject) || undefined,
-      gdprApplies: (cmpConsentObject) ? cmpConsentObject.gdprApplies : gdprScope
+      gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
     };
   }
   consentData.apiVersion = cmpVersion;
@@ -405,8 +416,8 @@ function exitModule(errMsg, hookConfig, extraArgs) {
     let nextFn = hookConfig.nextFn;
 
     if (errMsg) {
-      if (allowAuction) {
-        utils.logWarn(errMsg + ' Resuming auction without consent data as per consentManagement config.', extraArgs);
+      if (allowAuction.value && cmpVersion === 1) {
+        utils.logWarn(errMsg + ` 'allowAuctionWithoutConsent' activated.`, extraArgs);
         nextFn.apply(context, args);
       } else {
         utils.logError(errMsg + ' Canceling auction as per consentManagement config.', extraArgs);
@@ -459,10 +470,8 @@ export function setConsentConfig(config) {
   }
 
   if (typeof config.allowAuctionWithoutConsent === 'boolean') {
-    allowAuction = config.allowAuctionWithoutConsent;
-  } else {
-    allowAuction = DEFAULT_ALLOW_AUCTION_WO_CONSENT;
-    utils.logInfo(`consentManagement config did not specify allowAuctionWithoutConsent.  Using system default setting (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
+    allowAuction.value = config.allowAuctionWithoutConsent;
+    allowAuction.definedInConfig = true;
   }
 
   // if true, then gdprApplies should be set to true
