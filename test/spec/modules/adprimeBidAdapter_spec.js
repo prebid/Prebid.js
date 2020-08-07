@@ -45,7 +45,7 @@ describe('AdprimebBidAdapter', function () {
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'identeties', 'language', 'secure', 'host', 'page', 'placements');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.language).to.be.a('string');
@@ -55,7 +55,7 @@ describe('AdprimebBidAdapter', function () {
       expect(data.gdpr).to.not.exist;
       expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer', 'schain', 'keywords');
+      expect(placement).to.have.keys('placementId', 'bidId', 'identeties', 'traffic', 'sizes', 'hPlayer', 'wPlayer', 'schain', 'keywords');
       expect(placement.placementId).to.equal(0);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal(BANNER);
