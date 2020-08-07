@@ -71,7 +71,6 @@ export const spec = {
           sizes = bid.mediaTypes[VIDEO].playerSize
         }
       }
-      
       if (bid.userId && bid.userId.idl_env) {
         identeties.identityLink = bid.userId.idl_env
       }
