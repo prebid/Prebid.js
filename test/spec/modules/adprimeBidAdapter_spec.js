@@ -106,7 +106,6 @@ describe('AdprimebBidAdapter', function () {
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
-  
   describe('buildRequests with user ids', function () {
     bid.userId = {}
     bid.userId.idl_env = 'idl_env123';
@@ -124,7 +123,6 @@ describe('AdprimebBidAdapter', function () {
       }
     });
   });
-  
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
       const banner = {
