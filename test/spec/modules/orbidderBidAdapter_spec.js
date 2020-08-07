@@ -153,40 +153,6 @@ describe('orbidderBidAdapter', () => {
     });
   });
 
-  describe('onCallbackHandler', () => {
-    let ajaxStub;
-    const bidObj = {
-      adId: 'testId',
-      test: 1,
-      pageUrl: 'www.someurl.de',
-      referrer: 'www.somereferrer.de',
-      requestId: '123req456'
-    };
-
-    spec.bidParams['123req456'] = {'accountId': '123acc456'};
-
-    let bidObjClone = deepClone(bidObj);
-    bidObjClone.v = $$PREBID_GLOBAL$$.version;
-    bidObjClone.pageUrl = detectReferer(window)().referer;
-    bidObjClone.params = [{'accountId': '123acc456'}];
-
-    beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'ajaxCall');
-    });
-
-    afterEach(() => {
-      ajaxStub.restore();
-    });
-
-    it('calls orbidder\'s callback endpoint', () => {
-      spec.onBidWon(bidObj);
-      expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
-      expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/win`);
-      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObjClone));
-    });
-  });
-
   describe('interpretResponse', () => {
     it('should get correct bid response', () => {
       const serverResponse = [

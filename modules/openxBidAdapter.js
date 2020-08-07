@@ -6,7 +6,9 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '3.0.2';
+const BIDDER_VERSION = '3.0.3';
+
+const DEFAULT_CURRENCY = 'USD';
 
 export const USER_ID_CODE_TO_QUERY_ARG = {
   britepoolid: 'britepoolid', // BritePool ID
@@ -16,7 +18,7 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   idl_env: 'lre', // LiveRamp IdentityLink
   lipb: 'lipbid', // LiveIntent ID
   netId: 'netid', // netID
-  parrableid: 'parrableid', // Parrable ID
+  parrableId: 'parrableid', // Parrable ID
   pubcid: 'pubcid', // PubCommon ID
   tdid: 'ttduuid', // The Trade Desk Unified ID
 };
@@ -276,6 +278,9 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
           break;
+        case 'parrableId':
+          queryParams[key] = userIdObjectOrValue.eid;
+          break;
         default:
           queryParams[key] = userIdObjectOrValue;
       }
@@ -336,8 +341,10 @@ function buildOXBannerRequest(bids, bidderRequest) {
   let customFloorsForAllBids = [];
   let hasCustomFloor = false;
   bids.forEach(function (bid) {
-    if (bid.params.customFloor) {
-      customFloorsForAllBids.push((Math.round(bid.params.customFloor * 100) / 100) * 1000);
+    let floor = getBidFloor(bid, BANNER);
+
+    if (floor) {
+      customFloorsForAllBids.push(floor);
       hasCustomFloor = true;
     } else {
       customFloorsForAllBids.push(0);
@@ -416,6 +423,10 @@ function generateVideoParameters(bid, bidderRequest) {
     queryParams.vmimes = oxVideoConfig.mimes;
   }
 
+  if (bid.params.test) {
+    queryParams.vtest = 1;
+  }
+
   return queryParams;
 }
 
@@ -447,6 +458,22 @@ function createVideoBidResponses(response, {bid, startTime}) {
   }
 
   return bidResponses;
+}
+
+function getBidFloor(bidRequest, mediaType) {
+  let floorInfo = {};
+  const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: currency,
+      mediaType: mediaType,
+      size: '*'
+    });
+  }
+  let floor = floorInfo.floor || bidRequest.params.customFloor || 0;
+
+  return Math.round(floor * 1000); // normalize to microCpm
 }
 
 registerBidder(spec);
