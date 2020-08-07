@@ -59,7 +59,6 @@ export const spec = {
       }
     }
     const len = validBidRequests.length;
-    
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
       let sizes
