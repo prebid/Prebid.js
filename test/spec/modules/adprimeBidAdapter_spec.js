@@ -106,6 +106,25 @@ describe('AdprimebBidAdapter', function () {
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
+  
+  describe('buildRequests with user ids', function () {
+    bid.userId = {}
+    bid.userId.idl_env = 'idl_env123';
+    let serverRequest = spec.buildRequests([bid], bidderRequest);
+    it('Return bids with user identeties', function () {
+      let data = serverRequest.data;
+      let placements = data['placements'];
+      expect(data).to.be.an('object');
+      for (let i = 0; i < placements.length; i++) {
+        let placement = placements[i];
+        expect(placement).to.have.property('identeties')
+        expect(placement.identeties).to.be.an('object')
+        expect(placement.identeties).to.have.property('identityLink')
+        expect(placement.identeties.identityLink).to.be.equal('idl_env123')
+      }
+    });
+  });
+  
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
       const banner = {
