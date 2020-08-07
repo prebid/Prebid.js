@@ -9,20 +9,12 @@ const DMXURI = 'https://dmx.districtm.io/b/v1';
 
 const VIDEO_MAPPING = {
   playback_method: {
-    'unknown': 0,
     'auto_play_sound_on': 1,
     'auto_play_sound_off': 2,
     'click_to_play': 3,
     'mouse_over': 4,
-    'auto_play_sound_unknown': 5
-  },
-  context: {
-    'unknown': 0,
-    'pre_roll': 1,
-    'mid_roll': 2,
-    'post_roll': 3,
-    'outstream': 4,
-    'in-banner': 5
+    'viewport_sound_on': 5,
+    'viewport_sound_off': 6
   }
 };
 export const spec = {
@@ -47,9 +39,14 @@ export const spec = {
               nBid.requestId = nBid.impid;
               nBid.width = nBid.w || width;
               nBid.height = nBid.h || height;
+              nBid.mediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video': null;
+              if(nBid.mediaType) {
+                nBid.vastXml = cleanVast(nBid.adm);
+              }
               if (nBid.dealid) {
                 nBid.dealId = nBid.dealid;
               }
+              nBid.uuid = nBid.bidId;
               nBid.ad = nBid.adm;
               nBid.netRevenue = true;
               nBid.creativeId = nBid.crid;
@@ -103,13 +100,20 @@ export const spec = {
     }
 
     let eids = [];
-    console.log(44,bidRequest)
     if (bidRequest[0] && bidRequest[0].userId) {
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.idl_env`), 'liveramp.com', 1);
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.digitrustid.data.id`), 'digitru.st', 1);
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.id5id`), 'id5-sync.com', 1);
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.pubcid`), 'pubcid.org', 1);
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.tdid`), 'adserver.org', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.criteoId`), 'criteo.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.britepoolid`), 'britepool.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.lipb.lipbid`), 'liveintent.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.intentiqid`), 'intentiq.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.lotamePanoramaId`), 'lotame.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.parrableId`), 'parrable.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.netId`), 'netid.de', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.sharedid`), 'sharedid.org', 1);
       dmxRequest.user = dmxRequest.user || {};
       dmxRequest.user.ext = dmxRequest.user.ext || {};
       dmxRequest.user.ext.eids = eids;
@@ -150,8 +154,9 @@ export const spec = {
           linearity: 1,
           minduration: 10,
           maxduration: 30,
+          playbackmethod: getPlaybackmethod(dmx.params.video.playback_method),
           api: getApi(dmx.mediaTypes.video),
-          mimes: ['video/mp4'],
+          mimes: dmx.mediaTypes.video.mimes || ['video/mp4'],
           protocols: getProtocols(dmx.mediaTypes.video),
           w: dmx.mediaTypes.video.playerSize[0][0],
           h: dmx.mediaTypes.video.playerSize[0][1],
@@ -351,7 +356,7 @@ export function bindUserId(eids, value, source, atype) {
 }
 
 export function getApi({protocols}) {
-  let defaultValue = [1, 2];
+  let defaultValue = [2];
   let listProtocols = [
     {key: 'VPAID_1_0', value: 1},
     {key: 'VPAID_2_0', value: 2}
@@ -364,6 +369,15 @@ export function getApi({protocols}) {
     return defaultValue;
   }
 }
+export function getPlaybackmethod(playback) {
+  if (Array.isArray(playback) && playback.length > 0) {
+    return playback.map(label => {
+      return VIDEO_MAPPING.playback_method[label]
+    })
+  }
+  return [2]
+}
+
 export function getProtocols({protocols}) {
   let defaultValue = [2, 3, 5, 6, 7, 8];
   let listProtocols = [
@@ -383,5 +397,16 @@ export function getProtocols({protocols}) {
   } else {
     return defaultValue;
   }
+}
+
+export function  cleanVast(str){
+  const toberemove = /<img\s[^>]*?src\s*=\s*['\"]([^'\"]*?)['\"][^>]*?>/
+  const [img, url] = str.match(toberemove)
+  str = str.replace(toberemove, '')
+  if(url) {
+    const insrt = `<Impression><![CDATA[${url}]]></Impression>`
+    str = str.replace("</Impression>", `</Impression>${insrt}`)
+  }
+  return str;
 }
 registerBidder(spec);
