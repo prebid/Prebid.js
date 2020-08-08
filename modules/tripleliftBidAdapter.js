@@ -14,7 +14,8 @@ export const tripleliftAdapterSpec = {
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     if (bid.mediaTypes.video) {
-      if (!bid.params.video) return false;
+      let video = _getORTBVideo(bid);
+      if (!video.w || !video.h) return false;
     }
     return typeof bid.params.inventoryCode !== 'undefined';
   },
@@ -110,17 +111,16 @@ function _getSyncType(syncOptions) {
 function _buildPostBody(bidRequests) {
   let data = {};
   let { schain } = bidRequests[0];
-  data.imp = bidRequests.map(function(bid, index) {
+  data.imp = bidRequests.map(function(bidRequest, index) {
     let imp = {
       id: index,
-      tagid: bid.params.inventoryCode,
-      floor: _getFloor(bid)
+      tagid: bidRequest.params.inventoryCode,
+      floor: _getFloor(bidRequest)
     };
-
-    if (bid.mediaTypes.video) {
-      imp.video = bid.params.video;
-    } else if (bid.mediaTypes.banner) {
-      imp.banner = { format: _sizes(bid.sizes) };
+    if (bidRequest.mediaTypes.video) {
+      imp.video = _getORTBVideo(bidRequest);
+    } else if (bidRequest.mediaTypes.banner) {
+      imp.banner = { format: _sizes(bidRequest.sizes) };
     };
     return imp;
   });
@@ -143,6 +143,17 @@ function _buildPostBody(bidRequests) {
     }
   }
   return data;
+}
+
+function _getORTBVideo(bidRequest) {
+  // give precedent to mediaTypes.video
+  let video = { ...bidRequest.params.video, ...bidRequest.mediaTypes.video };
+  if (!video.w) video.w = video.playerSize[0][0];
+  if (!video.h) video.h = video.playerSize[0][1];
+  if (video.context === 'instream') video.placement = 1;
+  // clean up oRTB object
+  delete video.playerSize;
+  return video;
 }
 
 function _getFloor (bid) {
