@@ -37,7 +37,7 @@ describe('triplelift adapter', function () {
     instreamBid = {
       bidder: 'triplelift',
       params: {
-        inventoryCode: '12345',
+        inventoryCode: 'insteam_test',
         floor: 1.0,
         video: {
           mimes: ['video/mp4'],
@@ -87,7 +87,9 @@ describe('triplelift adapter', function () {
     });
 
     it('should return false when required params are not passed - instream', function () {
-      delete instreamBid.params.video;
+      delete instreamBid.mediaTypes.playerSize;
+      delete instreamBid.params.video.w;
+      delete instreamBid.params.video.h;
       expect(tripleliftAdapterSpec.isBidRequestValid(instreamBid)).to.equal(false);
     });
   });
@@ -137,7 +139,7 @@ describe('triplelift adapter', function () {
         {
           bidder: 'triplelift',
           params: {
-            inventoryCode: '12345-instream',
+            inventoryCode: 'insteam_test',
             floor: 1.0,
             video: {
               mimes: ['video/mp4'],
@@ -217,7 +219,7 @@ describe('triplelift adapter', function () {
       expect(payload.imp[0].tagid).to.equal('12345');
       expect(payload.imp[0].floor).to.equal(1.0);
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-      expect(payload.imp[1].tagid).to.equal('12345-instream');
+      expect(payload.imp[1].tagid).to.equal('insteam_test');
       expect(payload.imp[1].floor).to.equal(1.0);
       expect(payload.imp[1].video).to.exist.and.to.be.a('object');
     });
