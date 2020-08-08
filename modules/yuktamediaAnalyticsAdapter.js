@@ -6,9 +6,6 @@ import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
-
-const emptyUrl = '';
-const analyticsType = 'endpoint';
 const yuktamediaAnalyticsVersion = 'v3.0.0';
 
 let initOptions;
@@ -84,11 +81,7 @@ function send(data, status) {
   }
 }
 
-var yuktamediaAnalyticsAdapter = Object.assign(adapter(
-  {
-    emptyUrl,
-    analyticsType
-  }), {
+var yuktamediaAnalyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}), {
   track({ eventType, args }) {
     if (typeof args !== 'undefined') {
       switch (eventType) {
@@ -244,6 +237,15 @@ yuktamediaAnalyticsAdapter.buildUtmTagData = function (options) {
 
 yuktamediaAnalyticsAdapter.originEnableAnalytics = yuktamediaAnalyticsAdapter.enableAnalytics;
 yuktamediaAnalyticsAdapter.enableAnalytics = function (config) {
+  if (config && config.options) {
+    if (typeof config.options.pubId === 'undefined' || typeof config.options.pubKey === 'undefined') {
+      utils.logError('Need pubId and pubKey to log auction results. Please contact a YuktaMedia representative if you do not know your pubId and pubKey.');
+      return;
+    }
+  } else {
+    utils.logError('Need to provide config options to enable analytics');
+    return;
+  }
   initOptions = Object.assign({}, config.options, this.buildUtmTagData(config.options));
   yuktamediaAnalyticsAdapter.originEnableAnalytics(config);
 };
