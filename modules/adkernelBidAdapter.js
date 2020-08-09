@@ -78,10 +78,11 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     let impDispatch = dispatchImps(bidRequests, bidderRequest.refererInfo);
-    const requests = [];
+    let requests = [];
+    let schain = bidRequests[0].schain;
     Object.keys(impDispatch).forEach(host => {
       Object.keys(impDispatch[host]).forEach(zoneId => {
-        const request = buildRtbRequest(impDispatch[host][zoneId], bidderRequest);
+        const request = buildRtbRequest(impDispatch[host][zoneId], bidderRequest, schain);
         requests.push({
           method: 'POST',
           url: `https://${host}/hb?zone=${zoneId}&v=${VERSION}`,
@@ -293,9 +294,10 @@ function getAllowedSyncMethod(bidderCode) {
  * Builds complete rtb request
  * @param imps {Object} Collection of rtb impressions
  * @param bidderRequest {BidderRequest}
+ * @param schain {Object=} Supply chain config
  * @return {Object} Complete rtb request
  */
-function buildRtbRequest(imps, bidderRequest) {
+function buildRtbRequest(imps, bidderRequest, schain) {
   let {bidderCode, gdprConsent, auctionId, refererInfo, timeout, uspConsent} = bidderRequest;
 
   let req = {
@@ -328,6 +330,9 @@ function buildRtbRequest(imps, bidderRequest) {
   let syncMethod = getAllowedSyncMethod(bidderCode);
   if (syncMethod) {
     utils.deepSetValue(req, 'ext.adk_usersync', syncMethod);
+  }
+  if (schain) {
+    utils.deepSetValue(req, 'source.ext.schain', schain);
   }
   return req;
 }
