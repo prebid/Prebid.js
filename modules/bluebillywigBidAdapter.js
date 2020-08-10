@@ -1,36 +1,15 @@
 import * as utils from '../src/utils.js';
+import find from 'core-js-pure/features/array/find.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-<<<<<<< HEAD
-<<<<<<< HEAD
 import { VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { createEidsArray } from './userId/eids.js';
-=======
-import adapterManager from '../src/adapterManager.js';
-import { VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-import { VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
-import { createEidsArray } from './userId/eids.js';
->>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
 
 const DEV_MODE = window.location.search.match(/bbpbs_debug=true/);
 
 // Blue Billywig Constants
-<<<<<<< HEAD
-<<<<<<< HEAD
 const BB_CONSTANTS = {
-=======
-export const BB_CONSTANTS = {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-const BB_CONSTANTS = {
->>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
   BIDDER_CODE: 'bluebillywig',
   AUCTION_URL: '$$URL_STARTpbs.bluebillywig.com/openrtb2/auction?pub=$$PUBLICATION',
   SYNC_URL: '$$URL_STARTpbs.bluebillywig.com/static/cookie-sync.html?pub=$$PUBLICATION',
@@ -39,7 +18,10 @@ const BB_CONSTANTS = {
   DEFAULT_TTL: 300,
   DEFAULT_WIDTH: 768,
   DEFAULT_HEIGHT: 432,
-  DEFAULT_NET_REVENUE: true
+  DEFAULT_NET_REVENUE: true,
+  VIDEO_PARAMS: ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'linearity', 'skip', 'skipmin',
+    'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad',
+    'api', 'companiontype', 'ext']
 };
 
 // Aliasing
@@ -47,85 +29,35 @@ const getConfig = config.getConfig;
 
 // Helper Functions
 export const BB_HELPERS = {
-<<<<<<< HEAD
-<<<<<<< HEAD
   addSiteAppDevice: function(request, pageUrl) {
-    if (!request) return;
-
     if (typeof getConfig('app') === 'object') request.app = getConfig('app');
     else {
       request.site = {};
       if (typeof getConfig('site') === 'object') request.site = getConfig('site');
       if (pageUrl) request.site.page = pageUrl;
     }
-=======
-  addSiteAppDevice: (request, pageUrl) => {
-=======
-  addSiteAppDevice: function(request, pageUrl) {
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
-    if (!request) return;
-
-    if (typeof getConfig('app') === 'object') request.app = getConfig('app');
-    else if (pageUrl) request.site = { page: pageUrl };
->>>>>>> 1ae44aa5... add Blue Billywig adapter
 
     if (typeof getConfig('device') === 'object') request.device = getConfig('device');
     if (!request.device) request.device = {};
     if (!request.device.w) request.device.w = window.innerWidth;
     if (!request.device.h) request.device.h = window.innerHeight;
   },
-<<<<<<< HEAD
-<<<<<<< HEAD
   addSchain: function(request, validBidRequests) {
-=======
-  addSchain: (request, validBidRequests) => {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-  addSchain: function(request, validBidRequests) {
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
-    if (!request) return;
-
     const schain = utils.deepAccess(validBidRequests, '0.schain');
     if (schain) request.source.ext = { schain: schain };
   },
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
   addCurrency: function(request) {
-=======
-  addAliases: (request, aliases) => {
-    if (!request) return;
-
-    if (!utils.isEmpty(aliases)) request.ext.prebid.aliases = aliases;
-  },
-=======
->>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
-  addCurrency: (request) => {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-  addCurrency: function(request) {
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
-    if (!request) return;
-
     const adServerCur = getConfig('currency.adServerCurrency');
     if (adServerCur && typeof adServerCur === 'string') request.cur = [adServerCur];
     else if (Array.isArray(adServerCur) && adServerCur.length) request.cur = [adServerCur[0]];
   },
-<<<<<<< HEAD
-<<<<<<< HEAD
   addUserIds: function(request, validBidRequests) {
-    if (!request) return;
-
     const bidUserId = utils.deepAccess(validBidRequests, '0.userId');
     const eids = createEidsArray(bidUserId);
 
     if (eids.length) {
       utils.deepSetValue(request, 'user.ext.eids', eids);
     }
-  },
-  addDigiTrust: function(request, bidRequests) {
-    const digiTrust = BB_HELPERS.getDigiTrustParams(bidRequests && bidRequests[0]);
-    if (digiTrust) utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
   },
   substituteUrl: function (url, publication, renderer) {
     return url.replace('$$URL_START', (DEV_MODE) ? 'https://dev.' : 'https://').replace('$$PUBLICATION', publication).replace('$$RENDERER', renderer);
@@ -139,117 +71,65 @@ export const BB_HELPERS = {
   getRendererUrl: function(publication, renderer) {
     return BB_HELPERS.substituteUrl(BB_CONSTANTS.RENDERER_URL, publication, renderer);
   },
-  getDigiTrustParams: function(bidRequest) {
-=======
-  addUserIds: (request, validBidRequests) => {
-=======
-  addUserIds: function(request, validBidRequests) {
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
-    if (!request) return;
+  transformVideoParams: function(videoParams, videoParamsExt) {
+    videoParams = utils.deepClone(videoParams);
 
-    const bidUserId = utils.deepAccess(validBidRequests, '0.userId');
-    const eids = createEidsArray(bidUserId);
+    let playerSize = videoParams.playerSize || [BB_CONSTANTS.DEFAULT_WIDTH, BB_CONSTANTS.DEFAULT_HEIGHT];
+    if (Array.isArray(playerSize[0])) playerSize = playerSize[0];
 
-    if (eids.length) {
-      utils.deepSetValue(request, 'user.ext.eids', eids);
-    }
-  },
-  addDigiTrust: function(request, bidRequests) {
-    const digiTrust = BB_HELPERS.getDigiTrustParams(bidRequests && bidRequests[0]);
-    if (digiTrust) utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
-  },
-  substituteUrl: function (url, publication, renderer) {
-    return url.replace('$$URL_START', (DEV_MODE) ? 'https://dev.' : 'https://').replace('$$PUBLICATION', publication).replace('$$RENDERER', renderer);
-  },
-  getAuctionUrl: function(publication) {
-    return BB_HELPERS.substituteUrl(BB_CONSTANTS.AUCTION_URL, publication);
-  },
-  getSyncUrl: function(publication) {
-    return BB_HELPERS.substituteUrl(BB_CONSTANTS.SYNC_URL, publication);
-  },
-  getRendererUrl: function(publication, renderer) {
-    return BB_HELPERS.substituteUrl(BB_CONSTANTS.RENDERER_URL, publication, renderer);
-  },
-<<<<<<< HEAD
-  getDigiTrustParams: (bidRequest) => {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-  getDigiTrustParams: function(bidRequest) {
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
-    const digiTrustId = BB_HELPERS.getDigiTrustId(bidRequest);
+    videoParams.w = playerSize[0];
+    videoParams.h = playerSize[1];
+    videoParams.placement = 3;
 
-    if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) return null;
-    return {
-      id: digiTrustId.id,
-      keyv: digiTrustId.keyv
-    }
-  },
-<<<<<<< HEAD
-<<<<<<< HEAD
-  getDigiTrustId: function(bidRequest) {
-=======
-  getDigiTrustId: (bidRequest) => {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-  getDigiTrustId: function(bidRequest) {
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
-    const bidRequestDigiTrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
-    if (bidRequestDigiTrust) return bidRequestDigiTrust;
+    if (videoParamsExt) videoParams = Object.assign(videoParams, videoParamsExt);
 
-    const digiTrustUser = getConfig('digiTrustId');
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+    const videoParamsProperties = Object.keys(videoParams);
+
+    videoParamsProperties.forEach(property => {
+      if (BB_CONSTANTS.VIDEO_PARAMS.indexOf(property) === -1) delete videoParams[property];
+    });
+
+    return videoParams;
   },
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
   transformRTBToPrebidProps: function(bid, serverResponse) {
-=======
-  transformBidParams: (adapter, bidRequest, name) => {
-    if (adapter && typeof adapter.getSpec().transformBidParams === 'function') {
-      if (bidRequest.params && bidRequest.params[name]) {
-        bidRequest.params[name] = adapter.getSpec().transformBidParams(bidRequest.params[name], true);
-      }
+    const bidObject = {
+      cpm: bid.price,
+      currency: serverResponse.cur,
+      netRevenue: BB_CONSTANTS.DEFAULT_NET_REVENUE,
+      bidId: bid.impid,
+      requestId: bid.impid,
+      creativeId: bid.crid,
+      mediaType: VIDEO,
+      width: bid.w || BB_CONSTANTS.DEFAULT_WIDTH,
+      height: bid.h || BB_CONSTANTS.DEFAULT_HEIGHT,
+      ttl: BB_CONSTANTS.DEFAULT_TTL
+    };
+
+    const extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
+    const extPrebidCache = utils.deepAccess(bid, 'ext.prebid.cache');
+
+    if (extPrebidCache && typeof extPrebidCache.vastXml === 'object' && extPrebidCache.vastXml.cacheId && extPrebidCache.vastXml.url) {
+      bidObject.videoCacheKey = extPrebidCache.vastXml.cacheId;
+      bidObject.vastUrl = extPrebidCache.vastXml.url;
+    } else if (extPrebidTargeting && extPrebidTargeting.hb_uuid && extPrebidTargeting.hb_cache_host && extPrebidTargeting.hb_cache_path) {
+      bidObject.videoCacheKey = extPrebidTargeting.hb_uuid;
+      bidObject.vastUrl = `https://${extPrebidTargeting.hb_cache_host}${extPrebidTargeting.hb_cache_path}?uuid=${extPrebidTargeting.hb_uuid}`;
     }
-  },
-=======
->>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
-  transformRTBToPrebidProps: (bid, serverResponse) => {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-  transformRTBToPrebidProps: function(bid, serverResponse) {
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
-    bid.cpm = bid.price; delete bid.price;
-    bid.bidId = bid.impid;
-    bid.requestId = bid.impid; delete bid.impid;
-    bid.width = bid.w || BB_CONSTANTS.DEFAULT_WIDTH;
-    bid.height = bid.h || BB_CONSTANTS.DEFAULT_HEIGHT;
     if (bid.adm) {
-      bid.ad = bid.adm;
-      bid.vastXml = bid.adm;
-      delete bid.adm;
+      bidObject.ad = bid.adm;
+      bidObject.vastXml = bid.adm;
     }
-    if (bid.nurl && !bid.adm) { // ad markup is on win notice url, and adm is ommited according to OpenRTB 2.5
-      bid.vastUrl = bid.nurl;
-      delete bid.nurl;
+    if (!bidObject.vastUrl && bid.nurl && !bid.adm) { // ad markup is on win notice url, and adm is ommited according to OpenRTB 2.5
+      bidObject.vastUrl = bid.nurl;
     }
-    bid.netRevenue = BB_CONSTANTS.DEFAULT_NET_REVENUE;
-    bid.creativeId = bid.crid; delete bid.crid;
-    bid.currency = serverResponse.cur;
-    bid.ttl = BB_CONSTANTS.DEFAULT_TTL;
+
+    return bidObject;
   },
 };
 
 // Renderer Functions
 const BB_RENDERER = {
-<<<<<<< HEAD
-<<<<<<< HEAD
   bootstrapPlayer: function(bid) {
-=======
-  bootstrapPlayer: (bid) => {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-  bootstrapPlayer: function(bid) {
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     const config = {
       code: bid.adUnitCode,
     };
@@ -262,41 +142,19 @@ const BB_RENDERER = {
       return;
     }
 
-    const rendererId = BB_RENDERER.getRendererId(bid.publicationName, bid.rendererCode);
-
-    const ele = document.getElementById(bid.adUnitCode); // NB convention
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
-
-    let renderer;
-
-    for (let rendererIndex = 0; rendererIndex < window.bluebillywig.renderers.length; rendererIndex++) {
-      if (window.bluebillywig.renderers[rendererIndex]._id === rendererId) {
-        renderer = window.bluebillywig.renderers[rendererIndex];
-        break;
-      }
+    if (!(window.bluebillywig && window.bluebillywig.renderers)) {
+      utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: renderer code failed to initialize...`);
+      return;
     }
-<<<<<<< HEAD
-=======
-    const renderer = window.bluebillywig.renderers.find((renderer) => renderer._id === rendererId);
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
+
+    const rendererId = BB_RENDERER.getRendererId(bid.publicationName, bid.rendererCode);
+    const ele = document.getElementById(bid.adUnitCode); // NB convention
+    const renderer = find(window.bluebillywig.renderers, r => r._id === rendererId);
 
     if (renderer) renderer.bootstrap(config, ele);
     else utils.logWarn(`${BB_CONSTANTS.BIDDER_CODE}: Couldn't find a renderer with ${rendererId}`);
   },
-<<<<<<< HEAD
-<<<<<<< HEAD
   newRenderer: function(rendererUrl, adUnitCode) {
-=======
-  newRenderer: (rendererUrl, adUnitCode) => {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-  newRenderer: function(rendererUrl, adUnitCode) {
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     const renderer = Renderer.install({
       url: rendererUrl,
       loaded: false,
@@ -311,24 +169,10 @@ const BB_RENDERER = {
 
     return renderer;
   },
-<<<<<<< HEAD
-<<<<<<< HEAD
   outstreamRender: function(bid) {
     bid.renderer.push(function() { BB_RENDERER.bootstrapPlayer(bid) });
   },
   getRendererId: function(pub, renderer) {
-=======
-  outstreamRender: (bid) => {
-    bid.renderer.push(() => BB_RENDERER.bootstrapPlayer(bid));
-  },
-  getRendererId: (pub, renderer) => {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-  outstreamRender: function(bid) {
-    bid.renderer.push(function() { BB_RENDERER.bootstrapPlayer(bid) });
-  },
-  getRendererId: function(pub, renderer) {
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
     return `${pub}-${renderer}`; // NB convention!
   }
 };
@@ -374,18 +218,8 @@ export const spec = {
         utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: connections is not of type array. Rejecting bid: `, bid);
         return false;
       } else {
-<<<<<<< HEAD
-<<<<<<< HEAD
-        for (let connectionIndex = 0; connectionIndex < bid.params.connections.length; connectionIndex++) {
-          const connection = bid.params.connections[connectionIndex];
-=======
-        for (const connection of bid.params.connections) {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-        for (let connectionIndex = 0; connectionIndex < bid.params.connections.length; connectionIndex++) {
-          const connection = bid.params.connections[connectionIndex];
->>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
-          if (!bid.params.hasOwnProperty(connection)) {
+        for (let i = 0; i < bid.params.connections.length; i++) {
+          if (!bid.params.hasOwnProperty(bid.params.connections[i])) {
             utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: connection specified in params.connections, but not configured in params. Rejecting bid: `, bid);
             return false;
           }
@@ -393,6 +227,11 @@ export const spec = {
       }
     } else {
       utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: no connections specified in bid. Rejecting bid: `, bid);
+      return false;
+    }
+
+    if (bid.params.hasOwnProperty('video') && (bid.params.video === null || typeof bid.params.video !== 'object')) {
+      utils.logError(`${BB_CONSTANTS.BIDDER_CODE}: params.video must be of type object. Rejecting bid: `, bid);
       return false;
     }
 
@@ -415,43 +254,22 @@ export const spec = {
   },
   buildRequests(validBidRequests, bidderRequest) {
     const imps = [];
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-    for (let validBidRequestIndex = 0; validBidRequestIndex < validBidRequests.length; validBidRequestIndex++) {
-      const validBidRequest = validBidRequests[validBidRequestIndex];
-      const _this = this;
+    validBidRequests.forEach(validBidRequest => {
+      if (!this.syncStore.publicationName) this.syncStore.publicationName = validBidRequest.params.publicationName;
+      if (!this.syncStore.accountId) this.syncStore.accountId = validBidRequest.params.accountId;
 
-      const ext = validBidRequest.params.connections.reduce(function(extBuilder, connection) {
+      const ext = validBidRequest.params.connections.reduce((extBuilder, connection) => {
         extBuilder[connection] = validBidRequest.params[connection];
 
-=======
-    const aliases = {};
-=======
->>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
-
-    for (let validBidRequestIndex = 0; validBidRequestIndex < validBidRequests.length; validBidRequestIndex++) {
-      const validBidRequest = validBidRequests[validBidRequestIndex];
-      const _this = this;
-
-      const ext = validBidRequest.params.connections.reduce(function(extBuilder, connection) {
-        extBuilder[connection] = validBidRequest.params[connection];
-
-<<<<<<< HEAD
-        // check for and store valid aliases to add to the request
-        let connectionAliases = BB_HELPERS.getAliasesFromRegistry(connection);
-        if (connectionAliases) aliases[connection] = connectionAliases;
-
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
->>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
-        if (_this.syncStore.bidders.indexOf(connection) === -1) _this.syncStore.bidders.push(connection);
+        if (this.syncStore.bidders.indexOf(connection) === -1) this.syncStore.bidders.push(connection);
 
         return extBuilder;
       }, {});
 
-      imps.push({ id: validBidRequest.bidId, ext, secure: window.location.protocol === 'https' ? 1 : 0, video: utils.deepAccess(validBidRequest, 'mediaTypes.video') });
-    }
+      const videoParams = BB_HELPERS.transformVideoParams(utils.deepAccess(validBidRequest, 'mediaTypes.video'), utils.deepAccess(validBidRequest, 'params.video'));
+      imps.push({ id: validBidRequest.bidId, ext, secure: window.location.protocol === 'https' ? 1 : 0, video: videoParams });
+    });
 
     const request = {
       id: bidderRequest.auctionId,
@@ -484,16 +302,8 @@ export const spec = {
     // Enrich the request with any external data we may have
     BB_HELPERS.addSiteAppDevice(request, bidderRequest.refererInfo && bidderRequest.refererInfo.referer);
     BB_HELPERS.addSchain(request, validBidRequests);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    BB_HELPERS.addAliases(request, aliases);
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
->>>>>>> 263aeaec... Blue Billywig Adapter - update according to review feedback
     BB_HELPERS.addCurrency(request);
     BB_HELPERS.addUserIds(request, validBidRequests);
-    BB_HELPERS.addDigiTrust(request, validBidRequests);
 
     return {
       method: 'POST',
@@ -511,117 +321,43 @@ export const spec = {
 
     const bids = [];
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    for (let seatbidIndex = 0; seatbidIndex < serverResponse.seatbid.length; seatbidIndex++) {
-      const seatbid = serverResponse.seatbid[seatbidIndex];
-      if (!seatbid.bid || !Array.isArray(seatbid.bid)) continue;
-      for (let bidIndex = 0; bidIndex < seatbid.bid.length; bidIndex++) {
-        const bid = seatbid.bid[bidIndex];
-        BB_HELPERS.transformRTBToPrebidProps(bid, serverResponse);
+    serverResponse.seatbid.forEach(seatbid => {
+      if (!seatbid.bid || !Array.isArray(seatbid.bid)) return;
+      seatbid.bid.forEach(bid => {
+        bid = BB_HELPERS.transformRTBToPrebidProps(bid, serverResponse);
 
-        let bidParams;
-        for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
-          if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === bid.bidId) {
-            bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
-          }
-        }
-
-        if (bidParams) {
-          bid.publicationName = bidParams.publicationName;
-          bid.rendererCode = bidParams.rendererCode;
-          bid.accountId = bidParams.accountId;
-        }
-=======
-    for (const seatbid of serverResponse.seatbid) {
-=======
-    for (let seatbidIndex = 0; seatbidIndex < serverResponse.seatbid.length; seatbidIndex++) {
-      const seatbid = serverResponse.seatbid[seatbidIndex];
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
-      if (!seatbid.bid || !Array.isArray(seatbid.bid)) continue;
-      for (let bidIndex = 0; bidIndex < seatbid.bid.length; bidIndex++) {
-        const bid = seatbid.bid[bidIndex];
-        BB_HELPERS.transformRTBToPrebidProps(bid, serverResponse);
-
-        let bidParams;
-        for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
-          if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === bid.bidId) {
-            bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
-          }
-        }
-
-<<<<<<< HEAD
+        const bidParams = find(request.bidderRequest.bids, bidderRequestBid => bidderRequestBid.bidId === bid.bidId).params;
         bid.publicationName = bidParams.publicationName;
         bid.rendererCode = bidParams.rendererCode;
         bid.accountId = bidParams.accountId;
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
-        if (bidParams) {
-          bid.publicationName = bidParams.publicationName;
-          bid.rendererCode = bidParams.rendererCode;
-          bid.accountId = bidParams.accountId;
-        }
->>>>>>> b52c832d... Blue Billywig Adapter - update to try and pass CircleCI
 
         const rendererUrl = BB_HELPERS.getRendererUrl(bid.publicationName, bid.rendererCode);
-
         bid.renderer = BB_RENDERER.newRenderer(rendererUrl, bid.adUnitCode);
 
         bids.push(bid);
-      }
-    }
+      });
+    });
 
     return bids;
   },
   getUserSyncs(syncOptions, serverResponses, gdpr) {
-    if (!serverResponses || !serverResponses.length) return [];
     if (!syncOptions.iframeEnabled) return [];
 
     const queryString = [];
-    let accountId;
-    let publication;
-
-    const serverResponse = serverResponses[0];
-    if (!serverResponse.body || !serverResponse.body.seatbid) return [];
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 4772e9bc... Remove the last for .. of in bluebillywigBidAdapter.js, hopefully...
-    for (let seatbidIndex = 0; seatbidIndex < serverResponse.body.seatbid.length; seatbidIndex++) {
-      const seatbid = serverResponse.body.seatbid[seatbidIndex];
-      for (let bidIndex = 0; bidIndex < seatbid.bid.length; bidIndex++) {
-        const bid = seatbid.bid[bidIndex];
-<<<<<<< HEAD
-=======
-    for (const seatbid of serverResponse.body.seatbid) {
-      for (const bid of seatbid.bid) {
->>>>>>> 1ae44aa5... add Blue Billywig adapter
-=======
->>>>>>> 4772e9bc... Remove the last for .. of in bluebillywigBidAdapter.js, hopefully...
-        accountId = bid.accountId || null;
-        publication = bid.publicationName || null;
-
-        if (publication && accountId) break;
-      }
-      if (publication && accountId) break;
-    }
-
-    if (!publication || !accountId) return [];
 
     if (gdpr.gdprApplies) queryString.push(`gdpr=${gdpr.gdprApplies ? 1 : 0}`);
     if (gdpr.gdprApplies && gdpr.consentString) queryString.push(`gdpr_consent=${gdpr.consentString}`);
 
     if (this.syncStore.uspConsent) queryString.push(`usp_consent=${this.syncStore.uspConsent}`);
 
-    queryString.push(`accountId=${accountId}`);
+    queryString.push(`accountId=${this.syncStore.accountId}`);
     queryString.push(`bidders=${btoa(JSON.stringify(this.syncStore.bidders))}`);
     queryString.push(`cb=${Date.now()}-${Math.random().toString().replace('.', '')}`);
 
     if (DEV_MODE) queryString.push('bbpbs_debug=true');
 
     // NB syncUrl by default starts with ?pub=$$PUBLICATION
-    const syncUrl = `${BB_HELPERS.getSyncUrl(publication)}&${queryString.join('&')}`;
+    const syncUrl = `${BB_HELPERS.getSyncUrl(this.syncStore.publicationName)}&${queryString.join('&')}`;
 
     return [{
       type: 'iframe',
