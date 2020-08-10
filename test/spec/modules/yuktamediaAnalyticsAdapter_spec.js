@@ -2,7 +2,6 @@ import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter.js';
 import { expect } from 'chai';
 let events = require('src/events');
 let constants = require('src/constants.json');
-let utils = require('src/utils');
 
 let prebidAuction = {
   'auctionInit': {
@@ -384,15 +383,12 @@ describe('yuktamedia analytics adapter', function () {
   });
 
   describe('enableAnalytics', function () {
-    let sandbox;
     beforeEach(() => {
       sinon.spy(yuktamediaAnalyticsAdapter, 'track');
-      sandbox = sinon.sandbox.create();
     });
     afterEach(() => {
       yuktamediaAnalyticsAdapter.disableAnalytics();
       yuktamediaAnalyticsAdapter.track.restore();
-      sandbox.restore();
     });
 
     it('should catch all events', function () {
