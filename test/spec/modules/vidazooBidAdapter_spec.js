@@ -1,7 +1,22 @@
 import { expect } from 'chai';
-import { spec as adapter, SUPPORTED_ID_SYSTEMS, createDomain, extractPID, extractCID, extractSubDomain } from 'modules/vidazooBidAdapter.js';
+import {
+  spec as adapter,
+  SUPPORTED_ID_SYSTEMS,
+  createDomain,
+  hashCode,
+  extractPID,
+  extractCID,
+  extractSubDomain,
+  getStorageItem,
+  setStorageItem,
+  tryParseJSON,
+  getUniqueDealId,
+  getNextDealId,
+  getVidazooSessionId,
+} from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { version } from 'package.json';
+import { useFakeTimers } from 'sinon';
 
 const SUB_DOMAIN = 'openrtb';
 
@@ -62,10 +77,6 @@ const REQUEST = {
     height: 250,
     bidId: '2d52001cabd527'
   }
-};
-
-const SYNC_OPTIONS = {
-  'pixelEnabled': true
 };
 
 describe('VidazooBidAdapter', function () {
@@ -129,6 +140,7 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should build request for each size', function () {
+      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.referer);
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
@@ -146,6 +158,8 @@ describe('VidazooBidAdapter', function () {
           adUnitCode: 'div-gpt-ad-12345-0',
           publisherId: '59ac17c192832d0011283fe3',
           dealId: 1,
+          sessionId: '',
+          uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           bidderVersion: adapter.version,
           prebidVersion: version,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
@@ -229,6 +243,7 @@ describe('VidazooBidAdapter', function () {
         switch (idSystemProvider) {
           case 'digitrustid': return { data: { id: id } };
           case 'lipb': return { lipbid: id };
+          case 'parrableId': return { eid: id };
           default: return id;
         }
       })();
@@ -261,6 +276,101 @@ describe('VidazooBidAdapter', function () {
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
+    });
+  });
+
+  describe('vidazoo session id', function () {
+    it('should get undefined vidazoo session id', function () {
+      const sessionId = getVidazooSessionId();
+      expect(sessionId).to.be.empty;
+    });
+
+    it('should get vidazoo session id from storage', function () {
+      const vidSid = '1234-5678';
+      window.localStorage.setItem('vidSid', vidSid);
+      const sessionId = getVidazooSessionId();
+      expect(sessionId).to.be.equal(vidSid);
+    });
+  });
+
+  describe('deal id', function () {
+    const key = 'myDealKey';
+
+    it('should get the next deal id', function () {
+      const dealId = getNextDealId(key);
+      const nextDealId = getNextDealId(key);
+      expect(dealId).to.be.equal(1);
+      expect(nextDealId).to.be.equal(2);
+    });
+
+    it('should get the first deal id on expiration', function (done) {
+      setTimeout(function () {
+        const dealId = getNextDealId(key, 100);
+        expect(dealId).to.be.equal(1);
+        done();
+      }, 200);
+    });
+  });
+
+  describe('unique deal id', function () {
+    const key = 'myKey';
+    let uniqueDealId;
+
+    it('should get fresh unique deal id', function () {
+      const now = Date.now();
+      uniqueDealId = getUniqueDealId(key);
+      expect(uniqueDealId).to.be.equal(`${key}_${now.toString()}`);
+    });
+
+    it('should get current unique deal id', function (done) {
+      // waiting some time so `now` will become past
+      setTimeout(() => {
+        const current = getUniqueDealId(key);
+        expect(current).to.be.equal(uniqueDealId);
+        done();
+      }, 200);
+    });
+
+    it('should get new unique deal id on expiration', function () {
+      const current = getUniqueDealId(key, 100);
+      expect(current).to.not.be.equal(uniqueDealId);
+    });
+  });
+
+  describe('storage utils', function () {
+    it('should get value from storage with create param', function () {
+      const now = Date.now();
+      const clock = useFakeTimers({
+        shouldAdvanceTime: true,
+        now
+      });
+      setStorageItem('myKey', 2020);
+      const { value, created } = getStorageItem('myKey');
+      expect(created).to.be.equal(now);
+      expect(value).to.be.equal(2020);
+      expect(typeof value).to.be.equal('number');
+      expect(typeof created).to.be.equal('number');
+      clock.restore();
+    });
+
+    it('should get external stored value', function () {
+      const value = 'superman'
+      window.localStorage.setItem('myExternalKey', value);
+      const item = getStorageItem('myExternalKey');
+      expect(item).to.be.equal(value);
+    });
+
+    it('should parse JSON value', function () {
+      const data = JSON.stringify({ event: 'send' });
+      const { event } = tryParseJSON(data);
+      expect(event).to.be.equal('send');
+    });
+
+    it('should get original value on parse fail', function () {
+      const value = 21;
+      const parsed = tryParseJSON(value);
+      expect(typeof parsed).to.be.equal('number');
+      expect(parsed).to.be.equal(value);
     });
   });
 });

@@ -44,7 +44,7 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, a
     Object.keys(bidsByBidder).forEach(key => bucketBids.push(bidsByBidder[key].reduce(highestCpmCallback)));
     // if adUnitBidLimit is set, pass top N number bids
     if (adUnitBidLimit > 0) {
-      bucketBids = dealPrioritization ? bucketBids(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
+      bucketBids = dealPrioritization ? bucketBids.sort(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
       bids.push(...bucketBids.slice(0, adUnitBidLimit));
     } else {
       bids.push(...bucketBids);
@@ -76,11 +76,11 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, a
 */
 export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
   return function(a, b) {
-    if (a.adUnitTargeting.hb_deal !== undefined && b.adUnitTargeting.hb_deal === undefined) {
+    if (a.adserverTargeting.hb_deal !== undefined && b.adserverTargeting.hb_deal === undefined) {
       return -1;
     }
 
-    if ((a.adUnitTargeting.hb_deal === undefined && b.adUnitTargeting.hb_deal !== undefined)) {
+    if ((a.adserverTargeting.hb_deal === undefined && b.adserverTargeting.hb_deal !== undefined)) {
       return 1;
     }
 
@@ -89,7 +89,7 @@ export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
       return b.cpm - a.cpm;
     }
 
-    return b.adUnitTargeting.hb_pb - a.adUnitTargeting.hb_pb;
+    return b.adserverTargeting.hb_pb - a.adserverTargeting.hb_pb;
   }
 }
 
@@ -240,13 +240,13 @@ export function newTargeting(auctionManager) {
     let targetingMap = Object.keys(targetingCopy).map(adUnitCode => {
       return {
         adUnitCode,
-        adUnitTargeting: targetingCopy[adUnitCode]
+        adserverTargeting: targetingCopy[adUnitCode]
       };
     }).sort(sortByDealAndPriceBucketOrCpm());
 
     // iterate through the targeting based on above list and transform the keys into the query-equivalent and count characters
     return targetingMap.reduce(function (accMap, currMap, index, arr) {
-      let adUnitQueryString = convertKeysToQueryForm(currMap.adUnitTargeting);
+      let adUnitQueryString = convertKeysToQueryForm(currMap.adserverTargeting);
 
       // for the last adUnit - trim last encoded ampersand from the converted query string
       if ((index + 1) === arr.length) {
