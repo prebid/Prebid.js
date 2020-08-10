@@ -2,15 +2,13 @@ import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {
-  cookiesAreEnabled,
   deepAccess,
   generateUUID,
-  getCookie,
-  localStorageIsEnabled,
   logError,
-  setCookie,
 } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager';
 
+const storage = getStorageManager();
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb'; // production endpoint
 const USER_ID_KEY = 'hb_insticator_uid';
@@ -27,10 +25,10 @@ config.setDefaults({
 function getUserId() {
   let uid;
 
-  if (localStorageIsEnabled()) {
+  if (storage.localStorageIsEnabled()) {
     uid = localStorage.getItem(USER_ID_KEY);
   } else {
-    uid = getCookie(USER_ID_KEY);
+    uid = storage.getCookie(USER_ID_KEY);
   }
 
   if (uid && uid.length !== 36) {
@@ -41,13 +39,13 @@ function getUserId() {
 }
 
 function setUserId(userId) {
-  if (localStorageIsEnabled()) {
+  if (storage.localStorageIsEnabled()) {
     localStorage.setItem(USER_ID_KEY, userId);
   }
 
-  if (cookiesAreEnabled()) {
+  if (storage.cookiesAreEnabled()) {
     const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toISOString();
-    setCookie(USER_ID_KEY, userId, expires);
+    storage.setCookie(USER_ID_KEY, userId, expires);
   }
 }
 
@@ -83,8 +81,8 @@ function buildDevice() {
     h: window.innerHeight,
     js: true,
     ext: {
-      localStorage: localStorageIsEnabled(),
-      cookies: cookiesAreEnabled(),
+      localStorage: storage.localStorageIsEnabled(),
+      cookies: storage.cookiesAreEnabled(),
     },
   };
 
