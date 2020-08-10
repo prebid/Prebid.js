@@ -229,13 +229,22 @@ describe('Adkernel adapter', function () {
       cur: 'USD'
     };
 
+  var sandbox;
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
     return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
   function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
-    let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
+    let dntmock = sandbox.stub(utils, 'getDNT').callsFake(() => dnt);
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
     dntmock.restore();
     let rtbRequests = pbRequests.map(r => JSON.parse(r.data));
