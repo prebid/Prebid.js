@@ -242,9 +242,6 @@ yuktamediaAnalyticsAdapter.enableAnalytics = function (config) {
       utils.logError('Need pubId and pubKey to log auction results. Please contact a YuktaMedia representative if you do not know your pubId and pubKey.');
       return;
     }
-  } else {
-    utils.logError('Need to provide config options to enable analytics');
-    return;
   }
   initOptions = Object.assign({}, config.options, this.buildUtmTagData(config.options));
   yuktamediaAnalyticsAdapter.originEnableAnalytics(config);
