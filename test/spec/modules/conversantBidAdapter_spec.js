@@ -210,7 +210,7 @@ describe('Conversant adapter tests', function() {
     };
     const request = spec.buildRequests(bidRequests, bidderRequest);
     expect(request.method).to.equal('POST');
-    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/s2s/header/24');
+    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25');
     const payload = request.data;
 
     expect(payload).to.have.property('id', 'req000');

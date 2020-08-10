@@ -140,7 +140,18 @@
                             name: "unifiedid",
                             expires: 30
                         },
-                    }, {
+                    },{
+                        name: "intentIqId",
+                        params: {
+                            partner: 0, //Set your real IntentIQ partner ID here for production.
+                        },
+                        storage: {
+                            type: "cookie",
+                            name: "intentIqId",
+                            expires: 30
+                        },
+                    },
+                     {
                         name: "id5Id",
                         params: {
                             partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
@@ -179,9 +190,34 @@
                         name: 'idl_env',
                         expires: 30
                       }
+                    },
+                    {
+                      name: "sharedId",
+                      params: {
+                        syncTime: 60 // in seconds, default is 24 hours
+                      },
+                      storage: {
+                        type: "cookie",
+                        name: "sharedid",
+                        expires: 28
+                      }
+                    },  
+                    {
+                      name: 'lotamePanoramaId'
+                    }, 
+                    {
+                      name: "liveIntentId",
+                      params: {
+                        publisherId: "9896876"
+                      },
+                      storage: {
+                        type: "cookie",
+                        name: "_li_pbid",
+                        expires: 28
+                      }
                     }],
                     syncDelay: 5000,
-                    auctionDelay: 1000 
+                    auctionDelay: 1000
                 }
             });
             pbjs.addAdUnits(adUnits);

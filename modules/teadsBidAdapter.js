@@ -41,6 +41,9 @@ export const spec = {
     const bids = validBidRequests.map(buildRequestObject);
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
+      pageReferrer: document.referrer,
+      networkBandwidth: getConnectionDownLink(window.navigator),
+      timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
       hb_version: '$prebid.version$'
@@ -115,6 +118,39 @@ function getReferrerInfo(bidderRequest) {
     ref = bidderRequest.refererInfo.referer;
   }
   return ref;
+}
+
+function getConnectionDownLink(nav) {
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
+}
+
+function getTimeToFirstByte(win) {
+  const performance = win.performance || win.webkitPerformance || win.msPerformance || win.mozPerformance;
+
+  const ttfbWithTimingV2 = performance &&
+    typeof performance.getEntriesByType === 'function' &&
+    Object.prototype.toString.call(performance.getEntriesByType) === '[object Function]' &&
+    performance.getEntriesByType('navigation')[0] &&
+    performance.getEntriesByType('navigation')[0].responseStart &&
+    performance.getEntriesByType('navigation')[0].requestStart &&
+    performance.getEntriesByType('navigation')[0].responseStart >= 0 &&
+    performance.getEntriesByType('navigation')[0].requestStart >= 0 &&
+    Math.round(
+      performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
+    );
+
+  if (ttfbWithTimingV2) {
+    return ttfbWithTimingV2.toString();
+  }
+
+  const ttfbWithTimingV1 = performance &&
+    performance.timing.responseStart &&
+    performance.timing.requestStart &&
+    performance.timing.responseStart >= 0 &&
+    performance.timing.requestStart >= 0 &&
+    performance.timing.responseStart - performance.timing.requestStart;
+
+  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
 }
 
 function findGdprStatus(gdprApplies, gdprData, apiVersion) {

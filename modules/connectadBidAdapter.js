@@ -85,7 +85,7 @@ export const spec = {
       })
     }
 
-    if (validBidRequests[0].userId && typeof validBidRequests[0].userId === 'object' && (validBidRequests[0].userId.tdid || validBidRequests[0].userId.pubcid || validBidRequests[0].userId.lipb || validBidRequests[0].userId.id5id || validBidRequests[0].userId.parrableid)) {
+    if (validBidRequests[0].userId && typeof validBidRequests[0].userId === 'object' && (validBidRequests[0].userId.tdid || validBidRequests[0].userId.pubcid || validBidRequests[0].userId.lipb || validBidRequests[0].userId.id5id || validBidRequests[0].userId.parrableId)) {
       utils.deepSetValue(data, 'user.ext.eids', []);
 
       if (validBidRequests[0].userId.tdid) {
@@ -118,11 +118,11 @@ export const spec = {
         });
       }
 
-      if (validBidRequests[0].userId.parrableid) {
+      if (validBidRequests[0].userId.parrableId) {
         data.user.ext.eids.push({
           source: 'parrable.com',
           uids: [{
-            id: validBidRequests[0].userId.parrableid,
+            id: validBidRequests[0].userId.parrableId.eid,
           }]
         });
       }
