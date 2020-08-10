@@ -353,8 +353,8 @@ function buildNewRequest(validBidRequests, bidderRequest) {
       if (!jwpseg && realTimeData.jwTargeting.segments) {
         jwpseg = realTimeData.segments;
       }
-      if (!content && realTimeData.content) {
-        content = realTimeData.content;
+      if (!content && realTimeData.jwTargeting.content) {
+        content = realTimeData.jwTargeting.content;
       }
     }
     let impObj = {
