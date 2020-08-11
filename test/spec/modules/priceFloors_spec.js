@@ -365,6 +365,52 @@ describe('the price floors module', function () {
         floorProvider: 'floorprovider'
       });
     });
+    it('should pick the right floorProvider', function () {
+      let inputFloors = {
+        ...basicFloorConfig,
+        floorProvider: 'providerA',
+        data: {
+          ...basicFloorData,
+          floorProvider: 'providerB',
+        }
+      };
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: 'providerB'
+      });
+
+      // if not at data level take top level
+      delete inputFloors.data.floorProvider;
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: 'providerA'
+      });
+
+      // if none should be undefined
+      delete inputFloors.floorProvider;
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined
+      });
+    });
     it('should take the right skipRate depending on input', function () {
       // first priority is data object
       sandbox.stub(Math, 'random').callsFake(() => 0.99);
@@ -641,6 +687,42 @@ describe('the price floors module', function () {
         skipRate: 0,
         fetchStatus: 'success',
         floorProvider: 'floorprovider'
+      });
+    });
+    it('it should correctly overwrite floorProvider with fetch provider', function () {
+      // init the fake server with response stuff
+      let fetchFloorData = {
+        ...basicFloorData,
+        floorProvider: 'floorProviderD', // change the floor provider
+        modelVersion: 'fetch model name', // change the model name
+      };
+      fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
+
+      // run setConfig indicating fetch
+      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorproviderC', auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+
+      // floor provider should be called
+      expect(fakeFloorProvider.requests.length).to.equal(1);
+      expect(fakeFloorProvider.requests[0].url).to.equal('http://www.fakeFloorProvider.json');
+
+      // start the auction it should delay and not immediately call `continueAuction`
+      runStandardAuction();
+
+      // exposedAdUnits should be undefined if the auction has not continued
+      expect(exposedAdUnits).to.be.undefined;
+
+      // make the fetch respond
+      fakeFloorProvider.respond();
+
+      // the exposedAdUnits should be from the fetch not setConfig level data
+      // and fetchStatus is success since fetch worked
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'fetch model name',
+        location: 'fetch',
+        skipRate: 0,
+        fetchStatus: 'success',
+        floorProvider: 'floorProviderD'
       });
     });
     it('it should correctly overwrite skipRate with fetch skipRate', function () {
