@@ -258,4 +258,82 @@ describe('ironsourceAdapter', function () {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
   })
+
+  describe('getUserSyncs', function() {
+    const imageSyncResponse = {
+      body: {
+        userSyncPixels: [
+          'https://image-sync-url.test/1',
+          'https://image-sync-url.test/2',
+          'https://image-sync-url.test/3'
+        ]
+      }
+    };
+
+    const iframeSyncResponse = {
+      body: {
+        userSyncURL: 'https://iframe-sync-url.test'
+      }
+    };
+
+    it('should register all img urls from the response', function() {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, [imageSyncResponse]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/1'
+        },
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/2'
+        },
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/3'
+        }
+      ]);
+    });
+
+    it('should register the iframe url from the response', function() {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [iframeSyncResponse]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'https://iframe-sync-url.test'
+        }
+      ]);
+    });
+
+    it('should register both image and iframe urls from the responses', function() {
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [iframeSyncResponse, imageSyncResponse]);
+      expect(syncs).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'https://iframe-sync-url.test'
+        },
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/1'
+        },
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/2'
+        },
+        {
+          type: 'image',
+          url: 'https://image-sync-url.test/3'
+        }
+      ]);
+    });
+
+    it('should handle an empty response', function() {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should handle when user syncs are disabled', function() {
+      const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
+      expect(syncs).to.deep.equal([]);
+    });
+  })
 });
