@@ -25,8 +25,8 @@ pbjs.setConfig({
         }, {
             name: "id5Id",
             params: {
-                partner: 173, //Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
-                pd: "some-pd-string" // See https://console.id5.io/docs/public/prebid for details
+                partner: 173,         // Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
+                pd: "some-pd-string"  // See https://wiki.id5.io/display/PD/Prebid.js+UserId+Module for details
             },
             storage: {
                 type: "cookie",
