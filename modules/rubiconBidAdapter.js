@@ -592,15 +592,6 @@ export const spec = {
       data['tg_i.dfp_ad_unit_code'] = pbAdSlot.replace(/^\/+/, '');
     }
 
-    /**
-     * Prebid AdSlot
-     * @type {(string|undefined)}
-     */
-    const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-    if (typeof pbAdSlot === 'string' && pbAdSlot) {
-      data['tg_i.dfp_ad_unit_code'] = pbAdSlot.replace(/^\/+/, '');
-    }
-
     // digitrust properties
     const digitrustParams = _getDigiTrustQueryParams(bidRequest, 'FASTLANE');
     Object.assign(data, digitrustParams);
