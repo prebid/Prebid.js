@@ -602,5 +602,16 @@ describe('OneVideoBidAdapter', function () {
         expect(pixel[1].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=0&gdpr_consent=&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=0&gdpr_consent=');
       });
     });
+
+    describe('verify sync pixels', function () {
+      let pixel = spec.getUserSyncs({pixelEnabled: true}, {}, undefined);
+      it('should be UPS sync pixel for DBM', function () {
+        expect(pixel[0].url).to.equal('https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true')
+      });
+
+      it('should be TTD sync pixel', function () {
+        expect(pixel[2].url).to.equal('https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1')
+      });
+    })
   });
 });
