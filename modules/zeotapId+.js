@@ -16,15 +16,15 @@ function isValidConfig(configParams) {
     utils.logError('User ID - zeotapId submodule requires configParams');
     return false;
   }
-  if (!configParams.partner) {
-    utils.logError('User ID - zeotapId submodule requires partner list');
+  if (!configParams.name || !configParams.storage) {
+    utils.logError('User ID - zeotapId submodule requires valid config params: name, storage');
     return false;
   }
   return true;
 }
 
 function readCookie() {
-  return storage.cookiesAreEnabled ? storage.readCookie(ZEOTAP_COOKIE_NAME) : null;
+  return storage.cookiesAreEnabled ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null;
 }
 
 function readFromLocalStorage() {
