@@ -1038,4 +1038,33 @@ describe('gdpr enforcement', function () {
       expect(enforcementRules).to.deep.equal(rules);
     });
   });
+
+  describe('TCF2FinalResults', function() {
+    let sandbox;
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      sandbox.spy(events, 'emit');
+    });
+    afterEach(function() {
+      config.resetConfig();
+      sandbox.restore();
+    });
+    it('should emit TCF2 enforcement data on auction end', function() {
+      const rules = [{
+        purpose: 'storage',
+        enforcePurpose: false,
+        enforceVendor: false
+      }, {
+        purpose: 'basicAds',
+        enforcePurpose: false,
+        enforceVendor: false
+      }]
+      setEnforcementConfig({gdpr: { rules }});
+
+      events.emit('auctionEnd', {})
+
+      // Assertions
+      sinon.assert.calledWith(events.emit.getCall(1), 'tcf2Enforcement', sinon.match.object);
+    })
+  });
 });
