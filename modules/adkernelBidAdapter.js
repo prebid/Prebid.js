@@ -120,6 +120,9 @@ export const spec = {
         ttl: 360,
         netRevenue: true
       };
+      if (rtbBid.dealid !== undefined) {
+        prBid.dealId = rtbBid.dealid;
+      }
       if ('banner' in imp) {
         prBid.mediaType = BANNER;
         prBid.width = rtbBid.w;
@@ -307,6 +310,7 @@ function buildRtbRequest(imps, bidderRequest, schain) {
     'at': 1,
     'device': {
       'ip': 'caller',
+      'ipv6': 'caller',
       'ua': 'caller',
       'js': 1,
       'language': getLanguage()
