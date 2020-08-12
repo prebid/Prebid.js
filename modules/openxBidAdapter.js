@@ -6,7 +6,9 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '3.0.2';
+const BIDDER_VERSION = '3.0.3';
+
+const DEFAULT_CURRENCY = 'USD';
 
 export const USER_ID_CODE_TO_QUERY_ARG = {
   britepoolid: 'britepoolid', // BritePool ID
@@ -16,7 +18,7 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   idl_env: 'lre', // LiveRamp IdentityLink
   lipb: 'lipbid', // LiveIntent ID
   netId: 'netid', // netID
-  parrableid: 'parrableid', // Parrable ID
+  parrableId: 'parrableid', // Parrable ID
   pubcid: 'pubcid', // PubCommon ID
   tdid: 'ttduuid', // The Trade Desk Unified ID
 };
@@ -276,6 +278,9 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
           break;
+        case 'parrableId':
+          queryParams[key] = userIdObjectOrValue.eid;
+          break;
         default:
           queryParams[key] = userIdObjectOrValue;
       }
@@ -457,9 +462,11 @@ function createVideoBidResponses(response, {bid, startTime}) {
 
 function getBidFloor(bidRequest, mediaType) {
   let floorInfo = {};
+  const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+
   if (typeof bidRequest.getFloor === 'function') {
     floorInfo = bidRequest.getFloor({
-      currency: 'USD',
+      currency: currency,
       mediaType: mediaType,
       size: '*'
     });

@@ -1126,7 +1126,7 @@ describe('S2S Adapter', function () {
         criteoId: '44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU',
         tdid: 'abc123',
         pubcid: '1234',
-        parrableid: '01.1563917337.test-eid',
+        parrableId: { eid: '01.1563917337.test-eid' },
         lipb: {
           lipbid: 'li-xyz',
           segments: ['segA', 'segB']
