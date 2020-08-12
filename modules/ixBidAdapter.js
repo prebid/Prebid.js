@@ -1,9 +1,9 @@
-import * as utils from '../src/utils';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { config } from '../src/config';
-import find from 'core-js/library/fn/array/find';
-import isInteger from 'core-js/library/fn/number/is-integer';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import find from 'core-js-pure/features/array/find.js';
+import isInteger from 'core-js-pure/features/number/is-integer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
 const SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
@@ -17,6 +17,7 @@ const NET_REVENUE = true;
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
+const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
@@ -286,7 +287,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   const payload = {};
 
   // Parse additional runtime configs.
-  const otherIxConfig = config.getConfig('ix');
+  const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
+  const otherIxConfig = config.getConfig(bidderCode);
   if (otherIxConfig) {
     // Append firstPartyData to r.site.page if firstPartyData exists.
     if (typeof otherIxConfig.firstPartyData === 'object') {
@@ -328,6 +330,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 export const spec = {
 
   code: BIDDER_CODE,
+  gvlid: 10,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
@@ -459,6 +462,19 @@ export const spec = {
     return utils.convertTypes({
       'siteID': 'number'
     }, params);
+  },
+
+  /**
+   * Determine which user syncs should occur
+   * @param {object} syncOptions
+   * @param {array} serverResponses
+   * @returns {array} User sync pixels
+   */
+  getUserSyncs: function (syncOptions, serverResponses) {
+    return (syncOptions.iframeEnabled) ? [{
+      type: 'iframe',
+      url: USER_SYNC_URL
+    }] : [];
   }
 };
 

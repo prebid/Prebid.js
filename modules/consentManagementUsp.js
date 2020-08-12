@@ -4,9 +4,9 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import { uspDataHandler } from '../src/adapterManager';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { uspDataHandler } from '../src/adapterManager.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -39,7 +39,7 @@ function lookupStaticConsentData(cmpSuccess, cmpError, hookConfig) {
  * This function handles interacting with an USP compliant consent manager to obtain the consent information of the user.
  * Given the async nature of the USP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
- * @param {function(string)} uspSuccess acts as a success callback when USPAPI returns a value; pass along consentObject (string) from UPSAPI
+ * @param {function(string)} uspSuccess acts as a success callback when USPAPI returns a value; pass along consentObject (string) from USPAPI
  * @param {function(string)} uspError acts as an error callback while interacting with USPAPI; pass along an error message (string)
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
@@ -190,7 +190,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
 function processUspData(consentObject, hookConfig) {
   const valid = !!(consentObject && consentObject.usPrivacy);
   if (!valid) {
-    uspapiFailed(`UPSAPI returned unexpected value during lookup process.`, hookConfig, consentObject);
+    uspapiFailed(`USPAPI returned unexpected value during lookup process.`, hookConfig, consentObject);
     return;
   }
 

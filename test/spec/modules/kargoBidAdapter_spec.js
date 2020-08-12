@@ -1,6 +1,6 @@
 import {expect, assert} from 'chai';
-import {spec} from 'modules/kargoBidAdapter';
-import {config} from 'src/config';
+import {spec} from 'modules/kargoBidAdapter.js';
+import {config} from 'src/config.js';
 
 describe('kargo adapter tests', function () {
   var sandbox, clock, frozenNow = new Date();
@@ -49,6 +49,8 @@ describe('kargo adapter tests', function () {
           }
           return {adServerCurrency: 'USD'};
         }
+        if (key === 'debug') return true;
+        if (key === 'deviceAccess') return true;
         throw new Error(`Config stub incomplete! Missing key "${key}"`)
       });
 
@@ -439,7 +441,8 @@ describe('kargo adapter tests', function () {
           cpm: 3,
           adm: '<div id="1"></div>',
           width: 320,
-          height: 50
+          height: 50,
+          metadata: {}
         },
         2: {
           id: 'bar',
@@ -447,7 +450,10 @@ describe('kargo adapter tests', function () {
           adm: '<div id="2"></div>',
           width: 300,
           height: 250,
-          targetingCustom: 'dmpmptest1234'
+          targetingCustom: 'dmpmptest1234',
+          metadata: {
+            landingPageDomain: 'https://foobar.com'
+          }
         },
         3: {
           id: 'bar',
@@ -485,7 +491,8 @@ describe('kargo adapter tests', function () {
         creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: undefined
       }, {
         requestId: '2',
         cpm: 2.5,
@@ -496,7 +503,10 @@ describe('kargo adapter tests', function () {
         creativeId: 'bar',
         dealId: 'dmpmptest1234',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: {
+          clickUrl: 'https://foobar.com'
+        }
       }, {
         requestId: '3',
         cpm: 2.5,
@@ -507,7 +517,8 @@ describe('kargo adapter tests', function () {
         creativeId: 'bar',
         dealId: undefined,
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: undefined
       }];
       expect(resp).to.deep.equal(expectation);
     });

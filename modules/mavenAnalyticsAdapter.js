@@ -71,11 +71,23 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                         screenSize: options.screenSize,
                         status: 'inProgress',
                         timeoutPeriod: undefined,
+                        gdprApplies: false,
+                        consentString: null,
                     };
                     // Sanity check on POD
                     if (isNaN(auctionObj.pod) || auctionObj.pod > 999) {
                         auctionObj.pod = 0;
                     };
+                    // GDPR values are stored with at the bidRequest level
+                    // If set for any bidRequest, set for auction
+                    args.bidderRequests.forEach(request => {
+                        if (request.hasOwnProperty('gdprApplies')) {
+                            auctionObj.gdprApplies = request.gdprApplies;
+                        }
+                        if (request.hasOwnProperty('consentString')) {
+                            auctionObj.consentString = request.consentString;
+                        }
+                    });
                     currentAuctions[id] = auctionObj;
                     break;
                 case AUCTION_END:

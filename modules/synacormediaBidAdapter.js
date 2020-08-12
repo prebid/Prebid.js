@@ -1,12 +1,13 @@
 'use strict';
 
-import { getAdUnitSizes, logWarn } from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import includes from 'core-js/library/fn/array/includes';
+import { getAdUnitSizes, logWarn } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import {config} from '../src/config.js';
 
-const BID_HOST = '//prebid.technoratimedia.com';
-const USER_SYNC_HOST = '//ad-cdn.technoratimedia.com';
+const BID_HOST = 'https://prebid.technoratimedia.com';
+const USER_SYNC_HOST = 'https://ad-cdn.technoratimedia.com';
 const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'linearity', 'mimes', 'protocols', 'api' ];
 const BLOCKED_AD_SIZES = [
   '1x1',
@@ -44,6 +45,12 @@ export const spec = {
       },
       imp: []
     };
+
+    const schain = validBidReqs[0].schain;
+    if (schain) {
+      openRtbBidRequest.source = { ext: { schain } };
+    }
+
     let seatId = null;
 
     validBidReqs.forEach((bid, i) => {
@@ -58,7 +65,7 @@ export const spec = {
       if (isNaN(bidFloor)) {
         logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
       }
-      let pos = parseInt(bid.params.pos);
+      let pos = parseInt(bid.params.pos, 10);
       if (isNaN(pos)) {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;
@@ -150,7 +157,9 @@ export const spec = {
           };
           if (isVideo) {
             const [, uuid] = nurl.match(/ID=([^&]*)&?/);
-            bidObj.videoCacheKey = encodeURIComponent(uuid);
+            if (!config.getConfig('cache.url')) {
+              bidObj.videoCacheKey = encodeURIComponent(uuid);
+            }
             bidObj.vastUrl = nurl;
           }
           bids.push(bidObj);

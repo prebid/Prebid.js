@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 export const spec = {
   code: 'sekindoUM',
   supportedMediaTypes: ['banner', 'video'],
@@ -70,7 +70,7 @@ export const spec = {
         }
       }
 
-      var endpointUrl = 'http' + protocol + '://hb.sekindo.com/live/liveView.php';
+      var endpointUrl = 'https' + '://hb.sekindo.com/live/liveView.php';
 
       return {
         method: 'GET',

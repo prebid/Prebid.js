@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils'
-import {ajax} from '../src/ajax';
-import {submodule} from '../src/hook';
+import * as utils from '../src/utils.js'
+import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook.js';
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
@@ -16,6 +16,11 @@ export const id5IdSubmodule = {
    * @type {string}
    */
   name: 'id5Id',
+  /**
+   * Vendor id of ID5
+   * @type {Number}
+   */
+  gvlid: 131,
   /**
    * decode the stored id value for passing to bid requests
    * @function decode
@@ -44,17 +49,24 @@ export const id5IdSubmodule = {
     const url = `https://id5-sync.com/g/v1/${configParams.partner}.json?1puid=${storedUserId ? storedUserId.id5id : ''}&gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}`;
 
     const resp = function (callback) {
-      ajax(url, response => {
-        let responseObj;
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            utils.logError(error);
+      const callbacks = {
+        success: response => {
+          let responseObj;
+          if (response) {
+            try {
+              responseObj = JSON.parse(response);
+            } catch (error) {
+              utils.logError(error);
+            }
           }
+          callback(responseObj);
+        },
+        error: error => {
+          utils.logError(`id5Id: ID fetch encountered an error`, error);
+          callback();
         }
-        callback(responseObj);
-      }, undefined, { method: 'GET', withCredentials: true });
+      };
+      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
     };
     return {callback: resp};
   }

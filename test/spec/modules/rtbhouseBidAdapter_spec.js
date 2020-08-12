@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { OPENRTB, spec } from 'modules/rtbhouseBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { OPENRTB, spec } from 'modules/rtbhouseBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('RTBHouseAdapter', () => {
   const adapter = newBidder(spec);
@@ -69,14 +69,26 @@ describe('RTBHouseAdapter', () => {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
         'transactionId': 'example-transaction-id',
+        'schain': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'directseller.com',
+              'sid': '00001',
+              'rid': 'BidRequest1',
+              'hp': 1
+            }
+          ]
+        }
       }
     ];
     const bidderRequest = {
       'refererInfo': {
         'numIframes': 0,
         'reachedTop': true,
-        'referer': 'http://example.com',
-        'stack': ['http://example.com']
+        'referer': 'https://example.com',
+        'stack': ['https://example.com']
       }
     };
 
@@ -171,6 +183,36 @@ describe('RTBHouseAdapter', () => {
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].bidfloor).to.equal(0.01)
+    });
+
+    it('should include source.ext.schain in request', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.source.ext.schain).to.deep.equal({
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'directseller.com',
+            'sid': '00001',
+            'rid': 'BidRequest1',
+            'hp': 1
+          }
+        ]
+      });
+    });
+
+    it('should not include invalid schain', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].schain = {
+        'nodes': [{
+          'unknown_key': 1
+        }]
+      };
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.source).to.not.have.property('ext');
     });
 
     describe('native imp', () => {
@@ -402,10 +444,10 @@ describe('RTBHouseAdapter', () => {
         native: {
           ver: 1.1,
           link: {
-            url: 'http://example.com'
+            url: 'https://example.com'
           },
           imptrackers: [
-            'http://example.com/imptracker'
+            'https://example.com/imptracker'
           ],
           assets: [{
             id: OPENRTB.NATIVE.ASSET_ID.TITLE,
@@ -417,7 +459,7 @@ describe('RTBHouseAdapter', () => {
             id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
             required: 1,
             img: {
-              url: 'http://example.com/image.jpg',
+              url: 'https://example.com/image.jpg',
               w: 150,
               h: 50
             }
@@ -446,10 +488,10 @@ describe('RTBHouseAdapter', () => {
         const bids = spec.interpretResponse({body: response}, {});
         expect(bids[0].native).to.deep.equal({
           title: 'Title text',
-          clickUrl: encodeURIComponent('http://example.com'),
-          impressionTrackers: ['http://example.com/imptracker'],
+          clickUrl: encodeURIComponent('https://example.com'),
+          impressionTrackers: ['https://example.com/imptracker'],
           image: {
-            url: encodeURIComponent('http://example.com/image.jpg'),
+            url: encodeURIComponent('https://example.com/image.jpg'),
             width: 150,
             height: 50
           },

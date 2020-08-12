@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { Renderer } from 'src/Renderer';
-import * as utils from 'src/utils';
+import { Renderer } from 'src/Renderer.js';
+import * as utils from 'src/utils.js';
+import { loadExternalScript } from 'src/adloader.js';
 
 describe('Renderer', function () {
   describe('Renderer: A renderer installed on a bid response', function () {
@@ -125,7 +126,30 @@ describe('Renderer', function () {
         id: 1,
         adUnitCode: 'video1'
       });
+      testRenderer.setRender(() => {})
+
+      testRenderer.render()
       expect(utilsSpy.callCount).to.equal(1);
+    });
+
+    it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function() {
+      $$PREBID_GLOBAL$$.adUnits = [{
+        code: 'video1',
+        renderer: {
+          url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+          render: sinon.spy()
+        }
+      }];
+      let testRenderer = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { test: 'config1' },
+        id: 1,
+        adUnitCode: undefined
+      });
+      expect(loadExternalScript.called).to.be.false;
+
+      testRenderer.render()
+      expect(loadExternalScript.called).to.be.true;
     });
   });
 });

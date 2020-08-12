@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import {config} from '../src/config';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'districtmDMX';
 
@@ -27,6 +27,9 @@ export const spec = {
               nBid.requestId = nBid.impid;
               nBid.width = nBid.w || width;
               nBid.height = nBid.h || height;
+              if (nBid.dealid) {
+                nBid.dealId = nBid.dealid;
+              }
               nBid.ad = nBid.adm;
               nBid.netRevenue = true;
               nBid.creativeId = nBid.crid;
@@ -69,6 +72,7 @@ export const spec = {
         publisher: { id: String(bidRequest[0].params.memberid) || null }
       }
     }
+
     try {
       let params = config.getConfig('dmx');
       dmxRequest.user = params.user || {};
@@ -76,6 +80,18 @@ export const spec = {
       dmxRequest.site = {...dmxRequest.site, ...site}
     } catch (e) {
 
+    }
+
+    let eids = [];
+    if (bidRequest && bidRequest.userId) {
+      bindUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid.org', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 1);
+      dmxRequest.user = dmxRequest.user || {};
+      dmxRequest.user.ext = dmxRequest.user.ext || {};
+      dmxRequest.user.ext.eids = eids;
     }
     if (!dmxRequest.test) {
       delete dmxRequest.test;
@@ -87,6 +103,13 @@ export const spec = {
       dmxRequest.user = {};
       dmxRequest.user.ext = {};
       dmxRequest.user.ext.consent = bidderRequest.gdprConsent.consentString;
+    }
+    dmxRequest.regs = dmxRequest.regs || {};
+    dmxRequest.regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
+    if (bidderRequest && bidderRequest.uspConsent) {
+      dmxRequest.regs = dmxRequest.regs || {};
+      dmxRequest.regs.ext = dmxRequest.regs.ext || {};
+      dmxRequest.regs.ext.us_privacy = bidderRequest.uspConsent;
     }
     try {
       schain = bidRequest[0].schain;
@@ -125,11 +148,22 @@ export const spec = {
   test() {
     return window.location.href.indexOf('dmTest=true') !== -1 ? 1 : 0;
   },
-  getUserSyncs(optionsType) {
+  getUserSyncs(optionsType, serverResponses, gdprConsent, uspConsent) {
+    let query = [];
+    let url = 'https://cdn.districtm.io/ids/index.html'
+    if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
+      query.push(['gdpr', gdprConsent.consentString])
+    }
+    if (uspConsent) {
+      query.push(['ccpa', uspConsent])
+    }
+    if (query.length > 0) {
+      url += '?' + query.map(q => q.join('=')).join('&')
+    }
     if (optionsType.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: 'https://cdn.districtm.io/ids/index.html'
+        url: url
       }];
     }
   }
@@ -261,5 +295,19 @@ export function defaultSize(thebidObj) {
   returnObject.width = checkDeepArray(sizes)[0];
   returnObject.height = checkDeepArray(sizes)[1];
   return returnObject;
+}
+
+export function bindUserId(eids, value, source, atype) {
+  if (utils.isStr(value) && Array.isArray(eids)) {
+    eids.push({
+      source,
+      uids: [
+        {
+          id: value,
+          atype
+        }
+      ]
+    })
+  }
 }
 registerBidder(spec);

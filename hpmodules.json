@@ -2,9 +2,9 @@
   "33acrossBidAdapter",
   "aolBidAdapter",
   "appnexusBidAdapter",
-  "cedatoBidAdapter",
   "consentManagement",
   "consentManagementUsp",
+  "dfpAdServerVideo",
   "emx_digitalBidAdapter",
   "ixBidAdapter",
   "justpremiumBidAdapter",
@@ -21,8 +21,7 @@
   "rhythmoneBidAdapter",
   "pubmaticBidAdapter",
   "synacormediaBidAdapter",
-  "tripleliftBidAdapter",
-  "dfpAdServerVideo",
-  "spotxBidAdapter"
+  "googleAnalyticsAdapter",
+  "tripleliftBidAdapter"
 ]
 

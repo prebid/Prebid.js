@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec, getTimeoutUrl } from 'modules/seedtagBidAdapter'
+import { spec, getTimeoutUrl } from 'modules/seedtagBidAdapter.js'
 
 function getSlotConfigs(mediaTypes, params) {
   return {

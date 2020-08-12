@@ -1,21 +1,19 @@
 import {expect} from 'chai';
-import adapterManager from 'src/adapterManager';
-import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
+import adapterManager from 'src/adapterManager.js';
+import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {userSync} from 'src/userSync';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
-import find from 'core-js/library/fn/array/find';
-
-var CONSTANTS = require('src/constants.json');
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
+const PBS_INTEGRATION = 'pbjs';
 
 describe('the rubicon adapter', function () {
   let sandbox,
     bidderRequest,
-    sizeMap;
+    sizeMap,
+    getFloorResponse;
 
   /**
    * @typedef {Object} sizeMapConverted
@@ -224,8 +222,10 @@ describe('the rubicon adapter', function () {
       lipb: {
         lipbid: '0000-1111-2222-3333',
         segments: ['segA', 'segB']
-      }
-    }
+      },
+      idl_env: '1111-2222-3333-4444'
+    };
+    bid.storedAuctionResponse = 11111;
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -272,7 +272,7 @@ describe('the rubicon adapter', function () {
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
-
+    getFloorResponse = {};
     bidderRequest = {
       bidderCode: 'rubicon',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
@@ -409,6 +409,43 @@ describe('the rubicon adapter', function () {
           });
         });
 
+        it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
+          // default getFloor response is empty object so should not break and not send hard_floor
+          bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // not an object should work and not send
+          getFloorResponse = undefined;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR', floor: 1.0};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.be.undefined;
+
+          // make it respond with USD floor and string floor
+          getFloorResponse = {currency: 'USD', floor: '1.23'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.equal('1.23');
+
+          // make it respond with USD floor and num floor
+          getFloorResponse = {currency: 'USD', floor: 1.23};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          data = parseQuery(request.data);
+          expect(data.rp_hard_floor).to.equal('1.23');
+        });
         it('should not send p_pos to AE if not params.position specified', function() {
 	      var noposRequest = utils.deepClone(bidderRequest);
 	      delete noposRequest.bids[0].params.position;
@@ -550,12 +587,12 @@ describe('the rubicon adapter', function () {
 
         it('should add referer info to request data', function () {
           let refererInfo = {
-            referer: 'http://www.prebid.org',
+            referer: 'https://www.prebid.org',
             reachedTop: true,
             numIframes: 1,
             stack: [
-              'http://www.prebid.org/page.html',
-              'http://www.prebid.org/iframe1.html',
+              'https://www.prebid.org/page.html',
+              'https://www.prebid.org/iframe1.html',
             ]
           };
 
@@ -564,7 +601,7 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(parseQuery(request.data).rf).to.exist;
-          expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
+          expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
         });
 
         it('page_url should use params.referrer, config.getConfig("pageUrl"), bidderRequest.refererInfo in that order', function () {
@@ -572,20 +609,20 @@ describe('the rubicon adapter', function () {
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
-          let refererInfo = { referer: 'http://www.prebid.org' };
+          let refererInfo = { referer: 'https://www.prebid.org' };
           bidderRequest = Object.assign({refererInfo}, bidderRequest);
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
+          expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
 
           let origGetConfig = config.getConfig;
           sandbox.stub(config, 'getConfig').callsFake(function (key) {
             if (key === 'pageUrl') {
-              return 'http://www.rubiconproject.com';
+              return 'https://www.rubiconproject.com';
             }
             return origGetConfig.apply(config, arguments);
           });
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('http://www.rubiconproject.com');
+          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
 
           bidderRequest.bids[0].params.secure = true;
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -979,6 +1016,51 @@ describe('the rubicon adapter', function () {
               expect(data[key]).to.equal(value);
             });
           });
+
+          it('should use first party data from getConfig over the bid params, if present', () => {
+            const context = {
+              keywords: ['e', 'f'],
+              rating: '4-star'
+            };
+            const user = {
+              keywords: ['d'],
+              gender: 'M',
+              yob: '1984',
+              geo: { country: 'ca' }
+            };
+
+            sandbox.stub(config, 'getConfig').callsFake(key => {
+              const config = {
+                fpd: {
+                  context,
+                  user
+                }
+              };
+              return utils.deepAccess(config, key);
+            });
+
+            const expectedQuery = {
+              'kw': 'a,b,c,d,e,f',
+              'tg_v.ucat': 'new',
+              'tg_v.lastsearch': 'iphone',
+              'tg_v.likes': 'sports,video games',
+              'tg_v.gender': 'M',
+              'tg_v.yob': '1984',
+              'tg_v.geo': '{"country":"ca"}',
+              'tg_i.rating': '4-star',
+              'tg_i.prodtype': 'tech,mobile',
+            };
+
+            // get the built request
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            // make sure that tg_v, tg_i, and kw values are correct
+            Object.keys(expectedQuery).forEach(key => {
+              let value = expectedQuery[key];
+              expect(data[key]).to.deep.equal(value);
+            });
+          });
         });
 
         describe('singleRequest config', function () {
@@ -1259,6 +1341,19 @@ describe('the rubicon adapter', function () {
               expect(unescapedData.indexOf('&tg_v.LIseg=segD,segE&') !== -1).to.equal(true);
             });
           });
+
+          describe('LiveRamp support', function () {
+            it('should send tpid_liveramp.com when userId defines idl_env', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                idl_env: '1111-2222-3333-4444'
+              };
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['tpid_liveramp.com']).to.equal('1111-2222-3333-4444');
+            });
+          });
         })
 
         describe('Prebid AdSlot', function () {
@@ -1372,6 +1467,9 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.tpid).that.is.an('object');
           expect(post.user.ext.tpid.source).to.equal('liveintent.com');
           expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
+          // LiveRamp should exist
+          expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
+          expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.rp).that.is.an('object');
           expect(post.rp.target).that.is.an('object');
           expect(post.rp.target.LIseg).that.is.an('array');
@@ -1381,12 +1479,46 @@ describe('the rubicon adapter', function () {
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
-          expect(post.ext.prebid).to.have.property('cache').that.is.an('object')
-          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object')
-          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean')
-          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
+          expect(post.ext.prebid).to.have.property('cache').that.is.an('object');
+          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object');
+          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
+          expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
         });
 
+        it('should correctly set bidfloor on imp when getfloor in scope', function () {
+          createVideoBidderRequest();
+          // default getFloor response is empty object so should not break and not send hard_floor
+          bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // not an object should work and not send
+          expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR', floor: 1.0};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+          // make it respond with a non USD floor should not send it
+          getFloorResponse = {currency: 'EUR'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+          // make it respond with USD floor and string floor
+          getFloorResponse = {currency: 'USD', floor: '1.23'};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(1.23);
+
+          // make it respond with USD floor and num floor
+          getFloorResponse = {currency: 'USD', floor: 1.23};
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(1.23);
+        });
         it('should add alias name to PBS Request', function() {
           createVideoBidderRequest();
 
@@ -1640,6 +1772,60 @@ describe('the rubicon adapter', function () {
           expect(request.data.regs.coppa).to.equal(1);
         });
 
+        it('should include first party data', () => {
+          createVideoBidderRequest();
+
+          const context = {
+            keywords: ['e', 'f'],
+            rating: '4-star'
+          };
+          const user = {
+            keywords: ['d'],
+            gender: 'M',
+            yob: '1984',
+            geo: { country: 'ca' }
+          };
+
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              fpd: {
+                context,
+                user
+              }
+            };
+            return utils.deepAccess(config, key);
+          });
+
+          const expected = [{
+            bidders: [ 'rubicon' ],
+            config: {
+              fpd: {
+                site: Object.assign({}, bidderRequest.bids[0].params.inventory, context),
+                user: Object.assign({}, bidderRequest.bids[0].params.visitor, user)
+              }
+            }
+          }];
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.ext.prebid.bidderconfig).to.deep.equal(expected);
+        });
+
+        it('should include storedAuctionResponse in video bid request', function () {
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp).to.exist.and.to.be.a('array');
+          expect(request.data.imp).to.have.lengthOf(1);
+          expect(request.data.imp[0].ext).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid.storedauctionresponse).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
+        });
+
         it('should include pbAdSlot in bid request', function () {
           createVideoBidderRequest();
           bidderRequest.bids[0].fpd = {
@@ -1654,6 +1840,18 @@ describe('the rubicon adapter', function () {
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
+        });
+
+        it('should use the integration type provided in the config instead of the default', () => {
+          createVideoBidderRequest();
+          sandbox.stub(config, 'getConfig').callsFake(function (key) {
+            const config = {
+              'rubicon.int_type': 'testType'
+            };
+            return config[key];
+          });
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
         });
       });
 
@@ -1735,6 +1933,12 @@ describe('the rubicon adapter', function () {
               expect(slotParams[key]).to.equal(value);
             }
           });
+        });
+
+        it('should not fail if keywords param is not an array', function () {
+          bidderRequest.bids[0].params.keywords = 'a,b,c';
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], bidderRequest);
+          expect(slotParams.kw).to.equal('');
         });
       });
 
@@ -2558,7 +2762,7 @@ describe('the rubicon adapter', function () {
 
   describe('get price granularity', function() {
     it('should return correct buckets for all price granularity values', function() {
-      const CUSTOM_PRICE_BUCKET_ITEM = {min: 0, max: 5, increment: 0.5};
+      const CUSTOM_PRICE_BUCKET_ITEM = {max: 5, increment: 0.5};
 
       const mockConfig = {
         priceGranularity: undefined,
