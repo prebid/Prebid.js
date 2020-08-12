@@ -1,12 +1,12 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, NATIVE} from '../src/mediaTypes';
-import {config} from '../src/config';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
   code: ADG_BIDDER_CODE,
-  aliases: ['adg'], // short code
+  aliases: ['adg','adg2'], // short code
   supportedMediaTypes: [BANNER, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
@@ -28,7 +28,7 @@ export const spec = {
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
-      const DEBUG_URL = 'http://api-test.scaleout.jp/adsv/v1';
+      const DEBUG_URL = 'https://api-test.scaleout.jp/adsv/v1';
       const URL = 'https://d.socdm.com/adsv/v1';
       const url = validReq.params.debug ? DEBUG_URL : URL;
       let data = ``;

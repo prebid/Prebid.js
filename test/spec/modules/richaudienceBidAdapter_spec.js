@@ -2,9 +2,10 @@
 import {expect} from 'chai'; // may prefer 'assert' in place of 'expect'
 import {
   spec
-} from 'modules/richaudienceBidAdapter';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
+} from 'modules/richaudienceBidAdapter.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import { getGlobal } from 'src/prebidGlobal.js';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS = [{
@@ -181,7 +182,7 @@ describe('Richaudience adapter tests', function () {
         gdprApplies: true
       },
       refererInfo: {
-        referer: 'http://domain.com',
+        referer: 'https://domain.com',
         numIframes: 0
       }
     });
@@ -197,7 +198,8 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('bidder').and.to.equal('richaudience');
     expect(requestContent).to.have.property('bidderRequestId').and.to.equal('1858b7382993ca');
     expect(requestContent).to.have.property('tagId').and.to.equal('test-div');
-    expect(requestContent).to.have.property('referer').and.to.equal('http%3A%2F%2Fdomain.com');
+    expect(requestContent).to.have.property('referer').and.to.equal('https%3A%2F%2Fdomain.com');
+    expect(requestContent).to.have.property('sizes');
     expect(requestContent.sizes[0]).to.have.property('w').and.to.equal(300);
     expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(250);
     expect(requestContent.sizes[1]).to.have.property('w').and.to.equal(300);
@@ -224,15 +226,31 @@ describe('Richaudience adapter tests', function () {
         }
       });
 
-      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        gdprConsent: {
+          consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+          gdprApplies: true
+        },
+        refererInfo: {
+          referer: 'https://domain.com',
+          numIframes: 0
+        }
+      });
       const requestContent = JSON.parse(request[0].data);
       expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA');
     });
 
     it('Verify adding ifa when supplyType equal to app', function () {
-      const request = spec.buildRequests(DEFAULT_PARAMS_APP, DEFAULT_PARAMS_GDPR);
-      const requestContent = JSON.parse(request[0].data);
-      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA');
+      const request = spec.buildRequests(DEFAULT_PARAMS_APP, {
+        gdprConsent: {
+          consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+          gdprApplies: true
+        },
+        refererInfo: {
+          referer: 'https://domain.com',
+          numIframes: 0
+        }
+      });
     });
 
     it('Verify build request with GDPR without gdprApplies', function () {
@@ -252,7 +270,7 @@ describe('Richaudience adapter tests', function () {
           consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA'
         },
         refererInfo: {
-          referer: 'http://domain.com',
+          referer: 'https://domain.com',
           numIframes: 0
         }
       });
@@ -262,7 +280,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   describe('UID test', function () {
-    owpbjs.setConfig({
+    getGlobal().setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
@@ -486,7 +504,7 @@ describe('Richaudience adapter tests', function () {
         gdprApplies: true
       },
       refererInfo: {
-        referer: 'http://domain.com',
+        referer: 'https://domain.com',
         numIframes: 0
       }
     });
@@ -513,7 +531,7 @@ describe('Richaudience adapter tests', function () {
         gdprApplies: true
       },
       refererInfo: {
-        referer: 'http://domain.com',
+        referer: 'https://domain.com',
         numIframes: 0
       }
     });
@@ -622,7 +640,7 @@ describe('Richaudience adapter tests', function () {
     }, [], {consentString: '', gdprApplies: true});
     expect(syncs).to.have.lengthOf(0);
 
-    owpbjs.setConfig({
+    getGlobal().setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
@@ -645,6 +663,16 @@ describe('Richaudience adapter tests', function () {
       pixelEnabled: true
     }, [], {
       consentString: '',
+      referer: 'http://domain.com',
+      gdprApplies: true
+    })
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('image');
+
+    syncs = spec.getUserSyncs({
+      pixelEnabled: true
+    }, [], {
+      consentString: null,
       referer: 'http://domain.com',
       gdprApplies: true
     })

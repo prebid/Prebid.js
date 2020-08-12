@@ -1,8 +1,7 @@
 import {assert, expect} from 'chai';
-import * as url from 'src/url';
-import {spec} from 'modules/adformBidAdapter';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { config } from 'src/config';
+import {spec} from 'modules/adformBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 
 describe('Adform adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -38,7 +37,7 @@ describe('Adform adapter', function () {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       let query = parsedUrl.query;
 
-      assert.equal(parsedUrl.path, '//newDomain/adx');
+      assert.equal(parsedUrl.path, 'https://newDomain/adx');
       assert.equal(query.tid, 45);
       assert.equal(query.rp, 4);
       assert.equal(query.fd, 1);
