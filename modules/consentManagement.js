@@ -380,7 +380,7 @@ function storeConsentData(cmpConsentObject) {
       gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : gdprScope
     };
   } else if (cmpConsentObject.addtlConsent && utils.isStr(cmpConsentObject.addtlConsent)) {
-      consentData = {
+    consentData = {
       consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
       addtlConsent: (cmpConsentObject) ? cmpConsentObject.addtlConsent : undefined,
       vendorData: (cmpConsentObject) || undefined,
