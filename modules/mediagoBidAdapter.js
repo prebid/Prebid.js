@@ -227,7 +227,6 @@ function getParam(validBidRequests, bidderRequest) {
         // 'dnt':0,
         // 'devicetype':2,
         'js': 1,
-        'ip': '64.124.253.1',
         'os': navigator.platform || '',
         'ua': navigator.userAgent,
         'language': /en/.test(navigator.language) ? 'en' : navigator.language,
