@@ -379,18 +379,14 @@ function storeConsentData(cmpConsentObject) {
       vendorData: (cmpConsentObject) ? cmpConsentObject.getVendorConsents : undefined,
       gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : gdprScope
     };
-  } else if (cmpConsentObject.addtlConsent && utils.isStr(cmpConsentObject.addtlConsent)) {
-    consentData = {
-      consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
-      addtlConsent: (cmpConsentObject) ? cmpConsentObject.addtlConsent : undefined,
-      vendorData: (cmpConsentObject) || undefined,
-      gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
-    };
   } else {
     consentData = {
       consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
       vendorData: (cmpConsentObject) || undefined,
       gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
+    };
+    if (cmpConsentObject.addtlConsent && utils.isStr(cmpConsentObject.addtlConsent)) {
+      consentData.addtlConsent = cmpConsentObject.addtlConsent;
     };
   }
   consentData.apiVersion = cmpVersion;
