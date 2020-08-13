@@ -85,6 +85,8 @@ export const britepoolIdSubmodule = {
   createParams(submoduleConfigParams, consentData) {
     let errors = [];
     const headers = {};
+    const dynamicVars = typeof britepool_pubparams !== 'undefined'; // eslint-disable-line camelcase
+    submoduleConfigParams = Object.assign(submoduleConfigParams, dynamicVars);
     let params = Object.assign({}, submoduleConfigParams);
     if (params.getter) {
       // Custom getter will not require other params
