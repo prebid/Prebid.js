@@ -20,21 +20,28 @@ export const spec = {
     }
     const { gdprConsent, refererInfo } = bidderRequest;
 
-    const account = getAccount(validBidRequests);
     const targets = validBidRequests.map(bid => bid.params.data).reduce(mergeTargets, {});
-    const gdprParams = (gdprConsent && gdprConsent.consentString) ? [`xt${gdprConsent.consentString}`] : [];
-    const refererParams = (refererInfo && refererInfo.referer) ? [`xf${base64urlEncode(refererInfo.referer)}`] : [];
-    const id5Params = (getId5Id(validBidRequests)) ? [`x5${getId5Id(validBidRequests)}`] : [];
-    const targetsParams = Object.keys(targets).map(targetCode => targetCode + targets[targetCode].join(';'));
-    const slotsParams = validBidRequests.map(bid => 'sl' + bidToSlotName(bid));
-    const params = [...slotsParams, ...targetsParams, ...gdprParams, ...refererParams, ...id5Params].map(s => `/${s}`).join('');
-    const cacheBuster = '?t=' + new Date().getTime();
-    const uri = 'https://ads-' + account + '.adhese.com/json' + params + cacheBuster;
+    const gdprParams = (gdprConsent && gdprConsent.consentString) ? { xt: [gdprConsent.consentString] } : {};
+    const refererParams = (refererInfo && refererInfo.referer) ? { xf: [base64urlEncode(refererInfo.referer)] } : {};
+    const id5Params = (getId5Id(validBidRequests)) ? { x5: [getId5Id(validBidRequests)] } : {};
+    const slots = validBidRequests.map(bid => ({ slotname: bidToSlotName(bid) }));
+
+    const payload = {
+      slots: slots,
+      parameters: { ...targets, ...gdprParams, ...refererParams, ...id5Params }
+    }
+
+    const account = getAccount(validBidRequests);
+    const uri = 'https://ads-' + account + '.adhese.com/json';
 
     return {
-      method: 'GET',
+      method: 'POST',
       url: uri,
-      bids: validBidRequests
+      data: JSON.stringify(payload),
+      bids: validBidRequests,
+      options: {
+        contentType: 'application/json'
+      }
     };
   },
 
@@ -148,7 +155,7 @@ function getbaseAdResponse(response) {
 }
 
 function isAdheseAd(ad) {
-  return !ad.origin || ad.origin === 'JERLICIA' || ad.origin === 'DALE';
+  return !ad.origin || ad.origin === 'JERLICIA';
 }
 
 function getMediaType(markup) {
