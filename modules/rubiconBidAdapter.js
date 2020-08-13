@@ -28,6 +28,7 @@ var sizeMap = {
   1: '468x60',
   2: '728x90',
   5: '120x90',
+  7: '125x125',
   8: '120x600',
   9: '160x600',
   10: '300x600',
@@ -331,13 +332,25 @@ export const spec = {
        */
       const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
+        utils.deepSetValue(data.imp[0].ext, 'context.data.pbadslot', pbAdSlot);
+      }
+
+      /**
+       * GAM Ad Unit
+       * @type {(string|undefined)}
+       */
+      const gamAdUnit = utils.deepAccess(bidRequest, 'fpd.context.adServer.adSlot');
+      if (typeof gamAdUnit === 'string' && gamAdUnit) {
+        utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', gamAdUnit);
       }
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
         utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
       }
+
+      // set ext.prebid.auctiontimestamp using auction time
+      utils.deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
 
       return {
         method: 'POST',
@@ -589,7 +602,16 @@ export const spec = {
      */
     const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
     if (typeof pbAdSlot === 'string' && pbAdSlot) {
-      data['tg_i.dfp_ad_unit_code'] = pbAdSlot.replace(/^\/+/, '');
+      data['tg_i.pbadslot'] = pbAdSlot.replace(/^\/+/, '');
+    }
+
+    /**
+     * GAM Ad Unit
+     * @type {(string|undefined)}
+     */
+    const gamAdUnit = utils.deepAccess(bidRequest, 'fpd.context.adServer.adSlot');
+    if (typeof gamAdUnit === 'string' && gamAdUnit) {
+      data['tg_i.dfp_ad_unit_code'] = gamAdUnit.replace(/^\/+/, '');
     }
 
     // digitrust properties

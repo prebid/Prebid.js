@@ -6,7 +6,7 @@ import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
-const SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
+const SECURE_BID_URL = 'https://htlb.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BANNER_ENDPOINT_VERSION = 7.2;
 const VIDEO_ENDPOINT_VERSION = 8.1;
@@ -128,6 +128,9 @@ function parseBid(rawBid, currency, bidRequest) {
   bid.meta.networkId = utils.deepAccess(rawBid, 'ext.dspid');
   bid.meta.brandId = utils.deepAccess(rawBid, 'ext.advbrandid');
   bid.meta.brandName = utils.deepAccess(rawBid, 'ext.advbrand');
+  if (rawBid.adomain && rawBid.adomain.length > 0) {
+    bid.meta.advertiserDomains = rawBid.adomain;
+  }
 
   return bid;
 }
@@ -170,7 +173,7 @@ function includesSize(sizeArray, size) {
  *
  * @param  {*}       bidFloor    The bidFloor parameter inside bid request config.
  * @param  {*}       bidFloorCur The bidFloorCur parameter inside bid request config.
- * @return {boolean}             True if this is a valid biFfloor parameters format, and false
+ * @return {boolean}             True if this is a valid bidFloor parameters format, and false
  *                               otherwise.
  */
 function isValidBidFloorParams(bidFloor, bidFloorCur) {
@@ -195,6 +198,39 @@ function getBidRequest(id, impressions) {
 }
 
 /**
+ * Adds a User ID module's response into user Eids array.
+ *
+ * @param  {array}  userEids       An array of objects containing user ids,
+ *                                 will be attached to bid request later.
+ * @param  {object} seenIdPartners An object with Identity partners names already added,
+ *                                 updated with new partner name.
+ * @param  {*}      id             The id obtained from User ID module.
+ * @param  {string} source         The URL of the User ID module.
+ * @param  {string} ixlPartnerName The name of the Identity Partner in IX Library.
+ * @param  {string} rtiPartner     The name of the User ID provider in Prebid.
+ * @return {boolean}               True if successfully added the ID to the userEids, false otherwise.
+ */
+function addUserEids(userEids, seenIdPartners, id, source, ixlPartnerName, rtiPartner) {
+  if (id) {
+    // mark the partnername that IX RTI uses
+    seenIdPartners[ixlPartnerName] = 1;
+    userEids.push({
+      source: source,
+      uids: [{
+        id: id,
+        ext: {
+          rtiPartner: rtiPartner
+        }
+      }]
+    });
+    return true;
+  }
+
+  utils.logWarn('Tried to add a user ID from Prebid, the ID received was null');
+  return false;
+}
+
+/**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
  * @param  {array}  validBidRequests A list of valid bid request config objects.
@@ -210,6 +246,17 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
 
+  // Dict for identity partners already populated from prebid
+  let seenIdPartners = {};
+
+  // Get ids from Prebid User ID Modules
+  const userId = validBidRequests[0].userId;
+  if (userId && typeof userId === 'object') {
+    if (userId.idl_env) {
+      addUserEids(userEids, seenIdPartners, userId.idl_env, 'liveramp.com', 'LiveRampIp', 'idl');
+    }
+  }
+
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
   if (window.headertag && typeof window.headertag.getIdentityInfo === 'function') {
@@ -217,9 +264,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (identityInfo && typeof identityInfo === 'object') {
       for (const partnerName in identityInfo) {
         if (identityInfo.hasOwnProperty(partnerName)) {
-          let response = identityInfo[partnerName];
-          if (!response.responsePending && response.data && typeof response.data === 'object' && Object.keys(response.data).length) {
-            userEids.push(response.data);
+          // check if not already populated by prebid cache
+          if (!seenIdPartners.hasOwnProperty(partnerName)) {
+            let response = identityInfo[partnerName];
+            if (!response.responsePending && response.data && typeof response.data === 'object' && Object.keys(response.data).length) {
+              userEids.push(response.data);
+            }
           }
         }
       }
@@ -327,6 +377,67 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   };
 }
 
+/**
+ *
+ * @param  {array}   bannerSizeList list of banner sizes
+ * @param  {array}   bannerSize the size to be removed
+ * @return {boolean} true if succesfully removed, false if not found
+ */
+
+function removeFromSizes(bannerSizeList, bannerSize) {
+  for (let i = 0; i < bannerSizeList.length; i++) {
+    if (bannerSize[0] == bannerSizeList[i][0] && bannerSize[1] == bannerSizeList[i][1]) {
+      bannerSizeList.splice(i, 1);
+      return true;
+    }
+  }
+  // size not found
+  return false;
+}
+
+/**
+ * Updates the Object to track missing banner sizes.
+ *
+ * @param {object} validBidRequest    The bid request for an ad unit's with a configured size.
+ * @param {object} missingBannerSizes The object containing missing banner sizes
+ * @param {object} imp                The impression for the bidrequest
+ */
+function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
+  const transactionID = validBidRequest.transactionId;
+  if (missingBannerSizes.hasOwnProperty(transactionID)) {
+    let currentSizeList = [];
+    if (missingBannerSizes[transactionID].hasOwnProperty('missingSizes')) {
+      currentSizeList = missingBannerSizes[transactionID].missingSizes;
+    }
+    removeFromSizes(currentSizeList, validBidRequest.params.size);
+    missingBannerSizes[transactionID].missingSizes = currentSizeList;
+  } else {
+    // New Ad Unit
+    if (utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes')) {
+      let sizeList = utils.deepClone(validBidRequest.mediaTypes.banner.sizes);
+      removeFromSizes(sizeList, validBidRequest.params.size);
+      let newAdUnitEntry = { 'missingSizes': sizeList,
+        'impression': imp
+      };
+      missingBannerSizes[transactionID] = newAdUnitEntry;
+    }
+  }
+}
+
+/**
+ *
+ * @param  {object} imp      Impression object to be modified
+ * @param  {array}  newSize  The new size to be applied
+ * @return {object} newImp   Updated impression object
+ */
+function createMissingBannerImp(imp, newSize) {
+  const newImp = utils.deepClone(imp);
+  newImp.ext.sid = `${newSize[0]}x${newSize[1]}`;
+  newImp.banner.w = newSize[0];
+  newImp.banner.h = newSize[1];
+  return newImp;
+}
+
 export const spec = {
 
   code: BIDDER_CODE,
@@ -389,6 +500,9 @@ export const spec = {
     let videoImps = [];
     let validBidRequest = null;
 
+    // To capture the missing sizes i.e not configured for ix
+    let missingBannerSizes = {};
+
     for (let i = 0; i < validBidRequests.length; i++) {
       validBidRequest = validBidRequests[i];
 
@@ -399,10 +513,22 @@ export const spec = {
           utils.logError('Bid size is not included in video playerSize')
         }
       }
-
       if (validBidRequest.mediaType === BANNER || utils.deepAccess(validBidRequest, 'mediaTypes.banner') ||
           (!validBidRequest.mediaType && !validBidRequest.mediaTypes)) {
-        bannerImps.push(bidToBannerImp(validBidRequest));
+        let imp = bidToBannerImp(validBidRequest);
+        bannerImps.push(imp);
+        updateMissingSizes(validBidRequest, missingBannerSizes, imp);
+      }
+    }
+    // Finding the missing banner sizes ,and making impressions for them
+    for (var transactionID in missingBannerSizes) {
+      if (missingBannerSizes.hasOwnProperty(transactionID)) {
+        let missingSizes = missingBannerSizes[transactionID].missingSizes;
+        for (let i = 0; i < missingSizes.length; i++) {
+          let origImp = missingBannerSizes[transactionID].impression;
+          let newImp = createMissingBannerImp(origImp, missingSizes[i]);
+          bannerImps.push(newImp);
+        }
       }
     }
 
