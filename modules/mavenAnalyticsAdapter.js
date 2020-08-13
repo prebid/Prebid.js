@@ -81,11 +81,14 @@ let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
                     // GDPR values are stored with at the bidRequest level
                     // If set for any bidRequest, set for auction
                     args.bidderRequests.forEach(request => {
-                        if (request.hasOwnProperty('gdprApplies')) {
-                            auctionObj.gdprApplies = request.gdprApplies;
-                        }
-                        if (request.hasOwnProperty('consentString')) {
-                            auctionObj.consentString = request.consentString;
+                        if (request.gdprConsent) {
+                            let gc = request.gdprConsent;
+                            if (gc.hasOwnProperty('gdprApplies')) {
+                                auctionObj.gdprApplies = gc.gdprApplies;
+                            }
+                            if (gc.hasOwnProperty('consentString')) {
+                                auctionObj.consentString = gc.consentString;
+                            }
                         }
                     });
                     currentAuctions[id] = auctionObj;
