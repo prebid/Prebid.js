@@ -1,7 +1,13 @@
 import * as utils from '../src/utils.js';
-import { Renderer } from '../src/Renderer.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO } from '../src/mediaTypes.js';
+import {
+  Renderer
+} from '../src/Renderer.js';
+import {
+  registerBidder
+} from '../src/adapters/bidderFactory.js';
+import {
+  VIDEO
+} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'smartx';
 const URL = 'https://bid.sxp.smartclip.net/bid/1000';
 export const spec = {
@@ -14,7 +20,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (bid && typeof bid.params !== 'object') {
       utils.logError(BIDDER_CODE + ': params is not defined or is incorrect in the bidder settings.');
       return false;
@@ -40,18 +46,29 @@ export const spec = {
       utils.logError(BIDDER_CODE + ': siteId is not present in bidder params');
       return false;
     }
-    if (utils.deepAccess(bid, 'mediaTypes.video.context') == 'outstream' || utils.deepAccess(bid, 'params.ad_unit') == 'outstream') {
+    if (!utils.getBidIdParameter('bidfloor', bid.params)) {
+      utils.logError(BIDDER_CODE + ': bidfloor is not present in bidder params');
+      return false;
+    }
+    if (!utils.getBidIdParameter('bidfloorcur', bid.params)) {
+      utils.logError(BIDDER_CODE + ': bidfloorcur is not present in bidder params');
+      return false;
+    }
+    if (utils.deepAccess(bid, 'mediaTypes.video.context') == 'outstream') {
       if (!utils.getBidIdParameter('outstream_function', bid.params)) {
         if (!utils.getBidIdParameter('outstream_options', bid.params)) {
           utils.logMessage(BIDDER_CODE + ': outstream_options parameter is not defined. The default outstream renderer will be injected in the header. You can override the default SmartX outstream rendering by defining your own Outstream function using field outstream_function.');
-          return true;
+          // return true;
+          return false;
         }
         if (!utils.getBidIdParameter('slot', bid.params.outstream_options)) {
           utils.logMessage(BIDDER_CODE + ': slot parameter is not defined in outstream_options object in the configuration. The default outstream renderer will be injected in the header.');
-          return true;
+          // return true;
+          return false;
         }
       }
     }
+
     return true;
   },
   /**
@@ -61,10 +78,12 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const page = bidderRequest.refererInfo.referer;
     const isPageSecure = !!page.match(/^https:/)
-    const smartxRequests = bidRequests.map(function(bid) {
+
+
+    const smartxRequests = bidRequests.map(function (bid) {
       const tagId = utils.getBidIdParameter('tagId', bid.params);
       const publisherId = utils.getBidIdParameter('publisherId', bid.params);
       const siteId = utils.getBidIdParameter('siteId', bid.params);
@@ -91,9 +110,11 @@ export const spec = {
       const protocols = utils.getBidIdParameter('protocols', bid.params) || [2, 3, 5, 6];
       var contextcustom = utils.deepAccess(bid, 'mediaTypes.video.context');
       var placement = 1;
+
       if (contextcustom == 'outstream') {
         placement = 3;
       }
+
       let smartxReq = {
         id: bid.bidId,
         secure: secure,
@@ -119,15 +140,19 @@ export const spec = {
           'smart.bidpricetype': 1
         }
       };
+
       if (utils.getBidIdParameter('bidfloor', bid.params) != '') {
         smartxReq.bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
       }
+
       if (utils.getBidIdParameter('bidfloorcur', bid.params) != '') {
         smartxReq.bidfloorcur = utils.getBidIdParameter('bidfloorcur', bid.params);
       }
+
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
       }
+
       const language = navigator.language ? 'language' : 'userLanguage';
       const device = {
         h: screen.height,
@@ -157,6 +182,7 @@ export const spec = {
         cur: cur
       };
       const userExt = {};
+
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
         userExt.consent = bidderRequest.gdprConsent.consentString;
@@ -168,14 +194,19 @@ export const spec = {
           };
         }
       }
+
       // Add common id if available
       if (pubcid) {
         userExt.fpc = pubcid;
       }
+
       // Only add the user object if it's not empty
       if (!utils.isEmpty(userExt)) {
-        requestPayload.user = { ext: userExt };
+        requestPayload.user = {
+          ext: userExt
+        };
       }
+      // TODO check if params.user.data is set, if not skip custom targetingparams
       // CUSTOM - Targetingparameters
       var dataarray = [];
       for (var i = 0; i < bid.params.user.data.length; i++) {
@@ -193,11 +224,14 @@ export const spec = {
           })
         }
       }
+
       requestPayload.user = {
         ext: userExt,
         data: dataarray
       }
-      // CUSTOM -  Targetingparameters
+      // CUSTOM - Targetingparameters
+
+
       return {
         method: 'POST',
         url: URL,
@@ -211,6 +245,8 @@ export const spec = {
         }
       };
     });
+
+
     return smartxRequests;
   },
   /**
@@ -219,12 +255,12 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidderRequest) {
+  interpretResponse: function (serverResponse, bidderRequest) {
     const bidResponses = [];
     const serverResponseBody = serverResponse.body;
     if (serverResponseBody && utils.isArray(serverResponseBody.seatbid)) {
-      utils._each(serverResponseBody.seatbid, function(bids) {
-        utils._each(bids.bid, function(smartxBid) {
+      utils._each(serverResponseBody.seatbid, function (bids) {
+        utils._each(bids.bid, function (smartxBid) {
           let currentBidRequest = {};
           for (let i in bidderRequest.bidRequest.bids) {
             if (smartxBid.impid == bidderRequest.bidRequest.bids[i].bidId) {
@@ -235,7 +271,7 @@ export const spec = {
            * Make sure currency and price are the right ones
            * TODO: what about the pre_market_bid partners sizes?
            */
-          utils._each(currentBidRequest.params.pre_market_bids, function(pmb) {
+          utils._each(currentBidRequest.params.pre_market_bids, function (pmb) {
             if (pmb.deal_id == smartxBid.id) {
               smartxBid.price = pmb.price;
               serverResponseBody.cur = pmb.currency;
@@ -297,6 +333,7 @@ export const spec = {
     return bidResponses;
   }
 }
+
 function createOutstreamScript(bid) {
   // const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
   utils.logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
@@ -311,10 +348,26 @@ function createOutstreamScript(bid) {
   let smartPlayObj = {
     minAdWidth: 290,
     maxAdWidth: 900,
-    elementLocator: { allowInViewport: false, minimumElementWidth: 290, scanPixelsBelowViewport: 800 },
-    onStartCallback: function(m, n) { try { sc_smartIntxtStart(n); } catch (f) {} },
-    onCappedCallback: function(m, n) { try { sc_smartIntxtNoad(n); } catch (f) {} },
-    onEndCallback: function(m, n) { try { sc_smartIntxtEnd(n); } catch (f) {} },
+    elementLocator: {
+      allowInViewport: false,
+      minimumElementWidth: 290,
+      scanPixelsBelowViewport: 800
+    },
+    onStartCallback: function (m, n) {
+      try {
+        sc_smartIntxtStart(n);
+      } catch (f) {}
+    },
+    onCappedCallback: function (m, n) {
+      try {
+        sc_smartIntxtNoad(n);
+      } catch (f) {}
+    },
+    onEndCallback: function (m, n) {
+      try {
+        sc_smartIntxtEnd(n);
+      } catch (f) {}
+    },
     debug: true
   };
   smartPlayObj.adResponse = bid.vastContent;
@@ -322,15 +375,18 @@ function createOutstreamScript(bid) {
   script.type = 'text/javascript';
   script.async = 'true';
   script.src = 'https://dco.smartclip.net/?plc=7777777';
-  script.onload = script.onreadystatechange = function() {
+  script.onload = script.onreadystatechange = function () {
     var rs = this.readyState;
     if (rs && rs != 'complete' && rs != 'loaded') return;
     try {
       SmartPlay(elementId, smartPlayObj);
-    } catch (e) { utils.logError('error caught : ' + e); }
+    } catch (e) {
+      utils.logError('error caught : ' + e);
+    }
   };
   return script;
 }
+
 function outstreamRender(bid) {
   const script = createOutstreamScript(bid);
   if (bid.renderer.config.outstream_function != null && typeof bid.renderer.config.outstream_function === 'function') {
