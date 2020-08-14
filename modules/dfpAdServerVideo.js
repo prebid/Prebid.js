@@ -42,7 +42,7 @@ import { auctionManager } from '../src/auctionManager.js';
 const defaultParamConstants = {
   env: 'vp',
   gdfp_req: 1,
-  output: 'xml_vast3',
+  output: 'vast',
   unviewed_position_start: 1,
 };
 
