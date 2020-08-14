@@ -16,8 +16,8 @@ function isValidConfig(configParams) {
     utils.logError('User ID - zeotapId submodule requires configParams');
     return false;
   }
-  if (!configParams.name || !configParams.storage) {
-    utils.logError('User ID - zeotapId submodule requires valid config params: name, storage');
+  if (!configParams.name) {
+    utils.logError('User ID - zeotapId submodule requires valid config params: name');
     return false;
   }
   return true;
@@ -34,7 +34,8 @@ function readFromLocalStorage() {
 function fetchId(configParams) {
   if (!isValidConfig(configParams)) return undefined;
   const id = readCookie() || readFromLocalStorage();
-  return { id };
+  if (!id) return undefined;
+  return { id: JSON.parse(atob(id)) };
 };
 
 /** @type {Submodule} */
@@ -51,9 +52,13 @@ export const zeotapIdPlusSubmodule = {
    * @return { Object | string | undefined }
    */
   decode(value) {
-    return value ? {
-      'IDP': utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined
-    } : undefined;
+    const id = value ? utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined : undefined;
+    if (!id) {
+      return undefined;
+    }
+    return {
+      'IDP': JSON.parse(atob(id))
+    }
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument

@@ -11,12 +11,7 @@ const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_COOKIE = 'THIS-IS-A-DUMMY-COOKIE';
 const CONFIG_PARAMS_MOCK = {
   name: 'zeotapId+',
-  storage: {
-    name: 'IDP',
-    type: 'cookie',
-    expires: 30,
-    refreshInSeconds: null
-  }
+  storage: { name: 'IDP', type: 'cookie' }
 };
 
 function getConfigMock() {
@@ -27,9 +22,7 @@ function getConfigMock() {
         name: 'zeotapId+',
         storage: {
           name: 'IDP',
-          type: 'cookie',
-          expires: 30,
-          refreshInSeconds: null
+          type: 'cookie'
         }
       }]
     }
@@ -54,7 +47,7 @@ function getAdUnitMock(code = 'adUnit-code') {
 function writeZeotapCookie() {
   storage.setCookie(
     ZEOTAP_COOKIE_NAME,
-    ZEOTAP_COOKIE,
+    btoa(JSON.stringify(ZEOTAP_COOKIE)),
     (new Date(Date.now() + 5000).toUTCString()),
   );
 }
@@ -96,18 +89,16 @@ describe('Zeotap ID System', function() {
       });
     });
 
-    it('returns empty id in object if both cookie and local storage are empty', function() {
+    it('returns undefined if both cookie and local storage are empty', function() {
       let id = zeotapIdPlusSubmodule.getId(CONFIG_PARAMS_MOCK);
-      expect(id).to.deep.equal({
-        id: ''
-      });
+      expect(id).to.be.undefined
     })
   });
 
   describe('test method: decode', function() {
     it('provides the Zeotap ID (IDP) from a stored object', function() {
       let zeotapId = {
-        id: ZEOTAP_COOKIE,
+        id: btoa(JSON.stringify(ZEOTAP_COOKIE)),
       };
 
       expect(zeotapIdPlusSubmodule.decode(zeotapId)).to.deep.equal({
@@ -116,7 +107,7 @@ describe('Zeotap ID System', function() {
     });
 
     it('provides the Zeotap ID (IDP) from a stored string', function() {
-      let zeotapId = ZEOTAP_COOKIE;
+      let zeotapId = btoa(JSON.stringify(ZEOTAP_COOKIE));
 
       expect(zeotapIdPlusSubmodule.decode(zeotapId)).to.deep.equal({
         IDP: ZEOTAP_COOKIE
