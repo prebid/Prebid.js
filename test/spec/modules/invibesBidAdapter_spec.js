@@ -137,9 +137,17 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('has capped ids if local storage variable is correctly formatted', function () {
+      top.window.invibes.optIn = 1;
+      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       localStorage.ivvcap = '{"9731":[1,1768600800000]}';
       const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
       expect(request.data.capCounts).to.equal('9731=1');
+    });
+
+    it('does not have capped ids if local storage variable is correctly formatted but no opt in', function () {
+      localStorage.ivvcap = '{"9731":[1,1768600800000]}';
+      const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
+      expect(request.data.capCounts).to.equal('');
     });
 
     it('does not have capped ids if local storage variable is incorrectly formatted', function () {
@@ -184,6 +192,8 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('sends lid when comes on cookie', function () {
+      top.window.invibes.optIn = 1;
+      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
       global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":0}';
       let bidderRequest = {gdprConsent: {vendorData: {vendorConsents: {436: true}}}};
       let request = spec.buildRequests(bidRequests, bidderRequest);

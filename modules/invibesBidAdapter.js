@@ -8,7 +8,7 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 2,
+  PREBID_VERSION: 4,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436
 };
@@ -53,6 +53,7 @@ registerBidder(spec);
 // some state info is required: cookie info, unique user visit id
 const topWin = getTopMostWindow();
 let invibes = topWin.invibes = topWin.invibes || {};
+invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false];
 let _customUserSync;
 
 function isBidRequestValid(bid) {
@@ -87,11 +88,10 @@ function buildRequest(bidRequests, bidderRequest) {
     _customUserSync = _customUserSync || bidRequest.params.customUserSync;
   });
 
+  invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent);
+
   invibes.visitId = invibes.visitId || generateRandomId();
-
   invibes.noCookies = invibes.noCookies || invibes.getCookie('ivNoCookie');
-  invibes.optIn = invibes.optIn || invibes.getCookie('ivOptIn') || readGdprConsent(bidderRequest.gdprConsent);
-
   let lid = initDomainId(invibes.domainOptions);
 
   const currentQueryStringParams = parseQueryStringParams();
@@ -117,7 +117,8 @@ function buildRequest(bidRequests, bidderRequest) {
     oi: invibes.optIn,
 
     kw: keywords,
-    purposes: invibes.purposes.toString()
+    purposes: invibes.purposes.toString(),
+
   };
 
   if (lid) {
@@ -275,6 +276,8 @@ function renderCreative(bidModel) {
 function getCappedCampaignsAsString() {
   const key = 'ivvcap';
 
+  if (!invibes.optIn || !invibes.purposes[0]) { return ''; }
+
   let loadData = function () {
     try {
       return JSON.parse(storage.getDataFromLocalStorage(key)) || {};
@@ -346,8 +349,6 @@ function buildSyncUrl() {
 }
 
 function readGdprConsent(gdprConsent) {
-  invibes.purposes = [false, false, false, false, false, false, false, false, false, false];
-
   if (gdprConsent && gdprConsent.vendorData) {
     if (!gdprConsent.vendorData.gdprApplies || gdprConsent.vendorData.hasGlobalConsent) {
       var index;
@@ -440,16 +441,10 @@ invibes.Uid = {
 
 invibes.getCookie = function (name) {
   if (!storage.cookiesAreEnabled()) { return; }
-  let i, x, y;
-  let cookies = document.cookie.split(';');
-  for (i = 0; i < cookies.length; i++) {
-    x = cookies[i].substr(0, cookies[i].indexOf('='));
-    y = cookies[i].substr(cookies[i].indexOf('=') + 1);
-    x = x.replace(/^\s+|\s+$/g, '');
-    if (x === name) {
-      return unescape(y);
-    }
-  }
+
+  if (!invibes.optIn || !invibes.purposes[0]) { return; }
+
+  return storage.getCookie(name);
 };
 
 let initDomainId = function (options) {
