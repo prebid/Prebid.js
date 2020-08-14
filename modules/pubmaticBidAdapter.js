@@ -865,6 +865,11 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
+    // add the content object from config in request
+    if (typeof config.getConfig('content') === 'object') {
+      payload.site.content = config.getConfig('content');
+    }
+
     // merge the device from config.getConfig('device')
     if (typeof config.getConfig('device') === 'object') {
       payload.device = Object.assign(payload.device, config.getConfig('device'));
@@ -910,6 +915,11 @@ export const spec = {
       // not copying domain from site as it is a derived value from page
       payload.app.publisher = payload.site.publisher;
       payload.app.ext = payload.site.ext || UNDEFINED;
+      // We will also need to pass content object in app.content if app object is also set into the config;
+      // BUT do not use content object from config if content object is present in app as app.content
+      if (typeof payload.app.content !== 'object') {
+        payload.app.content = payload.site.content || UNDEFINED;
+      }
       delete payload.site;
     }
 
