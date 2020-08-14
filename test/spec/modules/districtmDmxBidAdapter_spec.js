@@ -138,12 +138,12 @@ const bidRequestVideo = [{
       id: 123,
       skipppable: true,
       playback_method: ['auto_play_sound_off', 'viewport_sound_off'],
-      mimes: ["application/javascript",
-        "video/mp4"],
+      mimes: ['application/javascript',
+        'video/mp4'],
     }
   },
-  'mediaTypes': { video: {context: 'instream', //or 'outstream'
-      playerSize: [[640, 480]]} },
+  'mediaTypes': { video: {context: 'instream', // or 'outstream'
+    playerSize: [[640, 480]]} },
   'adUnitCode': 'div-gpt-ad-12345678-1',
   'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
   'sizes': [
@@ -607,8 +607,8 @@ describe('DistrictM Adaptor', function () {
     })
   })
 
-  describe('test vast tag', function(){
-    it('img tag should not be present', function(){
+  describe('test vast tag', function() {
+    it('img tag should not be present', function() {
       expect(cleanVast(sample_vast).includes('img')).to.be.equal(false)
     })
   })
@@ -644,7 +644,7 @@ describe('DistrictM Adaptor', function () {
 
   describe('Test getProtocols function', function() {
     it('getProtocols will return 3', function() {
-      expect(getProtocols({protocols:["VAST_3_0"]})[0]).to.be.equal(3)
+      expect(getProtocols({protocols: ['VAST_3_0']})[0]).to.be.equal(3)
     })
     it('getProtocols will return 6', function() {
       expect(_.isEqual(getProtocols({}), [2, 3, 5, 6, 7, 8])).to.be.equal(true)
@@ -735,10 +735,8 @@ describe('DistrictM Adaptor', function () {
     });
   });
 
-  describe('bidRequest Video testing', function(){
+  describe('bidRequest Video testing', function() {
     const request = districtm.buildRequests(bidRequestVideo, bidRequestVideo);
-    console.log(request)
-    console.log(request.data)
     const data = JSON.parse(request.data)
     expect(data instanceof Object).to.be.equal(true)
   })

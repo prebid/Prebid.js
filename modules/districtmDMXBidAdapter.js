@@ -39,8 +39,8 @@ export const spec = {
               nBid.requestId = nBid.impid;
               nBid.width = nBid.w || width;
               nBid.height = nBid.h || height;
-              nBid.mediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video': null;
-              if(nBid.mediaType) {
+              nBid.mediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video' : null;
+              if (nBid.mediaType) {
                 nBid.vastXml = cleanVast(nBid.adm);
               }
               if (nBid.dealid) {
@@ -152,9 +152,9 @@ export const spec = {
           topframe: 1,
           skip: 0,
           linearity: 1,
-          minduration: 10,
-          maxduration: 30,
-          playbackmethod: getPlaybackmethod(dmx.params.video.playback_method),
+          minduration: dmx.mediaTypes.video.minduration || 5,
+          maxduration: dmx.mediaTypes.video.maxduration || 60,
+          playbackmethod: getPlaybackmethod(dmx.mediaTypes.video.playback_method),
           api: getApi(dmx.mediaTypes.video),
           mimes: dmx.mediaTypes.video.mimes || ['video/mp4'],
           protocols: getProtocols(dmx.mediaTypes.video),
@@ -399,13 +399,15 @@ export function getProtocols({protocols}) {
   }
 }
 
-export function  cleanVast(str){
+export function cleanVast(str) {
   const toberemove = /<img\s[^>]*?src\s*=\s*['\"]([^'\"]*?)['\"][^>]*?>/
   const [img, url] = str.match(toberemove)
   str = str.replace(toberemove, '')
-  if(url) {
-    const insrt = `<Impression><![CDATA[${url}]]></Impression>`
-    str = str.replace("</Impression>", `</Impression>${insrt}`)
+  if (img) {
+    if (url) {
+      const insrt = `<Impression><![CDATA[${url}]]></Impression>`
+      str = str.replace('</Impression>', `</Impression>${insrt}`)
+    }
   }
   return str;
 }
