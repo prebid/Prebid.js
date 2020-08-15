@@ -363,7 +363,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Use the siteId in the first bid request as the main siteId.
   payload.s = validBidRequests[0].params.siteId;
   payload.v = version;
-  payload.r = JSON.stringify(r);
+  payload.r = encodeURIComponent(JSON.stringify(r));
   payload.ac = 'j';
   payload.sd = 1;
   if (version === VIDEO_ENDPOINT_VERSION) {
