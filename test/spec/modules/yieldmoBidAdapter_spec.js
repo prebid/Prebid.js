@@ -140,12 +140,13 @@ describe('YieldmoAdapter', function () {
       expect(data.hasOwnProperty('pr')).to.be.true;
       expect(data.hasOwnProperty('scrd')).to.be.true;
       expect(data.dnt).to.be.false;
-      expect(data.e).to.equal(90);
       expect(data.hasOwnProperty('description')).to.be.true;
       expect(data.hasOwnProperty('title')).to.be.true;
       expect(data.hasOwnProperty('h')).to.be.true;
       expect(data.hasOwnProperty('w')).to.be.true;
       expect(data.hasOwnProperty('pubcid')).to.be.true;
+      expect(data.userConsent).to.equal('{"gdprApplies":"","cmp":""}');
+      expect(data.us_privacy).to.equal('');
     });
 
     it('should add pubcid as parameter of request', function () {
@@ -239,7 +240,7 @@ describe('YieldmoAdapter', function () {
 
     it('should add ccpa information to request if available', () => {
       const privacy = '1YNY';
-      bidderRequest.us_privacy = privacy;
+      bidderRequest.uspConsent = privacy;
       const data = spec.buildRequests(bidArray, bidderRequest).data;
       expect(data.us_privacy).equal(privacy);
     });
@@ -305,27 +306,8 @@ describe('YieldmoAdapter', function () {
   });
 
   describe('getUserSync', function () {
-    const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
-    let options = {
-      iframeEnabled: true,
-      pixelEnabled: true,
-    };
-
     it('should return a tracker with type and url as parameters', function () {
-      if (/iPhone|iPad|iPod/i.test(window.navigator.userAgent)) {
-        expect(spec.getUserSync(options)).to.deep.equal([
-          {
-            type: 'iframe',
-            url: SYNC_ENDPOINT + utils.getOrigin(),
-          },
-        ]);
-
-        options.iframeEnabled = false;
-        expect(spec.getUserSync(options)).to.deep.equal([]);
-      } else {
-        // not ios, so tracker will fail
-        expect(spec.getUserSync(options)).to.deep.equal([]);
-      }
+      expect(spec.getUserSyncs()).to.deep.equal([]);
     });
   });
 });
