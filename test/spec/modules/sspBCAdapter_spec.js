@@ -64,6 +64,37 @@ describe('SSPBC adapter', function () {
       transactionId,
     }
     ];
+    const bids_test = [{
+      adUnitCode: 'test_wideboard',
+      bidder: BIDDER_CODE,
+      mediaTypes: {
+        banner: {
+          sizes: [
+            [970, 300],
+            [750, 300],
+            [750, 200],
+            [750, 100],
+            [300, 250]
+          ]
+        }
+      },
+      sizes: [
+        [970, 300],
+        [750, 300],
+        [750, 200],
+        [750, 100],
+        [300, 250]
+      ],
+      params: {
+        id: '005',
+        siteId: '235911',
+        test: 1
+      },
+      auctionId,
+      bidderRequestId,
+      bidId: auctionId + '1',
+      transactionId,
+    }];
     const bidRequest = {
       auctionId,
       bidderCode: BIDDER_CODE,
@@ -82,6 +113,29 @@ describe('SSPBC adapter', function () {
       bidderRequestId,
       bids: [bids[0]],
       gdprConsent,
+      refererInfo: {
+        reachedTop: true,
+        referer: 'https://test.site.pl/',
+        stack: ['https://test.site.pl/'],
+      }
+    };
+    const bidRequestTest = {
+      auctionId,
+      bidderCode: BIDDER_CODE,
+      bidderRequestId,
+      bids: bids_test,
+      gdprConsent,
+      refererInfo: {
+        reachedTop: true,
+        referer: 'https://test.site.pl/',
+        stack: ['https://test.site.pl/'],
+      }
+    };
+    const bidRequestTestNoGDPR = {
+      auctionId,
+      bidderCode: BIDDER_CODE,
+      bidderRequestId,
+      bids: bids_test,
       refererInfo: {
         reachedTop: true,
         referer: 'https://test.site.pl/',
@@ -154,8 +208,11 @@ describe('SSPBC adapter', function () {
     }
     return {
       bids,
+      bids_test,
       bidRequest,
       bidRequestSingle,
+      bidRequestTest,
+      bidRequestTestNoGDPR,
       serverResponse,
       serverResponseSingle,
       emptyResponse
@@ -221,6 +278,38 @@ describe('SSPBC adapter', function () {
     it('should send gdpr data', function () {
       expect(payload.regs).to.be.an('object').and.to.have.property('[ortb_extensions.gdpr]', 1);
       expect(payload.user).to.be.an('object').and.to.have.property('[ortb_extensions.consent]', bidRequest.gdprConsent.consentString);
+    });
+  });
+
+  describe('Ajax tests', function () {
+    const { bids_test, bidRequestTest, bidRequestTestNoGDPR } = prepareTestData();
+    const requestSingleTest = spec.buildRequests(bids_test, bidRequestTest);
+    const requestSingleTestNoGDPR = spec.buildRequests(bids_test, bidRequestTestNoGDPR);
+
+    it('should return test ad when request is made with test:1 and gdpr data', function (done) {
+      const xhr = new XMLHttpRequest();
+      xhr.open(requestSingleTest.method, requestSingleTest.url, true)
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          const response = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+          expect(response.seatbid).to.be.an('array');
+          done();
+        }
+      }
+      xhr.send(requestSingleTest.data);
+    });
+
+    it('should return no ads for request without gdpr, regardless of test settings', function (done) {
+      const xhr = new XMLHttpRequest();
+      xhr.open(requestSingleTestNoGDPR.method, requestSingleTestNoGDPR.url, true)
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          const response = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+          expect(response.seatbid).to.be.undefined;
+          done();
+        }
+      }
+      xhr.send(requestSingleTestNoGDPR.data);
     });
   });
 
