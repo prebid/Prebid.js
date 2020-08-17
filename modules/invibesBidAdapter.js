@@ -361,32 +361,33 @@ function readGdprConsent(gdprConsent) {
     let purposeConsents = getPurposeConsents(gdprConsent.vendorData);
 
     if (purposeConsents == null) { return 0; }
-    let properties = Object.keys(purposeConsents);
-    let purposeConsentsCounter = getPurposeConsentsCounter(gdprConsent.vendorData);
+    let purposesLength = getPurposeConsentsCounter(gdprConsent.vendorData);
 
-    var oneMissing = false;
-
-    for (let i = 0; i < purposeConsentsCounter; i++) {
-      invibes.purposes[i] = !(!purposeConsents[properties[i]] || purposeConsents[properties[i]] === 'false');
-      if (!purposeConsents[properties[i]] || purposeConsents[properties[i]] === 'false') {
-        oneMissing = true;
+    if (purposeConsents instanceof Array) {
+      for (let i = 0; i < purposesLength && i < purposeConsents.length; i++) {
+        invibes.purposes[i] = !((purposeConsents[i] === false || purposeConsents[i] === 'false' || purposeConsents[i] == null));
       }
-    }
+    } else if (typeof purposeConsents === 'object' && purposeConsents !== null) {
+      let i = 0;
+      for (let prop in purposeConsents) {
+        if (i === purposesLength) {
+          break;
+        }
 
-    if (properties.length < purposeConsentsCounter) {
+        if (purposeConsents.hasOwnProperty(prop)) {
+          invibes.purposes[i] = !((purposeConsents[prop] === false || purposeConsents[prop] === 'false' || purposeConsents[prop] == null));
+          i++;
+        }
+      }
+    } else {
       return 0;
     }
 
-    if (oneMissing) {
-      return 0;
-    }
-
+    let invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10);
     let vendorConsents = getVendorConsents(gdprConsent.vendorData);
-    if (vendorConsents == null || vendorConsents[CONSTANTS.INVIBES_VENDOR_ID.toString(10)] == null) {
-      return 4;
-    }
+    if (vendorConsents[invibesVendorId] === false) { return 0; }
 
-    if (vendorConsents[CONSTANTS.INVIBES_VENDOR_ID.toString(10)] === false) { return 0; }
+    if (vendorConsents == null || vendorConsents[invibesVendorId] == null) { return 4; }
 
     return 2;
   }
