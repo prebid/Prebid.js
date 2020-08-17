@@ -281,38 +281,6 @@ describe('SSPBC adapter', function () {
     });
   });
 
-  describe('Ajax tests', function () {
-    const { bids_test, bidRequestTest, bidRequestTestNoGDPR } = prepareTestData();
-    const requestSingleTest = spec.buildRequests(bids_test, bidRequestTest);
-    const requestSingleTestNoGDPR = spec.buildRequests(bids_test, bidRequestTestNoGDPR);
-
-    it('should return test ad when request is made with test:1 and gdpr data', function (done) {
-      const xhr = new XMLHttpRequest();
-      xhr.open(requestSingleTest.method, requestSingleTest.url, true)
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-          const response = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-          expect(response.seatbid).to.be.an('array');
-          done();
-        }
-      }
-      xhr.send(requestSingleTest.data);
-    });
-
-    it('should return no ads for request without gdpr, regardless of test settings', function (done) {
-      const xhr = new XMLHttpRequest();
-      xhr.open(requestSingleTestNoGDPR.method, requestSingleTestNoGDPR.url, true)
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-          const response = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-          expect(response.seatbid).to.be.undefined;
-          done();
-        }
-      }
-      xhr.send(requestSingleTestNoGDPR.data);
-    });
-  });
-
   describe('interpretResponse', function () {
     const { bids, emptyResponse, serverResponse, serverResponseSingle, bidRequest, bidRequestSingle } = prepareTestData();
     const request = spec.buildRequests(bids, bidRequest);
