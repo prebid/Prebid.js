@@ -350,7 +350,7 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.oi).to.equal(0);
     });
 
-    it('should send oi = 0 when purpose consents weren\'t approved on tcf v2', function () {
+    it('should send oi = 2 when purpose consents weren\'t approved on tcf v2', function () {
       let bidderRequest = {
         gdprConsent: {
           vendorData: {
@@ -375,10 +375,10 @@ describe('invibesBidAdapter:', function () {
         }
       };
       let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.oi).to.equal(0);
+      expect(request.data.oi).to.equal(2);
     });
 
-    it('should send oi = 0 when purpose consents are less then 10 on tcf v2', function () {
+    it('should send oi = 2 when purpose consents are less then 10 on tcf v2', function () {
       let bidderRequest = {
         gdprConsent: {
           vendorData: {
@@ -398,7 +398,7 @@ describe('invibesBidAdapter:', function () {
         }
       };
       let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.oi).to.equal(0);
+      expect(request.data.oi).to.equal(2);
     });
 
     it('should send oi = 4 when vendor consents are null on tcf v2', function () {
@@ -533,7 +533,7 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.oi).to.equal(2);
     });
 
-    it('should send oi = 0 when purpose consents weren\'t approved on tcf v1', function () {
+    it('should send oi = 2 when purpose consents weren\'t approved on tcf v1', function () {
       let bidderRequest = {
         gdprConsent: {
           vendorData: {
@@ -551,10 +551,10 @@ describe('invibesBidAdapter:', function () {
         }
       };
       let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.oi).to.equal(0);
+      expect(request.data.oi).to.equal(2);
     });
 
-    it('should send oi = 0 when purpose consents are less then 5 on tcf v1', function () {
+    it('should send oi = 2 when purpose consents are less then 5 on tcf v1', function () {
       let bidderRequest = {
         gdprConsent: {
           vendorData: {
@@ -570,7 +570,7 @@ describe('invibesBidAdapter:', function () {
         }
       };
       let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.oi).to.equal(0);
+      expect(request.data.oi).to.equal(2);
     });
 
     it('should send oi = 0 when vendor consents for invibes are false on tcf v1', function () {

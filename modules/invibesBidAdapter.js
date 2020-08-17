@@ -385,9 +385,9 @@ function readGdprConsent(gdprConsent) {
 
     let invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10);
     let vendorConsents = getVendorConsents(gdprConsent.vendorData);
-    if (vendorConsents[invibesVendorId] === false) { return 0; }
-
     if (vendorConsents == null || vendorConsents[invibesVendorId] == null) { return 4; }
+
+    if (vendorConsents[invibesVendorId] === false) { return 0; }
 
     return 2;
   }
