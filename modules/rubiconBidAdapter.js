@@ -289,7 +289,7 @@ export const spec = {
         // support identityLink (aka LiveRamp)
         if (bidRequest.userId.idl_env) {
           data.user.ext.eids.push({
-            source: 'liveramp.com',
+            source: 'liveramp_idl',
             uids: [{
               id: bidRequest.userId.idl_env
             }]
@@ -554,7 +554,7 @@ export const spec = {
 
       // support identityLink (aka LiveRamp)
       if (bidRequest.userId.idl_env) {
-        data['tpid_liveramp.com'] = bidRequest.userId.idl_env;
+        data['x_liverampidl'] = bidRequest.userId.idl_env;
       }
     }
 
