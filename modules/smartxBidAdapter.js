@@ -55,17 +55,17 @@ export const spec = {
       return false;
     }
     if (utils.deepAccess(bid, 'mediaTypes.video.context') == 'outstream') {
+      if (!utils.getBidIdParameter('outstream_options', bid.params)) {
+        utils.logError(BIDDER_CODE + ': outstream_options parameter is not defined');
+        return false;
+      }
+      if (!utils.getBidIdParameter('slot', bid.params.outstream_options)) {
+        utils.logError(BIDDER_CODE + ': slot parameter is not defined in outstream_options object in the configuration');
+        return false;
+      }
       if (!utils.getBidIdParameter('outstream_function', bid.params)) {
-        if (!utils.getBidIdParameter('outstream_options', bid.params)) {
-          utils.logMessage(BIDDER_CODE + ': outstream_options parameter is not defined. The default outstream renderer will be injected in the header. You can override the default SmartX outstream rendering by defining your own Outstream function using field outstream_function.');
-          // return true;
-          return false;
-        }
-        if (!utils.getBidIdParameter('slot', bid.params.outstream_options)) {
-          utils.logMessage(BIDDER_CODE + ': slot parameter is not defined in outstream_options object in the configuration. The default outstream renderer will be injected in the header.');
-          // return true;
-          return false;
-        }
+        utils.logMessage(BIDDER_CODE + ': outstream_function parameter is not defined. The default outstream renderer will be injected in the header. You can override the default SmartX outstream rendering by defining your own Outstream function using field outstream_function.');
+        return true;
       }
     }
 
@@ -81,7 +81,6 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     const page = bidderRequest.refererInfo.referer;
     const isPageSecure = !!page.match(/^https:/)
-
 
     const smartxRequests = bidRequests.map(function (bid) {
       const tagId = utils.getBidIdParameter('tagId', bid.params);
@@ -231,7 +230,6 @@ export const spec = {
       }
       // CUSTOM - Targetingparameters
 
-
       return {
         method: 'POST',
         url: URL,
@@ -245,7 +243,6 @@ export const spec = {
         }
       };
     });
-
 
     return smartxRequests;
   },

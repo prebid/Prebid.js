@@ -11,7 +11,7 @@ describe('The smartx adapter', function () {
       bidId: 123,
       mediaTypes: {
         video: {
-          //context: 'outstream',
+          // context: 'outstream',
           playerSize: [
             ['640', '360']
           ]
@@ -30,7 +30,6 @@ describe('The smartx adapter', function () {
         //    slot: 'yourelementid'
         //  }
       }
-
 
     };
   };
@@ -77,7 +76,6 @@ describe('The smartx adapter', function () {
     });
 
     it('should succeed with mediaTypes_video_context outstream, options set for outstream and slot provided', function () {
-      // bid.params.ad_unit = 'outstream';
       bid.mediaTypes.video.context = 'outstream';
       bid.params.outstream_options = {
         slot: 'yourelementid'
@@ -96,21 +94,24 @@ describe('The smartx adapter', function () {
     });
 
     it('should fail with context outstream but no options set for outstream', function () {
-      //bid.params.ad_unit = 'outstream';
       bid.mediaTypes.video.context = 'outstream';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should fail with context outstream, options set for outstream but no slot provided', function () {
-      //bid.params.ad_unit = 'outstream';
       bid.mediaTypes.video.context = 'outstream';
       bid.params.outstream_options = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-
+    it('should succeed with context outstream, options set for outstream but no outstream_function is set', function () {
+      bid.mediaTypes.video.content = 'outstream';
+      bid.params.outstream_options = {
+        slot: 'yourelementid'
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
   });
-
 
   describe('buildRequests', function () {
     var bid, bidRequestObj;
@@ -169,10 +170,6 @@ describe('The smartx adapter', function () {
 
       //      expect(request).to.equal(1);
     });
-
-
-
-
 
   });
 })
