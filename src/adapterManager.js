@@ -439,15 +439,15 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
   if (typeof existingAlias === 'undefined') {
     let bidAdaptor = _bidderRegistry[bidderCode];
     if (typeof bidAdaptor === 'undefined') {
-      // check if alias is part of s2sConfig and allow them to register if so (as base bidder may be s2s-only)
-      const s2sConfig = config.getConfig('s2sConfig');
-      const s2sBidders = s2sConfig && s2sConfig.bidders;
-
-      if (!(s2sBidders && includes(s2sBidders, alias))) {
-        utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adapterManager.aliasBidAdapter');
-      } else {
-        _aliasRegistry[alias] = bidderCode;
-      }
+      (_s2sConfigs || []).forEach(function (s2sConfig) {
+        // check if alias is part of s2sConfig and allow them to register if so (as base bidder may be s2s-only)
+        const s2sBidders = s2sConfig && s2sConfig.bidders;
+        if (!(s2sBidders && includes(s2sBidders, alias))) {
+          utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adapterManager.aliasBidAdapter');
+        } else {
+          _aliasRegistry[alias] = bidderCode;
+        }
+      });
     } else {
       try {
         let newAdapter;
