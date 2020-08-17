@@ -147,11 +147,12 @@ export const spec = {
       obj.id = dmx.bidId;
       obj.tagid = String(dmx.params.dmxid);
       obj.secure = 1;
+      obj.bidfloor = dmx.params.floor || 0;
       if (dmx.mediaTypes && dmx.mediaTypes.video) {
         obj.video = {
           topframe: 1,
-          skip: 0,
-          linearity: 1,
+          skip: dmx.mediaTypes.video.skippable || 0,
+          linearity: dmx.mediaTypes.video.linearity || 1,
           minduration: dmx.mediaTypes.video.minduration || 5,
           maxduration: dmx.mediaTypes.video.maxduration || 60,
           playbackmethod: getPlaybackmethod(dmx.mediaTypes.video.playback_method),
@@ -359,7 +360,11 @@ export function getApi({protocols}) {
   let defaultValue = [2];
   let listProtocols = [
     {key: 'VPAID_1_0', value: 1},
-    {key: 'VPAID_2_0', value: 2}
+    {key: 'VPAID_2_0', value: 2},
+    {key: 'MRAID_1', value: 3},
+    {key: 'ORMMA', value: 4},
+    {key: 'MRAID_2', value: 5},
+    {key: 'MRAID_3', value: 6},
   ];
   if (protocols) {
     return listProtocols.filter(p => {
