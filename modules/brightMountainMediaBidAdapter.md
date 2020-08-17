@@ -3,7 +3,7 @@
 ```
 Module Name:  Bright Mountain Media Bidder Adapter
 Module Type:  Bidder Adapter
-Maintainer: example@bmtm.org
+Maintainer: dev@brightmountainmedia.com
 ```
 
 # Description
