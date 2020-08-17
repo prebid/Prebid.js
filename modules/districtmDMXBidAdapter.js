@@ -102,7 +102,6 @@ export const spec = {
     let eids = [];
     if (bidRequest[0] && bidRequest[0].userId) {
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.idl_env`), 'liveramp.com', 1);
-      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.digitrustid.data.id`), 'digitru.st', 1);
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.id5id`), 'id5-sync.com', 1);
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.pubcid`), 'pubcid.org', 1);
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.tdid`), 'adserver.org', 1);
@@ -147,7 +146,7 @@ export const spec = {
       obj.id = dmx.bidId;
       obj.tagid = String(dmx.params.dmxid);
       obj.secure = 1;
-      obj.bidfloor = dmx.params.floor || 0;
+      obj.bidfloor = getFloor(dmx);
       if (dmx.mediaTypes && dmx.mediaTypes.video) {
         obj.video = {
           topframe: 1,
@@ -212,6 +211,27 @@ export const spec = {
       }];
     }
   }
+}
+
+export function getFloor (bid) {
+  let floor = null;
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: bid.mediaTypes.video ? 'video' : 'banner',
+      size: bid.sizes.map(size => {
+        return {
+          w: size[0],
+          h: size[1]
+        }
+      })
+    });
+    if (typeof floorInfo === 'object' &&
+      floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor !== null ? floor : bid.params.floor;
 }
 
 export function cleanSizes(sizes, value) {
