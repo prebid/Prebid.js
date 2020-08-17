@@ -42,5 +42,22 @@ describe('storage manager', function() {
     storage.setCookie('foo1', 'baz1');
     expect(deviceAccessSpy.calledOnce).to.equal(true);
     deviceAccessSpy.restore();
+  });
+
+  it('should not throw if the localstorage is not accessible when setting/getting/removing from localstorage', function() {
+    const coreStorage = getStorageManager();
+
+    const localstorageStub = sinon.stub(global.window, 'localStorage').get(() => { throw Error });
+    const errorLogSpy = sinon.spy(utils, 'logError');
+
+    coreStorage.setDataInLocalStorage('key', 'value');
+    const val = coreStorage.getDataFromLocalStorage('key');
+    coreStorage.removeDataFromLocalStorage('key');
+
+    expect(val).to.be.null;
+    sinon.assert.calledThrice(errorLogSpy);
+
+    localstorageStub.restore();
+    errorLogSpy.restore();
   })
 });
