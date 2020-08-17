@@ -171,7 +171,8 @@ describe('Adkernel adapter', function () {
           nurl: 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
           adm: '<!-- admarkup here -->',
           w: 300,
-          h: 250
+          h: 250,
+          dealid: 'deal'
         }]
       }],
       cur: 'USD',
@@ -229,13 +230,22 @@ describe('Adkernel adapter', function () {
       cur: 'USD'
     };
 
+  var sandbox;
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
     return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
   function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
-    let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
+    let dntmock = sandbox.stub(utils, 'getDNT').callsFake(() => dnt);
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
     dntmock.restore();
     let rtbRequests = pbRequests.map(r => JSON.parse(r.data));
@@ -307,6 +317,7 @@ describe('Adkernel adapter', function () {
     it('should fill device with caller macro', function () {
       expect(bidRequest).to.have.property('device');
       expect(bidRequest.device).to.have.property('ip', 'caller');
+      expect(bidRequest.device).to.have.property('ipv6', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
       expect(bidRequest.device).to.have.property('dnt', 1);
     });
@@ -495,6 +506,7 @@ describe('Adkernel adapter', function () {
       expect(resp).to.have.property('ttl');
       expect(resp).to.have.property('mediaType', BANNER);
       expect(resp).to.have.property('ad');
+      expect(resp).to.have.property('dealId', 'deal');
       expect(resp.ad).to.have.string('<!-- admarkup here -->');
     });
 
