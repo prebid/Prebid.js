@@ -24,12 +24,14 @@ let queue = [];
 
 let concertAnalytics = Object.assign(adapter({url, analyticsType}), {
   track({ eventType, args }) {
-    // eslint-disable-next-line no-console
-    console.log('got event', eventType, args);
     switch (eventType) {
       case BID_RESPONSE:
+        // eslint-disable-next-line no-console
+        console.log('handling bid response');
         if (args.bidder !== 'concert') break;
         queue.push(mapBidEvent(eventType, args));
+        // eslint-disable-next-line no-console
+        console.log('pushed bid response to queue', queue);
         break;
 
       case BID_WON:
@@ -98,11 +100,7 @@ function sendEvents() {
 
   try {
     const body = JSON.stringify(queue);
-    ajax(url, () => {
-      // eslint-disable-next-line no-console
-      console.log('flushing bid queue');
-      queue = []
-    }, body, {
+    ajax(url, () => queue = [], body, {
       contentType: 'application/json',
       method: 'POST'
     });
