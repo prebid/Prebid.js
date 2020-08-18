@@ -3,14 +3,14 @@ import find from 'core-js-pure/features/array/find.js';
 import { config } from 'src/config.js';
 import { newStorageManager } from 'src/storageManager.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
-import { zeotapIdPlusSubmodule } from 'modules/zeotapId+.js';
+import { zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
 
 const storage = newStorageManager();
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_COOKIE = 'THIS-IS-A-DUMMY-COOKIE';
 const CONFIG_PARAMS_MOCK = {
-  name: 'zeotapId+',
+  name: 'zeotapIdPlus',
   storage: { name: 'IDP', type: 'cookie' }
 };
 
@@ -19,7 +19,7 @@ function getConfigMock() {
     userSync: {
       syncDelay: 0,
       userIds: [{
-        name: 'zeotapId+',
+        name: 'zeotapIdPlus',
         storage: {
           name: 'IDP',
           type: 'cookie'

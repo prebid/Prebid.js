@@ -1,7 +1,7 @@
 /**
  * This module adds Zeotap to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/zeotapId+
+ * @module modules/zeotapIdPlusIdSystem
  * @requires module:modules/userId
  */
 import * as utils from '../src/utils.js'
@@ -44,7 +44,7 @@ export const zeotapIdPlusSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'zeotapId+',
+  name: 'zeotapIdPlus',
   /**
    * decode the stored id value for passing to bid requests
    * @function

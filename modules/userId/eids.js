@@ -124,7 +124,7 @@ const USER_IDS_CONFIG = {
       } : undefined;
     }
   },
-  // zeotapId+
+  // zeotapIdPlus
   'IDP': {
     source: 'zeotap.com',
     atype: 1

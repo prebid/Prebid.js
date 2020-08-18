@@ -26,7 +26,7 @@ import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem.js';
 import {merkleIdSubmodule} from 'modules/merkleIdSystem.js';
 import {netIdSubmodule} from 'modules/netIdSystem.js';
 import {intentIqIdSubmodule} from 'modules/intentIqIdSystem.js';
-import {zeotapIdPlusSubmodule} from 'modules/zeotapId+.js';
+import {zeotapIdPlusSubmodule} from 'modules/zeotapIdPlusIdSystem.js';
 import {sharedIdSubmodule} from 'modules/sharedIdSystem.js';
 import {server} from 'test/mocks/xhr.js';
 
@@ -438,7 +438,7 @@ describe('User ID', function() {
             name: 'intentIqId',
             storage: { name: 'intentIqId', type: 'cookie' }
           }, {
-            name: 'zeotapId+',
+            name: 'zeotapIdPlus',
             storage: { name: 'IDP', type: 'cookie' }
           }]
         }
@@ -1146,13 +1146,13 @@ describe('User ID', function() {
       }, {adUnits});
     });
     
-    it('test hook from zeotapId+ cookies', function(done) {
+    it('test hook from zeotapIdPlus cookies', function(done) {
       // simulate existing browser local storage values
       coreStorage.setCookie('IDP', btoa(JSON.stringify('abcdefghijk')), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([zeotapIdPlusSubmodule]);
       init(config);
-      config.setConfig(getConfigMock(['zeotapId+', 'IDP', 'cookie']));
+      config.setConfig(getConfigMock(['zeotapIdPlus', 'IDP', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -1170,7 +1170,7 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
-    it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, intentIqId, zeotapId+, sharedId and netId have data to pass', function(done) {
+    it('test hook when pubCommonId, unifiedId, id5Id, identityLink, britepoolId, intentIqId, zeotapIdPlus, sharedId and netId have data to pass', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1191,7 +1191,7 @@ describe('User ID', function() {
         ['netId', 'netId', 'cookie'],
         ['sharedId', 'sharedid', 'cookie'],
         ['intentIqId', 'intentIqId', 'cookie'],
-        ['zeotapId+', 'IDP', 'cookie']));
+        ['zeotapIdPlus', 'IDP', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -1222,7 +1222,7 @@ describe('User ID', function() {
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
-            // also check that zeotapId+ id data was copied to bid
+            // also check that zeotapIdPlus id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.IDP');
             expect(bid.userId.IDP).to.equal('zeotapId');
             expect(bid.userIdAsEids.length).to.equal(9);
@@ -1241,7 +1241,7 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
-    it('test hook when pubCommonId, unifiedId, id5Id, britepoolId, intentIqId, zeotapId+, sharedId and netId have their modules added before and after init', function(done) {
+    it('test hook when pubCommonId, unifiedId, id5Id, britepoolId, intentIqId, zeotapIdPlus, sharedId and netId have their modules added before and after init', function(done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
       coreStorage.setCookie('id5id', JSON.stringify({'universal_uid': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -1277,7 +1277,7 @@ describe('User ID', function() {
         ['netId', 'netId', 'cookie'],
         ['sharedId', 'sharedid', 'cookie'],
         ['intentIqId', 'intentIqId', 'cookie'],
-        ['zeotapId+', 'IDP', 'cookie']));
+        ['zeotapIdPlus', 'IDP', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -1308,7 +1308,7 @@ describe('User ID', function() {
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
-            // also check that zeotapId+ id data was copied to bid
+            // also check that zeotapIdPlus id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.IDP');
             expect(bid.userId.IDP).to.equal('zeotapId');
             expect(bid.userIdAsEids.length).to.equal(9);
@@ -1383,7 +1383,7 @@ describe('User ID', function() {
           }, {
             name: 'intentIqId', storage: { name: 'intentIqId', type: 'cookie' }
           }, {
-            name: 'zeotapId+', storage: { name: 'IDP', type: 'cookie' }
+            name: 'zeotapIdPlus', storage: { name: 'IDP', type: 'cookie' }
           }, {
             name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
           }]
@@ -1437,7 +1437,7 @@ describe('User ID', function() {
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
-            // also check that zeotapId+ id data was copied to bid
+            // also check that zeotapIdPlus id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.IDP');
             expect(bid.userId.IDP).to.equal('zeotapId');
             expect(bid.userIdAsEids.length).to.equal(9);
