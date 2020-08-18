@@ -30,6 +30,7 @@ let concertAnalytics = Object.assign(adapter({url, analyticsType}), {
         console.log('handling bid response');
         if (args.bidder !== 'concert') break;
         queue.push(mapBidEvent(eventType, args));
+        queue.push('pushing a silly thing just to see ok');
         // eslint-disable-next-line no-console
         console.log('pushed bid response to queue', queue);
         break;
@@ -54,7 +55,7 @@ function mapBidEvent(eventType, args) {
   const { adId, auctionId, cpm, creativeId, width, height, timeToRespond } = args;
   const [gamCreativeId, concertRequestId] = getConcertRequestId(creativeId);
 
-  return {
+  const payload = {
     event: eventType,
     concert_rid: concertRequestId,
     adId,
@@ -67,6 +68,11 @@ function mapBidEvent(eventType, args) {
     height,
     timeToRespond
   }
+
+  // eslint-disable-next-line no-console
+  console.log('payload', payload);
+
+  return payload;
 }
 
 /**
