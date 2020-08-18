@@ -84,6 +84,8 @@ function sampleAnalytics() {
 
 function sendEvents() {
   concertAnalytics.eventsStorage = queue;
+  // eslint-disable-next-line no-console
+  console.log('set concert events storage', concertAnalytics.eventsStorage);
 
   if (!queue.length) return;
 
