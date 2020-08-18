@@ -35,9 +35,29 @@ const USER_IDS_CONFIG = {
   },
 
   // parrableId
-  'parrableid': {
+  'parrableId': {
     source: 'parrable.com',
-    atype: 1
+    atype: 1,
+    getValue: function(parrableId) {
+      if (parrableId.eid) {
+        return parrableId.eid;
+      }
+      if (parrableId.ccpaOptout) {
+        // If the EID was suppressed due to a non consenting ccpa optout then
+        // we still wish to provide this as a reason to the adapters
+        return '';
+      }
+      return null;
+    },
+    getUidExt: function(parrableId) {
+      const extendedData = utils.pick(parrableId, [
+        'ibaOptout',
+        'ccpaOptout'
+      ]);
+      if (Object.keys(extendedData).length) {
+        return extendedData;
+      }
+    }
   },
 
   // identityLink
@@ -72,19 +92,6 @@ const USER_IDS_CONFIG = {
   lotamePanoramaId: {
     source: 'crwdcntrl.net',
     atype: 1,
-  },
-
-  // DigiTrust
-  'digitrustid': {
-    getValue: function (data) {
-      var id = null;
-      if (data && data.data && data.data.id != null) {
-        id = data.data.id;
-      }
-      return id;
-    },
-    source: 'digitru.st',
-    atype: 1
   },
 
   // criteo

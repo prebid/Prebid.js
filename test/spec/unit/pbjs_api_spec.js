@@ -1770,8 +1770,6 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('multiformat requests', function () {
-      let spyCallBids;
-      let createAuctionStub;
       let adUnits;
 
       beforeEach(function () {
@@ -1791,14 +1789,10 @@ describe('Unit: Prebid Module', function () {
         }];
         adUnitCodes = ['adUnit-code'];
         configObj.setConfig({maxRequestsPerOrigin: Number.MAX_SAFE_INTEGER || 99999999});
-        let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-        spyCallBids = sinon.spy(adapterManager, 'callBids');
-        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-        createAuctionStub.returns(auction);
+        sinon.spy(adapterManager, 'callBids');
       })
 
       afterEach(function () {
-        auctionModule.newAuction.restore();
         adapterManager.callBids.restore();
       });
 
@@ -1821,7 +1815,6 @@ describe('Unit: Prebid Module', function () {
 
         const spyArgs = adapterManager.callBids.getCall(0);
         const biddersCalled = spyArgs.args[0][0].bids;
-
         // only appnexus supports native
         expect(biddersCalled.length).to.equal(1);
       });

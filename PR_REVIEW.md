@@ -41,6 +41,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 - Requests to the bidder should support HTTPS
 - Responses from the bidder should be compressed (such as gzip, compress, deflate)
 - Bid responses may not use JSONP: All requests must be AJAX with JSON responses
+- Video openrtb params should be read from the ad unit when available; however bidder config can override the ad unit. 
 - All user-sync (aka pixel) activity must be registered via the provided functions
 - Adapters may not use the $$PREBID_GLOBAL$$ variable
 - All adapters must support the creation of multiple concurrent instances. This means, for example, that adapters cannot rely on mutable global variables.
