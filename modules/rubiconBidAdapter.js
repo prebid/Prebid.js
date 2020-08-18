@@ -299,7 +299,7 @@ export const spec = {
         // support shared id
         if (bidRequest.userId.sharedId) {
           data.user.ext.eids.push({
-            source: 'sharedID.org',
+            source: 'sharedid.org',
             uids: [{
               id: bidRequest.userId.sharedId,
               atype: 3,
