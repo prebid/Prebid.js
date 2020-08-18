@@ -243,7 +243,7 @@ export const spec = {
       }
 
       if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
-        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env)) {
+        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env || bidRequest.userId.sharedId)) {
         utils.deepSetValue(data, 'user.ext.eids', []);
 
         if (bidRequest.userId.tdid) {
@@ -292,6 +292,20 @@ export const spec = {
             source: 'liveramp_idl',
             uids: [{
               id: bidRequest.userId.idl_env
+            }]
+          });
+        }
+
+        // support shared id
+        if (bidRequest.userId.sharedId) {
+          data.user.ext.eids.push({
+            source: 'sharedID.org',
+            uids: [{
+              id: bidRequest.userId.sharedId,
+              atype: 3,
+              ext: {
+                third: bidRequest.userId.sharedId
+              }
             }]
           });
         }
@@ -555,6 +569,11 @@ export const spec = {
       // support identityLink (aka LiveRamp)
       if (bidRequest.userId.idl_env) {
         data['x_liverampidl'] = bidRequest.userId.idl_env;
+      }
+
+      // support shared id
+      if (bidRequest.userId.sharedId) {
+        data['eid_sharedid.org'] = `${bidRequest.userId.sharedId}^3^${bidRequest.userId.sharedId}`;
       }
     }
 
