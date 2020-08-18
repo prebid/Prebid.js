@@ -252,8 +252,7 @@ function getParam(validBidRequests, bidderRequest) {
         }
       },
 
-      'imp': items,
-      ext: {data: {test: 'baidu'}}
+      'imp': items}
     };
     return c;
   } else {
