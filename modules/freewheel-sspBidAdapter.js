@@ -72,7 +72,7 @@ function getPricing(xmlNode) {
       price: priceNode.textContent || priceNode.innerText
     };
   } else {
-    utils.logWarn('PREBID - ' + BIDDER_CODE + ': Can\'t get pricing data. Is price awareness enabled?');
+    utils.logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
   }
 
   return princingData;
@@ -261,7 +261,8 @@ export const spec = {
         reqType: 'AdsSetup',
         protocolVersion: '2.0',
         zoneId: zone,
-        componentId: getComponentId(currentBidRequest.params.format),
+        componentId: 'prebid',
+        componentSubId: getComponentId(currentBidRequest.params.format),
         timestamp: timeInMillis,
         pKey: keyCode
       };

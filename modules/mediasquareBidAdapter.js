@@ -21,7 +21,7 @@ export const spec = {
          * @return boolean True if this is a valid bid, and false otherwise.
          */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.owner || bid.params.code);
+    return !!(bid.params.owner && bid.params.code);
   },
   /**
          * Make a server request from the list of BidRequests.
@@ -49,13 +49,17 @@ export const spec = {
     const payload = {
       codes: codes,
       referer: encodeURIComponent(bidderRequest.refererInfo.referer)
-      // schain: validBidRequests.schain,
     };
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr = {
-        consent_string: bidderRequest.gdprConsent.consentString,
-        consent_required: bidderRequest.gdprConsent.gdprApplies
-      };
+    if (bidderRequest) { // modules informations (gdpr, ccpa, schain, userId)
+      if (bidderRequest.gdprConsent) {
+        payload.gdpr = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          consent_required: bidderRequest.gdprConsent.gdprApplies
+        };
+      }
+      if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
+      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
+      if (bidderRequest.userId) { payload.userId = bidderRequest.userId; }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -109,25 +113,19 @@ export const spec = {
      * @param {ServerResponse[]} serverResponses List of server's responses.
      * @return {UserSync[]} The user syncs which should be dropped.
      */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     let params = '';
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      if (typeof gdprConsent.gdprApplies === 'boolean') { params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`; } else { params += `&gdpr_consent=${gdprConsent.consentString}`; }
-    }
-    if (syncOptions.iframeEnabled) {
+    if (serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
+      return serverResponses[0].body.cookies;
+    } else {
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') { params += typeof gdprConsent.gdprApplies === 'boolean' ? `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}` : `&gdpr_consent=${gdprConsent.consentString}`; }
+      if (uspConsent && typeof uspConsent === 'string') { params += '&uspConsent=' + uspConsent }
       return {
         type: 'iframe',
         url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=iframe' + params
       };
     }
-    if (syncOptions.pixelEnabled) {
-      return {
-        type: 'image',
-        url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=pixel' + params
-      };
-    }
-    return false;
   },
 
   /**
@@ -138,7 +136,7 @@ export const spec = {
     // fires a pixel to confirm a winning bid
     let params = [];
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond']
+    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'auctionId', 'requestId']
     if (bid.hasOwnProperty('mediasquare')) {
       if (bid['mediasquare'].hasOwnProperty('bidder')) { params.push('bidder=' + bid['mediasquare']['bidder']); }
       if (bid['mediasquare'].hasOwnProperty('code')) { params.push('code=' + bid['mediasquare']['code']); }
