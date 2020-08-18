@@ -1343,7 +1343,7 @@ describe('the rubicon adapter', function () {
           });
 
           describe('LiveRamp support', function () {
-            it('should send tpid_liveramp.com when userId defines idl_env', function () {
+            it('should send x_liverampidl when userId defines idl_env', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 idl_env: '1111-2222-3333-4444'
@@ -1351,7 +1351,7 @@ describe('the rubicon adapter', function () {
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
-              expect(data['tpid_liveramp.com']).to.equal('1111-2222-3333-4444');
+              expect(data['x_liverampidl']).to.equal('1111-2222-3333-4444');
             });
           });
         })
@@ -1546,7 +1546,7 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.tpid.source).to.equal('liveintent.com');
           expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
           // LiveRamp should exist
-          expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
+          expect(post.user.ext.eids[1].source).to.equal('liveramp_idl');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.rp).that.is.an('object');
           expect(post.rp.target).that.is.an('object');
