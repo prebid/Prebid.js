@@ -20,21 +20,17 @@ const {
   }
 } = CONSTANTS;
 
-let queue = [];
-
 let concertAnalytics = Object.assign(adapter({url, analyticsType}), {
   track({ eventType, args }) {
-    // eslint-disable-next-line no-console
-    console.log('got event', eventType, args);
     switch (eventType) {
       case BID_RESPONSE:
         if (args.bidder !== 'concert') break;
-        queue.push(mapBidEvent(eventType, args));
+        this.queue.push(mapBidEvent(eventType, args));
         break;
 
       case BID_WON:
         if (args.bidder !== 'concert') break;
-        queue.push(mapBidEvent(eventType, args));
+        this.queue.push(mapBidEvent(eventType, args));
         break;
 
       case AUCTION_END:
@@ -45,7 +41,10 @@ let concertAnalytics = Object.assign(adapter({url, analyticsType}), {
       default:
         break;
     }
-  }
+  },
+
+  queue: [],
+  eventsStorage: []
 });
 
 function mapBidEvent(eventType, args) {
@@ -85,11 +84,9 @@ function sampleAnalytics() {
 }
 
 function sendEvents() {
-  concertAnalytics.eventsStorage = queue;
-  // eslint-disable-next-line no-console
-  console.log('set concert events storage', concertAnalytics.eventsStorage);
+  concertAnalytics.eventsStorage = concertAnalytics.queue.slice();
 
-  if (!queue.length) return;
+  if (!concertAnalytics.queue.length) return;
 
   if (!pageIncludedInSample) {
     utils.logMessage('Page not included in sample for Concert Analytics');
@@ -97,12 +94,8 @@ function sendEvents() {
   }
 
   try {
-    const body = JSON.stringify(queue);
-    ajax(url, () => {
-      // eslint-disable-next-line no-console
-      console.log('flushing bid queue');
-      queue = []
-    }, body, {
+    const body = JSON.stringify(concertAnalytics.queue);
+    ajax(url, () => concertAnalytics.queue = [], body, {
       contentType: 'application/json',
       method: 'POST'
     });
