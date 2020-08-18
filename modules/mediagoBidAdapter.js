@@ -9,10 +9,10 @@ import {
 } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'mediago';
-const PROTOCOL = window.document.location.protocol;
+// const PROTOCOL = window.document.location.protocol;
 const ENDPOINT_URL =
-  ((PROTOCOL === 'https:') ? 'https' : 'http') +
-  '://rtb-us.mediago.io/api/bid?tn=';
+  // ((PROTOCOL === 'https:') ? 'https' : 'http') +
+  'https://rtb-us.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
 // const ENDPOINT_URL = '/api/bid?tn=';
 const storage = getStorageManager();
@@ -251,8 +251,7 @@ function getParam(validBidRequests, bidderRequest) {
           'name': domain
         }
       },
-
-      'imp': items}
+      'imp': items
     };
     return c;
   } else {
