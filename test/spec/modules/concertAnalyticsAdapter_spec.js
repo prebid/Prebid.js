@@ -60,6 +60,8 @@ describe('ConcertAnalyticsAdapter', function() {
         expect(eventsToReport.indexOf(concertAnalytics.eventsStorage[i].event)).to.be.above(-1);
       }
 
+      // eslint-disable-next-line no-console
+      console.log(concertAnalytics.eventsStorage);
       for (var i = 0; i < eventsToReport.length; i++) {
         expect(concertAnalytics.eventsStorage.some(function(event) {
           return event.event === eventsToReport[i]
