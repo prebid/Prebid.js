@@ -114,6 +114,53 @@ describe('gumgumAdapter', function () {
         }
       }
     ];
+    const vidMediaTypes = {
+      video: {
+        playerSize: [640, 480],
+        context: 'instream',
+        minduration: 1,
+        maxduration: 2,
+        linearity: 1,
+        startdelay: 1,
+        placement: 123456,
+        protocols: [1, 2]
+      }
+    };
+
+    it('should return a defined sizes field for video', function () {
+      const request = { ...bidRequests[0], mediaTypes: vidMediaTypes, params: { 'videoPubID': 123 } };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.sizes).to.equal(vidMediaTypes.video.playerSize);
+    });
+
+    describe('floorModule', function () {
+      const floorTestData = {
+        'currency': 'USD',
+        'floor': 1.50
+      };
+      bidRequests[0].getFloor = _ => {
+        return floorTestData;
+      };
+      it('should return the value from getFloor if present', function () {
+        const request = { ...bidRequests[0] };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.fp).to.equal(floorTestData.floor);
+      });
+      it('should return the getFloor.floor value if it is greater than bidfloor', function () {
+        const bidfloor = 0.80;
+        const request = { ...bidRequests[0] };
+        request.params.bidfloor = bidfloor;
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.fp).to.equal(floorTestData.floor);
+      });
+      it('should return the bidfloor value if it is greater than getFloor.floor', function () {
+        const bidfloor = 1.80;
+        const request = { ...bidRequests[0] };
+        request.params.bidfloor = bidfloor;
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.fp).to.equal(bidfloor);
+      });
+    });
 
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests)[0];
@@ -145,21 +192,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.not.include.any.keys('t');
     });
     it('should send pubId if videoPubID param is specified', function () {
-      const mediaTypes = {
-        video: {
-          playerSize: [640, 480],
-          context: 'instream',
-          minduration: 1,
-          maxduration: 2,
-          linearity: 1,
-          startdelay: 1,
-          placement: 123456,
-          protocols: [1, 2]
-        }
-      };
-      const request = Object.assign({}, bidRequests[0]);
-      request.mediaTypes = mediaTypes
-      request.params = { 'videoPubID': 123 };
+      const request = { ...bidRequests[0], mediaTypes: vidMediaTypes, params: { 'videoPubID': 123 } };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.include.any.keys('pubId');
       expect(bidRequest.data.pubId).to.equal(request.params.videoPubID);
@@ -423,7 +456,7 @@ describe('gumgumAdapter', function () {
     });
 
     it('updates jcsi object when the server response jcsi prop is found', function () {
-      const response = Object.assign({cw: 'AD_JSON'}, serverResponse);
+      const response = Object.assign({ cw: 'AD_JSON' }, serverResponse);
       const bidResponse = spec.interpretResponse({ body: response }, bidRequest)[0].ad;
       const decodedResponse = JSON.parse(atob(bidResponse));
       expect(decodedResponse.jcsi).to.eql(JCSI);
