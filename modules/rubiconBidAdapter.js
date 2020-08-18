@@ -301,10 +301,10 @@ export const spec = {
           data.user.ext.eids.push({
             source: 'sharedid.org',
             uids: [{
-              id: bidRequest.userId.sharedid,
+              id: bidRequest.userId.sharedid.id,
               atype: 3,
               ext: {
-                third: bidRequest.userId.sharedid
+                third: bidRequest.userId.sharedid.third
               }
             }]
           });
@@ -573,7 +573,7 @@ export const spec = {
 
       // support shared id
       if (bidRequest.userId.sharedid) {
-        data['eid_sharedid.org'] = `${bidRequest.userId.sharedid}^3^${bidRequest.userId.sharedid}`;
+        data['eid_sharedid.org'] = `${bidRequest.userId.sharedid.id}^3^${bidRequest.userId.sharedid.third}`;
       }
     }
 

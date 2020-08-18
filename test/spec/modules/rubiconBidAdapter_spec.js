@@ -224,7 +224,10 @@ describe('the rubicon adapter', function () {
         segments: ['segA', 'segB']
       },
       idl_env: '1111-2222-3333-4444',
-      sharedid: '1111'
+      sharedid: {
+        id: '1111',
+        third: '2222'
+      }
     };
     bid.storedAuctionResponse = 11111;
   }
@@ -1360,12 +1363,15 @@ describe('the rubicon adapter', function () {
             it('should send sharedid when userId defines sharedId', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
-                sharedid: '1111'
+                sharedid: {
+                  id: '1111',
+                  third: '2222'
+                }
               };
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
-              expect(data['eid_sharedid.org']).to.equal('1111^3^1111');
+              expect(data['eid_sharedid.org']).to.equal('1111^3^2222');
             });
           });
         })
@@ -1566,7 +1572,7 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
           expect(post.user.ext.eids[2].uids[0].atype).to.equal(3);
-          expect(post.user.ext.eids[2].uids[0].ext.third).to.equal('1111');
+          expect(post.user.ext.eids[2].uids[0].ext.third).to.equal('2222');
 
           expect(post.rp).that.is.an('object');
           expect(post.rp.target).that.is.an('object');
