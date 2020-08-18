@@ -9,10 +9,10 @@ import {
 } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'mediago';
-// const PROTOCOL = window.document.location.protocol;
+const PROTOCOL = window.document.location.protocol;
 const ENDPOINT_URL =
-  // ((PROTOCOL === 'https:') ? 'https' : 'http') +
-  'http://ec2-44-233-123-136.us-west-2.compute.amazonaws.com:8081/api/bid?tn=';
+  ((PROTOCOL === 'https:') ? 'https' : 'http') +
+  '://rtb-us.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
 // const ENDPOINT_URL = '/api/bid?tn=';
 const storage = getStorageManager();
@@ -232,7 +232,6 @@ function getParam(validBidRequests, bidderRequest) {
         'os': navigator.platform || '',
         'ua': navigator.userAgent,
         'language': /en/.test(navigator.language) ? 'en' : navigator.language,
-        'ip': '64.124.253.1', // to delete
         // 'geo':{
         //     'country':'USA'
         // }
@@ -253,7 +252,8 @@ function getParam(validBidRequests, bidderRequest) {
         }
       },
 
-      'imp': items
+      'imp': items,
+      ext: {data: {test: 'baidu'}}
     };
     return c;
   } else {
@@ -317,8 +317,8 @@ export const spec = {
         const bidResponse = {
           requestId: bidId,
           cpm: getProperty(bid, 'price'),
-          width: 300,
-          height: 250,
+          width: getProperty(bid, 'w'),
+          height: getProperty(bid, 'h'),
           creativeId: getProperty(bid, 'crid'),
           dealId: '',
           currency: cur,
