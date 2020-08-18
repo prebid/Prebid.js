@@ -10,7 +10,7 @@ let hooksAdded = false;
 export const appendGptSlots = adUnits => {
   const { customGptSlotMatching } = _currentConfig;
 
-  if (!window.googletag) {
+  if (!utils.isGptPubadsDefined()) {
     return;
   }
 
