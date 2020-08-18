@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-const utils = require('../src/utils');
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+const utils = require('../src/utils.js');
 const BIDDER_CODE = 'teads';
 const ENDPOINT_URL = 'https://a.teads.tv/hb/bid-request';
 const gdprStatus = {
@@ -41,6 +41,9 @@ export const spec = {
     const bids = validBidRequests.map(buildRequestObject);
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
+      pageReferrer: document.referrer,
+      networkBandwidth: getConnectionDownLink(window.navigator),
+      timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
       hb_version: '$prebid.version$'
@@ -54,11 +57,18 @@ export const spec = {
     if (bidderRequest && gdpr) {
       let isCmp = (typeof gdpr.gdprApplies === 'boolean')
       let isConsentString = (typeof gdpr.consentString === 'string')
-      let status = isCmp ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData) : gdprStatus.CMP_NOT_FOUND_OR_ERROR
+      let status = isCmp
+        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData, gdpr.apiVersion)
+        : gdprStatus.CMP_NOT_FOUND_OR_ERROR
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
-        status: status
+        status: status,
+        apiVersion: gdpr.apiVersion
       };
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
     }
 
     const payloadString = JSON.stringify(payload);
@@ -92,38 +102,14 @@ export const spec = {
           creativeId: bid.creativeId,
           placementId: bid.placementId
         };
+        if (bid.dealId) {
+          bidResponse.dealId = bid.dealId
+        }
         bidResponses.push(bidResponse);
       });
     }
     return bidResponses;
   },
-
-  getUserSyncs: function(syncOptions, responses, gdprConsent) {
-    let queryParams = {
-      hb_provider: 'prebid',
-      hb_version: '$prebid.version$'
-    };
-
-    if (gdprConsent) {
-      let gdprIab = {
-        status: findGdprStatus(gdprConsent.gdprApplies, gdprConsent.vendorData),
-        consent: gdprConsent.consentString
-      };
-
-      queryParams.gdprIab = JSON.stringify(gdprIab)
-    }
-
-    if (utils.deepAccess(responses[0], 'body.responses.0.placementId')) {
-      queryParams.placementId = responses[0].body.responses[0].placementId
-    };
-
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: 'https://sync.teads.tv/iframe?' + utils.parseQueryStringParameters(queryParams)
-      }];
-    }
-  }
 };
 
 function getReferrerInfo(bidderRequest) {
@@ -134,13 +120,53 @@ function getReferrerInfo(bidderRequest) {
   return ref;
 }
 
-function findGdprStatus(gdprApplies, gdprData) {
-  let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
+function getConnectionDownLink(nav) {
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
+}
 
+function getTimeToFirstByte(win) {
+  const performance = win.performance || win.webkitPerformance || win.msPerformance || win.mozPerformance;
+
+  const ttfbWithTimingV2 = performance &&
+    typeof performance.getEntriesByType === 'function' &&
+    Object.prototype.toString.call(performance.getEntriesByType) === '[object Function]' &&
+    performance.getEntriesByType('navigation')[0] &&
+    performance.getEntriesByType('navigation')[0].responseStart &&
+    performance.getEntriesByType('navigation')[0].requestStart &&
+    performance.getEntriesByType('navigation')[0].responseStart >= 0 &&
+    performance.getEntriesByType('navigation')[0].requestStart >= 0 &&
+    Math.round(
+      performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
+    );
+
+  if (ttfbWithTimingV2) {
+    return ttfbWithTimingV2.toString();
+  }
+
+  const ttfbWithTimingV1 = performance &&
+    performance.timing.responseStart &&
+    performance.timing.requestStart &&
+    performance.timing.responseStart >= 0 &&
+    performance.timing.requestStart >= 0 &&
+    performance.timing.responseStart - performance.timing.requestStart;
+
+  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
+}
+
+function findGdprStatus(gdprApplies, gdprData, apiVersion) {
+  let status = gdprStatus.GDPR_APPLIES_PUBLISHER
   if (gdprApplies) {
-    if (gdprData.hasGlobalScope || gdprData.hasGlobalConsent) status = gdprStatus.GDPR_APPLIES_GLOBAL
+    if (isGlobalConsent(gdprData, apiVersion)) status = gdprStatus.GDPR_APPLIES_GLOBAL
   } else status = gdprStatus.GDPR_DOESNT_APPLY
   return status;
+}
+
+function isGlobalConsent(gdprData, apiVersion) {
+  return gdprData && apiVersion === 1
+    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
+    : gdprData && apiVersion === 2
+      ? !gdprData.isServiceSpecific
+      : false
 }
 
 function buildRequestObject(bid) {

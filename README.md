@@ -14,6 +14,8 @@ This README is for developers who want to contribute to Prebid.js.
 Additional documentation can be found at [the Prebid homepage](http://prebid.org).
 Working examples can be found in [the developer docs](http://prebid.org/dev-docs/getting-started.html).
 
+Prebid.js is open source software that is offered for free as a convenience. While it is designed to help companies address legal requirements associated with header bidding, we cannot and do not warrant that your use of Prebid.js will satisfy legal requirements. You are solely responsible for ensuring that your use of Prebid.js complies with all applicable laws.  We strongly encourage you to obtain legal advice when using Prebid.js to ensure your implementation complies with all laws where you operate.
+
 **Table of Contents**
 
 - [Usage](#Usage)
@@ -53,7 +55,7 @@ module.exports = {
       // override the regular exclusion from above (for being inside node_modules).
       {
         test: /.js$/,
-        include: new RegExp(`\\${path.sep}prebid\.js`),
+        include: new RegExp(`\\${path.sep}prebid\\.js`),
         use: {
           loader: 'babel-loader',
           // presets and plugins for Prebid.js must be manually specified separate from your other babel rule.
@@ -112,7 +114,7 @@ prebid.requestBids({
     $ cd Prebid.js
     $ npm install
 
-*Note:* You need to have `NodeJS` 8.9.x or greater installed.
+*Note:* You need to have `NodeJS` 12.16.1 or greater installed.
 
 *Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To comply with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in its setup.
 

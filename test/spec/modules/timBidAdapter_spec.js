@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/timBidAdapter';
+import { spec } from 'modules/timBidAdapter.js';
 
 describe('timAdapterTests', function () {
   describe('bidRequestValidity', function () {

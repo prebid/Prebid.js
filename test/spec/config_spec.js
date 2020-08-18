@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { assert } from 'chai';
-import { newConfig } from 'src/config';
+import { newConfig } from 'src/config.js';
 
 const utils = require('src/utils');
 
@@ -33,7 +33,7 @@ describe('config API', function () {
     expect(getConfig()).to.be.a('object');
   });
 
-  it('sets and gets arbitrary configuarion properties', function () {
+  it('sets and gets arbitrary configuration properties', function () {
     setConfig({ baz: 'qux' });
     expect(getConfig('baz')).to.equal('qux');
   });
@@ -176,6 +176,23 @@ describe('config API', function () {
     setConfig({ priceGranularity: goodConfig });
     expect(getConfig('priceGranularity')).to.be.equal('custom');
     expect(getConfig('customPriceBucket')).to.equal(goodConfig);
+  });
+
+  it('sets deviceAccess', function () {
+    // When the deviceAccess flag config option is not set, cookies may be read and set
+    expect(getConfig('deviceAccess')).to.be.equal(true);
+
+    // When the deviceAccess flag config option is set to false, no cookies are read or set
+    setConfig({
+      'deviceAccess': false
+    });
+    expect(getConfig('deviceAccess')).to.be.equal(false);
+
+    // When the deviceAccess flag config option is set to true, cookies may be read and set
+    setConfig({
+      'deviceAccess': true
+    });
+    expect(getConfig('deviceAccess')).to.be.equal(true);
   });
 
   it('should log error for invalid priceGranularity', function () {

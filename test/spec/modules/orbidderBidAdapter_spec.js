@@ -1,8 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/orbidderBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import openxAdapter from '../../../modules/openxAnalyticsAdapter';
-import {detectReferer} from 'src/refererDetection';
+import {spec} from 'modules/orbidderBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -93,12 +91,16 @@ describe('orbidderBidAdapter', () => {
     it('sends bid request to endpoint via https using post', () => {
       expect(request.method).to.equal('POST');
       expect(request.url.indexOf('https://')).to.equal(0);
-      expect(request.url).to.equal(`${spec.orbidderHost}/bid`);
+      expect(request.url).to.equal(`${spec.hostname}/bid`);
+    });
+
+    it('contains prebid version parameter', () => {
+      expect(request.data.v).to.equal($$PREBID_GLOBAL$$.version);
     });
 
     it('sends correct bid parameters', () => {
-      // we add one, because we add referer information from bidderRequest object
-      expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequest).length + 1);
+      // we add two, because we add referer information and version from bidderRequest object
+      expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequest).length + 2);
       expect(request.data.pageUrl).to.equal('https://localhost:9876/');
       // expect(request.data.referrer).to.equal('');
       Object.keys(defaultBidRequest).forEach((key) => {
@@ -146,39 +148,6 @@ describe('orbidderBidAdapter', () => {
       const gdprConsent = request.data.gdprConsent;
       expect(gdprConsent.consentRequired).to.be.equal(false);
       expect(gdprConsent.consentString).to.be.equal(consentString);
-    });
-  });
-
-  describe('onCallbackHandler', () => {
-    let ajaxStub;
-    const bidObj = {
-      adId: 'testId',
-      test: 1,
-      pageUrl: 'www.someurl.de',
-      referrer: 'www.somereferrer.de',
-      requestId: '123req456'
-    };
-
-    spec.bidParams['123req456'] = {'accountId': '123acc456'};
-
-    let bidObjClone = deepClone(bidObj);
-    bidObjClone.pageUrl = detectReferer(window)().referer;
-    bidObjClone.params = [{'accountId': '123acc456'}];
-
-    beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'ajaxCall');
-    });
-
-    afterEach(() => {
-      ajaxStub.restore();
-    });
-
-    it('calls orbidder\'s callback endpoint', () => {
-      spec.onBidWon(bidObj);
-      expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
-      expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/win`);
-      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObjClone));
     });
   });
 

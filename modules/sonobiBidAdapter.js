@@ -1,14 +1,13 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage } from '../src/utils';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import { config } from '../src/config';
-import { Renderer } from '../src/Renderer';
-import { userSync } from '../src/userSync';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage } from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { userSync } from '../src/userSync.js';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
-const SONOBI_DIGITRUST_KEY = 'fhnS5drwmH';
 const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/sbi_outstream_renderer.js';
 
 export const spec = {
@@ -100,14 +99,6 @@ export const spec = {
 
     if (deepAccess(validBidRequests[0], 'params.hfa')) {
       payload.hfa = deepAccess(validBidRequests[0], 'params.hfa');
-    } else if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
-      payload.hfa = `PRE-${validBidRequests[0].userId.pubcid}`;
-    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
-      payload.hfa = `PRE-${validBidRequests[0].crumbs.pubcid}`;
-    }
-
-    if (deepAccess(validBidRequests[0], 'userId.tdid')) {
-      payload.tdid = validBidRequests[0].userId.tdid;
     }
 
     if (validBidRequests[0].params.referrer) {
@@ -120,13 +111,6 @@ export const spec = {
       if (bidderRequest.gdprConsent.consentString) {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
       }
-    }
-
-    const digitrust = _getDigiTrustObject(SONOBI_DIGITRUST_KEY);
-
-    if (digitrust) {
-      payload.digid = digitrust.id;
-      payload.digkeyv = digitrust.keyv;
     }
 
     if (validBidRequests[0].schain) {
@@ -142,14 +126,24 @@ export const spec = {
       payload.kw = keywords;
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent;
+    }
+
     // If there is no key_maker data, then don't make the request.
     if (isEmpty(data)) {
       return null;
     }
 
+    let url = STR_ENDPOINT;
+
+    if (deepAccess(validBidRequests[0], 'params.bid_request_url')) {
+      url = deepAccess(validBidRequests[0], 'params.bid_request_url');
+    }
+
     return {
       method: 'GET',
-      url: STR_ENDPOINT,
+      url: url,
       withCredentials: true,
       data: payload,
       bidderRequests: validBidRequests
@@ -236,7 +230,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     const syncs = [];
     try {
       if (syncOptions.pixelEnabled) {
@@ -332,20 +326,6 @@ export function _getPlatform(context = window) {
     return 'tablet'
   }
   return 'desktop';
-}
-
-// https://github.com/digi-trust/dt-cdn/wiki/Integration-Guide
-function _getDigiTrustObject(key) {
-  function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-  return digiTrustId;
 }
 
 function newRenderer(adUnitCode, bid, rendererOptions = {}) {

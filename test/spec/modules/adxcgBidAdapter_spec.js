@@ -1,7 +1,6 @@
 import {expect} from 'chai';
-import * as url from 'src/url';
-import {spec} from 'modules/adxcgBidAdapter';
-import {deepClone} from '../../../src/utils';
+import {spec} from 'modules/adxcgBidAdapter.js';
+import {deepClone, parseUrl} from 'src/utils.js';
 
 describe('AdxcgAdapter', function () {
   let bidBanner = {
@@ -119,7 +118,7 @@ describe('AdxcgAdapter', function () {
       let request = spec.buildRequests([bidBanner]);
       expect(request).to.exist;
       expect(request.method).to.equal('GET');
-      let parsedRequestUrl = url.parse(request.url);
+      let parsedRequestUrl = parseUrl(request.url);
       expect(parsedRequestUrl.hostname).to.equal('hbps.adxcg.net');
       expect(parsedRequestUrl.pathname).to.equal('/get/adi');
 
@@ -152,7 +151,7 @@ describe('AdxcgAdapter', function () {
       let request = spec.buildRequests([bidVideo]);
       expect(request).to.exist;
       expect(request.method).to.equal('GET');
-      let parsedRequestUrl = url.parse(request.url);
+      let parsedRequestUrl = parseUrl(request.url);
       expect(parsedRequestUrl.hostname).to.equal('hbps.adxcg.net');
       expect(parsedRequestUrl.pathname).to.equal('/get/adi');
 
@@ -191,7 +190,7 @@ describe('AdxcgAdapter', function () {
       let request = spec.buildRequests([bidNative]);
       expect(request).to.exist;
       expect(request.method).to.equal('GET');
-      let parsedRequestUrl = url.parse(request.url);
+      let parsedRequestUrl = parseUrl(request.url);
       expect(parsedRequestUrl.hostname).to.equal('hbps.adxcg.net');
       expect(parsedRequestUrl.pathname).to.equal('/get/adi');
 
@@ -229,7 +228,7 @@ describe('AdxcgAdapter', function () {
           consentString: 'consentDataString'
         }
       });
-      let parsedRequestUrl = url.parse(request.url);
+      let parsedRequestUrl = parseUrl(request.url);
       let query = parsedRequestUrl.search;
 
       expect(query.gdpr).to.equal('1');
@@ -243,7 +242,7 @@ describe('AdxcgAdapter', function () {
           consentString: 'consentDataString'
         }
       });
-      let parsedRequestUrl = url.parse(request.url);
+      let parsedRequestUrl = parseUrl(request.url);
       let query = parsedRequestUrl.search;
 
       expect(query.gdpr).to.be.undefined;
@@ -258,7 +257,7 @@ describe('AdxcgAdapter', function () {
 
     it('should send pubcid if available', function () {
       let request = spec.buildRequests(bid, bidderRequests);
-      let parsedRequestUrl = url.parse(request.url);
+      let parsedRequestUrl = parseUrl(request.url);
       let query = parsedRequestUrl.search;
       expect(query.pubcid).to.equal('pubcidabcd');
     });
@@ -272,7 +271,7 @@ describe('AdxcgAdapter', function () {
 
     it('should send pubcid if available', function () {
       let request = spec.buildRequests(bid, bidderRequests);
-      let parsedRequestUrl = url.parse(request.url);
+      let parsedRequestUrl = parseUrl(request.url);
       let query = parsedRequestUrl.search;
       expect(query.tdid).to.equal('tdidabcd');
     });
@@ -286,7 +285,7 @@ describe('AdxcgAdapter', function () {
 
     it('should send pubcid if available', function () {
       let request = spec.buildRequests(bid, bidderRequests);
-      let parsedRequestUrl = url.parse(request.url);
+      let parsedRequestUrl = parseUrl(request.url);
       let query = parsedRequestUrl.search;
       expect(query.id5id).to.equal('id5idsample');
     });
@@ -300,7 +299,7 @@ describe('AdxcgAdapter', function () {
 
     it('should send pubcid if available', function () {
       let request = spec.buildRequests(bid, bidderRequests);
-      let parsedRequestUrl = url.parse(request.url);
+      let parsedRequestUrl = parseUrl(request.url);
       let query = parsedRequestUrl.search;
       expect(query.idl_env).to.equal('idl_envsample');
     });

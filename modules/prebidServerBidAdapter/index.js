@@ -1,16 +1,17 @@
-import Adapter from '../../src/adapter';
-import { createBid } from '../../src/bidfactory';
-import * as utils from '../../src/utils';
-import { STATUS, S2S, EVENTS } from '../../src/constants';
-import adapterManager from '../../src/adapterManager';
-import { config } from '../../src/config';
-import { VIDEO, NATIVE } from '../../src/mediaTypes';
-import { processNativeAdUnitParams } from '../../src/native';
-import { isValid } from '../../src/adapters/bidderFactory';
-import events from '../../src/events';
-import includes from 'core-js/library/fn/array/includes';
+import Adapter from '../../src/adapter.js';
+import { createBid } from '../../src/bidfactory.js';
+import * as utils from '../../src/utils.js';
+import { STATUS, S2S, EVENTS } from '../../src/constants.json';
+import adapterManager from '../../src/adapterManager.js';
+import { config } from '../../src/config.js';
+import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
+import { processNativeAdUnitParams } from '../../src/native.js';
+import { isValid } from '../../src/adapters/bidderFactory.js';
+import events from '../../src/events.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { S2S_VENDORS } from './config.js';
-import { ajax } from '../../src/ajax';
+import { ajax } from '../../src/ajax.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const getConfig = config.getConfig;
 
@@ -70,6 +71,7 @@ config.setDefaults({
  * @property {string} endpoint endpoint to contact
  *  === optional params below ===
  * @property {number} [timeout] timeout for S2S bidders - should be lower than `pbjs.requestBids({timeout})`
+ * @property {number} [defaultTtl] ttl for S2S bidders when pbs does not return a ttl on the response - defaults to 60`
  * @property {boolean} [cacheMarkup] whether to cache the adm result
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
@@ -238,27 +240,6 @@ function doClientSideSyncs(bidders) {
   });
 }
 
-function _getDigiTrustQueryParams(bidRequest = {}) {
-  function getDigiTrustId(bidRequest) {
-    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'bids.0.userId.digitrustid.data');
-    if (bidRequestDigitrust) {
-      return bidRequestDigitrust;
-    }
-
-    const digiTrustUser = config.getConfig('digiTrustId');
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-  let digiTrustId = getDigiTrustId(bidRequest);
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-  return {
-    id: digiTrustId.id,
-    keyv: digiTrustId.keyv
-  };
-}
-
 function _appendSiteAppDevice(request, pageUrl) {
   if (!request) return;
 
@@ -267,9 +248,17 @@ function _appendSiteAppDevice(request, pageUrl) {
     request.app = config.getConfig('app');
     request.app.publisher = {id: _s2sConfig.accountId}
   } else {
-    request.site = {
-      publisher: { id: _s2sConfig.accountId },
-      page: pageUrl
+    request.site = {};
+    if (utils.isPlainObject(config.getConfig('site'))) {
+      request.site = config.getConfig('site');
+    }
+    // set publisher.id if not already defined
+    if (!utils.deepAccess(request.site, 'publisher.id')) {
+      utils.deepSetValue(request.site, 'publisher.id', _s2sConfig.accountId);
+    }
+    // set site.page if not already defined
+    if (!request.site.page) {
+      request.site.page = pageUrl;
     }
   }
   if (typeof config.getConfig('device') === 'object') {
@@ -283,6 +272,32 @@ function _appendSiteAppDevice(request, pageUrl) {
   }
   if (!request.device.h) {
     request.device.h = window.innerHeight;
+  }
+}
+
+function addBidderFirstPartyDataToRequest(request) {
+  const bidderConfig = config.getBidderConfig();
+  const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
+    const currBidderConfig = bidderConfig[bidder];
+    if (currBidderConfig.fpd) {
+      const fpd = {};
+      if (currBidderConfig.fpd.context) {
+        fpd.site = currBidderConfig.fpd.context;
+      }
+      if (currBidderConfig.fpd.user) {
+        fpd.user = currBidderConfig.fpd.user;
+      }
+
+      acc.push({
+        bidders: [ bidder ],
+        config: { fpd }
+      });
+    }
+    return acc;
+  }, []);
+
+  if (fpdConfigs.length) {
+    utils.deepSetValue(request, 'ext.prebid.bidderconfig', fpdConfigs);
   }
 }
 
@@ -337,10 +352,55 @@ let nativeEventTrackerMethodMap = {
  */
 let bidIdMap = {};
 let nativeAssetCache = {}; // store processed native params to preserve
+
+/**
+ * map wurl to auction id and adId for use in the BID_WON event
+ */
+let wurlMap = {};
+
+/**
+ * @param {string} auctionId
+ * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
+ * @param {string} wurl events.winurl passed from prebidServer as wurl
+ */
+function addWurl(auctionId, adId, wurl) {
+  if ([auctionId, adId].every(utils.isStr)) {
+    wurlMap[`${auctionId}${adId}`] = wurl;
+  }
+}
+
+/**
+ * @param {string} auctionId
+ * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
+ */
+function removeWurl(auctionId, adId) {
+  if ([auctionId, adId].every(utils.isStr)) {
+    wurlMap[`${auctionId}${adId}`] = undefined;
+  }
+}
+/**
+ * @param {string} auctionId
+ * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
+ * @return {(string|undefined)} events.winurl which was passed as wurl
+ */
+function getWurl(auctionId, adId) {
+  if ([auctionId, adId].every(utils.isStr)) {
+    return wurlMap[`${auctionId}${adId}`];
+  }
+}
+
+/**
+ * remove all cached wurls
+ */
+export function resetWurlMap() {
+  wurlMap = {};
+}
+
 const OPEN_RTB_PROTOCOL = {
   buildRequest(s2sBidRequest, bidRequests, adUnits) {
     let imps = [];
     let aliases = {};
+    const firstBidRequest = bidRequests[0];
 
     // transform ad unit into array of OpenRTB impression objects
     adUnits.forEach(adUnit => {
@@ -481,7 +541,31 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
+      /**
+       * Prebid AdSlot
+       * @type {(string|undefined)}
+       */
+      const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
+      if (typeof pbAdSlot === 'string' && pbAdSlot) {
+        utils.deepSetValue(imp, 'ext.context.data.pbadslot', pbAdSlot);
+      }
+
+      /**
+       * GAM Ad Unit
+       * @type {(string|undefined)}
+       */
+      const gamAdUnit = utils.deepAccess(adUnit, 'fpd.context.adServer.adSlot');
+      if (typeof gamAdUnit === 'string' && gamAdUnit) {
+        utils.deepSetValue(imp, 'ext.context.data.adslot', gamAdUnit);
+      }
+
       Object.assign(imp, mediaTypes);
+
+      // if storedAuctionResponse has been set, pass SRID
+      const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
+      if (storedAuctionResponseBid) {
+        utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
+      }
 
       if (imp.banner || imp.video || imp.native) {
         imps.push(imp);
@@ -500,6 +584,8 @@ const OPEN_RTB_PROTOCOL = {
       test: getConfig('debug') ? 1 : 0,
       ext: {
         prebid: {
+          // set ext.prebid.auctiontimestamp with the auction timestamp. Data type is long integer.
+          auctiontimestamp: firstBidRequest.auctionStart,
           targeting: {
             // includewinners is always true for openrtb
             includewinners: true,
@@ -527,12 +613,7 @@ const OPEN_RTB_PROTOCOL = {
       request.cur = [adServerCur[0]];
     }
 
-    _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer);
-
-    const digiTrust = _getDigiTrustQueryParams(bidRequests && bidRequests[0]);
-    if (digiTrust) {
-      utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
-    }
+    _appendSiteAppDevice(request, firstBidRequest.refererInfo.referer);
 
     // pass schain object if it is present
     const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
@@ -546,104 +627,43 @@ const OPEN_RTB_PROTOCOL = {
       request.ext.prebid.aliases = aliases;
     }
 
-    const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.criteoId || bidUserId.britepoolid)) {
-      utils.deepSetValue(request, 'user.ext.eids', []);
-
-      if (bidUserId.tdid) {
-        request.user.ext.eids.push({
-          source: 'adserver.org',
-          uids: [{
-            id: bidUserId.tdid,
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }]
-        });
-      }
-
-      if (bidUserId.pubcid) {
-        request.user.ext.eids.push({
-          source: 'pubcid.org',
-          uids: [{
-            id: bidUserId.pubcid,
-          }]
-        });
-      }
-
-      if (bidUserId.parrableid) {
-        request.user.ext.eids.push({
-          source: 'parrable.com',
-          uids: [{
-            id: bidUserId.parrableid
-          }]
-        });
-      }
-
-      if (bidUserId.lipb && bidUserId.lipb.lipbid) {
-        const liveIntent = {
-          source: 'liveintent.com',
-          uids: [{
-            id: bidUserId.lipb.lipbid
-          }]
-        };
-
-        if (Array.isArray(bidUserId.lipb.segments) && bidUserId.lipb.segments.length) {
-          liveIntent.ext = {
-            segments: bidUserId.lipb.segments
-          };
-        }
-        request.user.ext.eids.push(liveIntent);
-      }
-
-      if (bidUserId.id5id) {
-        request.user.ext.eids.push({
-          source: 'id5-sync.com',
-          uids: [{
-            id: bidUserId.id5id,
-          }]
-        });
-      }
-
-      if (bidUserId.criteoId) {
-        request.user.ext.eids.push({
-          source: 'criteo.com',
-          uids: [{
-            id: bidUserId.criteoId
-          }]
-        });
-      }
-
-      if (bidUserId.britepoolid) {
-        request.user.ext.eids.push({
-          source: 'britepool.com',
-          uids: [{
-            id: bidUserId.britepoolid
-          }]
-        });
-      }
+    const bidUserIdAsEids = utils.deepAccess(bidRequests, '0.bids.0.userIdAsEids');
+    if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+      utils.deepSetValue(request, 'user.ext.eids', bidUserIdAsEids);
     }
 
     if (bidRequests) {
-      if (bidRequests[0].gdprConsent) {
+      if (firstBidRequest.gdprConsent) {
         // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
         let gdprApplies;
-        if (typeof bidRequests[0].gdprConsent.gdprApplies === 'boolean') {
-          gdprApplies = bidRequests[0].gdprConsent.gdprApplies ? 1 : 0;
+        if (typeof firstBidRequest.gdprConsent.gdprApplies === 'boolean') {
+          gdprApplies = firstBidRequest.gdprConsent.gdprApplies ? 1 : 0;
         }
         utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
-        utils.deepSetValue(request, 'user.ext.consent', bidRequests[0].gdprConsent.consentString);
+        utils.deepSetValue(request, 'user.ext.consent', firstBidRequest.gdprConsent.consentString);
+        if (firstBidRequest.gdprConsent.addtlConsent && typeof firstBidRequest.gdprConsent.addtlConsent === 'string') {
+          utils.deepSetValue(request, 'user.ext.ConsentedProvidersSettings.consented_providers', firstBidRequest.gdprConsent.addtlConsent);
+        }
       }
 
       // US Privacy (CCPA) support
-      if (bidRequests[0].uspConsent) {
-        utils.deepSetValue(request, 'regs.ext.us_privacy', bidRequests[0].uspConsent);
+      if (firstBidRequest.uspConsent) {
+        utils.deepSetValue(request, 'regs.ext.us_privacy', firstBidRequest.uspConsent);
       }
     }
 
     if (getConfig('coppa') === true) {
       utils.deepSetValue(request, 'regs.coppa', 1);
     }
+
+    const commonFpd = getConfig('fpd') || {};
+    if (commonFpd.context) {
+      utils.deepSetValue(request, 'site.ext.data', commonFpd.context);
+    }
+    if (commonFpd.user) {
+      utils.deepSetValue(request, 'user.ext.data', commonFpd.user);
+    }
+    addBidderFirstPartyDataToRequest(request);
 
     return request;
   },
@@ -678,10 +698,28 @@ const OPEN_RTB_PROTOCOL = {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
           }
 
-          const extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
+          // Look for seatbid[].bid[].ext.prebid.bidid and place it in the bidResponse object for use in analytics adapters as 'pbsBidId'
+          const bidId = utils.deepAccess(bid, 'ext.prebid.bidid');
+          if (utils.isStr(bidId)) {
+            bidObject.pbsBidId = bidId;
+          }
+
+          // store wurl by auctionId and adId so it can be accessed from the BID_WON event handler
+          if (utils.isStr(utils.deepAccess(bid, 'ext.prebid.events.win'))) {
+            addWurl(bidRequest.auctionId, bidObject.adId, utils.deepAccess(bid, 'ext.prebid.events.win'));
+          }
+
+          let extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
 
           // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
-          if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
+          // The removal of hb_winurl and hb_bidid targeting values is temporary
+          // once we get through the transition, this block will be removed.
+          if (utils.isPlainObject(extPrebidTargeting)) {
+            // If wurl exists, remove hb_winurl and hb_bidid targeting attributes
+            if (utils.isStr(utils.deepAccess(bid, 'ext.prebid.events.win'))) {
+              extPrebidTargeting = utils.getDefinedParams(extPrebidTargeting, Object.keys(extPrebidTargeting)
+                .filter(i => (i.indexOf('hb_winurl') === -1 && i.indexOf('hb_bidid') === -1)));
+            }
             bidObject.adserverTargeting = extPrebidTargeting;
           }
 
@@ -693,7 +731,7 @@ const OPEN_RTB_PROTOCOL = {
             bidObject.playerHeight = sizes[0];
             bidObject.playerWidth = sizes[1];
 
-            // try to get cache values from 'response.ext.prebid.cache'
+            // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
             if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
               bidObject.videoCacheKey = bid.ext.prebid.cache.vastXml.cacheId;
@@ -778,10 +816,13 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.creative_id = bid.crid;
           bidObject.creativeId = bid.crid;
           if (bid.burl) { bidObject.burl = bid.burl; }
+          bidObject.currency = (response.cur) ? response.cur : DEFAULT_S2S_CURRENCY;
+          bidObject.meta = bidObject.meta || {};
+          if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
 
-          // TODO: Remove when prebid-server returns ttl, currency and netRevenue
-          bidObject.ttl = (bid.ttl) ? bid.ttl : DEFAULT_S2S_TTL;
-          bidObject.currency = (bid.currency) ? bid.currency : DEFAULT_S2S_CURRENCY;
+          // TODO: Remove when prebid-server returns ttl and netRevenue
+          const configTtl = _s2sConfig.defaultTtl || DEFAULT_S2S_TTL;
+          bidObject.ttl = (bid.ttl) ? bid.ttl : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
           bids.push({ adUnit: bid.impid, bid: bidObject });
@@ -792,6 +833,21 @@ const OPEN_RTB_PROTOCOL = {
     return bids;
   }
 };
+
+/**
+ * BID_WON event to request the wurl
+ * @param {Bid} bid the winning bid object
+ */
+function bidWonHandler(bid) {
+  const wurl = getWurl(bid.auctionId, bid.adId);
+  if (utils.isStr(wurl)) {
+    utils.logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
+    utils.triggerPixel(wurl);
+
+    // remove from wurl cache, since the wurl url was called
+    removeWurl(bid.auctionId, bid.adId);
+  }
+}
 
 /**
  * Bidder adapter for Prebid Server
@@ -875,6 +931,9 @@ export function PrebidServer() {
     done();
     doClientSideSyncs(requestedBidders);
   }
+
+  // Listen for bid won to call wurl
+  events.on(EVENTS.BID_WON, bidWonHandler);
 
   return Object.assign(this, {
     callBids: baseAdapter.callBids,

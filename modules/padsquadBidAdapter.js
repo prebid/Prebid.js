@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://x.padsquad.com/auction';
 
@@ -83,6 +83,7 @@ export const spec = {
           ad: bid.adm,
           ttl: DEFAULT_BID_TTL,
           creativeId: bid.crid,
+          meta: { advertiserDomains: bid.adomain },
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
         })

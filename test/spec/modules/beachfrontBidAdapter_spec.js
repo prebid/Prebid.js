@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
-import { parse as parseUrl } from 'src/url';
+import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter.js';
+import { parseUrl } from 'src/utils.js';
 
 describe('BeachfrontAdapter', function () {
   let bidRequests;
@@ -146,6 +146,7 @@ describe('BeachfrontAdapter', function () {
         const width = 640;
         const height = 480;
         const bidRequest = bidRequests[0];
+        bidRequest.params.tagid = '7cd7a7b4-ef3f-4aeb-9565-3627f255fa10';
         bidRequest.mediaTypes = {
           video: {
             playerSize: [ width, height ]
@@ -165,6 +166,7 @@ describe('BeachfrontAdapter', function () {
         expect(data.id).to.be.a('string');
         expect(data.imp[0].video).to.deep.contain({ w: width, h: height, mimes: DEFAULT_MIMES });
         expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
+        expect(data.imp[0].tagid).to.equal(bidRequest.params.tagid);
         expect(data.site).to.deep.equal({ page: topLocation.href, domain: topLocation.hostname });
         expect(data.device).to.deep.contain({ ua: navigator.userAgent, language: navigator.language, js: 1 });
         expect(data.cur).to.deep.equal(['USD']);
@@ -232,6 +234,16 @@ describe('BeachfrontAdapter', function () {
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
         expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement });
+      });
+
+      it('must add US privacy data to the request', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const uspConsent = '2112YYZ';
+        const bidderRequest = { uspConsent };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.regs.ext.us_privacy).to.equal(uspConsent);
       });
 
       it('must add GDPR consent data to the request', function () {
@@ -370,6 +382,16 @@ describe('BeachfrontAdapter', function () {
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
         expect(data.slots[0].sizes).to.deep.contain({ w: width, h: height });
+      });
+
+      it('must add US privacy data to the request', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const uspConsent = '2112YYZ';
+        const bidderRequest = { uspConsent };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.usPrivacy).to.equal(uspConsent);
       });
 
       it('must add GDPR consent data to the request', function () {

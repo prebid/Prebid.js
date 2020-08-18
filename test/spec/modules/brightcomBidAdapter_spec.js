@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import * as utils from 'src/utils';
-import { spec } from 'modules/brightcomBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import * as utils from 'src/utils.js';
+import { spec } from 'modules/brightcomBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const URL = 'https://brightcombid.marphezis.com/hb';
 
@@ -139,6 +139,31 @@ describe('brightcomBidAdapter', function() {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
       expect(payload.site.publisher.id).to.equal(1234567);
+    });
+
+    it('sends gdpr info if exists', function () {
+      const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      const bidderRequest = {
+        'bidderCode': 'brightcom',
+        'auctionId': '1d1a030790a437',
+        'bidderRequestId': '22edbae2744bf5',
+        'timeout': 3000,
+        gdprConsent: {
+          consentString: consentString,
+          gdprApplies: true
+        },
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+      expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number');
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.user.ext.consent).to.exist.and.to.be.a('string');
+      expect(data.user.ext.consent).to.equal(consentString);
     });
 
     context('when element is fully in view', function() {

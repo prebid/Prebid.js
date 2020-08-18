@@ -1,22 +1,31 @@
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import {parse} from '../src/url';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '3.0.0';
+const BIDDER_VERSION = '3.0.3';
 
-const USER_ID_CODE_TO_QUERY_ARG = {
-  idl_env: 'lre', // liveramp
-  pubcid: 'pubcid', // publisher common id
-  tdid: 'ttduuid' // the trade desk
+const DEFAULT_CURRENCY = 'USD';
+
+export const USER_ID_CODE_TO_QUERY_ARG = {
+  britepoolid: 'britepoolid', // BritePool ID
+  criteoId: 'criteoid', // CriteoID
+  digitrustid: 'digitrustid', // DigiTrust
+  id5id: 'id5id', // ID5 ID
+  idl_env: 'lre', // LiveRamp IdentityLink
+  lipb: 'lipbid', // LiveIntent ID
+  netId: 'netid', // netID
+  parrableId: 'parrableid', // Parrable ID
+  pubcid: 'pubcid', // PubCommon ID
+  tdid: 'ttduuid', // The Trade Desk Unified ID
 };
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 69,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
     const hasDelDomainOrPlatform = bidRequest.params.delDomain || bidRequest.params.platform;
@@ -53,12 +62,13 @@ export const spec = {
     return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
   },
-  getUserSyncs: function (syncOptions, responses) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
       let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
       let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
         utils.deepAccess(responses, '0.body.pixels') ||
-        'https://u.openx.net/w/1.0/pd';
+        generateDefaultSyncUrl(gdprConsent, uspConsent);
+
       return [{
         type: pixelType,
         url: url
@@ -72,6 +82,23 @@ export const spec = {
     }, params);
   }
 };
+
+function generateDefaultSyncUrl(gdprConsent, uspConsent) {
+  let url = 'https://u.openx.net/w/1.0/pd';
+  let queryParamStrings = [];
+
+  if (gdprConsent) {
+    queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
+    queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+  }
+
+  // CCPA
+  if (uspConsent) {
+    queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
+  }
+
+  return `${url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`;
+}
 
 function isVideoRequest(bidRequest) {
   return (utils.deepAccess(bidRequest, 'mediaTypes.video') && !utils.deepAccess(bidRequest, 'mediaTypes.banner')) || bidRequest.mediaType === VIDEO;
@@ -205,7 +232,7 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     defaultParams.ph = bids[0].params.platform;
   }
 
-  if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
+  if (bidderRequest.gdprConsent) {
     let gdprConsentConfig = bidderRequest.gdprConsent;
 
     if (gdprConsentConfig.consentString !== undefined) {
@@ -219,6 +246,10 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     if (config.getConfig('consentManagement.cmpApi') === 'iab') {
       defaultParams.x_gdpr_f = 1;
     }
+  }
+
+  if (bidderRequest && bidderRequest.uspConsent) {
+    defaultParams.us_privacy = bidderRequest.uspConsent;
   }
 
   // normalize publisher common id
@@ -236,9 +267,23 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
 }
 
 function appendUserIdsToQueryParams(queryParams, userIds) {
-  utils._each(userIds, (userIdValue, userIdProviderKey) => {
+  utils._each(userIds, (userIdObjectOrValue, userIdProviderKey) => {
+    const key = USER_ID_CODE_TO_QUERY_ARG[userIdProviderKey];
+
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
-      queryParams[USER_ID_CODE_TO_QUERY_ARG[userIdProviderKey]] = userIdValue;
+      switch (userIdProviderKey) {
+        case 'digitrustid':
+          queryParams[key] = utils.deepAccess(userIdObjectOrValue, 'data.id');
+          break;
+        case 'lipb':
+          queryParams[key] = userIdObjectOrValue.lipbid;
+          break;
+        case 'parrableId':
+          queryParams[key] = userIdObjectOrValue.eid;
+          break;
+        default:
+          queryParams[key] = userIdObjectOrValue;
+      }
     }
   });
 
@@ -296,8 +341,10 @@ function buildOXBannerRequest(bids, bidderRequest) {
   let customFloorsForAllBids = [];
   let hasCustomFloor = false;
   bids.forEach(function (bid) {
-    if (bid.params.customFloor) {
-      customFloorsForAllBids.push((Math.round(bid.params.customFloor * 100) / 100) * 1000);
+    let floor = getBidFloor(bid, BANNER);
+
+    if (floor) {
+      customFloorsForAllBids.push(floor);
       hasCustomFloor = true;
     } else {
       customFloorsForAllBids.push(0);
@@ -376,14 +423,18 @@ function generateVideoParameters(bid, bidderRequest) {
     queryParams.vmimes = oxVideoConfig.mimes;
   }
 
+  if (bid.params.test) {
+    queryParams.vtest = 1;
+  }
+
   return queryParams;
 }
 
 function createVideoBidResponses(response, {bid, startTime}) {
   let bidResponses = [];
 
-  if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
-    let vastQueryParams = parse(response.vastUrl).search || {};
+  if (response !== undefined && response.vastUrl !== '' && response.pub_rev > 0) {
+    let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
     // default 5 mins
@@ -391,9 +442,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     // true is net, false is gross
     bidResponse.netRevenue = true;
     bidResponse.currency = response.currency;
-    bidResponse.cpm = Number(response.pub_rev) / 1000;
-    bidResponse.width = response.width;
-    bidResponse.height = response.height;
+    bidResponse.cpm = parseInt(response.pub_rev, 10) / 1000;
+    bidResponse.width = parseInt(response.width, 10);
+    bidResponse.height = parseInt(response.height, 10);
     bidResponse.creativeId = response.adid;
     bidResponse.vastUrl = response.vastUrl;
     bidResponse.mediaType = VIDEO;
@@ -407,6 +458,22 @@ function createVideoBidResponses(response, {bid, startTime}) {
   }
 
   return bidResponses;
+}
+
+function getBidFloor(bidRequest, mediaType) {
+  let floorInfo = {};
+  const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: currency,
+      mediaType: mediaType,
+      size: '*'
+    });
+  }
+  let floor = floorInfo.floor || bidRequest.params.customFloor || 0;
+
+  return Math.round(floor * 1000); // normalize to microCpm
 }
 
 registerBidder(spec);
