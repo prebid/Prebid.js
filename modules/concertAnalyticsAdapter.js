@@ -26,13 +26,8 @@ let concertAnalytics = Object.assign(adapter({url, analyticsType}), {
   track({ eventType, args }) {
     switch (eventType) {
       case BID_RESPONSE:
-        // eslint-disable-next-line no-console
-        console.log('handling bid response');
         if (args.bidder !== 'concert') break;
         queue.push(mapBidEvent(eventType, args));
-        queue.push('pushing a silly thing just to see ok');
-        // eslint-disable-next-line no-console
-        console.log('pushed bid response to queue', queue);
         break;
 
       case BID_WON:
@@ -69,9 +64,6 @@ function mapBidEvent(eventType, args) {
     timeToRespond
   }
 
-  // eslint-disable-next-line no-console
-  console.log('payload', payload);
-
   return payload;
 }
 
@@ -83,7 +75,7 @@ function mapBidEvent(eventType, args) {
  * @param {string} creativeId
  */
 function getConcertRequestId(creativeId) {
-  if (!creativeId || !creativeId.includes('|')) return [null, null];
+  if (!creativeId || creativeId.indexOf('|') < 0) return [null, null];
 
   return creativeId.split('|');
 }
@@ -94,8 +86,6 @@ function sampleAnalytics() {
 
 function sendEvents() {
   concertAnalytics.eventsStorage = queue;
-  // eslint-disable-next-line no-console
-  console.log('set concert events storage', concertAnalytics.eventsStorage);
 
   if (!queue.length) return;
 
