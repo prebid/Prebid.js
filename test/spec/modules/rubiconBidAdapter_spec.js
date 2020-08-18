@@ -1354,6 +1354,19 @@ describe('the rubicon adapter', function () {
               expect(data['x_liverampidl']).to.equal('1111-2222-3333-4444');
             });
           });
+
+          describe('SharedID support', function () {
+            it('should send sharedid when userId defines sharedId', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                sharedid: '1111'
+              };
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_sharedid.org']).to.equal('1111^3^1111');
+            });
+          });
         })
 
         describe('Prebid AdSlot', function () {

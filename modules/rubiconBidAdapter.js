@@ -243,7 +243,7 @@ export const spec = {
       }
 
       if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
-        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env || bidRequest.userId.sharedId)) {
+        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env || bidRequest.userId.sharedid)) {
         utils.deepSetValue(data, 'user.ext.eids', []);
 
         if (bidRequest.userId.tdid) {
@@ -297,14 +297,14 @@ export const spec = {
         }
 
         // support shared id
-        if (bidRequest.userId.sharedId) {
+        if (bidRequest.userId.sharedid) {
           data.user.ext.eids.push({
             source: 'sharedid.org',
             uids: [{
-              id: bidRequest.userId.sharedId,
+              id: bidRequest.userId.sharedid,
               atype: 3,
               ext: {
-                third: bidRequest.userId.sharedId
+                third: bidRequest.userId.sharedid
               }
             }]
           });
@@ -572,8 +572,8 @@ export const spec = {
       }
 
       // support shared id
-      if (bidRequest.userId.sharedId) {
-        data['eid_sharedid.org'] = `${bidRequest.userId.sharedId}^3^${bidRequest.userId.sharedId}`;
+      if (bidRequest.userId.sharedid) {
+        data['eid_sharedid.org'] = `${bidRequest.userId.sharedid}^3^${bidRequest.userId.sharedid}`;
       }
     }
 
