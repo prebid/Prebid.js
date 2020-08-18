@@ -52,6 +52,10 @@ export const spec = {
               nBid.creativeId = nBid.crid;
               nBid.currency = 'USD';
               nBid.ttl = 60;
+              nBid.meta = nBid.meta || {};
+              if (nBid.adomain && nBid.adomain.length > 0) {
+                nBid.meta.advertiserDomains = nBid.adomain;
+              }
               return nBid;
             } else {
               oBid.cpm = oBid.price;
@@ -388,7 +392,7 @@ export function getApi({protocols}) {
   ];
   if (protocols) {
     return listProtocols.filter(p => {
-      return protocols.includes(p.key);
+      return protocols.indexOf(p.key) !== -1;
     }).map(p => p.value)
   } else {
     return defaultValue;
