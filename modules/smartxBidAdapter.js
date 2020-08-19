@@ -205,30 +205,31 @@ export const spec = {
           ext: userExt
         };
       }
-      // TODO check if params.user.data is set, if not skip custom targetingparams
+
       // CUSTOM - Targetingparameters
-      var dataarray = [];
-      for (var i = 0; i < bid.params.user.data.length; i++) {
-        var isemq = (bid.params.user.data[i].name) || 'empty';
-        if (isemq !== 'empty') {
-          var provider = bid.params.user.data[i].name;
-          var targetingstring = (bid.params.user.data[i].segment[0].value) || 'empty';
-          dataarray.push({
-            id: provider,
-            name: provider,
-            segment: {
+      if (utils.getBidIdParameter('data', bid.params.user)) {
+        var dataarray = [];
+        for (var i = 0; i < bid.params.user.data.length; i++) {
+          var isemq = (bid.params.user.data[i].name) || 'empty';
+          if (isemq !== 'empty') {
+            var provider = bid.params.user.data[i].name;
+            var targetingstring = (bid.params.user.data[i].segment[0].value) || 'empty';
+            dataarray.push({
+              id: provider,
               name: provider,
-              value: targetingstring,
-            }
-          })
+              segment: {
+                name: provider,
+                value: targetingstring,
+              }
+            })
+          }
+        }
+
+        requestPayload.user = {
+          ext: userExt,
+          data: dataarray
         }
       }
-
-      requestPayload.user = {
-        ext: userExt,
-        data: dataarray
-      }
-      // CUSTOM - Targetingparameters
 
       return {
         method: 'POST',

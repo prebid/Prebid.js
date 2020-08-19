@@ -22,7 +22,7 @@ Test Parameters - Use case #1 - outstream with default rendering options
             },
             video: {
                 context: 'outstream',
-                playerSize: [640, 480]
+                playerSize: [640, 360]
             }
         },
         bids: [{
@@ -55,7 +55,7 @@ Test Parameters - Use case #1 - outstream with default rendering options
                             segment: [{
                                 id: 'gs',
                                 name:'gs',
-                                value: 'tone_of_voice_dislike,tone_of_voice_negative,gs_health'
+                                value: 'tone_of_voice_dislike:tone_of_voice_negative:gs_health'
                             }]
                     }]
                 }
