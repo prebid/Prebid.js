@@ -48,57 +48,66 @@ const analyticsBlocked = [];
 let addedDeviceAccessHook = false;
 
 /**
- * Returns gvlId for Bid Adapters. If a bidder does not have an associated gvlId, it returns 'undefined'.
- * @param  {string=} bidderCode - The 'code' property on the Bidder spec.
- * @retuns {number} gvlId
+ * Returns GVL ID for a bid adapter or an userId submodule or an analytics adapter.
+ * @param {{string=|Object=}} moduleName
+ * @return {number} GVL ID
  */
-function getGvlid(bidderCode) {
-  let gvlid;
+function getGvlid(moduleName, caller) {
+  let gvlid = null;
+  if (moduleName) {
+    // Check user defined GVL Mapping in pbjs.setConfig()
+    const gvlMapping = config.getConfig('gvlMapping');
+
+    // For userId modules, we pass the submodule object as "moduleName", so this check is needed to grab the module name
+    moduleName = typeof moduleName === 'string' ? moduleName : moduleName.name;
+
+    if (gvlMapping && gvlMapping[moduleName]) {
+      gvlid = gvlMapping[moduleName];
+      return gvlid;
+    }
+
+    gvlid = getGvlidForBidAdapter(moduleName) || getGvlidForUserIdModule(moduleName) || getGvlidForAnalyticsAdapter(moduleName);
+  }
+  return gvlid;
+}
+
+/**
+ * Returns GVL ID for a bid adapter. If the adapter does not have an associated GVL ID, it returns 'undefined'.
+ * @param  {string=} bidderCode - The 'code' property of the Bidder spec.
+ * @return {number} GVL ID
+ */
+function getGvlidForBidAdapter(bidderCode) {
+  let gvlid = null;
   bidderCode = bidderCode || config.getCurrentBidder();
   if (bidderCode) {
-    const gvlMapping = config.getConfig('gvlMapping');
-    if (gvlMapping && gvlMapping[bidderCode]) {
-      gvlid = gvlMapping[bidderCode];
-    } else {
-      const bidder = adapterManager.getBidAdapter(bidderCode);
-      if (bidder && bidder.getSpec) {
-        gvlid = bidder.getSpec().gvlid;
-      }
+    const bidder = adapterManager.getBidAdapter(bidderCode);
+    if (bidder && bidder.getSpec) {
+      gvlid = bidder.getSpec().gvlid;
     }
   }
   return gvlid;
 }
 
 /**
- * Returns gvlId for userId module. If a userId modules does not have an associated gvlId, it returns 'undefined'.
+ * Returns GVL ID for an userId submodule. If an userId submodules does not have an associated GVL ID, it returns 'undefined'.
  * @param {Object} userIdModule
- * @retuns {number} gvlId
+ * @return {number} GVL ID
  */
 function getGvlidForUserIdModule(userIdModule) {
-  let gvlId;
-  const gvlMapping = config.getConfig('gvlMapping');
-  if (gvlMapping && gvlMapping[userIdModule.name]) {
-    gvlId = gvlMapping[userIdModule.name];
-  } else {
-    gvlId = userIdModule.gvlid;
-  }
-  return gvlId;
+  return (typeof userIdModule === 'object' ? userIdModule.gvlid : null);
 }
 
 /**
- * Returns gvlId for analytics adapters. If a analytics adapter does not have an associated gvlId, it returns 'undefined'.
+ * Returns GVL ID for an analytics adapter. If an analytics adapter does not have an associated GVL ID, it returns 'undefined'.
  * @param {string} code - 'provider' property on the analytics adapter config
- * @returns {number} gvlId
+ * @return {number} GVL ID
  */
 function getGvlidForAnalyticsAdapter(code) {
-  let gvlId;
-  const gvlMapping = config.getConfig('gvlMapping');
-  if (gvlMapping && gvlMapping[code]) {
-    gvlId = gvlMapping[code];
-  } else {
-    gvlId = adapterManager.getAnalyticsAdapter(code).gvlid;
+  let gvlid = null;
+  if (adapterManager.getAnalyticsAdapter(code) && adapterManager.getAnalyticsAdapter(code).gvlid) {
+    return adapterManager.getAnalyticsAdapter(code).gvlid
   }
-  return gvlId;
+  return gvlid;
 }
 
 /**
@@ -165,7 +174,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
         if (curBidder && (curBidder != moduleName) && adapterManager.aliasRegistry[curBidder] === moduleName) {
           gvlid = getGvlid(curBidder);
         } else {
-          gvlid = getGvlid(moduleName);
+          gvlid = getGvlid(moduleName) || gvlid;
         }
         const curModule = moduleName || curBidder;
         let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
@@ -199,8 +208,8 @@ export function userSyncHook(fn, ...args) {
   const consentData = gdprDataHandler.getConsentData();
   if (consentData && consentData.gdprApplies) {
     if (consentData.apiVersion === 2) {
-      const gvlid = getGvlid();
       const curBidder = config.getCurrentBidder();
+      const gvlid = getGvlid(curBidder);
       let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
       if (isAllowed) {
         fn.call(this, ...args);
@@ -227,7 +236,7 @@ export function userIdHook(fn, submodules, consentData) {
   if (consentData && consentData.gdprApplies) {
     if (consentData.apiVersion === 2) {
       let userIdModules = submodules.map((submodule) => {
-        const gvlid = getGvlidForUserIdModule(submodule.submodule);
+        const gvlid = getGvlid(submodule.submodule);
         const moduleName = submodule.submodule.name;
         let isAllowed = validateRules(purpose1Rule, consentData, moduleName, gvlid);
         if (isAllowed) {
@@ -296,7 +305,7 @@ export function enableAnalyticsHook(fn, config) {
       }
       config = config.filter(conf => {
         const analyticsAdapterCode = conf.provider;
-        const gvlid = getGvlidForAnalyticsAdapter(analyticsAdapterCode);
+        const gvlid = getGvlid(analyticsAdapterCode);
         const isAllowed = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
         if (!isAllowed) {
           analyticsBlocked.push(analyticsAdapterCode);
