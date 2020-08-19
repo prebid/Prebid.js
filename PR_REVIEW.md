@@ -39,7 +39,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 - All required global and bidder-adapter rules defined in the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html) must be followed. Please review these rules often - we depend on reviewers to enforce them.
 - All bidder parameter conventions must be followed:
     - Video params must be read from AdUnit.mediaTypes.video when available; however bidder config can override the ad unit. 
-    - First party data must be read from [`fpd.context`](https://docs.prebid.org/dev-docs/publisher-api-reference.html#setConfig-fpd).
+    - First party data must be read from [`fpd.context` and `fpd.user`](https://docs.prebid.org/dev-docs/publisher-api-reference.html#setConfig-fpd).
     - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloors()` function.
     - Adapters cannot accept an schain parameter. Rather, they must look for the schain parameter at bidRequest.schain.
     - The bidRequest page referrer must checked in addition to any bidder-specific parameter.
