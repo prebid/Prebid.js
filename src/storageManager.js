@@ -1,8 +1,11 @@
 import { hook } from './hook.js';
 import * as utils from './utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
+import { MODULE_TYPE } from './constants.json'
 
-const moduleTypeWhiteList = ['core', 'prebid-module'];
+const { CORE, PREBID_MODULE } = MODULE_TYPE;
+
+const moduleTypeWhiteList = [CORE, PREBID_MODULE];
 
 export let storageCallbacks = [];
 
@@ -34,7 +37,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
       let hookDetails = {
         hasEnforcementHook: false
       }
-      validateStorageEnforcement(gvlid, moduleName, hookDetails, function(result) {
+      validateStorageEnforcement(gvlid, moduleName, moduleType, hookDetails, function(result) {
         if (result && result.hasEnforcementHook) {
           value = cb(result);
         } else {
@@ -284,7 +287,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
 /**
  * This hook validates the storage enforcement if gdprEnforcement module is included
  */
-export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, hookDetails, callback) {
+export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, moduleType, hookDetails, callback) {
   callback(hookDetails);
 }, 'validateStorageEnforcement');
 
@@ -293,17 +296,18 @@ export const validateStorageEnforcement = hook('async', function(gvlid, moduleNa
  * @param {string} moduleName Module name
  */
 export function getCoreStorageManager(moduleName) {
-  return newStorageManager({moduleName: moduleName, moduleType: 'core'});
+  return newStorageManager({moduleName: moduleName, moduleType: CORE});
 }
 
 /**
  * Note: Core modules or Prebid modules like Currency, SizeMapping should use getCoreStorageManager
- * This function returns storage functions to access cookies and localstorage. Bidders and User id modules should import this and use it in their module if needed. GVL ID and Module name are optional param but gvl id is needed for when gdpr enforcement module is used.
+ * This function returns storage functions to access cookies and localstorage. Bidders and User id modules should import this and use it in their module if needed. GVL ID, Module name and Module type are optional params but all are needed when gdpr enforcement module is used.
  * @param {Number=} gvlid Vendor id
  * @param {string=} moduleName BidderCode or module name
+ * @param {string=} moduleType Indicates if the module is a bid adapter or an userId submodule or an analytics adapter.
  */
-export function getStorageManager(gvlid, moduleName) {
-  return newStorageManager({gvlid: gvlid, moduleName: moduleName});
+export function getStorageManager(gvlid, moduleName, moduleType) {
+  return newStorageManager({gvlid: gvlid, moduleName: moduleName, moduleType: moduleType});
 }
 
 export function resetData() {

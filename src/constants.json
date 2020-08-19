@@ -98,5 +98,12 @@
     "BID_TARGETING_SET": "targetingSet",
     "RENDERED": "rendered",
     "BID_REJECTED": "bidRejected"
+  },
+  "MODULE_TYPE": {
+    "CORE": "core",
+    "PREBID_MODULE": "prebid_module",
+    "BID_ADAPTER": "bid_adapter",
+    "USERID_SUBMODULE": "userid_submodule",
+    "ANALYTICS_ADAPTER": "analytics_adapter"
   }
 }

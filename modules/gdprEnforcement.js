@@ -12,7 +12,7 @@ import { registerSyncInner } from '../src/adapters/bidderFactory.js';
 import { getHook } from '../src/hook.js';
 import { validateStorageEnforcement } from '../src/storageManager.js';
 import events from '../src/events.js';
-import { EVENTS } from '../src/constants.json';
+import { EVENTS, MODULE_TYPE } from '../src/constants.json';
 
 const TCF2 = {
   'purpose1': { id: 1, name: 'storage' },
@@ -47,12 +47,19 @@ const analyticsBlocked = [];
 
 let addedDeviceAccessHook = false;
 
+// Helps with the stubbing of these functions for writing unit tests.
+export const GVL_ID = {
+  getGvlidForBidAdapter,
+  getGvlidForUserIdModule,
+  getGvlidForAnalyticsAdapter
+}
+
 /**
  * Returns gvlId for Bid Adapters. If a bidder does not have an associated gvlId, it returns 'undefined'.
  * @param  {string=} bidderCode - The 'code' property on the Bidder spec.
  * @retuns {number} gvlId
  */
-function getGvlid(bidderCode) {
+function getGvlidForBidAdapter(bidderCode) {
   let gvlid;
   bidderCode = bidderCode || config.getCurrentBidder();
   if (bidderCode) {
@@ -148,44 +155,49 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
  * @param {Number=} gvlid gvlid of the module
  * @param {string=} moduleName name of the module
  */
-export function deviceAccessHook(fn, gvlid, moduleName, result) {
+export function deviceAccessHook(fn, gvlid, moduleName, moduleType, result) {
   result = Object.assign({}, {
     hasEnforcementHook: true
   });
   if (!hasDeviceAccess()) {
     utils.logWarn('Device access is disabled by Publisher');
     result.valid = false;
-    fn.call(this, gvlid, moduleName, result);
+    fn.call(this, gvlid, moduleName, moduleType, result);
   } else {
     const consentData = gdprDataHandler.getConsentData();
     if (consentData && consentData.gdprApplies) {
       if (consentData.apiVersion === 2) {
         const curBidder = config.getCurrentBidder();
         // Bidders have a copy of storage object with bidder code binded. Aliases will also pass the same bidder code when invoking storage functions and hence if alias tries to access device we will try to grab the gvl id for alias instead of original bidder
-        if (curBidder && (curBidder != moduleName) && adapterManager.aliasRegistry[curBidder] === moduleName) {
-          gvlid = getGvlid(curBidder);
+        if (moduleType === MODULE_TYPE.BID_ADAPTER && curBidder && (curBidder != moduleName) && adapterManager.aliasRegistry[curBidder] === moduleName) {
+          gvlid = GVL_ID.getGvlidForBidAdapter(curBidder) || gvlid;
+        } else if (moduleType === MODULE_TYPE.USERID_SUBMODULE) {
+          gvlid = GVL_ID.getGvlidForUserIdModule(moduleName) || gvlid;
+        } else if (moduleType === MODULE_TYPE.ANALYTICS_ADAPTER) {
+          gvlid = GVL_ID.getGvlidForAnalyticsAdapter(moduleName) || gvlid;
         } else {
-          gvlid = getGvlid(moduleName);
+          // If moduleType is not found, assume moduleType is "bid_adapter".
+          gvlid = GVL_ID.getGvlidForBidAdapter(moduleName) || gvlid;
         }
         const curModule = moduleName || curBidder;
         let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
         if (isAllowed) {
           result.valid = true;
-          fn.call(this, gvlid, moduleName, result);
+          fn.call(this, gvlid, moduleName, moduleType, result);
         } else {
           curModule && utils.logWarn(`TCF2 denied device access for ${curModule}`);
           result.valid = false;
           storageBlocked.push(curModule);
-          fn.call(this, gvlid, moduleName, result);
+          fn.call(this, gvlid, moduleName, moduleType, result);
         }
       } else {
         // The module doesn't enforce TCF1.1 strings
         result.valid = true;
-        fn.call(this, gvlid, moduleName, result);
+        fn.call(this, gvlid, moduleName, moduleType, result);
       }
     } else {
       result.valid = true;
-      fn.call(this, gvlid, moduleName, result);
+      fn.call(this, gvlid, moduleName, moduleType, result);
     }
   }
 }
@@ -199,7 +211,7 @@ export function userSyncHook(fn, ...args) {
   const consentData = gdprDataHandler.getConsentData();
   if (consentData && consentData.gdprApplies) {
     if (consentData.apiVersion === 2) {
-      const gvlid = getGvlid();
+      const gvlid = GVL_ID.getGvlidForBidAdapter();
       const curBidder = config.getCurrentBidder();
       let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
       if (isAllowed) {
@@ -227,7 +239,7 @@ export function userIdHook(fn, submodules, consentData) {
   if (consentData && consentData.gdprApplies) {
     if (consentData.apiVersion === 2) {
       let userIdModules = submodules.map((submodule) => {
-        const gvlid = getGvlidForUserIdModule(submodule.submodule);
+        const gvlid = GVL_ID.getGvlidForUserIdModule(submodule.submodule);
         const moduleName = submodule.submodule.name;
         let isAllowed = validateRules(purpose1Rule, consentData, moduleName, gvlid);
         if (isAllowed) {
@@ -261,7 +273,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
       adUnits.forEach(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => {
           const currBidder = bid.bidder;
-          const gvlId = getGvlid(currBidder);
+          const gvlId = GVL_ID.getGvlidForBidAdapter(currBidder);
           if (includes(biddersBlocked, currBidder)) return false;
           const isAllowed = !!validateRules(purpose2Rule, consentData, currBidder, gvlId);
           if (!isAllowed) {
@@ -296,7 +308,7 @@ export function enableAnalyticsHook(fn, config) {
       }
       config = config.filter(conf => {
         const analyticsAdapterCode = conf.provider;
-        const gvlid = getGvlidForAnalyticsAdapter(analyticsAdapterCode);
+        const gvlid = GVL_ID.getGvlidForAnalyticsAdapter(analyticsAdapterCode);
         const isAllowed = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
         if (!isAllowed) {
           analyticsBlocked.push(analyticsAdapterCode);

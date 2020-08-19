@@ -10,13 +10,15 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
 const BASE_NB_COOKIE_NAME = 'id5id.1st';
 const NB_COOKIE_EXP_DAYS = (30 * 24 * 60 * 60 * 1000); // 30 days
+const MODULE_TYPE = CONSTANTS.MODULE_TYPE.USERID_SUBMODULE;
 
-const storage = getStorageManager(GVLID, MODULE_NAME);
+const storage = getStorageManager(GVLID, MODULE_NAME, MODULE_TYPE);
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
