@@ -16,6 +16,24 @@ const events = {
 };
 const localStoragePrefix = 'yuktamediaAnalytics_';
 const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+const location = utils.getWindowLocation();
+const referer = getRefererInfo().referer;
+const _pageInfo = {
+  userAgent: window.navigator.userAgent,
+  timezoneOffset: new Date().getTimezoneOffset(),
+  language: window.navigator.language,
+  screenWidth: window.screen.width,
+  screenHeight: window.screen.height,
+  pageViewId: utils.generateUUID(),
+  host: location.host,
+  path: location.pathname,
+  search: location.search,
+  hash: location.hash,
+  referer: referer,
+  refererDomain: utils.parseUrl(referer).host,
+  yuktamediaAnalyticsVersion: yuktamediaAnalyticsVersion,
+  prebidVersion: $$PREBID_GLOBAL$$.version
+};
 
 function getParameterByName(param) {
   let vars = {};
@@ -60,18 +78,12 @@ function isUtmTimeoutExpired() {
 }
 
 function send(data, status) {
-  const location = utils.getWindowLocation();
-  data.initOptions = Object.assign({ host: location.host, path: location.pathname, search: location.search }, initOptions);
+  data.initOptions = Object.assign(_pageInfo, initOptions);
 
   const yuktamediaAnalyticsRequestUrl = utils.buildUrl({
     protocol: 'https',
     hostname: 'analytics-prebid.yuktamedia.com',
-    pathname: '/api/bids',
-    search: {
-      auctionTimestamp: auctionTimestamp,
-      yuktamediaAnalyticsVersion: yuktamediaAnalyticsVersion,
-      prebidVersion: $$PREBID_GLOBAL$$.version
-    }
+    pathname: '/api/bids'
   });
 
   if (isNavigatorSendBeaconSupported()) {
