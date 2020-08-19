@@ -24,6 +24,15 @@ function nobidSetCookie(cname, cvalue, hours) {
 function nobidGetCookie(cname) {
   return storage.getCookie(cname);
 }
+function nobidHasPurpose1Consent(bidderRequest) {
+  let result = true;
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
+      result = !!(utils.deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
+    }
+  }
+  return result;
+}
 function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
     var filterAdUnitsByIds = function(divIds, adUnits) {
@@ -358,11 +367,18 @@ export const spec = {
     window.nobid.refreshCount++;
     const payloadString = JSON.stringify(payload).replace(/'|&|#/g, '')
     const endpoint = buildEndpoint();
+
+    let options = {};
+    if (!nobidHasPurpose1Consent(bidderRequest)) {
+      options = { withCredentials: false };
+    }
+
     return {
       method: 'POST',
       url: endpoint,
       data: payloadString,
-      bidderRequest
+      bidderRequest,
+      options
     };
   },
   /**
