@@ -421,7 +421,7 @@ export function getProtocols({protocols}) {
   ];
   if (protocols) {
     return listProtocols.filter(p => {
-      return protocols.includes(p.key)
+      return protocols.indexOf(p.key) !== -1
     }).map(p => p.value);
   } else {
     return defaultValue;
