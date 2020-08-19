@@ -609,7 +609,7 @@ describe('DistrictM Adaptor', function () {
 
   describe('test vast tag', function() {
     it('img tag should not be present', function() {
-      expect(cleanVast(sample_vast).includes('img')).to.be.equal(false)
+      expect(cleanVast(sample_vast).indexOf('img') !== -1).to.be.equal(false)
     })
   })
   describe('Test getApi function', function() {
