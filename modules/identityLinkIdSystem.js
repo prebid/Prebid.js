@@ -17,6 +17,11 @@ export const identityLinkSubmodule = {
    */
   name: 'identityLink',
   /**
+   * used to specify vendor id
+   * @type {number}
+   */
+  gvlid: 97,
+  /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
@@ -39,8 +44,13 @@ export const identityLinkSubmodule = {
     }
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
+    const tcfPolicyV2 = !!((consentData && consentData.vendorData && consentData.vendorData.tcfPolicyVersion && consentData.vendorData.tcfPolicyVersion === 2));
     // use protocol relative urls for http or https
-    const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}${hasGdpr ? '&ct=1&cv=' + gdprConsentString : ''}`;
+    if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
+      utils.logInfo('Consent string is required to call envelope API.');
+      return;
+    }
+    const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}${hasGdpr ? (tcfPolicyV2 ? '&ct=4&cv=' : '&ct=1&cv=') + gdprConsentString : ''}`;
     let resp;
     resp = function(callback) {
       // Check ats during callback so it has a chance to initialise.
