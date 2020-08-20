@@ -512,7 +512,7 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   const bidReq = bidderRequest.bids && find(bidderRequest.bids, bid => bid.adUnitCode == adUnitCode);
   const adUnitRenderer = bidReq && bidReq.renderer;
 
-  if (adUnitRenderer && adUnitRenderer.url && !(adUnitRenderer.backupOnly && adUnitRenderer.backupOnly == 'true' && bid.renderer)) {
+  if (adUnitRenderer && adUnitRenderer.url && !(adUnitRenderer.backupOnly && adUnitRenderer.backupOnly === 'true' && bid.renderer)) {
     bidObject.renderer = Renderer.install({ url: adUnitRenderer.url });
     bidObject.renderer.setRender(adUnitRenderer.render);
   }
