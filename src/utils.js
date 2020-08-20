@@ -1221,7 +1221,7 @@ export function mergeDeep(target, ...sources) {
  * source: https://stackoverflow.com/a/52171480/845390
  * @param str
  * @param seed (optional)
- * @returns {number}
+ * @returns {string}
  */
 export function simpleHash(str, seed = 0) {
   // IE doesn't support imul

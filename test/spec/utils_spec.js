@@ -1192,6 +1192,10 @@ describe('Utils', function () {
         const stringTwo = 'string2';
         expect(utils.simpleHash(stringOne)).to.not.equal(utils.simpleHash(stringTwo));
       });
+      it('should return a string value, not a number', function() {
+        const stringOne = 'string1';
+        expect(typeof utils.simpleHash(stringOne)).to.equal('string');
+      });
     });
   });
 });
