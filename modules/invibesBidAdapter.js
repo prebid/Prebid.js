@@ -119,6 +119,7 @@ function buildRequest(bidRequests, bidderRequest) {
     kw: keywords,
     purposes: invibes.purposes.toString(),
 
+    tc: invibes.gdpr_consent
   };
 
   if (lid) {
@@ -350,6 +351,8 @@ function buildSyncUrl() {
 
 function readGdprConsent(gdprConsent) {
   if (gdprConsent && gdprConsent.vendorData) {
+    invibes.gdpr_consent = getVendorConsentData(gdprConsent.vendorData);
+
     if (!gdprConsent.vendorData.gdprApplies || gdprConsent.vendorData.hasGlobalConsent) {
       var index;
       for (index = 0; index < invibes.purposes; ++index) {
@@ -414,6 +417,13 @@ function getPurposeConsents(vendorData) {
 
   return null;
 }
+
+function getVendorConsentData(vendorData) {
+  if (vendorData.purpose && vendorData.purpose.consents) {
+    if (vendorData.tcString != null) { return vendorData.tcString; }
+  }
+  return vendorData.consentData;
+};
 
 function getVendorConsents(vendorData) {
   if (vendorData.vendor && vendorData.vendor.consents) {
