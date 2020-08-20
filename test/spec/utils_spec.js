@@ -1177,5 +1177,21 @@ describe('Utils', function () {
       }
       expect(utils.deepEqual(obj1, obj2)).to.equal(false);
     });
+
+    describe('simpleHash', function() {
+      it('should return the same hash for the same string', function() {
+        const stringOne = 'string1';
+        expect(utils.simpleHash(stringOne)).to.equal(utils.simpleHash(stringOne));
+      });
+      it('should return a different hash for the same string with different seeds', function() {
+        const stringOne = 'string1';
+        expect(utils.simpleHash(stringOne, 1)).to.not.equal(utils.simpleHash(stringOne, 2));
+      });
+      it('should return a different hash for different strings with the same seed', function() {
+        const stringOne = 'string1';
+        const stringTwo = 'string2';
+        expect(utils.simpleHash(stringOne)).to.not.equal(utils.simpleHash(stringTwo));
+      });
+    });
   });
 });
