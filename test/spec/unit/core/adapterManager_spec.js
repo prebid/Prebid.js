@@ -988,6 +988,27 @@ describe('adapterManager tests', function () {
         expect(adapterManager.aliasRegistry).to.have.property('s2sAlias');
       });
 
+      it('should allow an alias if alias is part of s2sConfig.bidders for multiple s2sConfigs', function () {
+        let testS2sConfig = utils.deepClone(CONFIG);
+        testS2sConfig.bidders = ['s2sAlias'];
+        config.setConfig({s2sConfig: [
+          testS2sConfig, {
+            enabled: true,
+            endpoint: 'rp-pbs-endpoint-test.com',
+            timeout: 500,
+            maxBids: 1,
+            adapter: 'prebidServer',
+            bidders: ['s2sRpAlias'],
+            accountId: 'def'
+          }
+        ]});
+
+        adapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
+        expect(adapterManager.aliasRegistry).to.have.property('s2sAlias');
+        adapterManager.aliasBidAdapter('s2sBidder', 's2sRpAlias');
+        expect(adapterManager.aliasRegistry).to.have.property('s2sRpAlias');
+      });
+
       it('should throw an error if alias + bidder are unknown and not part of s2sConfig.bidders', function () {
         let testS2sConfig = utils.deepClone(CONFIG);
         testS2sConfig.bidders = ['s2sAlias'];
