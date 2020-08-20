@@ -1223,7 +1223,7 @@ export function mergeDeep(target, ...sources) {
  * @param seed (optional)
  * @returns {string}
  */
-export function simpleHash(str, seed = 0) {
+export function cyrb53Hash(str, seed = 0) {
   // IE doesn't support imul
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul#Polyfill
   let imul = function(opA, opB) {

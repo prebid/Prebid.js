@@ -244,7 +244,7 @@ function makeStoredConsentDataHash(consentData) {
     storedConsentData.gdprApplies = consentData.gdprApplies;
     storedConsentData.apiVersion = consentData.apiVersion;
   }
-  return utils.simpleHash(JSON.stringify(storedConsentData));
+  return utils.cyrb53Hash(JSON.stringify(storedConsentData));
 }
 
 /**
