@@ -52,7 +52,7 @@ export const spec = {
 
     return {
       method: 'POST',
-        url: 'https://prebid.owneriq.net:8443/bidder/pb/bid',
+      url: 'https://prebid.owneriq.net:8443/bidder/pb/bid',
       data: payloadString,
     };
   },
