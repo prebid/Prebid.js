@@ -743,7 +743,8 @@ describe('rubicon analytics adapter', function () {
         enforcement: true,
         dealsEnforced: false,
         skipRate: 15,
-        fetchStatus: 'error'
+        fetchStatus: 'error',
+        provider: 'rubicon'
       });
       // first adUnit's adSlot
       expect(message.auctions[0].adUnits[0].adSlot).to.equal('12345/sports');
@@ -765,19 +766,28 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.bidPriceUSD).to.equal(1.52);
     });
 
-    it('should not send floor info if provider is not rubicon', function () {
+    it('should still send floor info if provider is not rubicon', function () {
       let message = performFloorAuction('randomProvider')
 
       // verify our floor stuff is passed
       // top level floor info
-      expect(message.auctions[0].floors).to.be.undefined;
+      expect(message.auctions[0].floors).to.deep.equal({
+        location: 'setConfig',
+        modelName: 'someModelName',
+        skipped: false,
+        enforcement: true,
+        dealsEnforced: false,
+        skipRate: 15,
+        fetchStatus: 'error',
+        provider: 'randomProvider'
+      });
       // first adUnit's adSlot
       expect(message.auctions[0].adUnits[0].adSlot).to.equal('12345/sports');
       // since no other bids, we set adUnit status to no-bid
       expect(message.auctions[0].adUnits[0].status).to.equal('no-bid');
       // first adUnits bid is rejected
       expect(message.auctions[0].adUnits[0].bids[0].status).to.equal('rejected');
-      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.floorValue).to.be.undefined;
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.floorValue).to.equal(4);
       // if bid rejected should take cpmAfterAdjustments val
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD).to.equal(2.1);
 
@@ -787,7 +797,7 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].adUnits[1].status).to.equal('success');
       // second adUnits bid is success
       expect(message.auctions[0].adUnits[1].bids[0].status).to.equal('success');
-      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.floorValue).to.be.undefined;
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.floorValue).to.equal(1);
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.bidPriceUSD).to.equal(1.52);
     });
 

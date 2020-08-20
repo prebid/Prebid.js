@@ -171,7 +171,8 @@ describe('Adkernel adapter', function () {
           nurl: 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
           adm: '<!-- admarkup here -->',
           w: 300,
-          h: 250
+          h: 250,
+          dealid: 'deal'
         }]
       }],
       cur: 'USD',
@@ -316,6 +317,7 @@ describe('Adkernel adapter', function () {
     it('should fill device with caller macro', function () {
       expect(bidRequest).to.have.property('device');
       expect(bidRequest.device).to.have.property('ip', 'caller');
+      expect(bidRequest.device).to.have.property('ipv6', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
       expect(bidRequest.device).to.have.property('dnt', 1);
     });
@@ -504,6 +506,7 @@ describe('Adkernel adapter', function () {
       expect(resp).to.have.property('ttl');
       expect(resp).to.have.property('mediaType', BANNER);
       expect(resp).to.have.property('ad');
+      expect(resp).to.have.property('dealId', 'deal');
       expect(resp.ad).to.have.string('<!-- admarkup here -->');
     });
 
