@@ -115,5 +115,5 @@ function isRendererPreferredFromAdUnit(adUnitCode) {
   const adUnit = find(adUnits, adUnit => {
     return adUnit.code === adUnitCode;
   });
-  return !!(adUnit && adUnit.renderer && adUnit.renderer.url && adUnit.renderer.render && !(adUnit.renderer.backupOnly && adUnit.renderer.backupOnly=='true'));
+  return !!(adUnit && adUnit.renderer && adUnit.renderer.url && adUnit.renderer.render && !(adUnit.renderer.backupOnly && adUnit.renderer.backupOnly === 'true'));
 }
