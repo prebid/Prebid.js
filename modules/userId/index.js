@@ -244,7 +244,6 @@ function makeStoredConsentDataHash(consentData) {
     storedConsentData.gdprApplies = consentData.gdprApplies;
     storedConsentData.apiVersion = consentData.apiVersion;
   }
-
   return utils.simpleHash(JSON.stringify(storedConsentData));
 }
 
@@ -285,7 +284,7 @@ function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
   return (
     typeof storedConsentData === 'undefined' ||
     storedConsentData === null ||
-    storedConsentData == makeStoredConsentDataHash(consentData)
+    storedConsentData === makeStoredConsentDataHash(consentData)
   );
 }
 
