@@ -315,6 +315,7 @@ describe('VidazooBidAdapter', function () {
   describe('unique deal id', function () {
     const key = 'myKey';
     let uniqueDealId;
+    uniqueDealId = getUniqueDealId(key);
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
