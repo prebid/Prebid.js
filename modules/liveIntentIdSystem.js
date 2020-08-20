@@ -10,9 +10,11 @@ import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const MODULE_NAME = 'liveIntentId';
-export const storage = getStorageManager(null, MODULE_NAME);
+const MODULE_TYPE = CONSTANTS.MODULE_TYPE.USERID_SUBMODULE;
+export const storage = getStorageManager(null, MODULE_NAME, MODULE_TYPE);
 
 let eventFired = false;
 let liveConnect = null;

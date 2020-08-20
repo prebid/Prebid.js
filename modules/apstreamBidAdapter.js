@@ -2,13 +2,15 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE } from '../src/constants.json';
 
 const CONSTANTS = {
   DSU_KEY: 'apr_dsu',
   BIDDER_CODE: 'apstream',
-  GVLID: 394
+  GVLID: 394,
+  MODULE_TYPE: MODULE_TYPE.BID_ADAPTER
 };
-const storage = getStorageManager(CONSTANTS.GVLID, CONSTANTS.BIDDER_CODE);
+const storage = getStorageManager(CONSTANTS.GVLID, CONSTANTS.BIDDER_CODE, CONSTANTS.MODULE_TYPE);
 
 var dsuModule = (function() {
   'use strict';

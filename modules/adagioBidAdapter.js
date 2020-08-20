@@ -6,6 +6,7 @@ import JSEncrypt from 'jsencrypt/bin/jsencrypt.js';
 import sha256 from 'crypto-js/sha256.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import CONSTANTS from '../src/constants.json';
 
 export const BIDDER_CODE = 'adagio';
 export const LOG_PREFIX = 'Adagio:';
@@ -16,7 +17,8 @@ export const SUPPORTED_MEDIA_TYPES = ['banner'];
 export const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 export const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 export const GVLID = 617;
-export const storage = getStorageManager(GVLID, 'adagio');
+export const MODULE_TYPE = CONSTANTS.MODULE_TYPE.BID_ADAPTER;
+export const storage = getStorageManager(GVLID, 'adagio', MODULE_TYPE);
 
 export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9el0+OEn6fvEh1RdVHQu4cnT0

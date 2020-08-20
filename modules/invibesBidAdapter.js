@@ -1,6 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE } from '../src/constants.json';
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -10,10 +11,11 @@ const CONSTANTS = {
   DEFAULT_CURRENCY: 'EUR',
   PREBID_VERSION: 2,
   METHOD: 'GET',
-  INVIBES_VENDOR_ID: 436
+  INVIBES_VENDOR_ID: 436,
+  MODULE_TYPE: MODULE_TYPE.BID_ADAPTER
 };
 
-const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
+const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID, CONSTANTS.BIDDER_CODE, CONSTANTS.MODULE_TYPE);
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,

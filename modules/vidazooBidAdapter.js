@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const GLVID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -20,6 +21,8 @@ const EXTERNAL_SYNC_TYPE = {
   IFRAME: 'iframe',
   IMAGE: 'image'
 };
+const MODULE_TYPE = CONSTANTS.MODULE_TYPE.BID_ADAPTER;
+
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
@@ -32,7 +35,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'pubcid': 1,
   'tdid': 1,
 };
-const storage = getStorageManager(GLVID);
+const storage = getStorageManager(GLVID, BIDDER_CODE, MODULE_TYPE);
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;

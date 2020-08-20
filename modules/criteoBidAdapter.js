@@ -6,6 +6,7 @@ import * as utils from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const GVLID = 91;
 export const ADAPTER_VERSION = 32;
@@ -13,7 +14,8 @@ const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
-const storage = getStorageManager(GVLID);
+const MODULE_TYPE = CONSTANTS.MODULE_TYPE.BID_ADAPTER;
+const storage = getStorageManager(GVLID, BIDDER_CODE, MODULE_TYPE);
 const LOG_PREFIX = 'Criteo: ';
 
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js

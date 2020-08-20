@@ -8,12 +8,14 @@
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
 
 const MODULE_NAME = 'pubCommonId';
+const MODULE_TYPE = CONSTANTS.MODULE_TYPE.USERID_SUBMODULE;
 
-const storage = getStorageManager(null, 'pubCommonId');
+const storage = getStorageManager(null, 'pubCommonId', MODULE_TYPE);
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {

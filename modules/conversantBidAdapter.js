@@ -2,11 +2,14 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const GVLID = 24;
-export const storage = getStorageManager(GVLID);
-
 const BIDDER_CODE = 'conversant';
+const MODULE_TYPE = CONSTANTS.MODULE_TYPE.BID_ADAPTER;
+
+export const storage = getStorageManager(GVLID, BIDDER_CODE, MODULE_TYPE);
+
 const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 export const spec = {

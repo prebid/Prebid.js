@@ -8,6 +8,7 @@ import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
+import CONSTANTS from '../src/constants.json';
 
 const KEY_ID = 'panoramaId';
 const KEY_EXPIRY = `${KEY_ID}_expiry`;
@@ -16,8 +17,9 @@ const MODULE_NAME = 'lotamePanoramaId';
 const NINE_MONTHS_MS = 23328000 * 1000;
 const DAYS_TO_CACHE = 7;
 const DAY_MS = 60 * 60 * 24 * 1000;
+const MODULE_TYPE = CONSTANTS.MODULE_TYPE.USERID_SUBMODULE;
 
-export const storage = getStorageManager(null, MODULE_NAME);
+export const storage = getStorageManager(null, MODULE_NAME, MODULE_TYPE);
 
 /**
  * Set the Lotame First Party Profile ID in the first party namespace
