@@ -446,7 +446,7 @@ describe('yuktamedia analytics adapter', function () {
       events.emit(constants.EVENTS.BID_RESPONSE, prebidNativeAuction[constants.EVENTS.BID_RESPONSE]);
       events.emit(constants.EVENTS.AUCTION_END, prebidNativeAuction[constants.EVENTS.AUCTION_END]);
       events.emit(constants.EVENTS.AUCTION_END, prebidNativeAuction[constants.EVENTS.BID_WON]);
-      sinon.assert.callCount(yuktamediaAnalyticsAdapter.track, 8);
+      sinon.assert.callCount(yuktamediaAnalyticsAdapter.track, 9);
     });
   });
 
