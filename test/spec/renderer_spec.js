@@ -132,7 +132,7 @@ describe('Renderer', function () {
       expect(utilsSpy.callCount).to.equal(1);
     });
 
-    it('should load renderer and not log warn message when backupOnly', function() {
+    it('should load renderer adunit renderer when backupOnly', function() {
       $$PREBID_GLOBAL$$.adUnits = [{
         code: 'video1',
         renderer: {
@@ -153,7 +153,6 @@ describe('Renderer', function () {
 
       testRenderer.render()
       expect(loadExternalScript.called).to.be.true;
-      expect(utilsSpy.callCount).to.equal(0);
     });
 
     it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function() {
