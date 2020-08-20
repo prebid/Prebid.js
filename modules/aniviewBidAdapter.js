@@ -252,7 +252,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['selectmediavideo'],
+  aliases: ['avantisvideo', 'selectmediavideo'],
   supportedMediaTypes: [VIDEO],
   isBidRequestValid,
   buildRequests,

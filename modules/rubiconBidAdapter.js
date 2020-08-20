@@ -203,11 +203,16 @@ export const spec = {
 
       let bidFloor;
       if (typeof bidRequest.getFloor === 'function' && !config.getConfig('rubicon.disableFloors')) {
-        let floorInfo = bidRequest.getFloor({
-          currency: 'USD',
-          mediaType: 'video',
-          size: parseSizes(bidRequest, 'video')
-        });
+        let floorInfo;
+        try {
+          floorInfo = bidRequest.getFloor({
+            currency: 'USD',
+            mediaType: 'video',
+            size: parseSizes(bidRequest, 'video')
+          });
+        } catch (e) {
+          utils.logError('Rubicon: getFloor threw an error: ', e);
+        }
         bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
       } else {
         bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
@@ -289,7 +294,7 @@ export const spec = {
         // support identityLink (aka LiveRamp)
         if (bidRequest.userId.idl_env) {
           data.user.ext.eids.push({
-            source: 'liveramp.com',
+            source: 'liveramp_idl',
             uids: [{
               id: bidRequest.userId.idl_env
             }]
@@ -527,11 +532,16 @@ export const spec = {
 
     // If floors module is enabled and we get USD floor back, send it in rp_hard_floor else undfined
     if (typeof bidRequest.getFloor === 'function' && !config.getConfig('rubicon.disableFloors')) {
-      let floorInfo = bidRequest.getFloor({
-        currency: 'USD',
-        mediaType: 'banner',
-        size: '*'
-      });
+      let floorInfo;
+      try {
+        floorInfo = bidRequest.getFloor({
+          currency: 'USD',
+          mediaType: 'video',
+          size: parseSizes(bidRequest, 'video')
+        });
+      } catch (e) {
+        utils.logError('Rubicon: getFloor threw an error: ', e);
+      }
       data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
 
@@ -554,7 +564,7 @@ export const spec = {
 
       // support identityLink (aka LiveRamp)
       if (bidRequest.userId.idl_env) {
-        data['tpid_liveramp.com'] = bidRequest.userId.idl_env;
+        data['x_liverampidl'] = bidRequest.userId.idl_env;
       }
     }
 

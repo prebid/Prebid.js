@@ -1,27 +1,176 @@
-import {
-  init,
-  requestBidsHook,
-  setTargetsAfterRequestBids,
-  deepMerge,
-  validateProviderDataForGPT
-} from 'modules/rtdModule/index.js';
-import {
-  init as browsiInit,
-  addBrowsiTag,
-  isIdMatchingAdUnit,
-  setData,
-  getMacroId
-} from 'modules/browsiRtdProvider.js';
-import {
-  init as audigentInit,
-  setData as setAudigentData
-} from 'modules/audigentRtdProvider.js';
+import * as rtdModule from 'modules/rtdModule/index.js';
 import { config } from 'src/config.js';
-import { makeSlot } from '../integration/faker/googletag.js';
+import {makeSlot} from '../integration/faker/googletag.js';
+import * as browsiRTD from '../../../modules/browsiRtdProvider.js';
 
-let expect = require('chai').expect;
+const validSM = {
+  name: 'validSM',
+  init: () => { return true },
+  getData: (adUnits, onDone) => {
+    setTimeout(() => {
+      return onDone({'key': 'validSM'})
+    }, 500)
+  }
+};
+
+const validSMWait = {
+  name: 'validSMWait',
+  init: () => { return true },
+  getData: (adUnits, onDone) => {
+    setTimeout(() => {
+      return onDone({'ad1': {'key': 'validSMWait'}})
+    }, 50)
+  }
+};
+
+const invalidSM = {
+  name: 'invalidSM'
+};
+
+const failureSM = {
+  name: 'failureSM',
+  init: () => { return false }
+};
+
+const nonConfSM = {
+  name: 'nonConfSM',
+  init: () => { return true }
+};
+
+const conf = {
+  'realTimeData': {
+    'auctionDelay': 250,
+    dataProviders: [
+      {
+        'name': 'validSMWait',
+        'waitForIt': true,
+      },
+      {
+        'name': 'validSM',
+        'waitForIt': false,
+      },
+      {
+        'name': 'invalidSM'
+      },
+      {
+        'name': 'failureSM'
+      }]
+  }
+};
+
+function getAdUnitMock(code = 'adUnit-code') {
+  return {
+    code,
+    mediaTypes: { banner: {}, native: {} },
+    sizes: [[300, 200], [300, 600]],
+    bids: [{ bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }]
+  };
+}
 
 describe('Real time module', function () {
+  after(function () {
+    config.resetConfig();
+  });
+
+  beforeEach(function () {
+    config.setConfig(conf);
+  });
+
+  it('should use only valid modules', function (done) {
+    rtdModule.attachRealTimeDataProvider(validSM);
+    rtdModule.attachRealTimeDataProvider(invalidSM);
+    rtdModule.attachRealTimeDataProvider(failureSM);
+    rtdModule.attachRealTimeDataProvider(nonConfSM);
+    rtdModule.attachRealTimeDataProvider(validSMWait);
+    rtdModule.initSubModules(afterInitSubModules);
+    function afterInitSubModules() {
+      expect(rtdModule.subModules).to.eql([validSMWait, validSM]);
+      done();
+    }
+    rtdModule.init(config);
+  });
+
+  it('should only wait for must have sub modules', function (done) {
+    rtdModule.getProviderData([], (data) => {
+      expect(data).to.eql({validSMWait: {'ad1': {'key': 'validSMWait'}}});
+      done();
+    })
+  });
+
+  it('deep merge object', function () {
+    const obj1 = {
+      id1: {
+        key: 'value',
+        key2: 'value2'
+      },
+      id2: {
+        k: 'v'
+      }
+    };
+    const obj2 = {
+      id1: {
+        key3: 'value3'
+      }
+    };
+    const obj3 = {
+      id3: {
+        key: 'value'
+      }
+    };
+    const expected = {
+      id1: {
+        key: 'value',
+        key2: 'value2',
+        key3: 'value3'
+      },
+      id2: {
+        k: 'v'
+      },
+      id3: {
+        key: 'value'
+      }
+    };
+
+    const merged = rtdModule.deepMerge([obj1, obj2, obj3]);
+    assert.deepEqual(expected, merged);
+  });
+
+  it('check module using bidsBackCallback', function (done) {
+    // set slot
+    const slot = makeSlot({ code: '/code1', divId: 'ad1' });
+    window.googletag.pubads().setSlots([slot]);
+
+    function afterBidHook() {
+      expect(slot.getTargeting().length).to.equal(1);
+      expect(slot.getTargeting()[0].key).to.equal('validSMWait');
+      done();
+    }
+    rtdModule.setTargetsAfterRequestBids(afterBidHook, []);
+  });
+
+  it('check module using requestBidsHook', function (done) {
+    // set slot
+    const slotsB = makeSlot({ code: '/code1', divId: 'ad1' });
+    window.googletag.pubads().setSlots([slotsB]);
+    let adUnits = [getAdUnitMock('ad1')];
+
+    function afterBidHook(data) {
+      expect(slotsB.getTargeting().length).to.equal(1);
+      expect(slotsB.getTargeting()[0].key).to.equal('validSMWait');
+
+      data.adUnits.forEach(unit => {
+        unit.bids.forEach(bid => {
+          expect(bid.realTimeData).to.have.property('key');
+          expect(bid.realTimeData.key).to.equal('validSMWait');
+        });
+      });
+      done();
+    }
+    rtdModule.requestBidsHook(afterBidHook, { adUnits: adUnits });
+  });
+});
+
+describe('browsi Real time  data sub module', function () {
   const conf = {
     'realTimeData': {
       'auctionDelay': 250,
@@ -33,250 +182,93 @@ describe('Real time module', function () {
           'pubKey': 'testPub',
           'keyName': 'bv'
         }
-      }, {
-        'name': 'audigent'
       }]
     }
   };
 
-  const predictions = {
-    p: {
-      'browsiAd_2': {
-        'w': [
-          '/57778053/Browsi_Demo_Low',
-          '/57778053/Browsi_Demo_300x250'
-        ],
-        'p': 0.07
-      },
-      'browsiAd_1': {
-        'w': [],
-        'p': 0.06
-      },
-      'browsiAd_3': {
-        'w': [],
-        'p': 0.53
-      },
-      'browsiAd_4': {
-        'w': [
-          '/57778053/Browsi_Demo'
-        ],
-        'p': 0.85
+  beforeEach(function () {
+    config.setConfig(conf);
+  });
+
+  after(function () {
+    config.resetConfig();
+  });
+
+  it('should init and return true', function () {
+    browsiRTD.beforeInit(config);
+    expect(browsiRTD.browsiSubmodule.init()).to.equal(true)
+  });
+
+  it('should create browsi script', function () {
+    const script = browsiRTD.addBrowsiTag('scriptUrl.com');
+    expect(script.getAttribute('data-sitekey')).to.equal('testKey');
+    expect(script.getAttribute('data-pubkey')).to.equal('testPub');
+    expect(script.async).to.equal(true);
+    expect(script.prebidData.kn).to.equal(conf.realTimeData.dataProviders[0].params.keyName);
+  });
+
+  it('should match placement with ad unit', function () {
+    const slot = makeSlot({ code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1' });
+
+    const test1 = browsiRTD.isIdMatchingAdUnit(slot, ['/57778053/Browsi_Demo_300x250']); // true
+    const test2 = browsiRTD.isIdMatchingAdUnit(slot, ['/57778053/Browsi_Demo_300x250', '/57778053/Browsi']); // true
+    const test3 = browsiRTD.isIdMatchingAdUnit(slot, ['/57778053/Browsi_Demo_Low']); // false
+    const test4 = browsiRTD.isIdMatchingAdUnit(slot, []); // true
+
+    expect(test1).to.equal(true);
+    expect(test2).to.equal(true);
+    expect(test3).to.equal(false);
+    expect(test4).to.equal(true);
+  });
+
+  it('should return correct macro values', function () {
+    const slot = makeSlot({ code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1' });
+
+    slot.setTargeting('test', ['test', 'value']);
+    // slot getTargeting doesn't act like GPT so we can't expect real value
+    const macroResult = browsiRTD.getMacroId({p: '<AD_UNIT>/<KEY_test>'}, slot);
+    expect(macroResult).to.equal('/57778053/Browsi_Demo_300x250/NA');
+
+    const macroResultB = browsiRTD.getMacroId({}, slot);
+    expect(macroResultB).to.equal('browsiAd_1');
+
+    const macroResultC = browsiRTD.getMacroId({p: '<AD_UNIT>', s: {s: 0, e: 1}}, slot);
+    expect(macroResultC).to.equal('/');
+  });
+
+  describe('should return data to RTD module', function () {
+    it('should return empty if no ad units defined', function (done) {
+      browsiRTD.setData({});
+      browsiRTD.browsiSubmodule.getData([], onDone);
+      function onDone(data) {
+        expect(data).to.eql({});
+        done();
       }
-    }
-  };
-
-  const audigentSegments = {
-    audigent_segments: { 'a': 1, 'b': 2 }
-  }
-
-  function getAdUnitMock(code = 'adUnit-code') {
-    return {
-      code,
-      mediaTypes: { banner: {}, native: {} },
-      sizes: [[300, 200], [300, 600]],
-      bids: [{ bidder: 'sampleBidder', params: { placementId: 'banner-only-bidder' } }]
-    };
-  }
-
-  function createSlots() {
-    const slot1 = makeSlot({ code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1' });
-    const slot2 = makeSlot({ code: '/57778053/Browsi', divId: 'browsiAd_1' });
-    return [slot1, slot2];
-  }
-
-  describe('Real time module with browsi provider', function () {
-    afterEach(function () {
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
-    after(function () {
-      config.resetConfig();
-    });
-
-    it('check module using bidsBackCallback', function () {
-      let adUnits1 = [getAdUnitMock('browsiAd_1')];
-      let targeting = [];
-      init(config);
-      browsiInit(config);
-      config.setConfig(conf);
-      setData(predictions);
-
-      // set slot
-      const slots = createSlots();
-      window.googletag.pubads().setSlots(slots);
-
-      function afterBidHook() {
-        slots.map(s => {
-          targeting = [];
-          s.getTargeting().map(value => {
-            targeting.push(Object.keys(value).toString());
-          });
-        });
-
-        expect(targeting.indexOf('bv')).to.be.greaterThan(-1);
+    it('should return NA if no prediction for ad unit', function (done) {
+      const adUnits = [getAdUnitMock('adMock')];
+      browsiRTD.setData({});
+      browsiRTD.browsiSubmodule.getData(adUnits, onDone);
+      function onDone(data) {
+        expect(data).to.eql({adMock: {bv: 'NA'}});
+        done();
       }
-      setTargetsAfterRequestBids(afterBidHook, adUnits1, true);
     });
 
-    it('check module using requestBidsHook', function () {
-      let adUnits1 = [getAdUnitMock('browsiAd_1')];
-      let targeting = [];
-      let dataReceived = null;
-
-      // set slot
-      const slotsB = createSlots();
-      window.googletag.pubads().setSlots(slotsB);
-
-      function afterBidHook(data) {
-        dataReceived = data;
-        slotsB.map(s => {
-          targeting = [];
-          s.getTargeting().map(value => {
-            targeting.push(Object.keys(value).toString());
-          });
-        });
-
-        expect(targeting.indexOf('bv')).to.be.greaterThan(-1);
-        dataReceived.adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid.realTimeData).to.have.property('bv');
-          });
-        });
+    it('should return prediction from server', function (done) {
+      const adUnits = [getAdUnitMock('hasPrediction')];
+      const data = {
+        p: {'hasPrediction': {p: 0.234}},
+        kn: 'bv',
+        pmd: undefined
+      };
+      browsiRTD.setData(data);
+      browsiRTD.browsiSubmodule.getData(adUnits, onDone);
+      function onDone(data) {
+        expect(data).to.eql({hasPrediction: {bv: '0.20'}});
+        done();
       }
-      requestBidsHook(afterBidHook, { adUnits: adUnits1 });
-    });
-
-    it('check object deep merge', function () {
-      const obj1 = {
-        id1: {
-          key: 'value',
-          key2: 'value2'
-        },
-        id2: {
-          k: 'v'
-        }
-      };
-      const obj2 = {
-        id1: {
-          key3: 'value3'
-        }
-      };
-      const obj3 = {
-        id3: {
-          key: 'value'
-        }
-      };
-      const expected = {
-        id1: {
-          key: 'value',
-          key2: 'value2',
-          key3: 'value3'
-        },
-        id2: {
-          k: 'v'
-        },
-        id3: {
-          key: 'value'
-        }
-      };
-
-      const merged = deepMerge([obj1, obj2, obj3]);
-      assert.deepEqual(expected, merged);
-    });
-
-    it('check data validation for GPT targeting', function () {
-      // non strings values should be removed
-      const obj = {
-        valid: {'key': 'value'},
-        invalid: {'key': ['value']},
-        combine: {
-          'a': 'value',
-          'b': []
-        }
-      };
-
-      const expected = {
-        valid: {'key': 'value'},
-        invalid: {},
-        combine: {
-          'a': 'value',
-        }
-      };
-      const validationResult = validateProviderDataForGPT(obj);
-      assert.deepEqual(expected, validationResult);
-    });
-
-    it('check browsi sub module', function () {
-      const script = addBrowsiTag('scriptUrl.com');
-      expect(script.getAttribute('data-sitekey')).to.equal('testKey');
-      expect(script.getAttribute('data-pubkey')).to.equal('testPub');
-      expect(script.async).to.equal(true);
-
-      const slots = createSlots();
-      const test1 = isIdMatchingAdUnit(slots[0], ['/57778053/Browsi_Demo_300x250']); // true
-      const test2 = isIdMatchingAdUnit(slots[0], ['/57778053/Browsi_Demo_300x250', '/57778053/Browsi']); // true
-      const test3 = isIdMatchingAdUnit(slots[0], ['/57778053/Browsi_Demo_Low']); // false
-      const test4 = isIdMatchingAdUnit(slots[0], []); // true
-
-      expect(test1).to.equal(true);
-      expect(test2).to.equal(true);
-      expect(test3).to.equal(false);
-      expect(test4).to.equal(true);
-
-      // macro results
-      slots[0].setTargeting('test', ['test', 'value']);
-      // slot getTargeting doesn't act like GPT so we can't expect real value
-      const macroResult = getMacroId({p: '<AD_UNIT>/<KEY_test>'}, slots[0]);
-      expect(macroResult).to.equal('/57778053/Browsi_Demo_300x250/NA');
-
-      const macroResultB = getMacroId({}, slots[0]);
-      expect(macroResultB).to.equal('browsiAd_1');
-
-      const macroResultC = getMacroId({p: '<AD_UNIT>', s: {s: 0, e: 1}}, slots[0]);
-      expect(macroResultC).to.equal('/');
     })
-  });
-
-  describe('Real time module with Audigent provider', function () {
-    before(function () {
-      init(config);
-      audigentInit(config);
-      config.setConfig(conf);
-      setAudigentData(audigentSegments);
-    });
-
-    afterEach(function () {
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
-      config.resetConfig();
-    });
-
-    it('check module using requestBidsHook', function () {
-      let adUnits1 = [getAdUnitMock('audigentAd_1')];
-      let targeting = [];
-      let dataReceived = null;
-
-      // set slot
-      const slotsB = createSlots();
-      window.googletag.pubads().setSlots(slotsB);
-
-      function afterBidHook(data) {
-        dataReceived = data;
-        slotsB.map(s => {
-          targeting = [];
-          s.getTargeting().map(value => {
-            targeting.push(Object.keys(value).toString());
-          });
-        });
-
-        dataReceived.adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid.realTimeData).to.have.property('audigent_segments');
-            expect(bid.realTimeData.audigent_segments).to.deep.equal(audigentSegments.audigent_segments);
-          });
-        });
-      }
-
-      requestBidsHook(afterBidHook, { adUnits: adUnits1 });
-    });
-  });
+  })
 });
