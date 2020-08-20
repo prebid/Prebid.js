@@ -1178,23 +1178,23 @@ describe('Utils', function () {
       expect(utils.deepEqual(obj1, obj2)).to.equal(false);
     });
 
-    describe('simpleHash', function() {
+    describe('cyrb53Hash', function() {
       it('should return the same hash for the same string', function() {
         const stringOne = 'string1';
-        expect(utils.simpleHash(stringOne)).to.equal(utils.simpleHash(stringOne));
+        expect(utils.cyrb53Hash(stringOne)).to.equal(utils.cyrb53Hash(stringOne));
       });
       it('should return a different hash for the same string with different seeds', function() {
         const stringOne = 'string1';
-        expect(utils.simpleHash(stringOne, 1)).to.not.equal(utils.simpleHash(stringOne, 2));
+        expect(utils.cyrb53Hash(stringOne, 1)).to.not.equal(utils.cyrb53Hash(stringOne, 2));
       });
       it('should return a different hash for different strings with the same seed', function() {
         const stringOne = 'string1';
         const stringTwo = 'string2';
-        expect(utils.simpleHash(stringOne)).to.not.equal(utils.simpleHash(stringTwo));
+        expect(utils.cyrb53Hash(stringOne)).to.not.equal(utils.cyrb53Hash(stringTwo));
       });
       it('should return a string value, not a number', function() {
         const stringOne = 'string1';
-        expect(typeof utils.simpleHash(stringOne)).to.equal('string');
+        expect(typeof utils.cyrb53Hash(stringOne)).to.equal('string');
       });
     });
   });
