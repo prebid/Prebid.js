@@ -248,7 +248,7 @@ export const spec = {
       }
 
       if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
-        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env)) {
+        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env || bidRequest.userId.sharedid)) {
         utils.deepSetValue(data, 'user.ext.eids', []);
 
         if (bidRequest.userId.tdid) {
@@ -297,6 +297,20 @@ export const spec = {
             source: 'liveramp_idl',
             uids: [{
               id: bidRequest.userId.idl_env
+            }]
+          });
+        }
+
+        // support shared id
+        if (bidRequest.userId.sharedid) {
+          data.user.ext.eids.push({
+            source: 'sharedid.org',
+            uids: [{
+              id: bidRequest.userId.sharedid.id,
+              atype: 3,
+              ext: {
+                third: bidRequest.userId.sharedid.third
+              }
             }]
           });
         }
@@ -565,6 +579,11 @@ export const spec = {
       // support identityLink (aka LiveRamp)
       if (bidRequest.userId.idl_env) {
         data['x_liverampidl'] = bidRequest.userId.idl_env;
+      }
+
+      // support shared id
+      if (bidRequest.userId.sharedid) {
+        data['eid_sharedid.org'] = `${bidRequest.userId.sharedid.id}^3^${bidRequest.userId.sharedid.third}`;
       }
     }
 
@@ -1176,7 +1195,7 @@ export function hasValidSupplyChainParams(schain) {
   if (!schain.nodes) return isValid;
   isValid = schain.nodes.reduce((status, node) => {
     if (!status) return status;
-    return requiredFields.every(field => node[field]);
+    return requiredFields.every(field => node.hasOwnProperty(field));
   }, true);
   if (!isValid) utils.logError('Rubicon: required schain params missing');
   return isValid;
