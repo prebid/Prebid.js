@@ -3,7 +3,7 @@ import {
 } from 'chai';
 import {
   spec
-} from 'modules/smartXBidAdapter.js';
+} from 'modules/smartxBidAdapter.js';
 
 describe('The smartx adapter', function () {
   function getValidBidObject() {
