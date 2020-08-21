@@ -189,7 +189,7 @@ export const spec = {
         seatbid.bid.forEach(bid => {
           const creative = updateMacros(bid, bid.adm);
           const nurl = updateMacros(bid, bid.nurl);
-          const [, impType, impid] = bid.impid.match(/^([vb])(.*)$/);
+          const [, impType, impid] = bid.impid.match(/^([vb])([\w\d]+)/);
           let height = bid.h;
           let width = bid.w;
           const isVideo = impType === 'v';
