@@ -206,13 +206,15 @@ describe('The smartx adapter', function () {
         placement: 1
       });
 
+      bid.mediaTypes.video.context = 'outstream';
+
       bid.params = {
         outstream_options: {
           foo: 'bar'
         },
         outstream_function: '987',
         mimes: 'foo',
-        linearity: '2',
+        linearity: 2,
         minduration: 5,
         maxduration: 10,
         startdelay: 1,
@@ -227,47 +229,67 @@ describe('The smartx adapter', function () {
         bidfloor: 55,
         bidfloorcur: 'foo',
         at: 1,
-        cur: ['FOO'],
-        user: {
-          data: [{
-            id: 'emq',
-            name: 'emq',
-            segment: [{
-              name: 'ang_cntp',
-              value: 'foo'
-            }]
-          }]
-        }
+        cur: ['FOO']
       };
-
-      bid.crumbs = {
-        pubcid: 'pubcid_1'
-      };
-
-      bid.mediaTypes.video.context = 'outstream';
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
-
-      expect(request.data.imp.video).to.contain({
-        minduration: 5,
-        maxduration: 10
-      });
 
       expect(request.data.imp.video.ext).to.deep.equal({
         sdk_name: 'Prebid 1+'
       });
 
       expect(request.data.imp.video).to.contain({
-        placement: 3
-      });
-
-      expect(request.data.user.ext).to.contain({
-        fpc: 'pubcid_1'
+        minduration: 5,
+        maxduration: 10
       });
 
       expect(request.data.imp.video.startdelay).to.equal(1);
 
+      expect(request.data.imp.video).to.contain({
+        placement: 3
+      });
+
       expect(request.data.imp.bidfloor).to.equal(55);
+
+      expect(request.data.imp.bidfloorcur).to.equal('foo');
+
+      expect(request.data.imp.video.linearity).to.equal(2);
+
+      expect(request.data.imp.video.minbitrate).to.equal(50);
+
+      expect(request.data.imp.video.maxbitrate).to.equal(500);
+    });
+
+    it('should pass GDPR params', function () {
+      var request;
+
+      bidRequestObj.gdprConsent = {
+        gdprApplies: true,
+        consentString: 'foo'
+      }
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.regs.ext.gdpr).to.equal(1);
+      expect(request.data.user.ext.consent).to.be.an('string');
+      expect(request.data.user.ext.consent).to.equal('foo');
+    });
+
+    it('should pass emq params', function () {
+      var request;
+
+      bid.params.user = {
+        data: [{
+          id: 'emq',
+          name: 'emq',
+          segment: [{
+            name: 'emq',
+            value: 'foo'
+          }]
+        }]
+      }
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
 
       expect(request.data.user.data).to.deep.equal([{
         id: 'emq',
@@ -277,6 +299,215 @@ describe('The smartx adapter', function () {
           value: 'foo'
         }
       }]);
+    });
+
+    it('should pass crumbs params', function () {
+      var request;
+
+      bid.crumbs = {
+        pubcid: 'pubcid_1'
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.user.ext).to.contain({
+        fpc: 'pubcid_1'
+      });
+    });
+
+    it('should pass linearity params', function () {
+      var request;
+
+      bid.params.linearity = 3
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp.video.linearity).to.equal(3);
+    });
+
+    it('should pass min and max duration params', function () {
+      var request;
+
+      bid.params.minduration = 3
+      bid.params.maxduration = 15
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.imp.video.minduration).to.equal(3);
+      expect(request.data.imp.video.maxduration).to.equal(15);
+    });
+  });
+
+  describe('interpretResponse', function () {
+    var serverResponse, bidderRequestObj;
+
+    beforeEach(function () {
+      bidderRequestObj = {
+        bidRequest: {
+          bids: [{
+            mediaTypes: {
+              video: {
+                playerSize: [
+                  ['400', '300']
+                ]
+              }
+            },
+            bidId: 123,
+            params: {
+              player_width: 400,
+              player_height: 300,
+              content_page_url: 'prebid.js',
+              ad_mute: 1,
+              outstream_options: {
+                foo: 'bar'
+              },
+              outstream_function: 'function',
+            }
+          }, {
+            mediaTypes: {
+              video: {
+                playerSize: [
+                  ['200', '100']
+                ]
+              }
+            },
+            bidId: 124,
+            params: {
+              player_width: 200,
+              player_height: 100,
+              content_page_url: 'prebid.js',
+              ad_mute: 1,
+              outstream_options: {
+                foo: 'bar'
+              },
+              outstream_function: 'function'
+            }
+          }]
+        }
+      };
+
+      serverResponse = {
+        body: {
+          id: 12345,
+          seatbid: [{
+            bid: [{
+              impid: 123,
+              cur: 'USD',
+              price: 12,
+              adomain: ['abc.com'],
+              crid: 321,
+              w: 400,
+              h: 300,
+              ext: {
+                slot: 'slot123'
+              }
+            }, {
+              impid: 124,
+              cur: 'USD',
+              price: 13,
+              adomain: ['def.com'],
+              crid: 654,
+              w: 200,
+              h: 100,
+              ext: {
+                slot: 'slot124'
+              }
+            }]
+          }]
+        }
+      };
+    });
+
+    it('should return an array of bid responses', function () {
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+      expect(responses).to.be.an('array').with.length(2);
+      expect(responses[0].requestId).to.equal(123);
+      expect(responses[0].currency).to.equal('USD');
+      expect(responses[0].cpm).to.equal(12);
+      expect(responses[0].creativeId).to.equal(321);
+      expect(responses[0].ttl).to.equal(360);
+      expect(responses[0].netRevenue).to.equal(true);
+      expect(responses[0].mediaType).to.equal('video');
+      expect(responses[0].width).to.equal(400);
+      expect(responses[0].height).to.equal(300);
+      expect(responses[1].requestId).to.equal(124);
+      expect(responses[1].currency).to.equal('USD');
+      expect(responses[1].cpm).to.equal(13);
+      expect(responses[1].creativeId).to.equal(654);
+      expect(responses[1].ttl).to.equal(360);
+      expect(responses[1].netRevenue).to.equal(true);
+      expect(responses[1].mediaType).to.equal('video');
+      expect(responses[1].width).to.equal(200);
+      expect(responses[1].height).to.equal(100);
+    });
+  });
+
+  describe('oustreamRender', function () {
+    var serverResponse, bidderRequestObj;
+
+    beforeEach(function () {
+      bidderRequestObj = {
+        bidRequest: {
+          bids: [{
+            mediaTypes: {
+              video: {
+                context: 'outstream',
+                playerSize: [
+                  ['400', '300']
+                ]
+              }
+            },
+            bidId: 123,
+            params: {
+              player_width: 400,
+              player_height: 300,
+              content_page_url: 'prebid.js',
+              ad_mute: 1,
+              outstream_options: {
+                slot: 'slot123'
+              },
+              outstream_function: 'function',
+            }
+          }]
+        }
+      };
+
+      serverResponse = {
+        body: {
+          id: 12345,
+          seatbid: [{
+            bid: [{
+              impid: 123,
+              cur: 'USD',
+              price: 12,
+              adomain: ['abc.com'],
+              crid: 321,
+              w: 400,
+              h: 300,
+              ext: {
+                slot: 'slot123'
+              }
+            }]
+          }]
+        }
+      };
+    });
+
+    it('should attempt to insert the EASI script', function () {
+      var scriptTag;
+      sinon.stub(window.document, 'getElementById').returns({
+        appendChild: sinon.stub().callsFake(function (script) {
+          scriptTag = script
+        })
+      });
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+
+      responses[0].renderer.render(responses[0]);
+
+      expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
+      expect(scriptTag.getAttribute('src')).to.equal('https://dco.smartclip.net/?plc=7777777');
+
+      window.document.getElementById.restore();
     });
   });
 })

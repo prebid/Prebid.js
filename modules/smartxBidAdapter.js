@@ -320,7 +320,7 @@ export const spec = {
                 }
               });
             } catch (err) {
-              utils.logWarn('Prebid Error calling setRender or setEve,tHandlers on renderer', err);
+              utils.logWarn('Prebid Error calling setRender or setEventHandlers on renderer', err);
             }
             bid.renderer = renderer;
           }
