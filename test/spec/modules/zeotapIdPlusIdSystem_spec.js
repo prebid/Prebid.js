@@ -9,21 +9,14 @@ const storage = newStorageManager();
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_COOKIE = 'THIS-IS-A-DUMMY-COOKIE';
-const CONFIG_PARAMS_MOCK = {
-  name: 'zeotapIdPlus',
-  storage: { name: 'IDP', type: 'cookie' }
-};
+const ENCODED_ZEOTAP_COOKIE = btoa(JSON.stringify(ZEOTAP_COOKIE));
 
 function getConfigMock() {
   return {
     userSync: {
       syncDelay: 0,
       userIds: [{
-        name: 'zeotapIdPlus',
-        storage: {
-          name: 'IDP',
-          type: 'cookie'
-        }
+        name: 'zeotapIdPlus'
       }]
     }
   }
@@ -44,14 +37,6 @@ function getAdUnitMock(code = 'adUnit-code') {
   };
 }
 
-function writeZeotapCookie() {
-  storage.setCookie(
-    ZEOTAP_COOKIE_NAME,
-    btoa(JSON.stringify(ZEOTAP_COOKIE)),
-    (new Date(Date.now() + 5000).toUTCString()),
-  );
-}
-
 function unsetCookie() {
   storage.setCookie(ZEOTAP_COOKIE_NAME, '');
 }
@@ -67,30 +52,28 @@ describe('Zeotap ID System', function() {
       unsetLocalStorage();
     })
 
-    it('return undefined if incorrect config as argument', function() {
-      writeZeotapCookie();
-      let id = zeotapIdPlusSubmodule.getId({});
-      expect(id).to.be.undefined;
-    });
-
     it('provides the stored Zeotap id if a cookie exists', function() {
-      writeZeotapCookie();
-      let id = zeotapIdPlusSubmodule.getId(CONFIG_PARAMS_MOCK);
+      storage.setCookie(
+        ZEOTAP_COOKIE_NAME,
+        ENCODED_ZEOTAP_COOKIE,
+        (new Date(Date.now() + 5000).toUTCString()),
+      );
+      let id = zeotapIdPlusSubmodule.getId();
       expect(id).to.deep.equal({
-        id: ZEOTAP_COOKIE
+        id: ENCODED_ZEOTAP_COOKIE
       });
     });
 
     it('provides the stored Zeotap id if cookie is absent but present in local storage', function() {
-      writeZeotapCookie();
-      let id = zeotapIdPlusSubmodule.getId(CONFIG_PARAMS_MOCK);
+      storage.setDataInLocalStorage(ZEOTAP_COOKIE_NAME, ENCODED_ZEOTAP_COOKIE);
+      let id = zeotapIdPlusSubmodule.getId();
       expect(id).to.deep.equal({
-        id: ZEOTAP_COOKIE
+        id: ENCODED_ZEOTAP_COOKIE
       });
     });
 
     it('returns undefined if both cookie and local storage are empty', function() {
-      let id = zeotapIdPlusSubmodule.getId(CONFIG_PARAMS_MOCK);
+      let id = zeotapIdPlusSubmodule.getId();
       expect(id).to.be.undefined
     })
   });
@@ -98,7 +81,7 @@ describe('Zeotap ID System', function() {
   describe('test method: decode', function() {
     it('provides the Zeotap ID (IDP) from a stored object', function() {
       let zeotapId = {
-        id: btoa(JSON.stringify(ZEOTAP_COOKIE)),
+        id: ENCODED_ZEOTAP_COOKIE,
       };
 
       expect(zeotapIdPlusSubmodule.decode(zeotapId)).to.deep.equal({
@@ -107,7 +90,7 @@ describe('Zeotap ID System', function() {
     });
 
     it('provides the Zeotap ID (IDP) from a stored string', function() {
-      let zeotapId = btoa(JSON.stringify(ZEOTAP_COOKIE));
+      let zeotapId = ENCODED_ZEOTAP_COOKIE;
 
       expect(zeotapIdPlusSubmodule.decode(zeotapId)).to.deep.equal({
         IDP: ZEOTAP_COOKIE
@@ -120,7 +103,11 @@ describe('Zeotap ID System', function() {
 
     beforeEach(function() {
       adUnits = [getAdUnitMock()];
-      writeZeotapCookie();
+      storage.setCookie(
+        ZEOTAP_COOKIE_NAME,
+        ENCODED_ZEOTAP_COOKIE,
+        (new Date(Date.now() + 5000).toUTCString()),
+      );
       setSubmoduleRegistry([zeotapIdPlusSubmodule]);
       init(config);
       config.setConfig(getConfigMock());

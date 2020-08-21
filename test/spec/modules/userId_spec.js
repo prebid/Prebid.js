@@ -438,8 +438,7 @@ describe('User ID', function() {
             name: 'intentIqId',
             storage: { name: 'intentIqId', type: 'cookie' }
           }, {
-            name: 'zeotapIdPlus',
-            storage: { name: 'IDP', type: 'cookie' }
+            name: 'zeotapIdPlus'
           }]
         }
       });
@@ -1383,7 +1382,7 @@ describe('User ID', function() {
           }, {
             name: 'intentIqId', storage: { name: 'intentIqId', type: 'cookie' }
           }, {
-            name: 'zeotapIdPlus', storage: { name: 'IDP', type: 'cookie' }
+            name: 'zeotapIdPlus'
           }, {
             name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
           }]

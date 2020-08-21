@@ -11,18 +11,6 @@ import { getStorageManager } from '../src/storageManager.js';
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const storage = getStorageManager();
 
-function isValidConfig(configParams) {
-  if (!configParams) {
-    utils.logError('User ID - zeotapId submodule requires configParams');
-    return false;
-  }
-  if (!configParams.name) {
-    utils.logError('User ID - zeotapId submodule requires valid config params: name');
-    return false;
-  }
-  return true;
-}
-
 function readCookie() {
   return storage.cookiesAreEnabled ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null;
 }
@@ -30,13 +18,6 @@ function readCookie() {
 function readFromLocalStorage() {
   return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage(ZEOTAP_COOKIE_NAME) : null;
 }
-
-function fetchId(configParams) {
-  if (!isValidConfig(configParams)) return undefined;
-  const id = readCookie() || readFromLocalStorage();
-  if (!id) return undefined;
-  return { id: JSON.parse(atob(id)) };
-};
 
 /** @type {Submodule} */
 export const zeotapIdPlusSubmodule = {
@@ -53,12 +34,9 @@ export const zeotapIdPlusSubmodule = {
    */
   decode(value) {
     const id = value ? utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined : undefined;
-    if (!id) {
-      return undefined;
-    }
-    return {
+    return id ? {
       'IDP': JSON.parse(atob(id))
-    }
+    } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -66,8 +44,9 @@ export const zeotapIdPlusSubmodule = {
    * @param {SubmoduleParams} configParams
    * @return {{id: string | undefined} | undefined}
    */
-  getId(configParams) {
-    return fetchId(configParams);
+  getId() {
+    const id = readCookie() || readFromLocalStorage();
+    return id ? { id } : undefined;
   }
 };
 submodule('userId', zeotapIdPlusSubmodule);
