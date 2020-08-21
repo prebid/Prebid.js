@@ -1,21 +1,20 @@
-import {detectReferer} from '../src/refererDetection.js';
-import {ajax} from '../src/ajax.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
+const storageManager = getStorageManager();
 
 export const spec = {
   code: 'orbidder',
-  bidParams: {},
-  orbidderHost: (() => {
-    let ret = 'https://orbidder.otto.de';
+  hostname: 'https://orbidder.otto.de',
+
+  getHostname() {
+    let ret = this.hostname;
     try {
-      ret = storage.getDataFromLocalStorage('ov_orbidder_host') || ret;
+      ret = storageManager.getDataFromLocalStorage('ov_orbidder_host') || ret;
     } catch (e) {
     }
     return ret;
-  })(),
+  },
 
   isBidRequestValid(bid) {
     return !!(bid.sizes && bid.bidId && bid.params &&
@@ -26,6 +25,7 @@ export const spec = {
   },
 
   buildRequests(validBidRequests, bidderRequest) {
+    const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
@@ -33,7 +33,7 @@ export const spec = {
       }
 
       const ret = {
-        url: `${spec.orbidderHost}/bid`,
+        url: `${hostname}/bid`,
         method: 'POST',
         options: { withCredentials: true },
         data: {
@@ -48,7 +48,6 @@ export const spec = {
           params: bidRequest.params
         }
       };
-      spec.bidParams[bidRequest.bidId] = bidRequest.params;
       if (bidderRequest && bidderRequest.gdprConsent) {
         ret.data.gdprConsent = {
           consentString: bidderRequest.gdprConsent.consentString,
@@ -76,21 +75,6 @@ export const spec = {
     }
     return bidResponses;
   },
-
-  onBidWon(bid) {
-    const getRefererInfo = detectReferer(window);
-
-    bid.v = $$PREBID_GLOBAL$$.version;
-    bid.pageUrl = getRefererInfo().referer;
-    if (spec.bidParams[bid.requestId] && (typeof bid.params === 'undefined')) {
-      bid.params = [spec.bidParams[bid.requestId]];
-    }
-    spec.ajaxCall(`${spec.orbidderHost}/win`, JSON.stringify(bid));
-  },
-
-  ajaxCall(endpoint, data) {
-    ajax(endpoint, null, data, { withCredentials: true });
-  }
 };
 
 registerBidder(spec);

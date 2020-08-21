@@ -290,6 +290,38 @@ describe('OpenxAdapter', function () {
           expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(false);
         });
       });
+
+      describe('and request config uses test', () => {
+        const videoBidWithTest = {
+          bidder: 'openx',
+          params: {
+            unit: '12345678',
+            delDomain: 'test-del-domain',
+            test: true
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            video: {
+              playerSize: [640, 480]
+            }
+          },
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
+        };
+
+        let mockBidderRequest = {refererInfo: {}};
+
+        it('should return true when required params found', function () {
+          expect(spec.isBidRequestValid(videoBidWithTest)).to.equal(true);
+        });
+
+        it('should send video bid request to openx url via GET, with vtest=1 video parameter', function () {
+          const request = spec.buildRequests([videoBidWithTest], mockBidderRequest);
+          expect(request[0].data.vtest).to.equal(1);
+        });
+      });
     });
   });
 
@@ -506,25 +538,6 @@ describe('OpenxAdapter', function () {
 
       expect(dataParams.tps).to.exist;
       expect(dataParams.tps).to.equal(btoa('test1=testval1.&test2=testval2_,testval3'));
-    });
-
-    it('should send out custom floors on bids that have customFloors specified', function () {
-      const bidRequest = Object.assign({},
-        bidRequestsWithMediaTypes[0],
-        {
-          params: {
-            'unit': '12345678',
-            'delDomain': 'test-del-domain',
-            'customFloor': 1.500001
-          }
-        }
-      );
-
-      const request = spec.buildRequests([bidRequest], mockBidderRequest);
-      const dataParams = request[0].data;
-
-      expect(dataParams.aumfs).to.exist;
-      expect(dataParams.aumfs).to.equal('1500');
     });
 
     it('should send out custom bc parameter, if override is present', function () {
@@ -1034,7 +1047,7 @@ describe('OpenxAdapter', function () {
         idl_env: '1111-idl_env',
         lipb: {lipbid: '1111-lipb'},
         netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
-        parrableid: 'eidVersion.encryptionKeyReference.encryptedValue',
+        parrableId: { eid: 'eidVersion.encryptionKeyReference.encryptedValue' },
         pubcid: '1111-pubcid',
         tdid: '1111-tdid',
       };
@@ -1080,6 +1093,9 @@ describe('OpenxAdapter', function () {
               case 'lipb':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.lipb.lipbid;
                 break;
+              case 'parrableId':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.parrableId.eid;
+                break;
               default:
                 userIdValue = EXAMPLE_DATA_BY_ATTR[userIdProviderKey];
             }
@@ -1089,6 +1105,107 @@ describe('OpenxAdapter', function () {
         });
       });
     });
+
+    describe('floors', function () {
+      it('should send out custom floors on bids that have customFloors specified', function () {
+        const bidRequest = Object.assign({},
+          bidRequestsWithMediaTypes[0],
+          {
+            params: {
+              'unit': '12345678',
+              'delDomain': 'test-del-domain',
+              'customFloor': 1.500001
+            }
+          }
+        );
+
+        const request = spec.buildRequests([bidRequest], mockBidderRequest);
+        const dataParams = request[0].data;
+
+        expect(dataParams.aumfs).to.exist;
+        expect(dataParams.aumfs).to.equal('1500');
+      });
+
+      context('with floors module', function () {
+        let adServerCurrencyStub;
+
+        beforeEach(function () {
+          adServerCurrencyStub = sinon
+            .stub(config, 'getConfig')
+            .withArgs('currency.adServerCurrency')
+        });
+
+        afterEach(function () {
+          config.getConfig.restore();
+        });
+
+        it('should send out floors on bids', function () {
+          const bidRequest1 = Object.assign({},
+            bidRequestsWithMediaTypes[0],
+            {
+              getFloor: () => {
+                return {
+                  currency: 'AUS',
+                  floor: 9.99
+                }
+              }
+            }
+          );
+
+          const bidRequest2 = Object.assign({},
+            bidRequestsWithMediaTypes[1],
+            {
+              getFloor: () => {
+                return {
+                  currency: 'AUS',
+                  floor: 18.881
+                }
+              }
+            }
+          );
+
+          const request = spec.buildRequests([bidRequest1, bidRequest2], mockBidderRequest);
+          const dataParams = request[0].data;
+
+          expect(dataParams.aumfs).to.exist;
+          expect(dataParams.aumfs).to.equal('9990,18881');
+        });
+
+        it('should send out floors on bids in the default currency', function () {
+          const bidRequest1 = Object.assign({},
+            bidRequestsWithMediaTypes[0],
+            {
+              getFloor: () => {
+                return {};
+              }
+            }
+          );
+
+          let getFloorSpy = sinon.spy(bidRequest1, 'getFloor');
+
+          spec.buildRequests([bidRequest1], mockBidderRequest);
+          expect(getFloorSpy.args[0][0].currency).to.equal('USD');
+        });
+
+        it('should send out floors on bids in the ad server currency if defined', function () {
+          adServerCurrencyStub.returns('bitcoin');
+
+          const bidRequest1 = Object.assign({},
+            bidRequestsWithMediaTypes[0],
+            {
+              getFloor: () => {
+                return {};
+              }
+            }
+          );
+
+          let getFloorSpy = sinon.spy(bidRequest1, 'getFloor');
+
+          spec.buildRequests([bidRequest1], mockBidderRequest);
+          expect(getFloorSpy.args[0][0].currency).to.equal('bitcoin');
+        });
+      })
+    })
   });
 
   describe('buildRequests for video', function () {
@@ -1124,6 +1241,11 @@ describe('OpenxAdapter', function () {
       expect(dataParams.auid).to.equal('12345678');
       expect(dataParams.vht).to.equal(480);
       expect(dataParams.vwd).to.equal(640);
+    });
+
+    it('shouldn\'t have the test parameter', function () {
+      const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+      expect(request[0].data.vtest).to.be.undefined;
     });
 
     it('should send a bc parameter', function () {
