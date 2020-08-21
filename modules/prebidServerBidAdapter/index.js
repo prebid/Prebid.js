@@ -551,10 +551,12 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       /**
-       * GAM Ad Unit
-       * @type {(string|undefined)}
+       * Set GAM Ad Unit and Name values to imp
        */
       ['name', 'adSlot'].forEach(function (propName) {
+        /**
+         * @type {(string|undefined)}
+         */
         const propValue = utils.deepAccess(adUnit, `fpd.context.adserver.${propName}`);
         if (typeof propValue === 'string' && propValue) {
           utils.deepSetValue(imp, `ext.context.data.adserver.${propName.toLowerCase()}`, propValue);
