@@ -358,6 +358,24 @@ describe('BlueBillywigAdapter', () => {
       expect(payload.device.h).to.be.a('number');
     });
 
+    it('should add site when specified in config', () => {
+      config.setConfig({ site: { name: 'Blue Billywig', domain: 'bluebillywig.com', page: 'https://bluebillywig.com/', publisher: { id: 'abc', name: 'Blue Billywig', domain: 'bluebillywig.com' } } });
+
+      const request = spec.buildRequests(baseValidBidRequests, validBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload).to.have.property('site');
+      expect(payload).to.have.nested.property('site.name');
+      expect(payload).to.have.nested.property('site.domain');
+      expect(payload).to.have.nested.property('site.page');
+      expect(payload).to.have.nested.property('site.publisher');
+      expect(payload).to.have.nested.property('site.publisher.id');
+      expect(payload).to.have.nested.property('site.publisher.name');
+      expect(payload).to.have.nested.property('site.publisher.domain');
+
+      config.resetConfig();
+    });
+
     it('should add app when specified in config', () => {
       config.setConfig({ app: { bundle: 'org.prebid.mobile.demoapp', domain: 'prebid.org' } });
 
