@@ -883,7 +883,7 @@ describe('User ID', function() {
               source: 'sharedid.org',
               uids: [{
                 id: 'test_sharedId',
-                atype: 1,
+                atype: 3,
                 ext: {
                   third: 'test_sharedId'
                 }
@@ -917,7 +917,7 @@ describe('User ID', function() {
               source: 'sharedid.org',
               uids: [{
                 id: 'test_sharedId',
-                atype: 1
+                atype: 3
               }]
             });
           });
@@ -948,7 +948,7 @@ describe('User ID', function() {
               source: 'sharedid.org',
               uids: [{
                 id: 'test_sharedId',
-                atype: 1,
+                atype: 3,
                 ext: {
                   third: 'test_sharedId'
                 }
@@ -979,7 +979,7 @@ describe('User ID', function() {
               source: 'sharedid.org',
               uids: [{
                 id: 'test_sharedId',
-                atype: 1
+                atype: 3
               }]
             });
           });

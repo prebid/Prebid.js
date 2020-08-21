@@ -157,7 +157,7 @@ describe('eids array generation for known sub-modules', function() {
       source: 'sharedid.org',
       uids: [{
         id: 'test_sharedId',
-        atype: 1,
+        atype: 3,
         ext: {
           third: 'test_sharedId'
         }
@@ -176,7 +176,7 @@ describe('eids array generation for known sub-modules', function() {
       source: 'sharedid.org',
       uids: [{
         id: 'test_sharedId',
-        atype: 1
+        atype: 3
       }]
     });
   });

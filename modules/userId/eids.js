@@ -108,7 +108,7 @@ const USER_IDS_CONFIG = {
   // sharedid
   'sharedid': {
     source: 'sharedid.org',
-    atype: 1,
+    atype: 3,
     getValue: function(data) {
       return data.id;
     },
