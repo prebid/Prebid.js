@@ -551,9 +551,9 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       /**
-       * Set GAM Ad Unit and Name values to imp
+       * Copy GAM AdUnit and Name to imp
        */
-      ['name', 'adSlot'].forEach((name) => {
+      ['name', 'adSlot'].forEach(name => {
         /** @type {(string|undefined)} */
         const value = utils.deepAccess(adUnit, `fpd.context.adserver.${name}`);
         if (typeof value === 'string' && value) {

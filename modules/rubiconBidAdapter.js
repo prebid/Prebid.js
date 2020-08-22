@@ -355,15 +355,13 @@ export const spec = {
       }
 
       /**
-       * Set GAM Ad Unit and Name values to imp
+       * Copy GAM AdUnit and Name to imp
        */
-      ['name', 'adSlot'].forEach(function (propName) {
-        /**
-         * @type {(string|undefined)}
-         */
-        const propValue = utils.deepAccess(bidRequest, `fpd.context.adserver.${propName}`);
-        if (typeof propValue === 'string' && propValue) {
-          utils.deepSetValue(data.imp[0].ext, `context.data.adserver.${propName.toLowerCase()}`, propValue);
+      ['name', 'adSlot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(bidRequest, `fpd.context.adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(data.imp[0].ext, `context.data.adserver.${name.toLowerCase()}`, value);
         }
       });
 
