@@ -12,14 +12,6 @@ const TTL_SECONDS = 60 * 5;
 const DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const SESSION_ID_KEY = 'vidSid';
-const INTERNAL_SYNC_TYPE = {
-  IFRAME: 'iframe',
-  IMAGE: 'img'
-};
-const EXTERNAL_SYNC_TYPE = {
-  IFRAME: 'iframe',
-  IMAGE: 'image'
-};
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
