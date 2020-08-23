@@ -135,6 +135,8 @@ import find from 'core-js-pure/features/array/find.js';
 const MODULE_NAME = 'realTimeData';
 /** @type {number} */
 const DEF_TIMEOUT = 1000;
+/** @type {boolean} */
+let _smInit = false;
 /** @type {RtdSubmodule[]} */
 export let subModules = [];
 /** @type {ModuleConfig} */
@@ -159,16 +161,15 @@ export function init(config) {
     confListener(); // unsubscribe config listener
     _moduleConfig = realTimeData;
     _dataProviders = realTimeData.dataProviders;
-    getHook('makeBidRequests').before(initSubModules);
     setEventsListeners();
     if (typeof (_moduleConfig.auctionDelay) === 'undefined') {
       _moduleConfig.auctionDelay = 0;
     }
+    getGlobal().requestBids.before(requestBidsHook, 40);
     // delay bidding process only if auctionDelay > 0
+    // if auction delay is > 0 use requestBidsHook
     if (!_moduleConfig.auctionDelay > 0) {
       getHook('bidsBackCallback').before(setTargetsAfterRequestBids);
-    } else {
-      getGlobal().requestBids.before(requestBidsHook);
     }
   });
 }
@@ -177,7 +178,11 @@ export function init(config) {
  * call each sub module init function by config order
  * if no init function / init return failure / module not configured - remove it from submodules list
  */
-export function initSubModules(next, adUnits, auctionStart, auctionId, cbTimeout, labels) {
+export function initSubModules() {
+  if (_smInit) {
+    // only need to init once
+    return;
+  }
   let subModulesByOrder = [];
   _dataProviders.forEach(provider => {
     const sm = find(subModules, s => s.name === provider.name);
@@ -187,7 +192,7 @@ export function initSubModules(next, adUnits, auctionStart, auctionId, cbTimeout
     }
   });
   subModules = subModulesByOrder;
-  next(adUnits, auctionStart, auctionId, cbTimeout, labels)
+  _smInit = true;
 }
 
 /**
@@ -318,16 +323,21 @@ export function deepMerge(arr) {
  * @param {Object} reqBidsConfigObj - request bids object
  */
 export function requestBidsHook(fn, reqBidsConfigObj) {
-  getProviderData(reqBidsConfigObj.adUnits || getGlobal().adUnits, (data) => {
-    if (data && Object.keys(data).length) {
-      const _mergedData = deepMerge(setDataOrderByProvider(subModules, data));
-      if (Object.keys(_mergedData).length) {
-        setDataForPrimaryAdServer(_mergedData);
-        addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, _mergedData);
+  initSubModules();
+  if (_moduleConfig.auctionDelay > 0) {
+    getProviderData(reqBidsConfigObj.adUnits || getGlobal().adUnits, (data) => {
+      if (data && Object.keys(data).length) {
+        const _mergedData = deepMerge(setDataOrderByProvider(subModules, data));
+        if (Object.keys(_mergedData).length) {
+          setDataForPrimaryAdServer(_mergedData);
+          addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, _mergedData);
+        }
       }
-    }
+      return fn.call(this, reqBidsConfigObj);
+    });
+  } else {
     return fn.call(this, reqBidsConfigObj);
-  });
+  }
 }
 
 /**

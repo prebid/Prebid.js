@@ -76,17 +76,14 @@ describe('Real time module', function () {
     config.setConfig(conf);
   });
 
-  it('should use only valid modules', function (done) {
+  it('should use only valid modules', function () {
     rtdModule.attachRealTimeDataProvider(validSM);
     rtdModule.attachRealTimeDataProvider(invalidSM);
     rtdModule.attachRealTimeDataProvider(failureSM);
     rtdModule.attachRealTimeDataProvider(nonConfSM);
     rtdModule.attachRealTimeDataProvider(validSMWait);
-    rtdModule.initSubModules(afterInitSubModules);
-    function afterInitSubModules() {
-      expect(rtdModule.subModules).to.eql([validSMWait, validSM]);
-      done();
-    }
+    rtdModule.initSubModules();
+    expect(rtdModule.subModules).to.eql([validSMWait, validSM]);
     rtdModule.init(config);
   });
 
