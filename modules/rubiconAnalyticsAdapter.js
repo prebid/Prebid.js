@@ -195,15 +195,24 @@ function sendMessage(auctionId, bidWonId) {
 
     // pick our of top level floor data we want to send!
     if (auctionCache.floorData) {
-      auction.floors = utils.pick(auctionCache.floorData, [
-        'location',
-        'modelName', () => auctionCache.floorData.modelVersion,
-        'skipped',
-        'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
-        'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),
-        'skipRate', skipRate => !isNaN(skipRate) ? skipRate : 0,
-        'fetchStatus'
-      ]);
+      if (auctionCache.floorData.location === 'noData') {
+        auction.floors = utils.pick(auctionCache.floorData, [
+          'location',
+          'fetchStatus',
+          'floorProvider as provider'
+        ]);
+      } else {
+        auction.floors = utils.pick(auctionCache.floorData, [
+          'location',
+          'modelVersion as modelName',
+          'skipped',
+          'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
+          'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),
+          'skipRate',
+          'fetchStatus',
+          'floorProvider as provider'
+        ]);
+      }
     }
 
     if (serverConfig) {
@@ -269,7 +278,7 @@ function getBidPrice(bid) {
   }
 }
 
-export function parseBidResponse(bid, previousBidResponse) {
+export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
   // The current bidResponse for this matching requestId/bidRequestId
   let responsePrice = getBidPrice(bid)
   // we need to compare it with the previous one (if there was one)
@@ -368,8 +377,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
         cacheEntry.referrer = args.bidderRequests[0].refererInfo.referer;
-        if (utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData')) {
-          cacheEntry.floorData = {...utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData')};
+        const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
+        if (floorData) {
+          cacheEntry.floorData = {...floorData};
         }
         cache.auctions[args.auctionId] = cacheEntry;
         break;
