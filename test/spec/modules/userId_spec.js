@@ -1591,13 +1591,6 @@ describe('User ID', function() {
         sinon.assert.notCalled(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.calledOnce(mockExtendId);
-
-        let consent = gdprDataHandler.getConsentData();
-        let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
-        expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
-        expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
-        expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
-        expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
       });
 
       it('calls getId if no stored consent data but refresh is needed', function () {
@@ -1611,13 +1604,6 @@ describe('User ID', function() {
         sinon.assert.calledOnce(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.notCalled(mockExtendId);
-
-        let consent = gdprDataHandler.getConsentData();
-        let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
-        expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
-        expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
-        expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
-        expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
       });
 
       it('calls getId if empty stored consent and refresh not needed', function () {
@@ -1633,13 +1619,6 @@ describe('User ID', function() {
         sinon.assert.calledOnce(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.notCalled(mockExtendId);
-
-        let consent = gdprDataHandler.getConsentData();
-        let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
-        expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
-        expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
-        expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
-        expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
       });
 
       it('calls getId if stored consent does not match current consent and refresh not needed', function () {
@@ -1659,13 +1638,6 @@ describe('User ID', function() {
         sinon.assert.calledOnce(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.notCalled(mockExtendId);
-
-        let consent = gdprDataHandler.getConsentData();
-        let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
-        expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
-        expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
-        expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
-        expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
       });
 
       it('does not call getId if stored consent matches current consent and refresh not needed', function () {
@@ -1685,13 +1657,6 @@ describe('User ID', function() {
         sinon.assert.notCalled(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.calledOnce(mockExtendId);
-
-        let consent = gdprDataHandler.getConsentData();
-        let userIdStoredConsent = JSON.parse(coreStorage.getCookie(CONSENT_LOCAL_STORAGE_NAME));
-        expect(userIdStoredConsent.gdprApplies).to.equal(consent.gdprApplies);
-        expect(userIdStoredConsent.gdprApplies).to.equal(testConsentData.gdprApplies);
-        expect(userIdStoredConsent.consentString).to.equal(consent.consentString);
-        expect(userIdStoredConsent.consentString).to.equal(testConsentData.consentData);
       });
     });
   });

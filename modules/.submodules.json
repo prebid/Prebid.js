@@ -18,6 +18,7 @@
     "dfpAdServerVideo"
   ],
   "rtdModule": [
-    "browsiRtdProvider"
+    "browsiRtdProvider",
+    "jwplayerRtdProvider"
   ]
 }
