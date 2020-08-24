@@ -99,8 +99,8 @@ const USER_IDS_CONFIG = {
     source: 'criteo.com',
     atype: 1
   },
-  
-    // merkleId
+
+  // merkleId
   'merkleId': {
     source: 'merkleinc.com',
     atype: 1
