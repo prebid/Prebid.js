@@ -95,6 +95,11 @@ describe('automatadBidAdapter', function () {
       let r = rdata.imp[0]
       expect(r.siteID !== null && r.placementID !== null).to.be.true
     })
+
+    it('should include adunit code', function () {
+      let r = rdata.imp[0]
+      expect(r.adUnitCode !== null).to.be.true
+    })
   })
 
   describe('interpretResponse', function () {

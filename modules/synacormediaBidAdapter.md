@@ -42,8 +42,10 @@ https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_cache_id_synacorm
       code: 'test-div2',
       mediaTypes: {
         video: {
-            context: 'instream',
-            playerSize: [[300, 250]],
+          context: 'instream',
+          playerSize: [
+            [300, 250]
+          ],
         }
       },
       bids: [{
