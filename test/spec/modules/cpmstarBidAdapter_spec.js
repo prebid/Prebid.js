@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { spec } from 'modules/cpmstarBidAdapter.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
-<<<<<<< HEAD
 
 const valid_bid_requests = [{
   'bidder': 'cpmstar',
@@ -38,8 +37,6 @@ const serverResponse = {
     syncs: [{ type: 'image', url: 'https://server.cpmstar.com/pixel.aspx' }]
   }]
 };
-=======
->>>>>>> 565b941bb6d1a935f9fddcb8ed2483d4591b8024
 
 describe('Cpmstar Bid Adapter', function () {
   describe('isBidRequestValid', function () {
@@ -130,7 +127,6 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0]).to.have.property('url');
       expect(requests[0].url).to.include('tfcd=1');
     });
-<<<<<<< HEAD
   });
 
   it('should produce a request with support for OpenRTB SupplyChain', function () {
@@ -155,9 +151,6 @@ describe('Cpmstar Bid Adapter', function () {
     expect(requests[0]).to.have.property('url');
     expect(requests[0].url).to.include('&schain=1.0,1!exchange1.com,1234,1,,,!exchange2.com,abcd,1,,,');
   });
-=======
-  })
->>>>>>> 565b941bb6d1a935f9fddcb8ed2483d4591b8024
 
   describe('interpretResponse', function () {
     const request = {
