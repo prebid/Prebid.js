@@ -1,5 +1,4 @@
 import {expect} from 'chai';
-import adapterManager from 'src/adapterManager.js';
 import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
@@ -13,7 +12,8 @@ describe('the rubicon adapter', function () {
   let sandbox,
     bidderRequest,
     sizeMap,
-    getFloorResponse;
+    getFloorResponse,
+    logErrorSpy;
 
   /**
    * @typedef {Object} sizeMapConverted
@@ -276,6 +276,7 @@ describe('the rubicon adapter', function () {
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
+    logErrorSpy = sinon.spy(utils, 'logError');
     getFloorResponse = {};
     bidderRequest = {
       bidderCode: 'rubicon',
@@ -347,6 +348,7 @@ describe('the rubicon adapter', function () {
 
   afterEach(function () {
     sandbox.restore();
+    utils.logError.restore();
   });
 
   describe('MAS mapping / ordering', function () {
@@ -416,7 +418,18 @@ describe('the rubicon adapter', function () {
         it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
           // default getFloor response is empty object so should not break and not send hard_floor
           bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          sinon.spy(bidderRequest.bids[0], 'getFloor');
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // make sure banner bid called with right stuff
+          expect(
+            bidderRequest.bids[0].getFloor.calledWith({
+              currency: 'USD',
+              mediaType: 'banner',
+              size: '*'
+            })
+          ).to.be.true;
+
           let data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.be.undefined;
 
@@ -1594,11 +1607,22 @@ describe('the rubicon adapter', function () {
           createVideoBidderRequest();
           // default getFloor response is empty object so should not break and not send hard_floor
           bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          sinon.spy(bidderRequest.bids[0], 'getFloor');
+
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // make sure banner bid called with right stuff
+          expect(
+            bidderRequest.bids[0].getFloor.calledWith({
+              currency: 'USD',
+              mediaType: 'video',
+              size: [640, 480]
+            })
+          ).to.be.true;
 
           // not an object should work and not send
           expect(request.data.imp[0].bidfloor).to.be.undefined;
@@ -1623,6 +1647,30 @@ describe('the rubicon adapter', function () {
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.imp[0].bidfloor).to.equal(1.23);
         });
+
+        it('should continue with auction and log error if getFloor throws one', function () {
+          createVideoBidderRequest();
+          // default getFloor response is empty object so should not break and not send hard_floor
+          bidderRequest.bids[0].getFloor = () => {
+            throw new Error('An exception!');
+          };
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // log error called
+          expect(logErrorSpy.calledOnce).to.equal(true);
+
+          // should have an imp
+          expect(request.data.imp).to.exist.and.to.be.a('array');
+          expect(request.data.imp).to.have.lengthOf(1);
+
+          // should be NO bidFloor
+          expect(request.data.imp[0].bidfloor).to.be.undefined;
+        });
+
         it('should add alias name to PBS Request', function() {
           createVideoBidderRequest();
 
