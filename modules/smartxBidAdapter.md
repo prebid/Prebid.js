@@ -7,19 +7,11 @@ Connect to smartclip for bids.
 
 This adapter requires setup and approval from the smartclip team.
 
-Test Parameters - Use case #1 - outstream with default rendering options
+Test Parameters - Use case #1 - Out-Stream with targeting example and default rendering options
 
- var sizes = [
-        [300, 250],
-        [300, 50],
-        [640, 480]
-    ];
     var adUnits = [{
         code: 'video1',
         mediaTypes: {
-            banner: {
-                sizes: sizes
-            },
             video: {
                 context: 'outstream',
                 playerSize: [640, 360]
@@ -29,8 +21,8 @@ Test Parameters - Use case #1 - outstream with default rendering options
                 bidder: 'smartx',
                 params: {
                     tagId: 'Nu68JuOWAvrbzoyrOR9a7A',
-                    publisherId: '__name__tbdbysmartclip__',
-                    siteId: '__name__tbdbysmartclip__',
+                    publisherId: '__publisherId__',
+                    siteId: '__siteId__',
                     cat: "sport",
                     bidfloor: 0.3,
                     bidfloorcur: "EUR",
@@ -59,7 +51,106 @@ Test Parameters - Use case #1 - outstream with default rendering options
                             }]
                     }]
                 }
-                    //outstream_function: myOutstreamFunction
+                    // outstream_function: myOutstreamFunction()
+                }
+            }],
+    }];
+
+Test Parameters - Use case #2 - Out-Stream example and default rendering options
+
+    var adUnits = [{
+        code: 'video1',
+        mediaTypes: {
+            video: {
+                context: 'outstream',
+                playerSize: [640, 360]
+            }
+        },
+        bids: [{
+                bidder: 'smartx',
+                params: {
+                    tagId: 'Nu68JuOWAvrbzoyrOR9a7A',
+                    publisherId: '__publisherId__',
+                    siteId: '__siteId__',
+                    cat: "sport",
+                    bidfloor: 0.3,
+                    bidfloorcur: "EUR",
+                    at: 2,
+                    cur: ["EUR"],
+                    outstream_options: {
+                        slot: 'video1'
+                    },
+                    // outstream_function: myOutstreamFunction()
+                }
+            }],
+    }];
+
+Test Parameters - Use case #3 - In-Stream with targeting example and default rendering options
+
+    var adUnits = [{
+        code: 'video1',
+        mediaTypes: {
+            video: {
+                context: 'instream',
+                playerSize: [640, 360]
+            }
+        },
+        bids: [{
+                bidder: 'smartx',
+                params: {
+                    tagId: 'Nu68JuOWAvrbzoyrOR9a7A',
+                    publisherId: '__publisherId__',
+                    siteId: '__siteId__',
+                    cat: "sport",
+                    bidfloor: 0.3,
+                    bidfloorcur: "EUR",
+                    at: 2,
+                    cur: ["EUR"],
+                    user: {
+                        data: [{
+                            id: 'emq',
+                            name: 'emq',
+                            segment: [{
+                                id: 'emq',
+                                name:'emq',
+                                value: 'e0:k14:e24'
+                            }]
+                            },
+                            {
+                            id: 'gs',
+                            name: 'gs',
+                            segment: [{
+                                id: 'gs',
+                                name:'gs',
+                                value: 'tone_of_voice_dislike:tone_of_voice_negative:gs_health'
+                            }]
+                    }]
+                }
+                }
+            }],
+    }];
+
+Test Parameters - Use case #4 - In-Stream example and default rendering options
+
+    var adUnits = [{
+        code: 'video1',
+        mediaTypes: {
+            video: {
+                context: 'instream',
+                playerSize: [640, 360]
+            }
+        },
+        bids: [{
+                bidder: 'smartx',
+                params: {
+                    tagId: 'Nu68JuOWAvrbzoyrOR9a7A',
+                    publisherId: '__publisherId__',
+                    siteId: '__siteId__',
+                    cat: "sport",
+                    bidfloor: 0.3,
+                    bidfloorcur: "EUR",
+                    at: 2,
+                    cur: ["EUR"]
                 }
             }],
     }];

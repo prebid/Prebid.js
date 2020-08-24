@@ -54,7 +54,7 @@ export const spec = {
       utils.logError(BIDDER_CODE + ': bidfloorcur is not present in bidder params');
       return false;
     }
-    if (utils.deepAccess(bid, 'mediaTypes.video.context') == 'outstream') {
+    if (utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
       if (!utils.getBidIdParameter('outstream_options', bid.params)) {
         utils.logError(BIDDER_CODE + ': outstream_options parameter is not defined');
         return false;
@@ -85,6 +85,8 @@ export const spec = {
     const smartxRequests = bidRequests.map(function (bid) {
       const tagId = utils.getBidIdParameter('tagId', bid.params);
       const publisherId = utils.getBidIdParameter('publisherId', bid.params);
+      const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
+      const bidfloorcur = utils.getBidIdParameter('bidfloorcur', bid.params);
       const siteId = utils.getBidIdParameter('siteId', bid.params);
       const domain = utils.getBidIdParameter('domain', bid.params);
       const cat = utils.getBidIdParameter('cat', bid.params);
@@ -117,6 +119,8 @@ export const spec = {
       let smartxReq = {
         id: bid.bidId,
         secure: secure,
+        bidfloor: bidfloor,
+        bidfloorcur: bidfloorcur,
         video: {
           w: contentWidth,
           h: contentHeight,
@@ -139,14 +143,6 @@ export const spec = {
           'smart.bidpricetype': 1
         }
       };
-
-      if (utils.getBidIdParameter('bidfloor', bid.params) != '') {
-        smartxReq.bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
-      }
-
-      if (utils.getBidIdParameter('bidfloorcur', bid.params) != '') {
-        smartxReq.bidfloorcur = utils.getBidIdParameter('bidfloorcur', bid.params);
-      }
 
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
@@ -206,15 +202,15 @@ export const spec = {
         };
       }
 
-      // CUSTOM - Targetingparameters
+      // Targeting
       if (utils.getBidIdParameter('data', bid.params.user)) {
-        var dataarray = [];
+        var targetingarr = [];
         for (var i = 0; i < bid.params.user.data.length; i++) {
           var isemq = (bid.params.user.data[i].name) || 'empty';
           if (isemq !== 'empty') {
             var provider = bid.params.user.data[i].name;
             var targetingstring = (bid.params.user.data[i].segment[0].value) || 'empty';
-            dataarray.push({
+            targetingarr.push({
               id: provider,
               name: provider,
               segment: {
@@ -227,7 +223,7 @@ export const spec = {
 
         requestPayload.user = {
           ext: userExt,
-          data: dataarray
+          data: targetingarr
         }
       }
 
