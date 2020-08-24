@@ -198,7 +198,8 @@ function sendMessage(auctionId, bidWonId) {
       if (auctionCache.floorData.location === 'noData') {
         auction.floors = utils.pick(auctionCache.floorData, [
           'location',
-          'fetchStatus'
+          'fetchStatus',
+          'floorProvider as provider'
         ]);
       } else {
         auction.floors = utils.pick(auctionCache.floorData, [
