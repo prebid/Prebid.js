@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-let spec = require('modules/proxistoreBidAdapter');
+let { spec } = require('modules/proxistoreBidAdapter');
 
 const BIDDER_CODE = 'proxistore';
 describe('ProxistoreBidAdapter', function () {
@@ -28,7 +28,21 @@ describe('ProxistoreBidAdapter', function () {
     transactionId: 511916005
   };
   describe('isBidRequestValid', function () {
-    it('it should be true if required params are presents', function () {
+    it('it should be true if required params are presents and there is no info in the local storage', function () {
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('it should be false if the value in the localstorage is less than 5minutes of the actual time', function() {
+      const date = new Date();
+      date.setMinutes(date.getMinutes() - 1)
+      localStorage.setItem(`PX_NoAds_${bid.params.website}`, date)
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('it should be true if the value in the localstorage is more than 5minutes of the actual time', function() {
+      const date = new Date();
+      date.setMinutes(date.getMinutes() - 10)
+      localStorage.setItem(`PX_NoAds_${bid.params.website}`, date)
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
   });
@@ -97,7 +111,11 @@ describe('ProxistoreBidAdapter', function () {
       expect(interpretedResponse.requestId).equal('923756713');
       expect(interpretedResponse.netRevenue).to.be.true;
       expect(interpretedResponse.netRevenue).to.be.true;
-    })
+    });
+    it('should have a value in the local storage if the response is empty', function() {
+      spec.interpretResponse(badResponse, bid);
+      expect(localStorage.getItem(`PX_NoAds_${bid.params.website}`)).to.be.string;
+    });
   });
 
   describe('interpretResponse', function () {
