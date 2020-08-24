@@ -302,7 +302,7 @@ export const spec = {
             source: 'sharedid.org',
             uids: [{
               id: bidRequest.userId.sharedid.id,
-              atype: 3,
+              atype: 1,
               ext: {
                 third: bidRequest.userId.sharedid.third
               }

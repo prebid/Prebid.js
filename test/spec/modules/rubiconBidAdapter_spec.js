@@ -1571,7 +1571,7 @@ describe('the rubicon adapter', function () {
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[2].uids[0].atype).to.equal(3);
+          expect(post.user.ext.eids[2].uids[0].atype).to.equal(1);
           expect(post.user.ext.eids[2].uids[0].ext.third).to.equal('2222');
 
           expect(post.rp).that.is.an('object');
