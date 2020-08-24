@@ -57,9 +57,7 @@ describe('eids array generation for known sub-modules', function() {
 
   it('merkleId', function() {
     const userId = {
-      merkleId: {
-        eid: 'some-random-id-value'
-      }
+      merkleId: 'some-random-id-value'
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
