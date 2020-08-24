@@ -53,12 +53,17 @@ export const spec = {
       var mediaType = spec.getMediaType(bidRequest);
       var playerSize = spec.getPlayerSize(bidRequest);
       var videoArgs = '&fv=0' + (playerSize ? ('&w=' + playerSize[0] + '&h=' + playerSize[1]) : '');
+<<<<<<< HEAD
+=======
+
+>>>>>>> 565b941bb6d1a935f9fddcb8ed2483d4591b8024
       var url = ENDPOINT + '?media=' + mediaType + (mediaType == VIDEO ? videoArgs : '') +
         '&json=c_b&mv=1&poolid=' + utils.getBidIdParameter('placementId', bidRequest.params) +
         '&reachedTop=' + encodeURIComponent(bidderRequest.refererInfo.reachedTop) +
         '&requestid=' + bidRequest.bidId +
         '&referer=' + encodeURIComponent(referer);
 
+<<<<<<< HEAD
       if (bidRequest.schain && bidRequest.schain.nodes) {
         var schain = bidRequest.schain;
         var schainString = '';
@@ -76,6 +81,8 @@ export const spec = {
         url += '&schain=' + schainString
       }
 
+=======
+>>>>>>> 565b941bb6d1a935f9fddcb8ed2483d4591b8024
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString != null) {
           url += '&gdpr_consent=' + bidderRequest.gdprConsent.consentString;
