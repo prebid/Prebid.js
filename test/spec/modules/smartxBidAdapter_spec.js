@@ -130,7 +130,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should succeed with context outstream, options set for outstream but no outstream_function is set', function () {
-      bid.mediaTypes.video.content = 'outstream';
+      bid.mediaTypes.video.context = 'outstream';
       bid.params.outstream_options = {
         slot: 'yourelementid'
       };

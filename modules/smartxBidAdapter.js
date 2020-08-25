@@ -112,7 +112,7 @@ export const spec = {
       var contextcustom = utils.deepAccess(bid, 'mediaTypes.video.context');
       var placement = 1;
 
-      if (contextcustom == 'outstream') {
+      if (contextcustom === 'outstream') {
         placement = 3;
       }
 
@@ -284,9 +284,8 @@ export const spec = {
             width: smartxBid.w,
             height: smartxBid.h
           };
-          const context1 = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
-          const context2 = utils.deepAccess(currentBidRequest, 'params.ad_unit');
-          if (context1 == 'outstream' || context2 == 'outstream') {
+          const context = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
+          if (context === 'outstream') {
             const playersize = utils.deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
             const renderer = Renderer.install({
               id: 0,
