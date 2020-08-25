@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'aniview';
+const GVLID = 780;
 const TTL = 600;
 
 function avRenderer(bid) {
@@ -270,6 +271,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['avantisvideo', 'selectmediavideo'],
   supportedMediaTypes: [VIDEO],
   isBidRequestValid,
