@@ -315,12 +315,7 @@ describe('VidazooBidAdapter', function () {
   describe('unique deal id', function () {
     const key = 'myKey';
     let uniqueDealId;
-
-    it('should get fresh unique deal id', function () {
-      const now = Date.now();
-      uniqueDealId = getUniqueDealId(key);
-      expect(uniqueDealId).to.be.equal(`${key}_${now.toString()}`);
-    });
+    uniqueDealId = getUniqueDealId(key);
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
