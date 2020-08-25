@@ -5,6 +5,7 @@
   "appnexusBidAdapter",
   "consentManagement",
   "consentManagementUsp",
+  "gdprEnforcement",
   "consumableBidAdapter",
   "dfpAdServerVideo",
   "emx_digitalBidAdapter",
