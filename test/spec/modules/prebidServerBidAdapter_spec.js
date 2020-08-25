@@ -547,6 +547,37 @@ describe('S2S Adapter', function () {
         expect(requestBid.user).to.not.exist;
       });
 
+      it('adds additional consent information to ortb2 request depending on presence of module', function () {
+        let ortb2Config = utils.deepClone(CONFIG);
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: ortb2Config };
+        config.setConfig(consentConfig);
+
+        let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+        gdprBidRequest[0].gdprConsent = {
+          consentString: 'abc123',
+          addtlConsent: 'superduperconsent',
+          gdprApplies: true
+        };
+
+        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(server.requests[0].requestBody);
+
+        expect(requestBid.regs.ext.gdpr).is.equal(1);
+        expect(requestBid.user.ext.consent).is.equal('abc123');
+        expect(requestBid.user.ext.ConsentedProvidersSettings.consented_providers).is.equal('superduperconsent');
+
+        config.resetConfig();
+        config.setConfig({ s2sConfig: CONFIG });
+
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        requestBid = JSON.parse(server.requests[1].requestBody);
+
+        expect(requestBid.regs).to.not.exist;
+        expect(requestBid.user).to.not.exist;
+      });
+
       it('check gdpr info gets added into cookie_sync request: have consent data', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
         cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
@@ -1126,7 +1157,7 @@ describe('S2S Adapter', function () {
         criteoId: '44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU',
         tdid: 'abc123',
         pubcid: '1234',
-        parrableid: '01.1563917337.test-eid',
+        parrableId: { eid: '01.1563917337.test-eid' },
         lipb: {
           lipbid: 'li-xyz',
           segments: ['segA', 'segB']

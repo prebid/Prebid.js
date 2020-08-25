@@ -26,6 +26,9 @@ describe('PubMatic adapter', function () {
   let bannerBidResponse;
   let videoBidResponse;
   let schainConfig;
+  let outstreamBidRequest;
+  let validOutstreamBidRequest;
+  let outstreamVideoBidResponse;
 
   beforeEach(function () {
     schainConfig = {
@@ -55,7 +58,7 @@ describe('PubMatic adapter', function () {
           }
         },
         params: {
-          publisherId: '301',
+          publisherId: '5670',
           adSlot: '/15671365/DMDemo@300x250:0',
           kadfloor: '1.2',
     		  pmzoneid: 'aabc, ddef',
@@ -656,7 +659,89 @@ describe('PubMatic adapter', function () {
           }]
         }]
       }
-    }
+    };
+    outstreamBidRequest =
+    [
+      {
+        code: 'video1',
+        mediaTypes: {
+          video: {
+            playerSize: [640, 480],
+            context: 'outstream'
+          }
+        },
+        bidder: 'pubmatic',
+        bidId: '47acc48ad47af5',
+        requestId: '0fb4905b-1234-4152-86be-c6f6d259ba99',
+        bidderRequestId: '1c56ad30b9b8ca8',
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+        params: {
+          publisherId: '5670',
+          outstreamAU: 'pubmatic-test',
+          adSlot: 'Div1@0x0', // ad_id or tagid
+          video: {
+            mimes: ['video/mp4', 'video/x-flv'],
+            skippable: true,
+            minduration: 5,
+            maxduration: 30
+          }
+        }
+      }
+    ];
+
+    validOutstreamBidRequest = {
+      auctionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+      auctionStart: 1585918458868,
+      bidderCode: 'pubmatic',
+      bidderRequestId: '47acc48ad47af5',
+      bids: [{
+        adUnitCode: 'video1',
+        auctionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+        bidId: '47acc48ad47af5',
+        bidRequestsCount: 1,
+        bidder: 'pubmatic',
+        bidderRequestId: '47acc48ad47af5',
+        mediaTypes: {
+          video: {
+            context: 'outstream'
+          }
+        },
+        params: {
+          publisherId: '5670',
+          outstreamAU: 'pubmatic-test',
+          adSlot: 'Div1@0x0', // ad_id or tagid
+          video: {
+            mimes: ['video/mp4', 'video/x-flv'],
+            skippable: true,
+            minduration: 5,
+            maxduration: 30
+          }
+        },
+        sizes: [[768, 432], [640, 480], [630, 360]],
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+      }],
+      start: 11585918458869,
+      timeout: 3000
+    };
+
+    outstreamVideoBidResponse = {
+      'body': {
+        'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+        'seatbid': [{
+          'bid': [{
+            'id': '0fb4905b-1234-4152-86be-c6f6d259ba99',
+            'impid': '47acc48ad47af5',
+            'price': 1.3,
+            'adm': '<VAST version="3.0"><Ad id="601364"><InLine><AdSystem>Acudeo Compatible</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Impression><![CDATA[http://172.16.4.213/AdServer/AdDisplayTrackerServlet?operId=1&pubId=5890&siteId=47163&adId=1405268&adType=13&adServerId=243&kefact=70.000000&kaxefact=70.000000&kadNetFrequecy=0&kadwidth=0&kadheight=0&kadsizeid=97&kltstamp=1529929473&indirectAdId=0&adServerOptimizerId=2&ranreq=0.1&kpbmtpfact=100.000000&dcId=1&tldId=0&passback=0&svr=MADS1107&ekefact=Ad8wW91TCwCmdG0jlfjXn7Tyzh20hnTVx-m5DoNSep-RXGDr&ekaxefact=Ad8wWwRUCwAGir4Zzl1eF0bKiC-qrCV0D0yp_eE7YizB_BQk&ekpbmtpfact=Ad8wWxRUCwD7qgzwwPE2LnS5-Ou19uO5amJl1YT6-XVFvQ41&imprId=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&oid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&crID=creative-1_1_2&ucrid=160175026529250297&campaignId=17050&creativeId=0&pctr=0.000000&wDSPByrId=511&wDspId=6&wbId=0&wrId=0&wAdvID=3170&isRTB=1&rtbId=EBCA079F-8D7C-45B8-B733-92951F670AA1&pmZoneId=zone1&pageURL=www.yahoo.com&lpu=ae.com]]></Impression><Impression>https://dsptracker.com/{PSPM}</Impression><Error><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&er=[ERRORCODE]]]></Error><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID="601364"><Linear skipoffset="20%"><TrackingEvents><Tracking event="close"><![CDATA[https://mytracking.com/linear/close]]></Tracking><Tracking event="skip"><![CDATA[https://mytracking.com/linear/skip]]></Tracking><Tracking event="creativeView"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=1]]></Tracking><Tracking event="start"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=2]]></Tracking><Tracking event="midpoint"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=3]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=4]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=5]]></Tracking><Tracking event="complete"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=6]]></Tracking></TrackingEvents><Duration>00:00:04</Duration><VideoClicks><ClickTracking><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=99]]></ClickTracking><ClickThrough>https://www.pubmatic.com</ClickThrough></VideoClicks><MediaFiles><MediaFile delivery="progressive" type="video/mp4" bitrate="500" width="400" height="300" scalable="true" maintainAspectRatio="true"><![CDATA[https://stagingnyc.pubmatic.com:8443/video/Shashank/mediaFileHost/media/mp4-sample-2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>',
+            'h': 250,
+            'w': 300,
+            'ext': {
+              'deal_channel': 6
+            }
+          }]
+        }]
+      }
+    };
   });
 
   describe('implementation', function () {
@@ -725,7 +810,17 @@ describe('PubMatic adapter', function () {
   		  let request = spec.buildRequests(bidRequests);
         expect(request.url).to.equal('https://hbopenbid.pubmatic.com/translator?source=prebid-client');
         expect(request.method).to.equal('POST');
-  		});
+      });
+
+      it('should return bidderRequest property', function() {
+        let request = spec.buildRequests(bidRequests, validOutstreamBidRequest);
+        expect(request.bidderRequest).to.equal(validOutstreamBidRequest);
+      });
+
+      it('bidderRequest should be undefined if bidderRequest is not present', function() {
+        let request = spec.buildRequests(bidRequests);
+        expect(request.bidderRequest).to.be.undefined;
+      });
 
       it('test flag not sent when pubmaticTest=true is absent in page url', function() {
         let request = spec.buildRequests(bidRequests);
@@ -775,6 +870,23 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
+
+      it('Set content from config, set site.content', function() {
+        let sandbox = sinon.sandbox.create();
+        const content = {
+          'id': 'alpha-numeric-id'
+        };
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            content: content
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.site.content).to.deep.equal(content);
+        sandbox.restore();
+      });
 
       it('Merge the device info from config', function() {
         let sandbox = sinon.sandbox.create();
@@ -836,6 +948,62 @@ describe('PubMatic adapter', function () {
         expect(data.app.domain).to.equal('prebid.org');
         expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
         expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+        expect(data.site).to.not.exist;
+        sandbox.restore();
+      });
+
+      it('Set app, content from config, copy publisher and ext from site, unset site, config.content in app.content', function() {
+        let sandbox = sinon.sandbox.create();
+        const content = {
+          'id': 'alpha-numeric-id'
+        };
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            content: content,
+            app: {
+              bundle: 'org.prebid.mobile.demoapp',
+              domain: 'prebid.org'
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.app.bundle).to.equal('org.prebid.mobile.demoapp');
+        expect(data.app.domain).to.equal('prebid.org');
+        expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
+        expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+        expect(data.app.content).to.deep.equal(content);
+        expect(data.site).to.not.exist;
+        sandbox.restore();
+      });
+
+      it('Set app.content, content from config, copy publisher and ext from site, unset site, config.app.content in app.content', function() {
+        let sandbox = sinon.sandbox.create();
+        const content = {
+          'id': 'alpha-numeric-id'
+        };
+        const appContent = {
+          id: 'app-content-id-2'
+        };
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+          var config = {
+            content: content,
+            app: {
+              bundle: 'org.prebid.mobile.demoapp',
+              domain: 'prebid.org',
+              content: appContent
+            }
+          };
+          return config[key];
+        });
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.app.bundle).to.equal('org.prebid.mobile.demoapp');
+        expect(data.app.domain).to.equal('prebid.org');
+        expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
+        expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+        expect(data.app.content).to.deep.equal(appContent);
         expect(data.site).to.not.exist;
         sandbox.restore();
       });
@@ -1517,7 +1685,7 @@ describe('PubMatic adapter', function () {
         describe('Parrable Id', function() {
           it('send the Parrable id if it is present', function() {
             bidRequests[0].userId = {};
-            bidRequests[0].userId.parrableid = 'parrable-user-id';
+            bidRequests[0].userId.parrableId = { eid: 'parrable-user-id' };
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
@@ -1530,7 +1698,7 @@ describe('PubMatic adapter', function () {
             }]);
           });
 
-          it('do not pass if not string', function() {
+          it('do not pass if not object with eid key', function() {
             bidRequests[0].userId = {};
             bidRequests[0].userId.parrableid = 1;
             bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
@@ -2381,7 +2549,6 @@ describe('PubMatic adapter', function () {
       it('should check for valid video mediaType in case of multiformat request', function() {
         let request = spec.buildRequests(videoBidRequests);
         let response = spec.interpretResponse(videoBidResponse, request);
-
         expect(response[0].mediaType).to.equal('video');
       });
 
@@ -2390,6 +2557,36 @@ describe('PubMatic adapter', function () {
         let response = spec.interpretResponse(nativeBidResponse, request);
 
         expect(response[0].mediaType).to.equal('native');
+      });
+
+      it('should assign renderer if bid is video and request is for outstream', function() {
+        let request = spec.buildRequests(outstreamBidRequest, validOutstreamBidRequest);
+        let response = spec.interpretResponse(outstreamVideoBidResponse, request);
+        expect(response[0].renderer).to.exist;
+      });
+
+      it('should not assign renderer if bidderRequest is not present', function() {
+        let request = spec.buildRequests(outstreamBidRequest);
+        let response = spec.interpretResponse(outstreamVideoBidResponse, request);
+        expect(response[0].renderer).to.not.exist;
+      });
+
+      it('should not assign renderer if bid is video and request is for instream', function() {
+        let request = spec.buildRequests(videoBidRequests);
+        let response = spec.interpretResponse(videoBidResponse, request);
+        expect(response[0].renderer).to.not.exist;
+      });
+
+      it('should not assign renderer if bid is native', function() {
+        let request = spec.buildRequests(nativeBidRequests);
+        let response = spec.interpretResponse(nativeBidResponse, request);
+        expect(response[0].renderer).to.not.exist;
+      });
+
+      it('should not assign renderer if bid is of banner', function() {
+        let request = spec.buildRequests(bidRequests);
+        let response = spec.interpretResponse(bidResponses, request);
+        expect(response[0].renderer).to.not.exist;
       });
     });
 
