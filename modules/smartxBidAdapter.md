@@ -1,14 +1,19 @@
-Overview
+# Overview
+
+```
 Module Name: smartclip Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: adtech@smartclip.tv
-Description
-Connect to smartclip for bids.
+```
+
+# Description
+
+Connect to smartx for bids.
 
 This adapter requires setup and approval from the smartclip team.
 
-Test Parameters - Use case #1 - Out-Stream example and default rendering options
-
+# Test Parameters - Use case #1 - Out-Stream example and default rendering options
+```
     var adUnits = [{
         code: 'video1',
         mediaTypes: {
@@ -33,9 +38,10 @@ Test Parameters - Use case #1 - Out-Stream example and default rendering options
             }
         }],
     }];
+```
 
-Test Parameters - Use case #2 - Out-Stream with targeting example and default rendering options
-
+# Test Parameters - Use case #2 - Out-Stream with targeting example and default rendering options
+```
     var adUnits = [{
         code: 'video1',
         mediaTypes: {
@@ -79,9 +85,10 @@ Test Parameters - Use case #2 - Out-Stream with targeting example and default re
             }
         }]
     }];
+```
 
-Test Parameters - Use case #3 - In-Stream example and default rendering options
-
+# Test Parameters - Use case #3 - In-Stream example and default rendering options
+```
     var adUnits = [{
         code: 'video1',
         mediaTypes: {
@@ -103,9 +110,10 @@ Test Parameters - Use case #3 - In-Stream example and default rendering options
             }
         }],
     }];
+```
 
-Test Parameters - Use case #4 - In-Stream with targeting example and default rendering options
-
+# Test Parameters - Use case #4 - In-Stream with targeting example and default rendering options
+```
     var adUnits = [{
         code: 'video1',
         mediaTypes: {
@@ -148,3 +156,4 @@ Test Parameters - Use case #4 - In-Stream with targeting example and default ren
             }
         }],
     }];
+```
