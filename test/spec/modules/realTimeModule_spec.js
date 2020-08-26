@@ -6,20 +6,16 @@ import * as browsiRTD from '../../../modules/browsiRtdProvider.js';
 const validSM = {
   name: 'validSM',
   init: () => { return true },
-  getData: (adUnits, onDone) => {
-    setTimeout(() => {
-      return onDone({'key': 'validSM'})
-    }, 500)
+  addTargeting: (adUnits, onDone) => {
+    return onDone({'key': 'validSM'})
   }
 };
 
 const validSMWait = {
   name: 'validSMWait',
   init: () => { return true },
-  getData: (adUnits, onDone) => {
-    setTimeout(() => {
-      return onDone({'ad1': {'key': 'validSMWait'}})
-    }, 50)
+  addTargeting: (adUnits, onDone) => {
+    return onDone({'ad1': {'key': 'validSMWait'}})
   }
 };
 
@@ -39,7 +35,7 @@ const nonConfSM = {
 
 const conf = {
   'realTimeData': {
-    'auctionDelay': 250,
+    'timeout': 100,
     dataProviders: [
       {
         'name': 'validSMWait',
@@ -82,9 +78,9 @@ describe('Real time module', function () {
     rtdModule.attachRealTimeDataProvider(failureSM);
     rtdModule.attachRealTimeDataProvider(nonConfSM);
     rtdModule.attachRealTimeDataProvider(validSMWait);
+    rtdModule.init(config);
     rtdModule.initSubModules();
     expect(rtdModule.subModules).to.eql([validSMWait, validSM]);
-    rtdModule.init(config);
   });
 
   it('should only wait for must have sub modules', function (done) {
@@ -144,33 +140,12 @@ describe('Real time module', function () {
     }
     rtdModule.setTargetsAfterRequestBids(afterBidHook, []);
   });
-
-  it('check module using requestBidsHook', function (done) {
-    // set slot
-    const slotsB = makeSlot({ code: '/code1', divId: 'ad1' });
-    window.googletag.pubads().setSlots([slotsB]);
-    let adUnits = [getAdUnitMock('ad1')];
-
-    function afterBidHook(data) {
-      expect(slotsB.getTargeting().length).to.equal(1);
-      expect(slotsB.getTargeting()[0].key).to.equal('validSMWait');
-
-      data.adUnits.forEach(unit => {
-        unit.bids.forEach(bid => {
-          expect(bid.realTimeData).to.have.property('key');
-          expect(bid.realTimeData.key).to.equal('validSMWait');
-        });
-      });
-      done();
-    }
-    rtdModule.requestBidsHook(afterBidHook, { adUnits: adUnits });
-  });
 });
 
 describe('browsi Real time  data sub module', function () {
   const conf = {
     'realTimeData': {
-      'auctionDelay': 250,
+      'timeout': 250,
       dataProviders: [{
         'name': 'browsi',
         'params': {
@@ -236,7 +211,7 @@ describe('browsi Real time  data sub module', function () {
   describe('should return data to RTD module', function () {
     it('should return empty if no ad units defined', function (done) {
       browsiRTD.setData({});
-      browsiRTD.browsiSubmodule.getData([], onDone);
+      browsiRTD.browsiSubmodule.addTargeting([], onDone);
       function onDone(data) {
         expect(data).to.eql({});
         done();
@@ -246,7 +221,7 @@ describe('browsi Real time  data sub module', function () {
     it('should return NA if no prediction for ad unit', function (done) {
       const adUnits = [getAdUnitMock('adMock')];
       browsiRTD.setData({});
-      browsiRTD.browsiSubmodule.getData(adUnits, onDone);
+      browsiRTD.browsiSubmodule.addTargeting(adUnits, onDone);
       function onDone(data) {
         expect(data).to.eql({adMock: {bv: 'NA'}});
         done();
@@ -261,7 +236,7 @@ describe('browsi Real time  data sub module', function () {
         pmd: undefined
       };
       browsiRTD.setData(data);
-      browsiRTD.browsiSubmodule.getData(adUnits, onDone);
+      browsiRTD.browsiSubmodule.addTargeting(adUnits, onDone);
       function onDone(data) {
         expect(data).to.eql({hasPrediction: {bv: '0.20'}});
         done();

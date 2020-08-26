@@ -8,9 +8,9 @@
  */
 
 /**
- * @function
+ * @function?
  * @summary return real time data
- * @name RtdSubmodule#getData
+ * @name RtdSubmodule#addTargeting
  * @param {AdUnit[]} adUnits
  * @param {function} onDone
  */
@@ -73,13 +73,6 @@
 
 /**
  * @interface ModuleConfig
- */
-
-/**
- * @property
- * @summary auction delay
- * @name ModuleConfig#auctionDelay
- * @type {number}
  */
 
 /**
@@ -162,15 +155,8 @@ export function init(config) {
     _moduleConfig = realTimeData;
     _dataProviders = realTimeData.dataProviders;
     setEventsListeners();
-    if (typeof (_moduleConfig.auctionDelay) === 'undefined') {
-      _moduleConfig.auctionDelay = 0;
-    }
     getGlobal().requestBids.before(requestBidsHook, 40);
-    // delay bidding process only if auctionDelay > 0
-    // if auction delay is > 0 use requestBidsHook
-    if (!_moduleConfig.auctionDelay > 0) {
-      getHook('bidsBackCallback').before(setTargetsAfterRequestBids);
-    }
+    getHook('bidsBackCallback').before(setTargetsAfterRequestBids);
   });
 }
 
@@ -226,14 +212,19 @@ export function getProviderData(adUnits, callback) {
    * all sub modules configured "waitForIt:true" answered (as long as there is at least one configured)
    */
 
-  const waitForSubModulesLength = subModules.filter(sm => sm.config && sm.config.waitForIt).length;
-  let callbacksExpected = waitForSubModulesLength || subModules.length;
+  const dataSubModules = subModules.filter(sm => typeof sm.addTargeting === 'function');
+  const waitForSubModulesLength = dataSubModules.filter(sm => !!(sm.config && sm.config.waitForIt)).length;
+  let callbacksExpected = waitForSubModulesLength || dataSubModules.length;
   const shouldWaitForAllSubModules = waitForSubModulesLength === 0;
   let dataReceived = {};
   let processDone = false;
-  const dataWaitTimeout = setTimeout(done, _moduleConfig.auctionDelay || _moduleConfig.timeout || DEF_TIMEOUT);
-  subModules.forEach(sm => {
-    sm.getData(adUnits, onDataReceived.bind(sm));
+  if (!dataSubModules.length || !adUnits) {
+    done();
+    return;
+  }
+  const dataWaitTimeout = setTimeout(done, _moduleConfig.timeout || DEF_TIMEOUT);
+  dataSubModules.forEach(sm => {
+    sm.addTargeting(adUnits, onDataReceived.bind(sm));
   });
 
   function onDataReceived(data) {
@@ -318,26 +309,13 @@ export function deepMerge(arr) {
 
 /**
  * run hook before bids request
- * get data from provider and set key values to primary ad server & bidders
+ * use hook to init submodules (after consent is set)
  * @param {function} fn - hook function
  * @param {Object} reqBidsConfigObj - request bids object
  */
 export function requestBidsHook(fn, reqBidsConfigObj) {
   initSubModules();
-  if (_moduleConfig.auctionDelay > 0) {
-    getProviderData(reqBidsConfigObj.adUnits || getGlobal().adUnits, (data) => {
-      if (data && Object.keys(data).length) {
-        const _mergedData = deepMerge(setDataOrderByProvider(subModules, data));
-        if (Object.keys(_mergedData).length) {
-          setDataForPrimaryAdServer(_mergedData);
-          addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, _mergedData);
-        }
-      }
-      return fn.call(this, reqBidsConfigObj);
-    });
-  } else {
-    return fn.call(this, reqBidsConfigObj);
-  }
+  return fn.call(this, reqBidsConfigObj);
 }
 
 /**
@@ -354,19 +332,6 @@ function setDataForPrimaryAdServer(data) {
       targeting.setTargetingForGPT(data, null);
     });
   }
-}
-
-/**
- * @param {AdUnit[]} adUnits
- *  @param {Object} data - key values to set
- */
-function addIdDataToAdUnitBids(adUnits, data) {
-  adUnits.forEach(adUnit => {
-    adUnit.bids = adUnit.bids.map(bid => {
-      const rd = data[adUnit.code] || {};
-      return Object.assign(bid, {realTimeData: rd});
-    })
-  });
 }
 
 module('realTimeData', attachRealTimeDataProvider);

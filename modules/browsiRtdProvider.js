@@ -13,7 +13,6 @@
  * @property {string} pubKey
  * @property {string} url
  * @property {?string} keyName
- * @property {?number} auctionDelay
  * @property {?number} timeout
  */
 
@@ -231,7 +230,7 @@ function evaluate(macro, divId, adUnit, replacer) {
  * @param {string} url server url with query params
  */
 function getPredictionsFromServer(url) {
-  let ajax = ajaxBuilder(_moduleParams.auctionDelay || _moduleParams.timeout);
+  let ajax = ajaxBuilder(_moduleParams.timeout);
 
   ajax(url,
     {
@@ -286,7 +285,7 @@ export const browsiSubmodule = {
    * @param {adUnit[]} adUnits
    * @param {function} onDone
    */
-  getData: sendDataToModule,
+  addTargeting: sendDataToModule,
   init: init
 };
 
@@ -300,7 +299,6 @@ export function beforeInit(config) {
       _moduleParams = realTimeData.dataProviders && realTimeData.dataProviders.filter(
         pr => pr.name && pr.name.toLowerCase() === 'browsi')[0].params;
       confListener();
-      _moduleParams.auctionDelay = realTimeData.auctionDelay;
       _moduleParams.timeout = realTimeData.timeout || DEF_TIMEOUT;
     } catch (e) {
       _moduleParams = {};
