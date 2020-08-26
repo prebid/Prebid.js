@@ -1349,7 +1349,7 @@ describe('the rubicon adapter', function () {
         describe('user id config', function() {
           it('should send tpid_tdid when userId defines tdid', function () {
             const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-            clonedBid.userIdAsEids = [createEid('adserver.org', { id: 'abcd-efgh-ijkl-mnop-1234', atype: 1 })];
+            clonedBid.userIdAsEids = [createEid('adserver.org', { id: 'abcd-efgh-ijkl-mnop-1234', atype: 1, ext: { rtiPartner: 'TDID' } })];
             clonedBid.userId = {
               tdid: 'abcd-efgh-ijkl-mnop-1234'
             };
