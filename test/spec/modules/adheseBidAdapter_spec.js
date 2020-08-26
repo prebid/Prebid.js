@@ -95,6 +95,14 @@ describe('AdheseAdapter', function () {
       expect(JSON.parse(req.data).parameters).to.deep.include({ 'ci': [ 'london', 'gent' ] });
     });
 
+    it('should filter out empty params', function () {
+      let req = spec.buildRequests([ bidWithParams({ 'aa': [], 'bb': null, 'cc': '', 'dd': [ '', '' ], 'ee': [ 0, 1, null ], 'ff': 0, 'gg': [ 'x', 'y', '' ] }) ], bidderRequest);
+
+      let params = JSON.parse(req.data).parameters;
+      expect(params).to.not.have.any.keys('aa', 'bb', 'cc', 'dd');
+      expect(params).to.deep.include({ 'ee': [ 0, 1 ], 'ff': [ 0 ], 'gg': [ 'x', 'y' ] });
+    });
+
     it('should include gdpr consent param', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
