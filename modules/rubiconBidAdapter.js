@@ -251,7 +251,8 @@ export const spec = {
       const bidUserIdAsEids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       if (bidUserIdAsEids) {
         utils.deepSetValue(data, 'user.ext.eids', []);
-        // UserID EID support for adserver, pubcommon, liveintent, liveramp, sharedid
+        // Array of supported id systems
+        // Note: liveintent and liveramp have a callback defined to set additional props using their EID values
         [
           'adserver.org',
           'pubcommon', {
@@ -1171,7 +1172,7 @@ export function hasValidSupplyChainParams(schain) {
   if (!schain.nodes) return isValid;
   isValid = schain.nodes.reduce((status, node) => {
     if (!status) return status;
-    return requiredFields.every(field => node[field]);
+    return requiredFields.every(field => node.hasOwnProperty(field));
   }, true);
   if (!isValid) utils.logError('Rubicon: required schain params missing');
   return isValid;
