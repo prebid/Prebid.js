@@ -1159,7 +1159,7 @@ export function hasValidSupplyChainParams(schain) {
   if (!schain.nodes) return isValid;
   isValid = schain.nodes.reduce((status, node) => {
     if (!status) return status;
-    return requiredFields.every(field => node[field]);
+    return requiredFields.every(field => node.hasOwnProperty(field));
   }, true);
   if (!isValid) utils.logError('Rubicon: required schain params missing');
   return isValid;
