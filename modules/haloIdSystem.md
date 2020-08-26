@@ -11,9 +11,8 @@ pbjs.setConfig({
         userIds: [{
             name: 'haloId',
             storage: {
-                name: 'haloid',
-                type: 'cookie',
-                expires: 30
+                name: 'auHaloId',
+                type: 'html5'
             }
         }]
     }

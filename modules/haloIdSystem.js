@@ -6,6 +6,9 @@
  */
 
 import {submodule} from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 /** @type {Submodule} */
 export const haloIdSubmodule = {
@@ -21,18 +24,27 @@ export const haloIdSubmodule = {
    * @returns {{haloid:string}}
    */
   getHaloId(callback) {
-    var script = document.createElement('script')
-    script.type = 'text/javascript';
+    if (storage.getDataFromLocalStorage('haloId')) {
+      let haloId = storage.getDataFromLocalStorage('haloId');
+      callback(haloId);
+    } else if (storage.getDataFromLocalStorage('auHaloId')) {
+      let haloId = {haloId: storage.getDataFromLocalStorage('auHaloId')};
+      callback(haloId);
+    } else {
+      var script = document.createElement('script')
+      script.type = 'text/javascript';
 
-    script.onload = function() {
-      callback(window.localStorage.getItem('auHaloId'));
+      script.onload = function() {
+        let haloId = {haloId: storage.getDataFromLocalStorage('auHaloId')};
+        callback(haloId);
+      }
+
+      script.src = 'https://id.halo.dev.ad.gt/api/v1/haloid';
+      document.getElementsByTagName('head')[0].appendChild(script);
     }
-
-    script.src = 'https://id.halo.dev.ad.gt/api/v1/haloid';
-    document.getElementsByTagName('head')[0].appendChild(script);
   },
   decode(value) {
-    return (value && typeof value['haloId'] === 'string') ? { 'haloId': value['haloId'] } : null;
+    return (value && typeof value['haloId'] === 'string') ? { 'haloId': value['haloId'] } : undefined;
   },
   /**
    * Performs action to obtain id and return a value in the callback's response argument
@@ -44,12 +56,10 @@ export const haloIdSubmodule = {
     if (submoduleConfigParams &&
         typeof submoduleConfigParams['getter'] == 'function') {
       let haloId = submoduleConfigParams.getter()
-      return {id: haloId}
+      return {haloId: haloId}
     }
 
-    haloIdSubmodule.getHaloId(function(haloId) {
-      return {id: haloId}
-    });
+    return {callback: haloIdSubmodule.getHaloId};
   }
 };
 

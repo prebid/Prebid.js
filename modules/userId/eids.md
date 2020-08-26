@@ -95,6 +95,13 @@ userIdAsEids = [
                 third: 'some-random-id-value'
              }
          }]
+    },
+    {
+        source: 'audigent.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
     }
 ]
 ```

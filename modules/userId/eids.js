@@ -110,6 +110,10 @@ const USER_IDS_CONFIG = {
         third: data.third
       } : undefined;
     }
+  },
+  'haloId': {
+    source: 'audigent.com',
+    atype: 1
   }
 };
 

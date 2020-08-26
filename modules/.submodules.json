@@ -11,13 +11,15 @@
     "criteoIdSystem",
     "netIdSystem",
     "identityLinkIdSystem",
-    "sharedIdSystem"
+    "sharedIdSystem",
+    "haloIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
     "dfpAdServerVideo"
   ],
   "rtdModule": [
-    "browsiRtdProvider"
+    "browsiRtdProvider",
+    "audigentRtdProvider"
   ]
 }
