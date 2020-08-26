@@ -78,6 +78,7 @@ describe('openx analytics adapter', function() {
     const bidRequestedOpenX = {
       auctionId: 'test-auction-id',
       auctionStart: CURRENT_TIME,
+      timeout: 2000,
       bids: [
         {
           adUnitCode: AD_UNIT_CODE,
@@ -100,6 +101,7 @@ describe('openx analytics adapter', function() {
     const bidRequestedCloseX = {
       auctionId: 'test-auction-id',
       auctionStart: CURRENT_TIME,
+      timeout: 1000,
       bids: [
         {
           adUnitCode: AD_UNIT_CODE,
@@ -465,6 +467,11 @@ describe('openx analytics adapter', function() {
       it('should track the timeout', function () {
         expect(openxBidRequest.timedOut).to.equal(true);
         expect(closexBidRequest.timedOut).to.equal(true);
+      });
+
+      it('should track the timeout value ie timeLimit', function () {
+        expect(openxBidRequest.timeLimit).to.equal(2000);
+        expect(closexBidRequest.timeLimit).to.equal(1000);
       });
     });
 
