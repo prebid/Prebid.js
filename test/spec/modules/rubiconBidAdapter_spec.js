@@ -1,5 +1,4 @@
 import {expect} from 'chai';
-import adapterManager from 'src/adapterManager.js';
 import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
@@ -419,7 +418,18 @@ describe('the rubicon adapter', function () {
         it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
           // default getFloor response is empty object so should not break and not send hard_floor
           bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          sinon.spy(bidderRequest.bids[0], 'getFloor');
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // make sure banner bid called with right stuff
+          expect(
+            bidderRequest.bids[0].getFloor.calledWith({
+              currency: 'USD',
+              mediaType: 'banner',
+              size: '*'
+            })
+          ).to.be.true;
+
           let data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.be.undefined;
 
@@ -1597,11 +1607,22 @@ describe('the rubicon adapter', function () {
           createVideoBidderRequest();
           // default getFloor response is empty object so should not break and not send hard_floor
           bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          sinon.spy(bidderRequest.bids[0], 'getFloor');
+
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // make sure banner bid called with right stuff
+          expect(
+            bidderRequest.bids[0].getFloor.calledWith({
+              currency: 'USD',
+              mediaType: 'video',
+              size: [640, 480]
+            })
+          ).to.be.true;
 
           // not an object should work and not send
           expect(request.data.imp[0].bidfloor).to.be.undefined;

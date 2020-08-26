@@ -550,8 +550,8 @@ export const spec = {
       try {
         floorInfo = bidRequest.getFloor({
           currency: 'USD',
-          mediaType: 'video',
-          size: parseSizes(bidRequest, 'video')
+          mediaType: 'banner',
+          size: '*'
         });
       } catch (e) {
         utils.logError('Rubicon: getFloor threw an error: ', e);
