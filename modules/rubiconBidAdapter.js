@@ -265,8 +265,7 @@ export const spec = {
           'liveramp.com',
           'sharedid.org'
         ].forEach(item => {
-          const source = (typeof item === 'string') ? item : item.source;
-          const eid = find(bidUserIdAsEids, i => i.source === source);
+          const eid = find(bidUserIdAsEids, i => i.source === (typeof item === 'string' ? item : item.source));
           if (eid) {
             data.user.ext.eids.push(eid);
             if (typeof item.callback === 'function') {
