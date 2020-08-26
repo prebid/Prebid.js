@@ -249,28 +249,23 @@ export const spec = {
       }
 
       const bidUserIdAsEids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
-      // if property exists, it is a array with at least one element (set by a function from userId/eids.js called from userId/index.js)
       if (bidUserIdAsEids) {
-        const getEid = (source, callback) => {
-          return { source, callback };
-        };
-
         utils.deepSetValue(data, 'user.ext.eids', []);
-
         // UserID EID support for adserver, pubcommon, liveintent, liveramp, sharedid
         [
-          getEid('adserver.org'),
-          getEid('pubcommon'),
-          getEid('liveintent.com', function (data, eid) {
-            data.user.ext.tpid = { source: eid.source, uid: eid.uids[0].id };
-            if (eid.ext && eid.ext.segments) {
-              utils.deepSetValue(data, 'rp.target.LIseg', eid.ext.segments);
-            }
-          }),
-          getEid('liveramp.com'),
-          getEid('sharedid.org')
-        ].forEach(function (item) {
-          const eid = find(bidUserIdAsEids, (i) => i.source === item.source);
+          { source: 'adserver.org' },
+          { source: 'pubcommon' },
+          { source: 'liveintent.com',
+            callback: (data, eid) => {
+              data.user.ext.tpid = { source: eid.source, uid: eid.uids[0].id };
+              if (eid.ext && eid.ext.segments) {
+                utils.deepSetValue(data, 'rp.target.LIseg', eid.ext.segments);
+              }
+            }},
+          { source: 'liveramp.com' },
+          { source: 'sharedid.org' }
+        ].forEach(item => {
+          const eid = find(bidUserIdAsEids, i => i.source === item.source);
           if (eid) {
             data.user.ext.eids.push(eid);
             if (typeof item.callback === 'function') {
