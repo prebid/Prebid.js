@@ -251,23 +251,15 @@ export const spec = {
       const bidUserIdAsEids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       // if property exists, it is a array with at least one element (set by a function from userId/eids.js called from userId/index.js)
       if (bidUserIdAsEids) {
-        /**
-         * @param {string} source
-         * @param {function} update
-         * @return {{source: string, update: (function|undefined)}}
-         */
-        const getEid = function (source, update) {
-          const eid = { source };
-          if (typeof update === 'function') {
-            eid.update = update;
-          }
-          return eid;
-        }
+        const getEid = (source, callback) => {
+          return { source, callback };
+        };
 
         utils.deepSetValue(data, 'user.ext.eids', []);
 
         // UserID EID support for adserver, pubcommon, liveintent, liveramp, sharedid
-        [ getEid('adserver.org'),
+        [
+          getEid('adserver.org'),
           getEid('pubcommon'),
           getEid('liveintent.com', function (data, eid) {
             data.user.ext.tpid = { source: eid.source, uid: eid.uids[0].id };
@@ -277,18 +269,13 @@ export const spec = {
           }),
           getEid('liveramp.com'),
           getEid('sharedid.org')
-        ].forEach(function (eidSource) {
-          const eid = find(bidUserIdAsEids, function (i) {
-            return i.source === eidSource.source;
-          });
-
+        ].forEach(function (item) {
+          const eid = find(bidUserIdAsEids, (i) => i.source === item.source);
           if (eid) {
-            if (typeof eidSource.update === 'function') {
-              // console.log('HERE: if (typeof eidSource.update === \'function\') {', eid);
-              eidSource.update(data, eid);
-            }
             data.user.ext.eids.push(eid);
-            // console.log('data.user.ext.eids', data.user.ext.eids);
+            if (typeof item.callback === 'function') {
+              item.callback(data, eid);
+            }
           }
         });
       }
