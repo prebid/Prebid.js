@@ -254,15 +254,20 @@ export const spec = {
         // UserID EID support for adserver, pubcommon, liveintent, liveramp, sharedid
         [
           'adserver.org',
-          'pubcommon',
-          { source: 'liveintent.com',
+          'pubcommon', {
+            source: 'liveintent.com',
             callback: (data, eid) => {
               data.user.ext.tpid = { source: eid.source, uid: eid.uids[0].id };
               if (eid.ext && eid.ext.segments) {
                 utils.deepSetValue(data, 'rp.target.LIseg', eid.ext.segments);
               }
-            }},
-          'liveramp.com',
+            }
+          }, {
+            source: 'liveramp.com',
+            callback: (data, eid) => {
+              utils.deepSetValue(data, 'user.ext.liveramp_idl', eid.uids[0].id)
+            }
+          },
           'sharedid.org'
         ].forEach(item => {
           const eid = find(bidUserIdAsEids, i => i.source === (typeof item === 'string' ? item : item.source));
