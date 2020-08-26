@@ -232,7 +232,7 @@ function getStoredValue(storage, key = undefined) {
  * @param consentData
  * @returns {{apiVersion: number, gdprApplies: boolean, consentString: string}}
  */
-function makeStoredConsentDataObject(consentData) {
+function makeStoredConsentDataHash(consentData) {
   const storedConsentData = {
     consentString: '',
     gdprApplies: false,
@@ -244,8 +244,7 @@ function makeStoredConsentDataObject(consentData) {
     storedConsentData.gdprApplies = consentData.gdprApplies;
     storedConsentData.apiVersion = consentData.apiVersion;
   }
-
-  return storedConsentData;
+  return utils.cyrb53Hash(JSON.stringify(storedConsentData));
 }
 
 /**
@@ -255,7 +254,7 @@ function makeStoredConsentDataObject(consentData) {
 export function setStoredConsentData(consentData) {
   try {
     const expiresStr = (new Date(Date.now() + (CONSENT_DATA_COOKIE_STORAGE_CONFIG.expires * (60 * 60 * 24 * 1000)))).toUTCString();
-    coreStorage.setCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name, JSON.stringify(makeStoredConsentDataObject(consentData)), expiresStr, 'Lax');
+    coreStorage.setCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name, makeStoredConsentDataHash(consentData), expiresStr, 'Lax');
   } catch (error) {
     utils.logError(error);
   }
@@ -266,13 +265,11 @@ export function setStoredConsentData(consentData) {
  * @returns {string}
  */
 function getStoredConsentData() {
-  let storedValue;
   try {
-    storedValue = JSON.parse(coreStorage.getCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name));
+    return coreStorage.getCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name);
   } catch (e) {
     utils.logError(e);
   }
-  return storedValue;
 }
 
 /**
@@ -287,7 +284,7 @@ function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
   return (
     typeof storedConsentData === 'undefined' ||
     storedConsentData === null ||
-    utils.deepEqual(storedConsentData, makeStoredConsentDataObject(consentData))
+    storedConsentData === makeStoredConsentDataHash(consentData)
   );
 }
 
