@@ -5,9 +5,17 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const RUBICON_GVL_ID = 52;
+const storage = getStorageManager(RUBICON_GVL_ID, 'rubicon');
+const COOKIE_NAME = 'rpaSession';
+const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
+const END_EXPIRE_TIME = 21600000; // 6 hours
 
 const {
   EVENTS: {
+    REQUEST_BIDS,
     AUCTION_INIT,
     AUCTION_END,
     BID_REQUESTED,
@@ -15,7 +23,8 @@ const {
     BIDDER_DONE,
     BID_TIMEOUT,
     BID_WON,
-    SET_TARGETING
+    SET_TARGETING,
+    TCF2_ENFORCEMENT
   },
   STATUS: {
     GOOD,
@@ -38,6 +47,7 @@ const cache = {
   auctions: {},
   targeting: {},
   timeouts: {},
+  gpt: {},
 };
 
 export function getHostNameFromReferer(referer) {
@@ -126,7 +136,7 @@ function sendMessage(auctionId, bidWonId) {
     });
   }
   let auctionCache = cache.auctions[auctionId];
-  let referrer = config.getConfig('pageUrl') || auctionCache.referrer;
+  let referrer = config.getConfig('pageUrl') || auctionCache && auctionCache.referrer;
   let message = {
     eventTimeMillis: Date.now(),
     integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
@@ -149,7 +159,8 @@ function sendMessage(auctionId, bidWonId) {
           'mediaTypes',
           'dimensions',
           'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
-          'adSlot'
+          'gam',
+          'pbAdSlot'
         ]);
         adUnit.bids = [];
         adUnit.status = 'no-bid'; // default it to be no bid
@@ -213,6 +224,26 @@ function sendMessage(auctionId, bidWonId) {
           'floorProvider as provider'
         ]);
       }
+    }
+
+    // gather gdpr info
+    if (auctionCache.gdprConsent) {
+      auction.gdpr = utils.pick(auctionCache.gdprConsent, [
+        'gdprApplies as applies',
+        'consentString',
+        'apiVersion as version'
+      ]);
+    }
+
+    // gather session info
+    if (auctionCache.session) {
+      message.session = utils.pick(auctionCache.session, [
+        'id',
+        'pvid',
+        'start',
+        'expires'
+      ]);
+      auction.fpkvs = auctionCache.session.fpkvs || undefined;
     }
 
     if (serverConfig) {
@@ -300,6 +331,19 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
   ]);
 }
 
+function getDynamicKvps() {
+  if (pbjs.rp && typeof pbjs.rp.getCustomTargeting === 'function') {
+    return pbjs.rp.getCustomTargeting();
+  }
+  return {};
+}
+
+function getPageViewId() {
+  if (pbjs.rp && typeof pbjs.rp.getPageViewId === 'function') {
+    return pbjs.rp.getPageViewId();
+  }
+}
+
 let samplingFactor = 1;
 let accountId;
 // List of known rubicon aliases
@@ -315,6 +359,73 @@ function setRubiconAliases(aliasRegistry) {
     if (aliasRegistry[alias] === 'rubicon') {
       rubiconAliases.push(alias);
     }
+  });
+}
+
+function getRpaCookie() {
+  let encodedCookie = storage.getCookie(COOKIE_NAME);
+  if (encodedCookie) {
+    try {
+      return JSON.parse(window.atob(encodedCookie));
+    } catch (e) {
+      utils.logError('Rubicon Analytics: Unable to decode: ', e);
+    }
+  }
+  return {};
+}
+
+function setRpaCookie(decodedCookie) {
+  try {
+    storage.setCookie(COOKIE_NAME, window.btoa(JSON.stringify(decodedCookie)));
+  } catch (e) {
+    utils.logError('Rubicon Analytics: Unable to encode: ', e);
+  }
+}
+
+function updateRpaCookie() {
+  const currentTime = Date.now();
+  let decodedRpaCookie = getRpaCookie();
+  if (
+    !Object.keys(decodedRpaCookie).length ||
+    (decodedRpaCookie.lastSeen - currentTime) > LAST_SEEN_EXPIRE_TIME ||
+    decodedRpaCookie.expires < currentTime
+  ) {
+    decodedRpaCookie = {
+      id: utils.generateUUID(),
+      start: currentTime,
+      expires: currentTime + END_EXPIRE_TIME, // six hours later,
+    }
+  }
+  // possible that decodedRpaCookie is undefined, and if it is, we probably are blocked by storage or some other exception 
+  if (Object.keys(decodedRpaCookie).length) {
+    decodedRpaCookie.lastSeen = currentTime;
+    decodedRpaCookie.fpkvs = {...decodedRpaCookie.fpkvs, ...getDynamicKvps()};
+    decodedRpaCookie.pvid = getPageViewId();
+    setRpaCookie(decodedRpaCookie)
+  }
+  return decodedRpaCookie;
+}
+
+function subscribeToGamSlots() {
+  window.googletag.pubads().addEventListener('slotRenderEnded', event => {
+    const isMatchingAdSlot = utils.isAdUnitCodeMatchingSlot(event.slot);
+    // loop through auctions and adUnits and mark the info
+    Object.keys(cache.auctions).forEach(auctionId => {
+      (Object.keys(cache.auctions[auctionId].bids) || []).forEach(bidId => {
+        let bid = cache.auctions[auctionId].bids[bidId];
+        // if this slot matches this bids adUnit, add the adUnit info
+        if (isMatchingAdSlot(bid.adUnit.adUnitCode)) {
+          bid.adUnit.gam = utils.pick(event, [
+            // these come in as `null` from Gpt, which when stringified does not get removed
+            // so set explicitly to undefined when not a number
+            'advertiserId', advertiserId => utils.isNumber(advertiserId) ? advertiserId : undefined,
+            'creativeId', creativeId => utils.isNumber(creativeId) ? creativeId : undefined,
+            'lineItemId', lineItemId => utils.isNumber(lineItemId) ? lineItemId : undefined,
+            'adSlot', () => event.slot.getAdUnitPath()
+          ]);
+        }
+      });
+    });
   });
 }
 
@@ -367,7 +478,14 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   },
   track({eventType, args}) {
     switch (eventType) {
+      case REQUEST_BIDS:
+        console.log('THE REQUEST_BIDS args are: ', args);
+        break;
       case AUCTION_INIT:
+        // register to listen to gpt events if not done yet
+        if (!cache.gpt.registered && utils.isGptPubadsDefined()) {
+          subscribeToGamSlots();
+        }
         // set the rubicon aliases
         setRubiconAliases(adapterManager.aliasRegistry);
         let cacheEntry = utils.pick(args, [
@@ -376,11 +494,13 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         ]);
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
-        cacheEntry.referrer = args.bidderRequests[0].refererInfo.referer;
+        cacheEntry.referrer = utils.deepAccess(args, 'bidderRequests[0].refererInfo.referer');
         const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (floorData) {
           cacheEntry.floorData = {...floorData};
         }
+        cacheEntry.gdprConsent = utils.deepAccess(args, 'bidderRequests.0.gdprConsent');
+        cacheEntry.session = updateRpaCookie();
         cache.auctions[args.auctionId] = cacheEntry;
         break;
       case BID_REQUESTED:
@@ -452,6 +572,12 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                 }
                 return ['banner'];
               },
+              'gam', () => {
+                if (utils.deepAccess(bid, 'fpd.context.adServer.name') === 'gam') {
+                  return {adSlot: bid.fpd.context.adServer.adSlot}
+                }
+              },
+              'pbAdSlot', () => utils.deepAccess(bid, 'fpd.context.pbAdSlot')
             ])
           ]);
           return memo;
@@ -461,8 +587,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         let auctionEntry = cache.auctions[args.auctionId];
         let bid = auctionEntry.bids[args.requestId];
         // If floor resolved gptSlot but we have not yet, then update the adUnit to have the adSlot name
-        if (!utils.deepAccess(bid, 'adUnit.adSlot') && utils.deepAccess(args, 'floorData.matchedFields.gptSlot')) {
-          bid.adUnit.adSlot = args.floorData.matchedFields.gptSlot;
+        if (!utils.deepAccess(bid, 'adUnit.gam.adSlot') && utils.deepAccess(args, 'floorData.matchedFields.gptSlot')) {
+          utils.deepSetValue(bid, 'adUnit.gam.adSlot', args.floorData.matchedFields.gptSlot);
         }
         // if we have not set enforcements yet set it
         if (!utils.deepAccess(auctionEntry, 'floorData.enforcements') && utils.deepAccess(args, 'floorData.enforcements')) {
@@ -479,7 +605,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             delete bid.error; // it's possible for this to be set by a previous timeout
             break;
           case NO_BID:
-            bid.status = args.status === BID_REJECTED ? 'rejected' : 'no-bid';
+            bid.status = args.status === BID_REJECTED ? 'rejected-ipf' : 'no-bid';
             delete bid.error;
             break;
           default:
@@ -542,13 +668,17 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           };
         });
         break;
+      case TCF2_ENFORCEMENT:
+        console.log('THE TCF2_ENFORCEMENT args are: ', args);
+        break;
     }
   }
 });
 
 adapterManager.registerAnalyticsAdapter({
   adapter: rubiconAdapter,
-  code: 'rubicon'
+  code: 'rubicon',
+  gvlid: RUBICON_GVL_ID
 });
 
 export default rubiconAdapter;

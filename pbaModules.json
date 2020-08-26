@@ -1,0 +1,10 @@
+[
+  "rubiconBidAdapter",
+  "appnexusBidAdapter",
+  "rubiconAnalyticsAdapter",
+  "prebidServerBidAdapter",
+  "currency",
+  "priceFloors",
+  "consentManagement",
+  "gdprEnforcement"
+]

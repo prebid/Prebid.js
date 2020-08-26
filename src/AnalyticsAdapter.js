@@ -18,7 +18,8 @@ const {
     BIDDER_DONE,
     SET_TARGETING,
     AD_RENDER_FAILED,
-    ADD_AD_UNITS
+    ADD_AD_UNITS,
+    TCF2_ENFORCEMENT
   }
 } = CONSTANTS;
 
@@ -101,6 +102,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       // Next register event listeners to send data immediately
 
       _handlers = {
+        [TCF2_ENFORCEMENT]: args => this.enqueue({ eventType: TCF2_ENFORCEMENT, args }),
         [REQUEST_BIDS]: args => this.enqueue({ eventType: REQUEST_BIDS, args }),
         [BID_REQUESTED]: args => this.enqueue({ eventType: BID_REQUESTED, args }),
         [BID_RESPONSE]: args => this.enqueue({ eventType: BID_RESPONSE, args }),
