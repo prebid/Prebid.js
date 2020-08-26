@@ -316,6 +316,12 @@ export const spec = {
         }
       }
 
+      // set user.id value from config value
+      const configUserId = config.getConfig('user.id');
+      if (configUserId) {
+        utils.deepSetValue(data, 'user.id', configUserId);
+      }
+
       if (config.getConfig('coppa') === true) {
         utils.deepSetValue(data, 'regs.coppa', 1);
       }
@@ -585,6 +591,12 @@ export const spec = {
       if (bidRequest.userId.sharedid) {
         data['eid_sharedid.org'] = `${bidRequest.userId.sharedid.id}^3^${bidRequest.userId.sharedid.third}`;
       }
+    }
+
+    // set ppuid value from config value
+    const configUserId = config.getConfig('user.id');
+    if (configUserId) {
+      data['ppuid'] = configUserId;
     }
 
     if (bidderRequest.gdprConsent) {
