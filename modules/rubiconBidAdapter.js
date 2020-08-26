@@ -253,8 +253,8 @@ export const spec = {
         utils.deepSetValue(data, 'user.ext.eids', []);
         // UserID EID support for adserver, pubcommon, liveintent, liveramp, sharedid
         [
-          { source: 'adserver.org' },
-          { source: 'pubcommon' },
+          'adserver.org',
+          'pubcommon',
           { source: 'liveintent.com',
             callback: (data, eid) => {
               data.user.ext.tpid = { source: eid.source, uid: eid.uids[0].id };
@@ -262,10 +262,11 @@ export const spec = {
                 utils.deepSetValue(data, 'rp.target.LIseg', eid.ext.segments);
               }
             }},
-          { source: 'liveramp.com' },
-          { source: 'sharedid.org' }
+          'liveramp.com',
+          'sharedid.org'
         ].forEach(item => {
-          const eid = find(bidUserIdAsEids, i => i.source === item.source);
+          const source = (typeof item === 'string') ? item : item.source;
+          const eid = find(bidUserIdAsEids, i => i.source === source);
           if (eid) {
             data.user.ext.eids.push(eid);
             if (typeof item.callback === 'function') {
