@@ -6,5 +6,6 @@
   "currency",
   "priceFloors",
   "consentManagement",
-  "gdprEnforcement"
+  "gdprEnforcement",
+  "gptPreAuction"
 ]
