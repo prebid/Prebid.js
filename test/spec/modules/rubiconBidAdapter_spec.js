@@ -951,7 +951,7 @@ describe('the rubicon adapter', function () {
             expect(data['gdpr_consent']).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           });
 
-          it('should send only "gdpr_consent", when gdprConsent defines only  consentString', function () {
+          it('should send only "gdpr_consent", when gdprConsent defines only consentString', function () {
             createGdprBidderRequest();
             let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             let data = parseQuery(request.data);
@@ -1624,27 +1624,30 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          // EIDs should exist
+          expect(post.user.ext).to.have.property('eids').that.is.an('array');
           // LiveIntent should exist
           expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
           expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
           expect(post.user.ext.eids[0].uids[0].atype).to.equal(1);
-          expect(post.user.ext.eids[0].ext).that.is.an('object');
-          expect(post.user.ext.eids[0].ext.segments).that.is.an('array');
+          expect(post.user.ext.eids[0]).to.have.property('ext').that.is.an('object');
+          expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
           expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
           expect(post.user.ext.eids[0].ext.segments[1]).to.equal('segB');
           // Non-EID properties set using liveintent EID values
-          expect(post.user.ext.tpid).that.is.an('object');
+          expect(post.user.ext).to.have.property('tpid').that.is.an('object');
           expect(post.user.ext.tpid.source).to.equal('liveintent.com');
           expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
-          expect(post.rp).that.is.an('object');
-          expect(post.rp.target).that.is.an('object');
-          expect(post.rp.target.LIseg).that.is.an('array');
+          expect(post).to.have.property('rp').that.is.an('object');
+          expect(post.rp).to.have.property('target').that.is.an('object');
+          expect(post.rp.target).to.have.property('LIseg').that.is.an('array');
           expect(post.rp.target.LIseg[0]).to.equal('segA');
           expect(post.rp.target.LIseg[1]).to.equal('segB');
           // LiveRamp should exist
           expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.user.ext.eids[1].uids[0].atype).to.equal(1);
+          expect(post.user.ext).to.have.property('liveramp_idl').that.is.an('string');
           expect(post.user.ext.liveramp_idl).to.equal('1111-2222-3333-4444');
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
