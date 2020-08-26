@@ -641,6 +641,9 @@ const OPEN_RTB_PROTOCOL = {
         }
         utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
         utils.deepSetValue(request, 'user.ext.consent', firstBidRequest.gdprConsent.consentString);
+        if (firstBidRequest.gdprConsent.addtlConsent && typeof firstBidRequest.gdprConsent.addtlConsent === 'string') {
+          utils.deepSetValue(request, 'user.ext.ConsentedProvidersSettings.consented_providers', firstBidRequest.gdprConsent.addtlConsent);
+        }
       }
 
       // US Privacy (CCPA) support

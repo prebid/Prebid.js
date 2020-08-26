@@ -124,6 +124,10 @@ const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const DEFAULT_SYNC_DELAY = 500;
 const NO_AUCTION_DELAY = 0;
+const CONSENT_DATA_COOKIE_STORAGE_CONFIG = {
+  name: '_pbjs_userid_consent_data',
+  expires: 30 // 30 days expiration, which should match how often consent is refreshed by CMPs
+};
 export const coreStorage = getCoreStorageManager('userid');
 
 /** @type {string[]} */
@@ -222,6 +226,69 @@ function getStoredValue(storage, key = undefined) {
 }
 
 /**
+ * makes an object that can be stored with only the keys we need to check.
+ * excluding the vendorConsents object since the consentString is enough to know
+ * if consent has changed without needing to have all the details in an object
+ * @param consentData
+ * @returns {{apiVersion: number, gdprApplies: boolean, consentString: string}}
+ */
+function makeStoredConsentDataHash(consentData) {
+  const storedConsentData = {
+    consentString: '',
+    gdprApplies: false,
+    apiVersion: 0
+  };
+
+  if (consentData) {
+    storedConsentData.consentString = consentData.consentString;
+    storedConsentData.gdprApplies = consentData.gdprApplies;
+    storedConsentData.apiVersion = consentData.apiVersion;
+  }
+  return utils.cyrb53Hash(JSON.stringify(storedConsentData));
+}
+
+/**
+ * puts the current consent data into cookie storage
+ * @param consentData
+ */
+export function setStoredConsentData(consentData) {
+  try {
+    const expiresStr = (new Date(Date.now() + (CONSENT_DATA_COOKIE_STORAGE_CONFIG.expires * (60 * 60 * 24 * 1000)))).toUTCString();
+    coreStorage.setCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name, makeStoredConsentDataHash(consentData), expiresStr, 'Lax');
+  } catch (error) {
+    utils.logError(error);
+  }
+}
+
+/**
+ * get the stored consent data from local storage, if any
+ * @returns {string}
+ */
+function getStoredConsentData() {
+  try {
+    return coreStorage.getCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name);
+  } catch (e) {
+    utils.logError(e);
+  }
+}
+
+/**
+ * test if the consent object stored locally matches the current consent data.
+ * if there is nothing in storage, return true and we'll do an actual comparison next time.
+ * this way, we don't force a refresh for every user when this code rolls out
+ * @param storedConsentData
+ * @param consentData
+ * @returns {boolean}
+ */
+function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
+  return (
+    typeof storedConsentData === 'undefined' ||
+    storedConsentData === null ||
+    storedConsentData === makeStoredConsentDataHash(consentData)
+  );
+}
+
+/**
  * test if consent module is present, applies, and is valid for local storage or cookies (purpose 1)
  * @param {ConsentData} consentData
  * @returns {boolean}
@@ -308,7 +375,7 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
 }
 
 /**
- * This is a common function that will initalize subModules if not already done and it will also execute subModule callbacks
+ * This is a common function that will initialize subModules if not already done and it will also execute subModule callbacks
  */
 function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
   let delayed = false;
@@ -411,6 +478,10 @@ export const validateGdprEnforcement = hook('sync', function (submodules, consen
  * @returns {SubmoduleContainer[]} initialized submodules
  */
 function initSubmodules(submodules, consentData) {
+  // we always want the latest consentData stored, even if we don't execute any submodules
+  const storedConsentData = getStoredConsentData();
+  setStoredConsentData(consentData);
+
   // gdpr consent with purpose one is required, otherwise exit immediately
   let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
   if (!hasValidated && !hasGDPRConsent(consentData)) {
@@ -432,8 +503,8 @@ function initSubmodules(submodules, consentData) {
         refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
       }
 
-      if (!storedId || refreshNeeded) {
-        // No previously saved id.  Request one from submodule.
+      if (!storedId || refreshNeeded || !storedConsentDataMatchesConsentData(storedConsentData, consentData)) {
+        // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
         response = submodule.submodule.getId(submodule.config.params, consentData, storedId);
       } else if (typeof submodule.submodule.extendId === 'function') {
         // If the id exists already, give submodule a chance to decide additional actions that need to be taken
@@ -569,7 +640,7 @@ export function init(config) {
     utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
     return;
   }
-  // _pubcid_optout is checked for compatiblility with pubCommonId
+  // _pubcid_optout is checked for compatibility with pubCommonId
   if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (coreStorage.getDataFromLocalStorage('_pbjs_id_optout') || coreStorage.getDataFromLocalStorage('_pubcid_optout'))) {
     utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
     return;
