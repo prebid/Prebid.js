@@ -1,3 +1,4 @@
+import find from 'core-js-pure/features/array/find.js';
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -247,73 +248,49 @@ export const spec = {
         utils.deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
-        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env || bidRequest.userId.sharedid)) {
+      const bidUserIdAsEids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+      // if property exists, it is a array with at least one element (set by a function from userId/eids.js called from userId/index.js)
+      if (bidUserIdAsEids) {
+        /**
+         * @param {string} source
+         * @param {function} update
+         * @return {{source: string, update: (function|undefined)}}
+         */
+        const getEid = function (source, update) {
+          const eid = { source };
+          if (typeof update === 'function') {
+            eid.update = update;
+          }
+          return eid;
+        }
+
         utils.deepSetValue(data, 'user.ext.eids', []);
 
-        if (bidRequest.userId.tdid) {
-          data.user.ext.eids.push({
-            source: 'adserver.org',
-            uids: [{
-              id: bidRequest.userId.tdid,
-              ext: {
-                rtiPartner: 'TDID'
-              }
-            }]
-          });
-        }
-
-        if (bidRequest.userId.pubcid) {
-          data.user.ext.eids.push({
-            source: 'pubcommon',
-            uids: [{
-              id: bidRequest.userId.pubcid,
-            }]
-          });
-        }
-
-        // support liveintent ID
-        if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-          data.user.ext.eids.push({
-            source: 'liveintent.com',
-            uids: [{
-              id: bidRequest.userId.lipb.lipbid
-            }]
+        // UserID EID support for adserver, pubcommon, liveintent, liveramp, sharedid
+        [ getEid('adserver.org'),
+          getEid('pubcommon'),
+          getEid('liveintent.com', function (data, eid) {
+            data.user.ext.tpid = { source: eid.source, uid: eid.uids[0].id };
+            if (eid.ext && eid.ext.segments) {
+              utils.deepSetValue(data, 'rp.target.LIseg', eid.ext.segments);
+            }
+          }),
+          getEid('liveramp.com'),
+          getEid('sharedid.org')
+        ].forEach(function (eidSource) {
+          const eid = find(bidUserIdAsEids, function (i) {
+            return i.source === eidSource.source;
           });
 
-          data.user.ext.tpid = {
-            source: 'liveintent.com',
-            uid: bidRequest.userId.lipb.lipbid
-          };
-
-          if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
-            utils.deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
+          if (eid) {
+            if (typeof eidSource.update === 'function') {
+              // console.log('HERE: if (typeof eidSource.update === \'function\') {', eid);
+              eidSource.update(data, eid);
+            }
+            data.user.ext.eids.push(eid);
+            // console.log('data.user.ext.eids', data.user.ext.eids);
           }
-        }
-
-        // support identityLink (aka LiveRamp)
-        if (bidRequest.userId.idl_env) {
-          data.user.ext.eids.push({
-            source: 'liveramp_idl',
-            uids: [{
-              id: bidRequest.userId.idl_env
-            }]
-          });
-        }
-
-        // support shared id
-        if (bidRequest.userId.sharedid) {
-          data.user.ext.eids.push({
-            source: 'sharedid.org',
-            uids: [{
-              id: bidRequest.userId.sharedid.id,
-              atype: 1,
-              ext: {
-                third: bidRequest.userId.sharedid.third
-              }
-            }]
-          });
-        }
+        });
       }
 
       if (config.getConfig('coppa') === true) {
