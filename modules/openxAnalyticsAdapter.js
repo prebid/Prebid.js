@@ -170,14 +170,15 @@ function isValidConfig({options: analyticsOptions}) {
 }
 
 function buildCampaignFromUtmCodes() {
+  const location = utils.getWindowLocation();
+  const queryParams = utils.parseQS(location && location.search);
   let campaign = {};
-  let queryParams = utils.parseQS(utils.getWindowLocation() && utils.getWindowLocation().search);
 
   UTM_TAGS.forEach(function(utmKey) {
     let utmValue = queryParams[utmKey];
     if (utmValue) {
       let key = UTM_TO_CAMPAIGN_PROPERTIES[utmKey];
-      campaign[key] = utmValue;
+      campaign[key] = decodeURIComponent(utmValue);
     }
   });
   return campaign;
