@@ -219,13 +219,12 @@ describe('the rubicon adapter', function () {
       'playerWidth': 640,
       'size_id': 201,
     };
-
     bid.userId = {
-      lipb: { lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB'] }, // 'liveintent.com' liveIntentId
-      idl_env: '1111-2222-3333-4444', // 'liveramp.com' identityLink
-      sharedid: { id: '1111', third: '2222' }, // 'sharedid.org' sharedId
-      tdid: '3000', // 'adserver.org' unifiedId
-      pubcid: '4000' // 'pubcid.org' pubCommonId
+      lipb: { lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB'] },
+      idl_env: '1111-2222-3333-4444',
+      sharedid: { id: '1111', third: '2222' },
+      tdid: '3000',
+      pubcid: '4000'
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
