@@ -1,5 +1,4 @@
 import {expect} from 'chai';
-import adapterManager from 'src/adapterManager.js';
 import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
@@ -419,7 +418,18 @@ describe('the rubicon adapter', function () {
         it('should correctly send hard floors when getFloor function is present and returns valid floor', function () {
           // default getFloor response is empty object so should not break and not send hard_floor
           bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          sinon.spy(bidderRequest.bids[0], 'getFloor');
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // make sure banner bid called with right stuff
+          expect(
+            bidderRequest.bids[0].getFloor.calledWith({
+              currency: 'USD',
+              mediaType: 'banner',
+              size: '*'
+            })
+          ).to.be.true;
+
           let data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.be.undefined;
 
@@ -1377,7 +1387,24 @@ describe('the rubicon adapter', function () {
               expect(data['eid_sharedid.org']).to.equal('1111^3^2222');
             });
           });
-        })
+
+          describe('Config user.id support', function () {
+            it('should send ppuid when config defines user.id', function () {
+              config.setConfig({ user: { id: '123' } });
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                sharedid: {
+                  id: '1111',
+                  third: '2222'
+                }
+              };
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['ppuid']).to.equal('123');
+            });
+          });
+        });
 
         describe('Prebid AdSlot', function () {
           beforeEach(function () {
@@ -1597,11 +1624,22 @@ describe('the rubicon adapter', function () {
           createVideoBidderRequest();
           // default getFloor response is empty object so should not break and not send hard_floor
           bidderRequest.bids[0].getFloor = () => getFloorResponse;
+          sinon.spy(bidderRequest.bids[0], 'getFloor');
+
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // make sure banner bid called with right stuff
+          expect(
+            bidderRequest.bids[0].getFloor.calledWith({
+              currency: 'USD',
+              mediaType: 'video',
+              size: [640, 480]
+            })
+          ).to.be.true;
 
           // not an object should work and not send
           expect(request.data.imp[0].bidfloor).to.be.undefined;
@@ -2002,6 +2040,75 @@ describe('the rubicon adapter', function () {
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
         });
+
+        it('should pass the user.id provided in the config', function () {
+          config.setConfig({ user: { id: '123' } });
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+
+          expect(post).to.have.property('imp')
+          // .with.length.of(1);
+          let imp = post.imp[0];
+          expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
+          expect(imp.exp).to.equal(300);
+          expect(imp.video.w).to.equal(640);
+          expect(imp.video.h).to.equal(480);
+          expect(imp.video.pos).to.equal(1);
+          expect(imp.video.context).to.equal('instream');
+          expect(imp.video.minduration).to.equal(15);
+          expect(imp.video.maxduration).to.equal(30);
+          expect(imp.video.startdelay).to.equal(0);
+          expect(imp.video.skip).to.equal(1);
+          expect(imp.video.skipafter).to.equal(15);
+          expect(imp.ext.rubicon.video.playerWidth).to.equal(640);
+          expect(imp.ext.rubicon.video.playerHeight).to.equal(480);
+          expect(imp.ext.rubicon.video.size_id).to.equal(201);
+          expect(imp.ext.rubicon.video.language).to.equal('en');
+          // Also want it to be in post.site.content.language
+          expect(post.site.content.language).to.equal('en');
+          expect(imp.ext.rubicon.video.skip).to.equal(1);
+          expect(imp.ext.rubicon.video.skipafter).to.equal(15);
+          expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
+          expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
+          expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
+          expect(post.user.ext.tpid).that.is.an('object');
+          expect(post.user.ext.tpid.source).to.equal('liveintent.com');
+          expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
+          // LiveRamp should exist
+          expect(post.user.ext.eids[1].source).to.equal('liveramp_idl');
+          expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
+          // SharedId should exist
+          expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
+          expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
+          expect(post.user.ext.eids[2].uids[0].atype).to.equal(3);
+          expect(post.user.ext.eids[2].uids[0].ext.third).to.equal('2222');
+
+          expect(post.rp).that.is.an('object');
+          expect(post.rp.target).that.is.an('object');
+          expect(post.rp.target.LIseg).that.is.an('array');
+          expect(post.rp.target.LIseg[0]).to.equal('segA');
+          expect(post.rp.target.LIseg[1]).to.equal('segB');
+
+          // Config user.id
+          expect(post.user.id).to.equal('123');
+
+          expect(post.regs.ext.gdpr).to.equal(1);
+          expect(post.regs.ext.us_privacy).to.equal('1NYN');
+          expect(post).to.have.property('ext').that.is.an('object');
+          expect(post.ext.prebid.targeting.includewinners).to.equal(true);
+          expect(post.ext.prebid).to.have.property('cache').that.is.an('object');
+          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object');
+          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
+          expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
+        })
       });
 
       describe('combineSlotUrlParams', function () {
