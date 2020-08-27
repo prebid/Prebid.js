@@ -219,16 +219,13 @@ describe('the rubicon adapter', function () {
       'playerWidth': 640,
       'size_id': 201,
     };
+
     bid.userId = {
-      lipb: {
-        lipbid: '0000-1111-2222-3333',
-        segments: ['segA', 'segB']
-      },
-      idl_env: '1111-2222-3333-4444',
-      sharedid: {
-        id: '1111',
-        third: '2222'
-      }
+      lipb: { lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB'] }, // 'liveintent.com' liveIntentId
+      idl_env: '1111-2222-3333-4444', // 'liveramp.com' identityLink
+      sharedid: { id: '1111', third: '2222' }, // 'sharedid.org' sharedId
+      tdid: '3000', // 'adserver.org' unifiedId
+      pubcid: '4000' // 'pubcid.org' pubCommonId
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
@@ -1627,6 +1624,14 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
           expect(post.user.ext.eids[2].uids[0].atype).to.equal(1);
           expect(post.user.ext.eids[2].uids[0].ext.third).to.equal('2222');
+          // UnifiedId should exist
+          expect(post.user.ext.eids[3].source).to.equal('adserver.org');
+          expect(post.user.ext.eids[3].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[3].uids[0].id).to.equal('3000');
+          // PubCommonId should exist
+          expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
+          expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
 
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');

@@ -251,7 +251,7 @@ export const spec = {
       const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       if (eids) {
         // filter out unsupported id systems
-        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcommon', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1));
+        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1));
         // liveintent and liveramp require additional props to be set
         const eidMap = {
           'liveintent.com': (data, eid) => {
