@@ -260,9 +260,7 @@ export const spec = {
               utils.deepSetValue(data, 'rp.target.LIseg', eid.ext.segments);
             }
           },
-          'liveramp.com': (data, eid) => {
-            utils.deepSetValue(data, 'user.ext.liveramp_idl', eid.uids[0].id);
-          }
+          'liveramp.com': (data, eid) => utils.deepSetValue(data, 'user.ext.liveramp_idl', eid.uids[0].id)
         };
         Object.keys(eidMap).forEach(key => {
           const eid = find(data.user.ext.eids, i => i.source === key);
