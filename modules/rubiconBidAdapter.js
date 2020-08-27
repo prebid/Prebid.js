@@ -248,35 +248,26 @@ export const spec = {
         utils.deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      const bidUserIdAsEids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
-      if (bidUserIdAsEids) {
-        utils.deepSetValue(data, 'user.ext.eids', []);
-        // Array of supported id systems
-        // Note: liveintent and liveramp have a callback defined to set additional props using their EID values
-        [
-          'adserver.org',
-          'pubcommon', {
-            source: 'liveintent.com',
-            callback: (data, eid) => {
-              data.user.ext.tpid = { source: eid.source, uid: eid.uids[0].id };
-              if (eid.ext && eid.ext.segments) {
-                utils.deepSetValue(data, 'rp.target.LIseg', eid.ext.segments);
-              }
-            }
-          }, {
-            source: 'liveramp.com',
-            callback: (data, eid) => {
-              utils.deepSetValue(data, 'user.ext.liveramp_idl', eid.uids[0].id)
+      const userIdAsEids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+      if (userIdAsEids) {
+        // filter out unsupported id systems
+        utils.deepSetValue(data, 'user.ext.eids', userIdAsEids.filter(i => ['adserver.org', 'pubcommon', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(i.source) !== -1));
+        // liveintent and liveramp require additional props besides eids to be set
+        const eidMap = {
+          'liveintent.com': (data, eid) => {
+            utils.deepSetValue(data, 'user.ext.tpid', { source: eid.source, uid: eid.uids[0].id });
+            if (eid.ext && eid.ext.segments) {
+              utils.deepSetValue(data, 'rp.target.LIseg', eid.ext.segments);
             }
           },
-          'sharedid.org'
-        ].forEach(item => {
-          const eid = find(bidUserIdAsEids, i => i.source === (typeof item === 'string' ? item : item.source));
+          'liveramp.com': (data, eid) => {
+            utils.deepSetValue(data, 'user.ext.liveramp_idl', eid.uids[0].id);
+          }
+        };
+        Object.keys(eidMap).forEach(key => {
+          const eid = find(data.user.ext.eids, i => i.source === key);
           if (eid) {
-            data.user.ext.eids.push(eid);
-            if (typeof item.callback === 'function') {
-              item.callback(data, eid);
-            }
+            eidMap[key](data, eid);
           }
         });
       }
