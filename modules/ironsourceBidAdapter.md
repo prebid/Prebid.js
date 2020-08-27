@@ -37,7 +37,7 @@ var adUnits = [
           }
         },
         bids: [{
-          bidder: 'ironSource',
+          bidder: 'ironsource',
           params: {
             isOrg: '56f91cd4d3e3660002000033', // Required
             floorPrice: 2.00, // Optional

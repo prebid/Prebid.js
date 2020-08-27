@@ -68,7 +68,8 @@ export const spec = {
     return {
       method: 'GET',
       url: `${ENDPOINT}/yp/${adslots}?${queryString}`,
-      validBidRequests: validBidRequests
+      validBidRequests: validBidRequests,
+      queryParams: query
     }
   },
 
@@ -80,6 +81,7 @@ export const spec = {
   interpretResponse: function (serverResponse, originalBidRequest) {
     const bidResponses = []
     const timestamp = Date.now()
+    const reqParams = originalBidRequest.queryParams
 
     originalBidRequest.validBidRequests.forEach(function (bidRequest) {
       if (!serverResponse.body) {
@@ -95,6 +97,8 @@ export const spec = {
         const customsize = bidRequest.params.adSize !== undefined ? parseSize(bidRequest.params.adSize) : primarysize
         const extId = bidRequest.params.extId !== undefined ? '&id=' + bidRequest.params.extId : ''
         const adType = matchedBid.adtype !== undefined ? matchedBid.adtype : ''
+        const gdprApplies = reqParams.gdpr ? '&gdpr=' + reqParams.gdpr : ''
+        const gdprConsent = reqParams.consent ? '&consent=' + reqParams.consent : ''
 
         const bidResponse = {
           requestId: bidRequest.bidId,
@@ -107,7 +111,7 @@ export const spec = {
           netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}"></script>`
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}"></script>`
         }
 
         if (isVideo(bidRequest, adType)) {
@@ -117,7 +121,7 @@ export const spec = {
             bidResponse.height = playersize[1]
           }
           bidResponse.mediaType = VIDEO
-          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}`
+          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}`
 
           if (isOutstream(bidRequest)) {
             const renderer = Renderer.install({
