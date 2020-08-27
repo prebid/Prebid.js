@@ -4,6 +4,7 @@ import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 const PBS_INTEGRATION = 'pbjs';
@@ -219,16 +220,13 @@ describe('the rubicon adapter', function () {
       'size_id': 201,
     };
     bid.userId = {
-      lipb: {
-        lipbid: '0000-1111-2222-3333',
-        segments: ['segA', 'segB']
-      },
+      lipb: { lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB'] },
       idl_env: '1111-2222-3333-4444',
-      sharedid: {
-        id: '1111',
-        third: '2222'
-      }
+      sharedid: { id: '1111', third: '2222' },
+      tdid: '3000',
+      pubcid: '4000'
     };
+    bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
   }
 
@@ -1323,6 +1321,7 @@ describe('the rubicon adapter', function () {
             clonedBid.userId = {
               tdid: 'abcd-efgh-ijkl-mnop-1234'
             };
+            clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
             let [request] = spec.buildRequests([clonedBid], bidderRequest);
             let data = parseQuery(request.data);
 
@@ -1337,6 +1336,7 @@ describe('the rubicon adapter', function () {
                   lipbid: '0000-1111-2222-3333'
                 }
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1351,6 +1351,7 @@ describe('the rubicon adapter', function () {
                   segments: ['segD', 'segE']
                 }
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               const unescapedData = unescape(request.data);
 
@@ -1365,6 +1366,7 @@ describe('the rubicon adapter', function () {
               clonedBid.userId = {
                 idl_env: '1111-2222-3333-4444'
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1381,6 +1383,7 @@ describe('the rubicon adapter', function () {
                   third: '2222'
                 }
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1590,25 +1593,44 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          // EIDs should exist
+          expect(post.user.ext).to.have.property('eids').that.is.an('array');
+          // LiveIntent should exist
           expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
           expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
-          expect(post.user.ext.tpid).that.is.an('object');
+          expect(post.user.ext.eids[0].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[0]).to.have.property('ext').that.is.an('object');
+          expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
+          expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
+          expect(post.user.ext.eids[0].ext.segments[1]).to.equal('segB');
+          // Non-EID properties set using liveintent EID values
+          expect(post.user.ext).to.have.property('tpid').that.is.an('object');
           expect(post.user.ext.tpid.source).to.equal('liveintent.com');
           expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
+          expect(post).to.have.property('rp').that.is.an('object');
+          expect(post.rp).to.have.property('target').that.is.an('object');
+          expect(post.rp.target).to.have.property('LIseg').that.is.an('array');
+          expect(post.rp.target.LIseg[0]).to.equal('segA');
+          expect(post.rp.target.LIseg[1]).to.equal('segB');
           // LiveRamp should exist
-          expect(post.user.ext.eids[1].source).to.equal('liveramp_idl');
+          expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
+          expect(post.user.ext.eids[1].uids[0].atype).to.equal(1);
+
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[2].uids[0].atype).to.equal(3);
+          expect(post.user.ext.eids[2].uids[0].atype).to.equal(1);
           expect(post.user.ext.eids[2].uids[0].ext.third).to.equal('2222');
+          // UnifiedId should exist
+          expect(post.user.ext.eids[3].source).to.equal('adserver.org');
+          expect(post.user.ext.eids[3].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[3].uids[0].id).to.equal('3000');
+          // PubCommonId should exist
+          expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
+          expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
 
-          expect(post.rp).that.is.an('object');
-          expect(post.rp.target).that.is.an('object');
-          expect(post.rp.target.LIseg).that.is.an('array');
-          expect(post.rp.target.LIseg[0]).to.equal('segA');
-          expect(post.rp.target.LIseg[1]).to.equal('segB');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
           expect(post).to.have.property('ext').that.is.an('object');
@@ -2076,25 +2098,6 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
-          expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
-          expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
-          expect(post.user.ext.tpid).that.is.an('object');
-          expect(post.user.ext.tpid.source).to.equal('liveintent.com');
-          expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
-          // LiveRamp should exist
-          expect(post.user.ext.eids[1].source).to.equal('liveramp_idl');
-          expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
-          // SharedId should exist
-          expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
-          expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[2].uids[0].atype).to.equal(3);
-          expect(post.user.ext.eids[2].uids[0].ext.third).to.equal('2222');
-
-          expect(post.rp).that.is.an('object');
-          expect(post.rp.target).that.is.an('object');
-          expect(post.rp.target.LIseg).that.is.an('array');
-          expect(post.rp.target.LIseg[0]).to.equal('segA');
-          expect(post.rp.target.LIseg[1]).to.equal('segB');
 
           // Config user.id
           expect(post.user.id).to.equal('123');
