@@ -1616,7 +1616,8 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.user.ext.eids[1].uids[0].atype).to.equal(1);
-
+          expect(post.user.ext).to.have.property('liveramp_idl').that.is.an('string');
+          expect(post.user.ext.liveramp_idl).to.equal('1111-2222-3333-4444');
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');

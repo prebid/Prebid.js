@@ -253,13 +253,17 @@ export const spec = {
         // filter out unsupported id systems
         utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1));
 
-        // liveintent requires additional props to be set
+        // liveramp and liveintent requires additional props to be set
         const liveIntentEid = find(data.user.ext.eids, eid => eid.source === 'liveintent.com');
         if (liveIntentEid) {
           utils.deepSetValue(data, 'user.ext.tpid', { source: liveIntentEid.source, uid: liveIntentEid.uids[0].id });
           if (liveIntentEid.ext && liveIntentEid.ext.segments) {
             utils.deepSetValue(data, 'rp.target.LIseg', liveIntentEid.ext.segments);
           }
+        }
+        const liveRampEid = find(data.user.ext.eids, eid => eid.source === 'liveramp.com');
+        if (liveRampEid) {
+          utils.deepSetValue(data, 'user.ext.liveramp_idl', liveRampEid.uids[0].id);
         }
       }
 
