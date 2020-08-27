@@ -4,30 +4,7 @@ import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
-
-/**
- * Helper to create eids objs for userid tests
- * @param {string} source
- * @param {Object} props
- * @param {Object} ext
- * @return {{uids: [{atype: number, id: string, ext: (Object|undefined)}], source: string, ext: (Object|undefined)}}
- */
-function createEid(source, props, ext) {
-  const eid = {
-    source,
-    uids: [
-      Object.keys(props).reduce(function (aggregate, key) {
-        aggregate[key] = props[key];
-        return aggregate;
-      }, {})
-    ]
-  };
-
-  if (ext) {
-    eid.ext = ext;
-  }
-  return eid;
-}
+import { createEidsArray } from 'modules/userId/eids.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 const PBS_INTEGRATION = 'pbjs';
@@ -242,11 +219,6 @@ describe('the rubicon adapter', function () {
       'playerWidth': 640,
       'size_id': 201,
     };
-    bid.userIdAsEids = [
-      createEid('liveintent.com', { id: '0000-1111-2222-3333', atype: 1 }, { segments: ['segA', 'segB'] }),
-      createEid('liveramp.com', { id: '1111-2222-3333-4444', atype: 1 }),
-      createEid('sharedid.org', { id: '1111', atype: 1, ext: { third: '2222' } })
-    ];
     bid.userId = {
       lipb: {
         lipbid: '0000-1111-2222-3333',
@@ -258,6 +230,7 @@ describe('the rubicon adapter', function () {
         third: '2222'
       }
     };
+    bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
   }
 
@@ -1349,10 +1322,10 @@ describe('the rubicon adapter', function () {
         describe('user id config', function() {
           it('should send tpid_tdid when userId defines tdid', function () {
             const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-            clonedBid.userIdAsEids = [createEid('adserver.org', { id: 'abcd-efgh-ijkl-mnop-1234', atype: 1, ext: { rtiPartner: 'TDID' } })];
             clonedBid.userId = {
               tdid: 'abcd-efgh-ijkl-mnop-1234'
             };
+            clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
             let [request] = spec.buildRequests([clonedBid], bidderRequest);
             let data = parseQuery(request.data);
 
@@ -1362,12 +1335,12 @@ describe('the rubicon adapter', function () {
           describe('LiveIntent support', function () {
             it('should send tpid_liveintent.com when userId defines lipd', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              clonedBid.userIdAsEids = [createEid('liveintent.com', { id: '0000-1111-2222-3333', atype: 1 })];
               clonedBid.userId = {
                 lipb: {
                   lipbid: '0000-1111-2222-3333'
                 }
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1376,13 +1349,13 @@ describe('the rubicon adapter', function () {
 
             it('should send tg_v.LIseg when userId defines lipd.segments', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              clonedBid.userIdAsEids = [createEid('liveintent.com', { id: '1111-2222-3333-4444', atype: 1 }, { segments: ['segD', 'segE'] })];
               clonedBid.userId = {
                 lipb: {
                   lipbid: '1111-2222-3333-4444',
                   segments: ['segD', 'segE']
                 }
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               const unescapedData = unescape(request.data);
 
@@ -1394,10 +1367,10 @@ describe('the rubicon adapter', function () {
           describe('LiveRamp support', function () {
             it('should send x_liverampidl when userId defines idl_env', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              clonedBid.userIdAsEids = [createEid('liveramp.com', { id: '1111-2222-3333-4444', atype: 1 })];
               clonedBid.userId = {
                 idl_env: '1111-2222-3333-4444'
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1408,13 +1381,13 @@ describe('the rubicon adapter', function () {
           describe('SharedID support', function () {
             it('should send sharedid when userId defines sharedId', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              clonedBid.userIdAsEids = [createEid('sharedid.org', { id: '1111', atype: 1, ext: { third: '2222' } })];
               clonedBid.userId = {
                 sharedid: {
                   id: '1111',
                   third: '2222'
                 }
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
