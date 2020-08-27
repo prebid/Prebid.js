@@ -248,11 +248,11 @@ export const spec = {
         utils.deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      const userIdAsEids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
-      if (userIdAsEids) {
+      const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+      if (eids) {
         // filter out unsupported id systems
-        utils.deepSetValue(data, 'user.ext.eids', userIdAsEids.filter(i => ['adserver.org', 'pubcommon', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(i.source) !== -1));
-        // liveintent and liveramp require additional props besides eids to be set
+        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcommon', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1));
+        // liveintent and liveramp require additional props to be set
         const eidMap = {
           'liveintent.com': (data, eid) => {
             utils.deepSetValue(data, 'user.ext.tpid', { source: eid.source, uid: eid.uids[0].id });
@@ -262,12 +262,7 @@ export const spec = {
           },
           'liveramp.com': (data, eid) => utils.deepSetValue(data, 'user.ext.liveramp_idl', eid.uids[0].id)
         };
-        Object.keys(eidMap).forEach(key => {
-          const eid = find(data.user.ext.eids, i => i.source === key);
-          if (eid) {
-            eidMap[key](data, eid);
-          }
-        });
+        Object.keys(eidMap).map(source => find(data.user.ext.eids, eid => eid.source === source)).filter(eid => !!eid).forEach(eid => eidMap[eid.source](data, eid));
       }
 
       // set user.id value from config value
