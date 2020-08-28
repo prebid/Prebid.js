@@ -17,10 +17,7 @@ export const spec = {
    * @returns {boolean} True if this is a valid bid, and false otherwise
    */
   isBidRequestValid: function(bid) {
-    if (bid.bidder !== BIDDER_CODE) {
-      return false;
-    }
-    return true;
+    return !!(bid.params && bid.params.partnerId && bid.params.adnetId);
   },
 
   /**
@@ -37,7 +34,7 @@ export const spec = {
       bidRequests: validBidRequests,
       auctionStart: bidderRequest.auctionStart,
       timeout: bidderRequest.timeout,
-      referer: (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null),
+      refererInfo: bidderRequest.refererInfo,
       start: bidderRequest.start,
       gdprConsent: bidderRequest.gdprConsent,
       uspConsent: bidderRequest.uspConsent,
@@ -53,6 +50,9 @@ export const spec = {
     return {
       method: 'POST',
       url: 'https://prebid.owneriq.net:8443/bidder/pb/bid',
+      options: {
+        withCredentials: false
+      },
       data: payloadString,
     };
   },
