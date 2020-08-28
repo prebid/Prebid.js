@@ -1316,7 +1316,7 @@ describe('the rubicon adapter', function () {
         });
 
         describe('user id config', function() {
-          it('should send tpid_tdid when userId defines tdid', function () {
+          it('should send tpid_tdid when userIdAsEids contains unifiedId', function () {
             const clonedBid = utils.deepClone(bidderRequest.bids[0]);
             clonedBid.userId = {
               tdid: 'abcd-efgh-ijkl-mnop-1234'
@@ -1329,7 +1329,7 @@ describe('the rubicon adapter', function () {
           });
 
           describe('LiveIntent support', function () {
-            it('should send tpid_liveintent.com when userId defines lipd', function () {
+            it('should send tpid_liveintent.com when userIdAsEids contains liveintentId', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 lipb: {
@@ -1343,7 +1343,7 @@ describe('the rubicon adapter', function () {
               expect(data['tpid_liveintent.com']).to.equal('0000-1111-2222-3333');
             });
 
-            it('should send tg_v.LIseg when userId defines lipd.segments', function () {
+            it('should send tg_v.LIseg when userIdAsEids contains liveintentId with ext.segments as array', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 lipb: {
@@ -1361,7 +1361,7 @@ describe('the rubicon adapter', function () {
           });
 
           describe('LiveRamp support', function () {
-            it('should send x_liverampidl when userId defines idl_env', function () {
+            it('should send x_liverampidl when userIdAsEids contains liverampId', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 idl_env: '1111-2222-3333-4444'
@@ -1375,7 +1375,7 @@ describe('the rubicon adapter', function () {
           });
 
           describe('SharedID support', function () {
-            it('should send sharedid when userId defines sharedId', function () {
+            it('should send sharedid when userIdAsEids contains sharedId', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 sharedid: {
@@ -1387,7 +1387,7 @@ describe('the rubicon adapter', function () {
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
-              expect(data['eid_sharedid.org']).to.equal('1111^3^2222');
+              expect(data['eid_sharedid.org']).to.equal('1111^1^2222');
             });
           });
 
