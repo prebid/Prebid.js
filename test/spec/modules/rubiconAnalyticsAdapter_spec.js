@@ -747,17 +747,17 @@ describe('rubicon analytics adapter', function () {
         provider: 'rubicon'
       });
       // first adUnit's adSlot
-      expect(message.auctions[0].adUnits[0].adSlot).to.equal('12345/sports');
+      expect(message.auctions[0].adUnits[0].gam.adSlot).to.equal('12345/sports');
       // since no other bids, we set adUnit status to no-bid
       expect(message.auctions[0].adUnits[0].status).to.equal('no-bid');
       // first adUnits bid is rejected
-      expect(message.auctions[0].adUnits[0].bids[0].status).to.equal('rejected');
+      expect(message.auctions[0].adUnits[0].bids[0].status).to.equal('rejected-ipf');
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.floorValue).to.equal(4);
       // if bid rejected should take cpmAfterAdjustments val
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD).to.equal(2.1);
 
       // second adUnit's adSlot
-      expect(message.auctions[0].adUnits[1].adSlot).to.equal('12345/news');
+      expect(message.auctions[0].adUnits[1].gam.adSlot).to.equal('12345/news');
       // top level adUnit status is success
       expect(message.auctions[0].adUnits[1].status).to.equal('success');
       // second adUnits bid is success
@@ -786,7 +786,7 @@ describe('rubicon analytics adapter', function () {
       // since no other bids, we set adUnit status to no-bid
       expect(message.auctions[0].adUnits[0].status).to.equal('no-bid');
       // first adUnits bid is rejected
-      expect(message.auctions[0].adUnits[0].bids[0].status).to.equal('rejected');
+      expect(message.auctions[0].adUnits[0].bids[0].status).to.equal('rejected-ipf');
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.floorValue).to.equal(4);
       // if bid rejected should take cpmAfterAdjustments val
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD).to.equal(2.1);

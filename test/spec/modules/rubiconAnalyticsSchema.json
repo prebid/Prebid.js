@@ -293,7 +293,8 @@
             "success",
             "no-bid",
             "error",
-            "rejected"
+            "rejected-gdpr",
+            "rejected-ipf"
           ]
         },
         "error": {

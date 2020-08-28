@@ -13,9 +13,9 @@ const COOKIE_NAME = 'rpaSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
 
+let prebidGlobal = getGlobal();
 const {
   EVENTS: {
-    REQUEST_BIDS,
     AUCTION_INIT,
     AUCTION_END,
     BID_REQUESTED,
@@ -24,7 +24,6 @@ const {
     BID_TIMEOUT,
     BID_WON,
     SET_TARGETING,
-    TCF2_ENFORCEMENT
   },
   STATUS: {
     GOOD,
@@ -136,7 +135,7 @@ function sendMessage(auctionId, bidWonId) {
     });
   }
   let auctionCache = cache.auctions[auctionId];
-  let referrer = config.getConfig('pageUrl') || auctionCache && auctionCache.referrer;
+  let referrer = config.getConfig('pageUrl') || (auctionCache && auctionCache.referrer);
   let message = {
     eventTimeMillis: Date.now(),
     integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
@@ -243,7 +242,9 @@ function sendMessage(auctionId, bidWonId) {
         'start',
         'expires'
       ]);
-      auction.fpkvs = auctionCache.session.fpkvs || undefined;
+      if (auctionCache.session.fpkvs && Object.keys(auctionCache.session.fpkvs).length) {
+        auction.fpkvs = auctionCache.session.fpkvs;
+      }
     }
 
     if (serverConfig) {
@@ -303,7 +304,7 @@ function getBidPrice(bid) {
   }
   // otherwise we convert and return
   try {
-    return Number(getGlobal().convertCurrency(cpm, currency, 'USD'));
+    return Number(prebidGlobal.convertCurrency(cpm, currency, 'USD'));
   } catch (err) {
     utils.logWarn('Rubicon Analytics Adapter: Could not determine the bidPriceUSD of the bid ', bid);
   }
@@ -332,15 +333,15 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
 }
 
 function getDynamicKvps() {
-  if (pbjs.rp && typeof pbjs.rp.getCustomTargeting === 'function') {
-    return pbjs.rp.getCustomTargeting();
+  if (prebidGlobal.rp && typeof prebidGlobal.rp.getCustomTargeting === 'function') {
+    return prebidGlobal.rp.getCustomTargeting();
   }
   return {};
 }
 
 function getPageViewId() {
-  if (pbjs.rp && typeof pbjs.rp.getPageViewId === 'function') {
-    return pbjs.rp.getPageViewId();
+  if (prebidGlobal.rp && typeof prebidGlobal.rp.getPageViewId === 'function') {
+    return prebidGlobal.rp.getPageViewId();
   }
 }
 
@@ -396,7 +397,7 @@ function updateRpaCookie() {
       expires: currentTime + END_EXPIRE_TIME, // six hours later,
     }
   }
-  // possible that decodedRpaCookie is undefined, and if it is, we probably are blocked by storage or some other exception 
+  // possible that decodedRpaCookie is undefined, and if it is, we probably are blocked by storage or some other exception
   if (Object.keys(decodedRpaCookie).length) {
     decodedRpaCookie.lastSeen = currentTime;
     decodedRpaCookie.fpkvs = {...decodedRpaCookie.fpkvs, ...getDynamicKvps()};
@@ -478,9 +479,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   },
   track({eventType, args}) {
     switch (eventType) {
-      case REQUEST_BIDS:
-        console.log('THE REQUEST_BIDS args are: ', args);
-        break;
       case AUCTION_INIT:
         // register to listen to gpt events if not done yet
         if (!cache.gpt.registered && utils.isGptPubadsDefined()) {
@@ -494,7 +492,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         ]);
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
-        cacheEntry.referrer = utils.deepAccess(args, 'bidderRequests[0].refererInfo.referer');
+        cacheEntry.referrer = utils.deepAccess(args, 'bidderRequests.0.refererInfo.referer');
         const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (floorData) {
           cacheEntry.floorData = {...floorData};
@@ -667,9 +665,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             code: 'timeout-error'
           };
         });
-        break;
-      case TCF2_ENFORCEMENT:
-        console.log('THE TCF2_ENFORCEMENT args are: ', args);
         break;
     }
   }
