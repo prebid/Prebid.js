@@ -14,8 +14,7 @@ const utils = require('../src/utils.js');
  pbjs.enableAnalytics({
   provider: 'pubwise',
   options: {
-    site: 'test-test-test-test',
-    endpoint: 'https://api.pubwise.io/api/v4/event/add/',
+    site: 'test-test-test-test'
   }
  });
 
