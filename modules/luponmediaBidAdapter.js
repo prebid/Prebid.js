@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'luponmedia';
 const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
@@ -112,6 +113,10 @@ export const spec = {
 
     hasSynced = true;
     return allUserSyncs;
+  },
+  onBidWon: bid => {
+    const bidString = JSON.stringify(bid);
+    sendWinningsToServer(bidString);
   },
 };
 
@@ -347,6 +352,16 @@ function _getPageUrl(bidRequest, bidderRequest) {
     pageUrl = bidderRequest.refererInfo.referer;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
+}
+
+function sendWinningsToServer(data) {
+  let mutation = `mutation {createWin(input: {win: {eventData: "${window.btoa(data)}"}}) {win {createTime } } }`;
+  let dataToSend = JSON.stringify({ query: mutation });
+
+  ajax('https://analytics.adxpremium.services/graphql', null, dataToSend, {
+    contentType: 'application/json',
+    method: 'POST'
+  });
 }
 
 function appendSiteAppDevice(data, bidRequest, bidderRequest) {
