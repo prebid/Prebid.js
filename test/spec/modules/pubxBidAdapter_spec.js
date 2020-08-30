@@ -95,7 +95,21 @@ describe('pubxAdapter', function () {
         ad: '<div>some creative</div>'
       }
     ];
-
+    it('should return empty array when required param is empty', function () {
+      const serverResponseWithCidEmpty = {
+        body: {
+          TTL: 300,
+          adm: '<div>some creative</div>',
+          cid: '',
+          cpm: '',
+          currency: 'JPY',
+          height: 250,
+          width: 300,
+        }
+      }
+      const result = spec.interpretResponse(serverResponseWithCidEmpty, bidRequests[0]);
+      expect(result).to.be.empty;
+    });
     it('handles banner responses', function () {
       const result = spec.interpretResponse(serverResponse, bidRequests[0])[0];
       expect(result.requestId).to.equal(bidResponses[0].requestId);

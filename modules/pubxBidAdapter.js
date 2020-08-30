@@ -43,7 +43,6 @@ export const spec = {
       };
       bidResponses.push(bidResponse);
     } else {};
-    // console.log(bidResponses);
     return bidResponses;
   }
 }
