@@ -79,9 +79,7 @@ export const spec = {
           creativeId: response.creativeId,
           netRevenue: response.netRevenue,
           vastUrl: response.vastUrl,
-          vastXml: response.vastXml,
           dealId: response.dealId,
-          mediaType: response.mediaType,
           meta: response.meta
         };
 
