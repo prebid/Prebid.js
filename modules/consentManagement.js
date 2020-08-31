@@ -104,8 +104,6 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
         cmpSuccess(tcfData, hookConfig);
       } else if (tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         cmpSuccess(tcfData, hookConfig);
-      } else if (tcfData.eventStatus === 'cmpuishown') {
-        cmpSuccess(tcfData); // store consent, but don't continue to next hook
       }
     } else {
       cmpError('CMP unable to register callback function.  Please check CMP setup.', hookConfig);
@@ -334,20 +332,6 @@ function processCmpData(consentObject, hookConfig) {
     utils.logInfo(`'allowAuctionWithoutConsent' using system default: (${DEFAULT_ALLOW_AUCTION_WO_CONSENT}).`);
   }
 
-  // if no hookConfig, store consent, but don't continue to next hook    
-  if (!hookConfig) {
-    if (utils.isFn(checkFn)) {
-      if (checkFn(consentObject)) {
-        utils.logWarn('CMP returned unexpected value during lookup process.', consentObject);
-      } else {
-        storeConsentData(consentObject);
-      }
-    } else {
-      utils.logWarn('Unable to derive CMP version to process data.  Consent object does not conform to TCF v1 or v2 specs.', consentObject);
-    }
-    return;
-  }
-        
   if (utils.isFn(checkFn)) {
     if (checkFn(consentObject)) {
       cmpFailed(`CMP returned unexpected value during lookup process.`, hookConfig, consentObject);
