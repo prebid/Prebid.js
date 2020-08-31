@@ -48,25 +48,30 @@ const analyticsBlocked = [];
 let addedDeviceAccessHook = false;
 
 /**
- * Returns GVL ID for a bid adapter or an userId submodule or an analytics adapter.
- * @param {{string=|Object=}} moduleName
- * @return {number} GVL ID
+ * Returns GVL ID for a Bid adapter / an USERID submodule / an Analytics adapter.
+ * If modules of different types have the same moduleCode: For example, 'appnexus' is the code for both Bid adapter and Analytics adapter,
+ * then, we assume that their GVL IDs are same. This function first checks if GVL ID is defined for a Bid adapter, if not found, tries to find User ID
+ * submodule's GVL ID, if not found, tries to find Analytics adapter's GVL ID. In this process, as soon as it finds a GVL ID, it returns it
+ * without going to the next check.
+ * @param {{string|Object}} - module
+ * @return {number} - GVL ID
  */
-function getGvlid(moduleName, caller) {
+function getGvlid(module) {
   let gvlid = null;
-  if (moduleName) {
+  if (module) {
     // Check user defined GVL Mapping in pbjs.setConfig()
     const gvlMapping = config.getConfig('gvlMapping');
 
-    // For userId modules, we pass the submodule object as "moduleName", so this check is needed to grab the module name
-    moduleName = typeof moduleName === 'string' ? moduleName : moduleName.name;
+    // For USER ID Module, we pass the submodule object itself as the "module" parameter, this check is required to grab the module code
+    const moduleCode = typeof module === 'string' ? module : module.name;
 
-    if (gvlMapping && gvlMapping[moduleName]) {
-      gvlid = gvlMapping[moduleName];
+    // Return GVL ID from user defined gvlMapping
+    if (gvlMapping && gvlMapping[moduleCode]) {
+      gvlid = gvlMapping[moduleCode];
       return gvlid;
     }
 
-    gvlid = getGvlidForBidAdapter(moduleName) || getGvlidForUserIdModule(moduleName) || getGvlidForAnalyticsAdapter(moduleName);
+    gvlid = getGvlidForBidAdapter(moduleCode) || getGvlidForUserIdModule(module) || getGvlidForAnalyticsAdapter(moduleCode);
   }
   return gvlid;
 }
@@ -356,7 +361,7 @@ const hasPurpose7 = (rule) => { return rule.purpose === TCF2.purpose7.name }
 export function setEnforcementConfig(config) {
   const rules = utils.deepAccess(config, 'gdpr.rules');
   if (!rules) {
-    utils.logWarn('TCF2: enforcing P1 and P2');
+    utils.logWarn('TCF2: enforcing P1 and P2 by default');
     enforcementRules = DEFAULT_RULES;
   } else {
     enforcementRules = rules;
