@@ -138,10 +138,10 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
 /**
  * @summary If a the input bidder has a registered cpmadjustment it returns the input CPM after being adjusted
  */
-export function getBiddersCpmAdjustment(bidderName, inputCpm) {
+export function getBiddersCpmAdjustment(bidderName, inputCpm, bid = {}) {
   const adjustmentFunction = utils.deepAccess(getGlobal(), `bidderSettings.${bidderName}.bidCpmAdjustment`);
   if (adjustmentFunction) {
-    return parseFloat(adjustmentFunction(inputCpm));
+    return parseFloat(adjustmentFunction(inputCpm, {...bid, cpm: inputCpm}));
   }
   return parseFloat(inputCpm);
 }
@@ -682,7 +682,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   }
 
   // ok we got the bid response cpm in our desired currency. Now we need to run the bidders CPMAdjustment function if it exists
-  adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm);
+  adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm, bid);
 
   // add necessary data information for analytics adapters / floor providers would possibly need
   addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm);
