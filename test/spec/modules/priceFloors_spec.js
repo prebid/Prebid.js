@@ -192,7 +192,7 @@ describe('the price floors module', function () {
           matchingData: 'banner',
           matchingRule: 'banner'
         });
-        // make sure a post retrieval adjustment does not alter the cahced floor
+        // make sure a post retrieval adjustment does not alter the cached floor
         result.matchingFloor = result.matchingFloor * modifier;
       });
     });
