@@ -19,10 +19,7 @@ function mapMediaType(seedtagMediaType) {
 }
 
 function hasVideoMediaType(bid) {
-  return Object.keys(bid.mediaTypes)
-    .some(function(mt) {
-      return mt === VIDEO;
-    });
+  return !!bid.mediaTypes && !!bid.mediaTypes.video
 }
 
 function hasMandatoryParams(params) {
