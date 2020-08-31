@@ -23,6 +23,7 @@ import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
 import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem.js';
+import {merkleIdSubmodule} from 'modules/merkleIdSystem.js';
 import {netIdSubmodule} from 'modules/netIdSystem.js';
 import {intentIqIdSubmodule} from 'modules/intentIqIdSystem.js';
 import {sharedIdSubmodule} from 'modules/sharedIdSystem.js';
@@ -34,7 +35,7 @@ const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const CONSENT_LOCAL_STORAGE_NAME = '_pbjs_userid_consent_data';
 
 describe('User ID', function() {
-  function getConfigMock(configArr1, configArr2, configArr3, configArr4, configArr5, configArr6, configArr7, configArr8) {
+  function getConfigMock(configArr1, configArr2, configArr3, configArr4, configArr5, configArr6, configArr7, configArr8, configArr9) {
     return {
       userSync: {
         syncDelay: 0,
@@ -46,7 +47,8 @@ describe('User ID', function() {
           (configArr5 && configArr5.length >= 3) ? getStorageMock.apply(null, configArr5) : null,
           (configArr6 && configArr6.length >= 3) ? getStorageMock.apply(null, configArr6) : null,
           (configArr7 && configArr7.length >= 3) ? getStorageMock.apply(null, configArr7) : null,
-          (configArr8 && configArr8.length >= 3) ? getStorageMock.apply(null, configArr8) : null
+          (configArr8 && configArr8.length >= 3) ? getStorageMock.apply(null, configArr8) : null,
+          (configArr9 && configArr9.length >= 3) ? getStorageMock.apply(null, configArr9) : null
         ].filter(i => i)
       }
     }
@@ -352,7 +354,7 @@ describe('User ID', function() {
     });
 
     it('handles config with no usersync object', function() {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({});
       // usersync is undefined, and no logInfo message for 'User ID - usersync config updated'
@@ -360,14 +362,14 @@ describe('User ID', function() {
     });
 
     it('handles config with empty usersync object', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({userSync: {}});
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
     it('handles config with usersync and userIds that are empty objs', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -378,7 +380,7 @@ describe('User ID', function() {
     });
 
     it('handles config with usersync and userIds with empty names or that dont match a submodule.name', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -1112,6 +1114,30 @@ describe('User ID', function() {
           });
         });
         coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
+    });
+
+    it('test hook from merkleId cookies', function(done) {
+      // simulate existing browser local storage values
+      coreStorage.setCookie('merkleId', JSON.stringify({'ppid': {'id': 'testmerkleId'}}), (new Date(Date.now() + 5000).toUTCString()));
+
+      setSubmoduleRegistry([merkleIdSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['merkleId', 'merkleId', 'cookie']));
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.merkleId');
+            expect(bid.userId.merkleId).to.equal('testmerkleId');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'merkleinc.com',
+              uids: [{id: 'testmerkleId', atype: 1}]
+            });
+          });
+        });
+        coreStorage.setCookie('merkleId', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
