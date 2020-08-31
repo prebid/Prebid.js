@@ -29,15 +29,13 @@ function getRandomId(
   a // placeholder
 ) {
   return a // if the placeholder was passed, return
-    ?
-    ( // a random number from 0 to 15
+    ? ( // a random number from 0 to 15
       a ^ // unless b is 8,
       Math.random() * // in which case
       16 >> // a random number from
       a / 4 // 8 to 11
     ).toString(16) // in hexadecimal
-    :
-    ( // or otherwise a concatenated string:
+    : ( // or otherwise a concatenated string:
       [1e7] + // 10000000 +
       1e3 + // -1000 +
       4e3 + // -4000 +
