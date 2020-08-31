@@ -132,10 +132,10 @@ describe('onetag', function () {
       const data = JSON.parse(d);
       it('Should contain all keys', function () {
         expect(data).to.be.an('object');
-        expect(data).to.include.all.keys('location', 'referrer', 'masked', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'onetagSid');
+        expect(data).to.include.all.keys('location', 'referrer', 'masked', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'timing', 'version');
         expect(data.location).to.be.a('string');
-        expect(data.masked).to.be.a('number');
-        expect(data.referrer).to.be.a('string');
+        expect(data.masked).to.be.oneOf([0, 1, 2]);
+        expect(data.referrer).to.satisfy(referrer => referrer === null || typeof referrer === 'string');
         expect(data.sHeight).to.be.a('number');
         expect(data.sWidth).to.be.a('number');
         expect(data.wWidth).to.be.a('number');
@@ -148,6 +148,7 @@ describe('onetag', function () {
         expect(data.sTop).to.be.a('number');
         expect(data.hLength).to.be.a('number');
         expect(data.bids).to.be.an('array');
+        expect(data.version).to.have.all.keys('prebid', 'adapter');
         const bids = data['bids'];
         for (let i = 0; i < bids.length; i++) {
           const bid = bids[i];

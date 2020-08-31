@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/ixBidAdapter.js';
 
 describe('IndexexchangeAdapter', function () {
-  const IX_SECURE_ENDPOINT = 'https://as-sec.casalemedia.com/cygnus';
+  const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/cygnus';
   const VIDEO_ENDPOINT_VERSION = 8.1;
   const BANNER_ENDPOINT_VERSION = 7.2;
 
