@@ -536,8 +536,9 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
   auction.callBids();
 });
 
-export function executeStorageCallbacks(fn, reqBidsConfigObj) {
+export function executeCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);
+  runAll(enableAnalyticsCallbacks);
   fn.call(this, reqBidsConfigObj);
   function runAll(queue) {
     var queued;
@@ -548,7 +549,7 @@ export function executeStorageCallbacks(fn, reqBidsConfigObj) {
 }
 
 // This hook will execute all storage callbacks which were registered before gdpr enforcement hook was added. Some bidders, user id modules use storage functions when module is parsed but gdpr enforcement hook is not added at that stage as setConfig callbacks are yet to be called. Hence for such calls we execute all the stored callbacks just before requestBids. At this hook point we will know for sure that gdprEnforcement module is added or not
-$$PREBID_GLOBAL$$.requestBids.before(executeStorageCallbacks, 49);
+$$PREBID_GLOBAL$$.requestBids.before(executeCallbacks, 49);
 
 /**
  *
@@ -667,13 +668,21 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
  * @param {Object} config.options The options for this particular analytics adapter.  This will likely vary between adapters.
  * @alias module:pbjs.enableAnalytics
  */
-$$PREBID_GLOBAL$$.enableAnalytics = function (config) {
+
+// Stores 'enableAnalytics' callbacks for later execution.
+const enableAnalyticsCallbacks = [];
+
+const enableAnalyticsCb = hook('async', function (config) {
   if (config && !utils.isEmpty(config)) {
     utils.logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics for: ', config);
     adapterManager.enableAnalytics(config);
   } else {
     utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }
+}, 'enableAnalyticsCb');
+
+$$PREBID_GLOBAL$$.enableAnalytics = function (config) {
+  enableAnalyticsCallbacks.push(enableAnalyticsCb.bind(this, config));
 };
 
 /**

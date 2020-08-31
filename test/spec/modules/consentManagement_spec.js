@@ -643,6 +643,32 @@ describe('consentManagement', function () {
           expect(consent.apiVersion).to.equal(2);
         });
 
+        it('performs lookup check and stores consentData for a valid existing user with additional consent', function () {
+          let testConsentData = {
+            tcString: 'abc12345234',
+            addtlConsent: 'superduperstring',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded'
+          };
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          setConsentConfig(goodConfigWithAllowAuction);
+
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+          let consent = gdprDataHandler.getConsentData();
+          sinon.assert.notCalled(utils.logError);
+          expect(didHookReturn).to.be.true;
+          expect(consent.consentString).to.equal(testConsentData.tcString);
+          expect(consent.addtlConsent).to.equal(testConsentData.addtlConsent);
+          expect(consent.gdprApplies).to.be.true;
+          expect(consent.apiVersion).to.equal(2);
+        });
+
         it('throws an error when processCmpData check fails + does not call requestBids callbcack even when allowAuction is true', function () {
           let testConsentData = {};
           let bidsBackHandlerReturn = false;
