@@ -137,7 +137,7 @@ describe('Renderer', function () {
         code: 'video1',
         renderer: {
           url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
-          backupOnly: 'true',
+          backupOnly: true,
           render: sinon.spy()
         }
       }]
