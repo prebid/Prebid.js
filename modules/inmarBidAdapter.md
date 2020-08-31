@@ -26,7 +26,6 @@ Please reach out to your account manager for more information.
                         params: {
                             partnerId: 12345,
                             adnetId: 'ADb1f40rmi',
-                            bidFloor: 0.70,
                             position: 1
                         }
                     }]
@@ -39,7 +38,6 @@ Please reach out to your account manager for more information.
                         params: {
                             partnerId: 12345,
                             adnetId: 'ADb1f40rmo',
-                            bidFloor: 0.40,
                             position: 0
                         }
                     }]

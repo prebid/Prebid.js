@@ -39,7 +39,6 @@ export const spec = {
       gdprConsent: bidderRequest.gdprConsent,
       uspConsent: bidderRequest.uspConsent,
       currencyCode: config.getConfig('currency.adServerCurrency'),
-      domain: config.getConfig('publisherDomain'),
       coppa: config.getConfig('coppa'),
       firstPartyData: config.getConfig('fpd'),
       prebidVersion: '$prebid.version$'
@@ -82,7 +81,8 @@ export const spec = {
           vastUrl: response.vastUrl,
           vastXml: response.vastXml,
           dealId: response.dealId,
-          mediaType: response.mediaType
+          mediaType: response.mediaType,
+          meta: response.meta
         };
 
         bidResponses.push(bidResponse);

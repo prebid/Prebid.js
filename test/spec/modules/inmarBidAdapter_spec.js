@@ -17,7 +17,6 @@ describe('Inmar adapter tests', function () {
     },
     bidder: 'inmar',
     params: {
-      bidFloor: 0.5,
       adnetId: 'ADb1f40rmi',
       partnerId: 12345
     },
@@ -40,7 +39,6 @@ describe('Inmar adapter tests', function () {
     },
     bidder: 'inmar',
     params: {
-      bidFloor: 0.5,
       adnetId: 'ADb1f40rmi',
       partnerId: 12345
     },
@@ -75,7 +73,7 @@ describe('Inmar adapter tests', function () {
     body: {
       cpm: 1.50,
       ad: '<!-- script -->',
-      mediaType: 'js',
+      mediaType: 'banner',
       width: 300,
       height: 250,
       creativeId: '189198063',
@@ -116,7 +114,6 @@ describe('Inmar adapter tests', function () {
 
     expect(request).to.have.property('method').and.to.equal('POST');
     const requestContent = JSON.parse(request.data);
-    expect(requestContent.bidRequests[0].params).to.have.property('bidFloor').and.to.equal(0.5);
     expect(requestContent.bidRequests[0].params).to.have.property('adnetId').and.to.equal('ADb1f40rmi');
     expect(requestContent.bidRequests[0].params).to.have.property('partnerId').and.to.equal(12345);
     expect(requestContent.bidRequests[0]).to.have.property('auctionId').and.to.equal('0cb3144c-d084-4686-b0d6-f5dbe917c563');
@@ -152,7 +149,7 @@ describe('Inmar adapter tests', function () {
     const bid = bids[0];
     expect(bid.cpm).to.equal(1.50);
     expect(bid.ad).to.equal('<!-- script -->');
-    expect(bid.mediaType).to.equal('js');
+    expect(bid.mediaType).to.equal('banner');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.creativeId).to.equal('189198063');
@@ -209,13 +206,6 @@ describe('Inmar adapter tests', function () {
       params: {
         adnetId: 'ADb1f40rmi',
         partnerId: 12345
-      }
-    })).to.equal(true);
-    expect(spec.isBidRequestValid({
-      params: {
-        adnetId: 'ADb1f40rmi',
-        partnerId: 12345,
-        bidFloor: 0.50,
       }
     })).to.equal(true);
   });
