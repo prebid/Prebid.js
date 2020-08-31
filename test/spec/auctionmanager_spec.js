@@ -743,7 +743,7 @@ describe('auctionmanager.js', function () {
       it('installs publisher-defined backup renderers on bids', function () {
         let renderer = {
           url: 'renderer.js',
-          backupOnly: 'true',
+          backupOnly: true,
           render: (bid) => bid
         };
         let bidRequests = [Object.assign({}, TEST_BID_REQS[0])];
@@ -1251,5 +1251,5 @@ describe('auctionmanager.js', function () {
       server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
       assert.equal(doneSpy.callCount, 1);
     })
-  });
+  });'tr
 });
