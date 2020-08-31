@@ -548,7 +548,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: rubiconAdapter,
-  code: 'rubicon'
+  code: 'rubicon',
+  gvlid: '52'
 });
 
 export default rubiconAdapter;
