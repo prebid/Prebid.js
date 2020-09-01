@@ -51,8 +51,7 @@ let addedDeviceAccessHook = false;
 export const internal = {
   getGvlidForBidAdapter,
   getGvlidForUserIdModule,
-  getGvlidForAnalyticsAdapter,
-  getGvlid
+  getGvlidForAnalyticsAdapter
 };
 
 /**
@@ -185,9 +184,9 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
         const curBidder = config.getCurrentBidder();
         // Bidders have a copy of storage object with bidder code binded. Aliases will also pass the same bidder code when invoking storage functions and hence if alias tries to access device we will try to grab the gvl id for alias instead of original bidder
         if (curBidder && (curBidder != moduleName) && adapterManager.aliasRegistry[curBidder] === moduleName) {
-          gvlid = internal.getGvlid(curBidder);
+          gvlid = getGvlid(curBidder);
         } else {
-          gvlid = internal.getGvlid(moduleName) || gvlid;
+          gvlid = getGvlid(moduleName) || gvlid;
         }
         const curModule = moduleName || curBidder;
         let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
