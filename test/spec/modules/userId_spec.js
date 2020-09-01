@@ -43,7 +43,7 @@ describe('User ID', function() {
           (configArr6 && configArr6.length >= 3) ? getStorageMock.apply(null, configArr6) : null,
           (configArr7 && configArr7.length >= 3) ? getStorageMock.apply(null, configArr7) : null,
           (configArr8 && configArr8.length >= 3) ? getStorageMock.apply(null, configArr8) : null,
-          (configArr9 && configArr9.length >= 3) ? getStorageMock.apply(null, configArr9) : null,
+          (configArr9 && configArr9.length >= 3) ? getStorageMock.apply(null, configArr9) : null
         ].filter(i => i)
       }
     }
@@ -1190,7 +1190,7 @@ describe('User ID', function() {
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.haloId');
-            expect(bid.userId.intentIqId).to.equal('testHaloId');
+            expect(bid.userId.haloId).to.equal('testHaloId');
 
             expect(bid.userIdAsEids.length).to.equal(9);
           });
