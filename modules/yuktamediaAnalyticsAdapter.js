@@ -247,7 +247,7 @@ yuktamediaAnalyticsAdapter.buildUtmTagData = function (options) {
 yuktamediaAnalyticsAdapter.originEnableAnalytics = yuktamediaAnalyticsAdapter.enableAnalytics;
 yuktamediaAnalyticsAdapter.enableAnalytics = function (config) {
   if (config && config.options) {
-    if (typeof config.options.pubId === 'undefined') {
+    if (typeof config.options.pubId === 'undefined' || typeof config.options.pubKey === 'undefined') {
       utils.logError('Need pubId and pubKey to log auction results. Please contact a YuktaMedia representative if you do not know your pubId and pubKey.');
       return;
     }
