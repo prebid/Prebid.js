@@ -25,7 +25,6 @@ const serverResponse = {
 }
 
 describe('qwarryBidAdapter', function () {
-
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(REQUEST)).to.equal(true)
