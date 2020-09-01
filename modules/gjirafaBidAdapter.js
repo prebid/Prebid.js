@@ -57,21 +57,23 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     window.adnResponse = serverResponse;
-    const serverBody = serverResponse.body;
+    const responses = serverResponse.body;
     const bidResponses = [];
-    const bidResponse = {
-      requestId: bidRequest.data.bidid,
-      cpm: serverBody.CPM,
-      width: serverBody.Width,
-      height: serverBody.Height,
-      creativeId: serverBody.CreativeId,
-      currency: serverBody.Currency,
-      netRevenue: serverBody.NetRevenue,
-      ttl: serverBody.TTL,
-      referrer: serverBody.Referrer,
-      ad: serverBody.Ad
-    };
-    bidResponses.push(bidResponse);
+    for (var i = 0; i < responses.length; i++) {
+      const bidResponse = {
+        requestId: bidRequest.data.bidid,
+        cpm: responses[i].CPM,
+        width: responses[i].Width,
+        height: responses[i].Height,
+        creativeId: responses[i].CreativeId,
+        currency: responses[i].Currency,
+        netRevenue: responses[i].NetRevenue,
+        ttl: responses[i].TTL,
+        referrer: responses[i].Referrer,
+        ad: responses[i].Ad
+      };
+      bidResponses.push(bidResponse);
+    }
     return bidResponses;
   }
 }
