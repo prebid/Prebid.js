@@ -11,7 +11,7 @@ pbjs.setConfig({
         userIds: [{
             name: 'haloId',
             storage: {
-                name: 'auHaloId',
+                name: 'haloId',
                 type: 'html5'
             }
         }]
