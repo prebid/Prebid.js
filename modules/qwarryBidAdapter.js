@@ -4,14 +4,14 @@ import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'qwarry';
-const ENDPOINT = 'https://ui-bidder.kantics.co/bid/adtag?prebid=true&zoneToken='
+export const ENDPOINT = 'https://ui-bidder.kantics.co/bid/adtag?prebid=true&zoneToken='
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
-    return bid.params && bid.params.zoneToken;
+    return !!(bid.params && bid.params.zoneToken);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -28,7 +28,7 @@ export const spec = {
     const serverBody = serverResponse.body;
 
     let bid = deepClone(serverBody);
-    bid.cpm = parseFloat(serverBody.price);
+    bid.cpm = parseFloat(serverBody.cpm);
 
     // banner or video
     if (VIDEO === bid.format) {
