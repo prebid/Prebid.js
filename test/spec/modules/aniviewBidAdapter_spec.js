@@ -177,6 +177,33 @@ describe('ANIVIEW Bid Adapter Test', function () {
       let result = spec.interpretResponse(nobidResponse, bidRequest);
       expect(result.length).to.equal(0);
     });
+
+    it('should add renderer if outstream context', function () {
+      const bidRequest = spec.buildRequests([
+        {
+          bidId: '253dcb69fb2577',
+          params: {
+            playerDomain: 'example.com',
+            AV_PUBLISHERID: '55b78633181f4603178b4568',
+            AV_CHANNELID: '55b7904d181f46410f8b4568'
+          },
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 480]],
+              context: 'outstream'
+            }
+          }
+        }
+      ])[0]
+      const bidResponse = spec.interpretResponse(serverResponse, bidRequest)[0]
+
+      expect(bidResponse.renderer.url).to.equal('https://example.com/script/6.1/prebidRenderer.js')
+      expect(bidResponse.renderer.config.AV_PUBLISHERID).to.equal('55b78633181f4603178b4568')
+      expect(bidResponse.renderer.config.AV_CHANNELID).to.equal('55b7904d181f46410f8b4568')
+      expect(bidResponse.renderer.loaded).to.equal(false)
+      expect(bidResponse.width).to.equal(640)
+      expect(bidResponse.height).to.equal(480)
+    })
   });
 
   describe('getUserSyncs', function () {

@@ -56,6 +56,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'merkleinc.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'britepool.com',
         uids: [{
             id: 'some-random-id-value',

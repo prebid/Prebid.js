@@ -1,6 +1,7 @@
 import {assert, expect} from 'chai';
 import {spec} from 'modules/ablidaBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
 
@@ -104,16 +105,23 @@ describe('ablidaBidAdapter', function () {
   });
 
   describe('onBidWon', function() {
-    it('Should not ajax call if bid does not contain nurl', function() {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+    it('Should not trigger pixel if bid does not contain nurl', function() {
       const result = spec.onBidWon({});
-      expect(result).to.equal(false)
+      expect(utils.triggerPixel.callCount).to.equal(0)
     })
 
-    it('Should ajax call if bid nurl', function() {
+    it('Should trigger pixel if bid nurl', function() {
       const result = spec.onBidWon({
         nurl: 'https://example.com/some-tracker'
       });
-      expect(result).to.equal(true)
+      expect(utils.triggerPixel.callCount).to.equal(1)
     })
   })
 });
