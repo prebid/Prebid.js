@@ -178,13 +178,13 @@ function isIngestedEvent(eventType) {
     CONSTANTS.EVENTS.AD_RENDER_FAILED,
     CONSTANTS.EVENTS.TCF2_ENFORCEMENT
   ];
-  return ingested.includes(eventType);
+  return ingested.indexOf(eventType) !== -1;
 }
 
 function markEnabled() {
   pwInfo(`Enabled`, configOptions);
   pwAnalyticsEnabled = true;
-  setInterval(flushEvents, 100);
+  setInterval(flushEvents, 1);
 }
 
 function pwInfo(info, context) {
