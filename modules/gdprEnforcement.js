@@ -47,6 +47,14 @@ const analyticsBlocked = [];
 
 let addedDeviceAccessHook = false;
 
+// Helps in stubbing these functions in unit tests.
+export const internal = {
+  getGvlidForBidAdapter,
+  getGvlidForUserIdModule,
+  getGvlidForAnalyticsAdapter,
+  getGvlid
+};
+
 /**
  * Returns GVL ID for a Bid adapter / an USERID submodule / an Analytics adapter.
  * If modules of different types have the same moduleCode: For example, 'appnexus' is the code for both Bid adapter and Analytics adapter,
@@ -56,7 +64,7 @@ let addedDeviceAccessHook = false;
  * @param {{string|Object}} - module
  * @return {number} - GVL ID
  */
-function getGvlid(module) {
+export function getGvlid(module) {
   let gvlid = null;
   if (module) {
     // Check user defined GVL Mapping in pbjs.setConfig()
@@ -71,7 +79,7 @@ function getGvlid(module) {
       return gvlid;
     }
 
-    gvlid = getGvlidForBidAdapter(moduleCode) || getGvlidForUserIdModule(module) || getGvlidForAnalyticsAdapter(moduleCode);
+    gvlid = internal.getGvlidForBidAdapter(moduleCode) || internal.getGvlidForUserIdModule(module) || internal.getGvlidForAnalyticsAdapter(moduleCode);
   }
   return gvlid;
 }
@@ -177,9 +185,9 @@ export function deviceAccessHook(fn, gvlid, moduleName, result) {
         const curBidder = config.getCurrentBidder();
         // Bidders have a copy of storage object with bidder code binded. Aliases will also pass the same bidder code when invoking storage functions and hence if alias tries to access device we will try to grab the gvl id for alias instead of original bidder
         if (curBidder && (curBidder != moduleName) && adapterManager.aliasRegistry[curBidder] === moduleName) {
-          gvlid = getGvlid(curBidder);
+          gvlid = internal.getGvlid(curBidder);
         } else {
-          gvlid = getGvlid(moduleName) || gvlid;
+          gvlid = internal.getGvlid(moduleName) || gvlid;
         }
         const curModule = moduleName || curBidder;
         let isAllowed = validateRules(purpose1Rule, consentData, curModule, gvlid);
