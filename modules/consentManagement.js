@@ -102,6 +102,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     if (success) {
       if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         cmpSuccess(tcfData, hookConfig);
+      }
     } else {
       cmpError('CMP unable to register callback function.  Please check CMP setup.', hookConfig);
     }
