@@ -225,7 +225,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     window.addEventListener('message', readPostMessageResponse, false);
 
     // call CMP
-    window[apiName](commandName, null, moduleCallback);
+    window[apiName](commandName, undefined, moduleCallback);
 
     function readPostMessageResponse(event) {
       let cmpDataPkgName = `${apiName}Return`;
