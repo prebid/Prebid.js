@@ -73,7 +73,9 @@ describe('Inmar adapter tests', function () {
     body: {
       cpm: 1.50,
       ad: '<!-- script -->',
-      mediaType: 'banner',
+      meta: {
+        mediaType: 'banner',
+      },
       width: 300,
       height: 250,
       creativeId: '189198063',
@@ -88,14 +90,16 @@ describe('Inmar adapter tests', function () {
   var BID_RESPONSE_VIDEO = {
     body: {
       cpm: 1.50,
-      mediaType: 'video',
+      meta: {
+        mediaType: 'video',
+      },
       width: 1,
       height: 1,
       creativeId: '189198063',
       netRevenue: true,
       currency: 'USD',
       ttl: 300,
-      vastXml: '<VAST></VAST>',
+      vastUrl: 'https://vast.com/vast.xml',
       dealId: 'dealId'
     }
   };
@@ -149,7 +153,7 @@ describe('Inmar adapter tests', function () {
     const bid = bids[0];
     expect(bid.cpm).to.equal(1.50);
     expect(bid.ad).to.equal('<!-- script -->');
-    expect(bid.mediaType).to.equal('banner');
+    expect(bid.meta.mediaType).to.equal('banner');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.creativeId).to.equal('189198063');
@@ -173,7 +177,7 @@ describe('Inmar adapter tests', function () {
 
     const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request);
     const bid = bids[0];
-    expect(bid.vastXml).to.equal('<VAST></VAST>');
+    expect(bid.vastUrl).to.equal('https://vast.com/vast.xml');
   });
 
   it('Verifies bidder_code', function () {
