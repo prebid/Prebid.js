@@ -6,7 +6,8 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import {config} from '../src/config.js';
 
-const BID_HOST = 'https://prebid.technoratimedia.com';
+const BID_SCHEME = 'https://';
+const BID_DOMAIN = 'technoratimedia.com';
 const USER_SYNC_HOST = 'https://ad-cdn.technoratimedia.com';
 const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'linearity', 'mimes', 'protocols', 'api' ];
 const BLOCKED_AD_SIZES = [
@@ -93,7 +94,7 @@ export const spec = {
     if (openRtbBidRequest.imp.length && seatId) {
       return {
         method: 'POST',
-        url: `${BID_HOST}/openrtb/bids/${seatId}?src=$$REPO_AND_VERSION$$`,
+        url: `${BID_SCHEME}${seatId}.${BID_DOMAIN}/openrtb/bids/${seatId}?src=$$REPO_AND_VERSION$$`,
         data: openRtbBidRequest,
         options: {
           contentType: 'application/json',
@@ -189,7 +190,7 @@ export const spec = {
         seatbid.bid.forEach(bid => {
           const creative = updateMacros(bid, bid.adm);
           const nurl = updateMacros(bid, bid.nurl);
-          const [, impType, impid] = bid.impid.match(/^([vb])(.*)$/);
+          const [, impType, impid] = bid.impid.match(/^([vb])([\w\d]+)/);
           let height = bid.h;
           let width = bid.w;
           const isVideo = impType === 'v';
