@@ -47,7 +47,6 @@ function getRandomId(
     );
 }
 
-
 /**
  * @param {string} key
  * @param {string} value
@@ -79,7 +78,6 @@ const getCookie = function(name) {
   }
   return null;
 };
-
 
 /* ----- mguid:start ------ */
 const COOKIE_KEY_MGUID = '__mguid_';
