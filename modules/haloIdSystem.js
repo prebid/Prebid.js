@@ -1,65 +1,65 @@
 /**
- * This module adds Audigent HaloId to the User ID module
+ * This module adds UnifiedId to the User ID module
  * The {@link module:modules/userId} module is required
  * @module modules/haloIdSystem
  * @requires module:modules/userId
  */
 
-import {submodule} from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import * as utils from '../src/utils.js'
+import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook.js'
+import {getGlobal} from '../src/prebidGlobal.js';
 
-const storage = getStorageManager();
+const MODULE_NAME = 'haloId';
 
 /** @type {Submodule} */
 export const haloIdSubmodule = {
   /**
-   * Used to link submodule with config
+   * used to link submodule with config
    * @type {string}
    */
-  name: 'haloId',
+  name: MODULE_NAME,
   /**
-   * Decode the stored id value for passing to bid requests
+   * decode the stored id value for passing to bid requests
    * @function
-   * @param {string} value
-   * @returns {{haloid:string}}
+   * @param {{TDID:string}} value
+   * @returns {{tdid:Object}}
    */
-  getHaloId(callback) {
-    if (storage.getDataFromLocalStorage('haloId')) {
-      let haloId = storage.getDataFromLocalStorage('haloId');
-      callback(haloId);
-    } else if (storage.getDataFromLocalStorage('auHaloId')) {
-      let haloId = {haloId: storage.getDataFromLocalStorage('auHaloId')};
-      callback(haloId);
-    } else {
-      var script = document.createElement('script')
-      script.type = 'text/javascript';
-
-      script.onload = function() {
-        let haloId = {haloId: storage.getDataFromLocalStorage('auHaloId')};
-        callback(haloId);
-      }
-
-      script.src = 'https://id.halo.dev.ad.gt/api/v1/haloid';
-      document.getElementsByTagName('head')[0].appendChild(script);
-    }
-  },
   decode(value) {
     return (value && typeof value['haloId'] === 'string') ? { 'haloId': value['haloId'] } : undefined;
   },
   /**
-   * Performs action to obtain id and return a value in the callback's response argument
+   * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleParams} [configParams]
-   * @returns {function(callback:function)}
+   * @returns {IdResponse|undefined}
    */
-  getId(submoduleConfigParams, consentData) {
-    if (submoduleConfigParams &&
-        typeof submoduleConfigParams['getter'] == 'function') {
-      let haloId = submoduleConfigParams.getter()
-      return {haloId: haloId}
-    }
+  getId(configParams) {
+    // use protocol relative urls for http or https
+    const url = `https://id.halo.dev.ad.gt/api/v1/pbhid`;
 
-    return {callback: haloIdSubmodule.getHaloId};
+    const resp = function (callback) {
+      const callbacks = {
+        success: response => {
+          let responseObj;
+          if (response) {
+            try {
+              responseObj = JSON.parse(response);
+            } catch (error) {
+              utils.logError(error);
+            }
+          }
+          callback(responseObj);
+        },
+        error: error => {
+          utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+          callback();
+        }
+      };
+      const userIds = (getGlobal()).getUserIds();
+      ajax(url, callbacks, userIds);
+    };
+    return {callback: resp};
   }
 };
 

@@ -30,7 +30,7 @@ let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 
 describe('User ID', function() {
-  function getConfigMock(configArr1, configArr2, configArr3, configArr4, configArr5, configArr6, configArr7, configArr8) {
+  function getConfigMock(configArr1, configArr2, configArr3, configArr4, configArr5, configArr6, configArr7, configArr8, configArr9) {
     return {
       userSync: {
         syncDelay: 0,
@@ -42,7 +42,8 @@ describe('User ID', function() {
           (configArr5 && configArr5.length >= 3) ? getStorageMock.apply(null, configArr5) : null,
           (configArr6 && configArr6.length >= 3) ? getStorageMock.apply(null, configArr6) : null,
           (configArr7 && configArr7.length >= 3) ? getStorageMock.apply(null, configArr7) : null,
-          (configArr8 && configArr8.length >= 3) ? getStorageMock.apply(null, configArr8) : null
+          (configArr8 && configArr8.length >= 3) ? getStorageMock.apply(null, configArr8) : null,
+          (configArr9 && configArr9.length >= 3) ? getStorageMock.apply(null, configArr9) : null,
         ].filter(i => i)
       }
     }
@@ -1121,8 +1122,7 @@ describe('User ID', function() {
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.property('userId')
-            expect(bid.userId).to.have.property('haloId')
+            expect(bid).to.have.deep.nested.property('userId.haloId');
             expect(bid.userId.haloId).to.equal('random-ls-identifier');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'audigent.com',
@@ -1145,7 +1145,7 @@ describe('User ID', function() {
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'testintentIqId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('sharedid', JSON.stringify({'id': 'test_sharedId', 'ts': 1590525289611}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('haloId', JSON.stringify({'haloId': 'testHaloID'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('haloId', JSON.stringify({'haloId': 'testHaloId'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, haloIdSubmodule]);
       init(config);
@@ -1190,7 +1190,7 @@ describe('User ID', function() {
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.haloId');
-            expect(bid.userId.haloId).to.equal('testHaloId');
+            expect(bid.userId.intentIqId).to.equal('testHaloId');
 
             expect(bid.userIdAsEids.length).to.equal(9);
           });
@@ -1217,7 +1217,7 @@ describe('User ID', function() {
       coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('sharedid', JSON.stringify({'id': 'test_sharedId', 'ts': 1590525289611}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'testintentIqId'}), (new Date(Date.now() + 5000).toUTCString()));
-      coreStorage.setCookie('haloId', JSON.stringify({'haloid': 'testHaloId'}), (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('haloId', JSON.stringify({'haloId': 'testHaloId'}), (new Date(Date.now() + 5000).toUTCString()));
       setSubmoduleRegistry([]);
 
       // attaching before init
