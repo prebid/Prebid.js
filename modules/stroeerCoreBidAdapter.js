@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ajax} from '../src/ajax.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 
 // Do not import POLYFILLS from core-js. Most likely until next major update (v4).
@@ -119,9 +119,49 @@ function initUserConnect() {
   utils.insertElement(scriptElement);
 }
 
+function hasBanner(bidReq) {
+  return (!bidReq.mediaTypes && !bidReq.mediaType) ||
+    (bidReq.mediaTypes && bidReq.mediaTypes.banner) ||
+    bidReq.mediaType === BANNER;
+}
+
+function hasInstreamVideoOnly(bidReq) {
+  const mediaTypes = bidReq.mediaTypes;
+  return !hasBanner(bidReq) &&
+    mediaTypes &&
+    Object.keys(mediaTypes).length === 1 &&
+    mediaTypes.video &&
+    mediaTypes.video.context === 'instream';
+}
+
+function splitBidRequests(bidRequests) {
+  const groupBy = {
+    'params.ssat': value => value !== 1,
+    'mediaTypes.video': value => value != null
+  };
+  const keys = Object.keys(groupBy);
+  const bidRequestGroups = [];
+
+  bidRequests.forEach(bidRequest => {
+    let bidRequestsGroup = find(bidRequestGroups, bidGroup => {
+      return keys.every(name => bidGroup.key[name] === groupBy[name](utils.deepAccess(bidRequest, name)));
+    });
+    if (!bidRequestsGroup) {
+      const key = {};
+      keys.forEach(name => key[name] = groupBy[name](utils.deepAccess(bidRequest, name)));
+      bidRequestsGroup = {key, bidRequests: []}
+      bidRequestGroups.push(bidRequestsGroup);
+    }
+    bidRequestsGroup.bidRequests.push(bidRequest);
+  });
+
+  return bidRequestGroups.map(group => group.bidRequests);
+}
+
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: 136,
 
   isBidRequestValid: (function () {
     const validators = [];
@@ -131,20 +171,18 @@ export const spec = {
         if (checkFn(bidRequest)) {
           return true;
         } else {
-          utils.logError(`invalid bid: ${errorMsgFn(bidRequest)}`, 'ERROR');
+          utils.logError(`invalid bid in ${BIDDER_CODE}: ${errorMsgFn(bidRequest)}`, 'WARN');
           return false;
         }
       }
     };
 
-    function isBanner(bidReq) {
-      return (!bidReq.mediaTypes && !bidReq.mediaType) ||
-        (bidReq.mediaTypes && bidReq.mediaTypes.banner) ||
-        bidReq.mediaType === BANNER;
+    function hasValidMediaType(bidReq) {
+      return hasBanner(bidReq) || hasInstreamVideoOnly(bidReq);
     }
 
-    validators.push(createValidator((bidReq) => isBanner(bidReq),
-      bidReq => `bid request ${bidReq.bidId} is not a banner`));
+    validators.push(createValidator((bidReq) => hasValidMediaType(bidReq),
+      bidReq => `bid request ${bidReq.bidId} does not have a valid media type`));
     validators.push(createValidator((bidReq) => typeof bidReq.params === 'object',
       bidReq => `bid request ${bidReq.bidId} does not have custom params`));
     validators.push(createValidator((bidReq) => utils.isStr(bidReq.params.sid),
@@ -163,25 +201,20 @@ export const spec = {
 
     setupGlobalNamespace(anyBid);
 
-    const bidRequestWithSsat = find(validBidRequests, bidRequest => bidRequest.params.ssat);
-    const bidRequestWithYl2 = find(validBidRequests, bidRequest => bidRequest.params.yl2);
+    const groupedBidRequests = splitBidRequests(validBidRequests);
 
-    const payload = {
+    const commonPayload = {
       id: bidderRequest.auctionId,
-      bids: [],
       ref: getTopWindowReferrer(),
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
-      ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : 2,
-      yl2: bidRequestWithYl2 ? bidRequestWithYl2.params.yl2 : (localStorage.sdgYieldtest === '1'),
       ab: win['yieldlove_ab']
     };
 
     const userIds = anyBid.userId;
-
     if (!utils.isEmpty(userIds)) {
-      payload.user = {
+      commonPayload.user = {
         euids: userIds
       };
     }
@@ -189,39 +222,88 @@ export const spec = {
     const gdprConsent = bidderRequest.gdprConsent;
 
     if (gdprConsent && gdprConsent.consentString != null && gdprConsent.gdprApplies != null) {
-      payload.gdpr = {
-        consent: bidderRequest.gdprConsent.consentString, applies: bidderRequest.gdprConsent.gdprApplies
+      commonPayload.gdpr = {
+        consent: gdprConsent.consentString, applies: gdprConsent.gdprApplies
       };
     }
 
-    validBidRequests.forEach(bid => {
-      payload.bids.push({
-        bid: bid.bidId,
-        sid: bid.params.sid,
-        siz: bidSizes(bid),
-        viz: elementInView(bid.adUnitCode),
-        ctx: getContextFromSDG(bid)
-      });
-    });
+    function createPayload(bidRequests) {
+      const bidRequestWithSsat = find(bidRequests, bidRequest => bidRequest.params.ssat);
+      const bidRequestWithYl2 = find(bidRequests, bidRequest => bidRequest.params.yl2);
 
-    function getContextFromSDG(bid) {
+      const payload = Object.assign({
+        ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : undefined,
+        yl2: bidRequestWithYl2 ? bidRequestWithYl2.params.yl2 : (getFromLocalStorage('sdgYieldtest') === '1'),
+      }, commonPayload);
+
+      payload.bids = bidRequests.map(bidRequest => ({
+        // siz: [] - Still supported on the backend for backwards compatibility (size of banner bid)
+        bid: bidRequest.bidId,
+        sid: bidRequest.params.sid,
+        viz: elementInView(bidRequest.adUnitCode),
+        vid: createVideoObject(bidRequest),
+        ban: createBannerObject(bidRequest),
+        ctx: getContextFromSDG(bidRequest)
+      }));
+
+      return payload;
+    }
+
+    function getFromLocalStorage(itemName) {
+      let result;
+      try {
+        // Browser may restrict access by throwing error
+        result = localStorage[itemName];
+      } catch (ignore) {}
+      return result;
+    }
+
+    function getContextFromSDG(bidRequest) {
       if (win.SDG) {
         return {
-          position: bid.adUnitCode,
-          adUnits: getAdUnits(bid.adUnitCode),
-          zone: getZone(bid.adUnitCode),
-          pageType: getPageType(bid.adUnitCode),
+          position: bidRequest.adUnitCode,
+          adUnits: getAdUnits(bidRequest.adUnitCode),
+          zone: getZone(bidRequest.adUnitCode),
+          pageType: getPageType(bidRequest.adUnitCode),
         }
       }
     }
 
-    return {
-      method: 'POST', url: buildUrl(anyBid.params), data: payload
-    }
-
-    function bidSizes(bid) {
+    function bannerBidSizes(bid) {
       return utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes /* for prebid < 3 */ || [];
     }
+
+    function createVideoObject (bidRequest) {
+      if (hasInstreamVideoOnly(bidRequest)) {
+        const video = bidRequest.mediaTypes.video;
+        return {
+          ctx: video.context,
+          siz: video.playerSize,
+          mim: video.mimes
+        }
+      }
+      return undefined;
+    }
+
+    function createBannerObject (bidRequest) {
+      return hasBanner(bidRequest) ? {
+        siz: bannerBidSizes(bidRequest),
+      } : undefined
+    }
+
+    const endpointUrl = buildUrl(anyBid.params);
+
+    const serverRequestInfos = [];
+
+    groupedBidRequests.forEach(bidRequests => {
+      if (bidRequests.length > 0) {
+        serverRequestInfos.push({
+          method: 'POST', url: endpointUrl, data: createPayload(bidRequests)
+        });
+      }
+    });
+
+    return serverRequestInfos;
 
     function getPageType(position) {
       try {
@@ -259,6 +341,7 @@ export const spec = {
 
       serverResponse.body.bids.forEach(bidResponse => {
         const cpm = bidResponse.cpm || 0;
+        const mediaType = bidResponse.vastXml != null ? VIDEO : BANNER;
 
         const bid = {
           // Prebid fields
@@ -266,11 +349,11 @@ export const spec = {
           cpm: cpm,
           width: bidResponse.width || 0,
           height: bidResponse.height || 0,
-          ad: bidResponse.ad,
           ttl: 300 /* 5 minutes */,
           currency: 'EUR',
           netRevenue: true,
           creativeId: '',
+          mediaType,
 
           // Custom fields
           cpm2: bidResponse.cpm2 || 0,
@@ -304,6 +387,12 @@ export const spec = {
               .replace(/\${AUCTION_PRICE}/g, auctionPrice);
           }
         };
+
+        if (mediaType === VIDEO) {
+          bid.vastXml = bidResponse.vastXml;
+        } else {
+          bid.ad = bidResponse.ad;
+        }
 
         if (bidResponse.bidPriceOptimisation) {
           bids.push(Object.assign(bid, bidResponse.bidPriceOptimisation))
