@@ -184,7 +184,7 @@ function isIngestedEvent(eventType) {
 function markEnabled() {
   pwInfo(`Enabled`, configOptions);
   pwAnalyticsEnabled = true;
-  setInterval(flushEvents, 1);
+  setInterval(flushEvents, 100);
 }
 
 function pwInfo(info, context) {

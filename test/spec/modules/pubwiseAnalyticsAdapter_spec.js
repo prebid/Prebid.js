@@ -59,7 +59,7 @@ describe('PubWise Prebid Analytics', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
 
       // eslint-disable-next-line
-      console.log(requests);   
+      //console.log(requests);   
 
       /* testing for 6 calls, including the 2 we're not currently tracking */
       sandbox.assert.callCount(pubwiseAnalytics.track, 7);
@@ -73,9 +73,6 @@ describe('PubWise Prebid Analytics', function () {
       events.emit(constants.EVENTS.BID_WON, {});
       // force flush
       clock.tick(500);
-
-      // eslint-disable-next-line
-      console.log(requests);    
 
       /* check for critical values */
       let request = requests[0];
