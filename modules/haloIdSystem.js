@@ -56,8 +56,7 @@ export const haloIdSubmodule = {
           callback();
         }
       };
-      const userIds = (getGlobal()).getUserIds();
-      ajax(url, callbacks, userIds);
+      ajax(url, callbacks, undefined, {method: 'GET'});
     };
     return {callback: resp};
   }
