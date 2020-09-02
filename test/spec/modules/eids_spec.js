@@ -43,12 +43,26 @@ describe('eids array generation for known sub-modules', function() {
 
   it('parrableId', function() {
     const userId = {
-      parrableid: 'some-random-id-value'
+      parrableId: {
+        eid: 'some-random-id-value'
+      }
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'parrable.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('merkleId', function() {
+    const userId = {
+      merkleId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'merkleinc.com',
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
@@ -116,22 +130,6 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids[0]).to.deep.equal({
       source: 'crwdcntrl.net',
       uids: [{ id: 'some-random-id-value', atype: 1 }],
-    });
-  });
-
-  it('DigiTrust; getValue call', function() {
-    const userId = {
-      digitrustid: {
-        data: {
-          id: 'some-random-id-value'
-        }
-      }
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'digitru.st',
-      uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
 

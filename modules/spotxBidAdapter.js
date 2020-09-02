@@ -331,6 +331,11 @@ export const spec = {
             height: spotxBid.h
           };
 
+          bid.meta = bid.meta || {};
+          if (spotxBid && spotxBid.adomain && spotxBid.adomain.length > 0) {
+            bid.meta.advertiserDomains = spotxBid.adomain;
+          }
+
           const context1 = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
           const context2 = utils.deepAccess(currentBidRequest, 'params.ad_unit');
           if (context1 == 'outstream' || context2 == 'outstream') {
@@ -392,7 +397,7 @@ function createOutstreamScript(bid) {
 
   utils.logMessage('[SPOTX][renderer] Default beahavior');
   if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
-    dataSpotXParams['data-spotx_ad_mute'] = '0';
+    dataSpotXParams['data-spotx_ad_mute'] = '1';
   }
   dataSpotXParams['data-spotx_collapse'] = '0';
   dataSpotXParams['data-spotx_autoplay'] = '1';

@@ -14,6 +14,8 @@ This README is for developers who want to contribute to Prebid.js.
 Additional documentation can be found at [the Prebid homepage](http://prebid.org).
 Working examples can be found in [the developer docs](http://prebid.org/dev-docs/getting-started.html).
 
+Prebid.js is open source software that is offered for free as a convenience. While it is designed to help companies address legal requirements associated with header bidding, we cannot and do not warrant that your use of Prebid.js will satisfy legal requirements. You are solely responsible for ensuring that your use of Prebid.js complies with all applicable laws.  We strongly encourage you to obtain legal advice when using Prebid.js to ensure your implementation complies with all laws where you operate.
+
 **Table of Contents**
 
 - [Usage](#Usage)
@@ -266,7 +268,7 @@ As you make code changes, the bundles will be rebuilt and the page reloaded auto
 
 ## Contribute
 
-Many SSPs, bidders, and publishers have contributed to this project. [60+ Bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+Many SSPs, bidders, and publishers have contributed to this project. [Hundreds of bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
 
 For guidelines, see [Contributing](./CONTRIBUTING.md).
 
@@ -274,9 +276,7 @@ Our PR review process can be found [here](https://github.com/prebid/Prebid.js/tr
 
 ### Add a Bidder Adapter
 
-To add a bidder adapter module, see the instructions in [How to add a bidder adaptor](http://prebid.org/dev-docs/bidder-adaptor.html).
-
-Please **do NOT load Prebid.js inside your adapter**. If you do this, we will reject or remove your adapter as appropriate.
+To add a bidder adapter module, see the instructions in [How to add a bidder adapter](https://docs.prebid.org/dev-docs/bidder-adaptor.html).
 
 ### Code Quality
 
