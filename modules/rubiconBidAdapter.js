@@ -516,27 +516,25 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    if (bidRequest.userId) {
-      if (bidRequest.userId.tdid) {
-        data['tpid_tdid'] = bidRequest.userId.tdid;
+    if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
+      const unifiedId = find(bidRequest.userIdAsEids, eid => eid.source === 'adserver.org');
+      if (unifiedId) {
+        data['tpid_tdid'] = unifiedId.uids[0].id;
       }
-
-      // support liveintent ID
-      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-        data['tpid_liveintent.com'] = bidRequest.userId.lipb.lipbid;
-        if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
-          data['tg_v.LIseg'] = bidRequest.userId.lipb.segments.join(',');
+      const liveintentId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveintent.com');
+      if (liveintentId) {
+        data['tpid_liveintent.com'] = liveintentId.uids[0].id;
+        if (liveintentId.ext && Array.isArray(liveintentId.ext.segments) && liveintentId.ext.segments.length) {
+          data['tg_v.LIseg'] = liveintentId.ext.segments.join(',');
         }
       }
-
-      // support identityLink (aka LiveRamp)
-      if (bidRequest.userId.idl_env) {
-        data['x_liverampidl'] = bidRequest.userId.idl_env;
+      const liverampId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveramp.com');
+      if (liverampId) {
+        data['x_liverampidl'] = liverampId.uids[0].id;
       }
-
-      // support shared id
-      if (bidRequest.userId.sharedid) {
-        data['eid_sharedid.org'] = `${bidRequest.userId.sharedid.id}^3^${bidRequest.userId.sharedid.third}`;
+      const sharedId = find(bidRequest.userIdAsEids, eid => eid.source === 'sharedid.org');
+      if (sharedId) {
+        data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
       }
     }
 

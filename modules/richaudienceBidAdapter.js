@@ -132,7 +132,7 @@ export const spec = {
     var consent = '';
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString != 'undefined') {
-      consent = `consentString=’${gdprConsent.consentString}`
+      consent = `consentString=${gdprConsent.consentString}`
     }
 
     if (syncOptions.iframeEnabled) {
