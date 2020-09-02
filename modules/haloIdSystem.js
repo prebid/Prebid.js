@@ -22,8 +22,8 @@ export const haloIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {{haloId:string}} value
-   * @returns {{tdid:Object}}
+   * @param {{value:string}} value
+   * @returns {{haloId:Object}}
    */
   decode(value) {
     return (value && typeof value['haloId'] === 'string') ? { 'haloId': value['haloId'] } : undefined;
@@ -36,7 +36,7 @@ export const haloIdSubmodule = {
    */
   getId(configParams) {
     // use protocol relative urls for http or https
-    const url = `https://id.halo.dev.ad.gt/api/v1/pbhid`;
+    const url = `https://id.halo.ad.gt/api/v1/pbhid`;
 
     const resp = function (callback) {
       const callbacks = {
