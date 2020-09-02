@@ -139,6 +139,7 @@ function sendMessage(auctionId, bidWonId) {
   let message = {
     eventTimeMillis: Date.now(),
     integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
+    ruleId: config.getConfig('rubicon.rule_name'),
     version: '$prebid.version$',
     referrerUri: referrer,
     referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer)
@@ -422,7 +423,8 @@ function subscribeToGamSlots() {
             'advertiserId', advertiserId => utils.isNumber(advertiserId) ? advertiserId : undefined,
             'creativeId', creativeId => utils.isNumber(creativeId) ? creativeId : undefined,
             'lineItemId', lineItemId => utils.isNumber(lineItemId) ? lineItemId : undefined,
-            'adSlot', () => event.slot.getAdUnitPath()
+            'adSlot', () => event.slot.getAdUnitPath(),
+            'isSlotEmpty', () => event.isEmpty || undefined
           ]);
         }
       });
