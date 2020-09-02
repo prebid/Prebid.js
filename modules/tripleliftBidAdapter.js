@@ -1,4 +1,4 @@
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
@@ -11,9 +11,13 @@ let consentString = null;
 export const tripleliftAdapterSpec = {
 
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
-  isBidRequestValid: function(bid) {
-    return (typeof bid.params.inventoryCode !== 'undefined');
+  supportedMediaTypes: [BANNER, VIDEO],
+  isBidRequestValid: function (bid) {
+    if (bid.mediaTypes.video) {
+      let video = _getORTBVideo(bid);
+      if (!video.w || !video.h) return false;
+    }
+    return typeof bid.params.inventoryCode !== 'undefined';
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
@@ -107,15 +111,18 @@ function _getSyncType(syncOptions) {
 function _buildPostBody(bidRequests) {
   let data = {};
   let { schain } = bidRequests[0];
-  data.imp = bidRequests.map(function(bid, index) {
-    return {
+  data.imp = bidRequests.map(function(bidRequest, index) {
+    let imp = {
       id: index,
-      tagid: bid.params.inventoryCode,
-      floor: _getFloor(bid),
-      banner: {
-        format: _sizes(bid.sizes)
-      }
+      tagid: bidRequest.params.inventoryCode,
+      floor: _getFloor(bidRequest)
     };
+    if (bidRequest.mediaTypes.video) {
+      imp.video = _getORTBVideo(bidRequest);
+    } else if (bidRequest.mediaTypes.banner) {
+      imp.banner = { format: _sizes(bidRequest.sizes) };
+    };
+    return imp;
   });
 
   let eids = [
@@ -136,6 +143,17 @@ function _buildPostBody(bidRequests) {
     }
   }
   return data;
+}
+
+function _getORTBVideo(bidRequest) {
+  // give precedent to mediaTypes.video
+  let video = { ...bidRequest.params.video, ...bidRequest.mediaTypes.video };
+  if (!video.w) video.w = video.playerSize[0][0];
+  if (!video.h) video.h = video.playerSize[0][1];
+  if (video.context === 'instream') video.placement = 1;
+  // clean up oRTB object
+  delete video.playerSize;
+  return video;
 }
 
 function _getFloor (bid) {
@@ -207,10 +225,11 @@ function _buildResponseObject(bidderRequest, bid) {
   let height = bid.height || 1;
   let dealId = bid.deal_id || '';
   let creativeId = bid.crid || '';
+  let breq = bidderRequest.bids[bid.imp_id];
 
   if (bid.cpm != 0 && bid.ad) {
     bidResponse = {
-      requestId: bidderRequest.bids[bid.imp_id].bidId,
+      requestId: breq.bidId,
       cpm: bid.cpm,
       width: width,
       height: height,
@@ -220,7 +239,12 @@ function _buildResponseObject(bidderRequest, bid) {
       dealId: dealId,
       currency: 'USD',
       ttl: 300,
-      tl_source: bid.tl_source,
+      tl_source: bid.tl_source
+    };
+
+    if (breq.mediaTypes.video) {
+      bidResponse.vastXml = bid.ad;
+      bidResponse.mediaType = 'video';
     };
   };
   return bidResponse;
