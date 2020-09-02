@@ -19,8 +19,8 @@ var adUnits = [
             {
                  bidder: 'malltv',
                  params: {
-                    propertyId: '105135',
-                    placementId: '846835'
+                    propertyId: '105134',
+                    placementId: '846832'
                 }
             }
         ]
@@ -36,8 +36,8 @@ var adUnits = [
             {
                  bidder: 'malltv',
                  params: {
-                    propertyId: '105135',
-                    placementId: '846835',
+                    propertyId: '105134',
+                    placementId: '846832',
                     contents: [ //optional
                         { 
                             type: 'video',
