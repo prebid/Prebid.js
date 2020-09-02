@@ -35,9 +35,29 @@ const USER_IDS_CONFIG = {
   },
 
   // parrableId
-  'parrableid': {
+  'parrableId': {
     source: 'parrable.com',
-    atype: 1
+    atype: 1,
+    getValue: function(parrableId) {
+      if (parrableId.eid) {
+        return parrableId.eid;
+      }
+      if (parrableId.ccpaOptout) {
+        // If the EID was suppressed due to a non consenting ccpa optout then
+        // we still wish to provide this as a reason to the adapters
+        return '';
+      }
+      return null;
+    },
+    getUidExt: function(parrableId) {
+      const extendedData = utils.pick(parrableId, [
+        'ibaOptout',
+        'ccpaOptout'
+      ]);
+      if (Object.keys(extendedData).length) {
+        return extendedData;
+      }
+    }
   },
 
   // identityLink
@@ -77,6 +97,12 @@ const USER_IDS_CONFIG = {
   // criteo
   'criteoId': {
     source: 'criteo.com',
+    atype: 1
+  },
+
+  // merkleId
+  'merkleId': {
+    source: 'merkleinc.com',
     atype: 1
   },
 
