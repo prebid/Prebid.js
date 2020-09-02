@@ -1,5 +1,5 @@
 /**
- * This module adds UnifiedId to the User ID module
+ * This module adds HaloID to the User ID module
  * The {@link module:modules/userId} module is required
  * @module modules/haloIdSystem
  * @requires module:modules/userId
@@ -22,7 +22,7 @@ export const haloIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {{TDID:string}} value
+   * @param {{haloId:string}} value
    * @returns {{tdid:Object}}
    */
   decode(value) {
