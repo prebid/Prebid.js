@@ -86,6 +86,11 @@ describe('automatadBidAdapter', function () {
       expect(rdata.imp.length).to.equal(1)
     })
 
+    it('should include placement', function () {
+      let r = rdata.imp[0]
+      expect(r.placement !== null).to.be.true
+    })
+
     it('should include media types', function () {
       let r = rdata.imp[0]
       expect(r.media_types !== null).to.be.true
