@@ -1100,7 +1100,7 @@ describe('User ID', function() {
     });
 
     it('test hook from intentIqId cookies', function(done) {
-      // simulate existing browser local storage values∂h
+      // simulate existing browser local storage values
       coreStorage.setCookie('intentIqId', JSON.stringify({'ctrid': 'abcdefghijk'}), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([intentIqIdSubmodule]);
