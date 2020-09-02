@@ -84,7 +84,7 @@ export function getGvlid(module) {
 }
 
 /**
- * Returns GVL ID for a bid adapter. If the adapter does not have an associated GVL ID, it returns 'undefined'.
+ * Returns GVL ID for a bid adapter. If the adapter does not have an associated GVL ID, it returns 'null'.
  * @param  {string=} bidderCode - The 'code' property of the Bidder spec.
  * @return {number} GVL ID
  */
@@ -101,7 +101,7 @@ function getGvlidForBidAdapter(bidderCode) {
 }
 
 /**
- * Returns GVL ID for an userId submodule. If an userId submodules does not have an associated GVL ID, it returns 'undefined'.
+ * Returns GVL ID for an userId submodule. If an userId submodules does not have an associated GVL ID, it returns 'null'.
  * @param {Object} userIdModule
  * @return {number} GVL ID
  */
@@ -110,16 +110,12 @@ function getGvlidForUserIdModule(userIdModule) {
 }
 
 /**
- * Returns GVL ID for an analytics adapter. If an analytics adapter does not have an associated GVL ID, it returns 'undefined'.
+ * Returns GVL ID for an analytics adapter. If an analytics adapter does not have an associated GVL ID, it returns 'null'.
  * @param {string} code - 'provider' property on the analytics adapter config
  * @return {number} GVL ID
  */
 function getGvlidForAnalyticsAdapter(code) {
-  let gvlid = null;
-  if (adapterManager.getAnalyticsAdapter(code) && adapterManager.getAnalyticsAdapter(code).gvlid) {
-    return adapterManager.getAnalyticsAdapter(code).gvlid
-  }
-  return gvlid;
+  return adapterManager.getAnalyticsAdapter(code) && (adapterManager.getAnalyticsAdapter(code).gvlid || null);
 }
 
 /**
