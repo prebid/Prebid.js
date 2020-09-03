@@ -4,7 +4,7 @@ import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
 const SUPPORTED_AD_TYPES = [VIDEO];
-const BIDDER_CODE = 'ironSource';
+const BIDDER_CODE = 'ironsource';
 const BIDDER_VERSION = '4.0.0';
 const TTL = 360;
 const SELLER_ENDPOINT = 'https://hb.yellowblue.io/hb';
