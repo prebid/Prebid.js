@@ -45,6 +45,11 @@ export const spec = {
       us_privacy: utils.deepAccess(bidderRequest, 'uspConsent') || ''
     };
 
+    const mtp = window.navigator.maxTouchPoints;
+    if (mtp) {
+      serverRequest.mtp = mtp;
+    }
+
     bidRequests.forEach(request => {
       serverRequest.p.push(addPlacement(request));
       const pubcid = getId(request, 'pubcid');

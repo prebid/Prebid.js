@@ -27,6 +27,30 @@ Module that connects to Ablida's bidder for bids.
                        }
                    }
                ]
+           }, {
+               code: 'native-ad-div',
+               mediaTypes: {
+                   native: {
+                       image: {
+                           sendId: true,
+                           required: true
+                       },
+                       title: {
+                           required: true
+                       },
+                       body: {
+                           required: true
+                       }
+                   }
+               },
+               bids: [
+                   {
+                       bidder: 'ablida',
+                       params: {
+                           placementId: 'native-demo'
+                       }
+                   }
+               ]
            }
-       ];
+    ];
 ```
