@@ -3,7 +3,8 @@
  */
 
 import * as utils from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
+// import { getStorageManager } from '../src/storageManager.js'; // compatible to v3.0
+//
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
@@ -15,7 +16,7 @@ const ENDPOINT_URL =
   'https://rtb-us.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
 // const ENDPOINT_URL = '/api/bid?tn=';
-const storage = getStorageManager();
+// const storage = getStorageManager(); // compatible to v3.0
 let globals = {};
 let itemMaps = {};
 
@@ -46,6 +47,38 @@ function getRandomId(
     );
 }
 
+/**
+ * @param {string} key
+ * @param {string} value
+ * @param {string} [expires='']
+ * @param {string} [sameSite='/']
+ * @param {string} [domain] domain (e.g., 'example.com' or 'subdomain.example.com').
+ * If not specified, defaults to the host portion of the current document location.
+ * If a domain is specified, subdomains are always included.
+ * Domain must match the domain of the JavaScript origin. Setting cookies to foreign domains will be silently ignored.
+ */
+const setCookie = function(key, value, expires, sameSite, domain) {
+  if (getProperty(window, 'document', 'cookie')) {
+    const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
+    const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
+    const isNone = (sameSite != null && sameSite.toLowerCase() == 'none')
+    const secure = (isNone) ? '; Secure' : '';
+    document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
+  }
+};
+
+/**
+ * @param {string} name
+ * @returns {(string|null)}
+ */
+const getCookie = function(name) {
+  if (getProperty(window, 'document', 'cookie')) {
+    let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+    return m ? decodeURIComponent(m[2]) : null;
+  }
+  return null;
+};
+
 /* ----- mguid:start ------ */
 const COOKIE_KEY_MGUID = '__mguid_';
 
@@ -54,11 +87,11 @@ const COOKIE_KEY_MGUID = '__mguid_';
  * @return {string}
  */
 const getUserID = () => {
-  const i = storage.getCookie(COOKIE_KEY_MGUID);
+  const i = getCookie(COOKIE_KEY_MGUID);
 
   if (i === null) {
     const uuid = utils.generateUUID();
-    storage.setCookie(COOKIE_KEY_MGUID, uuid);
+    setCookie(COOKIE_KEY_MGUID, uuid);
     return uuid;
   }
   return i;
@@ -215,6 +248,7 @@ function getParam(validBidRequests, bidderRequest) {
   let isTest = 0;
   let auctionId = getProperty(bidderRequest, 'auctionId') || getRandomId();
   let items = getItems(validBidRequests, bidderRequest);
+  // console.log(items);
 
   const domain = document.domain;
   const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
@@ -286,7 +320,13 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
+    // console.log('mediago', {
+    //   validBidRequests, bidderRequest
+    // });
     let payload = getParam(validBidRequests, bidderRequest);
+    // console.log('mediago', {
+    //   payload
+    // });
 
     const payloadString = JSON.stringify(payload);
     return {
