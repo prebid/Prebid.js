@@ -8,7 +8,7 @@ describe('cointrafficBidAdapter', function () {
     let bid = {
       bidder: 'cointraffic',
       params: {
-        placementId: 'ct_testPlacementId'
+        placementId: 'testPlacementId'
       },
       adUnitCode: 'adunit-code',
       sizes: [
@@ -29,7 +29,7 @@ describe('cointrafficBidAdapter', function () {
       {
         bidder: 'cointraffic',
         params: {
-          placementId: 'ct_testPlacementId'
+          placementId: 'testPlacementId'
         },
         adUnitCode: 'adunit-code',
         sizes: [
@@ -42,7 +42,7 @@ describe('cointrafficBidAdapter', function () {
       {
         bidder: 'cointraffic',
         params: {
-          placementId: 'ct_testPlacementId'
+          placementId: 'testPlacementId'
         },
         adUnitCode: 'adunit-code2',
         sizes: [
@@ -83,7 +83,7 @@ describe('cointrafficBidAdapter', function () {
         method: 'POST',
         url: ENDPOINT_URL,
         data: {
-          placementId: 'ct_testPlacementId',
+          placementId: 'testPlacementId',
           device: 'desktop',
           sizes: ['300x250'],
           bidId: 'bidId12345',
