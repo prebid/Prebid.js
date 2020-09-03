@@ -8,7 +8,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const RUBICON_GVL_ID = 52;
-const storage = getStorageManager(RUBICON_GVL_ID, 'rubicon');
+export const storage = getStorageManager(RUBICON_GVL_ID, 'rubicon');
 const COOKIE_NAME = 'rpaSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
@@ -244,7 +244,9 @@ function sendMessage(auctionId, bidWonId) {
         'expires'
       ]);
       if (auctionCache.session.fpkvs && Object.keys(auctionCache.session.fpkvs).length) {
-        auction.fpkvs = auctionCache.session.fpkvs;
+        message.fpkvs = Object.keys(auctionCache.session.fpkvs).map(key => {
+          return { key, value: auctionCache.session.fpkvs[key] };
+        });
       }
     }
 
@@ -341,8 +343,8 @@ function getDynamicKvps() {
 }
 
 function getPageViewId() {
-  if (prebidGlobal.rp && typeof prebidGlobal.rp.getPageViewId === 'function') {
-    return prebidGlobal.rp.getPageViewId();
+  if (prebidGlobal.rp && typeof prebidGlobal.rp.generatePageViewId === 'function') {
+    return prebidGlobal.rp.generatePageViewId(false);
   }
 }
 
@@ -389,7 +391,7 @@ function updateRpaCookie() {
   let decodedRpaCookie = getRpaCookie();
   if (
     !Object.keys(decodedRpaCookie).length ||
-    (decodedRpaCookie.lastSeen - currentTime) > LAST_SEEN_EXPIRE_TIME ||
+    (currentTime - decodedRpaCookie.lastSeen) > LAST_SEEN_EXPIRE_TIME ||
     decodedRpaCookie.expires < currentTime
   ) {
     decodedRpaCookie = {
@@ -482,10 +484,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   track({eventType, args}) {
     switch (eventType) {
       case AUCTION_INIT:
-        // register to listen to gpt events if not done yet
-        if (!cache.gpt.registered && utils.isGptPubadsDefined()) {
-          subscribeToGamSlots();
-        }
         // set the rubicon aliases
         setRubiconAliases(adapterManager.aliasRegistry);
         let cacheEntry = utils.pick(args, [
@@ -502,6 +500,10 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.gdprConsent = utils.deepAccess(args, 'bidderRequests.0.gdprConsent');
         cacheEntry.session = updateRpaCookie();
         cache.auctions[args.auctionId] = cacheEntry;
+        // register to listen to gpt events if not done yet
+        if (!cache.gpt.registered && utils.isGptPubadsDefined()) {
+          subscribeToGamSlots();
+        }
         break;
       case BID_REQUESTED:
         Object.assign(cache.auctions[args.auctionId].bids, args.bids.reduce((memo, bid) => {
