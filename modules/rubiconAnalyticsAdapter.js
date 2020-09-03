@@ -23,7 +23,7 @@ const {
     BIDDER_DONE,
     BID_TIMEOUT,
     BID_WON,
-    SET_TARGETING,
+    SET_TARGETING
   },
   STATUS: {
     GOOD,

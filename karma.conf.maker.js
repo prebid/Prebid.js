@@ -170,6 +170,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     plugins: plugins
   }
+
   // To ensure that, we are able to run single spec file
   // here we are adding preprocessors, when file is passed
   if (file) {
@@ -178,6 +179,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     });
     delete config.preprocessors['test/test_index.js'];
   }
+
   setReporters(config, codeCoverage, browserstack);
   setBrowsers(config, browserstack);
   return config;
