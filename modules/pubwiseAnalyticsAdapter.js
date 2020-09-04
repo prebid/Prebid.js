@@ -2,7 +2,9 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../src/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
+import { getStorageManager } from '../src/storageManager.js';
 const utils = require('../src/utils.js');
+const storage = getStorageManager();
 
 /****
  * PubWise.io Analytics
@@ -42,7 +44,9 @@ let sessTimeoutName = 'sess_timeout';
 
 function enrichWithSessionInfo(dataBag) {
   try {
-    dataBag['session_id'] = sessionData.sessId;
+    // eslint-disable-next-line
+    // console.log(sessionData);
+    dataBag['session_id'] = sessionData.sessionId;
     dataBag['activation_id'] = sessionData.activationId;
   } catch (e) {
     dataBag['error_sess'] = 1;
@@ -81,14 +85,14 @@ function enrichWithUTM(dataBag) {
 
     if (newUtm === false) {
       for (let prop in utmKeys) {
-        let itemValue = localStorage.getItem(setNamespace(prop));
+        let itemValue = storage.getDataFromLocalStorage(setNamespace(prop));
         if (itemValue !== null && typeof itemValue !== 'undefined' && itemValue.length !== 0) {
           dataBag[prop] = itemValue;
         }
       }
     } else {
       for (let prop in utmKeys) {
-        localStorage.setItem(setNamespace(prop), utmKeys[prop]);
+        storage.setDataInLocalStorage(setNamespace(prop), utmKeys[prop]);
       }
     }
   } catch (e) {
@@ -101,7 +105,7 @@ function enrichWithUTM(dataBag) {
 function expireUtmData() {
   pwInfo(`Session Expiring UTM Data`);
   for (let prop in utmKeys) {
-    localStorage.removeItem(setNamespace(prop));
+    storage.removeDataFromLocalStorage(setNamespace(prop));
   }
 }
 
@@ -149,15 +153,15 @@ function localStorageSessName() {
 }
 
 function extendUserSessionTimeout() {
-  localStorage.setItem(localStorageSessTimeoutName(), Date.now().toString());
+  storage.setDataInLocalStorage(localStorageSessTimeoutName(), Date.now().toString());
 }
 
 function userSessionID() {
-  return localStorage.getItem(localStorageSessName()) ? localStorage.getItem(localStorageSessName()) : '';
+  return storage.getDataFromLocalStorage(localStorageSessName()) ? localStorage.getItem(localStorageSessName()) : '';
 }
 
 function sessionExpired() {
-  let sessLastTime = localStorage.getItem(localStorageSessTimeoutName());
+  let sessLastTime = storage.getDataFromLocalStorage(localStorageSessTimeoutName());
   return (Date.now() - parseInt(sessLastTime)) > sessTimeout;
 }
 
@@ -191,20 +195,6 @@ function pwInfo(info, context) {
   utils.logInfo(`${analyticsName} ` + info, context);
 }
 
-/*
-  // unused currently
-  function filterNoBid(data) {
-    let newNoBidData = {};
-
-    newNoBidData.auctionId = data.auctionId;
-    newNoBidData.bidId = data.bidId;
-    newNoBidData.bidderRequestId = data.bidderRequestId;
-    newNoBidData.transactionId = data.transactionId;
-
-    return newNoBidData;
-  }
-*/
-
 function filterBidResponse(data) {
   let modified = Object.assign({}, data);
   // clean up some properties we don't track in public version
@@ -233,12 +223,8 @@ function filterAuctionInit(data) {
 
   modified.refererInfo = {};
   // handle clean referrer, we only need one
-  if (typeof modified.bidderRequests !== 'undefined') {
-    if (typeof modified.bidderRequests[0] !== 'undefined') {
-      if (typeof modified.bidderRequests[0].refererInfo !== 'undefined') {
-        modified.refererInfo = modified.bidderRequests[0].refererInfo;
-      }
-    }
+  if (typeof modified.bidderRequests !== 'undefined' && typeof modified.bidderRequests[0] !== 'undefined' && typeof modified.bidderRequests[0].refererInfo !== 'undefined') {
+    modified.refererInfo = modified.bidderRequests[0].refererInfo;
   }
 
   if (typeof modified.adUnitCodes !== 'undefined') {
@@ -311,29 +297,32 @@ pubwiseAnalytics.handleEvent = function(eventType, data) {
 }
 
 pubwiseAnalytics.storeSessionID = function (userSessID) {
-  localStorage.setItem(localStorageSessName(), userSessID);
+  storage.setDataInLocalStorage(localStorageSessName(), userSessID);
   pwInfo(`New Session Generated`, userSessID);
 };
 
 // ensure a session exists, if not make one, always store it
 pubwiseAnalytics.ensureSession = function () {
   if (sessionExpired() === true || userSessionID() === null || userSessionID() === '') {
+    let generatedId = utils.generateUUID();
     expireUtmData();
-    this.storeSessionID(utils.generateUUID());
+    this.storeSessionID(generatedId);
+    sessionData.sessionId = generatedId;
   }
+  // eslint-disable-next-line
+  // console.log('ensured session');
   extendUserSessionTimeout();
-  sessionData.sessId = userSessionID();
 };
 
 pubwiseAnalytics.adapterEnableAnalytics = pubwiseAnalytics.enableAnalytics;
 
 pubwiseAnalytics.enableAnalytics = function (config) {
-  sessionData.activationId = utils.generateUUID();
   configOptions = config.options;
   if (configOptions.debug === undefined) {
     configOptions.debug = utils.debugTurnedOn();
   }
   markEnabled();
+  sessionData.activationId = utils.generateUUID();
   this.ensureSession();
   pubwiseAnalytics.adapterEnableAnalytics(config);
 };
