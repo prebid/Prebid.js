@@ -4,6 +4,7 @@ import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 const PBS_INTEGRATION = 'pbjs';
@@ -219,16 +220,13 @@ describe('the rubicon adapter', function () {
       'size_id': 201,
     };
     bid.userId = {
-      lipb: {
-        lipbid: '0000-1111-2222-3333',
-        segments: ['segA', 'segB']
-      },
+      lipb: { lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB'] },
       idl_env: '1111-2222-3333-4444',
-      sharedid: {
-        id: '1111',
-        third: '2222'
-      }
+      sharedid: { id: '1111', third: '2222' },
+      tdid: '3000',
+      pubcid: '4000'
     };
+    bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
   }
 
@@ -1318,11 +1316,12 @@ describe('the rubicon adapter', function () {
         });
 
         describe('user id config', function() {
-          it('should send tpid_tdid when userId defines tdid', function () {
+          it('should send tpid_tdid when userIdAsEids contains unifiedId', function () {
             const clonedBid = utils.deepClone(bidderRequest.bids[0]);
             clonedBid.userId = {
               tdid: 'abcd-efgh-ijkl-mnop-1234'
             };
+            clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
             let [request] = spec.buildRequests([clonedBid], bidderRequest);
             let data = parseQuery(request.data);
 
@@ -1330,20 +1329,21 @@ describe('the rubicon adapter', function () {
           });
 
           describe('LiveIntent support', function () {
-            it('should send tpid_liveintent.com when userId defines lipd', function () {
+            it('should send tpid_liveintent.com when userIdAsEids contains liveintentId', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 lipb: {
                   lipbid: '0000-1111-2222-3333'
                 }
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
               expect(data['tpid_liveintent.com']).to.equal('0000-1111-2222-3333');
             });
 
-            it('should send tg_v.LIseg when userId defines lipd.segments', function () {
+            it('should send tg_v.LIseg when userIdAsEids contains liveintentId with ext.segments as array', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 lipb: {
@@ -1351,6 +1351,7 @@ describe('the rubicon adapter', function () {
                   segments: ['segD', 'segE']
                 }
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               const unescapedData = unescape(request.data);
 
@@ -1360,11 +1361,12 @@ describe('the rubicon adapter', function () {
           });
 
           describe('LiveRamp support', function () {
-            it('should send x_liverampidl when userId defines idl_env', function () {
+            it('should send x_liverampidl when userIdAsEids contains liverampId', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 idl_env: '1111-2222-3333-4444'
               };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1373,7 +1375,25 @@ describe('the rubicon adapter', function () {
           });
 
           describe('SharedID support', function () {
-            it('should send sharedid when userId defines sharedId', function () {
+            it('should send sharedid when userIdAsEids contains sharedId', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                sharedid: {
+                  id: '1111',
+                  third: '2222'
+                }
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_sharedid.org']).to.equal('1111^1^2222');
+            });
+          });
+
+          describe('Config user.id support', function () {
+            it('should send ppuid when config defines user.id', function () {
+              config.setConfig({ user: { id: '123' } });
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 sharedid: {
@@ -1384,10 +1404,10 @@ describe('the rubicon adapter', function () {
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
-              expect(data['eid_sharedid.org']).to.equal('1111^3^2222');
+              expect(data['ppuid']).to.equal('123');
             });
           });
-        })
+        });
 
         describe('Prebid AdSlot', function () {
           beforeEach(function () {
@@ -1573,25 +1593,44 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          // EIDs should exist
+          expect(post.user.ext).to.have.property('eids').that.is.an('array');
+          // LiveIntent should exist
           expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
           expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
-          expect(post.user.ext.tpid).that.is.an('object');
+          expect(post.user.ext.eids[0].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[0]).to.have.property('ext').that.is.an('object');
+          expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
+          expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
+          expect(post.user.ext.eids[0].ext.segments[1]).to.equal('segB');
+          // Non-EID properties set using liveintent EID values
+          expect(post.user.ext).to.have.property('tpid').that.is.an('object');
           expect(post.user.ext.tpid.source).to.equal('liveintent.com');
           expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
+          expect(post).to.have.property('rp').that.is.an('object');
+          expect(post.rp).to.have.property('target').that.is.an('object');
+          expect(post.rp.target).to.have.property('LIseg').that.is.an('array');
+          expect(post.rp.target.LIseg[0]).to.equal('segA');
+          expect(post.rp.target.LIseg[1]).to.equal('segB');
           // LiveRamp should exist
-          expect(post.user.ext.eids[1].source).to.equal('liveramp_idl');
+          expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
+          expect(post.user.ext.eids[1].uids[0].atype).to.equal(1);
+
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[2].uids[0].atype).to.equal(3);
+          expect(post.user.ext.eids[2].uids[0].atype).to.equal(1);
           expect(post.user.ext.eids[2].uids[0].ext.third).to.equal('2222');
+          // UnifiedId should exist
+          expect(post.user.ext.eids[3].source).to.equal('adserver.org');
+          expect(post.user.ext.eids[3].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[3].uids[0].id).to.equal('3000');
+          // PubCommonId should exist
+          expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
+          expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
 
-          expect(post.rp).that.is.an('object');
-          expect(post.rp.target).that.is.an('object');
-          expect(post.rp.target.LIseg).that.is.an('array');
-          expect(post.rp.target.LIseg[0]).to.equal('segA');
-          expect(post.rp.target.LIseg[1]).to.equal('segB');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
           expect(post).to.have.property('ext').that.is.an('object');
@@ -2023,6 +2062,56 @@ describe('the rubicon adapter', function () {
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
         });
+
+        it('should pass the user.id provided in the config', function () {
+          config.setConfig({ user: { id: '123' } });
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+
+          expect(post).to.have.property('imp')
+          // .with.length.of(1);
+          let imp = post.imp[0];
+          expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
+          expect(imp.exp).to.equal(300);
+          expect(imp.video.w).to.equal(640);
+          expect(imp.video.h).to.equal(480);
+          expect(imp.video.pos).to.equal(1);
+          expect(imp.video.context).to.equal('instream');
+          expect(imp.video.minduration).to.equal(15);
+          expect(imp.video.maxduration).to.equal(30);
+          expect(imp.video.startdelay).to.equal(0);
+          expect(imp.video.skip).to.equal(1);
+          expect(imp.video.skipafter).to.equal(15);
+          expect(imp.ext.rubicon.video.playerWidth).to.equal(640);
+          expect(imp.ext.rubicon.video.playerHeight).to.equal(480);
+          expect(imp.ext.rubicon.video.size_id).to.equal(201);
+          expect(imp.ext.rubicon.video.language).to.equal('en');
+          // Also want it to be in post.site.content.language
+          expect(post.site.content.language).to.equal('en');
+          expect(imp.ext.rubicon.video.skip).to.equal(1);
+          expect(imp.ext.rubicon.video.skipafter).to.equal(15);
+          expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
+          expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+
+          // Config user.id
+          expect(post.user.id).to.equal('123');
+
+          expect(post.regs.ext.gdpr).to.equal(1);
+          expect(post.regs.ext.us_privacy).to.equal('1NYN');
+          expect(post).to.have.property('ext').that.is.an('object');
+          expect(post.ext.prebid.targeting.includewinners).to.equal(true);
+          expect(post.ext.prebid).to.have.property('cache').that.is.an('object');
+          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object');
+          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
+          expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
+        })
       });
 
       describe('combineSlotUrlParams', function () {
