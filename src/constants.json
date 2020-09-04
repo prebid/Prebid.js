@@ -36,7 +36,8 @@
     "BEFORE_REQUEST_BIDS": "beforeRequestBids",
     "REQUEST_BIDS": "requestBids",
     "ADD_AD_UNITS": "addAdUnits",
-    "AD_RENDER_FAILED" : "adRenderFailed"
+    "AD_RENDER_FAILED": "adRenderFailed",
+    "TCF2_ENFORCEMENT": "tcf2Enforcement"
   },
   "AD_RENDER_FAILED_REASON" : {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocuemnt",
