@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -36,7 +36,10 @@ export const internal = {
   logError,
   logWarn,
   logMessage,
-  logInfo
+  logInfo,
+  parseQS,
+  formatQS,
+  deepEqual
 };
 
 var uniqueRef = {};
@@ -49,28 +52,6 @@ export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === un
       return self.apply(bind, args.concat(Array.prototype.slice.call(arguments)));
     };
   };
-
-/*
- *   Substitutes into a string from a given map using the token
- *   Usage
- *   var str = 'text %%REPLACE%% this text with %%SOMETHING%%';
- *   var map = {};
- *   map['replace'] = 'it was subbed';
- *   map['something'] = 'something else';
- *   console.log(replaceTokenInString(str, map, '%%')); => "text it was subbed this text with something else"
- */
-export function replaceTokenInString(str, map, token) {
-  _each(map, function (value, key) {
-    value = (value === undefined) ? '' : value;
-
-    var keyString = token + key.toUpperCase() + token;
-    var re = new RegExp(keyString, 'g');
-
-    str = str.replace(re, value);
-  });
-
-  return str;
-}
 
 /* utility method to get incremental integer starting from 1 */
 var getIncrementalInteger = (function () {
@@ -120,7 +101,7 @@ export function getBidIdParameter(key, paramsObj) {
 
 export function tryAppendQueryString(existingUrl, key, value) {
   if (value) {
-    return existingUrl += key + '=' + encodeURIComponent(value) + '&';
+    return existingUrl + key + '=' + encodeURIComponent(value) + '&';
   }
 
   return existingUrl;
@@ -128,12 +109,13 @@ export function tryAppendQueryString(existingUrl, key, value) {
 
 // parse a query string object passed in bid params
 // bid params should be an object such as {key: "value", key1 : "value1"}
+// aliases to formatQS
 export function parseQueryStringParameters(queryObj) {
   let result = '';
   for (var k in queryObj) {
     if (queryObj.hasOwnProperty(k)) { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
-
+  result = result.replace(/&$/, '');
   return result;
 }
 
@@ -320,53 +302,9 @@ export function createInvisibleIframe() {
  *   and if it does return the value
  */
 export function getParameterByName(name) {
-  var regexS = '[\\?&]' + name + '=([^&#]*)';
-  var regex = new RegExp(regexS);
-  var results = regex.exec(window.location.search);
-  if (results === null) {
-    return '';
-  }
-
-  return decodeURIComponent(results[1].replace(/\+/g, ' '));
+  return parseQS(getWindowLocation().search)[name] || '';
 }
 
-/**
- * This function validates paramaters.
- * @param  {Object} paramObj          [description]
- * @param  {string[]} requiredParamsArr [description]
- * @return {boolean}                   Bool if paramaters are valid
- */
-export function hasValidBidRequest(paramObj, requiredParamsArr, adapter) {
-  var found = false;
-
-  function findParam(value, key) {
-    if (key === requiredParamsArr[i]) {
-      found = true;
-    }
-  }
-
-  for (var i = 0; i < requiredParamsArr.length; i++) {
-    found = false;
-
-    _each(paramObj, findParam);
-
-    if (!found) {
-      logError('Params are missing for bid request. One of these required paramaters are missing: ' + requiredParamsArr, adapter);
-      return false;
-    }
-  }
-
-  return true;
-}
-
-// Handle addEventListener gracefully in older browsers
-export function addEventHandler(element, event, func) {
-  if (element.addEventListener) {
-    element.addEventListener(event, func, true);
-  } else if (element.attachEvent) {
-    element.attachEvent('on' + event, func);
-  }
-}
 /**
  * Return if the object is of the
  * given type.
@@ -470,15 +408,6 @@ export function contains(a, obj) {
 
   return false;
 }
-
-export let indexOf = (function () {
-  if (Array.prototype.indexOf) {
-    return Array.prototype.indexOf;
-  }
-
-  // ie8 no longer supported
-  // return polyfills.indexOf;
-}());
 
 /**
  * Map an array or object into another array
@@ -647,32 +576,6 @@ export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') 
     </iframe>`;
 }
 
-/**
- * Returns iframe document in a browser agnostic way
- * @param  {Object} iframe reference
- * @return {Object}        iframe `document` reference
- */
-export function getIframeDocument(iframe) {
-  if (!iframe) {
-    return;
-  }
-
-  let doc;
-  try {
-    if (iframe.contentWindow) {
-      doc = iframe.contentWindow.document;
-    } else if (iframe.contentDocument.document) {
-      doc = iframe.contentDocument.document;
-    } else {
-      doc = iframe.contentDocument;
-    }
-  } catch (e) {
-    internal.logError('Cannot get iframe document', e);
-  }
-
-  return doc;
-}
-
 export function getValueString(param, val, defaultValue) {
   if (val === undefined || val === null) {
     return defaultValue;
@@ -792,16 +695,6 @@ export function adUnitsFilter(filter, bid) {
   return includes(filter, bid && bid.adUnitCode);
 }
 
-/**
- * Check if parent iframe of passed document supports content rendering via 'srcdoc' property
- * @param {HTMLDocument} doc document to check support of 'srcdoc'
- */
-export function isSrcdocSupported(doc) {
-  // Firefox is excluded due to https://bugzilla.mozilla.org/show_bug.cgi?id=1265961
-  return doc.defaultView && doc.defaultView.frameElement &&
-    'srcdoc' in doc.defaultView.frameElement && !/firefox/i.test(navigator.userAgent);
-}
-
 export function deepClone(obj) {
   return clone(obj);
 }
@@ -815,7 +708,7 @@ export function inIframe() {
 }
 
 export function isSafariBrowser() {
-  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
 
 export function replaceAuctionPrice(str, cpm) {
@@ -881,19 +774,6 @@ export function groupBy(xs, key) {
     (rv[x[key]] = rv[x[key]] || []).push(x);
     return rv;
   }, {});
-}
-
-/**
- * Returns content for a friendly iframe to execute a URL in script tag
- * @param {string} url URL to be executed in a script tag in a friendly iframe
- * <!--PRE_SCRIPT_TAG_MACRO--> and <!--POST_SCRIPT_TAG_MACRO--> are macros left to be replaced if required
- */
-export function createContentToExecuteExtScriptInFriendlyFrame(url) {
-  if (!url) {
-    return '';
-  }
-
-  return `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"><html><head><base target="_top" /><script>inDapIF=true;</script></head><body><!--PRE_SCRIPT_TAG_MACRO--><script src="${url}"></script><!--POST_SCRIPT_TAG_MACRO--></body></html>`;
 }
 
 /**
@@ -1030,18 +910,6 @@ export function unsupportedBidderMessage(adUnit, bidder) {
     containing bidders that don't support ${mediaType}: ${bidder}.
     This bidder won't fetch demand.
   `;
-}
-
-/**
- * Delete property from object
- * @param {Object} object
- * @param {string} prop
- * @return {Object} object
- */
-export function deletePropertyFromObject(object, prop) {
-  let result = Object.assign({}, object);
-  delete result[prop];
-  return result;
 }
 
 /**
@@ -1241,4 +1109,149 @@ export function compareOn(property) {
     }
     return 0;
   }
+}
+
+export function parseQS(query) {
+  return !query ? {} : query
+    .replace(/^\?/, '')
+    .split('&')
+    .reduce((acc, criteria) => {
+      let [k, v] = criteria.split('=');
+      if (/\[\]$/.test(k)) {
+        k = k.replace('[]', '');
+        acc[k] = acc[k] || [];
+        acc[k].push(v);
+      } else {
+        acc[k] = v || '';
+      }
+      return acc;
+    }, {});
+}
+
+export function formatQS(query) {
+  return Object
+    .keys(query)
+    .map(k => Array.isArray(query[k])
+      ? query[k].map(v => `${k}[]=${v}`).join('&')
+      : `${k}=${query[k]}`)
+    .join('&');
+}
+
+export function parseUrl(url, options) {
+  let parsed = document.createElement('a');
+  if (options && 'noDecodeWholeURL' in options && options.noDecodeWholeURL) {
+    parsed.href = url;
+  } else {
+    parsed.href = decodeURIComponent(url);
+  }
+  // in window.location 'search' is string, not object
+  let qsAsString = (options && 'decodeSearchAsString' in options && options.decodeSearchAsString);
+  return {
+    href: parsed.href,
+    protocol: (parsed.protocol || '').replace(/:$/, ''),
+    hostname: parsed.hostname,
+    port: +parsed.port,
+    pathname: parsed.pathname.replace(/^(?!\/)/, '/'),
+    search: (qsAsString) ? parsed.search : internal.parseQS(parsed.search || ''),
+    hash: (parsed.hash || '').replace(/^#/, ''),
+    host: parsed.host || window.location.host
+  };
+}
+
+export function buildUrl(obj) {
+  return (obj.protocol || 'http') + '://' +
+    (obj.host ||
+      obj.hostname + (obj.port ? `:${obj.port}` : '')) +
+    (obj.pathname || '') +
+    (obj.search ? `?${internal.formatQS(obj.search || '')}` : '') +
+    (obj.hash ? `#${obj.hash}` : '');
+}
+
+/**
+ * This function deeply compares two objects checking for their equivalence.
+ * @param {Object} obj1
+ * @param {Object} obj2
+ * @returns {boolean}
+ */
+export function deepEqual(obj1, obj2) {
+  if (obj1 === obj2) return true;
+  else if ((typeof obj1 === 'object' && obj1 !== null) && (typeof obj2 === 'object' && obj2 !== null)) {
+    if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
+    for (let prop in obj1) {
+      if (obj2.hasOwnProperty(prop)) {
+        if (!deepEqual(obj1[prop], obj2[prop])) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
+
+export function mergeDeep(target, ...sources) {
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isPlainObject(target) && isPlainObject(source)) {
+    for (const key in source) {
+      if (isPlainObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key], source[key]);
+      } else if (isArray(source[key])) {
+        if (!target[key]) {
+          Object.assign(target, { [key]: source[key] });
+        } else if (isArray(target[key])) {
+          target[key] = target[key].concat(source[key]);
+        }
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return mergeDeep(target, ...sources);
+}
+
+/**
+ * returns a hash of a string using a fast algorithm
+ * source: https://stackoverflow.com/a/52171480/845390
+ * @param str
+ * @param seed (optional)
+ * @returns {string}
+ */
+export function cyrb53Hash(str, seed = 0) {
+  // IE doesn't support imul
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul#Polyfill
+  let imul = function(opA, opB) {
+    if (isFn(Math.imul)) {
+      return Math.imul(opA, opB);
+    } else {
+      opB |= 0; // ensure that opB is an integer. opA will automatically be coerced.
+      // floating points give us 53 bits of precision to work with plus 1 sign bit
+      // automatically handled for our convienence:
+      // 1. 0x003fffff /*opA & 0x000fffff*/ * 0x7fffffff /*opB*/ = 0x1fffff7fc00001
+      //    0x1fffff7fc00001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
+      var result = (opA & 0x003fffff) * opB;
+      // 2. We can remove an integer coersion from the statement above because:
+      //    0x1fffff7fc00001 + 0xffc00000 = 0x1fffffff800001
+      //    0x1fffffff800001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
+      if (opA & 0xffc00000) result += (opA & 0xffc00000) * opB | 0;
+      return result | 0;
+    }
+  };
+
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = imul(h1 ^ ch, 2654435761);
+    h2 = imul(h2 ^ ch, 1597334677);
+  }
+  h1 = imul(h1 ^ (h1 >>> 16), 2246822507) ^ imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
 }

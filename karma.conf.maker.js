@@ -20,7 +20,7 @@ function newWebpackConfig(codeCoverage) {
       enforce: 'post',
       exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
       use: {
-        loader: 'istanbul-instrumenter-loader',
+        loader: '@jsdevtools/coverage-istanbul-loader',
         options: { esModules: true }
       },
       test: /\.js$/
@@ -170,6 +170,16 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     plugins: plugins
   }
+
+  // To ensure that, we are able to run single spec file
+  // here we are adding preprocessors, when file is passed
+  if (file) {
+    config.files.forEach((file) => {
+      config.preprocessors[file] = ['webpack', 'sourcemap'];
+    });
+    delete config.preprocessors['test/test_index.js'];
+  }
+
   setReporters(config, codeCoverage, browserstack);
   setBrowsers(config, browserstack);
   return config;

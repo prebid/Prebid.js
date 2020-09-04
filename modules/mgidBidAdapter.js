@@ -1,6 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import * as urlUtils from '../src/url.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -123,7 +122,7 @@ export const spec = {
     }
     const info = pageInfo();
     const page = info.location || utils.deepAccess(bidderRequest, 'refererInfo.referer') || utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
-    const hostname = urlUtils.parse(page).hostname;
+    const hostname = utils.parseUrl(page).hostname;
     let domain = extractDomainFromHost(hostname) || hostname;
     const accountId = setOnAny(validBidRequests, 'params.accountId');
     const muid = getLocalStorageSafely('mgMuidn');

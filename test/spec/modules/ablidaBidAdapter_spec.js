@@ -1,6 +1,7 @@
 import {assert, expect} from 'chai';
 import {spec} from 'modules/ablidaBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
 
@@ -67,7 +68,8 @@ describe('ablidaBidAdapter', function () {
         bidId: '2b8c4de0116e54',
         jaySupported: true,
         device: 'desktop',
-        referer: 'www.example.com'
+        referer: 'www.example.com',
+        adapterVersion: 2
       }
     };
     let serverResponse = {
@@ -80,7 +82,8 @@ describe('ablidaBidAdapter', function () {
         currency: 'EUR',
         netRevenue: true,
         ttl: 3000,
-        ad: '<script>console.log("ad");</script>'
+        ad: '<script>console.log("ad");</script>',
+        nurl: 'https://example.com/some-tracker'
       }]
     };
     it('should get the correct bid response', function () {
@@ -93,10 +96,32 @@ describe('ablidaBidAdapter', function () {
         currency: 'EUR',
         netRevenue: true,
         ttl: 3000,
-        ad: '<script>console.log("ad");</script>'
+        ad: '<script>console.log("ad");</script>',
+        nurl: 'https://example.com/some-tracker'
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
   });
+
+  describe('onBidWon', function() {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+    it('Should not trigger pixel if bid does not contain nurl', function() {
+      const result = spec.onBidWon({});
+      expect(utils.triggerPixel.callCount).to.equal(0)
+    })
+
+    it('Should trigger pixel if bid nurl', function() {
+      const result = spec.onBidWon({
+        nurl: 'https://example.com/some-tracker'
+      });
+      expect(utils.triggerPixel.callCount).to.equal(1)
+    })
+  })
 });

@@ -56,7 +56,7 @@ userIdAsEids = [
     },
 
     {
-        source: 'britepool.com',
+        source: 'merkleinc.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
@@ -64,7 +64,7 @@ userIdAsEids = [
     },
 
     {
-        source: 'digitru.st',
+        source: 'britepool.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
@@ -85,6 +85,16 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
+    },
+    {
+        source: 'sharedid.org',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1,
+            ext: { 
+                third: 'some-random-id-value'
+             }
+         }]
     }
 ]
 ```

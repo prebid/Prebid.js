@@ -210,7 +210,7 @@ describe('Conversant adapter tests', function() {
     };
     const request = spec.buildRequests(bidRequests, bidderRequest);
     expect(request.method).to.equal('POST');
-    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/s2s/header/24');
+    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25');
     const payload = request.data;
 
     expect(payload).to.have.property('id', 'req000');
@@ -319,6 +319,12 @@ describe('Conversant adapter tests', function() {
     expect(payload.device).to.have.property('ua', navigator.userAgent);
 
     expect(payload).to.not.have.property('user'); // there should be no user by default
+  });
+
+  it('Verify override url', function() {
+    const testUrl = 'https://someurl?name=value';
+    const request = spec.buildRequests([{params: {white_label_url: testUrl}}]);
+    expect(request.url).to.equal(testUrl);
   });
 
   it('Verify interpretResponse', function() {
