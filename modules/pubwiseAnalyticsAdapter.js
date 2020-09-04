@@ -16,21 +16,21 @@ const storage = getStorageManager();
  pbjs.enableAnalytics({
   provider: 'pubwise',
   options: {
-    site: 'test-test-test-test'
+    site: 'b1ccf317-a6fc-428d-ba69-0c9c208aa61c'
   }
  });
 
 Changes in 4.0 Version
 4.0.1 - Initial Version for Prebid 4.x, adds activationId, adds additiona testing, removes prebid global in favor of a prebid.version const
+4.0.2 - Updates to include dedicated default site to keep everything from getting rate limited
 
 */
 
 const analyticsType = 'endpoint';
 const analyticsName = 'PubWise:';
 const prebidVersion = '$prebid.version$';
-let defaultUrl = 'https://api.pubwise.io/api/v5/event/default/';
 let pubwiseVersion = '4.0.1';
-let configOptions = {site: '', endpoint: defaultUrl, debug: ''};
+let configOptions = {site: '', endpoint: 'https://api.pubwise.io/api/v5/event/add/', debug: null};
 let pwAnalyticsEnabled = false;
 let utmKeys = {utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: ''};
 let sessionData = {sessionId: '', activationId: ''};
@@ -110,7 +110,7 @@ function expireUtmData() {
 }
 
 function enrichWithCustomSegments(dataBag) {
-  // c_site: '', c_script_type: '', c_slot1: '', c_slot2: '', c_slot3: '', c_slot4: ''
+  // c_script_type: '', c_slot1: '', c_slot2: '', c_slot3: '', c_slot4: ''
   if (configOptions.custom) {
     if (configOptions.custom.c_script_type) {
       dataBag['c_script_type'] = configOptions.custom.c_script_type;
@@ -252,7 +252,7 @@ function filterAuctionInit(data) {
   return modified;
 }
 
-let pubwiseAnalytics = Object.assign(adapter({defaultUrl, analyticsType}), {
+let pubwiseAnalytics = Object.assign(adapter({analyticsType}), {
   // Override AnalyticsAdapter functions by supplying custom methods
   track({eventType, args}) {
     this.handleEvent(eventType, args);
@@ -317,8 +317,9 @@ pubwiseAnalytics.ensureSession = function () {
 pubwiseAnalytics.adapterEnableAnalytics = pubwiseAnalytics.enableAnalytics;
 
 pubwiseAnalytics.enableAnalytics = function (config) {
-  configOptions = config.options;
-  if (configOptions.debug === undefined) {
+  configOptions = Object.assign(configOptions, config.options);
+  // take the PBJS debug for our debug setting if no PW debug is defined
+  if (configOptions.debug === null) {
     configOptions.debug = utils.debugTurnedOn();
   }
   markEnabled();

@@ -15,7 +15,7 @@ describe('PubWise Prebid Analytics', function () {
   mock.DEFAULT_PW_CONFIG = {
     provider: 'pubwiseanalytics',
     options: {
-      site: ['test-test-test-test'],
+      site: ['b1ccf317-a6fc-428d-ba69-0c9c208aa61c'],
       custom: {'c_script_type': 'test-script-type', 'c_host': 'test-host', 'c_slot1': 'test-slot1', 'c_slot2': 'test-slot2', 'c_slot3': 'test-slot3', 'c_slot4': 'test-slot4'}
     }
   };
@@ -40,8 +40,6 @@ describe('PubWise Prebid Analytics', function () {
     xhr = sandbox.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => requests.push(request);
-
-    pubwiseAnalytics.enableAnalytics(mock.DEFAULT_PW_CONFIG);
   });
 
   afterEach(function () {
@@ -56,6 +54,8 @@ describe('PubWise Prebid Analytics', function () {
     });
 
     it('should catch all events', function () {
+      pubwiseAnalytics.enableAnalytics(mock.DEFAULT_PW_CONFIG);
+
       sandbox.spy(pubwiseAnalytics, 'track');
 
       // sent
@@ -78,6 +78,8 @@ describe('PubWise Prebid Analytics', function () {
     });
 
     it('should initialize the auction properly', function () {
+      pubwiseAnalytics.enableAnalytics(mock.DEFAULT_PW_CONFIG);
+
       // sent
       events.emit(constants.EVENTS.AUCTION_INIT, mock.AUCTION_INIT);
       events.emit(constants.EVENTS.BID_REQUESTED, {});
@@ -127,6 +129,8 @@ describe('PubWise Prebid Analytics', function () {
     });
 
     it('should remove extra data on init', function () {
+      pubwiseAnalytics.enableAnalytics(mock.DEFAULT_PW_CONFIG);
+
       // sent
       events.emit(constants.EVENTS.AUCTION_INIT, mock.AUCTION_INIT_EXTRAS);
       // force flush
