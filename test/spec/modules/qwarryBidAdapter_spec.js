@@ -1,6 +1,6 @@
-import { expect } from 'chai'
-import { spec, ENDPOINT } from 'modules/qwarryBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import {expect} from 'chai'
+import {ENDPOINT, spec} from 'modules/qwarryBidAdapter.js'
+import {newBidder} from 'src/adapters/bidderFactory.js'
 
 const REQUEST = {
   'bidder': 'qwarry',
@@ -10,7 +10,7 @@ const REQUEST = {
 }
 
 const BIDDER_BANNER_RESPONSE = {
-  'ad': '<div>test</div',
+  'ad': '<div>test</div>',
   'requestId': 'e64782a4-8e68-4c38-965b-80ccf115d46d',
   'cpm': 900.5,
   'currency': 'USD',
@@ -71,9 +71,9 @@ describe('qwarryBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('handles banner request : should get correct bid response', function () {
-      const result = spec.interpretResponse({ body: BIDDER_BANNER_RESPONSE }, {})
+      const result = spec.interpretResponse({body: BIDDER_BANNER_RESPONSE}, {})
 
-      expect(result[0]).to.have.property('ad').equal('<div>test</div')
+      expect(result[0]).to.have.property('ad').equal('<div>test</div>')
       expect(result[0]).to.have.property('requestId').equal('e64782a4-8e68-4c38-965b-80ccf115d46d')
       expect(result[0]).to.have.property('cpm').equal(900.5)
       expect(result[0]).to.have.property('currency').equal('USD')
@@ -87,7 +87,7 @@ describe('qwarryBidAdapter', function () {
     })
 
     it('handles video request : should get correct bid response', function () {
-      const result = spec.interpretResponse({ body: BIDDER_VIDEO_RESPONSE }, {})
+      const result = spec.interpretResponse({body: BIDDER_VIDEO_RESPONSE}, {})
 
       expect(result[0]).to.have.property('ad').equal('<xml>vast</xml>')
       expect(result[0]).to.have.property('requestId').equal('e64782a4-8e68-4c38-965b-80ccf115d46z')
