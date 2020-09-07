@@ -3,7 +3,7 @@ import * as utils from '../src/utils.js';
 
 const A4G_BIDDER_CODE = 'a4g';
 const A4G_CURRENCY = 'USD';
-const A4G_DEFAULT_BID_URL = '//ads.ad4game.com/v1/bid';
+const A4G_DEFAULT_BID_URL = 'https://ads.ad4game.com/v1/bid';
 const A4G_TTL = 120;
 
 const LOCATION_PARAM_NAME = 'siteurl';
@@ -33,7 +33,8 @@ export const spec = {
         deliveryUrl = bid.params.deliveryUrl;
       }
       idParams.push(bid.bidId);
-      sizeParams.push(bid.sizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
+      let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+      sizeParams.push(bidSizes.map(size => size.join(SIZE_SEPARATOR)).join(ARRAY_SIZE_SEPARATOR));
       zoneIds.push(bid.params.zoneId);
     });
 

@@ -48,6 +48,11 @@ describe('a4gAdapterTests', function () {
       },
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
       'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 50], [300, 250], [300, 600]]
+        }
+      },
       'sizes': [[320, 50], [300, 250], [300, 600]],
       'bidderRequestId': '418b37f85e772c',
       'auctionId': '18fd8b8b0bd757'
@@ -60,7 +65,11 @@ describe('a4gAdapterTests', function () {
       },
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
       'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-      'sizes': [[320, 50], [300, 250], [300, 600]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 50], [300, 250], [300, 600]]
+        }
+      },
       'bidderRequestId': '418b37f85e772c',
       'auctionId': '18fd8b8b0bd757'
     }];
@@ -119,7 +128,11 @@ describe('a4gAdapterTests', function () {
       },
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
       'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-      'sizes': [[320, 50], [300, 250], [300, 600]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 50], [300, 250], [300, 600]]
+        }
+      },
       'bidderRequestId': '418b37f85e772c',
       'auctionId': '18fd8b8b0bd757'
     }];
