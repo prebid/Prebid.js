@@ -65,6 +65,7 @@ describe('qwarryBidAdapter', function () {
     it('sends bid request to ENDPOINT via POST', function () {
       expect(bidderRequest.method).to.equal('POST')
       expect(bidderRequest.data).to.deep.equal({})
+      expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
       expect(bidderRequest.url).to.equal(ENDPOINT + REQUEST.params.zoneToken)
     })
   })

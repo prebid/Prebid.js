@@ -20,7 +20,13 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT + zoneToken,
-      data: {}
+      data: {},
+      options: {
+        contentType: 'application/json',
+        customHeaders: {
+          'Rtb-Direct': true
+        }
+      }
     };
   },
 
