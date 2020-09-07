@@ -7,8 +7,8 @@ import { newBidder } from './adapters/bidderFactory.js';
 import { ajaxBuilder } from './ajax.js';
 import { config, RANDOM } from './config.js';
 import { hook } from './hook.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
 import { adunitCounter } from './adUnits.js';
 import { getRefererInfo } from './refererDetection.js';
 
@@ -115,6 +115,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
     return result;
   }, []).reduce(flatten, []).filter(val => val !== '');
 }
+
+const hookedGetBids = hook('sync', getBids, 'getBids');
 
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
@@ -229,7 +231,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
         auctionId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
+        bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC,
@@ -264,7 +266,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
+      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo
@@ -366,19 +368,25 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    config.runWithBidder(
-      bidRequest.bidderCode,
-      bind.call(
-        adapter.callBids,
-        adapter,
-        bidRequest,
-        addBidResponse.bind(bidRequest),
-        doneCb.bind(bidRequest),
-        ajax,
-        onTimelyResponse,
-        config.callbackWithBidder(bidRequest.bidderCode)
-      )
-    );
+    const adapterDone = doneCb.bind(bidRequest);
+    try {
+      config.runWithBidder(
+        bidRequest.bidderCode,
+        bind.call(
+          adapter.callBids,
+          adapter,
+          bidRequest,
+          addBidResponse.bind(bidRequest),
+          adapterDone,
+          ajax,
+          onTimelyResponse,
+          config.callbackWithBidder(bidRequest.bidderCode)
+        )
+      );
+    } catch (e) {
+      utils.logError(`${bidRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, {e, bidRequest});
+      adapterDone();
+    }
   });
 };
 
@@ -418,7 +426,7 @@ adapterManager.registerBidAdapter = function (bidAdaptor, bidderCode, {supported
   }
 };
 
-adapterManager.aliasBidAdapter = function (bidderCode, alias) {
+adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
   let existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === 'undefined') {
@@ -444,7 +452,8 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias) {
           newAdapter.setBidderCode(alias);
         } else {
           let spec = bidAdaptor.getSpec();
-          newAdapter = newBidder(Object.assign({}, spec, { code: alias }));
+          let gvlid = options && options.gvlid;
+          newAdapter = newBidder(Object.assign({}, spec, { code: alias, gvlid }));
           _aliasRegistry[alias] = bidderCode;
         }
         adapterManager.registerBidAdapter(newAdapter, alias, {
@@ -459,11 +468,11 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias) {
   }
 };
 
-adapterManager.registerAnalyticsAdapter = function ({adapter, code}) {
+adapterManager.registerAnalyticsAdapter = function ({adapter, code, gvlid}) {
   if (adapter && code) {
     if (typeof adapter.enableAnalytics === 'function') {
       adapter.code = code;
-      _analyticsRegistry[code] = adapter;
+      _analyticsRegistry[code] = { adapter, gvlid };
     } else {
       utils.logError(`Prebid Error: Analytics adaptor error for analytics "${code}"
         analytics adapter must implement an enableAnalytics() function`);
@@ -479,7 +488,7 @@ adapterManager.enableAnalytics = function (config) {
   }
 
   utils._each(config, adapterConfig => {
-    var adapter = _analyticsRegistry[adapterConfig.provider];
+    var adapter = _analyticsRegistry[adapterConfig.provider].adapter;
     if (adapter) {
       adapter.enableAnalytics(adapterConfig);
     } else {
@@ -487,11 +496,15 @@ adapterManager.enableAnalytics = function (config) {
         ${adapterConfig.provider}.`);
     }
   });
-};
+}
 
 adapterManager.getBidAdapter = function(bidder) {
   return _bidderRegistry[bidder];
 };
+
+adapterManager.getAnalyticsAdapter = function(code) {
+  return _analyticsRegistry[code];
+}
 
 // the s2sTesting module is injected when it's loaded rather than being imported
 // importing it causes the packager to include it even when it's not explicitly included in the build

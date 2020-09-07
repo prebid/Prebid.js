@@ -6,6 +6,8 @@ master branch.
 Pull requests must have 80% code coverage before beign considered for merge.
 Additional details about the process can be found [here](./PR_REVIEW.md).
 
+There are more details available if you'd like to contribute a [bid adapter](https://docs.prebid.org/dev-docs/bidder-adaptor.html) or [analytics adapter](https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
+
 ## Issues
 [prebid.org](http://prebid.org/) contains documentation that may help answer questions you have about using Prebid.js.
 If you can't find the answer there, try searching for a similar issue on the [issues page](https://github.com/prebid/Prebid.js/issues).
@@ -51,6 +53,7 @@ When you are adding code to Prebid.js, or modifying code that isn't covered by a
 - If you need to check `adloader.loadExternalScript` in a test, use a `stub` rather than a `spy`. `spy`s trigger a network call which can result in a `script error` and cause unrelated unit tests to fail. `stub`s will let you gather information about the `adloader.loadExternalScript` call without affecting external resources
 - If your test makes ajax requests, use the global xhr stub in `test/mocks/xhr`. Do not use your own `sinon.useFakeXMLHttpRequest()` or `sinon.createFakeServer()`.
 - When writing tests you may use ES2015 syntax if desired
+- If your test relies on `Window` or `global` object, do not mutate that object directly. Instead, create a separate copy of that object and perform operations on that new copy.
 
 ### Test Examples
 Prebid.js already has many tests. Read them to see how Prebid.js is tested, and for inspiration:

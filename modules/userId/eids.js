@@ -5,6 +5,12 @@ const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // intentIqId
+  'intentIqId': {
+    source: 'intentiq.com',
+    atype: 1
+  },
+
   // pubCommonId
   'pubcid': {
     source: 'pubcid.org',
@@ -15,7 +21,7 @@ const USER_IDS_CONFIG = {
   'tdid': {
     source: 'adserver.org',
     atype: 1,
-    ext: function() {
+    getUidExt: function() {
       return {
         rtiPartner: 'TDID'
       };
@@ -29,9 +35,29 @@ const USER_IDS_CONFIG = {
   },
 
   // parrableId
-  'parrableid': {
+  'parrableId': {
     source: 'parrable.com',
-    atype: 1
+    atype: 1,
+    getValue: function(parrableId) {
+      if (parrableId.eid) {
+        return parrableId.eid;
+      }
+      if (parrableId.ccpaOptout) {
+        // If the EID was suppressed due to a non consenting ccpa optout then
+        // we still wish to provide this as a reason to the adapters
+        return '';
+      }
+      return null;
+    },
+    getUidExt: function(parrableId) {
+      const extendedData = utils.pick(parrableId, [
+        'ibaOptout',
+        'ccpaOptout'
+      ]);
+      if (Object.keys(extendedData).length) {
+        return extendedData;
+      }
+    }
   },
 
   // identityLink
@@ -47,7 +73,7 @@ const USER_IDS_CONFIG = {
     },
     source: 'liveintent.com',
     atype: 1,
-    ext: function(data) {
+    getEidExt: function(data) {
       if (Array.isArray(data.segments) && data.segments.length) {
         return {
           segments: data.segments
@@ -62,13 +88,10 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // DigiTrust
-  'digitrustid': {
-    getValue: function(data) {
-      return data.data.id;
-    },
-    source: 'digitru.st',
-    atype: 1
+  // lotamePanoramaId
+  lotamePanoramaId: {
+    source: 'crwdcntrl.net',
+    atype: 1,
   },
 
   // criteo
@@ -77,10 +100,29 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // merkleId
+  'merkleId': {
+    source: 'merkleinc.com',
+    atype: 1
+  },
+
   // NetId
   'netId': {
     source: 'netid.de',
     atype: 1
+  },
+  // sharedid
+  'sharedid': {
+    source: 'sharedid.org',
+    atype: 1,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      return (data && data.third) ? {
+        third: data.third
+      } : undefined;
+    }
   }
 };
 
@@ -88,16 +130,27 @@ const USER_IDS_CONFIG = {
 function createEidObject(userIdData, subModuleKey) {
   const conf = USER_IDS_CONFIG[subModuleKey];
   if (conf && userIdData) {
+    let eid = {};
+    eid.source = conf['source'];
     const value = utils.isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
-    if (value) {
+    if (utils.isStr(value)) {
       const uid = { id: value, atype: conf['atype'] };
-      if (utils.isFn(conf['ext'])) {
-        const ext = conf['ext'](userIdData);
-        if (ext) {
-          uid.ext = ext;
+      // getUidExt
+      if (utils.isFn(conf['getUidExt'])) {
+        const uidExt = conf['getUidExt'](userIdData);
+        if (uidExt) {
+          uid.ext = uidExt;
         }
       }
-      return { source: conf['source'], uids: [uid] };
+      eid.uids = [uid];
+      // getEidExt
+      if (utils.isFn(conf['getEidExt'])) {
+        const eidExt = conf['getEidExt'](userIdData);
+        if (eidExt) {
+          eid.ext = eidExt;
+        }
+      }
+      return eid;
     }
   }
   return null;

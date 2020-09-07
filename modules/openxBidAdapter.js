@@ -2,22 +2,30 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {parse} from '../src/url.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '3.0.1';
+const BIDDER_VERSION = '3.0.3';
 
-const USER_ID_CODE_TO_QUERY_ARG = {
-  idl_env: 'lre', // liveramp
-  pubcid: 'pubcid', // publisher common id
-  tdid: 'ttduuid', // the trade desk
-  criteoId: 'criteoid' // criteo id
+const DEFAULT_CURRENCY = 'USD';
+
+export const USER_ID_CODE_TO_QUERY_ARG = {
+  britepoolid: 'britepoolid', // BritePool ID
+  criteoId: 'criteoid', // CriteoID
+  digitrustid: 'digitrustid', // DigiTrust
+  id5id: 'id5id', // ID5 ID
+  idl_env: 'lre', // LiveRamp IdentityLink
+  lipb: 'lipbid', // LiveIntent ID
+  netId: 'netid', // netID
+  parrableId: 'parrableid', // Parrable ID
+  pubcid: 'pubcid', // PubCommon ID
+  tdid: 'ttduuid', // The Trade Desk Unified ID
 };
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 69,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
     const hasDelDomainOrPlatform = bidRequest.params.delDomain || bidRequest.params.platform;
@@ -259,9 +267,23 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
 }
 
 function appendUserIdsToQueryParams(queryParams, userIds) {
-  utils._each(userIds, (userIdValue, userIdProviderKey) => {
+  utils._each(userIds, (userIdObjectOrValue, userIdProviderKey) => {
+    const key = USER_ID_CODE_TO_QUERY_ARG[userIdProviderKey];
+
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
-      queryParams[USER_ID_CODE_TO_QUERY_ARG[userIdProviderKey]] = userIdValue;
+      switch (userIdProviderKey) {
+        case 'digitrustid':
+          queryParams[key] = utils.deepAccess(userIdObjectOrValue, 'data.id');
+          break;
+        case 'lipb':
+          queryParams[key] = userIdObjectOrValue.lipbid;
+          break;
+        case 'parrableId':
+          queryParams[key] = userIdObjectOrValue.eid;
+          break;
+        default:
+          queryParams[key] = userIdObjectOrValue;
+      }
     }
   });
 
@@ -319,8 +341,10 @@ function buildOXBannerRequest(bids, bidderRequest) {
   let customFloorsForAllBids = [];
   let hasCustomFloor = false;
   bids.forEach(function (bid) {
-    if (bid.params.customFloor) {
-      customFloorsForAllBids.push((Math.round(bid.params.customFloor * 100) / 100) * 1000);
+    let floor = getBidFloor(bid, BANNER);
+
+    if (floor) {
+      customFloorsForAllBids.push(floor);
       hasCustomFloor = true;
     } else {
       customFloorsForAllBids.push(0);
@@ -399,14 +423,18 @@ function generateVideoParameters(bid, bidderRequest) {
     queryParams.vmimes = oxVideoConfig.mimes;
   }
 
+  if (bid.params.test) {
+    queryParams.vtest = 1;
+  }
+
   return queryParams;
 }
 
 function createVideoBidResponses(response, {bid, startTime}) {
   let bidResponses = [];
 
-  if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
-    let vastQueryParams = parse(response.vastUrl).search || {};
+  if (response !== undefined && response.vastUrl !== '' && response.pub_rev > 0) {
+    let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
     // default 5 mins
@@ -414,9 +442,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     // true is net, false is gross
     bidResponse.netRevenue = true;
     bidResponse.currency = response.currency;
-    bidResponse.cpm = Number(response.pub_rev) / 1000;
-    bidResponse.width = response.width;
-    bidResponse.height = response.height;
+    bidResponse.cpm = parseInt(response.pub_rev, 10) / 1000;
+    bidResponse.width = parseInt(response.width, 10);
+    bidResponse.height = parseInt(response.height, 10);
     bidResponse.creativeId = response.adid;
     bidResponse.vastUrl = response.vastUrl;
     bidResponse.mediaType = VIDEO;
@@ -430,6 +458,22 @@ function createVideoBidResponses(response, {bid, startTime}) {
   }
 
   return bidResponses;
+}
+
+function getBidFloor(bidRequest, mediaType) {
+  let floorInfo = {};
+  const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: currency,
+      mediaType: mediaType,
+      size: '*'
+    });
+  }
+  let floor = floorInfo.floor || bidRequest.params.customFloor || 0;
+
+  return Math.round(floor * 1000); // normalize to microCpm
 }
 
 registerBidder(spec);

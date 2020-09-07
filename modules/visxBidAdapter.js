@@ -36,6 +36,8 @@ export const spec = {
       config.getConfig('currency.adServerCurrency') ||
       DEFAULT_CUR;
     let reqId;
+    let payloadSchain;
+    let payloadUserId;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       utils.logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -44,8 +46,14 @@ export const spec = {
 
     bids.forEach(bid => {
       reqId = bid.bidderRequestId;
-      const {params: {uid}, adUnitCode} = bid;
+      const {params: {uid}, adUnitCode, schain, userId} = bid;
       auids.push(uid);
+      if (!payloadSchain && schain) {
+        payloadSchain = schain;
+      }
+      if (!payloadUserId && userId) {
+        payloadUserId = userId;
+      }
       const sizesId = utils.parseSizesInput(bid.sizes);
 
       if (!slotsMapByUid[uid]) {
@@ -83,6 +91,22 @@ export const spec = {
       wrapperType: 'Prebid_js',
       wrapperVersion: '$prebid.version$'
     };
+
+    if (payloadSchain) {
+      payload.schain = JSON.stringify(payloadSchain);
+    }
+
+    if (payloadUserId) {
+      if (payloadUserId.tdid) {
+        payload.tdid = payloadUserId.tdid;
+      }
+      if (payloadUserId.id5id) {
+        payload.id5 = payloadUserId.id5id;
+      }
+      if (payloadUserId.digitrustid && payloadUserId.digitrustid.data && payloadUserId.digitrustid.data.id) {
+        payload.dtid = payloadUserId.digitrustid.data.id;
+      }
+    }
 
     if (bidderRequest) {
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -179,7 +203,6 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
           const bid = slot.bids.shift();
           bidResponses.push({
             requestId: bid.bidId,
-            bidderCode: spec.code,
             cpm: serverBid.price,
             width: serverBid.w,
             height: serverBid.h,

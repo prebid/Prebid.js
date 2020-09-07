@@ -1,6 +1,60 @@
 import {expect} from 'chai';
 import * as _ from 'lodash';
-import {spec, matchRequest, checkDeepArray, defaultSize, upto5, cleanSizes, shuffle} from '../../../modules/districtmDMXBidAdapter.js';
+import {spec, matchRequest, checkDeepArray, defaultSize, upto5, cleanSizes, shuffle, getApi, bindUserId, getPlaybackmethod, getProtocols, cleanVast} from '../../../modules/districtmDMXBidAdapter.js';
+
+const sample_vast = `<VAST version="3.0">
+    <Ad id="6">
+        <InLine>
+            <AdTitle><![CDATA[district m]]></AdTitle>
+            <Impression>
+            </Impression>
+            <Creatives>
+                <Creative>
+                    <Linear skipoffset="00:00:10">
+                        <Duration>00:00:15</Duration>
+                        <TrackingEvents>
+                            <Tracking event="start">
+                            </Tracking>
+                            <Tracking event="firstQuartile">
+                            </Tracking>
+                            <Tracking event="midpoint">
+                            </Tracking>
+                            <Tracking event="thirdQuartile">
+                            </Tracking>
+                            <Tracking event="complete">
+                            </Tracking>
+                            <Tracking event="mute">
+                            </Tracking>
+                            <Tracking event="unmute">
+                            </Tracking>
+                            <Tracking event="skip">
+                            </Tracking>
+                            <Tracking event="pause">
+                            </Tracking>
+                            <Tracking event="resume">
+                            </Tracking>
+                            <Tracking event="fullscreen">
+                            </Tracking>
+                            <Tracking event="close">
+                            </Tracking>
+                        </TrackingEvents>
+                        <VideoClicks>
+                            <ClickThrough><![CDATA[https://districtm.net/en/]]></ClickThrough>
+                            <ClickTracking>
+                            </ClickTracking>
+                        </VideoClicks>
+                        <MediaFiles>
+                        </MediaFiles>
+                    </Linear>
+                </Creative>
+                <Creative><CompanionAds></CompanionAds></Creative>
+            </Creatives>
+            <Extensions></Extensions>
+        </InLine>
+    </Ad>
+</VAST>
+<!-- DMX - seat 0 - crid 0 -->
+<img src="https://dmx.us-east-4.districtm.io/n/v1/22" style="display: none;" />`
 
 const supportedSize = [
   {
@@ -40,7 +94,29 @@ const bidRequest = [{
   'bidder': 'districtmDMX',
   'params': {
     'dmxid': 100001,
-    'memberid': 100003
+    'memberid': 100003,
+  },
+  'userId': {
+    idl_env: {},
+    digitrustid: {
+      data: {
+        id: {}
+      }
+    },
+    id5id: {},
+    pubcid: {},
+    tdid: {},
+    criteoId: {},
+    britepoolid: {},
+    intentiqid: {},
+    lotamePanoramaId: {},
+    parrableId: {},
+    netId: {},
+    sharedid: {},
+    lipb: {
+      lipbid: {}
+    },
+
   },
   'adUnitCode': 'div-gpt-ad-12345678-1',
   'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
@@ -53,6 +129,47 @@ const bidRequest = [{
   'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf'
 }];
 
+const bidRequestVideo = [{
+  'bidder': 'districtmDMX',
+  'params': {
+    'dmxid': 100001,
+    'memberid': 100003,
+    'video': {
+      id: 123,
+      skipppable: true,
+      playback_method: ['auto_play_sound_off', 'viewport_sound_off'],
+      mimes: ['application/javascript',
+        'video/mp4'],
+    }
+  },
+  'mediaTypes': { video: {context: 'instream', // or 'outstream'
+    playerSize: [[640, 480]]} },
+  'adUnitCode': 'div-gpt-ad-12345678-1',
+  'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
+  'sizes': [
+    [300, 250],
+    [300, 600]
+  ],
+  'bidId': '29a28a1bbc8a8d',
+  'bidderRequestId': '124b579a136515',
+  'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf'
+}];
+const bidRequestNoCoppa = [{
+  'bidder': 'districtmDMX',
+  'params': {
+    'dmxid': 100001,
+    'memberid': 100003
+  },
+  'adUnitCode': 'div-gpt-ad-12345678-1',
+  'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
+  'sizes': [
+    [300, 250],
+    [300, 600]
+  ],
+  'bidId': '29a28a1bbc8a8d',
+  'bidderRequestId': '124b579a136515',
+  'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf'
+}];
 const bidderRequest = {
   'bidderCode': 'districtmDMX',
   'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf',
@@ -61,7 +178,7 @@ const bidderRequest = {
     'bidder': 'districtmDMX',
     'params': {
       'dmxid': 100001,
-      'memberid': 100003
+      'memberid': 100003,
     },
     'adUnitCode': 'div-gpt-ad-12345678-1',
     'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
@@ -420,6 +537,32 @@ const bidderRequest = {
   'doneCbCallCount': 0
 };
 
+const bidderRequestNoCoppa = {
+  'bidderCode': 'districtmDMX',
+  'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf',
+  'bidderRequestId': '124b579a136515',
+  'bids': [{
+    'bidder': 'districtmDMX',
+    'params': {
+      'dmxid': 100001,
+      'memberid': 100003,
+    },
+    'adUnitCode': 'div-gpt-ad-12345678-1',
+    'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
+    'sizes': [
+      [300, 250],
+      [300, 600]
+    ],
+    'bidId': '29a28a1bbc8a8d',
+    'bidderRequestId': '124b579a136515',
+    'auctionId': '3d62f2d3-56a2-4991-888e-f7754619ddcf'
+  }],
+  'auctionStart': 1529511035677,
+  'timeout': 700,
+  'start': 1529511035686,
+  'doneCbCallCount': 0
+};
+
 const responses = {
   'body': {
     'id': '1f45b37c-5298-4934-b517-4d911aadabfd',
@@ -463,6 +606,51 @@ describe('DistrictM Adaptor', function () {
       expect(upto5([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], bidRequest, bidderRequest, 'https://google').length).to.be.equal(3)
     })
   })
+
+  describe('test vast tag', function() {
+    it('img tag should not be present', function() {
+      expect(cleanVast(sample_vast).indexOf('img') !== -1).to.be.equal(false)
+    })
+  })
+  describe('Test getApi function', function() {
+    const data = {
+      protocols: ['VPAID_1_0']
+    }
+    it('Will return 1 for vpaid version 1', function() {
+      expect(getApi(data)[0]).to.be.equal(1)
+    })
+    it('Will return 2 for vpaid default', function() {
+      expect(getApi({})[0]).to.be.equal(2)
+    })
+  })
+
+  describe('Test cleanSizes function', function() {
+    it('sequence will be respected', function() {
+      expect(cleanSizes(bidderRequest.bids[0].sizes).toString()).to.be.equal('300,250,300,600')
+    })
+    it('sequence will be respected', function() {
+      expect(cleanSizes([[728, 90], [970, 90], [300, 600], [320, 50]]).toString()).to.be.equal('728,90,320,50,300,600,970,90')
+    })
+  })
+
+  describe('Test getPlaybackmethod function', function() {
+    it('getPlaybackmethod will return 2', function() {
+      expect(getPlaybackmethod([])[0]).to.be.equal(2)
+    })
+    it('getPlaybackmethod will return 6', function() {
+      expect(getPlaybackmethod(['viewport_sound_off'])[0]).to.be.equal(6)
+    })
+  })
+
+  describe('Test getProtocols function', function() {
+    it('getProtocols will return 3', function() {
+      expect(getProtocols({protocols: ['VAST_3_0']})[0]).to.be.equal(3)
+    })
+    it('getProtocols will return 6', function() {
+      expect(_.isEqual(getProtocols({}), [2, 3, 5, 6, 7, 8])).to.be.equal(true)
+    })
+  })
+
   describe('All needed functions are available', function () {
     it(`isBidRequestValid is present and type function`, function () {
       expect(districtm.isBidRequestValid).to.exist.and.to.be.a('function')
@@ -522,6 +710,7 @@ describe('DistrictM Adaptor', function () {
 
   describe(`buildRequests test usage`, function () {
     const buildRequestResults = districtm.buildRequests(bidRequest, bidderRequest);
+    const buildRequestResultsNoCoppa = districtm.buildRequests(bidRequestNoCoppa, bidderRequestNoCoppa);
     it(`the function should return an array`, function () {
       expect(buildRequestResults).to.be.an('object');
     });
@@ -531,10 +720,26 @@ describe('DistrictM Adaptor', function () {
       expect(bidr.regs.ext.us_privacy).to.be.equal('1NY');
       expect(bidr.user.ext.consent).to.be.an('string');
     });
+    it(`test contain COPPA`, function() {
+      const bidr = JSON.parse(buildRequestResults.data)
+      bidr.regs = bidr.regs || {};
+      bidr.regs.coppa = 1;
+      expect(bidr.regs.coppa).to.be.equal(1)
+    })
+    it(`test should not contain COPPA`, function() {
+      const bidr = JSON.parse(buildRequestResultsNoCoppa.data)
+      expect(bidr.regs.coppa).to.be.equal(0)
+    })
     it(`the function should return array length of 1`, function () {
       expect(buildRequestResults.data).to.be.a('string');
     });
   });
+
+  describe('bidRequest Video testing', function() {
+    const request = districtm.buildRequests(bidRequestVideo, bidRequestVideo);
+    const data = JSON.parse(request.data)
+    expect(data instanceof Object).to.be.equal(true)
+  })
 
   describe(`interpretResponse test usage`, function () {
     const responseResults = districtm.interpretResponse(responses, {bidderRequest});

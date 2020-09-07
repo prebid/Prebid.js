@@ -1,9 +1,8 @@
 import { config } from '../src/config.js'
 import * as utils from '../src/utils.js'
-import * as url from '../src/url.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
-import includes from 'core-js/library/fn/array/includes.js'
+import includes from 'core-js-pure/features/array/includes.js'
 
 /**
  * Adapter for requesting bids from adxcg.net
@@ -179,7 +178,7 @@ export const spec = {
       beaconParams.idl_env = validBidRequests[0].userId.idl_env;
     }
 
-    let adxcgRequestUrl = url.format({
+    let adxcgRequestUrl = utils.buildUrl({
       protocol: 'https',
       hostname: 'hbps.adxcg.net',
       pathname: '/get/adi',
