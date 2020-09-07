@@ -1,0 +1,61 @@
+{
+	"httpRequest": {
+		"method": "POST",
+		"path": "/",
+		"body": {
+			"tags": [
+				{
+					"sizes": [
+						{
+							"width": 300,
+							"height": 250
+						},
+						{
+							"width": 300,
+							"height": 600
+						}
+					],
+					"primary_size": {
+						"width": 300,
+						"height": 250
+					},
+					"ad_types": [
+						"banner"
+					],
+					"id": 13144370,
+					"allow_smaller_sizes": false,
+					"use_pmt_rule": false,
+					"prebid": true,
+					"disable_psa": true,
+					"hb_source": 1
+				},
+				{
+					"sizes": [
+						{
+							"width": 300,
+							"height": 250
+						},
+						{
+							"width": 300,
+							"height": 600
+						}
+					],
+					"primary_size": {
+						"width": 300,
+						"height": 250
+					},
+					"ad_types": [
+						"banner"
+					],
+					"id": 13144370,
+					"allow_smaller_sizes": false,
+					"use_pmt_rule": false,
+					"prebid": true,
+					"disable_psa": true,
+					"hb_source": 1
+				}
+			],
+			"user": {}
+		}
+	}
+}

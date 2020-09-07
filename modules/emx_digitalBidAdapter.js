@@ -2,12 +2,13 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
 const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
-const ADAPTER_VERSION = '1.5.0';
+const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
@@ -41,11 +42,14 @@ export const emxAdapter = {
   },
   formatVideoResponse: (bidResponse, emxBid, bidRequest) => {
     bidResponse.vastXml = emxBid.adm;
-    if (bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === 'outstream') {
-      bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
-        id: emxBid.id,
-        url: RENDERER_URL
-      });
+    if (bidRequest.bidderRequest && bidRequest.bidderRequest.bids && bidRequest.bidderRequest.bids.length > 0) {
+      const matchingBid = find(bidRequest.bidderRequest.bids, bid => bidResponse.requestId && bid.bidId && bidResponse.requestId === bid.bidId && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream');
+      if (matchingBid) {
+        bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
+          id: emxBid.id,
+          url: RENDERER_URL
+        });
+      }
     }
     return bidResponse;
   },
@@ -158,6 +162,7 @@ export const emxAdapter = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 183,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     if (!bid || !bid.params) {
@@ -275,12 +280,21 @@ export const spec = {
     }
     return emxBidResponses;
   },
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     const syncs = [];
     if (syncOptions.iframeEnabled) {
+      let url = 'https://biddr.brealtime.com/check.html';
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          url += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          url += `?gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
       syncs.push({
         type: 'iframe',
-        url: 'https://biddr.brealtime.com/check.html'
+        url: url
       });
     }
     return syncs;

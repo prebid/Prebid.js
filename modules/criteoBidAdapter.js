@@ -1,14 +1,14 @@
-import { loadExternalScript } from '../src/adloader.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {loadExternalScript} from '../src/adloader.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 91;
-export const ADAPTER_VERSION = 29;
+export const ADAPTER_VERSION = 32;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
@@ -156,10 +156,16 @@ export const spec = {
    * @param {TimedOutBid} timeoutData
    */
   onTimeout: (timeoutData) => {
-    if (publisherTagAvailable()) {
-      // eslint-disable-next-line no-undef
-      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(timeoutData.auctionId);
-      adapter.handleBidTimeout();
+    if (publisherTagAvailable() && Array.isArray(timeoutData)) {
+      var auctionsIds = [];
+      timeoutData.forEach((bid) => {
+        if (auctionsIds.indexOf(bid.auctionId) === -1) {
+          auctionsIds.push(bid.auctionId);
+          // eslint-disable-next-line no-undef
+          const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
+          adapter.handleBidTimeout();
+        }
+      });
     }
   },
 
@@ -167,7 +173,7 @@ export const spec = {
    * @param {Bid} bid
    */
   onBidWon: (bid) => {
-    if (publisherTagAvailable()) {
+    if (publisherTagAvailable() && bid) {
       // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
       adapter.handleBidWon(bid);
@@ -274,7 +280,6 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
         impid: bidRequest.adUnitCode,
         transactionid: bidRequest.transactionId,
         auctionId: bidRequest.auctionId,
-        sizes: getBannerSizes(bidRequest),
       };
       if (bidRequest.params.zoneId) {
         slot.zoneid = bidRequest.params.zoneId;
@@ -293,10 +298,13 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
         if (!checkNativeSendId(bidRequest)) {
           utils.logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)');
         }
+        slot.sizes = parseSizes(retrieveBannerSizes(bidRequest), parseNativeSize);
+      } else {
+        slot.sizes = parseSizes(retrieveBannerSizes(bidRequest), parseSize);
       }
       if (hasVideoMediaType(bidRequest)) {
         const video = {
-          playersizes: getVideoSizes(bidRequest),
+          playersizes: parseSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
           mimes: bidRequest.mediaTypes.video.mimes,
           protocols: bidRequest.mediaTypes.video.protocols,
           maxduration: bidRequest.mediaTypes.video.maxduration,
@@ -339,24 +347,26 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   return request;
 }
 
-function getVideoSizes(bidRequest) {
-  return parseSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+function retrieveBannerSizes(bidRequest) {
+  return utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
 }
 
-function getBannerSizes(bidRequest) {
-  return parseSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes);
+function parseSizes(sizes, parser) {
+  if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
+    return sizes.map(size => parser(size));
+  }
+  return [parser(sizes)]; // or a single one ? (ie. [728,90])
 }
 
 function parseSize(size) {
   return size[0] + 'x' + size[1];
 }
 
-function parseSizes(sizes) {
-  if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
-    return sizes.map(size => parseSize(size));
+function parseNativeSize(size) {
+  if (size[0] === undefined && size[1] === undefined) {
+    return '2x2';
   }
-
-  return [parseSize(sizes)]; // or a single one ? (ie. [728,90])
+  return size[0] + 'x' + size[1];
 }
 
 function hasVideoMediaType(bidRequest) {
@@ -467,10 +477,7 @@ export function tryGetCriteoFastBid() {
 
         if (verify(publisherTag, publisherTagHash, FAST_BID_PUBKEY_N, FAST_BID_PUBKEY_E)) {
           utils.logInfo('Using Criteo FastBid');
-          const script = document.createElement('script');
-          script.type = 'text/javascript';
-          script.text = publisherTag;
-          utils.insertElement(script);
+          eval(publisherTag); // eslint-disable-line no-eval
         } else {
           utils.logWarn('Invalid Criteo FastBid found');
           storage.removeDataFromLocalStorage(fastBidStorageKey);

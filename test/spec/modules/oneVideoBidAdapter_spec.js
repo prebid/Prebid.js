@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oneVideoBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
 
 describe('OneVideoBidAdapter', function () {
   let bidRequest;
@@ -47,6 +46,7 @@ describe('OneVideoBidAdapter', function () {
           sid: 134,
           rewarded: 1,
           placement: 1,
+          hp: 1,
           inventoryid: 123
         },
         site: {
@@ -90,7 +90,7 @@ describe('OneVideoBidAdapter', function () {
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
-    it('should return true when the "pubId" param is missing', function () {
+    it('should return true when the "pubId" param exists', function () {
       bidRequest.params = {
         video: {
           playerWidth: 480,
@@ -115,6 +115,87 @@ describe('OneVideoBidAdapter', function () {
       bidRequest.params = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
+
+    it('should return false when the mediaType is "banner" and display="undefined" (DAP 3P)', function () {
+      bidRequest = {
+        mediaTypes: {
+          banner: {
+            sizes: [640, 480]
+          }
+        }
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    })
+
+    it('should return true when the mediaType is "banner" and display=1 (DAP 3P)', function () {
+      bidRequest = {
+        mediaTypes: {
+          banner: {
+            sizes: [640, 480]
+          }
+        },
+        bidder: 'oneVideo',
+        sizes: [640, 480],
+        bidId: '30b3efwfwe1e',
+        adUnitCode: 'video1',
+        params: {
+          video: {
+            playerWidth: 640,
+            playerHeight: 480,
+            mimes: ['video/mp4', 'application/javascript'],
+            protocols: [2, 5],
+            api: [2],
+            position: 1,
+            delivery: [2],
+            playbackmethod: [1, 5],
+            sid: 134,
+            rewarded: 1,
+            placement: 1,
+            inventoryid: 123,
+            display: 1
+          },
+          site: {
+            id: 1,
+            page: 'https://news.yahoo.com/portfolios',
+            referrer: 'http://www.yahoo.com'
+          },
+          pubId: 'brxd'
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    })
+
+    it('should return false when the mediaType is "video" and context="outstream" and display=1 (DAP 3P)', function () {
+      bidRequest = {
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [640, 480]
+          }
+        },
+        params: {
+          video: {
+            display: 1
+          }
+        }
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    })
+
+    it('should return true for Multi-Format AdUnits, when the mediaTypes are both "banner" and "video" (Multi-Format Support)', function () {
+      bidRequest = {
+        mediaTypes: {
+          banner: {
+            sizes: [640, 480]
+          },
+          video: {
+            context: 'outstream',
+            playerSize: [640, 480]
+          }
+        }
+      }
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    })
   });
 
   describe('spec.buildRequests', function () {
@@ -136,7 +217,7 @@ describe('OneVideoBidAdapter', function () {
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
-      const VERSION = '3.0.1';
+      const VERSION = '3.0.4';
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
@@ -156,6 +237,84 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
     });
+
+    it('should set pubId to HBExchange when bid.params.video.e2etest = true', function () {
+      bidRequest.params.video.e2etest = true;
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(requests[0].method).to.equal('POST');
+      expect(requests[0].url).to.equal(spec.E2ETESTENDPOINT + 'HBExchange');
+    });
+
+    it('should attach End 2 End test data', function () {
+      bidRequest.params.video.e2etest = true;
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      expect(data.imp[0].bidfloor).to.not.exist;
+      expect(data.imp[0].video.w).to.equal(300);
+      expect(data.imp[0].video.h).to.equal(250);
+      expect(data.imp[0].video.mimes).to.eql(['video/mp4', 'application/javascript']);
+      expect(data.imp[0].video.api).to.eql([2]);
+      expect(data.site.page).to.equal('https://verizonmedia.com');
+      expect(data.site.ref).to.equal('https://verizonmedia.com');
+      expect(data.tmax).to.equal(1000);
+    });
+
+    it('it should create new schain and send it if video.params.sid exists', function () {
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      const schain = data.source.ext.schain;
+      expect(schain.nodes.length).to.equal(1);
+      expect(schain.nodes[0].sid).to.equal(bidRequest.params.video.sid);
+      expect(schain.nodes[0].rid).to.equal(data.id);
+    })
+
+    it('should send Global or Bidder specific schain if sid is not passed in video.params.sid', function () {
+      bidRequest.params.video.sid = null;
+      const globalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'some-platform.com',
+          sid: '111111',
+          rid: bidRequest.id,
+          hp: 1
+        }]
+      };
+      bidRequest.schain = globalSchain;
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      const schain = data.source.ext.schain;
+      expect(schain.nodes.length).to.equal(1);
+      expect(schain).to.equal(globalSchain);
+    });
+
+    it('should ignore Global or Bidder specific schain if video.params.sid exists and send new schain', function () {
+      const globalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'some-platform.com',
+          sid: '111111',
+          rid: bidRequest.id,
+          hp: 1
+        }]
+      };
+      bidRequest.schain = globalSchain;
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      const schain = data.source.ext.schain;
+      expect(schain.nodes.length).to.equal(1);
+      expect(schain.complete).to.equal(1);
+      expect(schain.nodes[0].sid).to.equal(bidRequest.params.video.sid);
+      expect(schain.nodes[0].rid).to.equal(data.id);
+    })
+
+    it('should append hp to new schain created by sid if video.params.hp is passed', function () {
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      const schain = data.source.ext.schain;
+      expect(schain.nodes[0].hp).to.equal(bidRequest.params.video.hp);
+    })
   });
 
   describe('spec.interpretResponse', function () {
@@ -176,7 +335,7 @@ describe('OneVideoBidAdapter', function () {
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return a valid bid response with just "adm"', function () {
+    it('should return a valid video bid response with just "adm"', function () {
       const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       let o = {
@@ -196,6 +355,26 @@ describe('OneVideoBidAdapter', function () {
         renderer: (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined,
       };
       expect(bidResponse).to.deep.equal(o);
+    });
+    // @abrowning14 check that banner DAP response is appended to o.ad + mediaType: 'banner'
+    it('should return a valid DAP banner bid-response', function () {
+      bidRequest = {
+        mediaTypes: {
+          banner: {
+            sizes: [640, 480]
+          }
+        },
+        params: {
+          video: {
+            display: 1
+          }
+        }
+      }
+      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<div>DAP UNIT HERE</div>'}]}], cur: 'USD'};
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+      expect(bidResponse.ad).to.equal('<div>DAP UNIT HERE</div>');
+      expect(bidResponse.mediaType).to.equal('banner');
+      expect(bidResponse.renderer).to.be.undefined;
     });
   });
 
@@ -258,16 +437,10 @@ describe('OneVideoBidAdapter', function () {
       expect(request[0].data.regs.ext.gdpr).to.equal(1);
       expect(request[0].data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent);
     });
-
-    it('should send schain object', function () {
-      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
-      const data = requests[0].data;
-      expect(data.source.ext.schain.nodes[0].sid).to.equal(bidRequest.params.video.sid);
-      expect(data.source.ext.schain.nodes[0].rid).to.equal(data.id);
-    });
   });
+
   describe('should send banner object', function () {
-    it('should send banner object when display is 1', function () {
+    it('should send banner object when display is 1 and context="instream" (DAP O&O)', function () {
       bidRequest = {
         mediaTypes: {
           video: {
@@ -320,7 +493,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].banner.ext.maxduration).to.equal(bidRequest.params.video.maxduration);
       expect(data.site.id).to.equal(bidRequest.params.site.id);
     });
-    it('should send video object when display is other than 1', function () {
+    it('should send video object when display is other than 1 (VAST for All)', function () {
       bidRequest = {
         mediaTypes: {
           video: {
@@ -365,7 +538,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.pos).to.equal(position);
       expect(data.imp[0].video.mimes).to.equal(bidRequest.params.video.mimes);
     });
-    it('should send video object when display is not passed', function () {
+    it('should send video object when display is not passed (VAST for All)', function () {
       bidRequest = {
         mediaTypes: {
           video: {
@@ -420,14 +593,25 @@ describe('OneVideoBidAdapter', function () {
 
       it('should get correct user sync when iframeEnabled', function () {
         let pixel = spec.getUserSyncs({pixelEnabled: true}, {}, {gdprApplies: true, consentString: GDPR_CONSENT_STRING})
-        expect(pixel[2].type).to.equal('image');
-        expect(pixel[2].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING + '&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=1&gdpr_consent=' + encodeURI(GDPR_CONSENT_STRING));
+        expect(pixel[1].type).to.equal('image');
+        expect(pixel[1].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING + '&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=1&gdpr_consent=' + encodeURI(GDPR_CONSENT_STRING));
       });
 
       it('should default to gdprApplies=0 when consentData is undefined', function () {
         let pixel = spec.getUserSyncs({pixelEnabled: true}, {}, undefined);
-        expect(pixel[2].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=0&gdpr_consent=&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=0&gdpr_consent=');
+        expect(pixel[1].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=0&gdpr_consent=&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=0&gdpr_consent=');
       });
     });
+
+    describe('verify sync pixels', function () {
+      let pixel = spec.getUserSyncs({pixelEnabled: true}, {}, undefined);
+      it('should be UPS sync pixel for DBM', function () {
+        expect(pixel[0].url).to.equal('https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true')
+      });
+
+      it('should be TTD sync pixel', function () {
+        expect(pixel[2].url).to.equal('https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1')
+      });
+    })
   });
 });

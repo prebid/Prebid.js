@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -85,11 +85,6 @@ function checkTCFv1(vendorData) {
 }
 
 function checkTCFv2(tcData) {
-  if (tcData.purposeOneTreatment && tcData.publisherCC === 'DE') {
-    // special purpose 1 treatment for Germany
-    return true;
-  }
-
   let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
   let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
