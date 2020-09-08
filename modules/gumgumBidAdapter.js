@@ -275,6 +275,17 @@ function buildRequests (validBidRequests, bidderRequest) {
     }
     if (params.inSlot) {
       data.si = parseInt(params.inSlot, 10);
+      // check for sizes and type
+      if (params.sizes && Array.isArray(params.sizes)) {
+        const bf = params.sizes.reduce(function(r, i) {
+          // only push if it's an array of length 2
+          if (Array.isArray(i) && i.length === 2) {
+            r.push(`${i[0]}x${i[1]}`);
+          }
+          return r;
+        }, []);
+        data.bf = bf.toString();
+      }
       data.pi = 3;
     }
     if (params.ICV) {
