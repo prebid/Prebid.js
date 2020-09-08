@@ -235,13 +235,18 @@ function _buildResponseObject(bidderRequest, bid) {
       dealId: dealId,
       currency: 'USD',
       ttl: 300,
-      tl_source: bid.tl_source
+      tl_source: bid.tl_source,
+      meta: {}
     };
 
     if (breq.mediaTypes.video) {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
     };
+
+    if (bid.advertiser_name) {
+      bidResponse.meta.advertiserName = bid.advertiser_name;
+    }
   };
   return bidResponse;
 }
