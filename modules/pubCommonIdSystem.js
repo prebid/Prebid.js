@@ -126,11 +126,8 @@ export const pubCommonIdSubmodule = {
       }
     } catch (e) {
     }
-    let pixelCallback;
-    if (extend) {
-      pixelCallback = this.makeCallback(pixelUrl, storedId.id);
-    }
-    let callback = (storedId.third) ? pixelCallback : getIdCallback(storedId, pixelCallback);
+    let pixelCallback = extend ? this.makeCallback(pixelUrl, storedId.id) : undefined;
+    let callback = storedId.third ? pixelCallback : getIdCallback(storedId, pixelCallback);
     // When extending, only one of response fields is needed
     return callback ? {callback: callback} : {id: storedId};
   },
