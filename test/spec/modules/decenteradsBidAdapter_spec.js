@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec } from '../../../modules/decenteradsBidAdapter'
+import { spec } from '../../../modules/decenteradsBidAdapter.js'
 import { deepStrictEqual, notEqual, ok, strictEqual } from 'assert'
 
 describe('DecenteradsAdapter', () => {
