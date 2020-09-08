@@ -110,6 +110,7 @@ function watch(done) {
   connect.server({
     https: argv.https,
     port: port,
+    host: argv.host,
     root: './',
     livereload: true
   });
