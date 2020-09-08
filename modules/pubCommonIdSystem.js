@@ -84,7 +84,7 @@ export const pubCommonIdSubmodule = {
    * @returns {{pubcid: {id:string, third:string}}}
    */
   decode(value) {
-    let res = {'pubcid': value}
+    const res = {'pubcid': value}
     utils.logInfo('PubcId: Decoded value ' + JSON.stringify(res));
     return res;
   },
@@ -103,7 +103,7 @@ export const pubCommonIdSubmodule = {
     } catch (e) {
     }
     const newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
-    let idObj = {
+    const idObj = {
       id: newId
     };
     return {
@@ -126,8 +126,8 @@ export const pubCommonIdSubmodule = {
       }
     } catch (e) {
     }
-    let pixelCallback = extend ? this.makeCallback(pixelUrl, storedId.id) : undefined;
-    let callback = storedId.third ? pixelCallback : getIdCallback(storedId, pixelCallback);
+    const pixelCallback = extend ? this.makeCallback(pixelUrl, storedId.id) : undefined;
+    const callback = storedId.third ? pixelCallback : getIdCallback(storedId, pixelCallback);
     // When extending, only one of response fields is needed
     return callback ? {callback: callback} : {id: storedId};
   },
