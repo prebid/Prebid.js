@@ -551,13 +551,15 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       /**
-       * GAM Ad Unit
-       * @type {(string|undefined)}
+       * Copy GAM AdUnit and Name to imp
        */
-      const gamAdUnit = utils.deepAccess(adUnit, 'fpd.context.adServer.adSlot');
-      if (typeof gamAdUnit === 'string' && gamAdUnit) {
-        utils.deepSetValue(imp, 'ext.context.data.adslot', gamAdUnit);
-      }
+      ['name', 'adSlot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(adUnit, `fpd.context.adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(imp, `ext.context.data.adserver.${name.toLowerCase()}`, value);
+        }
+      });
 
       Object.assign(imp, mediaTypes);
 
