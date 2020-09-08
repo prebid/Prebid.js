@@ -8,12 +8,58 @@
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
 
 const MODULE_NAME = 'pubCommonId';
 
+const SHAREDID_OPT_OUT_VALUE = '00000000000000000000000000';
+const SHAREDID_COOKIE_EXPIRATION = 2419200000; // 28 days in milliseconds
+const SHAREDID_COOKIE_NAME ="sharedid";
+const SHAREDID_URL = "https://id.sharedid.org/id";
+
 const storage = getStorageManager(null, 'pubCommonId');
+
+function setCookieFromResponse() {
+  return {
+    success: function (responseBody) {
+      let value = {};
+      if (responseBody) {
+        try {
+          let responseObj = JSON.parse(responseBody);
+          utils.logInfo('SharedId: Generated SharedId: ' + responseObj.sharedId);
+          value = responseObj.sharedId;
+        } catch (error) {
+          utils.logError(error);
+        }
+      }
+      const expiresStr = new Date(Date.now() + SHAREDID_COOKIE_EXPIRATION).toUTCString();
+      storage.setCookie(SHAREDID_COOKIE_NAME, value, expiresStr, 'Lax');
+    },
+    error: function (statusText, responseBody) {
+      utils.logInfo('SharedId: failed to get id');
+    }
+  }
+}
+
+function encodeId(pubcId) {
+  const result = {};
+  const bidIds = {
+    id: pubcId,
+  };
+  let sharedId = storage.getCookie(SHAREDID_COOKIE_NAME);
+  if (sharedId) {
+    if (sharedId != SHAREDID_OPT_OUT_VALUE) {
+      bidIds.third = sharedId;
+    }
+  } else {
+    ajax(SHAREDID_URL, setCookieFromResponse(), undefined, {method: 'GET', withCredentials: true});
+  }
+  result.pubcid = bidIds;
+  utils.logInfo('PubcId: Decoded value ' + JSON.stringify(result));
+  return result;
+}
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {
@@ -46,10 +92,10 @@ export const pubCommonIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{pubcid:string}}
+   * @returns {{pubcid: {id:string, third:string}}}
    */
   decode(value) {
-    return { 'pubcid': value }
+    return (value) ? encodeId(value) : undefined;
   },
   /**
    * performs action to obtain id
