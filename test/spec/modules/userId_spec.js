@@ -1225,7 +1225,6 @@ describe('User ID', function() {
             // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.intentIqId');
             expect(bid.userId.intentIqId).to.equal('testintentIqId');
-            // also check that intentIqId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.haloId');
             expect(bid.userId.haloId).to.equal('testHaloId');
 

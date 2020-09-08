@@ -34,7 +34,6 @@ export const haloIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(configParams) {
-    // use protocol relative urls for http or https
     const url = `https://id.halo.ad.gt/api/v1/pbhid`;
 
     const resp = function (callback) {
