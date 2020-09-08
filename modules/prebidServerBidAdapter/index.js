@@ -504,6 +504,9 @@ const OPEN_RTB_PROTOCOL = {
           // Don't push oustream w/o renderer to request object.
           utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
         } else {
+          if (videoParams.context === 'instream' && !videoParams.hasOwnProperty('placement')) {
+            videoParams.placement = 1;
+          }
           mediaTypes['video'] = videoParams;
         }
       }
