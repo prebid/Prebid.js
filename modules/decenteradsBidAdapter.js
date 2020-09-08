@@ -22,7 +22,7 @@ export const spec = {
       winTop = window.top
     } catch (e) { utils.logMessage(e) }
 
-    const location = utils.getTopWindowLocation()
+    const location = utils.getWindowLocation()
     const placements = []
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -43,7 +43,7 @@ export const spec = {
         deviceHeight: winTop.screen.height,
         language: (navigator && navigator.language) ? navigator.language : '',
         secure: +(location.protocol === 'https:'),
-        host: location.host,
+        host: location.hostname,
         page: location.pathname,
         placements: placements
       }
