@@ -15,27 +15,25 @@ const PUB_COMMON_ID = 'PublisherCommonId';
 const MODULE_NAME = 'pubCommonId';
 
 const SHAREDID_OPT_OUT_VALUE = '00000000000000000000000000';
-const SHAREDID_COOKIE_EXPIRATION = 2419200000; // 28 days in milliseconds
-const SHAREDID_COOKIE_NAME = 'sharedid';
 const SHAREDID_URL = 'https://id.sharedid.org/id';
 
 const storage = getStorageManager(null, 'pubCommonId');
 
-function setCookieFromResponse() {
+function handleResponse(idObj, callback) {
   return {
     success: function (responseBody) {
-      let value = {};
       if (responseBody) {
         try {
           let responseObj = JSON.parse(responseBody);
           utils.logInfo('SharedId: Generated SharedId: ' + responseObj.sharedId);
-          value = responseObj.sharedId;
+          if (responseObj.sharedId && responseObj.sharedId != SHAREDID_OPT_OUT_VALUE) {
+            idObj.third = responseObj.sharedId;
+          }
+          callback(idObj);
         } catch (error) {
           utils.logError(error);
         }
       }
-      const expiresStr = new Date(Date.now() + SHAREDID_COOKIE_EXPIRATION).toUTCString();
-      storage.setCookie(SHAREDID_COOKIE_NAME, value, expiresStr, 'Lax');
     },
     error: function (statusText, responseBody) {
       utils.logInfo('SharedId: failed to get id');
@@ -43,22 +41,13 @@ function setCookieFromResponse() {
   }
 }
 
-function encodeId(pubcId) {
-  const result = {};
-  const bidIds = {
-    id: pubcId,
-  };
-  let sharedId = storage.getCookie(SHAREDID_COOKIE_NAME);
-  if (sharedId) {
-    if (sharedId != SHAREDID_OPT_OUT_VALUE) {
-      bidIds.third = sharedId;
+function getIdCallback(idObj, pixelCallback) {
+  return function (callback) {
+    ajax(SHAREDID_URL, handleResponse(idObj, callback), undefined, {method: 'GET', withCredentials: true});
+    if (typeof pixelCallback === 'function') {
+      pixelCallback();
     }
-  } else {
-    ajax(SHAREDID_URL, setCookieFromResponse(), undefined, {method: 'GET', withCredentials: true});
   }
-  result.pubcid = bidIds;
-  utils.logInfo('PubcId: Decoded value ' + JSON.stringify(result));
-  return result;
 }
 
 /** @type {Submodule} */
@@ -95,7 +84,9 @@ export const pubCommonIdSubmodule = {
    * @returns {{pubcid: {id:string, third:string}}}
    */
   decode(value) {
-    return (value) ? encodeId(value) : undefined;
+    let res = {'pubcid': value}
+    utils.logInfo('PubcId: Decoded value ' + JSON.stringify(res));
+    return res;
   },
   /**
    * performs action to obtain id
@@ -111,12 +102,14 @@ export const pubCommonIdSubmodule = {
       }
     } catch (e) {
     }
-
     const newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
+    let idObj = {
+      id: newId
+    };
     return {
-      id: newId,
-      callback: this.makeCallback(pixelUrl, newId)
-    }
+      id: idObj,
+      callback: getIdCallback(idObj, this.makeCallback(pixelUrl, newId))
+    };
   },
   /**
    * performs action to extend an id
@@ -133,12 +126,13 @@ export const pubCommonIdSubmodule = {
       }
     } catch (e) {
     }
-
+    let pixelCallback;
     if (extend) {
-      // When extending, only one of response fields is needed
-      const callback = this.makeCallback(pixelUrl, storedId);
-      return callback ? {callback: callback} : {id: storedId};
+      pixelCallback = this.makeCallback(pixelUrl, storedId.id);
     }
+    let callback = (storedId.third) ? pixelCallback : getIdCallback(storedId, pixelCallback);
+    // When extending, only one of response fields is needed
+    return callback ? {callback: callback} : {id: storedId};
   },
 
   /**
