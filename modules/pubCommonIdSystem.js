@@ -16,8 +16,8 @@ const MODULE_NAME = 'pubCommonId';
 
 const SHAREDID_OPT_OUT_VALUE = '00000000000000000000000000';
 const SHAREDID_COOKIE_EXPIRATION = 2419200000; // 28 days in milliseconds
-const SHAREDID_COOKIE_NAME ="sharedid";
-const SHAREDID_URL = "https://id.sharedid.org/id";
+const SHAREDID_COOKIE_NAME = 'sharedid';
+const SHAREDID_URL = 'https://id.sharedid.org/id';
 
 const storage = getStorageManager(null, 'pubCommonId');
 
@@ -125,7 +125,7 @@ export const pubCommonIdSubmodule = {
    * @param {Object} storedId existing id
    * @returns {IdResponse|undefined}
    */
-  extendId: function({extend = false, pixelUrl} = {}, storedId) {
+  extendId: function ({extend = false, pixelUrl} = {}, storedId) {
     try {
       if (typeof window[PUB_COMMON_ID] === 'object') {
         // If the page includes its onw pubcid module, then there is nothing to do.
