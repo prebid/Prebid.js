@@ -44,20 +44,32 @@ describe('storage manager', function() {
     deviceAccessSpy.restore();
   });
 
-  it('should not throw if the localstorage is not accessible when setting/getting/removing from localstorage', function() {
-    const coreStorage = getStorageManager();
+  describe('localstorage forbidden access in 3rd-party context', function() {
+    let errorLogSpy;
 
-    const localstorageStub = sinon.stub(global.window, 'localStorage').get(() => { throw Error });
-    const errorLogSpy = sinon.spy(utils, 'logError');
+    beforeEach(function() {
+      var mock = {
+        get: function() {
+          throw Error;
+        }
+      };
+      Object.defineProperty(window, 'localStorage', mock);
+      errorLogSpy = sinon.spy(utils, 'logError');
+    });
 
-    coreStorage.setDataInLocalStorage('key', 'value');
-    const val = coreStorage.getDataFromLocalStorage('key');
-    coreStorage.removeDataFromLocalStorage('key');
+    afterEach(function() {
+      errorLogSpy.restore();
+    })
 
-    expect(val).to.be.null;
-    sinon.assert.calledThrice(errorLogSpy);
+    it('should not throw if the localstorage is not accessible when setting/getting/removing from localstorage', function() {
+      const coreStorage = getStorageManager();
 
-    localstorageStub.restore();
-    errorLogSpy.restore();
+      coreStorage.setDataInLocalStorage('key', 'value');
+      const val = coreStorage.getDataFromLocalStorage('key');
+      coreStorage.removeDataFromLocalStorage('key');
+
+      expect(val).to.be.null;
+      sinon.assert.calledThrice(errorLogSpy);
+    })
   })
 });
