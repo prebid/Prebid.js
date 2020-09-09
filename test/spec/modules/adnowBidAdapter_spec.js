@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/adnowBidAdapter.js';
 
 describe.only('adnowBidAdapterTests', function () {
-  it('isBidRequestValid', function () {
+  describe('isBidRequestValid', function () {
     it('Should return true', function() {
       expect(spec.isBidRequestValid({
         bidder: 'adnow',
@@ -12,7 +12,7 @@ describe.only('adnowBidAdapterTests', function () {
       })).to.equal(true);
     });
 
-    it('Should return false', function() {
+    it('Should return false when required params is not passed', function() {
       expect(spec.isBidRequestValid({
         bidder: 'adnow',
         params: {}
@@ -39,32 +39,78 @@ describe.only('adnowBidAdapterTests', function () {
       .to.match(/d_user_agent=.+/);
   });
 
-  it.only('interpretResponse', function() {
+  describe('interpretResponse', function() {
     const request = {
       bidRequest: {
         bidId: 'bid12345'
       }
     };
 
-    const response = {
-      title: 'Title',
-      body: 'Body',
-      sponsoredBy: 'AdNow',
-      clickUrl: '//click.url',
-      image: {
-        url: '//img.url',
-        height: 200,
-        width: 200
-      }
-    };
+    it('Response with native bid', function() {
+      const response = {
+        currency: 'USD',
+        cpm: 0.5,
+        native: {
+          title: 'Title',
+          body: 'Body',
+          sponsoredBy: 'AdNow',
+          clickUrl: '//click.url',
+          image: {
+            url: '//img.url',
+            height: 200,
+            width: 200
+          }
+        },
+        meta: {
+          mediaType: 'native'
+        }
+      };
 
-    const bids = spec.interpretResponse({ body: response }, request);
-    const bid = bids[0];
+      const bids = spec.interpretResponse({ body: response }, request);
+      expect(bids).to.be.an('array').that.is.not.empty;
 
-    expect(bid).to.have.property('requestId');
-    expect(bid).to.have.property('title');
-    expect(bid).to.have.property('body');
-    expect(bid).to.have.property('clickUrl');
-    expect(bid).to.have.property('image');
+      const bid = bids[0];
+      expect(bid).to.have.keys('requestId', 'cpm', 'currency', 'native', 'creativeId', 'netRevenue', 'meta', 'ttl');
+
+      const nativePart = bid.native;
+
+      expect(nativePart.title).to.be.equal('Title');
+      expect(nativePart.body).to.be.equal('Body');
+      expect(nativePart.clickUrl).to.be.equal('//click.url');
+      expect(nativePart.image.url).to.be.equal('//img.url');
+      expect(nativePart.image.height).to.be.equal(200);
+      expect(nativePart.image.width).to.be.equal(200);
+    });
+
+    it('Response with banner bid', function() {
+      const response = {
+        currency: 'USD',
+        cpm: 0.5,
+        ad: '<div>Banner</div>',
+        meta: {
+          mediaType: 'banner'
+        }
+      };
+
+      const bids = spec.interpretResponse({ body: response }, request);
+      expect(bids).to.be.an('array').that.is.not.empty;
+
+      const bid = bids[0];
+      expect(bid).to.have.keys('requestId', 'cpm', 'currency', 'ad', 'creativeId', 'netRevenue', 'meta', 'ttl');
+
+      expect(bid.ad).to.be.equal('<div>Banner</div>');
+    });
+
+    it('Response with no bid should return an empty array', function() {
+      const noBidResponses = [
+        false,
+        {},
+        {inavalidBodyContent: true}
+      ];
+
+      noBidResponses.forEach(response => {
+        return expect(spec.interpretResponse(response, request)).to.be.an('array').that.is.empty;
+      });
+    });
   });
 });
