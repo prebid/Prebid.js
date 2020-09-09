@@ -142,7 +142,8 @@ function sendMessage(auctionId, bidWonId) {
     ruleId: config.getConfig('rubicon.rule_name'),
     version: '$prebid.version$',
     referrerUri: referrer,
-    referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer)
+    referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer),
+    channel: 'web'
   };
   const wrapperName = config.getConfig('rubicon.wrapperName');
   if (wrapperName) {

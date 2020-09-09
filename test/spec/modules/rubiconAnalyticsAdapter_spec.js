@@ -278,6 +278,7 @@ const MOCK = {
 const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
 
 const ANALYTICS_MESSAGE = {
+  'channel': 'web',
   'eventTimeMillis': 1519767013781,
   'integration': 'pbjs',
   'version': '$prebid.version$',
@@ -496,10 +497,15 @@ function performStandardAuction(gptEvents) {
 describe('rubicon analytics adapter', function () {
   let sandbox;
   let clock;
-
+  let getCookieStub, setCookieStub, cookiesAreEnabledStub;
   beforeEach(function () {
+    getCookieStub = sinon.stub(storage, 'getCookie');
+    setCookieStub = sinon.stub(storage, 'setCookie');
+    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
     mockGpt.disable();
     sandbox = sinon.sandbox.create();
+
+    cookiesAreEnabledStub.returns(true);
 
     sandbox.stub(events, 'getEvents').returns([]);
 
@@ -524,6 +530,9 @@ describe('rubicon analytics adapter', function () {
     sandbox.restore();
     config.resetConfig();
     mockGpt.enable();
+    getCookieStub.restore();
+    setCookieStub.restore();
+    cookiesAreEnabledStub.restore();
   });
 
   it('should require accountId', function () {
@@ -821,11 +830,8 @@ describe('rubicon analytics adapter', function () {
     });
 
     describe('with session handling', function () {
-      let getCookieStub, setCookieStub, pvid, kvps;
+      let pvid, kvps;
       beforeEach(function () {
-        getCookieStub = sinon.stub(storage, 'getCookie');
-        setCookieStub = sinon.stub(storage, 'setCookie');
-
         // custom dm stuff
         prebidGlobal.rp = {
           getCustomTargeting: () => kvps,
@@ -834,10 +840,27 @@ describe('rubicon analytics adapter', function () {
       });
 
       afterEach(function () {
-        getCookieStub.restore();
-        setCookieStub.restore();
-
         prebidGlobal.rp = pvid = kvps = undefined;
+      });
+
+      it('shouldnot log any session data if cookies are not enabled', function () {
+        cookiesAreEnabledStub.returns(false);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        delete expectedMessage.session;
+        delete expectedMessage.fpkvs;
+
+        performStandardAuction();
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+
+        expect(request.url).to.equal('//localhost:9999/event');
+
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        expect(message).to.deep.equal(expectedMessage);
       });
 
       it('should should pass along custom rubicon kv and pvid when defined', function () {
