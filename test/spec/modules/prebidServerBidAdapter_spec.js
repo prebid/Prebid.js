@@ -937,11 +937,11 @@ describe('S2S Adapter', function () {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
       const floorInfo = {
-        'data' : {
-          'currency' : 'USD',
+        'data': {
+          'currency': 'USD',
           'schema': { 'fields': ['adUnitCode'] },
-          'values': { '*' : 1.23 },
-          'floorsSchemaVersion' : 1 }
+          'values': { '*': 1.23 },
+          'floorsSchemaVersion': 1 }
       };
       config.setConfig({ s2sConfig: s2sConfig, floors: floorInfo });
       expect(requestBid.bidfloor).to.exist.and.to.be.a('string');
