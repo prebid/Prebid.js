@@ -617,7 +617,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
               code: 'request-error'
             };
         }
-        bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
+        bid.clientLatencyMillis = bid.timeToRespond || Date.now() - cache.auctions[args.auctionId].timestamp;
         bid.bidResponse = parseBidResponse(args, bid.bidResponse);
         break;
       case BIDDER_DONE:
