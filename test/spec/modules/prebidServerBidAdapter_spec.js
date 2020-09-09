@@ -944,6 +944,8 @@ describe('S2S Adapter', function () {
           'floorsSchemaVersion': 1 }
       };
       config.setConfig({ s2sConfig: s2sConfig, floors: floorInfo });
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.bidfloor).to.exist.and.to.be.a('string');
       expect(requestBid.bidfloorcur).to.exist.and.to.be.a('string');
       expect(requestBid.bidfloorcur).to.deep.equal('USD');
