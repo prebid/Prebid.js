@@ -275,6 +275,34 @@ function _appendSiteAppDevice(request, pageUrl) {
   }
 }
 
+function _getFloor(bid) {
+  let floor = null;
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({
+      currency: DEFAULT_S2S_CURRENCY,
+      mediaType: 'banner',
+      size: _sizes(bid.sizes)
+    });
+    if (typeof floorInfo === 'object' &&
+    floorInfo.currency === DEFAULT_S2S_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor !== null ? floor : bid.params.floor;
+}
+
+
+function _appendFloor(request) {
+  if (!request) return;
+
+  if (!request.bidfloor) {
+    request.bidfloor = _getFloor(request);
+  }
+  if (request.bidfloor && !request.bidfloorcur) {
+    request.bidfloorcur = DEFAULT_S2S_CURRENCY;
+  }
+}
+
 function addBidderFirstPartyDataToRequest(request) {
   const bidderConfig = config.getBidderConfig();
   const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
@@ -666,7 +694,7 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'user.ext.data', commonFpd.user);
     }
     addBidderFirstPartyDataToRequest(request);
-
+    _appendFloor(request);
     return request;
   },
 
