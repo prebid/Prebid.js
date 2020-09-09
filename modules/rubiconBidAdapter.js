@@ -308,13 +308,15 @@ export const spec = {
       }
 
       /**
-       * GAM Ad Unit
-       * @type {(string|undefined)}
+       * Copy GAM AdUnit and Name to imp
        */
-      const gamAdUnit = utils.deepAccess(bidRequest, 'fpd.context.adServer.adSlot');
-      if (typeof gamAdUnit === 'string' && gamAdUnit) {
-        utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', gamAdUnit);
-      }
+      ['name', 'adSlot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(bidRequest, `fpd.context.adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(data.imp[0].ext, `context.data.adserver.${name.toLowerCase()}`, value);
+        }
+      });
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {

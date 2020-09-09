@@ -46,6 +46,17 @@ describe('gumgumAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
+    it('should return true when inslot sends sizes and trackingid', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'inSlot': '789',
+        'sizes': [[0, 1], [2, 3], [4, 5], [6, 7]]
+      };
+
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
     it('should return false when no unit type is specified', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
@@ -81,6 +92,7 @@ describe('gumgumAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    let sizesArray = [[300, 250], [300, 600]];
     let bidRequests = [
       {
         'bidder': 'gumgum',
@@ -88,7 +100,7 @@ describe('gumgumAdapter', function () {
           'inSlot': '9'
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250], [300, 600]],
+        'sizes': sizesArray,
         'bidId': '30b31c1838de1e',
         'schain': {
           'ver': '1.0',
@@ -132,7 +144,16 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.sizes).to.equal(vidMediaTypes.video.playerSize);
     });
-
+    it('should handle multiple sizes for inslot', function () {
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.params = {
+        'inSlot': '123',
+        'sizes': [[0, 1], [0, 2]]
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.bf).to.equal('0x1,0x2');
+    });
     describe('floorModule', function () {
       const floorTestData = {
         'currency': 'USD',
