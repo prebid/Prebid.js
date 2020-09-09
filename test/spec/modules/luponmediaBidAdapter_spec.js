@@ -392,6 +392,6 @@ describe('luponmediaBidAdapter', function () {
       'status': 'rendered'
     };
 
-    spec.onBidWon(bid);
+    spec.onBidWon(bids);
   });
 });
