@@ -12,7 +12,8 @@
     "netIdSystem",
     "identityLinkIdSystem",
     "sharedIdSystem",
-    "intentIqIdSystem"
+    "intentIqIdSystem",
+    "quantcastIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",

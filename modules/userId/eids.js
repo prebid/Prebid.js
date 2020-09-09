@@ -123,6 +123,12 @@ const USER_IDS_CONFIG = {
         third: data.third
       } : undefined;
     }
+  },
+
+  // quantcastId
+  'quantcastId': {
+    source: 'quantcast.com',
+    atype: 1
   }
 };
 
