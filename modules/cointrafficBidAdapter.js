@@ -1,11 +1,13 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js'
 
 const BIDDER_CODE = 'cointraffic';
 const ENDPOINT_URL = 'https://appspb.cointraffic.io/pb/tmp';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -54,21 +56,23 @@ export const spec = {
     const bidResponses = [];
     const response = serverResponse.body;
 
-    if (response) {
-      const bidResponse = {
-        requestId: response.requestId,
-        cpm: response.cpm,
-        currency: response.currency,
-        netRevenue: response.netRevenue,
-        width: response.width,
-        height: response.height,
-        creativeId: response.creativeId,
-        ttl: response.ttl,
-        ad: response.ad
-      };
-
-      bidResponses.push(bidResponse);
+    if (utils.isEmpty(response)) {
+      return bidResponses;
     }
+
+    const bidResponse = {
+      requestId: response.requestId,
+      cpm: response.cpm,
+      currency: response.currency,
+      netRevenue: response.netRevenue,
+      width: response.width,
+      height: response.height,
+      creativeId: response.creativeId,
+      ttl: response.ttl,
+      ad: response.ad
+    };
+
+    bidResponses.push(bidResponse);
 
     return bidResponses;
   }

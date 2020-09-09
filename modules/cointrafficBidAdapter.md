@@ -13,7 +13,11 @@ The Cointraffic client module makes it easy to implement Cointraffic directly in
 ```
   var adUnits = [{
     code: 'test-ad-div',
-    sizes: [[300, 250]],
+    mediaTypes: {
+        banner: {
+            sizes: [[300, 250]],
+        }
+    },
     bids: [{
     bidder: 'cointraffic',
       params: { 

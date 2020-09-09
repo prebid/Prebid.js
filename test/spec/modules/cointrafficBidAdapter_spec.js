@@ -92,21 +92,21 @@ describe('cointrafficBidAdapter', function () {
       }
     ];
 
-    let serverResponse = {
-      body: {
-        requestId: 'bidId12345',
-        cpm: 3.9,
-        currency: 'EUR',
-        netRevenue: true,
-        width: 300,
-        height: 250,
-        creativeId: 'creativeId12345',
-        ttl: 90,
-        ad: '<html><h3>I am an ad</h3></html> ',
-      }
-    };
-
     it('should get the correct bid response', function () {
+      let serverResponse = {
+        body: {
+          requestId: 'bidId12345',
+          cpm: 3.9,
+          currency: 'EUR',
+          netRevenue: true,
+          width: 300,
+          height: 250,
+          creativeId: 'creativeId12345',
+          ttl: 90,
+          ad: '<html><h3>I am an ad</h3></html> ',
+        }
+      };
+
       let expectedResponse = [{
         requestId: 'bidId12345',
         cpm: 3.9,
@@ -118,6 +118,26 @@ describe('cointrafficBidAdapter', function () {
         ttl: 90,
         ad: '<html><h3>I am an ad</h3></html>'
       }];
+      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+    });
+
+    it('should get empty bid response if server response body is empty', function () {
+      let serverResponse = {
+        body: {}
+      };
+
+      let expectedResponse = [];
+
+      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+    });
+
+    it('should get empty bid response if no server response', function () {
+      let serverResponse = {};
+
+      let expectedResponse = [];
+
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
