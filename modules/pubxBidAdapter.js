@@ -1,10 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'pubx';
-const ALIAS_BIDDER_CODE = ['pbx'];
 const BID_ENDPOINT = 'https://api.primecaster.net/adlogue/api/slot/bid';
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ALIAS_BIDDER_CODE, // short code
   isBidRequestValid: function(bid) {
     if (!(bid.params.sid)) {
       return false;
