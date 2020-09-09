@@ -243,7 +243,7 @@ function sendMessage(auctionId, bidWonId) {
         'start',
         'expires'
       ]);
-      if (auctionCache.session.fpkvs && Object.keys(auctionCache.session.fpkvs).length) {
+      if (!utils.isEmpty(auctionCache.session.fpkvs)) {
         message.fpkvs = Object.keys(auctionCache.session.fpkvs).map(key => {
           return { key, value: auctionCache.session.fpkvs[key] };
         });
@@ -372,7 +372,7 @@ function getRpaCookie() {
     try {
       return JSON.parse(window.atob(encodedCookie));
     } catch (e) {
-      utils.logError('Rubicon Analytics: Unable to decode: ', e);
+      utils.logError(`Rubicon Analytics: Unable to decode ${COOKIE_NAME} value: `, e);
     }
   }
   return {};
@@ -382,7 +382,7 @@ function setRpaCookie(decodedCookie) {
   try {
     storage.setCookie(COOKIE_NAME, window.btoa(JSON.stringify(decodedCookie)));
   } catch (e) {
-    utils.logError('Rubicon Analytics: Unable to encode: ', e);
+    utils.logError(`Rubicon Analytics: Unable to encode ${COOKIE_NAME} value: `, e);
   }
 }
 
@@ -498,7 +498,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           cacheEntry.floorData = {...floorData};
         }
         cacheEntry.gdprConsent = utils.deepAccess(args, 'bidderRequests.0.gdprConsent');
-        cacheEntry.session = updateRpaCookie();
+        cacheEntry.session = storage.cookiesAreEnabled() && updateRpaCookie();
         cache.auctions[args.auctionId] = cacheEntry;
         // register to listen to gpt events if not done yet
         if (!cache.gpt.registered && utils.isGptPubadsDefined()) {
