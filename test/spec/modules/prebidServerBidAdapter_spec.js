@@ -943,7 +943,7 @@ describe('S2S Adapter', function () {
             fields: [ 'mediaType' ]
           },
           values: {
-            'banner: 1.23,
+            'banner': 1.23,
             'video': 1.24
           },
           default: 1.25
