@@ -205,12 +205,11 @@ function createQueryString (obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
-      let param = p
       let val = obj[p]
-      if (param !== 'schain') {
-        str.push(encodeURIComponent(param) + '=' + encodeURIComponent(val))
+      if (p !== 'schain') {
+        str.push(encodeURIComponent(p) + '=' + encodeURIComponent(val))
       } else {
-        str.push(param + '=' + val)
+        str.push(p + '=' + val)
       }
     }
   }
@@ -240,18 +239,21 @@ function createTargetingString (obj) {
  * @returns {String}
  */
 function createSchainString (schain) {
-  let ver = schain.ver ? schain.ver : ''
-  let complete = schain.complete ? schain.complete : ''
-  let nodes = []
+  let ver = schain.ver || ''
+  let complete = schain.complete || ''
+  let nodesString = ''
   for (let i = 0; i < schain.nodes.length; i++) {
-    let node = []
-    node.push(schain.nodes[i].asi, schain.nodes[i].sid, schain.nodes[i].hp, schain.nodes[i].rid, schain.nodes[i].name, schain.nodes[i].domain, schain.nodes[i].ext)
-    let filteredAndEncodedNode = node.map(x => x === undefined ? '' : encodeURIComponentWithBangIncluded(x))
-    let nodeString = filteredAndEncodedNode.join(',')
-    nodes.push(nodeString)
+    let asi = schain.nodes[i].asi ? encodeURIComponentWithBangIncluded(schain.nodes[i].asi) : ''
+    let sid = schain.nodes[i].sid ? encodeURIComponentWithBangIncluded(schain.nodes[i].sid) : ''
+    let hp = schain.nodes[i].hp ? encodeURIComponentWithBangIncluded(schain.nodes[i].hp) : ''
+    let rid = schain.nodes[i].rid ? encodeURIComponentWithBangIncluded(schain.nodes[i].rid) : ''
+    let name = schain.nodes[i].name ? encodeURIComponentWithBangIncluded(schain.nodes[i].name) : ''
+    let domain = schain.nodes[i].domain ? encodeURIComponentWithBangIncluded(schain.nodes[i].domain) : ''
+    let ext = schain.nodes[i].ext ? encodeURIComponentWithBangIncluded(schain.nodes[i].ext) : ''
+
+    nodesString += `!${asi},${sid},${hp},${rid},${name},${domain},${ext}`
   }
-  let nodesString = nodes.join('!')
-  return `${ver},${complete}!${nodesString}`
+  return `${ver},${complete}${nodesString}`
 }
 
 /**
