@@ -290,7 +290,7 @@ function _getFloor(bid) {
   return floor;
 }
 
-function _appendFloor(bid,imp) {
+function _appendFloor(bid, imp) {
   if (!imp.bidfloor) {
     imp.bidfloor = _getFloor(bid);
   }
@@ -593,8 +593,8 @@ const OPEN_RTB_PROTOCOL = {
         utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
       }
 
-      _appendFloor(bid,imp);
-      
+      _appendFloor(bidRequests[0].bids, imp);
+
       if (imp.banner || imp.video || imp.native) {
         imps.push(imp);
       }
