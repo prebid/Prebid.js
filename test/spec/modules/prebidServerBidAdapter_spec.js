@@ -937,11 +937,8 @@ describe('S2S Adapter', function () {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
       const floorInfo = {
-        'data': {
-          'currency': 'USD',
-          'schema': { 'fields': ['adUnitCode'] },
-          'values': { '*': 1.23 },
-          'floorsSchemaVersion': 1 }
+        currency: 'USD',
+        floor: 1.23
       };
       config.setConfig({ s2sConfig: s2sConfig, floors: floorInfo });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -949,7 +946,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.bidfloor).to.exist.and.to.be.a('string');
       expect(requestBid.bidfloorcur).to.exist.and.to.be.a('string');
       expect(requestBid.bidfloorcur).to.deep.equal('USD');
-      expect(requestBid.bidfloor).to.deep.equal('1.23');
+      expect(requestBid.bidfloor).to.deep.equal(1.23);
     });
 
     it('adds appnexus aliases to request', function () {
