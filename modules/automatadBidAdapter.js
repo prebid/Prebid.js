@@ -27,17 +27,20 @@ export const spec = {
     }
 
     const siteId = validBidRequests[0].params.siteId
-    const placementId = validBidRequests[0].params.placementId
 
-    const impressions = validBidRequests.map(bidRequest => ({
-      id: bidRequest.bidId,
-      banner: {
-        format: bidRequest.sizes.map(sizeArr => ({
-          w: sizeArr[0],
-          h: sizeArr[1],
-        }))
-      },
-    }))
+    const impressions = validBidRequests.map(bidRequest => {
+      return {
+        id: bidRequest.bidId,
+        adUnitCode: bidRequest.adUnitCode,
+        placement: bidRequest.params.placementId,
+        banner: {
+          format: bidRequest.sizes.map(sizeArr => ({
+            w: sizeArr[0],
+            h: sizeArr[1],
+          }))
+        },
+      }
+    })
 
     // params from bid request
     const openrtbRequest = {
@@ -45,7 +48,6 @@ export const spec = {
       imp: impressions,
       site: {
         id: siteId,
-        placement: placementId,
         domain: window.location.hostname,
         page: window.location.href,
         ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null,

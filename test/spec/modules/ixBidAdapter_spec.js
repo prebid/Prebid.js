@@ -110,6 +110,35 @@ describe('IndexexchangeAdapter', function () {
     ]
   };
 
+  const DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN = {
+    cur: 'USD',
+    id: '11a22b33c44d',
+    seatbid: [
+      {
+        bid: [
+          {
+            crid: '12345',
+            adid: '14851455',
+            impid: '1a2b3c4d',
+            cid: '3051266',
+            price: 100,
+            w: 300,
+            h: 250,
+            id: '1',
+            ext: {
+              dspid: 50,
+              pricelevel: '_100',
+              advbrandid: 303325,
+              advbrand: 'OECTA'
+            },
+            adm: '<a target="_blank" href="https://www.indexexchange.com"></a>'
+          }
+        ],
+        seat: '3970'
+      }
+    ]
+  };
+
   const DEFAULT_VIDEO_BID_RESPONSE = {
     cur: 'USD',
     id: '1aa2bb3cc4de',
@@ -1102,11 +1131,37 @@ describe('IndexexchangeAdapter', function () {
           meta: {
             networkId: 50,
             brandId: 303325,
-            brandName: 'OECTA'
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
           }
         }
       ];
       const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      expect(result[0]).to.deep.equal(expectedParse[0]);
+    });
+
+    it('should get correct bid response for banner ad with missing adomain', function () {
+      const expectedParse = [
+        {
+          requestId: '1a2b3c4d',
+          cpm: 1,
+          creativeId: '12345',
+          width: 300,
+          height: 250,
+          mediaType: 'banner',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
+          currency: 'USD',
+          ttl: 300,
+          netRevenue: true,
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
+        }
+      ];
+      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN }, { data: DEFAULT_BIDDER_REQUEST_DATA });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -1129,7 +1184,8 @@ describe('IndexexchangeAdapter', function () {
           meta: {
             networkId: 50,
             brandId: 303325,
-            brandName: 'OECTA'
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
           }
         }
       ];
@@ -1155,7 +1211,8 @@ describe('IndexexchangeAdapter', function () {
           meta: {
             networkId: 50,
             brandId: 303325,
-            brandName: 'OECTA'
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
           }
         }
       ];
@@ -1182,7 +1239,8 @@ describe('IndexexchangeAdapter', function () {
           meta: {
             networkId: 50,
             brandId: 303325,
-            brandName: 'OECTA'
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
           }
         }
       ];
@@ -1207,7 +1265,8 @@ describe('IndexexchangeAdapter', function () {
           meta: {
             networkId: 51,
             brandId: 303326,
-            brandName: 'OECTB'
+            brandName: 'OECTB',
+            advertiserDomains: ['www.abcd.com']
           }
         }
       ];

@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'medianet';
@@ -21,7 +21,7 @@ let refererInfo = getRefererInfo();
 
 let mnData = {};
 mnData.urlData = {
-  domain: utils.parseUrl(refererInfo.referer).host,
+  domain: utils.parseUrl(refererInfo.referer).hostname,
   page: refererInfo.referer,
   isTop: refererInfo.reachedTop
 }
@@ -131,11 +131,16 @@ function getCoordinates(id) {
   return null;
 }
 
-function extParams(params, gdpr, uspConsent, userId) {
-  let windowSize = spec.getWindowSize();
-  let gdprApplies = !!(gdpr && gdpr.gdprApplies);
-  let uspApplies = !!(uspConsent);
-  let coppaApplies = !!(config.getConfig('coppa'));
+function extParams(bidRequest, bidderRequests) {
+  const params = utils.deepAccess(bidRequest, 'params');
+  const gdpr = utils.deepAccess(bidderRequests, 'gdprConsent');
+  const uspConsent = utils.deepAccess(bidderRequests, 'uspConsent');
+  const userId = utils.deepAccess(bidRequest, 'userId');
+  const sChain = utils.deepAccess(bidRequest, 'schain') || {};
+  const windowSize = spec.getWindowSize();
+  const gdprApplies = !!(gdpr && gdpr.gdprApplies);
+  const uspApplies = !!(uspConsent);
+  const coppaApplies = !!(config.getConfig('coppa'));
   return Object.assign({},
     { customer_id: params.cid },
     { prebid_version: $$PREBID_GLOBAL$$.version },
@@ -146,7 +151,8 @@ function extParams(params, gdpr, uspConsent, userId) {
     {coppa_applies: coppaApplies},
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
-    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true }
+    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true },
+    !utils.isEmpty(sChain) && {schain: sChain}
   );
 }
 
@@ -160,7 +166,15 @@ function slotParams(bidRequest) {
     },
     all: bidRequest.params
   };
-  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes || [];
+  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
+
+  const videoInMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
+  const videoInParams = utils.deepAccess(bidRequest, 'params.video') || {};
+  const videoCombinedObj = Object.assign({}, videoInParams, videoInMediaType);
+
+  if (!utils.isEmpty(videoCombinedObj)) {
+    params.video = videoCombinedObj;
+  }
 
   if (bannerSizes.length > 0) {
     params.banner = transformSizes(bannerSizes);
@@ -246,7 +260,7 @@ function getBidderURL(cid) {
 function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site),
-    ext: extParams(bidRequests[0].params, bidderRequests.gdprConsent, bidderRequests.uspConsent, bidRequests[0].userId),
+    ext: extParams(bidRequests[0], bidderRequests),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
     tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
@@ -305,7 +319,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 142,
 
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
