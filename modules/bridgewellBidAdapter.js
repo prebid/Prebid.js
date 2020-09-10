@@ -29,7 +29,7 @@ export const spec = {
     }
     return valid;
   },
-
+  
   /**
    * Make a server request from the list of BidRequests.
    *
