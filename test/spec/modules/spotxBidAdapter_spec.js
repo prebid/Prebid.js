@@ -515,6 +515,7 @@ describe('the spotx adapter', function () {
       expect(scriptTag.getAttribute('data-spotx_digitrust_opt_out')).to.equal('1');
       expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('400');
       expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('300');
+      expect(scriptTag.getAttribute('data-spotx_ad_mute')).to.equal('1');
       window.document.getElementById.restore();
     });
 

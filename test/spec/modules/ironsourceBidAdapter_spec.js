@@ -56,7 +56,7 @@ describe('ironsourceAdapter', function () {
     ];
 
     const bidderRequest = {
-      bidderCode: 'ironSource',
+      bidderCode: 'ironsource',
     }
 
     it('sends bid request to ENDPOINT via GET', function () {
