@@ -296,8 +296,6 @@ function _appendFloor(request) {
 
   if (!request.bidfloor) {
     request.bidfloor = _getFloor(request);
-  }
-  if (request.bidfloor && !request.bidfloorcur) {
     request.bidfloorcur = DEFAULT_S2S_CURRENCY;
   }
 }
