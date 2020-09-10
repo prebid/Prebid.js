@@ -280,8 +280,7 @@ function _getFloor(bid) {
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: DEFAULT_S2S_CURRENCY,
-      mediaType: 'banner',
-      size: '*'
+      mediaType: 'banner'
     });
     if (typeof floorInfo === 'object' &&
     floorInfo.currency === DEFAULT_S2S_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
