@@ -290,14 +290,12 @@ function _getFloor(bid) {
   return floor;
 }
 
-function _appendFloor(bid, request) {
-  if (!request) return;
-
-  if (!request.bidfloor) {
-    request.bidfloor = _getFloor(bid);
+function _appendFloor(bid,imp) {
+  if (!imp.bidfloor) {
+    imp.bidfloor = _getFloor(bid);
   }
-  if (request.bidfloor) {
-    request.bidfloorcur = DEFAULT_S2S_CURRENCY;
+  if (imp.bidfloor) {
+    imp.bidfloorcur = DEFAULT_S2S_CURRENCY;
   }
 }
 
@@ -595,6 +593,8 @@ const OPEN_RTB_PROTOCOL = {
         utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
       }
 
+      _appendFloor(bid,imp);
+      
       if (imp.banner || imp.video || imp.native) {
         imps.push(imp);
       }
@@ -642,8 +642,6 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     _appendSiteAppDevice(request, firstBidRequest.refererInfo.referer);
-
-    _appendFloor(bidRequests[0], request);
 
     // pass schain object if it is present
     const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
