@@ -643,7 +643,7 @@ const OPEN_RTB_PROTOCOL = {
 
     _appendSiteAppDevice(request, firstBidRequest.refererInfo.referer);
 
-    _appendFloor(bidRequests[0],request);
+    _appendFloor(bidRequests[0], request);
 
     // pass schain object if it is present
     const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
