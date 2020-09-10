@@ -937,18 +937,16 @@ describe('S2S Adapter', function () {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
       const floorConfig = {
-        floors: {
-          data: {
-            currency: 'USD',
-            schema: {
-              fields: [ 'mediaType' ]
-            },
-            values: [
-              {key: 'banner', floor: 1.23},
-              {key: 'video', floor: 1.24}
-            ],
-            default: 1.25
-          }
+        data: {
+          currency: 'USD',
+          schema: {
+            fields: [ 'mediaType' ]
+          },
+          values: [
+            {key: 'banner', floor: 1.23},
+            {key: 'video', floor: 1.24}
+          ],
+          default: 1.25
         }
       };
       config.setConfig({ s2sConfig: s2sConfig, floors: floorConfig });
