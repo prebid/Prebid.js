@@ -150,7 +150,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent) {
     }
   }
 
-  // US Privace (CCPA) support
+  // US Privacy (CCPA) support
   if (uspConsent) {
     payload.us_privacy = uspConsent;
   }
@@ -291,11 +291,13 @@ function _getFloor(bid) {
   return floor;
 }
 
-function _appendFloor(request) {
+function _appendFloor(bid, request) {
   if (!request) return;
 
   if (!request.bidfloor) {
-    request.bidfloor = _getFloor(request);
+    request.bidfloor = _getFloor(bid);
+  }
+  if (request.bidfloor) {
     request.bidfloorcur = DEFAULT_S2S_CURRENCY;
   }
 }
@@ -642,7 +644,7 @@ const OPEN_RTB_PROTOCOL = {
 
     _appendSiteAppDevice(request, firstBidRequest.refererInfo.referer);
 
-    _appendFloor(request);
+    _appendFloor(bidRequests[0],request);
 
     // pass schain object if it is present
     const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
@@ -894,7 +896,7 @@ export function PrebidServer() {
     );
 
     // in case config.bidders contains invalid bidders, we only process those we sent requests for
-    const requestedBidders = validAdUnits
+    const requestedBidders = validAdUnits  if (!request.bidfloor) {
       .map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques))
       .reduce(utils.flatten)
       .filter(utils.uniques);
