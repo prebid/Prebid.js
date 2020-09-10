@@ -952,9 +952,34 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig: s2sConfig, floors: floorConfig });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.imp[0].bidfloor).to.deep.equal(1.23);
       expect(requestBid.imp[0].bidfloorcur).to.exist.and.to.be.a('string');
       expect(requestBid.imp[0].bidfloorcur).to.deep.equal('USD');
-      expect(requestBid.imp[0].bidfloor).to.deep.equal(1.23);
+    });
+
+     it('adds floor from floors module for video request', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      const floorConfig = {
+        data: {
+          currency: 'USD',
+          schema: {
+            fields: [ 'mediaType' ]
+          },
+          values: {
+            'banner': 1.23,
+            'video': 1.24
+          },
+          default: 1.25
+        }
+      };
+      config.setConfig({ s2sConfig: s2sConfig, floors: floorConfig });
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.imp[0].bidfloor).to.deep.equal(1.24);
+      expect(requestBid.imp[0].bidfloorcur).to.exist.and.to.be.a('string');
+      expect(requestBid.imp[0].bidfloorcur).to.deep.equal('USD');
     });
 
     it('adds appnexus aliases to request', function () {
