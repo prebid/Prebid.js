@@ -1,15 +1,16 @@
-import {expect} from 'chai'
-import {ENDPOINT, spec} from 'modules/qwarryBidAdapter.js'
-import {newBidder} from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai'
+import { ENDPOINT, spec } from 'modules/qwarryBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const REQUEST = {
+  'bidId': '456',
   'bidder': 'qwarry',
   'params': {
     zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f'
   }
 }
 
-const BIDDER_BANNER_RESPONSE = {
+const BIDDER_BANNER_RESPONSE = {'prebidResponse': [{
   'ad': '<div>test</div>',
   'requestId': 'e64782a4-8e68-4c38-965b-80ccf115d46d',
   'cpm': 900.5,
@@ -21,9 +22,9 @@ const BIDDER_BANNER_RESPONSE = {
   'netRevenue': true,
   'winUrl': 'http://test.com',
   'format': 'banner'
-}
+}]}
 
-const BIDDER_VIDEO_RESPONSE = {
+const BIDDER_VIDEO_RESPONSE = {'prebidResponse': [{
   'ad': '<xml>vast</xml>',
   'requestId': 'e64782a4-8e68-4c38-965b-80ccf115d46z',
   'cpm': 800.4,
@@ -35,7 +36,7 @@ const BIDDER_VIDEO_RESPONSE = {
   'netRevenue': true,
   'winUrl': 'http://test.com',
   'format': 'video'
-}
+}]}
 
 describe('qwarryBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -60,19 +61,20 @@ describe('qwarryBidAdapter', function () {
 
   describe('buildRequests', function () {
     let bidRequests = [REQUEST]
-    const bidderRequest = spec.buildRequests(bidRequests, {})
+    const bidderRequest = spec.buildRequests(bidRequests, { bidderRequestId: '123' })
 
     it('sends bid request to ENDPOINT via POST', function () {
       expect(bidderRequest.method).to.equal('POST')
-      expect(bidderRequest.data).to.deep.equal({})
+      expect(bidderRequest.data.requestId).to.equal('123')
+      expect(bidderRequest.data.bids).to.deep.contains({ bidId: '456', zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f' })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
-      expect(bidderRequest.url).to.equal(ENDPOINT + REQUEST.params.zoneToken)
+      expect(bidderRequest.url).to.equal(ENDPOINT)
     })
   })
 
   describe('interpretResponse', function () {
     it('handles banner request : should get correct bid response', function () {
-      const result = spec.interpretResponse({body: BIDDER_BANNER_RESPONSE}, {})
+      const result = spec.interpretResponse({ body: BIDDER_BANNER_RESPONSE }, {})
 
       expect(result[0]).to.have.property('ad').equal('<div>test</div>')
       expect(result[0]).to.have.property('requestId').equal('e64782a4-8e68-4c38-965b-80ccf115d46d')
@@ -88,7 +90,7 @@ describe('qwarryBidAdapter', function () {
     })
 
     it('handles video request : should get correct bid response', function () {
-      const result = spec.interpretResponse({body: BIDDER_VIDEO_RESPONSE}, {})
+      const result = spec.interpretResponse({ body: BIDDER_VIDEO_RESPONSE }, {})
 
       expect(result[0]).to.have.property('ad').equal('<xml>vast</xml>')
       expect(result[0]).to.have.property('requestId').equal('e64782a4-8e68-4c38-965b-80ccf115d46z')
