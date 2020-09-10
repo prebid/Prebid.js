@@ -1,6 +1,9 @@
 import { expect } from 'chai'
 import { spec, getTimeoutUrl } from 'modules/seedtagBidAdapter.js'
 
+const PUBLISHER_ID = '0000-0000-01'
+const ADUNIT_ID = '000000'
+
 function getSlotConfigs(mediaTypes, params) {
   return {
     params: params,
@@ -16,10 +19,16 @@ function getSlotConfigs(mediaTypes, params) {
   }
 }
 
+function createVideoSlotConfig(mediaType) {
+  return getSlotConfigs(mediaType, {
+    publisherId: PUBLISHER_ID,
+    adUnitId: ADUNIT_ID,
+    placement: 'video'
+  })
+}
+
 describe('Seedtag Adapter', function() {
   describe('isBidRequestValid method', function() {
-    const PUBLISHER_ID = '0000-0000-01'
-    const ADUNIT_ID = '000000'
     describe('returns true', function() {
       describe('when banner slot config has all mandatory params', () => {
         describe('and placement has the correct value', function() {
@@ -66,13 +75,13 @@ describe('Seedtag Adapter', function() {
     })
     describe('returns false', function() {
       describe('when params are not correct', function() {
-        function createSlotconfig(params) {
+        function createSlotConfig(params) {
           return getSlotConfigs({ banner: {} }, params)
         }
         it('does not have the PublisherToken.', function() {
           const isBidRequestValid = spec.isBidRequestValid(
-            createSlotconfig({
-              adUnitId: '000000',
+            createSlotConfig({
+              adUnitId: ADUNIT_ID,
               placement: 'banner'
             })
           )
@@ -80,8 +89,8 @@ describe('Seedtag Adapter', function() {
         })
         it('does not have the AdUnitId.', function() {
           const isBidRequestValid = spec.isBidRequestValid(
-            createSlotconfig({
-              publisherId: '0000-0000-01',
+            createSlotConfig({
+              publisherId: PUBLISHER_ID,
               placement: 'banner'
             })
           )
@@ -89,18 +98,18 @@ describe('Seedtag Adapter', function() {
         })
         it('does not have the placement.', function() {
           const isBidRequestValid = spec.isBidRequestValid(
-            createSlotconfig({
-              publisherId: '0000-0000-01',
-              adUnitId: '000000'
+            createSlotConfig({
+              publisherId: PUBLISHER_ID,
+              adUnitId: ADUNIT_ID
             })
           )
           expect(isBidRequestValid).to.equal(false)
         })
         it('does not have a the correct placement.', function() {
           const isBidRequestValid = spec.isBidRequestValid(
-            createSlotconfig({
-              publisherId: '0000-0000-01',
-              adUnitId: '000000',
+            createSlotConfig({
+              publisherId: PUBLISHER_ID,
+              adUnitId: ADUNIT_ID,
               placement: 'another_thing'
             })
           )
@@ -117,19 +126,19 @@ describe('Seedtag Adapter', function() {
         }
         it('is a void object', function() {
           const isBidRequestValid = spec.isBidRequestValid(
-            createVideoSlotconfig({ video: {} })
+            createVideoSlotConfig({ video: {} })
           )
           expect(isBidRequestValid).to.equal(false)
         })
         it('does not have playerSize.', function() {
           const isBidRequestValid = spec.isBidRequestValid(
-            createVideoSlotconfig({ video: { context: 'instream' } })
+            createVideoSlotConfig({ video: { context: 'instream' } })
           )
           expect(isBidRequestValid).to.equal(false)
         })
         it('is not instream ', function() {
           const isBidRequestValid = spec.isBidRequestValid(
-            createVideoSlotconfig({
+            createVideoSlotConfig({
               video: {
                 context: 'outstream',
                 playerSize: [[600, 200]]
@@ -137,6 +146,20 @@ describe('Seedtag Adapter', function() {
             })
           )
           expect(isBidRequestValid).to.equal(false)
+        })
+        describe('order does not matter', function() {
+          it('when video is not the first slot', function() {
+            const isBidRequestValid = spec.isBidRequestValid(
+              createVideoSlotConfig({ banner: {}, video: {} })
+            )
+            expect(isBidRequestValid).to.equal(false)
+          })
+          it('when video is the first slot', function() {
+            const isBidRequestValid = spec.isBidRequestValid(
+              createVideoSlotConfig({ video: {}, banner: {} })
+            )
+            expect(isBidRequestValid).to.equal(false)
+          })
         })
       })
     })
@@ -148,8 +171,8 @@ describe('Seedtag Adapter', function() {
       timeout: 1000
     }
     const mandatoryParams = {
-      publisherId: '0000-0000-01',
-      adUnitId: '000000',
+      publisherId: PUBLISHER_ID,
+      adUnitId: ADUNIT_ID,
       placement: 'banner'
     }
     const inStreamParams = Object.assign({}, mandatoryParams, {
