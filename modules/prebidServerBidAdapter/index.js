@@ -276,8 +276,9 @@ function _appendSiteAppDevice(request, pageUrl) {
 }
 
 function _getFloor(bid) {
-  let floor = 0;
+  let floor = null;
   if (typeof bid.getFloor === 'function') {
+    floor = 0;
     const floorInfo = bid.getFloor({
       currency: DEFAULT_S2S_CURRENCY,
       mediaType: 'banner'
