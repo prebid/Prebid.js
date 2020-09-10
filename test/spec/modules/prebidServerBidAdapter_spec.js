@@ -941,13 +941,13 @@ describe('S2S Adapter', function () {
           data: {
             currency: 'USD',
             schema: {
-                fields: [ 'mediaType' ]
+              fields: [ 'mediaType' ]
             },
             values: [
-                {key: 'banner', floor: 1.23},
-                {key: 'video', floor: 1.24}
+              {key: 'banner', floor: 1.23},
+              {key: 'video', floor: 1.24}
             ],
-            default : 1.25
+            default: 1.25
           }
         }
       };
