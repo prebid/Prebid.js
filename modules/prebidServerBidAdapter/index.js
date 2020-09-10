@@ -896,7 +896,7 @@ export function PrebidServer() {
     );
 
     // in case config.bidders contains invalid bidders, we only process those we sent requests for
-    const requestedBidders = validAdUnits  if (!request.bidfloor) {
+    const requestedBidders = validAdUnits
       .map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques))
       .reduce(utils.flatten)
       .filter(utils.uniques);
