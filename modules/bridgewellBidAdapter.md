@@ -20,7 +20,6 @@ Module that connects to Bridgewell demand source to fetch bids.
         bids: [{
             bidder: 'bridgewell',
             params: {
-                cid: 12338,
                 ChannelID: 'CgUxMjMzOBIBNiIFcGVubnkqCQisAhD6ARoBOQ'
             }
         }]
@@ -34,7 +33,6 @@ Module that connects to Bridgewell demand source to fetch bids.
         bids: [{
             bidder: 'bridgewell',
             params: {
-                cid: 12338,
                 ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ'
             }
         }]
@@ -72,7 +70,6 @@ Module that connects to Bridgewell demand source to fetch bids.
         bids: [{
             bidder: 'bridgewell',
             params: {
-                cid: 12338,
                 ChannelID: 'CgUxMjMzOBIBNiIGcGVubnkzKggI2AUQWhoBOQ'
             }
         }]
