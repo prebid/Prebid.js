@@ -4,6 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
 import prebid from '../../../package.json';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
@@ -11,6 +12,7 @@ const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7V
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
   let bid, instreamBid;
+  let sandbox;
 
   this.beforeEach(() => {
     bid = {
@@ -194,6 +196,10 @@ describe('triplelift adapter', function () {
           gdprApplies: true
         },
       };
+      sandbox = sinon.sandbox.create();
+    });
+    afterEach(() => {
+      sandbox.restore();
     });
 
     it('exists and is an object', function () {
@@ -382,6 +388,31 @@ describe('triplelift adapter', function () {
       bidRequests[0].getFloor = () => floorInfo;
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].floor).to.equal(1.99);
+    });
+    it('should send fpd on root level ext if kvps are available', function() {
+      const sens = null;
+      const category = ['news', 'weather', 'hurricane'];
+      const pmp_elig = 'true';
+      const fpd = {
+        context: {
+          pmp_elig,
+          category,
+        },
+        user: {
+          sens,
+        }
+      }
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+          fpd
+        };
+        return utils.deepAccess(config, key);
+      });
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const { data: payload } = request;
+      expect(payload.ext.fpd).to.not.haveOwnProperty('sens');
+      expect(payload.ext.fpd).to.haveOwnProperty('category');
+      expect(payload.ext.fpd).to.haveOwnProperty('pmp_elig');
     });
   });
 

@@ -107,6 +107,8 @@ function _getSyncType(syncOptions) {
 function _buildPostBody(bidRequests) {
   let data = {};
   let { schain } = bidRequests[0];
+  const globalFpd = _getGlobalFpd();
+
   data.imp = bidRequests.map(function(bidRequest, index) {
     let imp = {
       id: index,
@@ -133,10 +135,10 @@ function _buildPostBody(bidRequests) {
     };
   }
 
-  if (schain) {
-    data.ext = {
-      schain
-    }
+  let ext = _getExt(schain, globalFpd);
+
+  if (!utils.isEmpty(ext)) {
+    data.ext = ext;
   }
   return data;
 }
@@ -166,6 +168,38 @@ function _getFloor (bid) {
     }
   }
   return floor !== null ? floor : bid.params.floor;
+}
+
+function _getGlobalFpd() {
+  let fpd = {};
+  const fpdContext = Object.assign({}, config.getConfig('fpd.context'));
+  const fpdUser = Object.assign({}, config.getConfig('fpd.user'));
+
+  _addEntries(fpd, fpdContext);
+  _addEntries(fpd, fpdUser);
+
+  return fpd;
+}
+
+function _addEntries(target, source) {
+  if (!utils.isEmpty(source)) {
+    Object.keys(source).forEach(key => {
+      if (source[key] != null) {
+        target[key] = source[key];
+      }
+    });
+  }
+}
+
+function _getExt(schain, fpd) {
+  let ext = {};
+  if (!utils.isEmpty(schain)) {
+    ext.schain = { ...schain };
+  }
+  if (!utils.isEmpty(fpd)) {
+    ext.fpd = { ...fpd };
+  }
+  return ext;
 }
 
 function getUnifiedIdEids(bidRequests) {
