@@ -288,7 +288,7 @@ function _getFloor(bid) {
       floor = parseFloat(floorInfo.floor);
     }
   }
-  return floor !== null ? floor : null;
+  return floor;
 }
 
 function _appendFloor(request) {
