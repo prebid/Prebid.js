@@ -497,7 +497,7 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should not add outstrean without renderer', function () {
+    it('should not add outstream without renderer', function () {
       let ortb2Config = utils.deepClone(CONFIG);
       ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
