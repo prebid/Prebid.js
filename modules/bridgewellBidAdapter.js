@@ -20,10 +20,13 @@ export const spec = {
   isBidRequestValid: function (bid) {
     let valid = false;
 
-    if (bid && bid.params && (bid.params.cid || bid.params.ChannelID)) {
-      valid = true;
+    if (bid && bid.params) {
+      if ((bid.params.cid) && (typeof bid.params.cid === 'number')) {
+        valid = true;
+      } else if (bid.params.ChannelID) {
+        valid = true;
+      }
     }
-
     return valid;
   },
 
