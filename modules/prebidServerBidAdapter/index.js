@@ -593,7 +593,11 @@ const OPEN_RTB_PROTOCOL = {
         utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
       }
 
-      _appendFloor(firstBidRequest.bids[0], imp);
+      // add floors from floor module to imp.bidfloor and imp.bidfloorcur
+      let matchedBid = find(firstBidRequest.bids, bid => bid.adUnitCode === adUnit.code);
+      if (matchedBid) {
+        _appendFloor(matchedBid, imp);
+      }
 
       if (imp.banner || imp.video || imp.native) {
         imps.push(imp);
