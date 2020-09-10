@@ -936,11 +936,22 @@ describe('S2S Adapter', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
-      const floorInfo = {
-        currency: 'USD',
-        floor: 1.23
+      const floorConfig = {
+        floors: {
+          data: {
+            currency: 'USD',
+            schema: {
+                fields: [ 'mediaType' ]
+            },
+            values: [
+                {key: 'banner', floor: 1.23},
+                {key: 'video', floor: 1.24}
+            ],
+            default : 1.25
+          }
+        }
       };
-      config.setConfig({ s2sConfig: s2sConfig, floors: floorInfo });
+      config.setConfig({ s2sConfig: s2sConfig, floors: floorConfig });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.bidfloor).to.exist.and.to.be.a('string');
