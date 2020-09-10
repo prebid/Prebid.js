@@ -644,6 +644,8 @@ const OPEN_RTB_PROTOCOL = {
 
     _appendSiteAppDevice(request, firstBidRequest.refererInfo.referer);
 
+    _appendFloor(request);
+
     // pass schain object if it is present
     const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
     if (schain) {
@@ -693,7 +695,7 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'user.ext.data', commonFpd.user);
     }
     addBidderFirstPartyDataToRequest(request);
-    _appendFloor(request);
+    
     return request;
   },
 
