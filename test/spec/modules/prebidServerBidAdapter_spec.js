@@ -957,7 +957,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.imp[0].bidfloorcur).to.deep.equal('USD');
     });
 
-     it('adds floor from floors module for video request', function () {
+    it('adds floor from floors module for video request', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
