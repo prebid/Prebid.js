@@ -369,6 +369,20 @@ describe('triplelift adapter', function () {
       const url = request.url;
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
+    it('should return coppa param when COPPA config is set to true', function() {
+      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      config.getConfig.restore();
+      const url = request.url;
+      expect(url).to.match(/(\?|&)coppa=true/);
+    });
+    it('should not return coppa param when COPPA config is set to false', function() {
+      sinon.stub(config, 'getConfig').withArgs('coppa').returns(false);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      config.getConfig.restore();
+      const url = request.url;
+      expect(url).not.to.match(/(\?|&)coppa=/);
+    });
     it('should return schain when present', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;

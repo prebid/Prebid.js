@@ -51,6 +51,10 @@ export const tripleliftAdapterSpec = {
       tlCall = utils.tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
+    if (config.getConfig('coppa') === true) {
+      tlCall = utils.tryAppendQueryString(tlCall, 'coppa', true);
+    }
+
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
       tlCall = tlCall.substring(0, tlCall.length - 1);
     }
