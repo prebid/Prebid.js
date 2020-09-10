@@ -15,12 +15,18 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let bid = validBidRequests[0];
-    let zoneToken = bid.params.zoneToken;
+    let bids = [];
+    validBidRequests.forEach(bidRequest => {
+      bids.push({
+        bidId: bidRequest.bidId,
+        zoneToken: bidRequest.params.zoneToken
+      })
+    })
+
     return {
       method: 'POST',
-      url: ENDPOINT + zoneToken,
-      data: {},
+      url: ENDPOINT,
+      data: { requestId: bidderRequest.bidderRequestId, bids },
       options: {
         contentType: 'application/json',
         customHeaders: {
@@ -32,16 +38,22 @@ export const spec = {
 
   interpretResponse: function (serverResponse, request) {
     const serverBody = serverResponse.body;
+    const { prebidResponse } = serverBody;
 
-    let bid = deepClone(serverBody);
-    bid.cpm = parseFloat(serverBody.cpm);
+    let bids = [];
+    prebidResponse.forEach(bidResponse => {
+      let bid = deepClone(bidResponse);
+      bid.cpm = parseFloat(bidResponse.cpm);
 
-    // banner or video
-    if (VIDEO === bid.format) {
-      bid.vastXml = bid.ad;
-    }
+      // banner or video
+      if (VIDEO === bid.format) {
+        bid.vastXml = bid.ad;
+      }
 
-    return [bid];
+      bids.push(bid);
+    })
+
+    return bids;
   },
 
   onBidWon: function (bid) {
