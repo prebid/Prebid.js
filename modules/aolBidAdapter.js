@@ -63,7 +63,7 @@ function template(strings, ...keys) {
 function _isMarketplaceBidder(bidderCode) {
   return bidderCode === AOL_BIDDERS_CODES.AOL ||
     bidderCode === AOL_BIDDERS_CODES.VERIZON ||
-    bidderCode === AOL_BIDDERS_CODES.ONEDISPLAY
+    bidderCode === AOL_BIDDERS_CODES.ONEDISPLAY;
 }
 
 function _isOneMobileBidder(bidderCode) {
