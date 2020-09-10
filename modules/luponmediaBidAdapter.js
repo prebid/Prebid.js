@@ -116,8 +116,17 @@ export const spec = {
   },
   onBidWon: bid => {
     const bidString = JSON.stringify(bid);
-    sendWinningsToServer(bidString);
+    spec.sendWinningsToServer(bidString);
   },
+  sendWinningsToServer: data => {
+    let mutation = `mutation {createWin(input: {win: {eventData: "${window.btoa(data)}"}}) {win {createTime } } }`;
+    let dataToSend = JSON.stringify({ query: mutation });
+
+    ajax('https://analytics.adxpremium.services/graphql', null, dataToSend, {
+      contentType: 'application/json',
+      method: 'POST'
+    });
+  }
 };
 
 function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
@@ -352,16 +361,6 @@ function _getPageUrl(bidRequest, bidderRequest) {
     pageUrl = bidderRequest.refererInfo.referer;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
-}
-
-function sendWinningsToServer(data) {
-  let mutation = `mutation {createWin(input: {win: {eventData: "${window.btoa(data)}"}}) {win {createTime } } }`;
-  let dataToSend = JSON.stringify({ query: mutation });
-
-  ajax('https://analytics.adxpremium.services/graphql', null, dataToSend, {
-    contentType: 'application/json',
-    method: 'POST'
-  });
 }
 
 function appendSiteAppDevice(data, bidRequest, bidderRequest) {

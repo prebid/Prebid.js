@@ -406,7 +406,7 @@ describe('luponmediaBidAdapter', function () {
       const result = spec.onBidWon(bidWonEvent);
       expect(result).to.equal(undefined);
       expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[1]).to.deep.equal('mutation {createWin(input: {win: {eventData: "eyJiaWRkZXJDb2RlIjoibHVwb25tZWRpYSIsIndpZHRoIjozMDAsImhlaWdodCI6MjUwLCJzdGF0dXNNZXNzYWdlIjoiQmlkIGF2YWlsYWJsZSIsImFkSWQiOiIxMDViYmY4YzU0NDUzZmYiLCJyZXF1ZXN0SWQiOiI5MzRiODc1MjE4NTk1NSIsIm1lZGlhVHlwZSI6ImJhbm5lciIsInNvdXJjZSI6ImNsaWVudCIsImNwbSI6MC4zNjQsImNyZWF0aXZlSWQiOiI0NDM4MDEwMTAiLCJjdXJyZW5jeSI6IlVTRCIsIm5ldFJldmVudWUiOmZhbHNlLCJ0dGwiOjMwMCwicmVmZXJyZXIiOiIiLCJhZCI6IiIsImF1Y3Rpb25JZCI6IjkyNmE4ZWEzLTNkZDQtNGJmMi05NWFiLWM4NWMyY2U3ZTk5YiIsInJlc3BvbnNlVGltZXN0YW1wIjoxNTk4NTI3NzI4MDI2LCJyZXF1ZXN0VGltZXN0YW1wIjoxNTk4NTI3NzI3NjI5LCJiaWRkZXIiOiJsdXBvbm1lZGlhIiwiYWRVbml0Q29kZSI6ImRpdi1ncHQtYWQtMTUzMzE1NTE5Mzc4MC01IiwidGltZVRvUmVzcG9uZCI6Mzk3LCJzaXplIjoiMzAweDI1MCIsInN0YXR1cyI6InJlbmRlcmVkIn0="}}) {win {createTime } } }');
+      expect(ajaxStub.firstCall.args[0]).to.deep.equal(JSON.stringify(bidWonEvent));
     });
   });
 });
