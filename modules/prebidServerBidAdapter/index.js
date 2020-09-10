@@ -695,7 +695,7 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'user.ext.data', commonFpd.user);
     }
     addBidderFirstPartyDataToRequest(request);
-    
+
     return request;
   },
 
