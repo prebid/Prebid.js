@@ -120,6 +120,7 @@ const MOCK = {
 
 const ANALYTICS_MESSAGE = {
   publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7',
+  gdpr: [{}],
   bidAdUnits: [
     {
       adUnit: 'panorama_d_1',
@@ -134,17 +135,20 @@ const ANALYTICS_MESSAGE = {
     {
       adUnit: 'panorama_d_1',
       bidder: 'livewrapped',
-      timeStamp: 1519149562216
+      timeStamp: 1519149562216,
+      gdpr: 0
     },
     {
       adUnit: 'box_d_1',
       bidder: 'livewrapped',
-      timeStamp: 1519149562216
+      timeStamp: 1519149562216,
+      gdpr: 0
     },
     {
       adUnit: 'box_d_2',
       bidder: 'livewrapped',
-      timeStamp: 1519149562216
+      timeStamp: 1519149562216,
+      gdpr: 0
     }
   ],
   responses: [
@@ -320,6 +324,48 @@ describe('Livewrapped analytics adapter', function () {
       let message = JSON.parse(request.requestBody);
 
       expect(message.rcv).to.equal(true);
+    });
+
+    it('should forward GDPR data', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, {
+        'bidder': 'livewrapped',
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'bidderRequestId': '1be65d7958826a',
+        'bids': [
+          {
+            'bidder': 'livewrapped',
+            'adUnitCode': 'panorama_d_1',
+            'bidId': '2ecff0db240757',
+          },
+          {
+            'bidder': 'livewrapped',
+            'adUnitCode': 'box_d_1',
+            'bidId': '3ecff0db240757',
+          }
+        ],
+        'start': 1519149562216,
+        'gdprConsent': {
+          'gdprApplies': true,
+          'consentString': 'consentstring'
+        }
+      },
+      );
+      events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      expect(message.gdpr.length).to.equal(1);
+      expect(message.gdpr[0].gdprApplies).to.equal(true);
+      expect(message.gdpr[0].gdprConsent).to.equal('consentstring');
+      expect(message.requests.length).to.equal(2);
+      expect(message.requests[0].gdpr).to.equal(0);
+      expect(message.requests[1].gdpr).to.equal(0);
     });
   });
 
