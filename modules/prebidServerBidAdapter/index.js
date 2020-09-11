@@ -504,6 +504,9 @@ const OPEN_RTB_PROTOCOL = {
           // Don't push oustream w/o renderer to request object.
           utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
         } else {
+          if (videoParams.context === 'instream' && !videoParams.hasOwnProperty('placement')) {
+            videoParams.placement = 1;
+          }
           mediaTypes['video'] = videoParams;
         }
       }
@@ -822,9 +825,9 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.meta = bidObject.meta || {};
           if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
 
-          // TODO: Remove when prebid-server returns ttl and netRevenue
           const configTtl = _s2sConfig.defaultTtl || DEFAULT_S2S_TTL;
-          bidObject.ttl = (bid.ttl) ? bid.ttl : configTtl;
+          // the OpenRTB location for "TTL" as understood by Prebid.js is "exp" (expiration).
+          bidObject.ttl = (bid.exp) ? bid.exp : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
           bids.push({ adUnit: bid.impid, bid: bidObject });

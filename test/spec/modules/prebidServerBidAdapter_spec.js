@@ -497,7 +497,7 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should not add outstrean without renderer', function () {
+    it('should not add outstream without renderer', function () {
       let ortb2Config = utils.deepClone(CONFIG);
       ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
@@ -507,6 +507,22 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.imp[0].banner).to.exist;
       expect(requestBid.imp[0].video).to.not.exist;
+    });
+
+    it('should default video placement if not defined and instream', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+
+      config.setConfig({ s2sConfig: ortb2Config });
+
+      let videoBid = utils.deepClone(VIDEO_REQUEST);
+      videoBid.ad_units[0].mediaTypes.video.context = 'instream';
+      adapter.callBids(videoBid, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.imp[0].banner).to.not.exist;
+      expect(requestBid.imp[0].video).to.exist;
+      expect(requestBid.imp[0].video.placement).to.equal(1);
     });
 
     it('exists and is a function', function () {
