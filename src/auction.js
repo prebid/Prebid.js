@@ -512,9 +512,22 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   const bidReq = bidderRequest.bids && find(bidderRequest.bids, bid => bid.adUnitCode == adUnitCode);
   const adUnitRenderer = bidReq && bidReq.renderer;
 
-  if (adUnitRenderer && adUnitRenderer.url && !(adUnitRenderer.backupOnly && isBoolean(adUnitRenderer.backupOnly) && bid.renderer)) {
-    bidObject.renderer = Renderer.install({ url: adUnitRenderer.url });
-    bidObject.renderer.setRender(adUnitRenderer.render);
+  // a publisher can also define a renderer for a mediaType
+  var bidObjectMediaType = bidObject.mediaType;
+  var mediaTypeRenderer = !!bidReq[bidObjectMediaType] && bidReq[bidObjectMediaType].renderer;
+
+  var renderer = null;
+
+  // the renderer for the mediaType takes precendence
+  if (mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.renderer) {
+    renderer = mediaTypeRenderer;
+  } else if (adUnitRenderer && adUnitRenderer.url && !(adUnitRenderer.backupOnly && isBoolean(adUnitRenderer.backupOnly) && bid.renderer)) {
+    renderer = adUnitRenderer;
+  }
+
+  if (renderer) {
+    bidObject.renderer = Renderer.install({ url: renderer.url });
+    bidObject.renderer.setRender(renderer.render);
   }
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
