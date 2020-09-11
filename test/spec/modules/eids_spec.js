@@ -192,6 +192,20 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+  it('zeotapIdPlus', function() {
+    const userId = {
+      IDP: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'zeotap.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
   it('quantcastId', function () {
     const userId = {
       quantcastId: 'some-random-id-value',
@@ -200,7 +214,10 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'quantcast.com',
-      uids: [{ id: 'some-random-id-value', atype: 1 }],
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
     });
   });
 });

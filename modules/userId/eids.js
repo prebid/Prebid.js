@@ -124,7 +124,11 @@ const USER_IDS_CONFIG = {
       } : undefined;
     }
   },
-
+  // zeotapIdPlus
+  'IDP': {
+    source: 'zeotap.com',
+    atype: 1
+  },
   // quantcastId
   'quantcastId': {
     source: 'quantcast.com',
