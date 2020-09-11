@@ -24,30 +24,15 @@ Please use ```adnow``` as the bidder code.
       bids: [{
         bidder: 'adnow',
         params: {
-          codeId: 794934,
-          mediaType: 'banner'
+          codeId: 794934
         }
       }]
     }, {
       code: 'test',
       mediaTypes: {
         native: {
-          title: {
-            required: true,
-            len: 80
-          },
-          body: {
-            required: true
-          },
           image: {
-            required: true,
             sizes: [200, 200]
-          },
-          sponsoredBy: {
-            required: true
-          },
-          clickUrl: {
-            required: true
           }
         }
       },

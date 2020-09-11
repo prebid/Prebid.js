@@ -4,7 +4,7 @@ import * as utils from '../src/utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
 const BIDDER_CODE = 'adnow';
-const ENDPOINT = '//n.ads3-adnow.com/a';
+const ENDPOINT = 'https://n.ads3-adnow.com/a';
 
 /**
  * @typedef {object} CommonBidData
@@ -49,20 +49,39 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     return validBidRequests.map(req => {
-      const mediaType = req.params.mediaType || NATIVE;
+      const mediaType = this._isBannerRequest(req) ? BANNER : NATIVE;
       const codeId = parseInt(req.params.codeId, 10);
+
+      const data = {
+        Id: codeId,
+        mediaType: mediaType,
+        out: 'prebid',
+        d_user_agent: navigator.userAgent,
+        requestid: req.bidId
+      };
+
+      if (mediaType === BANNER) {
+        data.sizes = utils.parseSizesInput(
+          req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
+        ).join('|')
+      } else {
+        data.width = data.height = 200;
+
+        let sizes = utils.deepAccess(req, 'mediaTypes.native.image.sizes', []);
+
+        if (sizes.length > 0) {
+          const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
+
+          data.width = size[0] || data.width;
+          data.height = size[1] || data.height;
+        }
+      }
 
       /** @type {ServerRequest} */
       return {
         method: 'GET',
         url: ENDPOINT,
-        data: utils.parseQueryStringParameters({
-          Id: codeId,
-          mediaType: mediaType,
-          out: 'prebid',
-          d_user_agent: navigator.userAgent,
-          requestid: req.bidId
-        }),
+        data: utils.parseQueryStringParameters(data),
         options: {
           withCredentials: false,
           crossOrigin: true
@@ -118,6 +137,15 @@ export const spec = {
       ttl: bid.ttl || 360,
       meta: bid.meta || {}
     };
+  },
+
+  /**
+   * @param {BidRequest} req
+   * @return {boolean}
+   * @private
+   */
+  _isBannerRequest(req) {
+    return !!(req.mediaTypes && req.mediaTypes.banner);
   },
 
   /**

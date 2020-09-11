@@ -20,23 +20,67 @@ describe.only('adnowBidAdapterTests', function () {
     });
   });
 
-  it('buildRequests', function() {
-    const bidRequestData = [{
-      bidId: 'bid12345',
-      params: {
-        codeId: 12345
-      }
-    }];
+  describe('buildRequests', function() {
+    it('Common settings', function() {
+      const bidRequestData = [{
+        bidId: 'bid12345',
+        params: {
+          codeId: 12345
+        }
+      }];
 
-    const req = spec.buildRequests(bidRequestData);
-    const reqData = req[0].data;
+      const req = spec.buildRequests(bidRequestData);
+      const reqData = req[0].data;
 
-    expect(reqData)
-      .to.match(/Id=12345/)
-      .to.match(/mediaType=native/)
-      .to.match(/out=prebid/)
-      .to.match(/requestid=bid12345/)
-      .to.match(/d_user_agent=.+/);
+      expect(reqData)
+        .to.match(/Id=12345/)
+        .to.match(/mediaType=native/)
+        .to.match(/out=prebid/)
+        .to.match(/requestid=bid12345/)
+        .to.match(/d_user_agent=.+/);
+    });
+
+    it('Banner sizes', function () {
+      const bidRequestData = [{
+        bidId: 'bid12345',
+        params: {
+          codeId: 12345
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        }
+      }];
+
+      const req = spec.buildRequests(bidRequestData);
+      const reqData = req[0].data;
+
+      expect(reqData).to.match(/sizes=300x250/);
+    });
+
+    it.only('Native sizes', function () {
+      const bidRequestData = [{
+        bidId: 'bid12345',
+        params: {
+          codeId: 12345
+        },
+        mediaTypes: {
+          native: {
+            image: {
+              sizes: [100, 100]
+            }
+          }
+        }
+      }];
+
+      const req = spec.buildRequests(bidRequestData);
+      const reqData = req[0].data;
+
+      expect(reqData)
+        .to.match(/width=100/)
+        .to.match(/height=100/);
+    });
   });
 
   describe('interpretResponse', function() {
@@ -105,7 +149,8 @@ describe.only('adnowBidAdapterTests', function () {
       const noBidResponses = [
         false,
         {},
-        {inavalidBodyContent: true}
+        {body: false},
+        {body: {}}
       ];
 
       noBidResponses.forEach(response => {
