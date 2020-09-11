@@ -40,6 +40,13 @@ export const spec = {
     const serverBody = serverResponse.body;
     const { prebidResponse } = serverBody;
 
+    if (!serverBody || typeof serverBody !== 'object') {
+      return [];
+    }
+    if (!prebidResponse || typeof prebidResponse !== 'object') {
+      return [];
+    }
+
     let bids = [];
     prebidResponse.forEach(bidResponse => {
       let bid = deepClone(bidResponse);
