@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adnowBidAdapter.js';
 
-describe.only('adnowBidAdapterTests', function () {
+describe.only('adnowBidAdapter', function () {
   describe('isBidRequestValid', function () {
     it('Should return true', function() {
       expect(spec.isBidRequestValid({
