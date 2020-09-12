@@ -19,7 +19,6 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     let valid = false;
-
     if (bid && bid.params) {
       if ((bid.params.cid) && (typeof bid.params.cid === 'number')) {
         valid = true;
