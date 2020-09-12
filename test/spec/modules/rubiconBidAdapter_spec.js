@@ -2037,8 +2037,9 @@ describe('the rubicon adapter', function () {
           createVideoBidderRequest();
           bidderRequest.bids[0].fpd = {
             context: {
-              adServer: {
-                adSlot: '1234567890'
+              adserver: {
+                adSlot: '1234567890',
+                name: 'adServerName1'
               }
             }
           };
@@ -2048,7 +2049,8 @@ describe('the rubicon adapter', function () {
           );
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
+          expect(request.data.imp[0].ext.context.data.adserver.adslot).to.equal('1234567890');
+          expect(request.data.imp[0].ext.context.data.adserver.name).to.equal('adServerName1');
         });
 
         it('should use the integration type provided in the config instead of the default', () => {

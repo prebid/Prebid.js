@@ -1,7 +1,9 @@
 import * as utils from 'src/utils.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 import { expect } from 'chai';
 import { spec } from 'modules/amxBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 
 const sampleRequestId = '82c91e127a9b93e';
 const sampleDisplayAd = (additionalImpressions) => `<script src='https://assets.a-mo.net/tmode.v1.js'></script>${additionalImpressions}`;
@@ -13,6 +15,28 @@ const sampleVideoAd = (addlImpression) => `
 
 const embeddedTrackingPixel = `https://1x1.a-mo.net/hbx/g_impression?A=sample&B=20903`;
 const sampleNurl = 'https://example.exchange/nurl';
+
+const sampleFPD = {
+  context: {
+    keywords: 'sample keywords',
+    data: {
+      pageType: 'article'
+    }
+  },
+  user: {
+    gender: 'O',
+    yob: 1982,
+  }
+};
+
+const stubConfig = (withStub) => {
+  const stub = sinon.stub(config, 'getConfig').callsFake(
+    (arg) => arg === 'fpd' ? sampleFPD : null
+  )
+
+  withStub();
+  stub.restore();
+};
 
 const sampleBidderRequest = {
   gdprConsent: {
@@ -165,12 +189,59 @@ describe('AmxBidAdapter', () => {
       expect(data.tm).to.equal(true);
     });
 
-    it('handles referer data and GDPR, USP Consent', () => {
+    it('handles referer data and GDPR, USP Consent, COPPA', () => {
       const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
       delete data.m; // don't deal with "m" in this test
       expect(data.gs).to.equal(sampleBidderRequest.gdprConsent.gdprApplies)
       expect(data.gc).to.equal(sampleBidderRequest.gdprConsent.consentString)
       expect(data.usp).to.equal(sampleBidderRequest.uspConsent)
+      expect(data.cpp).to.equal(0)
+    });
+
+    it('will forward bid request count & wins count data', () => {
+      const bidderRequestsCount = Math.floor(Math.random() * 100)
+      const bidderWinsCount = Math.floor(Math.random() * 100)
+      const { data } = spec.buildRequests([{
+        ...sampleBidRequestBase,
+        bidderRequestsCount,
+        bidderWinsCount
+      }], sampleBidderRequest);
+
+      expect(data.brc).to.equal(bidderRequestsCount)
+      expect(data.bwc).to.equal(bidderWinsCount)
+      expect(data.trc).to.equal(0)
+    });
+    it('will forward first-party data', () => {
+      stubConfig(() => {
+        const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
+        expect(data.fpd).to.deep.equal(sampleFPD)
+      });
+    });
+
+    it('will collect & forward RTI user IDs', () => {
+      const randomRTI = `greatRTI${Math.floor(Math.random() * 100)}`
+      const userId = {
+        britepoolid: 'sample-britepool',
+        criteoId: 'sample-criteo',
+        digitrustid: {data: {id: 'sample-digitrust'}},
+        id5id: 'sample-id5',
+        idl_env: 'sample-liveramp',
+        lipb: {lipbid: 'sample-liveintent'},
+        netId: 'sample-netid',
+        parrableId: { eid: 'sample-parrable' },
+        pubcid: 'sample-pubcid',
+        [randomRTI]: 'sample-unknown',
+        tdid: 'sample-ttd',
+      };
+
+      const eids = createEidsArray(userId);
+      const bid = {
+        ...sampleBidRequestBase,
+        userIdAsEids: eids
+      };
+
+      const { data } = spec.buildRequests([bid, bid], sampleBidderRequest);
+      expect(data.eids).to.deep.equal(eids)
     });
 
     it('can build a banner request', () => {
@@ -188,6 +259,12 @@ describe('AmxBidAdapter', () => {
       expect(Object.keys(data.m).length).to.equal(2);
       expect(data.m[sampleRequestId]).to.deep.equal({
         av: true,
+        au: 'div-gpt-ad-example',
+        ms: [
+          [[320, 50]],
+          [[300, 250]],
+          []
+        ],
         aw: 300,
         ah: 250,
         tf: 0,
@@ -196,6 +273,12 @@ describe('AmxBidAdapter', () => {
       expect(data.m[sampleRequestId + '_2']).to.deep.equal({
         av: true,
         aw: 300,
+        au: 'div-gpt-ad-example',
+        ms: [
+          [[320, 50]],
+          [[300, 250]],
+          []
+        ],
         i: 'example',
         ah: 250,
         tf: 0,
@@ -207,6 +290,12 @@ describe('AmxBidAdapter', () => {
       const { data } = spec.buildRequests([sampleBidRequestVideo], sampleBidderRequest);
       expect(Object.keys(data.m).length).to.equal(1);
       expect(data.m[sampleRequestId + '_video']).to.deep.equal({
+        au: 'div-gpt-ad-example',
+        ms: [
+          [[300, 150]],
+          [],
+          [[360, 250]]
+        ],
         av: true,
         aw: 360,
         ah: 250,
