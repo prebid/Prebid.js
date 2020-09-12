@@ -239,20 +239,12 @@ function createTargetingString (obj) {
  * @returns {String}
  */
 function createSchainString (schain) {
-  let ver = schain.ver || ''
-  let complete = schain.complete || ''
-  let nodesString = ''
-  for (let i = 0; i < schain.nodes.length; i++) {
-    let asi = schain.nodes[i].asi ? encodeURIComponentWithBangIncluded(schain.nodes[i].asi) : ''
-    let sid = schain.nodes[i].sid ? encodeURIComponentWithBangIncluded(schain.nodes[i].sid) : ''
-    let hp = schain.nodes[i].hp ? encodeURIComponentWithBangIncluded(schain.nodes[i].hp) : ''
-    let rid = schain.nodes[i].rid ? encodeURIComponentWithBangIncluded(schain.nodes[i].rid) : ''
-    let name = schain.nodes[i].name ? encodeURIComponentWithBangIncluded(schain.nodes[i].name) : ''
-    let domain = schain.nodes[i].domain ? encodeURIComponentWithBangIncluded(schain.nodes[i].domain) : ''
-    let ext = schain.nodes[i].ext ? encodeURIComponentWithBangIncluded(schain.nodes[i].ext) : ''
-
-    nodesString += `!${asi},${sid},${hp},${rid},${name},${domain},${ext}`
-  }
+  const ver = schain.ver || ''
+  const complete = schain.complete || ''
+  const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']
+  const nodesString = schain.nodes.reduce((acc, node) => {
+    return acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`
+  }, '')
   return `${ver},${complete}${nodesString}`
 }
 
