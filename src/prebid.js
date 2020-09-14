@@ -779,7 +779,7 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
   } else if (markBidRequest.adId) {
     bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
   } else {
-    utils.logWarn('Inproper usage of markWinningBidAsUsed. It\'ll need an adUnitCode and/or adId to function.');
+    utils.logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
   }
 
   if (bids.length > 0) {
