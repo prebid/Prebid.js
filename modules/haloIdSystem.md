@@ -5,6 +5,7 @@ Audigent Halo ID Module. For assistance setting up your module please contact us
 ### Prebid Params
 
 Individual params may be set for the Audigent Halo ID Submodule. At least one identifier must be set in the params.
+
 ```
 pbjs.setConfig({
     usersync: {
