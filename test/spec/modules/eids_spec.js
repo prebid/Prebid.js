@@ -207,7 +207,7 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
-  
+
   it('haloId', function() {
     const userId = {
       haloId: 'some-random-id-value'
@@ -217,7 +217,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids[0]).to.deep.equal({
       source: 'audigent.com',
       uids: [{
-        id: 'some-random-id-value', 
+        id: 'some-random-id-value',
         atype: 1
       }]
     });
