@@ -100,6 +100,12 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // merkleId
+  'merkleId': {
+    source: 'merkleinc.com',
+    atype: 1
+  },
+
   // NetId
   'netId': {
     source: 'netid.de',
@@ -117,6 +123,11 @@ const USER_IDS_CONFIG = {
         third: data.third
       } : undefined;
     }
+  },
+  // zeotapIdPlus
+  'IDP': {
+    source: 'zeotap.com',
+    atype: 1
   }
 };
 

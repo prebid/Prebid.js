@@ -7,11 +7,13 @@
     "britepoolIdSystem",
     "liveIntentIdSystem",
     "lotamePanoramaId",
+    "merkleIdSystem",
     "criteoIdSystem",
     "netIdSystem",
     "identityLinkIdSystem",
     "sharedIdSystem",
-    "intentIqIdSystem"
+    "intentIqIdSystem",
+    "zeotapIdPlusIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
