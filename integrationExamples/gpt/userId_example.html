@@ -84,6 +84,9 @@
             {
                 code: 'test-div',
                 sizes: [[300,250],[300,600],[728,90]],
+                mediaTypes: {
+                    banner: {}
+                },
                 bids: [
                     {
                         bidder: 'rubicon',
@@ -227,6 +230,9 @@
                         name: "_li_pbid",
                         expires: 28
                       }
+                    },
+                    {
+                      name: "zeotapIdPlus"
                     }],
                     syncDelay: 5000,
                     auctionDelay: 1000

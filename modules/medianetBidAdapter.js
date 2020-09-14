@@ -131,11 +131,16 @@ function getCoordinates(id) {
   return null;
 }
 
-function extParams(params, gdpr, uspConsent, userId) {
-  let windowSize = spec.getWindowSize();
-  let gdprApplies = !!(gdpr && gdpr.gdprApplies);
-  let uspApplies = !!(uspConsent);
-  let coppaApplies = !!(config.getConfig('coppa'));
+function extParams(bidRequest, bidderRequests) {
+  const params = utils.deepAccess(bidRequest, 'params');
+  const gdpr = utils.deepAccess(bidderRequests, 'gdprConsent');
+  const uspConsent = utils.deepAccess(bidderRequests, 'uspConsent');
+  const userId = utils.deepAccess(bidRequest, 'userId');
+  const sChain = utils.deepAccess(bidRequest, 'schain') || {};
+  const windowSize = spec.getWindowSize();
+  const gdprApplies = !!(gdpr && gdpr.gdprApplies);
+  const uspApplies = !!(uspConsent);
+  const coppaApplies = !!(config.getConfig('coppa'));
   return Object.assign({},
     { customer_id: params.cid },
     { prebid_version: $$PREBID_GLOBAL$$.version },
@@ -146,7 +151,8 @@ function extParams(params, gdpr, uspConsent, userId) {
     {coppa_applies: coppaApplies},
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
-    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true }
+    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true },
+    !utils.isEmpty(sChain) && {schain: sChain}
   );
 }
 
@@ -254,7 +260,7 @@ function getBidderURL(cid) {
 function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site),
-    ext: extParams(bidRequests[0].params, bidderRequests.gdprConsent, bidderRequests.uspConsent, bidRequests[0].userId),
+    ext: extParams(bidRequests[0], bidderRequests),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
     tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
