@@ -22,6 +22,16 @@ describe('bridgewellBidAdapter', function () {
       expect(spec.isBidRequestValid(validTag)).to.equal(true);
     });
 
+    it('should return true when required params found', function () {
+      const validTag = {
+        'bidder': 'bridgewell',
+        'params': {
+          'cid': 1234
+        },
+      };
+      expect(spec.isBidRequestValid(validTag)).to.equal(true);
+    });
+
     it('should return false when required params not found', function () {
       const invalidTag = {
         'bidder': 'bridgewell',
@@ -35,6 +45,26 @@ describe('bridgewellBidAdapter', function () {
         'bidder': 'bridgewell',
         'params': {
           'ChannelID': '',
+        },
+      };
+      expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
+    });
+
+    it('should return false when required params are empty', function () {
+      const invalidTag = {
+        'bidder': 'bridgewell',
+        'params': {
+          'cid': '',
+        },
+      };
+      expect(spec.isBidRequestValid(invalidTag)).to.equal(false);
+    });
+
+    it('should return false when required param cid is not a number', function () {
+      const invalidTag = {
+        'bidder': 'bridgewell',
+        'params': {
+          'cid': 'bad_cid',
         },
       };
       expect(spec.isBidRequestValid(invalidTag)).to.equal(false);

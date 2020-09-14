@@ -124,6 +124,12 @@ const USER_IDS_CONFIG = {
       } : undefined;
     }
   },
+  // zeotapIdPlus
+  'IDP': {
+    source: 'zeotap.com',
+    atype: 1
+  },
+  // haloId
   'haloId': {
     source: 'audigent.com',
     atype: 1
