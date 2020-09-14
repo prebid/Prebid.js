@@ -46,18 +46,16 @@ describe('storage manager', function() {
 
   describe('localstorage forbidden access in 3rd-party context', function() {
     let errorLogSpy;
+    const originalLocalStorage = { get: () => window.localStorage };
+    const localStorageMock = { get: () => { throw Error } };
 
     beforeEach(function() {
-      var mock = {
-        get: function() {
-          throw Error;
-        }
-      };
-      Object.defineProperty(window, 'localStorage', mock);
+      Object.defineProperty(window, 'localStorage', localStorageMock);
       errorLogSpy = sinon.spy(utils, 'logError');
     });
 
     afterEach(function() {
+      Object.defineProperty(window, 'localStorage', originalLocalStorage);
       errorLogSpy.restore();
     })
 
