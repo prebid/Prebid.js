@@ -1258,10 +1258,10 @@ describe('User ID', function() {
             // also check that zeotapIdPlus id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.IDP');
             expect(bid.userId.IDP).to.equal('zeotapId');
-            expect(bid.userIdAsEids.length).to.equal(10);
             // also check that haloId id was copied to bid
             expect(bid).to.have.deep.nested.property('userId.haloId');
             expect(bid.userId.haloId).to.equal('testHaloId');
+            expect(bid.userIdAsEids.length).to.equal(10);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
