@@ -588,16 +588,39 @@ function updateSubmodules() {
   // do this to avoid reprocessing submodules
   const addedSubmodules = submoduleRegistry.filter(i => !find(submodules, j => j.name === i.name));
 
+  const requiredSubmodules = [];
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   submodules = addedSubmodules.map(i => {
+    let res = null;
     const submoduleConfig = find(configs, j => j.name === i.name);
-    return submoduleConfig ? {
-      submodule: i,
-      config: submoduleConfig,
-      callback: undefined,
-      idObj: undefined
-    } : null;
+    if (submoduleConfig) {
+      res = {
+        submodule: i,
+        config: submoduleConfig,
+        callback: undefined,
+        idObj: undefined
+      };
+      if (i.required) {
+        const storage = utils.deepClone(submoduleConfig.storage);
+        storage.name = storage.name + '_' + i.required.name;
+        requiredSubmodules.push({
+          submodule: i.required,
+          config: {
+            name: submoduleConfig.name + '_' + i.required.name,
+            storage: storage
+          },
+          callback: undefined,
+          idObj: undefined
+        })
+      }
+    }
+    return res;
   }).filter(submodule => submodule !== null);
+
+  // add missing required submodules
+  submodules = submodules.concat(
+    requiredSubmodules.filter(sub => !find(submodules, s => s.submodule.name === sub.submodule.name))
+  );
 
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50

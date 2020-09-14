@@ -8,6 +8,7 @@
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {sharedIdSubmodule} from './sharedIdSystem';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
 
@@ -22,6 +23,11 @@ export const pubCommonIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  /**
+   * required submodule
+   * @type {Submodule}
+   */
+  required: sharedIdSubmodule,
   /**
    * Return a callback function that calls the pixelUrl with id as a query parameter
    * @param pixelUrl
@@ -49,7 +55,9 @@ export const pubCommonIdSubmodule = {
    * @returns {{pubcid:string}}
    */
   decode(value) {
-    return { 'pubcid': value }
+    const res = {'pubcid': value};
+    utils.logInfo('PubcId: Decoded value ' + JSON.stringify(res));
+    return res;
   },
   /**
    * performs action to obtain id
