@@ -740,6 +740,29 @@ describe('auctionmanager.js', function () {
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
 
+      it('installs publisher-defined backup renderers on bids', function () {
+        let renderer = {
+          url: 'renderer.js',
+          backupOnly: true,
+          render: (bid) => bid
+        };
+        let bidRequests = [Object.assign({}, TEST_BID_REQS[0])];
+        bidRequests[0].bids[0] = Object.assign({ renderer }, bidRequests[0].bids[0]);
+        makeRequestsStub.returns(bidRequests);
+
+        let bids1 = Object.assign({},
+          bids[0],
+          {
+            bidderCode: BIDDER_CODE,
+            mediaType: 'video-outstream',
+          }
+        );
+        spec.interpretResponse.returns(bids1);
+        auction.callBids();
+        const addedBid = auction.getBidsReceived().pop();
+        assert.equal(addedBid.renderer.url, 'renderer.js');
+      });
+
       it('bid for a regular unit and a video unit', function() {
         let renderer = {
           url: 'renderer.js',

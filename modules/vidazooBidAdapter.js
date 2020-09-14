@@ -12,14 +12,6 @@ const TTL_SECONDS = 60 * 5;
 const DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const SESSION_ID_KEY = 'vidSid';
-const INTERNAL_SYNC_TYPE = {
-  IFRAME: 'iframe',
-  IMAGE: 'img'
-};
-const EXTERNAL_SYNC_TYPE = {
-  IFRAME: 'iframe',
-  IMAGE: 'image'
-};
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
@@ -176,39 +168,24 @@ function interpretResponse(serverResponse, request) {
   }
 }
 
-function getUserSyncs(syncOptions, responses) {
+function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
+  let syncs = [];
   const { iframeEnabled, pixelEnabled } = syncOptions;
-
+  const { gdprApplies, consentString = '' } = gdprConsent;
+  const params = `?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
   if (iframeEnabled) {
-    return [{
+    syncs.push({
       type: 'iframe',
-      url: 'https://static.cootlogix.com/basev/sync/user_sync.html'
-    }];
-  }
-
-  if (pixelEnabled) {
-    const lookup = {};
-    const syncs = [];
-    responses.forEach(response => {
-      const { body } = response;
-      const results = body ? body.results || [] : [];
-      results.forEach(result => {
-        (result.cookies || []).forEach(cookie => {
-          if (cookie.type === INTERNAL_SYNC_TYPE.IMAGE) {
-            if (pixelEnabled && !lookup[cookie.src]) {
-              syncs.push({
-                type: EXTERNAL_SYNC_TYPE.IMAGE,
-                url: cookie.src
-              });
-            }
-          }
-        });
-      });
+      url: `https://prebid.cootlogix.com/api/sync/iframe/${params}`
     });
-    return syncs;
   }
-
-  return [];
+  if (pixelEnabled) {
+    syncs.push({
+      type: 'image',
+      url: `https://prebid.cootlogix.com/api/sync/image/${params}`
+    });
+  }
+  return syncs;
 }
 
 export function hashCode(s, prefix = '_') {

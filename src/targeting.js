@@ -325,7 +325,10 @@ export function newTargeting(auctionManager) {
       Object.keys(targetingConfig).filter(customSlotMatching ? customSlotMatching(slot) : isAdUnitCodeMatchingSlot(slot))
         .forEach(targetId =>
           Object.keys(targetingConfig[targetId]).forEach(key => {
-            let valueArr = targetingConfig[targetId][key].split(',');
+            let valueArr = targetingConfig[targetId][key];
+            if (typeof valueArr === 'string') {
+              valueArr = valueArr.split(',');
+            }
             valueArr = (valueArr.length > 1) ? [valueArr] : valueArr;
             valueArr.map((value) => {
               utils.logMessage(`Attempting to set key value for slot: ${slot.getSlotElementId()} key: ${key} value: ${value}`);

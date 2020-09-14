@@ -179,7 +179,7 @@ describe('VidazooBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://static.cootlogix.com/basev/sync/user_sync.html'
+        url: 'https://prebid.cootlogix.com/api/sync/iframe/?gdpr=0&gdpr_consent=&us_privacy='
       }]);
     });
 
@@ -187,7 +187,7 @@ describe('VidazooBidAdapter', function () {
       const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.com',
+        'url': 'https://prebid.cootlogix.com/api/sync/image/?gdpr=0&gdpr_consent=&us_privacy=',
         'type': 'image'
       }]);
     })
@@ -315,12 +315,7 @@ describe('VidazooBidAdapter', function () {
   describe('unique deal id', function () {
     const key = 'myKey';
     let uniqueDealId;
-
-    it('should get fresh unique deal id', function () {
-      const now = Date.now();
-      uniqueDealId = getUniqueDealId(key);
-      expect(uniqueDealId).to.be.equal(`${key}_${now.toString()}`);
-    });
+    uniqueDealId = getUniqueDealId(key);
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
