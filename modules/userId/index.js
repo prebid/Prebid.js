@@ -377,11 +377,12 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
 /**
  * This is a common function that will initialize subModules if not already done and it will also execute subModule callbacks
  */
-function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
+
+function initializeSubmodulesAndExecuteCallbacks(continueAuction, refresh) {
   let delayed = false;
 
   // initialize submodules only when undefined
-  if (typeof initializedSubmodules === 'undefined') {
+  if (typeof initializedSubmodules === 'undefined' || !!refresh) {
     initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
     if (initializedSubmodules.length) {
       // list of submodules that have callbacks that need to be executed
@@ -463,6 +464,13 @@ function getUserIdsAsEids() {
   // initialize submodules only when undefined
   initializeSubmodulesAndExecuteCallbacks();
   return createEidsArray(getCombinedSubmoduleIds(initializedSubmodules));
+}
+
+/**
+* This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
+*/
+function refreshUserIds() {
+  initializeSubmodulesAndExecuteCallbacks(undefined, true);
 }
 
 /**
@@ -660,6 +668,8 @@ export function init(config) {
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
+
+  (getGlobal()).refreshUserIds = refreshUserIds;
 }
 
 // init config update listener to start the application
