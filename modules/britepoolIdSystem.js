@@ -8,6 +8,7 @@
 import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
+const PIXEL = 'https://px.britepool.com/new?partner_id=t';
 
 /** @type {Submodule} */
 export const britepoolIdSubmodule = {
@@ -66,6 +67,7 @@ export const britepoolIdSubmodule = {
         } else {
           ajax(url, {
             success: response => {
+              utils.triggerPixel(PIXEL);
               const responseObj = britepoolIdSubmodule.normalizeValue(response);
               callback(responseObj ? { primaryBPID: responseObj.primaryBPID } : null);
             },
