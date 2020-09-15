@@ -233,11 +233,20 @@
                       }
                     },
                     {
-                      name: "zeotapIdPlus"
+                        name: "zeotapIdPlus"
                     },
                     {
-                      name: "quantcastId"
-                    }],
+                        name: 'haloId',
+                        storage: {
+                            type: "cookie",
+                            name: "haloId",
+                            expires: 28
+                        }
+                    },
+                    {
+                        name: "quantcastId"
+                    }
+                    ],
                     syncDelay: 5000,
                     auctionDelay: 1000
                 }
