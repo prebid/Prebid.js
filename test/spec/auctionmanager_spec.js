@@ -763,6 +763,36 @@ describe('auctionmanager.js', function () {
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
 
+      it('installs publisher-defined renderers for a media type', function () {
+        const renderer = {
+          url: 'videoRenderer.js',
+          render: (bid) => bid
+        };
+        let myBid = mockBid();
+        let bidRequest = mockBidRequest(myBid);
+
+        bidRequest.bids[0] = {
+          ...bidRequest.bids[0],
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            },
+            video: {
+              context: 'outstream',
+              renderer
+            }
+          }
+        };
+        makeRequestsStub.returns([bidRequest]);
+
+        myBid.mediaType = "video";
+        spec.interpretResponse.returns(myBid);
+        auction.callBids();
+
+        const addedBid = auction.getBidsReceived().pop();
+        assert.equal(addedBid.renderer.url, renderer.url);
+      });
+
       it('bid for a regular unit and a video unit', function() {
         let renderer = {
           url: 'renderer.js',

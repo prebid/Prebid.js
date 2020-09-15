@@ -71,6 +71,29 @@ describe('video.js', function () {
     expect(valid).to.equal(true);
   });
 
+  it('validates valid outstream bids with a publisher defined renderer', function () {
+    const bid = {
+      requestId: '123abc',
+    };
+    const bidRequests = [{
+      bids: [{
+        bidId: '123abc',
+        bidder: 'appnexus',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            renderer: {
+              url: 'render.url',
+              render: () => true,
+            }
+          }
+        }
+      }]
+    }];
+    const valid = isValidVideoBid(bid, bidRequests);
+    expect(valid).to.equal(true);
+  });
+
   it('catches invalid outstream bids', function () {
     const bid = {
       requestId: '123abc'
