@@ -29,6 +29,7 @@ export const britepoolIdSubmodule = {
    * Performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleParams} [configParams]
+   * @param {ConsentData|undefined} consentData
    * @returns {function(callback:function)}
    */
   getId(submoduleConfigParams, consentData) {
@@ -80,9 +81,12 @@ export const britepoolIdSubmodule = {
   /**
    * Helper method to create params for our API call
    * @param {SubmoduleParams} [configParams]
+   * @param {ConsentData|undefined} consentData
    * @returns {object} Object with parsed out params
    */
   createParams(submoduleConfigParams, consentData) {
+    const hasGdprData = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
+    const gdprConsentString = hasGdprData ? consentData.consentString : undefined;
     let errors = [];
     const headers = {};
     let params = Object.assign({}, submoduleConfigParams);
@@ -98,7 +102,7 @@ export const britepoolIdSubmodule = {
         headers['x-api-key'] = params.api_key;
       }
     }
-    const url = params.url || 'https://api.britepool.com/v1/britepool/id';
+    const url = params.url || `https://api.britepool.com/v1/britepool/id${gdprConsentString ? '?gdprString=' + encodeURIComponent(gdprConsentString) : ''}`;
     const getter = params.getter;
     delete params.api_key;
     delete params.url;

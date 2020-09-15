@@ -43,6 +43,21 @@ describe('BritePool Submodule', () => {
     expect(params.url).to.be.undefined;
   });
 
+  it('test gdpr consent string in url', () => {
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid }, { gdprApplies: true, consentString: 'expectedConsentString' });
+    expect(url).to.equal('https://api.britepool.com/v1/britepool/id?gdprString=expectedConsentString');
+  });
+
+  it('test gdpr consent string not in url if gdprApplies false', () => {
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid }, { gdprApplies: false, consentString: 'expectedConsentString' });
+    expect(url).to.equal('https://api.britepool.com/v1/britepool/id');
+  });
+
+  it('test gdpr consent string not in url if consent string undefined', () => {
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid }, { gdprApplies: true, consentString: undefined });
+    expect(url).to.equal('https://api.britepool.com/v1/britepool/id');
+  });
+
   it('test getter override with value', () => {
     const { params, headers, url, getter, errors } = britepoolIdSubmodule.createParams({ api_key, aaid, url: url_override, getter: getter_override });
     expect(getter).to.equal(getter_override);
