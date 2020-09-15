@@ -513,13 +513,17 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   const adUnitRenderer = bidReq && bidReq.renderer;
 
   // a publisher can also define a renderer for a mediaType
-  var bidObjectMediaType = bidObject.mediaType;
-  var mediaTypeRenderer = !!bidReq[bidObjectMediaType] && bidReq[bidObjectMediaType].renderer;
+  const bidObjectMediaType = bidObject.mediaType;
+  const bidMediaType = bidReq &&
+        bidReq.mediaTypes &&
+        bidReq.mediaTypes[bidObjectMediaType];
+
+  var mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
 
   var renderer = null;
 
   // the renderer for the mediaType takes precendence
-  if (mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.renderer) {
+  if (mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render) {
     renderer = mediaTypeRenderer;
   } else if (adUnitRenderer && adUnitRenderer.url && !(adUnitRenderer.backupOnly && isBoolean(adUnitRenderer.backupOnly) && bid.renderer)) {
     renderer = adUnitRenderer;
