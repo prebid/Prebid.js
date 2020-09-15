@@ -44,11 +44,7 @@ export const intentIqIdSubmodule = {
     const resp = function (callback) {
       const callbacks = {
         success: response => {
-          let responseObj;
-          if (response) {
-            responseObj = response;
-          }
-          callback(responseObj);
+          callback(response);
         },
         error: error => {
           utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
