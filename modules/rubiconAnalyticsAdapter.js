@@ -49,6 +49,8 @@ const cache = {
   gpt: {},
 };
 
+const BID_REJECTED_IPF = 'rejected-ipf';
+
 export function getHostNameFromReferer(referer) {
   try {
     rubiconAdapter.referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
@@ -368,7 +370,7 @@ function setRubiconAliases(aliasRegistry) {
 }
 
 function getRpaCookie() {
-  let encodedCookie = storage.getCookie(COOKIE_NAME);
+  let encodedCookie = storage.getDataFromLocalStorage(COOKIE_NAME);
   if (encodedCookie) {
     try {
       return JSON.parse(window.atob(encodedCookie));
@@ -381,7 +383,7 @@ function getRpaCookie() {
 
 function setRpaCookie(decodedCookie) {
   try {
-    storage.setCookie(COOKIE_NAME, window.btoa(JSON.stringify(decodedCookie)));
+    storage.setDataInLocalStorage(COOKIE_NAME, window.btoa(JSON.stringify(decodedCookie)));
   } catch (e) {
     utils.logError(`Rubicon Analytics: Unable to encode ${COOKIE_NAME} value: `, e);
   }
@@ -480,6 +482,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   disableAnalytics() {
     this.getUrl = baseAdapter.getUrl;
     accountId = null;
+    cache.gpt.registered = false;
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
   track({eventType, args}) {
@@ -499,11 +502,12 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           cacheEntry.floorData = {...floorData};
         }
         cacheEntry.gdprConsent = utils.deepAccess(args, 'bidderRequests.0.gdprConsent');
-        cacheEntry.session = storage.cookiesAreEnabled() && updateRpaCookie();
+        cacheEntry.session = storage.localStorageIsEnabled() && updateRpaCookie();
         cache.auctions[args.auctionId] = cacheEntry;
         // register to listen to gpt events if not done yet
         if (!cache.gpt.registered && utils.isGptPubadsDefined()) {
           subscribeToGamSlots();
+          cache.gpt.registered = true;
         }
         break;
       case BID_REQUESTED:
@@ -608,7 +612,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             delete bid.error; // it's possible for this to be set by a previous timeout
             break;
           case NO_BID:
-            bid.status = args.status === BID_REJECTED ? 'rejected-ipf' : 'no-bid';
+            bid.status = args.status === BID_REJECTED ? BID_REJECTED_IPF : 'no-bid';
             delete bid.error;
             break;
           default:

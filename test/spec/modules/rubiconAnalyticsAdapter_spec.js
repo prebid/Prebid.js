@@ -497,15 +497,15 @@ function performStandardAuction(gptEvents) {
 describe('rubicon analytics adapter', function () {
   let sandbox;
   let clock;
-  let getCookieStub, setCookieStub, cookiesAreEnabledStub;
+  let getDataFromLocalStorageStub, setDataInLocalStorageStub, localStorageIsEnabledStub;
   beforeEach(function () {
-    getCookieStub = sinon.stub(storage, 'getCookie');
-    setCookieStub = sinon.stub(storage, 'setCookie');
-    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
+    localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
     mockGpt.disable();
     sandbox = sinon.sandbox.create();
 
-    cookiesAreEnabledStub.returns(true);
+    localStorageIsEnabledStub.returns(true);
 
     sandbox.stub(events, 'getEvents').returns([]);
 
@@ -530,9 +530,9 @@ describe('rubicon analytics adapter', function () {
     sandbox.restore();
     config.resetConfig();
     mockGpt.enable();
-    getCookieStub.restore();
-    setCookieStub.restore();
-    cookiesAreEnabledStub.restore();
+    getDataFromLocalStorageStub.restore();
+    setDataInLocalStorageStub.restore();
+    localStorageIsEnabledStub.restore();
   });
 
   it('should require accountId', function () {
@@ -843,8 +843,8 @@ describe('rubicon analytics adapter', function () {
         prebidGlobal.rp = pvid = kvps = undefined;
       });
 
-      it('shouldnot log any session data if cookies are not enabled', function () {
-        cookiesAreEnabledStub.returns(false);
+      it('should not log any session data if local storage is not enabled', function () {
+        localStorageIsEnabledStub.returns(false);
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         delete expectedMessage.session;
@@ -885,20 +885,20 @@ describe('rubicon analytics adapter', function () {
         expect(message).to.deep.equal(expectedMessage);
       });
 
-      it('should pick up existing cookie and use its values', function () {
-        // set some cookie
-        let inputCookie = {
+      it('should pick up existing localStorage and use its values', function () {
+        // set some localStorage
+        let inputlocalStorage = {
           id: '987654',
           start: 1519766113781, // 15 mins before "now"
           expires: 1519787713781, // six hours later
           lastSeen: 1519766113781,
           fpkvs: { source: 'tw' }
         };
-        getCookieStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputCookie)));
+        getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
         pvid = '1a2b3c';
         kvps = {
-          link: 'email' // should merge this with what is in the cookie!
+          link: 'email' // should merge this with what is in the localStorage!
         };
 
         performStandardAuction();
@@ -922,7 +922,7 @@ describe('rubicon analytics adapter', function () {
 
         let calledWith;
         try {
-          calledWith = JSON.parse(atob(setCookieStub.getCall(0).args[1]));
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
         } catch (e) {
           calledWith = {};
         }
@@ -938,19 +938,19 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should throw out session if lastSeen > 30 mins ago and create new one', function () {
-        // set some cookie
-        let inputCookie = {
+        // set some localStorage
+        let inputlocalStorage = {
           id: '987654',
           start: 1519764313781, // 45 mins before "now"
           expires: 1519785913781, // six hours later
           lastSeen: 1519764313781, // 45 mins before "now"
           fpkvs: { source: 'tw' }
         };
-        getCookieStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputCookie)));
+        getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
         pvid = '1a2b3c';
         kvps = {
-          link: 'email' // should merge this with what is in the cookie!
+          link: 'email' // should merge this with what is in the localStorage!
         };
 
         performStandardAuction();
@@ -971,7 +971,7 @@ describe('rubicon analytics adapter', function () {
 
         let calledWith;
         try {
-          calledWith = JSON.parse(atob(setCookieStub.getCall(0).args[1]));
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
         } catch (e) {
           calledWith = {};
         }
@@ -987,19 +987,19 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should throw out session if past expires time and create new one', function () {
-        // set some cookie
-        let inputCookie = {
+        // set some localStorage
+        let inputlocalStorage = {
           id: '987654',
           start: 1519745353781, // 6 hours before "expires"
           expires: 1519766953781, // little more than six hours ago
           lastSeen: 1519767008781, // 5 seconds ago
           fpkvs: { source: 'tw' }
         };
-        getCookieStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputCookie)));
+        getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
         pvid = '1a2b3c';
         kvps = {
-          link: 'email' // should merge this with what is in the cookie!
+          link: 'email' // should merge this with what is in the localStorage!
         };
 
         performStandardAuction();
@@ -1020,7 +1020,7 @@ describe('rubicon analytics adapter', function () {
 
         let calledWith;
         try {
-          calledWith = JSON.parse(atob(setCookieStub.getCall(0).args[1]));
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
         } catch (e) {
           calledWith = {};
         }
