@@ -25,7 +25,7 @@ export const intentIqIdSubmodule = {
    * @returns {{intentIqId:string}}
    */
   decode(value) {
-    return (value != undefined && value != '') ? { 'intentIqId': value } : undefined;
+    return (value && value != '') ? { 'intentIqId': value } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -46,11 +46,7 @@ export const intentIqIdSubmodule = {
         success: response => {
           let responseObj;
           if (response) {
-            try {
-              responseObj = JSON.parse(response);
-            } catch (error) {
-              utils.logError(error);
-            }
+            responseObj = response;
           }
           callback(responseObj);
         },
