@@ -2,7 +2,7 @@ import { quantcastIdSubmodule, storage } from 'modules/quantcastIdSystem.js';
 
 describe('QuantcastId module', function () {
   beforeEach(function() {
-    window.document.cookie = '__qca= ; expires = Thu, 01 Jan 1970 00:00:00 GMT;';
+    storage.setCookie('__qca', '', 'Thu, 01 Jan 1970 00:00:00 GMT');
   });
 
   it('getId() should return a quantcast id when the Quantcast first party cookie exists', function () {
