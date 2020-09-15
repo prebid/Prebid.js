@@ -35,6 +35,7 @@ export const quantcastIdSubmodule = {
    * @returns {{id: {quantcastId: string} | undefined}}}
    */
   getId() {
+    // Consent signals are currently checked on the server side.
     let fpa = storage.getCookie(QUANTCAST_FPA);
     return { id: fpa ? { quantcastId: fpa } : undefined }
   }
