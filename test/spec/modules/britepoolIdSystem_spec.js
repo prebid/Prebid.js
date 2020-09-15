@@ -58,6 +58,27 @@ describe('BritePool Submodule', () => {
     expect(url).to.equal('https://api.britepool.com/v1/britepool/id');
   });
 
+  it('dynamic pub params should be added to params', () => {
+    window.britepool_pubparams = { ppid: '12345' };
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid });
+    expect(params).to.eql({ aaid, ppid: '12345' });
+    window.britepool_pubparams = undefined;
+  });
+
+  it('dynamic pub params should override submodule params', () => {
+    window.britepool_pubparams = { ppid: '67890' };
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, ppid: '12345' });
+    expect(params).to.eql({ ppid: '67890' });
+    window.britepool_pubparams = undefined;
+  });
+
+  it('if dynamic pub params undefined do nothing', () => {
+    window.britepool_pubparams = undefined;
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid });
+    expect(params).to.eql({ aaid });
+    window.britepool_pubparams = undefined;
+  });
+
   it('test getter override with value', () => {
     const { params, headers, url, getter, errors } = britepoolIdSubmodule.createParams({ api_key, aaid, url: url_override, getter: getter_override });
     expect(getter).to.equal(getter_override);

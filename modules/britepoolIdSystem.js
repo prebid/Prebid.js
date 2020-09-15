@@ -89,7 +89,8 @@ export const britepoolIdSubmodule = {
     const gdprConsentString = hasGdprData ? consentData.consentString : undefined;
     let errors = [];
     const headers = {};
-    let params = Object.assign({}, submoduleConfigParams);
+    const dynamicVars = typeof britepool_pubparams !== 'undefined' ? britepool_pubparams : {}; // eslint-disable-line camelcase, no-undef
+    let params = Object.assign({}, submoduleConfigParams, dynamicVars);
     if (params.getter) {
       // Custom getter will not require other params
       if (typeof params.getter !== 'function') {
