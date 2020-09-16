@@ -5,7 +5,7 @@ import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
-const BIDDER_VERSION = '0.0.2';
+const BIDDER_VERSION = '0.0.3';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -19,11 +19,13 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     let valid = false;
-
-    if (bid && bid.params && bid.params.ChannelID) {
-      valid = true;
+    if (bid && bid.params) {
+      if ((bid.params.cid) && (typeof bid.params.cid === 'number')) {
+        valid = true;
+      } else if (bid.params.ChannelID) {
+        valid = true;
+      }
     }
-
     return valid;
   },
 

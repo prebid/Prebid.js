@@ -320,6 +320,7 @@ export const spec = {
             currency: serverResponseBody.cur || 'USD',
             cpm: spotxBid.price,
             creativeId: spotxBid.crid || '',
+            dealId: spotxBid.dealid || '',
             ttl: 360,
             netRevenue: true,
             channel_id: serverResponseBody.id,
