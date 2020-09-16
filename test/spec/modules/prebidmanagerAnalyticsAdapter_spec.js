@@ -98,7 +98,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
-      sinon.assert.callCount(prebidmanagerAnalytics.track, 6);
+      sinon.assert.callCount(prebidmanagerAnalytics.track, 7);
     });
   });
 
