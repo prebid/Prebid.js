@@ -170,6 +170,16 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     plugins: plugins
   }
+
+  // To ensure that, we are able to run single spec file
+  // here we are adding preprocessors, when file is passed
+  if (file) {
+    config.files.forEach((file) => {
+      config.preprocessors[file] = ['webpack', 'sourcemap'];
+    });
+    delete config.preprocessors['test/test_index.js'];
+  }
+
   setReporters(config, codeCoverage, browserstack);
   setBrowsers(config, browserstack);
   return config;

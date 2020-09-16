@@ -14,7 +14,7 @@ describe('ID5 ID System', function() {
   const ID5_PARTNER = 173;
   const ID5_ENDPOINT = `https://id5-sync.com/g/v2/${ID5_PARTNER}.json`;
   const ID5_COOKIE_NAME = 'id5idcookie';
-  const ID5_NB_COOKIE_NAME = `pbjs-id5id-${ID5_PARTNER}-nb`;
+  const ID5_NB_COOKIE_NAME = `id5id.1st_${ID5_PARTNER}_nb`;
   const ID5_EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
   const ID5_STORED_ID = 'storedid5id';
   const ID5_STORED_SIGNATURE = '123456';

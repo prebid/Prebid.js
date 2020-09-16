@@ -18,7 +18,7 @@ function bidRequestedHandler(args) {
       bidder: bid.bidder,
       bid_id: bid.bidId,
       auction_id: args.auctionId,
-      user_browser: (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari()),
+      user_browser: checkUserBrowser(),
       user_platform: navigator.platform,
       auction_start: new Date(args.auctionStart).toJSON(),
       domain: window.location.hostname,
@@ -36,6 +36,24 @@ function bidResponseHandler(args) {
     cpm: args.cpm,
     net_revenue: args.netRevenue
   };
+}
+
+export function checkUserBrowser() {
+  let firefox = browserIsFirefox();
+  let chrome = browserIsChrome();
+  let edge = browserIsEdge();
+  let safari = browserIsSafari();
+  if (firefox) {
+    return firefox;
+  } if (chrome) {
+    return chrome;
+  } if (edge) {
+    return edge;
+  } if (safari) {
+    return safari;
+  } else {
+    return 'Unknown'
+  }
 }
 
 export function browserIsFirefox() {
@@ -67,7 +85,7 @@ export function browserIsChrome() {
 }
 
 export function browserIsSafari() {
-  if (navigator.vendor.indexOf('Apple')) {
+  if (window.safari !== undefined) {
     return 'Safari'
   } else {
     return false;
@@ -147,7 +165,8 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: atsAnalyticsAdapter,
-  code: 'atsAnalytics'
+  code: 'atsAnalytics',
+  gvlid: 97
 });
 
 export default atsAnalyticsAdapter;

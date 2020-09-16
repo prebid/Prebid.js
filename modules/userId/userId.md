@@ -25,12 +25,12 @@ pbjs.setConfig({
         }, {
             name: "id5Id",
             params: {
-                partner: 173, //Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
-                pd: "some-pd-string" // See https://console.id5.io/docs/public/prebid for details
+                partner: 173,         // Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
+                pd: "some-pd-string"  // See https://wiki.id5.io/display/PD/Prebid.js+UserId+Module for details
             },
             storage: {
                 type: "cookie",
-                name: "id5id",
+                name: "id5id.1st",
                 expires: 90, // Expiration of cookies in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
@@ -80,7 +80,7 @@ pbjs.setConfig({
 Example showing `localStorage` for user id data for some submodules
 ```
 pbjs.setConfig({
-    usersync: {
+    userSync: {
         userIds: [{
             name: "unifiedId",
             params: {
@@ -138,7 +138,7 @@ pbjs.setConfig({
 Example showing how to configure a `value` object to pass directly to bid adapters
 ```
 pbjs.setConfig({
-    usersync: {
+    userSync: {
         userIds: [{
             name: "pubCommonId",
             value: {

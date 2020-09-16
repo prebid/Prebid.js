@@ -37,6 +37,11 @@ let VALID_BID_REQUEST = [{
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
     'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 251]],
+      }
+    },
     'sizes': [[300, 251]],
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
@@ -81,6 +86,11 @@ let VALID_BID_REQUEST = [{
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
     'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 251]],
+      }
+    },
     'sizes': [[300, 251]],
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
@@ -127,6 +137,11 @@ let VALID_BID_REQUEST = [{
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
     'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 251]],
+      }
+    },
     'sizes': [[300, 251]],
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
@@ -731,6 +746,28 @@ let VALID_BID_REQUEST = [{
     }],
     'tmax': config.getConfig('bidderTimeout')
   },
+
+  VALID_VIDEO_BID_REQUEST = [{
+    'bidder': 'medianet',
+    'params': {
+      'cid': 'customer_id',
+      'video': {
+        'skipppable': true
+      }
+    },
+    'adUnitCode': 'div-gpt-ad-1460505748561-0',
+    'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+    'mediaTypes': {
+      'video': {
+        'context': 'instream',
+      }
+    },
+    'bidId': '28f8f8130a583e',
+    'bidderRequestId': '1e9b1f07797c1c',
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'bidRequestsCount': 1
+  }],
+
   VALID_PAYLOAD_PAGE_META = (() => {
     let PAGE_META;
     try {
@@ -1154,6 +1191,11 @@ describe('Media.net bid adapter', function () {
     it('should parse params for native request', function () {
       let bidReq = spec.buildRequests(VALID_NATIVE_BID_REQUEST, VALID_AUCTIONDATA);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_NATIVE);
+    });
+
+    it('should parse params for video request', function () {
+      let bidReq = spec.buildRequests(VALID_VIDEO_BID_REQUEST, VALID_AUCTIONDATA);
+      expect(JSON.stringify(bidReq.data)).to.include('instream');
     });
 
     it('should have valid crid present in bid request', function() {

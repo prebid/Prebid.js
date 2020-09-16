@@ -83,7 +83,11 @@
         var adUnits = [
             {
                 code: 'test-div',
-                sizes: [[300,250],[300,600],[728,90]],
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300,250],[300,600],[728,90]]
+                    }
+                },
                 bids: [
                     {
                         bidder: 'rubicon',
@@ -115,7 +119,7 @@
                 consentManagement: {
                     cmpApi: 'iab',
                     timeout: 1000,
-                    allowAuctionWithoutConsent: true
+                    defaultGdprScope: true
                 },
                 // consentManagement: {
                 //     cmpApi: 'static',
@@ -128,7 +132,7 @@
                 //         }
                 //     }
                 // },
-                usersync: {
+                userSync: {
                     userIds: [{
                         name: "unifiedId",
                         params: {
@@ -140,7 +144,18 @@
                             name: "unifiedid",
                             expires: 30
                         },
-                    }, {
+                    },{
+                        name: "intentIqId",
+                        params: {
+                            partner: 0, //Set your real IntentIQ partner ID here for production.
+                        },
+                        storage: {
+                            type: "cookie",
+                            name: "intentIqId",
+                            expires: 30
+                        },
+                    },
+                     {
                         name: "id5Id",
                         params: {
                             partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
@@ -153,6 +168,18 @@
                         },
 
                     }, {
+                        name: "merkleId",
+                        params: {
+                            ptk: '12345678-aaaa-bbbb-cccc-123456789abc', //Set your real merkle partner key here
+                            pubid: 'EXAMPLE' //Set your real merkle publisher id here
+                        },
+                        storage: {
+                            type: "html5",
+                            name: "merkleId",
+                            expires: 30
+                        },
+
+                    },{
                         name: "parrableId",
                         params: {
                             // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
@@ -179,7 +206,8 @@
                         name: 'idl_env',
                         expires: 30
                       }
-                    }, {
+                    },
+                    {
                       name: "sharedId",
                       params: {
                         syncTime: 60 // in seconds, default is 24 hours
@@ -189,7 +217,11 @@
                         name: "sharedid",
                         expires: 28
                       }
-                    }, {
+                    },
+                    {
+                      name: 'lotamePanoramaId'
+                    },
+                    {
                       name: "liveIntentId",
                       params: {
                         publisherId: "9896876"
@@ -199,7 +231,22 @@
                         name: "_li_pbid",
                         expires: 28
                       }
-                    }],
+                    },
+                    {
+                        name: "zeotapIdPlus"
+                    },
+                    {
+                        name: 'haloId',
+                        storage: {
+                            type: "cookie",
+                            name: "haloId",
+                            expires: 28
+                        }
+                    },
+                    {
+                        name: "quantcastId"
+                    }
+                    ],
                     syncDelay: 5000,
                     auctionDelay: 1000
                 }

@@ -85,11 +85,6 @@ function checkTCFv1(vendorData) {
 }
 
 function checkTCFv2(tcData) {
-  if (tcData.purposeOneTreatment && tcData.publisherCC === 'DE') {
-    // special purpose 1 treatment for Germany
-    return true;
-  }
-
   let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
   let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
