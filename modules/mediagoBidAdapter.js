@@ -166,7 +166,7 @@ function getItems(validBidRequests, bidderRequest) {
   let items = [];
   for (let i in validBidRequests) {
     let req = validBidRequests[i];
-    let ret = undefined;
+    let ret;
     let mediaTypes = getProperty(req, 'mediaTypes');
 
     let sizes = transformSizes(getProperty(req, 'sizes'));
