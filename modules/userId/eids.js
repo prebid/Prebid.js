@@ -136,6 +136,12 @@ const USER_IDS_CONFIG = {
   'haloId': {
     source: 'audigent.com',
     atype: 1
+  },
+
+  // quantcastId
+  'quantcastId': {
+    source: 'quantcast.com',
+    atype: 1
   }
 };
 

@@ -46,8 +46,9 @@ export const spec = {
         referer: bidderRequest.refererInfo.referer,
         jaySupported: jaySupported,
         device: device,
-        adapterVersion: 3,
-        mediaTypes: bidRequest.mediaTypes
+        adapterVersion: 4,
+        mediaTypes: bidRequest.mediaTypes,
+        gdprConsent: bidderRequest.gdprConsent
       };
       return {
         method: 'POST',
