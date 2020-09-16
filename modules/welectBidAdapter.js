@@ -7,6 +7,7 @@ const DEFAULT_DOMAIN = 'www.welect.de';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['wlt'],
+  gvlid: 282,
   supportedMediaTypes: ['video'],
 
   // short code
