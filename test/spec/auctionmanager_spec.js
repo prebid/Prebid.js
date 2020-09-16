@@ -785,7 +785,7 @@ describe('auctionmanager.js', function () {
         };
         makeRequestsStub.returns([bidRequest]);
 
-        myBid.mediaType = "video";
+        myBid.mediaType = 'video';
         spec.interpretResponse.returns(myBid);
         auction.callBids();
 
