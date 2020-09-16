@@ -83,9 +83,10 @@
         var adUnits = [
             {
                 code: 'test-div',
-                sizes: [[300,250],[300,600],[728,90]],
                 mediaTypes: {
-                    banner: {}
+                    banner: {
+                        sizes: [[300,250],[300,600],[728,90]]
+                    }
                 },
                 bids: [
                     {
@@ -216,10 +217,10 @@
                         name: "sharedid",
                         expires: 28
                       }
-                    },  
+                    },
                     {
                       name: 'lotamePanoramaId'
-                    }, 
+                    },
                     {
                       name: "liveIntentId",
                       params: {
@@ -230,7 +231,7 @@
                         name: "_li_pbid",
                         expires: 28
                       }
-                    }, 
+                    },
                     {
                         name: "zeotapIdPlus"
                     },
@@ -241,7 +242,10 @@
                             name: "haloId",
                             expires: 28
                         }
-                    } 
+                    },
+                    {
+                        name: "quantcastId"
+                    }
                     ],
                     syncDelay: 5000,
                     auctionDelay: 1000
