@@ -32,12 +32,28 @@ describe('Hybrid.ai Adapter', function() {
   describe('isBidRequestValid method', function() {
     describe('returns true', function() {
       describe('when banner slot config has all mandatory params', () => {
-        describe('and placement has the correct value', function() {
+        describe('and banner placement has the correct value', function() {
           const slotConfig = getSlotConfigs(
-            { banner: {} },
+            {banner: {}},
             {
               placeId: PLACE_ID,
               placement: 'banner'
+            }
+          )
+          const isBidRequestValid = spec.isBidRequestValid(slotConfig)
+          expect(isBidRequestValid).to.equal(true)
+        })
+        describe('and In-Image placement has the correct value', function() {
+          const slotConfig = getSlotConfigs(
+            {
+              banner: {
+                sizes: [[0, 0]]
+              }
+            },
+            {
+              placeId: PLACE_ID,
+              placement: 'inImage',
+              imageUrl: 'imageUrl'
             }
           )
           const isBidRequestValid = spec.isBidRequestValid(slotConfig)
@@ -80,6 +96,15 @@ describe('Hybrid.ai Adapter', function() {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotconfig({
               placeId: PLACE_ID
+            })
+          )
+          expect(isBidRequestValid).to.equal(false)
+        })
+        it('does not have the imageUrl.', function() {
+          const isBidRequestValid = spec.isBidRequestValid(
+            createSlotconfig({
+              placeId: PLACE_ID,
+              placement: 'inImage'
             })
           )
           expect(isBidRequestValid).to.equal(false)
