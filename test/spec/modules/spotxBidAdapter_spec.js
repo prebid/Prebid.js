@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {config} from 'src/config.js';
 import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter.js';
 
 describe('the spotx adapter', function () {
@@ -89,6 +90,7 @@ describe('the spotx adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
+
   describe('buildRequests', function() {
     var bid, bidRequestObj;
 
@@ -125,6 +127,7 @@ describe('the spotx adapter', function () {
         page: 'prebid.js'
       });
     });
+
     it('should change request parameters based on options sent', function() {
       var request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.data.imp.video.ext).to.deep.equal({
@@ -330,6 +333,50 @@ describe('the spotx adapter', function () {
 
       expect(request.data.imp.video.ext.placement).to.equal(2);
       expect(request.data.imp.video.ext.pos).to.equal(5);
+    });
+
+    it('should pass page param and override refererInfo.referer', function() {
+      var request;
+
+      bid.params.page = 'https://example.com';
+
+      var origGetConfig = config.getConfig;
+      sinon.stub(config, 'getConfig').callsFake(function (key) {
+        if (key === 'pageUrl') {
+          return 'https://www.spotx.tv';
+        }
+        return origGetConfig.apply(config, arguments);
+      });
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.page).to.equal('https://example.com');
+      config.getConfig.restore();
+    });
+
+    it('should use pageUrl from config if page param is not passed', function() {
+      var request;
+
+      var origGetConfig = config.getConfig;
+      sinon.stub(config, 'getConfig').callsFake(function (key) {
+        if (key === 'pageUrl') {
+          return 'https://www.spotx.tv';
+        }
+        return origGetConfig.apply(config, arguments);
+      });
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.page).to.equal('https://www.spotx.tv');
+      config.getConfig.restore();
+    });
+
+    it('should use refererInfo.referer if no page or pageUrl are passed', function() {
+      var request;
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.page).to.equal('prebid.js');
     });
   });
 
