@@ -79,7 +79,7 @@ const REQUEST = {
   }
 };
 
-describe('VidazooBidAdapter', function () {
+describe.only('VidazooBidAdapter', function () {
   describe('validtae spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
@@ -244,6 +244,7 @@ describe('VidazooBidAdapter', function () {
           case 'digitrustid': return { data: { id: id } };
           case 'lipb': return { lipbid: id };
           case 'parrableId': return { eid: id };
+          case 'id5id': return { uid: id };
           default: return id;
         }
       })();

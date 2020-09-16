@@ -536,7 +536,7 @@ describe('TheMediaGrid Adapter', function () {
       const bidRequestsWithUserIds = bidRequests.map((bid) => {
         return Object.assign({
           userId: {
-            id5id: 'id5id_1',
+            id5id: { uid: 'id5id_1' },
             tdid: 'tdid_1',
             digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
             lipb: {lipbid: 'lipb_1'}

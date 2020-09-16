@@ -157,7 +157,7 @@ export const spec = {
 
       let eids = [];
       if (bidRequest && bidRequest.userId) {
-        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 'ID5ID');
+        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 'ID5ID');
         addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
       }
       if (eids.length > 0) {

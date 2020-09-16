@@ -66,7 +66,7 @@ var validBidRequestsWithUserIdData = [
     params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
     sizes: [[300, 250], [300, 600]],
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87',
-    userId: {'pubcid': '12345678', 'id5id': 'ID5-someId', 'criteortus': {'ozone': {'userid': 'critId123'}}, 'idl_env': 'liverampId', 'lipb': {'lipbid': 'lipbidId123'}, 'parrableId': {eid: 'parrableid123'}}
+    userId: {'pubcid': '12345678', 'id5id': { 'uid': 'ID5-someId' }, 'criteortus': {'ozone': {'userid': 'critId123'}}, 'idl_env': 'liverampId', 'lipb': {'lipbid': 'lipbidId123'}, 'parrableId': {eid: 'parrableid123'}}
   }
 ];
 var validBidRequestsMinimal = [
@@ -297,7 +297,7 @@ var validBidderRequest1OutstreamVideo2020 = {
           }
         },
         'userId': {
-          'id5id': 'ID5-ZHMOpSv9CkZNiNd1oR4zc62AzCgSS73fPjmQ6Od7OA',
+          'id5id': { uid: 'ID5-ZHMOpSv9CkZNiNd1oR4zc62AzCgSS73fPjmQ6Od7OA' },
           'pubcid': '2ada6ae6-aeca-4e07-8922-a99b3aaf8a56'
         },
         'userIdAsEids': [
@@ -2118,7 +2118,7 @@ describe('ozone Adapter', function () {
       bidRequests[0]['userId'] = {
         'criteortus': '1111',
         'digitrustid': {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
-        'id5id': '2222',
+        'id5id': {'uid': '2222'},
         'idl_env': '3333',
         'lipb': {'lipbid': '4444'},
         'parrableId': {eid: 'eidVersion.encryptionKeyReference.encryptedValue'},
@@ -2138,7 +2138,7 @@ describe('ozone Adapter', function () {
       bidRequests[0]['userId'] = {
         'criteortus': '1111',
         'digitrustid': {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
-        'id5id': '2222',
+        'id5id': {'uid': '2222'},
         'idl_env': '3333',
         'lipb': {'lipbid': '4444'},
         'parrableId': {eid: 'eidVersion.encryptionKeyReference.encryptedValue'},
