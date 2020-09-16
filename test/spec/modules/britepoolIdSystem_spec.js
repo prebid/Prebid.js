@@ -1,5 +1,5 @@
-import { expect } from 'chai';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
+import * as utils from '../../../src/utils.js';
 
 describe('BritePool Submodule', () => {
   const api_key = '1111';
@@ -15,6 +15,32 @@ describe('BritePool Submodule', () => {
       callback(JSON.stringify({ 'primaryBPID': bpid }));
     };
   };
+
+  let triggerPixelStub;
+
+  beforeEach(function (done) {
+    triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    done();
+  });
+
+  afterEach(function () {
+    triggerPixelStub.restore();
+  });
+
+  it('trigger id resolution pixel when no identifiers set', () => {
+    britepoolIdSubmodule.getId({});
+    expect(triggerPixelStub.called).to.be.true;
+  });
+
+  it('trigger id resolution pixel when no identifiers set with api_key param', () => {
+    britepoolIdSubmodule.getId({ api_key });
+    expect(triggerPixelStub.called).to.be.true;
+  });
+
+  it('does not trigger id resolution pixel when identifiers set', () => {
+    britepoolIdSubmodule.getId({ api_key, aaid });
+    expect(triggerPixelStub.called).to.be.false;
+  });
 
   it('sends x-api-key in header and one identifier', () => {
     const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid });

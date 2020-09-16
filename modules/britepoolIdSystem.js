@@ -29,7 +29,7 @@ export const britepoolIdSubmodule = {
   /**
    * Performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleParams} [submoduleConfigParams]
    * @param {ConsentData|undefined} consentData
    * @returns {function(callback:function)}
    */
@@ -45,6 +45,9 @@ export const britepoolIdSubmodule = {
           id: britepoolIdSubmodule.normalizeValue(getterResponse)
         };
       }
+    }
+    if (utils.isEmpty(params)) {
+      utils.triggerPixel(PIXEL);
     }
     // Return for async operation
     return {
@@ -67,7 +70,6 @@ export const britepoolIdSubmodule = {
         } else {
           ajax(url, {
             success: response => {
-              utils.triggerPixel(PIXEL);
               const responseObj = britepoolIdSubmodule.normalizeValue(response);
               callback(responseObj ? { primaryBPID: responseObj.primaryBPID } : null);
             },
@@ -82,7 +84,7 @@ export const britepoolIdSubmodule = {
   },
   /**
    * Helper method to create params for our API call
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleParams} [submoduleConfigParams]
    * @param {ConsentData|undefined} consentData
    * @returns {object} Object with parsed out params
    */
