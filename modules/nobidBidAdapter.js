@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const storage = getStorageManager();
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.6';
+window.nobidVersion = '1.2.8';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -305,19 +305,7 @@ window.addEventListener('message', function (event) {
     if (window.nobid && window.nobid.bidResponses) {
       var bid = window.nobid.bidResponses['' + adId];
       if (bid && bid.adm2) {
-        var markup = null;
-        if (bid.is_combo && bid.adm_combo) {
-          for (var i in bid.adm_combo) {
-            var combo = bid.adm_combo[i];
-            if (!combo.done) {
-              markup = combo.adm;
-              combo.done = true;
-              break;
-            }
-          }
-        } else {
-          markup = bid.adm2;
-        }
+    	var markup = bid.adm2;
         if (markup) {
           event.source.postMessage('nbTagRenderer.renderAdInSafeFrame|' + markup, '*');
         }
