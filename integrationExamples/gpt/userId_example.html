@@ -109,6 +109,15 @@
             googletag.pubads().disableInitialLoad();
         });
 
+        const eidsProvider = function(){
+            return [{
+                source: "prov.com",
+                uids:[{
+                    id: "value read from cookie or local storage"
+                }]
+            }];
+        };
+
         pbjs.que.push(function() {
             pbjs.setConfig({
                 debug: true,
@@ -130,6 +139,25 @@
                 // },
                 userSync: {
                     userIds: [{
+                        name: "publisherProvided",
+                        params: {
+                            eids: [{
+                                source: "example.com",
+                                uids:[{
+                                    id: "value read from cookie or local storage",
+                                    ext: {
+                                        third: "third"
+                                    }
+                                }]
+                            },{
+                                source: "id-partner.com",
+                                uids:[{
+                                    id: "value read from cookie or local storage"
+                                }]
+                            }],
+                            eidsFunction: eidsProvider
+                        }
+                    },{
                         name: "unifiedId",
                         params: {
                             partner: "prebid",
