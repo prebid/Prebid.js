@@ -305,7 +305,7 @@ window.addEventListener('message', function (event) {
     if (window.nobid && window.nobid.bidResponses) {
       var bid = window.nobid.bidResponses['' + adId];
       if (bid && bid.adm2) {
-    	var markup = bid.adm2;
+        var markup = bid.adm2;
         if (markup) {
           event.source.postMessage('nbTagRenderer.renderAdInSafeFrame|' + markup, '*');
         }
