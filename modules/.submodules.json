@@ -10,7 +10,8 @@
     "criteoIdSystem",
     "netIdSystem",
     "identityLinkIdSystem",
-    "sharedIdSystem"
+    "sharedIdSystem",
+    "verizonMediaIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",

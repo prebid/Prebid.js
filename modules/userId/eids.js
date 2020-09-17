@@ -117,6 +117,12 @@ const USER_IDS_CONFIG = {
         third: data.third
       } : undefined;
     }
+  },
+
+  // Verizon Media
+  'vmuid': {
+    source: 'verizonmedia.com',
+    atype: 1
   }
 };
 
