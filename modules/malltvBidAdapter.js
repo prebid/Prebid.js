@@ -1,4 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'malltv';
 const ENDPOINT_URL = 'https://central.mall.tv/bid';
@@ -7,6 +8,7 @@ const SIZE_SEPARATOR = ';';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -70,7 +72,9 @@ export const spec = {
         netRevenue: responses[i].NetRevenue,
         ttl: responses[i].TTL,
         referrer: responses[i].Referrer,
-        ad: responses[i].Ad
+        ad: responses[i].Ad,
+        vastUrl: responses[i].VastUrl,
+        mediaType: responses[i].MediaType
       };
       bidResponses.push(bidResponse);
     }

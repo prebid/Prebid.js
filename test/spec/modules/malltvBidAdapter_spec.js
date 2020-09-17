@@ -128,7 +128,9 @@ describe('malltvAdapterTest', () => {
         'netRevenue',
         'ttl',
         'referrer',
-        'ad'
+        'ad',
+        'vastUrl',
+        'mediaType'
       ];
 
       let resultKeys = Object.keys(result[0]);

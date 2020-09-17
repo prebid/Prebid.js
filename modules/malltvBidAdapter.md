@@ -28,22 +28,16 @@ var adUnits = [
     {
         code: 'test-div',
         mediaTypes: {
-            banner: {
-                sizes: [[300, 250], [300, 300]]
-            }
+             video: {
+                context: 'instream'
+             }
         },
         bids: [
             {
                  bidder: 'malltv',
                  params: {
                     propertyId: '105134',
-                    placementId: '846832',
-                    contents: [ //optional
-                        { 
-                            type: 'video',
-                            id: '123'
-                        }
-                    ]
+                    placementId: '846841'
                 }
             }
         ]
