@@ -79,7 +79,7 @@ const REQUEST = {
   }
 };
 
-describe.only('VidazooBidAdapter', function () {
+describe('VidazooBidAdapter', function () {
   describe('validtae spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
