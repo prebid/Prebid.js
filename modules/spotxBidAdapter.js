@@ -320,6 +320,7 @@ export const spec = {
             currency: serverResponseBody.cur || 'USD',
             cpm: spotxBid.price,
             creativeId: spotxBid.crid || '',
+            dealId: spotxBid.dealid || '',
             ttl: 360,
             netRevenue: true,
             channel_id: serverResponseBody.id,
@@ -397,7 +398,7 @@ function createOutstreamScript(bid) {
 
   utils.logMessage('[SPOTX][renderer] Default beahavior');
   if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
-    dataSpotXParams['data-spotx_ad_mute'] = '0';
+    dataSpotXParams['data-spotx_ad_mute'] = '1';
   }
   dataSpotXParams['data-spotx_collapse'] = '0';
   dataSpotXParams['data-spotx_autoplay'] = '1';

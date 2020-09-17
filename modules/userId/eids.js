@@ -100,11 +100,18 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // merkleId
+  'merkleId': {
+    source: 'merkleinc.com',
+    atype: 1
+  },
+
   // NetId
   'netId': {
     source: 'netid.de',
     atype: 1
   },
+
   // sharedid
   'sharedid': {
     source: 'sharedid.org',
@@ -117,6 +124,24 @@ const USER_IDS_CONFIG = {
         third: data.third
       } : undefined;
     }
+  },
+
+  // zeotapIdPlus
+  'IDP': {
+    source: 'zeotap.com',
+    atype: 1
+  },
+
+  // haloId
+  'haloId': {
+    source: 'audigent.com',
+    atype: 1
+  },
+
+  // quantcastId
+  'quantcastId': {
+    source: 'quantcast.com',
+    atype: 1
   },
 
   // Verizon Media
