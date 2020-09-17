@@ -109,15 +109,6 @@
             googletag.pubads().disableInitialLoad();
         });
 
-        const eidsProvider = function(){
-            return [{
-                source: "provider.com",
-                uids:[{
-                    id: "value read from cookie or local storage"
-                }]
-            }];
-        };
-
         pbjs.que.push(function() {
             pbjs.setConfig({
                 debug: true,
@@ -139,7 +130,7 @@
                 // },
                 userSync: {
                     userIds: [{
-                        name: "publisherProvided",
+                        name: "pubProvided",
                         params: {
                             eids: [{
                                 source: "example.com",
@@ -154,7 +145,14 @@
                                     id: "value read from cookie or local storage"
                                 }]
                             }],
-                            eidsFunction: eidsProvider
+                            eidsFunction: function() {
+                                return [{
+                                    source: "provider.com",
+                                    uids: [{
+                                        id: "value read from cookie or local storage"
+                                    }]
+                                }]
+                            }
                         }
                     },{
                         name: "unifiedId",

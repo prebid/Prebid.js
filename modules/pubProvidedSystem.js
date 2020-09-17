@@ -8,7 +8,7 @@
 import {submodule} from '../src/hook.js';
 import * as utils from "../src/utils";
 
-const MODULE_NAME = 'publisherProvided';
+const MODULE_NAME = 'pubProvided';
 
 /** @type {Submodule} */
 export const pubProvidedSubmodule = {
@@ -26,7 +26,7 @@ export const pubProvidedSubmodule = {
    */
   decode(value) {
     const res = value ? {pubProvided: value} : undefined;
-    utils.logInfo('PubProvidedId: Decoded value ' + JSON.stringify(res));
+    utils.logInfo('PubProvided: Decoded value ' + JSON.stringify(res));
     return res;
   },
 

@@ -163,7 +163,7 @@ export function createEidsArray(bidRequestUserId) {
   let eids = [];
   for (const subModuleKey in bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
-      if(subModuleKey === "pubProvided"){
+      if (subModuleKey === "pubProvided") {
         eids = eids.concat(bidRequestUserId["pubProvided"]);
       } else {
         const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
