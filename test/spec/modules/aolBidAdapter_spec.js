@@ -594,7 +594,7 @@ describe('AolAdapter', function () {
       });
     });
 
-    it.only('returns the bid object with eid defined when supported userId keys are passed', () => {
+    it('returns the bid object with eid defined when supported userId keys are passed', () => {
       let userIdBid = Object.assign({userId: {vmuid: VMUID}}, bid);
       global['console'].log(JSON.stringify(userIdBid));
       expect(spec.buildOpenRtbRequestData(userIdBid)).to.deep.equal({
