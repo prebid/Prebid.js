@@ -45,11 +45,11 @@ export const verizonMediaIdSubmodule = {
     }
 
     const data = {
-      '1p': configParams['1p'] ? configParams['1p'] : '0',
+      '1p': [1, '1', true].includes(configParams['1p']) ? '1' : '0',
       he: configParams.he,
       gdpr: isEUConsentRequired(consentData) ? '1' : '0',
       euconsent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
-      us_privacy: consentData.uspConsent
+      us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
     };
 
     const resp = function (callback) {
@@ -70,9 +70,18 @@ export const verizonMediaIdSubmodule = {
           callback();
         }
       };
-      ajax(configParams.endpoint || VMUID_ENDPOINT, callbacks, JSON.stringify(data), {method: 'POST', withCredentials: true});
+      verizonMediaIdSubmodule.getAjaxFn()(configParams.endpoint || VMUID_ENDPOINT, callbacks, JSON.stringify(data), {method: 'POST', withCredentials: true});
     };
     return {callback: resp};
+  },
+
+  /**
+   * Return the function used to perform XHR calls.
+   * Utilised for each of testing.
+   * @returns {Function}
+   */
+  getAjaxFn() {
+    return ajax;
   }
 };
 
