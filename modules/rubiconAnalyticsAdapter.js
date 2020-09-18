@@ -328,10 +328,11 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
     'dealId',
     'status',
     'mediaType',
-    'dimensions', () => utils.pick(bid, [
-      'width',
-      'height'
-    ]),
+    'dimensions', () => {
+      const width = bid.width || bid.playerWidth;
+      const height = bid.height || bid.playerHeight;
+      return (width && height) ? {width, height} : undefined;
+    },
     'seatBidId',
     'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
     'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined
