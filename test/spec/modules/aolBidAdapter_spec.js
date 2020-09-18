@@ -80,6 +80,7 @@ describe('AolAdapter', function () {
   const NEXAGE_URL = 'https://c2shb.ssp.yahoo.com/bidRequest?';
   const ONE_DISPLAY_TTL = 60;
   const ONE_MOBILE_TTL = 3600;
+  const VMUID = 'Hello VMUID Value';
 
   function createCustomBidRequest({bids, params} = {}) {
     var bidderRequest = getDefaultBidRequest();
@@ -463,6 +464,17 @@ describe('AolAdapter', function () {
           '&param1=val1&param2=val2&param3=val3&param4=val4');
       });
 
+      it('should set the vmuid param if the relevant user id property is available', function () {
+        let bidRequest = createCustomBidRequest({
+          params: getNexageGetBidParams()
+        });
+        bidRequest.bids[0].userId = {
+          vmuid: VMUID
+        };
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('eidvmuid=' + encodeURIComponent(VMUID));
+      });
+
       it('should return request object for One Mobile POST endpoint when POST configuration is present', function () {
         let bidConfig = getNexagePostBidParams();
         let bidRequest = createCustomBidRequest({
@@ -577,6 +589,27 @@ describe('AolAdapter', function () {
         user: {
           ext: {
             consent: 'someEUConsent'
+          }
+        }
+      });
+    });
+
+    it.only('returns the bid object with eid defined when supported userId keys are passed', () => {
+      let userIdBid = Object.assign({userId: {vmuid: VMUID}}, bid);
+      global['console'].log(JSON.stringify(userIdBid));
+      expect(spec.buildOpenRtbRequestData(userIdBid)).to.deep.equal({
+        id: 'bid-id',
+        imp: [],
+        user: {
+          ext: {
+            eids: [
+              {
+                source: 'vmuid',
+                uids: [{
+                  id: VMUID
+                }]
+              }
+            ]
           }
         }
       });

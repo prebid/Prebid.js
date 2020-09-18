@@ -30,6 +30,8 @@ const SYNC_TYPES = {
   }
 };
 
+const SUPPORTED_USER_ID_PROVIDER_KEYS = ['vmuid'];
+
 const pubapiTemplate = template`${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;
 const nexageBaseApiTemplate = template`${'host'}/bidRequest?`;
 const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'dynamicParams'}`;
@@ -226,6 +228,14 @@ export const spec = {
   },
   buildOneMobileGetUrl(bid, consentData) {
     let { dcn, pos, ext } = bid.params;
+    if (typeof bid.userId === 'object') {
+      ext = ext || {};
+      Object.keys(bid.userId).forEach(providerKey => {
+        if (SUPPORTED_USER_ID_PROVIDER_KEYS.includes(providerKey)) {
+          ext['eid' + providerKey] = bid.userId[providerKey];
+        }
+      });
+    }
     let nexageApi = this.buildOneMobileBaseUrl(bid);
     if (dcn && pos) {
       let dynamicParams = this.formatOneMobileDynamicParams(ext, consentData);
@@ -278,7 +288,10 @@ export const spec = {
   buildOpenRtbRequestData(bid, consentData = {}) {
     let openRtbObject = {
       id: bid.params.id,
-      imp: bid.params.imp
+      imp: bid.params.imp,
+      user: {
+        ext: {}
+      }
     };
 
     if (this.isEUConsentRequired(consentData)) {
@@ -291,6 +304,20 @@ export const spec = {
     if (consentData.uspConsent) {
       utils.deepSetValue(openRtbObject, 'regs.ext.us_privacy', consentData.uspConsent);
     }
+
+    Object.keys(bid.userId).forEach(providerKey => {
+      if (SUPPORTED_USER_ID_PROVIDER_KEYS.includes(providerKey)) {
+        openRtbObject.user.ext.eids = openRtbObject.user.ext.eids || [];
+        openRtbObject.user.ext.eids.push(
+          {
+            source: providerKey,
+            uids: [
+              {id: bid.userId[providerKey]}
+            ]
+          }
+        );
+      }
+    });
 
     return openRtbObject;
   },
