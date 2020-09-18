@@ -289,9 +289,6 @@ export const spec = {
     let openRtbObject = {
       id: bid.params.id,
       imp: bid.params.imp,
-      user: {
-        ext: {}
-      }
     };
 
     if (this.isEUConsentRequired(consentData)) {
@@ -305,19 +302,24 @@ export const spec = {
       utils.deepSetValue(openRtbObject, 'regs.ext.us_privacy', consentData.uspConsent);
     }
 
-    Object.keys(bid.userId).forEach(providerKey => {
-      if (SUPPORTED_USER_ID_PROVIDER_KEYS.includes(providerKey)) {
-        openRtbObject.user.ext.eids = openRtbObject.user.ext.eids || [];
-        openRtbObject.user.ext.eids.push(
-          {
-            source: providerKey,
-            uids: [
-              {id: bid.userId[providerKey]}
-            ]
-          }
-        );
-      }
-    });
+    if (typeof bid.userId === 'object') {
+      openRtbObject.user = openRtbObject.user || {};
+      openRtbObject.user.ext = openRtbObject.user.ext || {};
+
+      Object.keys(bid.userId).forEach(providerKey => {
+        if (SUPPORTED_USER_ID_PROVIDER_KEYS.includes(providerKey)) {
+          openRtbObject.user.ext.eids = openRtbObject.user.ext.eids || [];
+          openRtbObject.user.ext.eids.push(
+            {
+              source: providerKey,
+              uids: [
+                {id: bid.userId[providerKey]}
+              ]
+            }
+          );
+        }
+      });
+    }
 
     return openRtbObject;
   },
