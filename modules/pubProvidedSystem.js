@@ -6,7 +6,7 @@
  */
 
 import {submodule} from '../src/hook.js';
-import * as utils from "../src/utils";
+import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'pubProvided';
 
@@ -38,7 +38,7 @@ export const pubProvidedSubmodule = {
    */
   getId(configParams) {
     let res = [];
-    if (Array.isArray(configParams.eids)) {
+    if (utils.isArray(configParams.eids)) {
       res = res.concat(configParams.eids);
     }
     if (typeof configParams.eidsFunction === 'function') {
