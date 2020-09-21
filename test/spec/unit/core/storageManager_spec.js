@@ -42,5 +42,32 @@ describe('storage manager', function() {
     storage.setCookie('foo1', 'baz1');
     expect(deviceAccessSpy.calledOnce).to.equal(true);
     deviceAccessSpy.restore();
+  });
+
+  describe('localstorage forbidden access in 3rd-party context', function() {
+    let errorLogSpy;
+    const originalLocalStorage = { get: () => window.localStorage };
+    const localStorageMock = { get: () => { throw Error } };
+
+    beforeEach(function() {
+      Object.defineProperty(window, 'localStorage', localStorageMock);
+      errorLogSpy = sinon.spy(utils, 'logError');
+    });
+
+    afterEach(function() {
+      Object.defineProperty(window, 'localStorage', originalLocalStorage);
+      errorLogSpy.restore();
+    })
+
+    it('should not throw if the localstorage is not accessible when setting/getting/removing from localstorage', function() {
+      const coreStorage = getStorageManager();
+
+      coreStorage.setDataInLocalStorage('key', 'value');
+      const val = coreStorage.getDataFromLocalStorage('key');
+      coreStorage.removeDataFromLocalStorage('key');
+
+      expect(val).to.be.null;
+      sinon.assert.calledThrice(errorLogSpy);
+    })
   })
 });
