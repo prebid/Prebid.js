@@ -578,6 +578,34 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.source.ext).to.have.property('schain');
       expect(payload.source.ext.schain).to.deep.equal(schain);
     });
+
+    it('if content and segment is present in realTimeData.jwTargeting, payload must have right params', function () {
+      const jsContent = {id: 'test_jw_content_id'};
+      const jsSegments = ['test_seg_1', 'test_seg_2'];
+      const bidRequestsWithUserIds = bidRequests.map((bid) => {
+        return Object.assign({
+          realTimeData: {
+            jwTargeting: {
+              segments: jsSegments,
+              content: jsContent
+            }
+          }
+        }, bid);
+      });
+      const [request] = spec.buildRequests(bidRequestsWithUserIds, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('user');
+      expect(payload.user.data).to.deep.equal([{
+        name: 'iow_labs_pub_data',
+        segment: [
+          {name: 'jwpseg', value: jsSegments[0]},
+          {name: 'jwpseg', value: jsSegments[1]}
+        ]
+      }]);
+      expect(payload).to.have.property('site');
+      expect(payload.site.content).to.deep.equal(jsContent);
+    });
   });
 
   describe('interpretResponse', function () {
