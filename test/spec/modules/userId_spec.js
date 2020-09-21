@@ -1072,6 +1072,7 @@ describe('User ID', function () {
                 id: 'value read from cookie or local storage'
               }]
             }]);
+
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'example.com',
               type: 'pubProvided',
