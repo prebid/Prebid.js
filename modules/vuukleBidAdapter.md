@@ -2,7 +2,7 @@
 ```
 Module Name: Vuukle Bid Adapter
 Module Type: Bidder Adapter
-Maintainer:
+Maintainer: support@vuukle.com
 ```
 
 # Description
