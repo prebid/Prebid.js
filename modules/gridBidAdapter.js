@@ -351,10 +351,10 @@ function buildNewRequest(validBidRequests, bidderRequest) {
     }
     if (realTimeData && realTimeData.jwTargeting) {
       if (!jwpseg && realTimeData.jwTargeting.segments) {
-        jwpseg = realTimeData.segments;
+        jwpseg = realTimeData.jwTargeting.segments;
       }
-      if (!content && realTimeData.content) {
-        content = realTimeData.content;
+      if (!content && realTimeData.jwTargeting.content) {
+        content = realTimeData.jwTargeting.content;
       }
     }
     let impObj = {

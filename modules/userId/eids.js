@@ -111,6 +111,7 @@ const USER_IDS_CONFIG = {
     source: 'netid.de',
     atype: 1
   },
+
   // sharedid
   'sharedid': {
     source: 'sharedid.org',
@@ -123,6 +124,24 @@ const USER_IDS_CONFIG = {
         third: data.third
       } : undefined;
     }
+  },
+
+  // zeotapIdPlus
+  'IDP': {
+    source: 'zeotap.com',
+    atype: 1
+  },
+
+  // haloId
+  'haloId': {
+    source: 'audigent.com',
+    atype: 1
+  },
+
+  // quantcastId
+  'quantcastId': {
+    source: 'quantcast.com',
+    atype: 1
   }
 };
 
