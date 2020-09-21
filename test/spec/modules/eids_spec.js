@@ -242,15 +242,14 @@ describe('eids array generation for known sub-modules', function() {
       pubProvided: [{
         source: "example.com",
         type: 'pubProvided',
-        uids:[{
+        uids: [{
           id: "value read from cookie or local storage",
-          ext: {
-          }
+          ext: {}
         }]
-      },{
+      }, {
         source: "id-partner.com",
         type: 'pubProvided',
-        uids:[{
+        uids: [{
           id: "value read from cookie or local storage"
         }]
       }]
@@ -260,21 +259,20 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids[0]).to.deep.equal({
       source: "example.com",
       type: 'pubProvided',
-      uids:[{
+      uids: [{
         id: "value read from cookie or local storage",
-        ext: {
-        }
+        ext: {}
       }]
     });
     expect(newEids[1]).to.deep.equal({
       source: "id-partner.com",
       type: 'pubProvided',
-      uids:[{
+      uids: [{
         id: "value read from cookie or local storage"
       }]
     });
+  });
 });
-
 describe('Negative case', function() {
   it('eids array generation for UN-known sub-module', function() {
     // UnknownCommonId
