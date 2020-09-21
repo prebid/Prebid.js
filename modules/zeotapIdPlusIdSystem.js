@@ -9,7 +9,7 @@ import {submodule} from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
-const storage = getStorageManager();
+export const storage = getStorageManager();
 
 function readCookie() {
   return storage.cookiesAreEnabled ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null;
