@@ -44,6 +44,7 @@ export const pubProvidedSubmodule = {
     if (typeof configParams.eidsFunction === 'function') {
       res = res.concat(configParams.eidsFunction());
     }
+    res.forEach(id => id.type = 'pubProvided');
     return {id: res};
   }
 };

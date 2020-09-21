@@ -192,6 +192,44 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
+  it('PubProvided', function() {
+    const userId = {
+      pubProvided: [{
+        source: "example.com",
+        type: 'pubProvided',
+        uids:[{
+          id: "value read from cookie or local storage",
+          ext: {
+          }
+        }]
+      },{
+        source: "id-partner.com",
+        type: 'pubProvided',
+        uids:[{
+          id: "value read from cookie or local storage"
+        }]
+      }]
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(2);
+    expect(newEids[0]).to.deep.equal({
+      source: "example.com",
+      type: 'pubProvided',
+      uids:[{
+        id: "value read from cookie or local storage",
+        ext: {
+        }
+      }]
+    });
+    expect(newEids[1]).to.deep.equal({
+      source: "id-partner.com",
+      type: 'pubProvided',
+      uids:[{
+        id: "value read from cookie or local storage"
+      }]
+    });
+  });
 });
 
 describe('Negative case', function() {
