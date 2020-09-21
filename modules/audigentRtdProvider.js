@@ -34,7 +34,6 @@ let _moduleParams = {};
  * XMLHttpRequest to get data form audigent server
  * @param {string} url server url with query params
  */
-
 export function setData(data) {
   storage.setDataInLocalStorage('__adgntseg', JSON.stringify(data));
 }
