@@ -11,11 +11,11 @@ import * as utils from '../src/utils.js';
 const MODULE_NAME = 'pubProvided';
 
 function addType(uid) {
-  if(!uid.ext.types){
+  if (!uid.ext.types) {
     uid.ext.types = [];
   }
-  if(!uid.ext.types.includes('ppuid')){
-    uid.ext.types.push('ppuid')
+  if (!uid.ext.types.includes('ppuid')) {
+    uid.ext.types.push('ppuid');
   }
 }
 
