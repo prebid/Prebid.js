@@ -10,6 +10,15 @@ import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'pubProvided';
 
+function addType(uid) {
+  if(!uid.ext.types){
+    uid.ext.types = [];
+  }
+  if(!uid.ext.types.includes('ppuid')){
+    uid.ext.types.push('ppuid')
+  }
+}
+
 /** @type {Submodule} */
 export const pubProvidedSubmodule = {
   /**
@@ -44,7 +53,7 @@ export const pubProvidedSubmodule = {
     if (typeof configParams.eidsFunction === 'function') {
       res = res.concat(configParams.eidsFunction());
     }
-    res.forEach(id => id.type = 'pubProvided');
+    res.forEach(id => id.uids.forEach(uid => addType(uid)));
     return {id: res};
   }
 };

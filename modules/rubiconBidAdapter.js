@@ -251,7 +251,8 @@ export const spec = {
       const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       if (eids && eids.length) {
         // filter out unsupported id systems
-        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1 || eid.type === 'pubProvided'));
+        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1 ||
+          eid.uids[0].ext.types.includes('ppuid')));
 
         // liveintent requires additional props to be set
         const liveIntentEid = find(data.user.ext.eids, eid => eid.source === 'liveintent.com');
@@ -538,7 +539,7 @@ export const spec = {
       if (sharedId) {
         data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
       }
-      const pubProvidedIds = bidRequest.userIdAsEids.filter(eid => eid.type === 'pubProvided');
+      const pubProvidedIds = bidRequest.userIdAsEids.filter(eid => eid.uids[0].ext.types.includes('ppuid'));
       if (pubProvidedIds) {
         pubProvidedIds.forEach(pubProvidedId => {
           data[`${pubProvidedId.source}_id`] = pubProvidedId.uids[0].id;

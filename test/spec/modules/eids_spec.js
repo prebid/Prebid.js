@@ -241,16 +241,19 @@ describe('eids array generation for known sub-modules', function() {
     const userId = {
       pubProvided: [{
         source: 'example.com',
-        type: 'pubProvided',
         uids: [{
           id: 'value read from cookie or local storage',
-          ext: {}
+          ext: {
+            types: ['ppuid']
+          }
         }]
       }, {
         source: 'id-partner.com',
-        type: 'pubProvided',
         uids: [{
-          id: 'value read from cookie or local storage'
+          id: 'value read from cookie or local storage',
+          ext: {
+            types: ['ppuid']
+          }
         }]
       }]
     };
@@ -258,17 +261,20 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(2);
     expect(newEids[0]).to.deep.equal({
       source: 'example.com',
-      type: 'pubProvided',
       uids: [{
         id: 'value read from cookie or local storage',
-        ext: {}
+        ext: {
+          types: ['ppuid']
+        }
       }]
     });
     expect(newEids[1]).to.deep.equal({
       source: 'id-partner.com',
-      type: 'pubProvided',
       uids: [{
-        id: 'value read from cookie or local storage'
+        id: 'value read from cookie or local storage',
+        ext: {
+          types: ['ppuid']
+        }
       }]
     });
   });
