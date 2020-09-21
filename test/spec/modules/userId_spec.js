@@ -1052,7 +1052,6 @@ describe('User ID', function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.pubProvided');
-            expect(bid.userId.pubProvided).to.have.deep.nested.property('source');
             expect(bid.userId.pubProvided).to.deep.equal([{
               source: 'example.com',
               type: 'pubProvided',
