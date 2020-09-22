@@ -1023,29 +1023,29 @@ describe('User ID', function () {
             name: 'pubProvidedId',
             params: {
               eids: [{
-                source: "example.com",
-                uids:[{
-                  id: "value read from cookie or local storage",
+                source: 'example.com',
+                uids: [{
+                  id: 'value read from cookie or local storage',
                   ext: {
-                    type: "ppuid" // options are ppuid, dmp and sha256email
+                    type: 'ppuid' // options are ppuid, dmp and sha256email
                   }
                 }]
-              },{
-                source: "id-partner.com",
-                uids:[{
-                  id: "value read from cookie or local storage",
+              }, {
+                source: 'id-partner.com',
+                uids: [{
+                  id: 'value read from cookie or local storage',
                   ext: {
-                    type: "dmp"
+                    type: 'dmp'
                   }
                 }]
               }],
-              eidsFunction: function() {
+              eidsFunction: function () {
                 return [{
-                  source: "provider.com",
+                  source: 'provider.com',
                   uids: [{
-                    id: "value read from cookie or local storage",
+                    id: 'value read from cookie or local storage',
                     ext: {
-                      type: "sha256email"
+                      type: 'sha256email'
                     }
                   }]
                 }]
