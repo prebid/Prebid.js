@@ -54,7 +54,7 @@ const BID_REJECTED_IPF = 'rejected-ipf';
 let fpkvs = {};
 function updateFpkvs(fpkvs, newKvs) {
   const isValid = typeof newKvs === 'object' && Object.keys(newKvs).every(key => typeof key === 'string' && typeof newKvs[key] === 'string');
-  if (isValid) {
+  if (!isValid) {
     utils.logError('Rubicon Analytics: fpkvs must be object with string keys and values');
     return fpkvs;
   } else {
