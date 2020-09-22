@@ -118,7 +118,7 @@ describe('Nobid Adapter', function () {
       expect(payload.a).to.exist;
       expect(payload.t).to.exist;
       expect(payload.tz).to.exist;
-      expect(payload.r).to.exist;
+      expect(payload.r).to.exist.and.to.equal('100x100');
       expect(payload.lang).to.exist;
       expect(payload.ref).to.exist;
       expect(payload.a[0].d).to.exist.and.to.equal('adunit-code');
@@ -264,6 +264,38 @@ describe('Nobid Adapter', function () {
       expect(payload.gdpr).to.exist;
     });
 
+    it('sends bid request to ad size', function () {
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.a).to.exist;
+      expect(payload.a.length).to.exist.and.to.equal(1);
+      expect(payload.a[0].z[0][0]).to.equal(300);
+      expect(payload.a[0].z[0][1]).to.equal(250);
+    });
+
+    it('sends bid request to div id', function () {
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.a).to.exist;
+      expect(payload.a[0].d).to.equal('adunit-code');
+    });
+
+    it('sends bid request to site id', function () {
+	  const request = spec.buildRequests(bidRequests);
+	  const payload = JSON.parse(request.data);
+	  expect(payload.a).to.exist;
+	  expect(payload.a[0].sid).to.equal(2);
+	  expect(payload.a[0].at).to.equal('banner');
+	  expect(payload.a[0].params.siteId).to.equal(2);
+    });
+
+    it('sends bid request to ad type', function () {
+  	  const request = spec.buildRequests(bidRequests);
+  	  const payload = JSON.parse(request.data);
+  	  expect(payload.a).to.exist;
+  	  expect(payload.a[0].at).to.equal('banner');
+  	});
+
     it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.contain('ads.servenobid.com/adreq');
@@ -290,6 +322,43 @@ describe('Nobid Adapter', function () {
       expect(payload.gdpr).to.exist;
       expect(payload.gdpr.consentString).to.exist.and.to.equal(consentString);
       expect(payload.gdpr.consentRequired).to.exist.and.to.be.true;
+    });
+
+    it('should add gdpr consent information to the request', function () {
+      let bidderRequest = {
+        'bidderCode': 'nobid',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          gdprApplies: false
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdpr).to.exist;
+      expect(payload.gdpr.consentString).to.not.exist;
+      expect(payload.gdpr.consentRequired).to.exist.and.to.be.false;
+    });
+
+    it('should add usp consent information to the request', function () {
+      let bidderRequest = {
+        'bidderCode': 'nobid',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'uspConsent': '1Y-N'
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.usp).to.exist;
+      expect(payload.usp).to.exist.and.to.equal('1Y-N');
     });
   });
 
