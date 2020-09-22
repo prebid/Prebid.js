@@ -8,9 +8,21 @@ const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
 
 // always use https, regardless of whether or not current page is secure
-export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
-export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
+export let FASTLANE_ENDPOINT = `https://fastlane.rubiconproject.com/a/api/fastlane.json`;
+export let VIDEO_ENDPOINT = `https://prebid-server.rubiconproject.com/openrtb2/auction`;
+export let SYNC_ENDPOINT = `https://eus.rubiconproject.com/usync.html`;
+let RETURN_VAST = false;
+
+let bannerHost = 'fastlane';
+let videoHost = 'prebid-server';
+let syncHost = 'eus';
+config.getConfig('rubicon', config => {
+  let rubiConf = config.rubicon;
+  FASTLANE_ENDPOINT = `https://${rubiConf.bannerHost || bannerHost}.rubiconproject.com/a/api/fastlane.json`;
+  VIDEO_ENDPOINT = `https://${rubiConf.videoHost || videoHost}.rubiconproject.com/openrtb2/auction`;
+  SYNC_ENDPOINT = `https://${rubiConf.syncHost || syncHost}.rubiconproject.com/usync.html`;
+  RETURN_VAST = rubiConf.returnVast === true; // anything other than true is false
+});
 
 const GVLID = 52;
 const DIGITRUST_PROP_NAMES = {
@@ -177,7 +189,7 @@ export const spec = {
           prebid: {
             cache: {
               vastxml: {
-                returnCreative: false // don't return the VAST
+                returnCreative: RETURN_VAST
               }
             },
             targeting: {

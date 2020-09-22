@@ -3132,4 +3132,51 @@ describe('the rubicon adapter', function () {
       expect(request[0].data.source.ext.schain).to.deep.equal(schain);
     });
   });
+
+  describe('configurable settings', function() {
+    afterEach(() => {
+      config.setConfig({
+        rubicon: {
+          bannerHost: 'rubicon',
+          videoHost: 'prebid-server',
+          syncHost: 'eus',
+          returnVast: false
+        }
+      });
+      config.resetConfig();
+    });
+
+    beforeEach(function () {
+      resetUserSync();
+    });
+
+    it('should update fastlane endpoint if', function () {
+      config.setConfig({
+        rubicon: {
+          bannerHost: 'fastlane-qa',
+          videoHost: 'prebid-server-qa',
+          syncHost: 'eus-qa',
+          returnVast: true
+        }
+      });
+
+      // banner
+      let [bannerRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      expect(bannerRequest.url).to.equal('https://fastlane-qa.rubiconproject.com/a/api/fastlane.json');
+
+      // video and returnVast
+      createVideoBidderRequest();
+      let [videoRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      let post = videoRequest.data;
+      expect(videoRequest.url).to.equal('https://prebid-server-qa.rubiconproject.com/openrtb2/auction');
+      expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+      expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(true);
+
+      // user sync
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
+      expect(syncs).to.deep.equal({type: 'iframe', url: 'https://eus-qa.rubiconproject.com/usync.html'});
+    });
+  });
 });
