@@ -474,34 +474,40 @@ function refreshUserIds(submoduleNames) {
     return;
   }
 
-  if (!initializedSubmodules) {
-    utils.logWarn(`${MODULE_NAME} - refresh called before submodule initialization`);
-    return;
-  }
+  initializeSubmodulesAndExecuteCallbacks(function() {
+    let consentData = gdprDataHandler.getConsentData()
 
-  let consentData = gdprDataHandler.getConsentData()
+    const storedConsentData = getStoredConsentData();
+    setStoredConsentData(consentData);
 
-  const storedConsentData = getStoredConsentData();
-  setStoredConsentData(consentData);
+    // gdpr consent with purpose one is required, otherwise exit immediately
+    let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
+    if (!hasValidated && !hasGDPRConsent(consentData)) {
+      utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
+      return;
+    }
 
-  let callbackSubmodules = [];
+    let callbackSubmodules = [];
 
-  for (let submoduleName of submoduleNames) {
-    for (let submodule of initializedSubmodules) {
-      if (submodule.submodule.name === submoduleName) {
-        utils.logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
-        populateSubmoduleId(submodule, consentData, storedConsentData, true);
+    for (let submoduleName of submoduleNames) {
+      for (let submodule of userIdModules) {
+        if (submodule.submodule.name === submoduleName) {
+          utils.logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
+          populateSubmoduleId(submodule, consentData, storedConsentData, true);
 
-        if (utils.isFn(submodule.callback)) {
-          callbackSubmodules.push(submodule);
+          if (utils.isFn(submodule.callback)) {
+            callbackSubmodules.push(submodule);
+          }
+
+          break;
         }
       }
     }
-  }
 
-  if (callbackSubmodules.length > 0) {
-    processSubmoduleCallbacks(callbackSubmodules);
-  }
+    if (callbackSubmodules.length > 0) {
+      processSubmoduleCallbacks(callbackSubmodules);
+    }
+  });
 }
 
 /**
@@ -703,7 +709,6 @@ export function init(config) {
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
-
   (getGlobal()).refreshUserIds = refreshUserIds;
 }
 
