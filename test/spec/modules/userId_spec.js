@@ -1054,46 +1054,38 @@ describe('User ID', function () {
             expect(bid).to.have.deep.nested.property('userId.pubProvided');
             expect(bid.userId.pubProvided).to.deep.equal([{
               source: 'example.com',
+              type: 'pubProvided',
               uids: [{
                 id: 'value read from cookie or local storage',
-                ext: {
-                  types: ['ppuid']
-                }
+                ext: {}
               }]
             }, {
               source: 'id-partner.com',
+              type: 'pubProvided',
               uids: [{
-                id: 'value read from cookie or local storage',
-                ext: {
-                  types: ['ppuid']
-                }
+                id: 'value read from cookie or local storage'
               }]
             }, {
               source: 'provider.com',
+              type: 'pubProvided',
               uids: [{
-                id: 'value read from cookie or local storage',
-                ext: {
-                  types: ['ppuid']
-                }
+                id: 'value read from cookie or local storage'
               }]
             }]);
 
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'example.com',
+              type: 'pubProvided',
               uids: [{
                 id: 'value read from cookie or local storage',
-                ext: {
-                  types: ['ppuid']
-                }
+                ext: {}
               }]
             });
             expect(bid.userIdAsEids[2]).to.deep.equal({
               source: 'provider.com',
+              type: 'pubProvided',
               uids: [{
-                id: 'value read from cookie or local storage',
-                ext: {
-                  types: ['ppuid']
-                }
+                id: 'value read from cookie or local storage'
               }]
             });
           });
