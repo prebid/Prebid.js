@@ -194,13 +194,15 @@ describe('jixie Adapter', function () {
     it('should attach valid params to the adserver endpoint (2)', function () {
       // similar to above test case but here we force some clientid sessionid values
       // and domain, pageurl
-
       // get the interceptors ready:
-      let getCookiesStub = sinon.stub(jixieaux, 'getCookies');
+      let getCookieStub = sinon.stub(storage, 'getCookie');
       let getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-      getCookiesStub
-        .withArgs(['_jx', '_jxs'])
-        .returns({ _jx: clientIdTest1_, _jxs: sessionIdTest1_ });
+      getCookieStub
+        .withArgs('_jx')
+        .returns(clientIdTest1_);
+      getCookieStub
+        .withArgs('_jxs')
+        .returns(sessionIdTest1_);
       getLocalStorageStub
         .withArgs('_jx')
         .returns(clientIdTest1_);
@@ -232,7 +234,7 @@ describe('jixie Adapter', function () {
       expect(payload).to.have.property('bids').that.deep.equals(refBids_);
 
       // unwire interceptors
-      getCookiesStub.restore();
+      getCookieStub.restore();
       getLocalStorageStub.restore();
       miscDimsStub.restore();
     });// it
@@ -390,7 +392,7 @@ describe('jixie Adapter', function () {
     });
 
     it('should get correct bid response', function () {
-      let setCookieSpy = sinon.spy(jixieaux, 'setCookie');
+      let setCookieSpy = sinon.spy(storage, 'setCookie');
       let setLocalStorageSpy = sinon.spy(storage, 'setDataInLocalStorage');
       const result = spec.interpretResponse({body: responseBody_}, requestObj_)
       expect(setLocalStorageSpy.calledWith('_jx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
