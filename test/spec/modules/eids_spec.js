@@ -244,7 +244,7 @@ describe('eids array generation for known sub-modules', function() {
         uids: [{
           id: 'value read from cookie or local storage',
           ext: {
-            type: 'ppuid'
+            stype: 'ppuid'
           }
         }]
       }, {
@@ -261,7 +261,7 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{
         id: 'value read from cookie or local storage',
         ext: {
-          type: 'ppuid'
+          stype: 'ppuid'
         }
       }]
     });

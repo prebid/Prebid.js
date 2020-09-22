@@ -137,33 +137,25 @@
                         name: "pubProvidedId",
                         params: {
                             eids: [{
-                                source: "example.com",
+                                source: "domain.com",
                                 uids:[{
                                     id: "value read from cookie or local storage",
+                                    atype: 1,
                                     ext: {
-                                        type: "ppuid" // options are ppuid, dmp and sha256email
+                                        stype: "ppuid" // allowable options are sha256email, DMP, ppuid for now
                                     }
                                 }]
                             },{
-                                source: "id-partner.com",
+                                source: "3rdpartyprovided.com",
                                 uids:[{
                                     id: "value read from cookie or local storage",
+                                    atype: 3,
                                     ext: {
-                                        type: "dmp"
+                                        stype: "sha256email"
                                     }
                                 }]
                             }],
-                            eidsFunction: function() {
-                                return [{
-                                    source: "provider.com",
-                                    uids: [{
-                                        id: "value read from cookie or local storage",
-                                        ext: {
-                                            type: "sha256email"
-                                        }
-                                    }]
-                                }]
-                            }
+                            eidsFunction: getHashedEmail  // any user defined function that exists in the page
                         }
                     },{
                         name: "unifiedId",

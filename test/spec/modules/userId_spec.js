@@ -1026,7 +1026,7 @@ describe('User ID', function () {
                 uids: [{
                   id: 'value read from cookie or local storage',
                   ext: {
-                    type: 'ppuid'
+                    stype: 'ppuid'
                   }
                 }]
               }, {
@@ -1034,7 +1034,7 @@ describe('User ID', function () {
                 uids: [{
                   id: 'value read from cookie or local storage',
                   ext: {
-                    type: 'dmp'
+                    stype: 'dmp'
                   }
                 }]
               }],
@@ -1044,7 +1044,7 @@ describe('User ID', function () {
                   uids: [{
                     id: 'value read from cookie or local storage',
                     ext: {
-                      type: 'sha256email'
+                      stype: 'sha256email'
                     }
                   }]
                 }]
@@ -1064,7 +1064,7 @@ describe('User ID', function () {
               uids: [{
                 id: 'value read from cookie or local storage',
                 ext: {
-                  type: 'ppuid'
+                  stype: 'ppuid'
                 }
               }]
             }, {
@@ -1072,7 +1072,7 @@ describe('User ID', function () {
               uids: [{
                 id: 'value read from cookie or local storage',
                 ext: {
-                  type: 'dmp'
+                  stype: 'dmp'
                 }
               }]
             }, {
@@ -1080,7 +1080,7 @@ describe('User ID', function () {
               uids: [{
                 id: 'value read from cookie or local storage',
                 ext: {
-                  type: 'sha256email'
+                  stype: 'sha256email'
                 }
               }]
             }]);
@@ -1090,7 +1090,7 @@ describe('User ID', function () {
               uids: [{
                 id: 'value read from cookie or local storage',
                 ext: {
-                  type: 'ppuid'
+                  stype: 'ppuid'
                 }
               }]
             });
@@ -1099,7 +1099,7 @@ describe('User ID', function () {
               uids: [{
                 id: 'value read from cookie or local storage',
                 ext: {
-                  type: 'sha256email'
+                  stype: 'sha256email'
                 }
               }]
             });

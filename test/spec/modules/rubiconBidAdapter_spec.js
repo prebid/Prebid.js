@@ -237,7 +237,7 @@ describe('the rubicon adapter', function () {
         uids: [{
           id: '333333',
           ext: {
-            type: 'ppuid'
+            stype: 'ppuid'
           }
         }]
       }, {
@@ -1421,7 +1421,7 @@ describe('the rubicon adapter', function () {
                   uids: [{
                     id: '11111',
                     ext: {
-                      type: 'ppuid'
+                      stype: 'ppuid'
                     }
                   }]
                 }, {
