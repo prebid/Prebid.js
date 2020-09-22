@@ -8,20 +8,23 @@ const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
 
 // always use https, regardless of whether or not current page is secure
-export let FASTLANE_ENDPOINT = `https://fastlane.rubiconproject.com/a/api/fastlane.json`;
-export let VIDEO_ENDPOINT = `https://prebid-server.rubiconproject.com/openrtb2/auction`;
-export let SYNC_ENDPOINT = `https://eus.rubiconproject.com/usync.html`;
-let RETURN_VAST = false;
+export let fastlaneEndpoint = `https://fastlane.rubiconproject.com/a/api/fastlane.json`;
+export let videoEndpoint = `https://prebid-server.rubiconproject.com/openrtb2/auction`;
+export let syncEndpoint = `https://eus.rubiconproject.com/usync.html`;
+let returnVast = false;
 
 let bannerHost = 'fastlane';
 let videoHost = 'prebid-server';
 let syncHost = 'eus';
 config.getConfig('rubicon', config => {
   let rubiConf = config.rubicon;
-  FASTLANE_ENDPOINT = `https://${rubiConf.bannerHost || bannerHost}.rubiconproject.com/a/api/fastlane.json`;
-  VIDEO_ENDPOINT = `https://${rubiConf.videoHost || videoHost}.rubiconproject.com/openrtb2/auction`;
-  SYNC_ENDPOINT = `https://${rubiConf.syncHost || syncHost}.rubiconproject.com/usync.html`;
-  RETURN_VAST = rubiConf.returnVast === true; // anything other than true is false
+  bannerHost = rubiConf.bannerHost || bannerHost;
+  fastlaneEndpoint = `https://${bannerHost}.rubiconproject.com/a/api/fastlane.json`;
+  videoHost = rubiConf.videoHost || videoHost;
+  videoEndpoint = `https://${videoHost}.rubiconproject.com/openrtb2/auction`;
+  syncHost = rubiConf.syncHost || syncHost;
+  syncEndpoint = `https://${syncHost}.rubiconproject.com/usync.html`;
+  returnVast = rubiConf.returnVast === true; // anything other than true is false
 });
 
 const GVLID = 52;
@@ -189,7 +192,7 @@ export const spec = {
           prebid: {
             cache: {
               vastxml: {
-                returnCreative: RETURN_VAST
+                returnCreative: returnVast
               }
             },
             targeting: {
@@ -340,7 +343,7 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: VIDEO_ENDPOINT,
+        url: videoEndpoint,
         data,
         bidRequest
       }
@@ -352,7 +355,7 @@ export const spec = {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
           method: 'GET',
-          url: FASTLANE_ENDPOINT,
+          url: fastlaneEndpoint,
           data: spec.getOrderedParams(bidParams).reduce((paramString, key) => {
             const propValue = bidParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
@@ -383,7 +386,7 @@ export const spec = {
           // SRA request returns grouped bidRequest arrays not a plain bidRequest
           aggregate.push({
             method: 'GET',
-            url: FASTLANE_ENDPOINT,
+            url: fastlaneEndpoint,
             data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
               const propValue = combinedSlotParams[key];
               return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
@@ -807,7 +810,7 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
-      // data is only assigned if params are available to pass to SYNC_ENDPOINT
+      // data is only assigned if params are available to pass to syncEndpoint
       let params = '';
 
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -826,7 +829,7 @@ export const spec = {
       hasSynced = true;
       return {
         type: 'iframe',
-        url: SYNC_ENDPOINT + params
+        url: syncEndpoint + params
       };
     }
   },

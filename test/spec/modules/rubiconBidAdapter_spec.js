@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter.js';
+import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, fastlaneEndpoint} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -1916,14 +1916,14 @@ describe('the rubicon adapter', function () {
           let requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+          expect(requests[0].url).to.equal(fastlaneEndpoint);
 
           bidderRequest.mediaTypes.video.context = 'instream';
 
           requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+          expect(requests[0].url).to.equal(fastlaneEndpoint);
         });
 
         it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {
@@ -1942,7 +1942,7 @@ describe('the rubicon adapter', function () {
 
           let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+          expect(requests[0].url).to.equal(fastlaneEndpoint);
         });
 
         it('should include coppa flag in video bid request', () => {
