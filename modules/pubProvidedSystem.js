@@ -22,11 +22,11 @@ export const pubProvidedIdSubmodule = {
    * decode the stored id value for passing to bid request
    * @function
    * @param {string} value
-   * @returns {{pubProvided: array}} or undefined if value doesn't exists
+   * @returns {{pubProvidedId: array}} or undefined if value doesn't exists
    */
   decode(value) {
-    const res = value ? {pubProvided: value} : undefined;
-    utils.logInfo('PubProvided: Decoded value ' + JSON.stringify(res));
+    const res = value ? {pubProvidedId: value} : undefined;
+    utils.logInfo('PubProvidedId: Decoded value ' + JSON.stringify(res));
     return res;
   },
 

@@ -232,7 +232,7 @@ describe('the rubicon adapter', function () {
       sharedid: {id: '1111', third: '2222'},
       tdid: '3000',
       pubcid: '4000',
-      pubProvided: [{
+      pubProvidedId: [{
         source: 'example.com',
         uids: [{
           id: '333333',
@@ -1412,11 +1412,11 @@ describe('the rubicon adapter', function () {
             });
           });
 
-          describe('PubProvided support', function () {
-            it('should send PubProvided when userIdAsEids contains PubProvided ids', function () {
+          describe('pubProvidedId support', function () {
+            it('should send pubProvidedId when userIdAsEids contains pubProvidedId ids', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
-                pubProvided: [{
+                pubProvidedId: [{
                   source: 'example.com',
                   uids: [{
                     id: '11111',

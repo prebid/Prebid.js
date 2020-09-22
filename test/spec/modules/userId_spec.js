@@ -1012,7 +1012,7 @@ describe('User ID', function () {
       }, {adUnits});
     });
 
-    it('test hook from pubProvided config params', function (done) {
+    it('test hook from pubProvidedId config params', function (done) {
       setSubmoduleRegistry([pubProvidedIdSubmodule]);
       init(config);
       config.setConfig({
@@ -1058,8 +1058,8 @@ describe('User ID', function () {
       requestBidsHook(function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.pubProvided');
-            expect(bid.userId.pubProvided).to.deep.equal([{
+            expect(bid).to.have.deep.nested.property('userId.pubProvidedId');
+            expect(bid.userId.pubProvidedId).to.deep.equal([{
               source: 'example.com',
               uids: [{
                 id: 'value read from cookie or local storage',

@@ -237,9 +237,9 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
-  it('PubProvided', function() {
+  it('pubProvidedId', function() {
     const userId = {
-      pubProvided: [{
+      pubProvidedId: [{
         source: 'example.com',
         uids: [{
           id: 'value read from cookie or local storage',
