@@ -12,6 +12,7 @@ const MODULE_NAME = 'pubProvidedId';
 
 /** @type {Submodule} */
 export const pubProvidedIdSubmodule = {
+
   /**
    * used to link submodule with config
    * @type {string}
