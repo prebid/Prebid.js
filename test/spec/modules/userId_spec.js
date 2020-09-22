@@ -33,7 +33,7 @@ import {zeotapIdPlusSubmodule} from 'modules/zeotapIdPlusIdSystem.js';
 import {sharedIdSubmodule} from 'modules/sharedIdSystem.js';
 import {haloIdSubmodule} from 'modules/haloIdSystem.js';
 import {server} from 'test/mocks/xhr.js';
-import {pubProvidedIdSubmodule} from '../../../modules/pubProvidedSystem.js';
+import {pubProvidedIdSubmodule} from 'modules/pubProvidedSystem.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
