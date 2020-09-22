@@ -687,6 +687,41 @@ describe('rubicon analytics adapter', function () {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
+    it('should handle bidResponse dimensions correctly', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // mock bid response with playerWidth and playerHeight (NO width and height)
+      let bidResponse1 = utils.deepClone(MOCK.BID_RESPONSE[0]);
+      delete bidResponse1.width;
+      delete bidResponse1.height;
+      bidResponse1.playerWidth = 640;
+      bidResponse1.playerHeight = 480;
+
+      // mock bid response with no width height or playerwidth playerheight
+      let bidResponse2 = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      delete bidResponse2.width;
+      delete bidResponse2.height;
+      delete bidResponse2.playerWidth;
+      delete bidResponse2.playerHeight;
+
+      events.emit(BID_RESPONSE, bidResponse1);
+      events.emit(BID_RESPONSE, bidResponse2);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.dimensions).to.deep.equal({
+        width: 640,
+        height: 480
+      });
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.dimensions).to.equal(undefined);
+    });
+
     function performFloorAuction(provider) {
       let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
       auctionInit.bidderRequests[0].bids[0].floorData = {
