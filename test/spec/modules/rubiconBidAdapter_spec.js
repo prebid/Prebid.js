@@ -1,5 +1,12 @@
 import {expect} from 'chai';
-import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, fastlaneEndpoint} from 'modules/rubiconBidAdapter.js';
+import {
+  spec,
+  getPriceGranularity,
+  masSizeOrdering,
+  resetUserSync,
+  hasVideoMediaType,
+  resetRubiConf
+} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -347,6 +354,8 @@ describe('the rubicon adapter', function () {
   afterEach(function () {
     sandbox.restore();
     utils.logError.restore();
+    config.resetConfig();
+    resetRubiConf();
   });
 
   describe('MAS mapping / ordering', function () {
@@ -484,12 +493,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should correctly send p_pos in sra fashion', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            const config = {
-              'rubicon.singleRequest': true
-            };
-            return config[key];
-          });
+          config.setConfig({rubicon: {singleRequest: true}});
           // first one is atf
           var sraPosRequest = utils.deepClone(bidderRequest);
 
@@ -1082,12 +1086,7 @@ describe('the rubicon adapter', function () {
           it('should group all bid requests with the same site id', function () {
             sandbox.stub(Math, 'random').callsFake(() => 0.1);
 
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              const config = {
-                'rubicon.singleRequest': true
-              };
-              return config[key];
-            });
+            config.setConfig({rubicon: {singleRequest: true}});
 
             const expectedQuery = {
               'account_id': '14062',
@@ -1195,13 +1194,7 @@ describe('the rubicon adapter', function () {
           });
 
           it('should not send more than 10 bids in a request (split into separate requests with <= 10 bids each)', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              const config = {
-                'rubicon.singleRequest': true
-              };
-              return config[key];
-            });
-
+            config.setConfig({rubicon: {singleRequest: true}});
             let serverRequests;
             let data;
 
@@ -1243,12 +1236,7 @@ describe('the rubicon adapter', function () {
           });
 
           it('should not group bid requests if singleRequest does not equal true', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              const config = {
-                'rubicon.singleRequest': false
-              };
-              return config[key];
-            });
+            config.setConfig({rubicon: {singleRequest: false}});
 
             const bidCopy = utils.deepClone(bidderRequest.bids[0]);
             bidderRequest.bids.push(bidCopy);
@@ -1266,12 +1254,7 @@ describe('the rubicon adapter', function () {
           });
 
           it('should not group video bid requests', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              const config = {
-                'rubicon.singleRequest': true
-              };
-              return config[key];
-            });
+            config.setConfig({rubicon: {singleRequest: true}});
 
             const bidCopy = utils.deepClone(bidderRequest.bids[0]);
             bidderRequest.bids.push(bidCopy);
@@ -1916,14 +1899,14 @@ describe('the rubicon adapter', function () {
           let requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(fastlaneEndpoint);
+          expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           bidderRequest.mediaTypes.video.context = 'instream';
 
           requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(fastlaneEndpoint);
+          expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
         });
 
         it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {
@@ -1942,7 +1925,7 @@ describe('the rubicon adapter', function () {
 
           let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(fastlaneEndpoint);
+          expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
         });
 
         it('should include coppa flag in video bid request', () => {
@@ -2055,12 +2038,7 @@ describe('the rubicon adapter', function () {
 
         it('should use the integration type provided in the config instead of the default', () => {
           createVideoBidderRequest();
-          sandbox.stub(config, 'getConfig').callsFake(function (key) {
-            const config = {
-              'rubicon.int_type': 'testType'
-            };
-            return config[key];
-          });
+          config.setConfig({rubicon: {int_type: 'testType'}});
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
         });
@@ -2891,12 +2869,7 @@ describe('the rubicon adapter', function () {
 
       describe('config with integration type', () => {
         it('should use the integration type provided in the config instead of the default', () => {
-          sandbox.stub(config, 'getConfig').callsFake(function (key) {
-            const config = {
-              'rubicon.int_type': 'testType'
-            };
-            return config[key];
-          });
+          config.setConfig({rubicon: {int_type: 'testType'}});
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).tk_flint).to.equal('testType_v$prebid.version$');
         });
