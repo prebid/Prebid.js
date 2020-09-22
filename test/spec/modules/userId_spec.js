@@ -1015,7 +1015,6 @@ describe('User ID', function () {
     it('test hook from pubProvided config params', function (done) {
       setSubmoduleRegistry([pubProvidedIdSubmodule]);
       init(config);
-      getConfigMock(['sharedId', 'sharedid', 'cookie'])
       config.setConfig({
         userSync: {
           syncDelay: 0,
@@ -1027,7 +1026,7 @@ describe('User ID', function () {
                 uids: [{
                   id: 'value read from cookie or local storage',
                   ext: {
-                    type: 'ppuid' // options are ppuid, dmp and sha256email
+                    type: 'ppuid'
                   }
                 }]
               }, {
