@@ -33,7 +33,7 @@ import {zeotapIdPlusSubmodule} from 'modules/zeotapIdPlusIdSystem.js';
 import {sharedIdSubmodule} from 'modules/sharedIdSystem.js';
 import {haloIdSubmodule} from 'modules/haloIdSystem.js';
 import {server} from 'test/mocks/xhr.js';
-import {pubProvidedSubmodule} from '../../../modules/pubProvidedSystem.js';
+import {pubProvidedIdSubmodule} from '../../../modules/pubProvidedSystem.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -361,7 +361,7 @@ describe('User ID', function () {
     });
 
     it('handles config with no usersync object', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule]);
       init(config);
       config.setConfig({});
       // usersync is undefined, and no logInfo message for 'User ID - usersync config updated'
@@ -369,14 +369,14 @@ describe('User ID', function () {
     });
 
     it('handles config with empty usersync object', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule]);
       init(config);
       config.setConfig({userSync: {}});
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
     it('handles config with usersync and userIds that are empty objs', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -387,7 +387,7 @@ describe('User ID', function () {
     });
 
     it('handles config with usersync and userIds with empty names or that dont match a submodule.name', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, merkleIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -404,7 +404,7 @@ describe('User ID', function () {
     });
 
     it('config with 1 configurations should create 1 submodules', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, pubProvidedIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['unifiedId', 'unifiedid', 'cookie']));
 
@@ -412,13 +412,13 @@ describe('User ID', function () {
     });
 
     it('config with 11 configurations should result in 12 submodules add', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
           syncDelay: 0,
           userIds: [{
-            name: 'pubProvided'
+            name: 'pubProvidedId'
           }, {
             name: 'pubCommonId', value: {'pubcid': '11111'}
           }, {
@@ -457,7 +457,7 @@ describe('User ID', function () {
     });
 
     it('config syncDelay updates module correctly', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -472,7 +472,7 @@ describe('User ID', function () {
     });
 
     it('config auctionDelay updates module correctly', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -487,7 +487,7 @@ describe('User ID', function () {
     });
 
     it('config auctionDelay defaults to 0 if not a number', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule]);
       init(config);
       config.setConfig({
         userSync: {
@@ -1013,32 +1013,40 @@ describe('User ID', function () {
     });
 
     it('test hook from pubProvided config params', function (done) {
-      setSubmoduleRegistry([pubProvidedSubmodule]);
+      setSubmoduleRegistry([pubProvidedIdSubmodule]);
       init(config);
       getConfigMock(['sharedId', 'sharedid', 'cookie'])
       config.setConfig({
         userSync: {
           syncDelay: 0,
           userIds: [{
-            name: 'pubProvided',
+            name: 'pubProvidedId',
             params: {
               eids: [{
-                source: 'example.com',
-                uids: [{
-                  id: 'value read from cookie or local storage',
-                  ext: {}
+                source: "example.com",
+                uids:[{
+                  id: "value read from cookie or local storage",
+                  ext: {
+                    type: "ppuid" // options are ppuid, dmp and sha256email
+                  }
                 }]
-              }, {
-                source: 'id-partner.com',
-                uids: [{
-                  id: 'value read from cookie or local storage'
+              },{
+                source: "id-partner.com",
+                uids:[{
+                  id: "value read from cookie or local storage",
+                  ext: {
+                    type: "dmp"
+                  }
                 }]
               }],
-              eidsFunction: function () {
+              eidsFunction: function() {
                 return [{
-                  source: 'provider.com',
+                  source: "provider.com",
                   uids: [{
-                    id: 'value read from cookie or local storage'
+                    id: "value read from cookie or local storage",
+                    ext: {
+                      type: "sha256email"
+                    }
                   }]
                 }]
               }
@@ -1054,38 +1062,46 @@ describe('User ID', function () {
             expect(bid).to.have.deep.nested.property('userId.pubProvided');
             expect(bid.userId.pubProvided).to.deep.equal([{
               source: 'example.com',
-              type: 'pubProvided',
               uids: [{
                 id: 'value read from cookie or local storage',
-                ext: {}
+                ext: {
+                  type: 'ppuid'
+                }
               }]
             }, {
               source: 'id-partner.com',
-              type: 'pubProvided',
               uids: [{
-                id: 'value read from cookie or local storage'
+                id: 'value read from cookie or local storage',
+                ext: {
+                  type: 'dmp'
+                }
               }]
             }, {
               source: 'provider.com',
-              type: 'pubProvided',
               uids: [{
-                id: 'value read from cookie or local storage'
+                id: 'value read from cookie or local storage',
+                ext: {
+                  type: 'sha256email'
+                }
               }]
             }]);
 
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'example.com',
-              type: 'pubProvided',
               uids: [{
                 id: 'value read from cookie or local storage',
-                ext: {}
+                ext: {
+                  type: 'ppuid'
+                }
               }]
             });
             expect(bid.userIdAsEids[2]).to.deep.equal({
               source: 'provider.com',
-              type: 'pubProvided',
               uids: [{
-                id: 'value read from cookie or local storage'
+                id: 'value read from cookie or local storage',
+                ext: {
+                  type: 'sha256email'
+                }
               }]
             });
           });

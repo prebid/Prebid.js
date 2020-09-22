@@ -8,7 +8,7 @@
 import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
 
-const MODULE_NAME = 'pubProvided';
+const MODULE_NAME = 'pubProvidedId';
 
 function addType(uid) {
   if (!uid.ext) {
@@ -23,7 +23,7 @@ function addType(uid) {
 }
 
 /** @type {Submodule} */
-export const pubProvidedSubmodule = {
+export const pubProvidedIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -62,4 +62,4 @@ export const pubProvidedSubmodule = {
 };
 
 // Register submodule for userId
-submodule('userId', pubProvidedSubmodule);
+submodule('userId', pubProvidedIdSubmodule);

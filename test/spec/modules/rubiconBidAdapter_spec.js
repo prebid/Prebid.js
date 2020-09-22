@@ -234,14 +234,14 @@ describe('the rubicon adapter', function () {
       pubcid: '4000',
       pubProvided: [{
         source: 'example.com',
-        type: 'pubProvided',
         uids: [{
           id: '333333',
-          ext: {}
+          ext: {
+            type: 'ppuid'
+          }
         }]
       }, {
         source: 'id-partner.com',
-        type: 'pubProvided',
         uids: [{
           id: '4444444'
         }]
@@ -1418,14 +1418,14 @@ describe('the rubicon adapter', function () {
               clonedBid.userId = {
                 pubProvided: [{
                   source: 'example.com',
-                  type: 'pubProvided',
                   uids: [{
                     id: '11111',
-                    ext: {}
+                    ext: {
+                      type: 'ppuid'
+                    }
                   }]
                 }, {
                   source: 'id-partner.com',
-                  type: 'pubProvided',
                   uids: [{
                     id: '222222'
                   }]
@@ -1436,7 +1436,7 @@ describe('the rubicon adapter', function () {
               let data = parseQuery(request.data);
 
               expect(data['example.com_id']).to.equal('11111');
-              expect(data['id-partner.com_id']).to.equal('222222');
+              expect(data['id-partner.com_id']).to.equal(null);
             });
           });
 
@@ -1681,10 +1681,8 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
           // PubProvided should exist
           expect(post.user.ext.eids[5].source).to.equal('example.com');
-          expect(post.user.ext.eids[5].type).to.equal('pubProvided');
           expect(post.user.ext.eids[5].uids[0].id).to.equal('333333');
           expect(post.user.ext.eids[6].source).to.equal('id-partner.com');
-          expect(post.user.ext.eids[6].type).to.equal('pubProvided');
           expect(post.user.ext.eids[6].uids[0].id).to.equal('4444444');
 
           expect(post.regs.ext.gdpr).to.equal(1);
