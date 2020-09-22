@@ -17,35 +17,6 @@ const sidTTLMins_ = 30;
 /**
  * Own miscellaneous support functions:
  */
-function setCookie_(name, value, domMaybe, expires) {
-  let ex = 'expires=' + expires.toUTCString();
-  let cstr = name + '=' + value + ';' + ex + ';secure;';
-  document.cookie = cstr + 'path=/';
-  if (domMaybe) {
-    document.cookie = cstr + 'domain=.' + domMaybe + ';secure;SameSite=None;path=/';
-  }
-}
-
-function getCookies_(cnames) {
-  let coo = {};
-  try {
-    if (document.cookie && document.cookie != '') {
-      let spl = document.cookie.split(';');
-      for (var i = 0; i < spl.length; i++) {
-        let nv = spl[i].split('=');
-        nv[0] = nv[0].replace(/^ /, '');
-        coo[decodeURIComponent(nv[0])] = decodeURIComponent(nv[1]);
-      }
-    }
-  } catch (err) {}
-  let ret = {};
-  cnames.forEach(function(oneC) {
-    if (coo[oneC]) {
-      ret[oneC] = coo[oneC];
-    }
-  });
-  return ret;
-}
 
 function setIds_(clientId, sessionId) {
   let dd = null;
@@ -53,10 +24,15 @@ function setIds_(clientId, sessionId) {
     dd = window.location.hostname.match(/[^.]*\.[^.]{2,3}(?:\.[^.]{2,3})?$/mg);
   } catch (err1) {}
   try {
-    internal.setCookie('_jx', clientId, dd,
-      new Date(new Date().setFullYear(new Date().getFullYear() + 1)));
-    internal.setCookie('_jxs', sessionId, dd,
-      new Date(new Date().setMinutes(new Date().getMinutes() + sidTTLMins_)));
+    let expC = (new Date(new Date().setFullYear(new Date().getFullYear() + 1))).toUTCString();
+    let expS = (new Date(new Date().setMinutes(new Date().getMinutes() + sidTTLMins_))).toUTCString();
+
+    storage.setCookie('_jx', clientId, expC, 'None', null);
+    storage.setCookie('_jx', clientId, expC, 'None', dd);
+
+    storage.setCookie('_jxs', sessionId, expS, 'None', null);
+    storage.setCookie('_jxs', sessionId, expS, 'None', dd);
+
     storage.setDataInLocalStorage('_jx', clientId);
     storage.setDataInLocalStorage('_jxs', sessionId);
   } catch (error) {}
@@ -70,10 +46,9 @@ function fetchIds_() {
     session_id_ls: ''
   };
   try {
-    let cookies = internal.getCookies(['_jx', '_jxs']);
-    let tmp = cookies['_jx'];
+    let tmp = storage.getCookie('_jx');
     if (tmp) ret.client_id_c = tmp;
-    tmp = cookies['_jxs'];
+    tmp = storage.getCookie('_jxs');
     if (tmp) ret.session_id_c = tmp;
 
     tmp = storage.getDataFromLocalStorage('_jx');
@@ -146,8 +121,6 @@ export const internal = {
   getDevice: getDevice_,
   getRefererInfo: getRefererInfo,
   ajax: ajax,
-  getCookies: getCookies_,
-  setCookie: setCookie_,
   getMiscDims: getMiscDims_
 };
 
