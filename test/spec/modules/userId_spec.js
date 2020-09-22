@@ -1059,8 +1059,7 @@ describe('User ID', function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.pubProvided');
-            utils.logInfo(JSON.stringify(bid.userId.pubProvided));
-            expect(bid.userId.pubProvided).to.deep.equal([{
+            expect(JSON.stringify(bid.userId.pubProvided)).to.deep.equal(JSON.stringify([{
               source: 'example.com',
               uids: [{
                 id: 'value read from cookie or local storage',
@@ -1084,7 +1083,7 @@ describe('User ID', function () {
                   type: 'sha256email'
                 }
               }]
-            }]);
+            }]));
 
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'example.com',
