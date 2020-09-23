@@ -561,8 +561,8 @@ export const spec = {
       data['ppuid'] = configUserId;
     } else {
       // if config.getConfig('user.id') doesn't return anything, then look for the first eid.uids[*].ext.stype === 'ppuid'
-      for (const eid in bidRequest.userIdAsEids) {
-        if (bidRequest.userIdAsEids.hasOwnProperty(eid) && eid.uids) {
+      for (const eid of bidRequest.userIdAsEids) {
+        if (eid.uids) {
           const pubProvidedId = eid.uids.find(uid => uid.ext && uid.ext.stype === 'ppuid');
           if (pubProvidedId && pubProvidedId.id) {
             data['ppuid'] = pubProvidedId.id;
