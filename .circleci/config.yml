@@ -61,8 +61,3 @@ workflows:
             branches:
               only:
                 - master
-    jobs:
-      - e2etest
-
-experimental:
-  pipelines: true
