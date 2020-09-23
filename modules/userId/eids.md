@@ -109,6 +109,13 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
+    },
+    {
+        source: 'quantcast.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
     }
 ]
 ```
