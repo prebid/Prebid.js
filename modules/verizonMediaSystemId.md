@@ -1,6 +1,6 @@
 ## Verizon Media User ID Submodule
 
-Verizon Media User ID Module. For assistance setting up your module please contact us at [prebid@britepool.com](prebid@britepool.com).
+Verizon Media User ID Module.
 
 ### Prebid Params
 
