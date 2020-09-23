@@ -56,7 +56,7 @@ userIdAsEids = [
     },
 
     {
-        source: 'britepool.com',
+        source: 'merkleinc.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
@@ -64,7 +64,7 @@ userIdAsEids = [
     },
 
     {
-        source: 'digitru.st',
+        source: 'britepool.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
@@ -95,6 +95,27 @@ userIdAsEids = [
                 third: 'some-random-id-value'
              }
          }]
+    },
+    {
+        source: 'zeotap.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'audigent.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'quantcast.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
     }
 ]
 ```

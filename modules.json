@@ -1,8 +1,6 @@
 [
   "33acrossBidAdapter",
-  "adkernelBidAdapter",
   "appnexusBidAdapter",
-  "beachfrontBidAdapter",
   "conversantBidAdapter",
   "districtmDMXBidAdapter",
   "eplanningBidAdapter",
@@ -11,18 +9,19 @@
   "improvedigitalBidAdapter",
   "insticatorBidAdapter",
   "ixBidAdapter",
+  "mediagoAdapter",
   "openxBidAdapter",
   "pubmaticBidAdapter",
-  "pulsepointBidAdapter",
   "rhythmoneBidAdapter",
   "rubiconBidAdapter",
   "sonobiBidAdapter",
   "sovrnBidAdapter",
   "synacormediaBidAdapter",
   "ucfunnelBidAdapter",
-  "roxotAnalyticsAdapter",
+  "unrulyBidAdapter",
   "schain",
   "userId",
   "identityLinkIdSystem",
-  "id5IdSystem"
+  "id5IdSystem",
+  "consentManagement"
 ]

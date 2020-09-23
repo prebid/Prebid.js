@@ -430,26 +430,6 @@ describe('Quantcast adapter', function () {
     expect(requests).to.equal(undefined);
   });
 
-  it('allows TCF v2 request from Germany for purpose 1', function () {
-    const bidderRequest = {
-      gdprConsent: {
-        gdprApplies: true,
-        consentString: 'consentString',
-        vendorData: {
-          publisherCC: 'DE',
-          purposeOneTreatment: true
-        },
-        apiVersion: 2
-      }
-    };
-
-    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
-    const parsed = JSON.parse(requests[0].data);
-
-    expect(parsed.gdprSignal).to.equal(1);
-    expect(parsed.gdprConsent).to.equal('consentString');
-  });
-
   it('allows TCF v2 request when Quantcast has consent for purpose 1', function() {
     const bidderRequest = {
       gdprConsent: {

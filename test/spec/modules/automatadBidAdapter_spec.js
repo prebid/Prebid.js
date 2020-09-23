@@ -86,6 +86,11 @@ describe('automatadBidAdapter', function () {
       expect(rdata.imp.length).to.equal(1)
     })
 
+    it('should include placement', function () {
+      let r = rdata.imp[0]
+      expect(r.placement !== null).to.be.true
+    })
+
     it('should include media types', function () {
       let r = rdata.imp[0]
       expect(r.media_types !== null).to.be.true
@@ -95,12 +100,67 @@ describe('automatadBidAdapter', function () {
       let r = rdata.imp[0]
       expect(r.siteID !== null && r.placementID !== null).to.be.true
     })
+
+    it('should include adunit code', function () {
+      let r = rdata.imp[0]
+      expect(r.adUnitCode !== null).to.be.true
+    })
   })
 
   describe('interpretResponse', function () {
     it('should get the correct bid response', function () {
       let result = spec.interpretResponse(expectedResponse[0])
       expect(result).to.be.an('array').that.is.not.empty
+    })
+
+    it('should interpret multiple bids in seatbid', function () {
+      let multipleBidResponse = [{
+        'body': {
+          'id': 'abc-321',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'adm': '<!-- creative code -->',
+                  'adomain': [
+                    'someAdDomain'
+                  ],
+                  'crid': 123,
+                  'h': 600,
+                  'id': 'bid1',
+                  'impid': 'imp1',
+                  'nurl': 'https://example/win',
+                  'price': 0.5,
+                  'w': 300
+                }
+              ]
+            }, {
+              'bid': [
+                {
+                  'adm': '<!-- creative code -->',
+                  'adomain': [
+                    'someAdDomain'
+                  ],
+                  'crid': 321,
+                  'h': 600,
+                  'id': 'bid1',
+                  'impid': 'imp2',
+                  'nurl': 'https://example/win',
+                  'price': 0.5,
+                  'w': 300
+                }
+              ]
+            }
+          ]
+        }
+      }]
+      let result = spec.interpretResponse(multipleBidResponse[0]).map(bid => {
+        const {requestId} = bid;
+        return [ requestId ];
+      });
+
+      assert.equal(result.length, 2);
+      assert.deepEqual(result, [[ 'imp1' ], [ 'imp2' ]]);
     })
 
     it('handles empty bid response', function () {

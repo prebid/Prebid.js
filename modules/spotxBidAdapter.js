@@ -320,6 +320,7 @@ export const spec = {
             currency: serverResponseBody.cur || 'USD',
             cpm: spotxBid.price,
             creativeId: spotxBid.crid || '',
+            dealId: spotxBid.dealid || '',
             ttl: 360,
             netRevenue: true,
             channel_id: serverResponseBody.id,
@@ -330,6 +331,11 @@ export const spec = {
             width: spotxBid.w,
             height: spotxBid.h
           };
+
+          bid.meta = bid.meta || {};
+          if (spotxBid && spotxBid.adomain && spotxBid.adomain.length > 0) {
+            bid.meta.advertiserDomains = spotxBid.adomain;
+          }
 
           const context1 = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
           const context2 = utils.deepAccess(currentBidRequest, 'params.ad_unit');
@@ -392,7 +398,7 @@ function createOutstreamScript(bid) {
 
   utils.logMessage('[SPOTX][renderer] Default beahavior');
   if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
-    dataSpotXParams['data-spotx_ad_mute'] = '0';
+    dataSpotXParams['data-spotx_ad_mute'] = '1';
   }
   dataSpotXParams['data-spotx_collapse'] = '0';
   dataSpotXParams['data-spotx_autoplay'] = '1';

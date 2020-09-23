@@ -7,10 +7,13 @@
 
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
 
 const MODULE_NAME = 'pubCommonId';
+
+const storage = getStorageManager(null, 'pubCommonId');
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {
@@ -89,6 +92,33 @@ export const pubCommonIdSubmodule = {
       // When extending, only one of response fields is needed
       const callback = this.makeCallback(pixelUrl, storedId);
       return callback ? {callback: callback} : {id: storedId};
+    }
+  },
+
+  /**
+   * @param {string} domain
+   * @param {HTMLDocument} document
+   * @return {(string|undefined)}
+   */
+  domainOverride: function () {
+    const domainElements = document.domain.split('.');
+    const cookieName = `_gd${Date.now()}`;
+    for (let i = 0, topDomain; i < domainElements.length; i++) {
+      const nextDomain = domainElements.slice(i).join('.');
+
+      // write test cookie
+      storage.setCookie(cookieName, '1', undefined, undefined, nextDomain);
+
+      // read test cookie to verify domain was valid
+      if (storage.getCookie(cookieName) === '1') {
+        // delete test cookie
+        storage.setCookie(cookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, nextDomain);
+        // cookie was written successfully using test domain so the topDomain is updated
+        topDomain = nextDomain;
+      } else {
+        // cookie failed to write using test domain so exit by returning the topDomain
+        return topDomain;
+      }
     }
   }
 };

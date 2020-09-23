@@ -5,15 +5,15 @@
 
 aliases:
   - &environment
-    docker:
-      # specify the version you desire here
-      - image: circleci/node:12.16.1
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/mongo:3.4.4
-    working_directory: ~/Prebid.js
+      docker:
+        # specify the version you desire here
+        - image: circleci/node:12.16.1
+      resource_class: xlarge
+        # Specify service dependencies here if necessary
+        # CircleCI maintains a library of pre-built images
+        # documented at https://circleci.com/docs/2.0/circleci-images/
+        # - image: circleci/mongo:3.4.4
+      working_directory: ~/Prebid.js
 
   - &restore_dep_cache
     keys:
@@ -59,4 +59,10 @@ workflows:
           context: org-aws
           filters:
             branches:
-              only: master
+              only:
+                - master
+    jobs:
+      - e2etest
+
+experimental:
+  pipelines: true

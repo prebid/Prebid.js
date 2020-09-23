@@ -421,7 +421,7 @@ function user(bidRequest, bidderRequest) {
       addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo');
       addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
       addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5-sync.com');
-      addExternalUserId(ext.eids, bidRequest.userId.parrableid, 'parrable.com');
+      addExternalUserId(ext.eids, utils.deepAccess(bidRequest, 'userId.parrableId.eid'), 'parrable.com');
       // liveintent
       if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
         addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
