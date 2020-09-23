@@ -66,6 +66,7 @@ function getSegmentsAsync(adUnits, onDone) {
 
   if (typeof userIds == 'undefined' || userIds == null) {
     onDone({});
+    return;
   }
 
   const url = `https://seg.ad.gt/api/v1/rtb_segments`;
