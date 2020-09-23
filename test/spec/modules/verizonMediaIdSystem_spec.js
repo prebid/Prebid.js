@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {verizonMediaIdSubmodule} from 'modules/verizonMediaIdSystem.js';
 
-describe.only('Verizon Media ID Submodule', () => {
+describe('Verizon Media ID Submodule', () => {
   const HASHED_EMAIL = '6bda6f2fa268bf0438b5423a9861a2cedaa5dec163c03f743cfe05c08a8397b2';
   const PROD_ENDPOINT = 'https://ups.analytics.yahoo.com/ups/58300/fed';
   const OVERRIDE_ENDPOINT = 'https://foo/bar';
