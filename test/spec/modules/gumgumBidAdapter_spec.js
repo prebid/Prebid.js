@@ -33,7 +33,11 @@ describe('gumgumAdapter', function () {
     };
 
     it('should return true when required params found', function () {
+      const zoneBid = { ...bid, params: { 'zone': '123' } };
+      const pubIdBid = { ...bid, params: { 'pubId': '123' } };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(zoneBid)).to.equal(true);
+      expect(spec.isBidRequestValid(pubIdBid)).to.equal(true);
     });
 
     it('should return true when required params found', function () {
@@ -139,20 +143,68 @@ describe('gumgumAdapter', function () {
       }
     };
 
+    describe('zone param', function () {
+      const zoneParam = { 'zone': '123a' };
+
+      it('should set t and pi param', function () {
+        const request = { ...bidRequests[0], params: zoneParam };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.t).to.equal(zoneParam.zone);
+        expect(bidRequest.data.pi).to.equal(2);
+      });
+      it('should set the correct pi param if slot param is found', function () {
+        const request = { ...bidRequests[0], params: { ...zoneParam, 'slot': 1 } };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pi).to.equal(3);
+      });
+      it('should set the correct pi param if native param is found', function () {
+        const request = { ...bidRequests[0], params: { ...zoneParam, 'native': 2 } };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pi).to.equal(5);
+      });
+      it('should set the correct pi param for video', function () {
+        const request = { ...bidRequests[0], params: zoneParam, mediaTypes: vidMediaTypes };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pi).to.equal(7);
+      });
+      it('should set the correct pi param for invideo', function () {
+        const invideo = { video: { ...vidMediaTypes.video, linearity: 2 } };
+        const request = { ...bidRequests[0], params: zoneParam, mediaTypes: invideo };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pi).to.equal(6);
+      });
+    });
+
+    describe('pubId zone', function () {
+      const pubIdParam = { 'pubId': 'abc' };
+
+      it('should set t param', function () {
+        const request = { ...bidRequests[0], params: pubIdParam };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pubId).to.equal(pubIdParam.pubId);
+      });
+
+      it('should set the correct pi depending on what is found in mediaTypes', function () {
+        const request = { ...bidRequests[0], params: pubIdParam };
+        const bidRequest = spec.buildRequests([request])[0];
+        const vidRequest = { ...bidRequests[0], mediaTypes: vidMediaTypes, params: { 'videoPubID': 123 } };
+        const vidBidRequest = spec.buildRequests([vidRequest])[0];
+
+        expect(bidRequest.data.pi).to.equal(2);
+        expect(vidBidRequest.data.pi).to.equal(7);
+      });
+    });
+
     it('should return a defined sizes field for video', function () {
       const request = { ...bidRequests[0], mediaTypes: vidMediaTypes, params: { 'videoPubID': 123 } };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.sizes).to.equal(vidMediaTypes.video.playerSize);
     });
     it('should handle multiple sizes for inslot', function () {
-      const request = Object.assign({}, bidRequests[0]);
-      delete request.params;
-      request.params = {
-        'inSlot': '123',
-        'sizes': [[0, 1], [0, 2]]
-      };
+      const mediaTypes = { banner: { sizes: [[300, 250], [300, 600]] } }
+      const request = { ...bidRequests[0], mediaTypes };
       const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data.bf).to.equal('0x1,0x2');
+      expect(bidRequest.data.bf).to.equal('300x250,300x600');
     });
     describe('floorModule', function () {
       const floorTestData = {
@@ -163,9 +215,8 @@ describe('gumgumAdapter', function () {
         return floorTestData;
       };
       it('should return the value from getFloor if present', function () {
-        const request = { ...bidRequests[0] };
-        const bidRequest = spec.buildRequests([request])[0];
-        expect(bidRequest.data.fp).to.equal(floorTestData.floor);
+        const request = spec.buildRequests(bidRequests)[0];
+        expect(request.data.fp).to.equal(floorTestData.floor);
       });
       it('should return the getFloor.floor value if it is greater than bidfloor', function () {
         const bidfloor = 0.80;
