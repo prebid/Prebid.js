@@ -561,15 +561,16 @@ export const spec = {
       data['ppuid'] = configUserId;
     } else {
       // if config.getConfig('user.id') doesn't return anything, then look for the first eid.uids[*].ext.stype === 'ppuid'
-      for (const eid of bidRequest.userIdAsEids) {
+      bidRequest.userIdAsEids.some(eid => {
         if (eid.uids) {
           const pubProvidedId = find(eid.uids, uid => uid.ext && uid.ext.stype === 'ppuid');
           if (pubProvidedId && pubProvidedId.id) {
             data['ppuid'] = pubProvidedId.id;
-            break;
+            return true;
           }
+          return false;
         }
-      }
+      });
     }
 
     if (bidderRequest.gdprConsent) {
