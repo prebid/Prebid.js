@@ -1,10 +1,9 @@
 import {expect} from 'chai';
-
+import * as utils from 'src/utils.js';
 import {verizonMediaIdSubmodule} from 'modules/verizonMediaIdSystem.js';
 
-describe('Verizon Media ID Submodule', () => {
+describe.only('Verizon Media ID Submodule', () => {
   const HASHED_EMAIL = '6bda6f2fa268bf0438b5423a9861a2cedaa5dec163c03f743cfe05c08a8397b2';
-  const API_ENDPOINT_OVERRIDE = 'https://test-override';
   const PROD_ENDPOINT = 'https://ups.analytics.yahoo.com/ups/58300/fed';
   const OVERRIDE_ENDPOINT = 'https://foo/bar';
 
@@ -53,23 +52,43 @@ describe('Verizon Media ID Submodule', () => {
       expect(result.callback).to.be.a('function');
     });
 
-    it('Makes an ajax POST request to the production API endpoint', () => {
+    it('Makes an ajax GET request to the production API endpoint with query params', () => {
       invokeGetIdAPI({
         he: HASHED_EMAIL,
       }, consentData);
 
-      expect(ajaxStub.firstCall.args[0]).to.equal(PROD_ENDPOINT);
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'POST', withCredentials: true});
+      const expectedParams = {
+        he: HASHED_EMAIL,
+        '1p': '0',
+        gdpr: '1',
+        euconsent: consentData.gdpr.consentString,
+        us_privacy: consentData.uspConsent
+      };
+      const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+
+      expect(ajaxStub.firstCall.args[0].indexOf(PROD_ENDPOINT)).to.equal(0);
+      expect(requestQueryParams).to.deep.equal(expectedParams);
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
     });
 
-    it('Makes an ajax POST request to the specified override API endpoint', () => {
+    it('Makes an ajax GET request to the specified override API endpoint with query params', () => {
       invokeGetIdAPI({
         he: HASHED_EMAIL,
         endpoint: OVERRIDE_ENDPOINT
       }, consentData);
 
-      expect(ajaxStub.firstCall.args[0]).to.equal(OVERRIDE_ENDPOINT);
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'POST', withCredentials: true});
+      const expectedParams = {
+        he: HASHED_EMAIL,
+        '1p': '0',
+        gdpr: '1',
+        euconsent: consentData.gdpr.consentString,
+        us_privacy: consentData.uspConsent
+      };
+      const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+
+      expect(ajaxStub.firstCall.args[0].indexOf(OVERRIDE_ENDPOINT)).to.equal(0);
+      expect(requestQueryParams).to.deep.equal(expectedParams);
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
     });
 
     it('sets the callbacks param of the ajax function call correctly', () => {
@@ -85,18 +104,9 @@ describe('Verizon Media ID Submodule', () => {
         he: HASHED_EMAIL
       }, consentData);
 
-      const EXPECTED_PAYLOAD = {
-        '1p': '0',
-        he: HASHED_EMAIL,
-        gdpr: '1',
-        euconsent: consentData.gdpr.consentString,
-        us_privacy: consentData.uspConsent
-      };
-
-      expect(ajaxStub.firstCall.args[0]).to.equal(PROD_ENDPOINT);
-      expect(ajaxStub.firstCall.args[1]).to.be.an('object').that.has.all.keys(['success', 'error']);
-      expect(JSON.parse(ajaxStub.firstCall.args[2])).to.deep.equal(EXPECTED_PAYLOAD);
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'POST', withCredentials: true});
+      const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+      expect(requestQueryParams.gdpr).to.equal('1');
+      expect(requestQueryParams.euconsent).to.equal(consentData.gdpr.consentString);
     });
 
     it('sets GDPR consent data flag correctly when call is NOT under GDPR jurisdiction.', () => {
@@ -106,14 +116,9 @@ describe('Verizon Media ID Submodule', () => {
         he: HASHED_EMAIL
       }, consentData);
 
-      const EXPECTED_PAYLOAD = {
-        '1p': '0',
-        he: HASHED_EMAIL,
-        gdpr: '0',
-        euconsent: '',
-        us_privacy: consentData.uspConsent
-      };
-      expect(JSON.parse(ajaxStub.firstCall.args[2])).to.deep.equal(EXPECTED_PAYLOAD);
+      const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+      expect(requestQueryParams.gdpr).to.equal('0');
+      expect(requestQueryParams.euconsent).to.equal('');
     });
 
     [1, '1', true].forEach(firstPartyParamValue => {
@@ -123,7 +128,8 @@ describe('Verizon Media ID Submodule', () => {
           he: HASHED_EMAIL
         }, consentData);
 
-        expect(JSON.parse(ajaxStub.firstCall.args[2])['1p']).to.equal('1');
+        const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+        expect(requestQueryParams['1p']).to.equal('1');
       });
     });
   });

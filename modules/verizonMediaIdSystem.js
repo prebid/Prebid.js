@@ -70,7 +70,8 @@ export const verizonMediaIdSubmodule = {
           callback();
         }
       };
-      verizonMediaIdSubmodule.getAjaxFn()(configParams.endpoint || VMUID_ENDPOINT, callbacks, JSON.stringify(data), {method: 'POST', withCredentials: true});
+      let url = `${configParams.endpoint || VMUID_ENDPOINT}?${utils.formatQS(data)}`;
+      verizonMediaIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};
   },
