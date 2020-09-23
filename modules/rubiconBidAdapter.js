@@ -251,8 +251,7 @@ export const spec = {
       const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       if (eids && eids.length) {
         // filter out unsupported id systems
-        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1 ||
-          (eid.uids[0] && eid.uids[0].ext && eid.uids[0].ext.stype === 'ppuid')));
+        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1));
 
         // liveintent requires additional props to be set
         const liveIntentEid = find(data.user.ext.eids, eid => eid.source === 'liveintent.com');
@@ -539,18 +538,23 @@ export const spec = {
       if (sharedId) {
         data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
       }
-      const pubProvidedIds = bidRequest.userIdAsEids.filter(eid => (eid.uids[0] && eid.uids[0].ext && eid.uids[0].ext.stype === 'ppuid'));
-      if (pubProvidedIds) {
-        pubProvidedIds.forEach(pubProvidedId => {
-          data[`${pubProvidedId.source}_id`] = pubProvidedId.uids[0].id;
-        });
-      }
     }
 
     // set ppuid value from config value
     const configUserId = config.getConfig('user.id');
     if (configUserId) {
       data['ppuid'] = configUserId;
+    }else{
+      // if config.getConfig('user.id') doesn't return anything, then look for the first eid.uids[*].ext.stype === 'ppuid'
+      for(const eid in bidRequest.userIdAsEids){
+        if(bidRequest.userIdAsEids.hasOwnProperty(eid) && eid.uids){
+          const pubProvidedId = eid.uids.find(uid => uid.ext && uid.ext.stype === 'ppuid');
+          if (pubProvidedId && pubProvidedId.id) {
+            data['ppuid'] = pubProvidedId.id;
+            break;
+          }
+        }
+      }
     }
 
     if (bidderRequest.gdprConsent) {

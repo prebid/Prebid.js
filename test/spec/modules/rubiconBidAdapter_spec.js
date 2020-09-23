@@ -1435,8 +1435,7 @@ describe('the rubicon adapter', function () {
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
-              expect(data['example.com_id']).to.equal('11111');
-              expect(data['id-partner.com_id']).to.equal(undefined);
+              expect(data['ppuid']).to.equal('11111');
             });
           });
 
@@ -1679,9 +1678,6 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
           expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
           expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
-          // PubProvided should exist
-          expect(post.user.ext.eids[5].source).to.equal('example.com');
-          expect(post.user.ext.eids[5].uids[0].id).to.equal('333333');
 
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
