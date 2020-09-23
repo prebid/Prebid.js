@@ -11,7 +11,9 @@ import { getRefererInfo } from '../src/refererDetection.js'
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-export const storage = getStorageManager();
+const gvlid = 91;
+const bidderCode = 'criteo';
+export const storage = getStorageManager(gvlid, bidderCode);
 
 const bididStorageKey = 'cto_bidid';
 const bundleStorageKey = 'cto_bundle';
