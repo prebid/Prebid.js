@@ -86,6 +86,7 @@ userIdAsEids = [
             atype: 1
         }]
     },
+
     {
         source: 'sharedid.org',
         uids: [{
@@ -96,6 +97,7 @@ userIdAsEids = [
              }
          }]
     },
+
     {
         source: 'zeotap.com',
         uids: [{
@@ -103,6 +105,7 @@ userIdAsEids = [
             atype: 1
         }]
     },
+
     {
         source: 'audigent.com',
         uids: [{
@@ -110,8 +113,17 @@ userIdAsEids = [
             atype: 1
         }]
     },
+
     {
         source: 'quantcast.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
+        source: 'verizonmedia.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
