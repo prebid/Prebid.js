@@ -31,7 +31,7 @@ describe('gjirafaAdapterTest', () => {
       })).to.equal(false);
     });
 
-    it('bidRequest without propertyId orplacementId', () => {
+    it('bidRequest without propertyId or placementId', () => {
       expect(spec.isBidRequestValid({
         bidder: 'gjirafa',
         params: {
@@ -80,7 +80,11 @@ describe('gjirafaAdapterTest', () => {
 
     it('bidRequest sizes', () => {
       const requests = spec.buildRequests(bidRequests);
-      expect(requests[0].data.sizes).to.equal('728x90');
+      requests.forEach(function (requestItem) {
+        expect(requestItem.data.placements).to.exist;
+        expect(requestItem.data.placements.length).to.equal(1);
+        expect(requestItem.data.placements[0].sizes).to.equal('728x90');
+      });
     });
   });
 
