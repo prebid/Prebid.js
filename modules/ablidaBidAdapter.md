@@ -51,6 +51,22 @@ Module that connects to Ablida's bidder for bids.
                        }
                    }
                ]
+           }, {
+               code: 'video-ad',
+               mediaTypes: {
+                   video: {
+                       playerSize: [[640, 360]],
+                       context: 'instream'
+                  }
+               },
+               bids: [
+                   {
+                       bidder: 'ablida',
+                       params: {
+                           placementId: 'instream-demo'
+                       }
+                   }
+               ]
            }
     ];
 ```
