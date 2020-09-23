@@ -1,12 +1,5 @@
 import {expect} from 'chai';
-import {
-  FASTLANE_ENDPOINT,
-  getPriceGranularity,
-  hasVideoMediaType,
-  masSizeOrdering,
-  resetUserSync,
-  spec
-} from 'modules/rubiconBidAdapter.js';
+import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, fastlaneEndpoint} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -1964,14 +1957,14 @@ describe('the rubicon adapter', function () {
           let requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+          expect(requests[0].url).to.equal(fastlaneEndpoint);
 
           bidderRequest.mediaTypes.video.context = 'instream';
 
           requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+          expect(requests[0].url).to.equal(fastlaneEndpoint);
         });
 
         it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {
@@ -1990,7 +1983,7 @@ describe('the rubicon adapter', function () {
 
           let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+          expect(requests[0].url).to.equal(fastlaneEndpoint);
         });
 
         it('should include coppa flag in video bid request', () => {
@@ -3185,6 +3178,53 @@ describe('the rubicon adapter', function () {
       bidderRequest.bids[0].schain = schain;
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       expect(request[0].data.source.ext.schain).to.deep.equal(schain);
+    });
+  });
+
+  describe('configurable settings', function() {
+    afterEach(() => {
+      config.setConfig({
+        rubicon: {
+          bannerHost: 'rubicon',
+          videoHost: 'prebid-server',
+          syncHost: 'eus',
+          returnVast: false
+        }
+      });
+      config.resetConfig();
+    });
+
+    beforeEach(function () {
+      resetUserSync();
+    });
+
+    it('should update fastlane endpoint if', function () {
+      config.setConfig({
+        rubicon: {
+          bannerHost: 'fastlane-qa',
+          videoHost: 'prebid-server-qa',
+          syncHost: 'eus-qa',
+          returnVast: true
+        }
+      });
+
+      // banner
+      let [bannerRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      expect(bannerRequest.url).to.equal('https://fastlane-qa.rubiconproject.com/a/api/fastlane.json');
+
+      // video and returnVast
+      createVideoBidderRequest();
+      let [videoRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      let post = videoRequest.data;
+      expect(videoRequest.url).to.equal('https://prebid-server-qa.rubiconproject.com/openrtb2/auction');
+      expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+      expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(true);
+
+      // user sync
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
+      expect(syncs).to.deep.equal({type: 'iframe', url: 'https://eus-qa.rubiconproject.com/usync.html'});
     });
   });
 });
