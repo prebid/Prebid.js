@@ -64,7 +64,7 @@ function getSegments(adUnits, onDone) {
 function getSegmentsAsync(adUnits, onDone) {
   const userIds = (getGlobal()).getUserIds();
 
-  if (typeof userIds != 'undefined' && userIds != null) {
+  if (typeof userIds == 'undefined' || userIds == null) {
     onDone({});
   }
 
