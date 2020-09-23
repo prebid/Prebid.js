@@ -108,6 +108,11 @@
  * @property {(function|undefined)} callback - function that will return an id
  */
 
+/**
+  * @typedef {Object} RefreshUserIdsOptions
+  * @property {(string[]|undefined)} submoduleNames - submodules to refresh
+  */
+
 import find from 'core-js-pure/features/array/find.js';
 import {config} from '../../src/config.js';
 import events from '../../src/events.js';
@@ -467,11 +472,12 @@ function getUserIdsAsEids() {
 
 /**
 * This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
-* @param {String[]} submoduleNames submodules to be refreshed
+* @param {RefreshUserIdsOptions} options
 */
-function refreshUserIds(submoduleNames) {
-  if (!utils.isArray(submoduleNames)) {
-    return;
+function refreshUserIds(options) {
+  let submoduleNames = options.submoduleNames;
+  if (!submoduleNames) {
+    submoduleNames = [];
   }
 
   initializeSubmodulesAndExecuteCallbacks(function() {
@@ -489,18 +495,17 @@ function refreshUserIds(submoduleNames) {
 
     let callbackSubmodules = [];
 
-    for (let submoduleName of submoduleNames) {
-      for (let submodule of userIdModules) {
-        if (submodule.submodule.name === submoduleName) {
-          utils.logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
-          populateSubmoduleId(submodule, consentData, storedConsentData, true);
+    for (let submodule of userIdModules) {
+      if (submoduleNames.length > 0 &&
+        submoduleNames.indexOf(submodule.submodule.name) === -1) {
+        continue;
+      }
 
-          if (utils.isFn(submodule.callback)) {
-            callbackSubmodules.push(submodule);
-          }
+      utils.logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
+      populateSubmoduleId(submodule, consentData, storedConsentData, true);
 
-          break;
-        }
+      if (utils.isFn(submodule.callback)) {
+        callbackSubmodules.push(submodule);
       }
     }
 
