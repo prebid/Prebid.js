@@ -13,7 +13,9 @@
     "identityLinkIdSystem",
     "sharedIdSystem",
     "intentIqIdSystem",
-    "zeotapIdPlusIdSystem"
+    "zeotapIdPlusIdSystem",
+    "haloIdSystem",
+    "quantcastIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -21,6 +23,7 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
+    "audigentRtdProvider",
     "jwplayerRtdProvider"
   ]
 }

@@ -170,14 +170,15 @@ function isValidConfig({options: analyticsOptions}) {
 }
 
 function buildCampaignFromUtmCodes() {
+  const location = utils.getWindowLocation();
+  const queryParams = utils.parseQS(location && location.search);
   let campaign = {};
-  let queryParams = utils.parseQS(utils.getWindowLocation() && utils.getWindowLocation().search);
 
   UTM_TAGS.forEach(function(utmKey) {
     let utmValue = queryParams[utmKey];
     if (utmValue) {
       let key = UTM_TO_CAMPAIGN_PROPERTIES[utmKey];
-      campaign[key] = utmValue;
+      campaign[key] = decodeURIComponent(utmValue);
     }
   });
   return campaign;
@@ -326,7 +327,7 @@ function onAuctionInit({auctionId, timestamp: startTime, timeout, adUnitCodes}) 
  * @param {PbBidRequest} bidRequest
  */
 function onBidRequested(bidRequest) {
-  const {auctionId, bids: bidderRequests, start} = bidRequest;
+  const {auctionId, bids: bidderRequests, start, timeout} = bidRequest;
   const auction = auctionMap[auctionId];
   const adUnitCodeToAdUnitMap = auction.adUnitCodeToAdUnitMap;
 
@@ -341,6 +342,7 @@ function onBidRequested(bidRequest) {
       source: src,
       startTime: start,
       timedOut: false,
+      timeLimit: timeout,
       bids: {}
     };
   });
@@ -640,13 +642,14 @@ function buildAuctionPayload(auction) {
 
       function buildBidRequestPayload(bidRequestsMap) {
         return utils._map(bidRequestsMap, (bidRequest) => {
-          let {bidder, source, bids, mediaTypes, timedOut} = bidRequest;
+          let {bidder, source, bids, mediaTypes, timeLimit, timedOut} = bidRequest;
           return {
             bidder,
             source,
             hasBidderResponded: Object.keys(bids).length > 0,
             availableAdSizes: getMediaTypeSizes(mediaTypes),
             availableMediaTypes: getMediaTypes(mediaTypes),
+            timeLimit,
             timedOut,
             bidResponses: utils._map(bidRequest.bids, (bidderBidResponse) => {
               let {

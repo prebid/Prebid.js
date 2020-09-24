@@ -228,14 +228,15 @@ export const spec = {
       }
 
       // ID5 fied
-      if (bid && bid.userId && bid.userId.id5id) {
+      if (utils.deepAccess(bid, 'userId.id5id.uid')) {
         userExt.eids = userExt.eids || [];
         userExt.eids.push(
           {
             source: 'id5-sync.com',
             uids: [{
-              id: bid.userId.id5id
-            }]
+              id: bid.userId.id5id.uid
+            }],
+            ext: bid.userId.id5id.ext || {}
           }
         )
       }
@@ -320,6 +321,7 @@ export const spec = {
             currency: serverResponseBody.cur || 'USD',
             cpm: spotxBid.price,
             creativeId: spotxBid.crid || '',
+            dealId: spotxBid.dealid || '',
             ttl: 360,
             netRevenue: true,
             channel_id: serverResponseBody.id,
