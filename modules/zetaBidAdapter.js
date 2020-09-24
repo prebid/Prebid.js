@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'Zeta Global';
 const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
-const USER_SYNC_URL = 'http://p.rfihub.com/cm?pub=42770&in=1';
+const USER_SYNC_URL = 'https://p.rfihub.com/cm?pub=42770&in=1';
 const DEFAULT_CUR = 'USD';
 
 export const spec = {
@@ -16,7 +16,15 @@ export const spec = {
      * @return boolean True if this is a valid bid, and false otherwise.
      */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
+    //check for all required bid fields
+    return !!(
+      bid
+      && bid.bidId
+      && bid.params
+      && bid.params.ip
+      && bid.params.user
+      && bid.params.user.buyeruid
+    );
   },
 
   /**
@@ -27,12 +35,12 @@ export const spec = {
      * @return ServerRequest Info describing the request to the server.
      */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const secure = location.protocol.indexOf('https') > -1 ? 1 : 0;
+    const secure = 1; //treat all requests as secure
     const request = validBidRequests[0];
     const params = request.params;
     let impData = {
       id: request.bidId,
-      secure,
+      secure: secure,
       banner: buildBanner(request)
     };
     let isMobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
@@ -115,7 +123,7 @@ export const spec = {
      * @return {UserSync[]} The user syncs which should be dropped.
      */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
+    const syncs = [];
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
@@ -127,12 +135,12 @@ export const spec = {
 }
 
 function buildBanner(request) {
-  let sizes;
-  request.mediaTypes &&
-    request.mediaTypes.banner &&
-    request.mediaTypes.banner.sizes
-    ? sizes = request.mediaTypes.banner.sizes
-    : sizes = request.sizes;
+  let sizes = request.sizes;
+  if(request.mediaTypes
+    && request.mediaTypes.banner
+    && request.mediaTypes.banner.sizes) {
+    sizes = request.mediaTypes.banner.sizes;
+  }
   return {
     w: sizes[0][0],
     h: sizes[0][1]

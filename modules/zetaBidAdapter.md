@@ -22,24 +22,16 @@ Module that connects to Zeta's demand sources
             },
             bids: [
                 {
-                    bidder: "example",
+                    bidder: 'Zeta Global',
+                    bidId: 12345
                     params: {
-                        placement: '12345'
-                    }
-                }
-            ]
-        },{
-            code: 'test-div',
-            mediaTypes: {
-                banner: {
-                    sizes: [[320, 50]],   // a mobile size
-                }
-            },
-            bids: [
-                {
-                    bidder: "example",
-                    params: {
-                        placement: 67890
+                        placement: 12345
+                        user: {
+                            uid: 12345,
+                            buyeruid: 12345
+                        },
+                        ip: 0.0.0.0
+                        test: 1
                     }
                 }
             ]
