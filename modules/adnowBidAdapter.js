@@ -156,6 +156,8 @@ export const spec = {
   _getBannerBid(bid) {
     return {
       ...this._commonBidData(bid),
+      width: bid.width || 300,
+      height: bid.height || 250,
       ad: bid.ad || '<div>Empty Ad</div>'
     };
   },
