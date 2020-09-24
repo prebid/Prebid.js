@@ -120,15 +120,13 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    if (window.pbjs) {
-      let fpdcfg = window.pbjs.getConfig('fpd')
-      if (fpdcfg && fpdcfg.context) {
-        let fdata = {
-          keywords: fpdcfg.context.keywords,
-          category: fpdcfg.context.data.category
-        }
-        payload.fpd = fdata;
+    let fpdcfg = config.getConfig('fpd')
+    if (fpdcfg && fpdcfg.context) {
+      let fdata = {
+        keywords: fpdcfg.context.keywords,
+        category: fpdcfg.context.data.category
       }
+      payload.fpd = fdata;
     }
 
     const request = formatRequest(payload, bidderRequest);
@@ -191,13 +189,6 @@ export const spec = {
     }
 
     return params;
-  },
-
-  /**
-   * Add element selector to javascript tracker to improve native viewability
-   * @param {Bid} bid
-   */
-  onBidWon: function(bid) {
   }
 }
 
@@ -488,11 +479,7 @@ function bidToTag(bid) {
   const videoMediaType = utils.deepAccess(bid, `mediaTypes.${VIDEO}`);
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
 
-  if (videoMediaType && context === 'adpod') {
-    tag.hb_source = 7;
-  } else {
-    tag.hb_source = 1;
-  }
+  tag.hb_source = 1;
   if (bid.mediaType === VIDEO || videoMediaType) {
     tag.ad_types.push(VIDEO);
   }
