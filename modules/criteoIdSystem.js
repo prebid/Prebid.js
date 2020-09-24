@@ -113,7 +113,8 @@ export const criteoIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'criteo',
+  name: bidderCode,
+  gvlid: gvlid,
   /**
    * decode the stored id value for passing to bid requests
    * @function
