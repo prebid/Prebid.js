@@ -231,7 +231,7 @@ describe('VisxAdapter', function () {
       const schainBidRequests = [
         Object.assign({userId: {
           tdid: '111',
-          id5id: '222',
+          id5id: { uid: '222' },
           digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}}
         }}, bidRequests[0]),
         bidRequests[1],

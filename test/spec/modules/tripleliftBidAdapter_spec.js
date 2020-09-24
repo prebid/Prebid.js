@@ -4,6 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
 import prebid from '../../../package.json';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
@@ -11,6 +12,7 @@ const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7V
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
   let bid, instreamBid;
+  let sandbox;
 
   this.beforeEach(() => {
     bid = {
@@ -194,6 +196,10 @@ describe('triplelift adapter', function () {
           gdprApplies: true
         },
       };
+      sandbox = sinon.sandbox.create();
+    });
+    afterEach(() => {
+      sandbox.restore();
     });
 
     it('exists and is an object', function () {
@@ -397,6 +403,31 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].floor).to.equal(1.99);
     });
+    it('should send fpd on root level ext if kvps are available', function() {
+      const sens = null;
+      const category = ['news', 'weather', 'hurricane'];
+      const pmp_elig = 'true';
+      const fpd = {
+        context: {
+          pmp_elig,
+          category,
+        },
+        user: {
+          sens,
+        }
+      }
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+          fpd
+        };
+        return utils.deepAccess(config, key);
+      });
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const { data: payload } = request;
+      expect(payload.ext.fpd).to.not.haveOwnProperty('sens');
+      expect(payload.ext.fpd).to.haveOwnProperty('category');
+      expect(payload.ext.fpd).to.haveOwnProperty('pmp_elig');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -413,6 +444,7 @@ describe('triplelift adapter', function () {
               ad: 'ad-markup',
               iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
               tl_source: 'tlx',
+              advertiser_name: 'fake advertiser name'
             },
             {
               imp_id: 1,
@@ -486,6 +518,7 @@ describe('triplelift adapter', function () {
           currency: 'USD',
           ttl: 33,
           tl_source: 'tlx',
+          meta: {}
         },
         {
           requestId: '30b31c1838de1e',
@@ -501,6 +534,7 @@ describe('triplelift adapter', function () {
           tl_source: 'hdx',
           mediaType: 'video',
           vastXml: '<VAST version=\"2.0\"><Ad id=\"gsen95th\"><Wrapper><Error><![CDATA[https://eb2.3lift.net/ive?aid=156025986241697082890&bmid=10092&bsid=76480&crid=10092_76480_i2j6qm8u&e=[ERRORCODE]]]></Error><Impression><![CDATA[https://eb2.3lift.net/r?rr=creative&bc=0.011&uid=8217096503606905723&pr=%24%7BAUCTION_PRICE%7D&brid=554350&bmid=10092&biid=10066&aid=156025986241697082890&bcud=11&sid=76480&ts=1593552049&fid=11]]></Impression><Impression><![CDATA[https://tlx.3lift.net/header/notify?px=1&pr=${AUCTION_PRICE}&ts=1593552049&aid=156025986241697082890&ec=10092_76480_i2j6qm8u&n=GgDyAqABCAASFTE1NjAyNTk4NjI0MTY5NzA4Mjg5MBgAIAEo7E4wwNUEQAFIAFAAYAtogIAEcO7qIZABAJgBAKgBALABC7gBAMABCsgBC%2BABCvABAPgBlo0GgAL%2FlwWIAgqRAgAAAAAAAPA%2FmQIzMzMzMzPDP6ECAAAAAAAAAACoAgCwAgDIAgTYAgDxAmZmZmZmZuY%2F%2BALSTpADAJgDAKADAKgDA%2FgCDIgDAJIDBDEyMzQ%3D]]></Impression><AdSystem version=\"1.0\">The Trade Desk</AdSystem><VASTAdTagURI><![CDATA[https://insight.adsrvr.org/enduser/vast/?iid=590299b9-1817-4859-a2af-ef007bb4c78e&crid=gsen95th&wp=0.011&aid=1&wpc=USD&sfe=10fba14e&puid=&tdid=&pid=13hzg59&ag=l2w0772&adv=ct0nqrx&sig=1BGM_YxB0HAcl-s55S_NKIu-oLW94YpTn_DjMRmdWHzs.&bp=0.3&cf=1448159&fq=0&td_s=388389451&rcats=&mcat=&mste=&mfld=2&mssi=None&mfsi=ve35dsnkwp&uhow=75&agsa=&rgco=South%20Korea&rgre=Gyeonggi-do&rgme=&rgci=Ansan-si&rgz=15345&svbttd=1&dt=Mobile&osf=iOS&os=iOS134&br=WebView&rlangs=01&mlang=&svpid=7453-EB&did=&rcxt=InApp&lat=37.324400&lon=126.823700&tmpc=9.66&daid=d7804da7-147b-421d-bb44-60ad3ac32681&vp=0&osi=&osv=&svscid=388389451&bffi=41&mk=Apple&mdl=iPhone&vpb=PreRoll&dc=14&vcc=EDwYPDICCAI6BAgBCAJAAUgBUASIAQKgAZ4DqAGwBsgBAdABA-gBAoACA4oCCAgCCAMIBQgGmgIICAMIBQgGCAegAgKoAgGwAgC4AgDAAgE.&sv=triplelift&pidi=3584&advi=270782&cmpi=1319400&agi=6167705&cridi=13268739&svi=70&cmp=a9nj9ex&tsig=tlN4j1OujX9nrFakJmfpTuNNfg-D0qArlSjjNAb8tLg.&c=MAQ4AEgAUAc.&dur=&crrelr=&adpt=tl_ltriplelift&ipl=39250&fpa=826&pcm=3&said=40286845772363793660&ict=Unknown&auct=1&im=1]]></VASTAdTagURI><Creatives><Creative><Linear><VideoClicks><ClickTracking><![CDATA[https://eb2.3lift.net/ec?aid=156025986241697082890]]></ClickTracking></VideoClicks><TrackingEvents><Tracking event=\"mute\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=5]]></Tracking><Tracking event=\"unmute\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=6]]></Tracking><Tracking event=\"expand\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=7]]></Tracking><Tracking event=\"collapse\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=8]]></Tracking><Tracking event=\"pause\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=14]]></Tracking><Tracking event=\"resume\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=15]]></Tracking><Tracking event=\"fullscreen\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=16]]></Tracking><Tracking event=\"exitFullscreen\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=17]]></Tracking><Tracking event=\"skip\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=18]]></Tracking><Tracking event=\"start\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=7]]></Tracking><Tracking event=\"firstQuartile\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=1]]></Tracking><Tracking event=\"midpoint\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=2]]></Tracking><Tracking event=\"thirdQuartile\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=3]]></Tracking><Tracking event=\"complete\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=4]]></Tracking><Tracking event=\"progress\" offset=\"00:00:02\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=1]]></Tracking><Tracking event=\"progress\" offset=\"00:00:03\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=2]]></Tracking><Tracking event=\"progress\" offset=\"00:00:05\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=3]]></Tracking><Tracking event=\"progress\" offset=\"00:00:10\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=4]]></Tracking><Tracking event=\"progress\" offset=\"00:00:15\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=5]]></Tracking><Tracking event=\"progress\" offset=\"00:00:30\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=6]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>',
+          meta: {}
         }
       ];
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
@@ -512,6 +546,12 @@ describe('triplelift adapter', function () {
     it('should return multiple responses to support SRA', function () {
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
       expect(result).to.have.length(2);
+    });
+
+    it('should include the advertiser name in the meta field if available', function () {
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      expect(result[0].meta.advertiserName).to.equal('fake advertiser name')
+      expect(result[1].meta).to.not.have.key('advertiserName');
     });
   });
 

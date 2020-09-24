@@ -8,9 +8,24 @@ const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
 
 // always use https, regardless of whether or not current page is secure
-export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
-export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
+export let fastlaneEndpoint = `https://fastlane.rubiconproject.com/a/api/fastlane.json`;
+export let videoEndpoint = `https://prebid-server.rubiconproject.com/openrtb2/auction`;
+export let syncEndpoint = `https://eus.rubiconproject.com/usync.html`;
+let returnVast = false;
+
+let bannerHost = 'fastlane';
+let videoHost = 'prebid-server';
+let syncHost = 'eus';
+config.getConfig('rubicon', config => {
+  let rubiConf = config.rubicon;
+  bannerHost = rubiConf.bannerHost || bannerHost;
+  fastlaneEndpoint = `https://${bannerHost}.rubiconproject.com/a/api/fastlane.json`;
+  videoHost = rubiConf.videoHost || videoHost;
+  videoEndpoint = `https://${videoHost}.rubiconproject.com/openrtb2/auction`;
+  syncHost = rubiConf.syncHost || syncHost;
+  syncEndpoint = `https://${syncHost}.rubiconproject.com/usync.html`;
+  returnVast = rubiConf.returnVast === true; // anything other than true is false
+});
 
 const GVLID = 52;
 const DIGITRUST_PROP_NAMES = {
@@ -177,7 +192,7 @@ export const spec = {
           prebid: {
             cache: {
               vastxml: {
-                returnCreative: false // don't return the VAST
+                returnCreative: returnVast
               }
             },
             targeting: {
@@ -308,13 +323,15 @@ export const spec = {
       }
 
       /**
-       * GAM Ad Unit
-       * @type {(string|undefined)}
+       * Copy GAM AdUnit and Name to imp
        */
-      const gamAdUnit = utils.deepAccess(bidRequest, 'fpd.context.adServer.adSlot');
-      if (typeof gamAdUnit === 'string' && gamAdUnit) {
-        utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', gamAdUnit);
-      }
+      ['name', 'adSlot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(bidRequest, `fpd.context.adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(data.imp[0].ext, `context.data.adserver.${name.toLowerCase()}`, value);
+        }
+      });
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
@@ -326,7 +343,7 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: VIDEO_ENDPOINT,
+        url: videoEndpoint,
         data,
         bidRequest
       }
@@ -338,7 +355,7 @@ export const spec = {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
           method: 'GET',
-          url: FASTLANE_ENDPOINT,
+          url: fastlaneEndpoint,
           data: spec.getOrderedParams(bidParams).reduce((paramString, key) => {
             const propValue = bidParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
@@ -369,7 +386,7 @@ export const spec = {
           // SRA request returns grouped bidRequest arrays not a plain bidRequest
           aggregate.push({
             method: 'GET',
-            url: FASTLANE_ENDPOINT,
+            url: fastlaneEndpoint,
             data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
               const propValue = combinedSlotParams[key];
               return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
@@ -793,7 +810,7 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
-      // data is only assigned if params are available to pass to SYNC_ENDPOINT
+      // data is only assigned if params are available to pass to syncEndpoint
       let params = '';
 
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -812,7 +829,7 @@ export const spec = {
       hasSynced = true;
       return {
         type: 'iframe',
-        url: SYNC_ENDPOINT + params
+        url: syncEndpoint + params
       };
     }
   },

@@ -113,6 +113,56 @@ describe('automatadBidAdapter', function () {
       expect(result).to.be.an('array').that.is.not.empty
     })
 
+    it('should interpret multiple bids in seatbid', function () {
+      let multipleBidResponse = [{
+        'body': {
+          'id': 'abc-321',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'adm': '<!-- creative code -->',
+                  'adomain': [
+                    'someAdDomain'
+                  ],
+                  'crid': 123,
+                  'h': 600,
+                  'id': 'bid1',
+                  'impid': 'imp1',
+                  'nurl': 'https://example/win',
+                  'price': 0.5,
+                  'w': 300
+                }
+              ]
+            }, {
+              'bid': [
+                {
+                  'adm': '<!-- creative code -->',
+                  'adomain': [
+                    'someAdDomain'
+                  ],
+                  'crid': 321,
+                  'h': 600,
+                  'id': 'bid1',
+                  'impid': 'imp2',
+                  'nurl': 'https://example/win',
+                  'price': 0.5,
+                  'w': 300
+                }
+              ]
+            }
+          ]
+        }
+      }]
+      let result = spec.interpretResponse(multipleBidResponse[0]).map(bid => {
+        const {requestId} = bid;
+        return [ requestId ];
+      });
+
+      assert.equal(result.length, 2);
+      assert.deepEqual(result, [[ 'imp1' ], [ 'imp2' ]]);
+    })
+
     it('handles empty bid response', function () {
       let response = {
         body: ''

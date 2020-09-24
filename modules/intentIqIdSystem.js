@@ -21,11 +21,11 @@ export const intentIqIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {{ctrid:string}} value
+   * @param {{string}} value
    * @returns {{intentIqId:string}}
    */
   decode(value) {
-    return (value && typeof value['ctrid'] === 'string') ? { 'intentIqId': value['ctrid'] } : undefined;
+    return (value && value != '') ? { 'intentIqId': value } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -40,19 +40,14 @@ export const intentIqIdSubmodule = {
     }
 
     // use protocol relative urls for http or https
-    const url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
+    let url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
+    url += configParams.pcid ? '&pcid=' + encodeURIComponent(configParams.pcid) : '';
+    url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
+
     const resp = function (callback) {
       const callbacks = {
         success: response => {
-          let responseObj;
-          if (response) {
-            try {
-              responseObj = JSON.parse(response);
-            } catch (error) {
-              utils.logError(error);
-            }
-          }
-          callback(responseObj);
+          callback(response);
         },
         error: error => {
           utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);

@@ -38,7 +38,7 @@ describe('sigmoid Prebid Analytic', function () {
       events.emit(constants.EVENTS.BID_RESPONSE, {});
       events.emit(constants.EVENTS.BID_WON, {});
 
-      sinon.assert.callCount(sigmoidAnalytic.track, 5);
+      sinon.assert.callCount(sigmoidAnalytic.track, 7);
     });
   });
   describe('build utm tag data', function () {
