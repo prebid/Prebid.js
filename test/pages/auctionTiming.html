@@ -1,0 +1,197 @@
+<!-- This is a Test Page for Auction Timing Feature between two bidders. One will be marked as a secondary bidder and the auction not wait for their bids to return.  -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var FAILSAFE_TIMEOUT = 3300;
+        var PREBID_TIMEOUT = 500;
+
+        var adUnits = [{
+            code: 'div-gpt-ad-1460505748561-0',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250], [300,600]],
+                }
+            },
+            bids: [{
+                    bidder: 'waitForMe',
+                    params: {
+                        placementId: 13144370
+                    }
+                },
+                {
+                    bidder: 'doNotWaitForMe',
+                    params: {
+                        accountId: '1001',
+                        siteId: '113932',
+                        zoneId: '535510'
+                    }
+                }
+            ]
+
+        }];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+    </script>
+
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function() {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        pbjs.que.push(function() {
+            pbjs.addAdUnits(adUnits);
+            pbjs.aliasBidder('appnexus', 'waitForMe');
+            pbjs.aliasBidder('rubicon', 'doNotWaitForMe');
+            pbjs.setConfig({
+                'auctionTiming': {
+                    'secondaryBidders': ['doNotWaitForMe']
+                }
+            })
+            auctionTimingLogging();
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest,
+                timeout: PREBID_TIMEOUT
+            });
+        });
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function() {
+                pbjs.que.push(function() {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        setTimeout(function() {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+
+        function auctionTimingLogging() {
+            pbjs.onEvent('auctionInit', auction => {
+                console.log(`Auction Timing: Auction Start at ${auction.timestamp} - ${auction.auctionId}`);
+            })
+
+            pbjs.onEvent('bidRequested', bidderRequest => {
+                console.log(`Auction Timing: Bid Requested from ${bidderRequest.bidderCode} at ${bidderRequest.start} - ${bidderRequest.auctionId}`);
+            })
+
+            pbjs.onEvent('bidResponse', bid => {
+                console.log(`Auction Timing: Bid Response from ${bid.bidderCode} at ${Date.now()} in ${bid.responseTimestamp - bid.requestTimestamp}ms - ${bid.auctionId}`);
+            })
+
+            pbjs.onEvent('noBid', bid => {
+                console.log(`Auction Timing: No Bid from ${bid.bidder} - ${bid.auctionId}`);
+            })
+
+            pbjs.onEvent('bidderDone', bidderRequest => {
+                console.log(`Auction Timing: Bidder ${bidderRequest.bidderCode} Done in ${Date.now() - bidderRequest.start}ms - ${bidderRequest.auctionId}`);
+            })
+
+            pbjs.onEvent('bidTimeout', timedOutBidders => {
+                let auctionId = timedOutBidders.length > 0 ? timedOutBidders[0].auctionId : 0
+                console.log(`Auction Timing: Auction End! Timed Out! Bidders: ${Array.from(new Set(timedOutBidders.map(each => each.bidder))).join(',')} - ${auctionId}`);
+            })
+
+            pbjs.onEvent('auctionEnd', auction => {
+                let auctionId = auction.bidderRequests.length > 0 ? auction.bidderRequests[0].auctionId : 0
+                let auctionStart = auction.bidderRequests.length > 0 ? auction.bidderRequests[0].auctionStart : 0
+                console.log(`Auction Timing: Auction End! After ${Date.now() - auctionStart}ms - ${auctionId}`);
+                auctionTimingLog(auctionId)
+            })
+
+            function auctionTimingLog(auctionId) {
+                let winners = pbjs.getAllWinningBids();
+                let output = [];
+                let auctionTime = pbjs.getConfig('bidderTimeout');
+                const config = pbjs.getConfig('auctionTiming');
+
+                populateData();
+                displayData();
+
+                function populateData() {
+                    function forEach(responses, cb) {
+                        Object.keys(responses).forEach(function (adUnitCode) {
+                            var response = responses[adUnitCode];
+                            response.bids.forEach(function (bid) {
+                                cb(adUnitCode, bid);
+                            });
+                        });
+                    }
+
+                    forEach(pbjs.getBidResponses(), function (code, bid) {
+                        output.push({
+                            "Auction Timing": auctionId,
+                            bid: bid,
+                            adunit: code,
+                            adId: bid.adId,
+                            bidder: bid.bidder,
+                            secondary: !config.secondaryBidders.includes(bid.bidder),
+                            time: bid.timeToRespond,
+                            auctionTimeout: auctionTime,
+                            cpm: bid.cpm,
+                            msg: bid.statusMessage,
+                            rendered: !!winners.find(function (winner) {
+                                return winner.adId == bid.adId;
+                            })
+                        });
+                    });
+
+
+                    forEach(pbjs.getNoBids && pbjs.getNoBids() || {}, function (code, bid) {
+                        output.push({
+                            "Auction Timing": auctionId,
+                            msg: "no bid",
+                            adunit: code,
+                            adId: bid.bidId,
+                            bidder: bid.bidder,
+                            secondary: !config.secondaryBidders.includes(bid.bidder),
+                        });
+                    });
+                }
+
+                function displayData() {
+                    if (output.length) {
+                        if (console.table) {
+                            console.table(output);
+                        } else {
+                            for (var j = 0; j < output.length; j++) {
+                                console.log(output[j]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+<h2>Prebid.js Test</h2>
+<h5>Div-1</h5>
+<div id='div-gpt-ad-1460505748561-0'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+    </script>
+</div>
+</body>
+</html>

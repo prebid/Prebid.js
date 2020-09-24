@@ -66,6 +66,7 @@ import { config } from './config.js';
 import { userSync } from './userSync.js';
 import { hook } from './hook.js';
 import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM } from './video.js';
 import { VIDEO } from './mediaTypes.js';
 
@@ -397,10 +398,16 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
 
   function adapterDone() {
     let bidderRequest = this;
+    let bidderRequests = auctionInstance.getBidRequests();
 
     bidderRequestsDone.add(bidderRequest);
-    allAdapterCalledDone = auctionInstance.getBidRequests()
-      .every(bidderRequest => bidderRequestsDone.has(bidderRequest));
+    allAdapterCalledDone = bidderRequests.filter(request => {
+      const auctionTimingConfig = config.getConfig('auctionTiming');
+      if (auctionTimingConfig && auctionTimingConfig.secondaryBidders && !bidderRequests.every(bidder => includes(auctionTimingConfig.secondaryBidders, bidder.bidderCode))) {
+        return !includes(auctionTimingConfig.secondaryBidders, request.bidderCode)
+      }
+      return request;
+    }).every(bidderRequest => bidderRequestsDone.has(bidderRequest));
 
     bidderRequest.bids.forEach(bid => {
       if (!bidResponseMap[bid.bidId]) {

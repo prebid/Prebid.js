@@ -211,4 +211,37 @@ describe('config API', function () {
     setConfig({ bidderSequence: 'random' });
     expect(logWarnSpy.called).to.equal(false);
   });
+
+  it('sets auctionTiming', function () {
+    const auctionTimingConfig = {
+      'secondaryBidders': ['rubicon', 'appnexus']
+    }
+    setConfig({ auctionTiming: auctionTimingConfig });
+    expect(getConfig('auctionTiming')).to.eql(auctionTimingConfig);
+  });
+
+  it('should log warning for the wrong value passed to auctionTiming', function () {
+    setConfig({ auctionTiming: '' });
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Timing must be an object';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid auctionTiming bidder values', function () {
+    setConfig({ auctionTiming: {
+      'secondaryBidders': 'appnexus, rubicon',
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Timing secondaryBidders must be of type Array';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid properties to auctionTiming', function () {
+    setConfig({ auctionTiming: {
+      'testing': true
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Timing given an incorrect param: testing';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
 });

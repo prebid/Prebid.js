@@ -1252,4 +1252,119 @@ describe('auctionmanager.js', function () {
       assert.equal(doneSpy.callCount, 1);
     })
   });
+
+  describe('auctionTiming', function() {
+    let bidRequests;
+    let doneSpy;
+    let clock;
+    let auction = {
+      getBidRequests: () => bidRequests,
+      getAuctionId: () => '1',
+      addBidReceived: () => true,
+      getTimeout: () => 1000
+    }
+    let requiredBidder = BIDDER_CODE;
+    let requiredBidder1 = BIDDER_CODE1;
+    let secondaryBidder = 'doNotWaitForMe';
+
+    beforeEach(() => {
+      clock = sinon.useFakeTimers();
+      doneSpy = sinon.spy();
+      config.setConfig({
+        'auctionTiming': {
+          secondaryBidders: [ secondaryBidder ]
+        }
+      })
+    });
+
+    afterEach(() => {
+      doneSpy.resetHistory();
+      config.resetConfig();
+      clock.restore();
+    });
+
+    it('should not wait to call auction done for secondary bidders', function () {
+      let bids1 = [mockBid({ bidderCode: requiredBidder })];
+      let bids2 = [mockBid({ bidderCode: requiredBidder1 })];
+      let bids3 = [mockBid({ bidderCode: secondaryBidder })];
+      bidRequests = [
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids3[0], { adUnitCode: ADUNIT_CODE1 }),
+      ];
+      let cbs = auctionCallbacks(doneSpy, auction);
+      // required bidder responds immeaditely to auction
+      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
+      cbs.adapterDone.call(bidRequests[0]);
+      assert.equal(doneSpy.callCount, 0);
+
+      // auction waits for second required bidder to respond
+      clock.tick(100);
+      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
+      cbs.adapterDone.call(bidRequests[1]);
+
+      // auction done is reported and does not wait for secondaryBidder request
+      assert.equal(doneSpy.callCount, 1);
+
+      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
+      cbs.adapterDone.call(bidRequests[2]);
+    });
+
+    it('should wait for all bidders if they are all secondary', function () {
+      config.setConfig({
+        'auctionTiming': {
+          secondaryBidders: [requiredBidder, requiredBidder1, secondaryBidder]
+        }
+      })
+      let bids1 = [mockBid({ bidderCode: requiredBidder })];
+      let bids2 = [mockBid({ bidderCode: requiredBidder1 })];
+      let bids3 = [mockBid({ bidderCode: secondaryBidder })];
+      bidRequests = [
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids3[0], { adUnitCode: ADUNIT_CODE1 }),
+      ];
+      let cbs = auctionCallbacks(doneSpy, auction);
+      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
+      cbs.adapterDone.call(bidRequests[0]);
+      clock.tick(100);
+      assert.equal(doneSpy.callCount, 0)
+
+      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
+      cbs.adapterDone.call(bidRequests[1]);
+      clock.tick(100);
+      assert.equal(doneSpy.callCount, 0);
+
+      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
+      cbs.adapterDone.call(bidRequests[2]);
+      assert.equal(doneSpy.callCount, 1);
+    });
+
+    it('should allow secondaryBidders to respond in auction before is is done', function () {
+      let bids1 = [mockBid({ bidderCode: requiredBidder })];
+      let bids2 = [mockBid({ bidderCode: requiredBidder1 })];
+      let bids3 = [mockBid({ bidderCode: secondaryBidder })];
+      bidRequests = [
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids3[0], { adUnitCode: ADUNIT_CODE1 }),
+      ];
+      let cbs = auctionCallbacks(doneSpy, auction);
+      // secondaryBidder is first to respond
+      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
+      cbs.adapterDone.call(bidRequests[2]);
+      clock.tick(100);
+      assert.equal(doneSpy.callCount, 0);
+
+      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
+      cbs.adapterDone.call(bidRequests[1]);
+      clock.tick(100);
+      assert.equal(doneSpy.callCount, 0);
+
+      // first required bidder takes longest to respond, auction isn't marked as done until this occurs
+      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
+      cbs.adapterDone.call(bidRequests[0]);
+      assert.equal(doneSpy.callCount, 1);
+    });
+  });
 });
