@@ -28,22 +28,16 @@ var adUnits = [
     {
         code: 'test-div',
         mediaTypes: {
-            banner: {
-                sizes: [[300, 250]]
-            }
+             video: {
+                context: 'instream'
+             }
         },
         bids: [
             {
                  bidder: 'gjirafa',
                  params: {
                     propertyId: '105227',
-                    placementId: '846848',
-                    contents: [ //optional
-                        { 
-                            type: 'article',
-                            id: '123'
-                        }
-                    ]
+                    placementId: '846836'
                 }
             }
         ]

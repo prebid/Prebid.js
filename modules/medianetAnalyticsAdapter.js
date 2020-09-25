@@ -728,7 +728,8 @@ medianetAnalytics.enableAnalytics = function (configuration) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: medianetAnalytics,
-  code: 'medianetAnalytics'
+  code: 'medianetAnalytics',
+  gvlid: 142,
 });
 
 export default medianetAnalytics;
