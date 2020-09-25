@@ -2,8 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'Zeta Global';
-// const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
-const ENDPOINT_URL = 'https://ewr-337.ewr-rtb1.rfihub.com/prebid';
+const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
 const USER_SYNC_URL = 'https://p.rfihub.com/cm?pub=42770&in=1';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
@@ -106,8 +105,7 @@ export const spec = {
       let zetaBid = zetaResponse.seatbid[0].bid[0];
       let bid = {
         requestId: zetaBid.impid,
-        // cpm: zetaBid.price,
-        cpm: 10.0,
+        cpm: zetaBid.price,
         currency: zetaResponse.cur,
         width: zetaBid.w,
         height: zetaBid.h,
