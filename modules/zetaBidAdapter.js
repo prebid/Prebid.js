@@ -1,9 +1,13 @@
+import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'Zeta Global';
-const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
+// const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
+const ENDPOINT_URL = 'https://ewr-337.ewr-rtb1.rfihub.com/prebid';
 const USER_SYNC_URL = 'https://p.rfihub.com/cm?pub=42770&in=1';
 const DEFAULT_CUR = 'USD';
+const TTL = 200;
+const NET_REV = true;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -16,15 +20,19 @@ export const spec = {
      * @return boolean True if this is a valid bid, and false otherwise.
      */
   isBidRequestValid: function(bid) {
-    //check for all required bid fields
-    return !!(
-      bid
-      && bid.bidId
-      && bid.params
-      && bid.params.ip
-      && bid.params.user
-      && bid.params.user.buyeruid
+    // check for all required bid fields
+    let isValid = !!(
+      bid &&
+      bid.bidId &&
+      bid.params &&
+      bid.params.ip &&
+      bid.params.user &&
+      bid.params.user.buyeruid
     );
+    if (!isValid) {
+      utils.logWarn('Invalid bid request');
+    }
+    return isValid;
   },
 
   /**
@@ -35,7 +43,7 @@ export const spec = {
      * @return ServerRequest Info describing the request to the server.
      */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const secure = 1; //treat all requests as secure
+    const secure = 1; // treat all requests as secure
     const request = validBidRequests[0];
     const params = request.params;
     let impData = {
@@ -61,7 +69,7 @@ export const spec = {
         uid: params.user.uid
       },
     };
-    if (params.test) {
+    if (!!params.test) {
       payload.test = params.test;
     }
     if (request.gdprConsent) {
@@ -92,23 +100,21 @@ export const spec = {
      * @return {Bid[]} An array of bids which were nested inside the server.
      */
   interpretResponse: function(serverResponse, bidRequest) {
-    const ttl = 200;
-    const netRev = true;
     let bidResponse = [];
     if (serverResponse.body !== {}) {
       let zetaResponse = serverResponse.body;
-      let cur = zetaResponse.cur;
       let zetaBid = zetaResponse.seatbid[0].bid[0];
       let bid = {
-        requestId: zetaResponse.id,
-        cpm: zetaBid.price,
-        currency: cur,
+        requestId: zetaBid.impid,
+        // cpm: zetaBid.price,
+        cpm: 10.0,
+        currency: zetaResponse.cur,
         width: zetaBid.w,
         height: zetaBid.h,
         ad: zetaBid.adm,
-        ttl: ttl,
+        ttl: TTL,
         creativeId: zetaBid.crid,
-        netRevenue: netRev
+        netRevenue: NET_REV
       };
       bidResponse.push(bid);
     }
@@ -136,9 +142,9 @@ export const spec = {
 
 function buildBanner(request) {
   let sizes = request.sizes;
-  if(request.mediaTypes
-    && request.mediaTypes.banner
-    && request.mediaTypes.banner.sizes) {
+  if (request.mediaTypes &&
+    request.mediaTypes.banner &&
+    request.mediaTypes.banner.sizes) {
     sizes = request.mediaTypes.banner.sizes;
   }
   return {
