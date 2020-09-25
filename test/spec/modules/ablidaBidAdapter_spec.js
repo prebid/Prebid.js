@@ -75,7 +75,7 @@ describe('ablidaBidAdapter', function () {
       method: 'POST',
       url: ENDPOINT_URL,
       data: {
-        adapterVersion: 4,
+        adapterVersion: 5,
         bidId: '2b8c4de0116e54',
         categories: undefined,
         device: 'desktop',
