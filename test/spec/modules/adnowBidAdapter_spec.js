@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adnowBidAdapter.js';
 
-describe.only('adnowBidAdapter', function () {
+describe('adnowBidAdapter', function () {
   describe('isBidRequestValid', function () {
     it('Should return true', function() {
       expect(spec.isBidRequestValid({
@@ -59,7 +59,7 @@ describe.only('adnowBidAdapter', function () {
       expect(reqData).to.match(/sizes=300x250/);
     });
 
-    it.only('Native sizes', function () {
+    it('Native sizes', function () {
       const bidRequestData = [{
         bidId: 'bid12345',
         params: {
@@ -140,7 +140,9 @@ describe.only('adnowBidAdapter', function () {
       expect(bids).to.be.an('array').that.is.not.empty;
 
       const bid = bids[0];
-      expect(bid).to.have.keys('requestId', 'cpm', 'currency', 'ad', 'creativeId', 'netRevenue', 'meta', 'ttl');
+      expect(bid).to.have.keys(
+        'requestId', 'cpm', 'currency', 'ad', 'creativeId', 'netRevenue', 'meta', 'ttl', 'width', 'height'
+      );
 
       expect(bid.ad).to.be.equal('<div>Banner</div>');
     });
