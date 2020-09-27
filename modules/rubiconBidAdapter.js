@@ -2,14 +2,30 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
 
 // always use https, regardless of whether or not current page is secure
-export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
-export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
+export let fastlaneEndpoint = `https://fastlane.rubiconproject.com/a/api/fastlane.json`;
+export let videoEndpoint = `https://prebid-server.rubiconproject.com/openrtb2/auction`;
+export let syncEndpoint = `https://eus.rubiconproject.com/usync.html`;
+let returnVast = false;
+
+let bannerHost = 'fastlane';
+let videoHost = 'prebid-server';
+let syncHost = 'eus';
+config.getConfig('rubicon', config => {
+  let rubiConf = config.rubicon;
+  bannerHost = rubiConf.bannerHost || bannerHost;
+  fastlaneEndpoint = `https://${bannerHost}.rubiconproject.com/a/api/fastlane.json`;
+  videoHost = rubiConf.videoHost || videoHost;
+  videoEndpoint = `https://${videoHost}.rubiconproject.com/openrtb2/auction`;
+  syncHost = rubiConf.syncHost || syncHost;
+  syncEndpoint = `https://${syncHost}.rubiconproject.com/usync.html`;
+  returnVast = rubiConf.returnVast === true; // anything other than true is false
+});
 
 const GVLID = 52;
 const DIGITRUST_PROP_NAMES = {
@@ -176,7 +192,7 @@ export const spec = {
           prebid: {
             cache: {
               vastxml: {
-                returnCreative: false // don't return the VAST
+                returnCreative: returnVast
               }
             },
             targeting: {
@@ -247,72 +263,18 @@ export const spec = {
         utils.deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
-        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env || bidRequest.userId.sharedid)) {
-        utils.deepSetValue(data, 'user.ext.eids', []);
+      const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+      if (eids && eids.length) {
+        // filter out unsupported id systems
+        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1));
 
-        if (bidRequest.userId.tdid) {
-          data.user.ext.eids.push({
-            source: 'adserver.org',
-            uids: [{
-              id: bidRequest.userId.tdid,
-              ext: {
-                rtiPartner: 'TDID'
-              }
-            }]
-          });
-        }
-
-        if (bidRequest.userId.pubcid) {
-          data.user.ext.eids.push({
-            source: 'pubcommon',
-            uids: [{
-              id: bidRequest.userId.pubcid,
-            }]
-          });
-        }
-
-        // support liveintent ID
-        if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-          data.user.ext.eids.push({
-            source: 'liveintent.com',
-            uids: [{
-              id: bidRequest.userId.lipb.lipbid
-            }]
-          });
-
-          data.user.ext.tpid = {
-            source: 'liveintent.com',
-            uid: bidRequest.userId.lipb.lipbid
-          };
-
-          if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
-            utils.deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
+        // liveintent requires additional props to be set
+        const liveIntentEid = find(data.user.ext.eids, eid => eid.source === 'liveintent.com');
+        if (liveIntentEid) {
+          utils.deepSetValue(data, 'user.ext.tpid', { source: liveIntentEid.source, uid: liveIntentEid.uids[0].id });
+          if (liveIntentEid.ext && liveIntentEid.ext.segments) {
+            utils.deepSetValue(data, 'rp.target.LIseg', liveIntentEid.ext.segments);
           }
-        }
-
-        // support identityLink (aka LiveRamp)
-        if (bidRequest.userId.idl_env) {
-          data.user.ext.eids.push({
-            source: 'liveramp_idl',
-            uids: [{
-              id: bidRequest.userId.idl_env
-            }]
-          });
-        }
-
-        // support shared id
-        if (bidRequest.userId.sharedid) {
-          data.user.ext.eids.push({
-            source: 'sharedid.org',
-            uids: [{
-              id: bidRequest.userId.sharedid.id,
-              atype: 3,
-              ext: {
-                third: bidRequest.userId.sharedid.third
-              }
-            }]
-          });
         }
       }
 
@@ -361,13 +323,15 @@ export const spec = {
       }
 
       /**
-       * GAM Ad Unit
-       * @type {(string|undefined)}
+       * Copy GAM AdUnit and Name to imp
        */
-      const gamAdUnit = utils.deepAccess(bidRequest, 'fpd.context.adServer.adSlot');
-      if (typeof gamAdUnit === 'string' && gamAdUnit) {
-        utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', gamAdUnit);
-      }
+      ['name', 'adSlot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(bidRequest, `fpd.context.adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(data.imp[0].ext, `context.data.adserver.${name.toLowerCase()}`, value);
+        }
+      });
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
@@ -379,7 +343,7 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: VIDEO_ENDPOINT,
+        url: videoEndpoint,
         data,
         bidRequest
       }
@@ -391,7 +355,7 @@ export const spec = {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
           method: 'GET',
-          url: FASTLANE_ENDPOINT,
+          url: fastlaneEndpoint,
           data: spec.getOrderedParams(bidParams).reduce((paramString, key) => {
             const propValue = bidParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
@@ -422,7 +386,7 @@ export const spec = {
           // SRA request returns grouped bidRequest arrays not a plain bidRequest
           aggregate.push({
             method: 'GET',
-            url: FASTLANE_ENDPOINT,
+            url: fastlaneEndpoint,
             data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
               const propValue = combinedSlotParams[key];
               return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
@@ -569,27 +533,25 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    if (bidRequest.userId) {
-      if (bidRequest.userId.tdid) {
-        data['tpid_tdid'] = bidRequest.userId.tdid;
+    if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
+      const unifiedId = find(bidRequest.userIdAsEids, eid => eid.source === 'adserver.org');
+      if (unifiedId) {
+        data['tpid_tdid'] = unifiedId.uids[0].id;
       }
-
-      // support liveintent ID
-      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-        data['tpid_liveintent.com'] = bidRequest.userId.lipb.lipbid;
-        if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
-          data['tg_v.LIseg'] = bidRequest.userId.lipb.segments.join(',');
+      const liveintentId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveintent.com');
+      if (liveintentId) {
+        data['tpid_liveintent.com'] = liveintentId.uids[0].id;
+        if (liveintentId.ext && Array.isArray(liveintentId.ext.segments) && liveintentId.ext.segments.length) {
+          data['tg_v.LIseg'] = liveintentId.ext.segments.join(',');
         }
       }
-
-      // support identityLink (aka LiveRamp)
-      if (bidRequest.userId.idl_env) {
-        data['x_liverampidl'] = bidRequest.userId.idl_env;
+      const liverampId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveramp.com');
+      if (liverampId) {
+        data['x_liverampidl'] = liverampId.uids[0].id;
       }
-
-      // support shared id
-      if (bidRequest.userId.sharedid) {
-        data['eid_sharedid.org'] = `${bidRequest.userId.sharedid.id}^3^${bidRequest.userId.sharedid.third}`;
+      const sharedId = find(bidRequest.userIdAsEids, eid => eid.source === 'sharedid.org');
+      if (sharedId) {
+        data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
       }
     }
 
@@ -848,7 +810,7 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
-      // data is only assigned if params are available to pass to SYNC_ENDPOINT
+      // data is only assigned if params are available to pass to syncEndpoint
       let params = '';
 
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -867,7 +829,7 @@ export const spec = {
       hasSynced = true;
       return {
         type: 'iframe',
-        url: SYNC_ENDPOINT + params
+        url: syncEndpoint + params
       };
     }
   },

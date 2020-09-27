@@ -31,6 +31,22 @@ describe('AP Stream adapter', function() {
       }
     };
 
+    let mockConfig;
+    beforeEach(function () {
+      mockConfig = {
+        apstream: {
+          publisherId: '4321'
+        }
+      };
+      sinon.stub(config, 'getConfig').callsFake((key) => {
+        return utils.deepAccess(mockConfig, key);
+      });
+    });
+
+    afterEach(function () {
+      config.getConfig.restore();
+    });
+
     it('should return true when publisherId is configured and one media type', function() {
       bid.params.publisherId = '1234';
       assert(spec.isBidRequestValid(bid))
@@ -39,6 +55,12 @@ describe('AP Stream adapter', function() {
     it('should return false when publisherId is configured and two media types', function() {
       bid.mediaTypes.video = {sizes: [300, 250]};
       assert.isFalse(spec.isBidRequestValid(bid))
+    });
+
+    it('should return true when publisherId is configured via config', function() {
+      delete bid.mediaTypes.video;
+      delete bid.params.publisherId;
+      assert.isTrue(spec.isBidRequestValid(bid))
     });
   });
 

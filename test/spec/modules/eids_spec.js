@@ -29,15 +29,39 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('id5Id', function() {
-    const userId = {
-      id5id: 'some-random-id-value'
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'id5-sync.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+  describe('id5Id', function() {
+    it('does not include an ext if not provided', function() {
+      const userId = {
+        id5id: {
+          uid: 'some-random-id-value'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'id5-sync.com',
+        uids: [{ id: 'some-random-id-value', atype: 1 }]
+      });
+    });
+
+    it('includes ext if provided', function() {
+      const userId = {
+        id5id: {
+          uid: 'some-random-id-value',
+          ext: {
+            linkType: 0
+          }
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'id5-sync.com',
+        uids: [{ id: 'some-random-id-value', atype: 1 }],
+        ext: {
+          linkType: 0
+        }
+      });
     });
   });
 
@@ -51,6 +75,18 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'parrable.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('merkleId', function() {
+    const userId = {
+      merkleId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'merkleinc.com',
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
@@ -176,6 +212,51 @@ describe('eids array generation for known sub-modules', function() {
       source: 'sharedid.org',
       uids: [{
         id: 'test_sharedId',
+        atype: 1
+      }]
+    });
+  });
+
+  it('zeotapIdPlus', function() {
+    const userId = {
+      IDP: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'zeotap.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
+
+  it('haloId', function() {
+    const userId = {
+      haloId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'audigent.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
+
+  it('quantcastId', function() {
+    const userId = {
+      quantcastId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'quantcast.com',
+      uids: [{
+        id: 'some-random-id-value',
         atype: 1
       }]
     });

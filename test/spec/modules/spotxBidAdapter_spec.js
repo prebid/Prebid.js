@@ -152,7 +152,7 @@ describe('the spotx adapter', function () {
       };
 
       bid.userId = {
-        id5id: 'id5id_1',
+        id5id: { uid: 'id5id_1' },
         tdid: 'tdid_1'
       };
 
@@ -202,7 +202,8 @@ describe('the spotx adapter', function () {
           source: 'id5-sync.com',
           uids: [{
             id: 'id5id_1'
-          }]
+          }],
+          ext: {}
         },
         {
           source: 'adserver.org',
@@ -515,6 +516,7 @@ describe('the spotx adapter', function () {
       expect(scriptTag.getAttribute('data-spotx_digitrust_opt_out')).to.equal('1');
       expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('400');
       expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('300');
+      expect(scriptTag.getAttribute('data-spotx_ad_mute')).to.equal('1');
       window.document.getElementById.restore();
     });
 
