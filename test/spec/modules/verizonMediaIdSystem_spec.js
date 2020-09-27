@@ -8,7 +8,7 @@ describe('Verizon Media ID Submodule', () => {
   const OVERRIDE_ENDPOINT = 'https://foo/bar';
 
   it('should have the correct module name declared', () => {
-    expect(verizonMediaIdSubmodule.name).to.equal('verizonMedia');
+    expect(verizonMediaIdSubmodule.name).to.equal('verizonMediaId');
   });
 
   describe('getId()', () => {

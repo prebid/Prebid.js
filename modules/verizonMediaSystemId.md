@@ -8,10 +8,10 @@ Verizon Media User ID Module.
 pbjs.setConfig({
     userSync: {
         userIds: [{
-            name: 'verizonMedia',
+            name: 'verizonMediaId',
             storage: {
                 name: 'vmuid',
-                type: 'cookie',
+                type: 'html5',
                 expires: 30
             },
             params: {
@@ -26,10 +26,6 @@ The below parameters apply only to the Verizon Media User ID Module integration.
 
 | Param under usersync.userIds[] | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
-| name | Required | String | ID value for the Verizon Media module - `"verizonMedia"` | `"verizonMedia"` |
+| name | Required | String | ID value for the Verizon Media module - `"verizonMediaId"` | `"verizonMediaId"` |
 | params | Required | Object | Data for Verizon Media ID initialization. | |
 | params.he | Required | String | The SHA-256 hashed user email address | `"529cb86de31e9547a712d9f380146e98bbd39beec"` |
-| storage | Required | Object | The publisher must specify the local storage in which to store the results of the call to get the user ID. This can be either cookie or HTML5 storage. | |
-| storage.type | Required | String | This is where the results of the user ID will be stored. The recommended method is `localStorage` by specifying `html5`. | `"html5"` |
-| storage.name | Required | String | The name of the cookie or html5 local storage where the user ID will be stored. | `"vmuid"` |
-| storage.expires | Optional | Integer | How long (in days) the user ID information will be stored. | `365` |

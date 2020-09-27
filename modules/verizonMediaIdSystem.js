@@ -9,7 +9,7 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
 
-const MODULE_NAME = 'verizonMedia';
+const MODULE_NAME = 'verizonMediaId';
 const VMUID_ENDPOINT = 'https://ups.analytics.yahoo.com/ups/58300/fed';
 
 function isEUConsentRequired(consentData) {
