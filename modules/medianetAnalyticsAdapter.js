@@ -133,6 +133,38 @@ class Configure {
       new ErrorLogger(ERROR_CONFIG_JSON_PARSE, e).send();
     }
   }
+  setDataFromResponse(response) {
+    if (!isNaN(response.percentage)) {
+      this.loggingPercent = response.percentage;
+    }
+    if (!isNaN(response.pixelwaittime)) {
+      this.pixelWaitTime = response.pixelwaittime;
+    }
+
+    if (!isNaN(response.aplper)) {
+      this.apLoggingPct = response.aplper;
+      this.batching = BATCHING.MULTI;
+    }
+
+    if (!isNaN(response.prlper)) {
+      this.prLoggingPct = response.prlper;
+      this.batching = BATCHING.MULTI;
+    }
+  }
+
+  overrideDomainLevelData(response) {
+    const domain = utils.deepAccess(response, 'domain.' + pageDetails.domain);
+    if (domain) {
+      this.setDataFromResponse(domain);
+    }
+  }
+  overrideToDebug(response) {
+    if (response === '') return;
+    try {
+      this.setDataFromResponse(JSON.parse(decodeURIComponent(response)));
+    } catch (e) {
+    }
+  }
 
   setDataFromResponse(response) {
     if (!isNaN(parseInt(response.percentage, 10))) {
@@ -278,6 +310,7 @@ class AdSlot {
     if (!config.shouldBeLogged.hasOwnProperty(logType)) {
       config.shouldBeLogged[logType] = isSampled(logType);
     }
+    config.shouldBeLogged[logType] = isSampled(logType);
     return config.shouldBeLogged[logType];
   }
 
