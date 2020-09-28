@@ -133,20 +133,22 @@ class Configure {
       new ErrorLogger(ERROR_CONFIG_JSON_PARSE, e).send();
     }
   }
+
   setDataFromResponse(response) {
-    if (!isNaN(response.percentage)) {
+    if (!isNaN(parseInt(response.percentage, 10))) {
       this.loggingPercent = response.percentage;
     }
-    if (!isNaN(response.pixelwaittime)) {
+
+    if (!isNaN(parseInt(response.pixelwaittime, 10))) {
       this.pixelWaitTime = response.pixelwaittime;
     }
 
-    if (!isNaN(response.aplper)) {
+    if (!isNaN(parseInt(response.aplper, 10))) {
       this.apLoggingPct = response.aplper;
       this.batching = BATCHING.MULTI;
     }
 
-    if (!isNaN(response.prlper)) {
+    if (!isNaN(parseInt(response.prlper, 10))) {
       this.prLoggingPct = response.prlper;
       this.batching = BATCHING.MULTI;
     }
@@ -158,6 +160,7 @@ class Configure {
       this.setDataFromResponse(domain);
     }
   }
+
   overrideToDebug(response) {
     if (response === '') return;
     try {
@@ -272,10 +275,9 @@ class AdSlot {
   }
 
   getShouldBeLogged(logType) {
-    if (logType in config.shouldBeLogged) {
-      return config.shouldBeLogged[logType];
+    if (!config.shouldBeLogged.hasOwnProperty(logType)) {
+      config.shouldBeLogged[logType] = isSampled(logType);
     }
-    config.shouldBeLogged[logType] = isSampled(logType);
     return config.shouldBeLogged[logType];
   }
 
@@ -461,7 +463,7 @@ function addAddSlots(auctionId, adUnits, tmax) {
     adUnits.forEach(({mediaTypes, sizes, ext}) => {
       mediaTypes = mediaTypes || {};
       adext = Object.assign(adext, ext || utils.deepAccess(mediaTypes, 'banner.ext'));
-      context = utils.deepAccess(mediaTypes, 'video.context') || '';
+      context = utils.deepAccess(mediaTypes, 'video.context') || context;
       Object.keys(mediaTypes).forEach((mediaType) => mediaTypeMap[mediaType] = 1);
       const sizeObject = _getSizes(mediaTypes, sizes);
       sizeObject.banner.forEach(size => oSizes.banner.push(size));
