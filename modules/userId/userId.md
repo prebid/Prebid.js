@@ -26,7 +26,7 @@ pbjs.setConfig({
             name: "id5Id",
             params: {
                 partner: 173,         // Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
-                pd: "some-pd-string"  // See https://wiki.id5.io/display/PD/Prebid.js+UserId+Module for details
+                pd: "some-pd-string"  // See https://wiki.id5.io/x/BIAZ for details
             },
             storage: {
                 type: "cookie",
@@ -43,7 +43,7 @@ pbjs.setConfig({
         }, {
             name: 'identityLink',
             params: {
-                pid: '999' // Set your real identityLink placement ID here 
+                pid: '999' // Set your real identityLink placement ID here
             },
             storage: {
                 type: 'cookie',
@@ -53,7 +53,7 @@ pbjs.setConfig({
         }, {
             name: 'liveIntentId',
             params: {
-                publisherId: '7798696' // Set an identifier of a publisher know to your systems 
+                publisherId: '7798696' // Set an identifier of a publisher know to your systems
             },
             storage: {
                 type: 'cookie',
@@ -102,7 +102,7 @@ pbjs.setConfig({
         }, {
             name: 'identityLink',
             params: {
-                pid: '999' // Set your real identityLink placement ID here 
+                pid: '999' // Set your real identityLink placement ID here
             },
             storage: {
                 type: 'html5',
@@ -110,25 +110,37 @@ pbjs.setConfig({
                 expires: 30
             }
         }, {
-             name: 'liveIntentId',
-             params: {
-                 publisherId: '7798696' // Set an identifier of a publisher know to your systems 
-             },
-             storage: {
-                 type: 'html5',
-                 name: '_li_pbid',
-                 expires: 60
-             }
+            name: 'liveIntentId',
+            params: {
+                publisherId: '7798696' // Set an identifier of a publisher know to your systems
+            },
+            storage: {
+                type: 'html5',
+                name: '_li_pbid',
+                expires: 60
+            }
         }, {
-             name: 'sharedId',
+            name: 'sharedId',
             params: {
                   syncTime: 60 // in seconds, default is 24 hours
                },
              storage: {
-                type: 'cookie',
+                type: 'html',
                 name: 'sharedid',
                 expires: 28
              }
+        }, {
+            name: 'id5Id',
+            params: {
+                partner: 173,         // Set your real ID5 partner ID here for production, please ask for one at https://id5.io/universal-id
+                pd: 'some-pd-string'  // See https://wiki.id5.io/x/BIAZ for details
+            },
+            storage: {
+                type: 'html',
+                name: 'id5id.1st',
+                expires: 90, // Expiration of cookies in days
+                refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
+            },
         }],
         syncDelay: 5000
     }
