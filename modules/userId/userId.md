@@ -125,7 +125,7 @@ pbjs.setConfig({
                   syncTime: 60 // in seconds, default is 24 hours
                },
              storage: {
-                type: 'html',
+                type: 'html5',
                 name: 'sharedid',
                 expires: 28
              }
@@ -136,7 +136,7 @@ pbjs.setConfig({
                 pd: 'some-pd-string'  // See https://wiki.id5.io/x/BIAZ for details
             },
             storage: {
-                type: 'html',
+                type: 'html5',
                 name: 'id5id.1st',
                 expires: 90, // Expiration of cookies in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
