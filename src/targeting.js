@@ -188,9 +188,10 @@ export function newTargeting(auctionManager) {
    * @return {targetingArray} filtered targeting
    */
   function getAllowedTargetingKeyValues(targeting, allowedKeys) {
-    logInfo(`Allowed default targeting keys [ ${allowedKeys.join(', ')}]`);
     const defaultKeyring = Object.assign({}, CONSTANTS.TARGETING_KEYS, CONSTANTS.NATIVE_KEYS);
     const defaultKeys = Object.keys(defaultKeyring);
+    const keyDispositions = {};
+    logInfo(`allowTargetingKeys - allowed keys [ ${allowedKeys.map(k => defaultKeyring[k]).join(', ')} ]`);
     targeting.map(adUnit => {
       const adUnitCode = Object.keys(adUnit)[0];
       const keyring = adUnit[adUnitCode];
@@ -206,18 +207,17 @@ export function newTargeting(auctionManager) {
           const found = key.indexOf(allowedKeyName) === 0;
           return found;
         });
-        const keyDisposition = found ? 'Keeping' : 'Removing';
-        const keyType = isCustom ? 'custom' : 'default';
-        logInfo(`${keyDisposition} ${keyType} targeting key ${key} for ${adUnitCode} adserverTargeting object`);
+        keyDispositions[key] = !found;
         return found;
       });
       adUnit[adUnitCode] = keys;
     });
+    const removedKeys = Object.keys(keyDispositions).filter(d => keyDispositions[d]);
+    logInfo(`allowTargetingKeys - removed keys [ ${removedKeys.join(', ')} ]`);
+    // remove any empty targeting objects, as they're unnecessary.
     const filteredTargeting = targeting.filter(adUnit => {
       const adUnitCode = Object.keys(adUnit)[0];
       const keyring = adUnit[adUnitCode];
-      const targetingObjectDisposition = keyring.length > 0 ? 'Keeping populated' : 'Removing empty';
-      logInfo(`${targetingObjectDisposition} ${adUnitCode} adserverTargeting object`);
       return keyring.length > 0;
     });
     return filteredTargeting

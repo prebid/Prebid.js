@@ -444,13 +444,13 @@ describe('targeting tests', function () {
         expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('foobar');
       });
 
-      it('targeting should include explicily listed default targeting keys', function () {
+      it('targeting should include keys prefixed by allowed default targeting keys', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_bidder_rubicon', 'hb_adid_rubicon', 'hb_pb_rubicon');
         expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus');
       });
 
-      it('targeting should not include unlisted default targeting keys', function () {
+      it('targeting should not include keys prefixed by disallowed default targeting keys', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         expect(targeting['/123456/header-bid-tag-0']).to.not.have.all.keys(['hb_deal_appnexus', 'hb_deal_rubicon']);
       });
