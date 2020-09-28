@@ -305,6 +305,51 @@ describe('User ID', function() {
       expect(typeof (getGlobal()).getUserIdsAsEids).to.equal('function');
       expect((getGlobal()).getUserIdsAsEids()).to.deep.equal(createEidsArray((getGlobal()).getUserIds()));
     });
+
+    it('pbjs.refreshUserIds', function() {
+      let sandbox = sinon.createSandbox();
+
+      let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
+
+      const mockIdSystem = {
+        name: 'mockId',
+        decode: function(value) {
+          return {
+            'mid': value['MOCKID']
+          };
+        },
+        getId: mockIdCallback
+      };
+
+      setSubmoduleRegistry([mockIdSystem]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'mockId',
+            value: {id: {mockId: '1111'}}
+          }]
+        }
+      });
+      expect(typeof (getGlobal()).refreshUserIds).to.equal('function');
+
+      getGlobal().getUserIds(); // force initialization
+
+      // update config so that getId will be called
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'mockId',
+            storage: {name: 'mockid', type: 'cookie'},
+          }]
+        }
+      });
+
+      getGlobal().refreshUserIds({submoduleNames: 'mockId'});
+      expect(mockIdCallback.callCount).to.equal(1);
+    });
   });
 
   describe('Opt out', function() {

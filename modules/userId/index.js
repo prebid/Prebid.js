@@ -474,7 +474,7 @@ function getUserIdsAsEids() {
 * This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
 * @param {RefreshUserIdsOptions} options
 */
-function refreshUserIds(options) {
+function refreshUserIds(options, callback) {
   let submoduleNames = options.submoduleNames;
   if (!submoduleNames) {
     submoduleNames = [];
@@ -494,7 +494,6 @@ function refreshUserIds(options) {
     }
 
     let callbackSubmodules = [];
-
     for (let submodule of userIdModules) {
       if (submoduleNames.length > 0 &&
         submoduleNames.indexOf(submodule.submodule.name) === -1) {
@@ -511,6 +510,10 @@ function refreshUserIds(options) {
 
     if (callbackSubmodules.length > 0) {
       processSubmoduleCallbacks(callbackSubmodules);
+    }
+
+    if (callback) {
+      callback();
     }
   });
 }
