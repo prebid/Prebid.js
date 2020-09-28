@@ -1,4 +1,4 @@
-<!-- This is a Test Page for Auction Timing Feature between two bidders. One will be marked as a secondary bidder and the auction not wait for their bids to return.  -->
+<!-- This is a Test Page for configuring Auction Options. One bidder will be marked as secondary and the auction not wait for their bids to return.  -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,11 +50,11 @@
             pbjs.aliasBidder('appnexus', 'waitForMe');
             pbjs.aliasBidder('rubicon', 'doNotWaitForMe');
             pbjs.setConfig({
-                'auctionTiming': {
+                'auctionOptions': {
                     'secondaryBidders': ['doNotWaitForMe']
                 }
             })
-            auctionTimingLogging();
+            auctionOptionsLogging();
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
                 timeout: PREBID_TIMEOUT
@@ -76,44 +76,46 @@
             sendAdserverRequest();
         }, FAILSAFE_TIMEOUT);
 
-        function auctionTimingLogging() {
+        // auction options debugging log that should be initialized prior to requestBids function
+        function auctionOptionsLogging() {
             pbjs.onEvent('auctionInit', auction => {
-                console.log(`Auction Timing: Auction Start at ${auction.timestamp} - ${auction.auctionId}`);
+                console.log(`Auction Options: Auction Start at ${auction.timestamp} - ${auction.auctionId}`);
             })
 
             pbjs.onEvent('bidRequested', bidderRequest => {
-                console.log(`Auction Timing: Bid Requested from ${bidderRequest.bidderCode} at ${bidderRequest.start} - ${bidderRequest.auctionId}`);
+                console.log(`Auction Options: Bid Requested from ${bidderRequest.bidderCode} at ${bidderRequest.start} - ${bidderRequest.auctionId}`);
             })
 
             pbjs.onEvent('bidResponse', bid => {
-                console.log(`Auction Timing: Bid Response from ${bid.bidderCode} at ${Date.now()} in ${bid.responseTimestamp - bid.requestTimestamp}ms - ${bid.auctionId}`);
+                console.log(`Auction Options: Bid Response from ${bid.bidderCode} at ${Date.now()} in ${bid.responseTimestamp - bid.requestTimestamp}ms - ${bid.auctionId}`);
             })
 
             pbjs.onEvent('noBid', bid => {
-                console.log(`Auction Timing: No Bid from ${bid.bidder} - ${bid.auctionId}`);
+                console.log(`Auction Options: No Bid from ${bid.bidder} - ${bid.auctionId}`);
             })
 
             pbjs.onEvent('bidderDone', bidderRequest => {
-                console.log(`Auction Timing: Bidder ${bidderRequest.bidderCode} Done in ${Date.now() - bidderRequest.start}ms - ${bidderRequest.auctionId}`);
+                console.log(`Auction Options: Bidder ${bidderRequest.bidderCode} Done in ${Date.now() - bidderRequest.start}ms - ${bidderRequest.auctionId}`);
             })
 
             pbjs.onEvent('bidTimeout', timedOutBidders => {
                 let auctionId = timedOutBidders.length > 0 ? timedOutBidders[0].auctionId : 0
-                console.log(`Auction Timing: Auction End! Timed Out! Bidders: ${Array.from(new Set(timedOutBidders.map(each => each.bidder))).join(',')} - ${auctionId}`);
+                console.log(`Auction Options: Auction End! Timed Out! Bidders: ${Array.from(new Set(timedOutBidders.map(each => each.bidder))).join(',')} - ${auctionId}`);
             })
 
             pbjs.onEvent('auctionEnd', auction => {
                 let auctionId = auction.bidderRequests.length > 0 ? auction.bidderRequests[0].auctionId : 0
                 let auctionStart = auction.bidderRequests.length > 0 ? auction.bidderRequests[0].auctionStart : 0
-                console.log(`Auction Timing: Auction End! After ${Date.now() - auctionStart}ms - ${auctionId}`);
-                auctionTimingLog(auctionId)
+                console.log(`Auction Options: Auction End! After ${Date.now() - auctionStart}ms - ${auctionId}`);
+                auctionOptionsLog(auctionId)
             })
 
-            function auctionTimingLog(auctionId) {
+            // auction options debug that can be run post auction within the devtools console
+            function auctionOptionsLog(auctionId) {
                 let winners = pbjs.getAllWinningBids();
                 let output = [];
                 let auctionTime = pbjs.getConfig('bidderTimeout');
-                const config = pbjs.getConfig('auctionTiming');
+                const config = pbjs.getConfig('auctionOptions');
 
                 populateData();
                 displayData();
@@ -130,7 +132,7 @@
 
                     forEach(pbjs.getBidResponses(), function (code, bid) {
                         output.push({
-                            "Auction Timing": auctionId,
+                            "Auction Options": auctionId,
                             bid: bid,
                             adunit: code,
                             adId: bid.adId,
@@ -149,7 +151,7 @@
 
                     forEach(pbjs.getNoBids && pbjs.getNoBids() || {}, function (code, bid) {
                         output.push({
-                            "Auction Timing": auctionId,
+                            "Auction Options": auctionId,
                             msg: "no bid",
                             adunit: code,
                             adId: bid.bidId,

@@ -402,9 +402,9 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
 
     bidderRequestsDone.add(bidderRequest);
     allAdapterCalledDone = bidderRequests.filter(request => {
-      const auctionTimingConfig = config.getConfig('auctionTiming');
-      if (auctionTimingConfig && auctionTimingConfig.secondaryBidders && !bidderRequests.every(bidder => includes(auctionTimingConfig.secondaryBidders, bidder.bidderCode))) {
-        return !includes(auctionTimingConfig.secondaryBidders, request.bidderCode)
+      const auctionOptionsConfig = config.getConfig('auctionOptions');
+      if (auctionOptionsConfig && auctionOptionsConfig.secondaryBidders && !bidderRequests.every(bidder => includes(auctionOptionsConfig.secondaryBidders, bidder.bidderCode))) {
+        return !includes(auctionOptionsConfig.secondaryBidders, request.bidderCode)
       }
       return request;
     }).every(bidderRequest => bidderRequestsDone.has(bidderRequest));

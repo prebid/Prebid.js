@@ -1253,7 +1253,7 @@ describe('auctionmanager.js', function () {
     })
   });
 
-  describe('auctionTiming', function() {
+  describe('auctionOptions', function() {
     let bidRequests;
     let doneSpy;
     let clock;
@@ -1271,7 +1271,7 @@ describe('auctionmanager.js', function () {
       clock = sinon.useFakeTimers();
       doneSpy = sinon.spy();
       config.setConfig({
-        'auctionTiming': {
+        'auctionOptions': {
           secondaryBidders: [ secondaryBidder ]
         }
       })
@@ -1312,7 +1312,7 @@ describe('auctionmanager.js', function () {
 
     it('should wait for all bidders if they are all secondary', function () {
       config.setConfig({
-        'auctionTiming': {
+        'auctionOptions': {
           secondaryBidders: [requiredBidder, requiredBidder1, secondaryBidder]
         }
       })

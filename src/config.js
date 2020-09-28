@@ -200,13 +200,13 @@ export function newConfig() {
         this._disableAjaxTimeout = val;
       },
 
-      _auctionTiming: {},
-      get auctionTiming() {
-        return this._auctionTiming;
+      _auctionOptions: {},
+      get auctionOptions() {
+        return this._auctionOptions;
       },
-      set auctionTiming(val) {
-        if (validateAuctionTiming(val)) {
-          this._auctionTiming = val;
+      set auctionOptions(val) {
+        if (validateauctionOptions(val)) {
+          this._auctionOptions = val;
         }
       },
     };
@@ -248,23 +248,23 @@ export function newConfig() {
       return true;
     }
 
-    function validateAuctionTiming(val) {
+    function validateauctionOptions(val) {
       if (!utils.isPlainObject(val)) {
-        utils.logWarn('Auction Timing must be an object')
+        utils.logWarn('Auction Options must be an object')
         return false
       }
 
       for (let k of Object.keys(val)) {
         if (k !== 'secondaryBidders') {
-          utils.logWarn(`Auction Timing given an incorrect param: ${k}`)
+          utils.logWarn(`Auction Options given an incorrect param: ${k}`)
           return false
         }
         if (k === 'secondaryBidders') {
           if (!utils.isArray(val[k])) {
-            utils.logWarn(`Auction Timing ${k} must be of type Array`);
+            utils.logWarn(`Auction Options ${k} must be of type Array`);
             return false
           } else if (!val[k].every(utils.isStr)) {
-            utils.logWarn(`Auction Timing ${k} must be only string`);
+            utils.logWarn(`Auction Options ${k} must be only string`);
             return false
           }
         }

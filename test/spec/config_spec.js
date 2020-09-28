@@ -212,36 +212,36 @@ describe('config API', function () {
     expect(logWarnSpy.called).to.equal(false);
   });
 
-  it('sets auctionTiming', function () {
-    const auctionTimingConfig = {
+  it('sets auctionOptions', function () {
+    const auctionOptionsConfig = {
       'secondaryBidders': ['rubicon', 'appnexus']
     }
-    setConfig({ auctionTiming: auctionTimingConfig });
-    expect(getConfig('auctionTiming')).to.eql(auctionTimingConfig);
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
   });
 
-  it('should log warning for the wrong value passed to auctionTiming', function () {
-    setConfig({ auctionTiming: '' });
+  it('should log warning for the wrong value passed to auctionOptions', function () {
+    setConfig({ auctionOptions: '' });
     expect(logWarnSpy.calledOnce).to.equal(true);
-    const warning = 'Auction Timing must be an object';
+    const warning = 'Auction Options must be an object';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 
-  it('should log warning for invalid auctionTiming bidder values', function () {
-    setConfig({ auctionTiming: {
+  it('should log warning for invalid auctionOptions bidder values', function () {
+    setConfig({ auctionOptions: {
       'secondaryBidders': 'appnexus, rubicon',
     }});
     expect(logWarnSpy.calledOnce).to.equal(true);
-    const warning = 'Auction Timing secondaryBidders must be of type Array';
+    const warning = 'Auction Options secondaryBidders must be of type Array';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 
-  it('should log warning for invalid properties to auctionTiming', function () {
-    setConfig({ auctionTiming: {
+  it('should log warning for invalid properties to auctionOptions', function () {
+    setConfig({ auctionOptions: {
       'testing': true
     }});
     expect(logWarnSpy.calledOnce).to.equal(true);
-    const warning = 'Auction Timing given an incorrect param: testing';
+    const warning = 'Auction Options given an incorrect param: testing';
     assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 });
