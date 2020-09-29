@@ -40,7 +40,10 @@ export const intentIqIdSubmodule = {
     }
 
     // use protocol relative urls for http or https
-    const url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
+    let url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
+    url += configParams.pcid ? '&pcid=' + encodeURIComponent(configParams.pcid) : '';
+    url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
+
     const resp = function (callback) {
       const callbacks = {
         success: response => {

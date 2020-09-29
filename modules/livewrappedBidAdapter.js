@@ -277,7 +277,7 @@ function handleEids(bidRequests) {
   const bidRequest = bidRequests[0];
   if (bidRequest && bidRequest.userId) {
     AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1); // Also add this to eids
-    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
+    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 1);
   }
   if (eids.length > 0) {
     return {user: {ext: {eids}}};
