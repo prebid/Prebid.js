@@ -35,10 +35,10 @@ export const spec = {
   },
 
   /**
-     * Make a server request from the lqist of BidRequests.
+     * Make a server request from the list of BidRequests.
      *
-     * @param {validBidRequests[]} - an array of bidRequest objects
-     * @param {bidderRequest} - master bidRequest object
+     * @param {Bids[]} validBidRequests - an array of bidRequest objects
+     * @param {BidderRequest} bidderRequest - master bidRequest object
      * @return ServerRequest Info describing the request to the server.
      */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -68,7 +68,7 @@ export const spec = {
         uid: params.user.uid
       },
     };
-    if (params.test) {
+    if (!!params.test) {
       payload.test = params.test;
     }
     if (request.gdprConsent) {
@@ -96,11 +96,12 @@ export const spec = {
      * Unpack the response from the server into a list of bids.
      *
      * @param {ServerResponse} serverResponse A successful response from the server.
+     * @param bidRequest The payload from the server's response.
      * @return {Bid[]} An array of bids which were nested inside the server.
      */
   interpretResponse: function(serverResponse, bidRequest) {
     let bidResponse = [];
-    if (serverResponse.body !== {}) {
+    if (Object.keys(serverResponse.body).length !== 0) {
       let zetaResponse = serverResponse.body;
       let zetaBid = zetaResponse.seatbid[0].bid[0];
       let bid = {
@@ -124,6 +125,8 @@ export const spec = {
      *
      * @param {SyncOptions} syncOptions Which user syncs are allowed?
      * @param {ServerResponse[]} serverResponses List of server's responses.
+     * @param gdprConsent The GDPR consent parameters
+     * @param uspConsent The USP consent parameters
      * @return {UserSync[]} The user syncs which should be dropped.
      */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
