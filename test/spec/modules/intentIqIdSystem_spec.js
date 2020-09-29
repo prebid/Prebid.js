@@ -55,6 +55,21 @@ describe('IntentIQ tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
+  it('should call the IntentIQ ignore NA response', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({'RESULT': 'NA'})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(submoduleCallback).to.be.undefined;
+  });
+
   it('should call the IntentIQ endpoint with only partner, pai', function () {
     let callBackSpy = sinon.spy();
     let submoduleCallback = intentIqIdSubmodule.getId(paiConfigParams).callback;
