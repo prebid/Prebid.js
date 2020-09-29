@@ -170,8 +170,8 @@ export const spec = {
       beaconParams.tdid = validBidRequests[0].userId.tdid;
     }
 
-    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.id5id'))) {
-      beaconParams.id5id = validBidRequests[0].userId.id5id;
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.id5id.uid'))) {
+      beaconParams.id5id = validBidRequests[0].userId.id5id.uid;
     }
 
     if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.idl_env'))) {

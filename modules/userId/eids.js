@@ -30,8 +30,16 @@ const USER_IDS_CONFIG = {
 
   // id5Id
   'id5id': {
+    getValue: function(data) {
+      return data.uid
+    },
     source: 'id5-sync.com',
-    atype: 1
+    atype: 1,
+    getEidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
   },
 
   // parrableId
@@ -111,6 +119,7 @@ const USER_IDS_CONFIG = {
     source: 'netid.de',
     atype: 1
   },
+
   // sharedid
   'sharedid': {
     source: 'sharedid.org',
@@ -123,6 +132,24 @@ const USER_IDS_CONFIG = {
         third: data.third
       } : undefined;
     }
+  },
+
+  // zeotapIdPlus
+  'IDP': {
+    source: 'zeotap.com',
+    atype: 1
+  },
+
+  // haloId
+  'haloId': {
+    source: 'audigent.com',
+    atype: 1
+  },
+
+  // quantcastId
+  'quantcastId': {
+    source: 'quantcast.com',
+    atype: 1
   }
 };
 
