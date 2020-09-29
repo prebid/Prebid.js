@@ -475,7 +475,7 @@ function getUserIdsAsEids() {
 * @param {RefreshUserIdsOptions} options
 */
 function refreshUserIds(options, callback) {
-  let submoduleNames = options.submoduleNames;
+  let submoduleNames = options ? options.submoduleNames : null;
   if (!submoduleNames) {
     submoduleNames = [];
   }

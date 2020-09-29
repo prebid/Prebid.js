@@ -306,12 +306,12 @@ describe('User ID', function() {
       expect((getGlobal()).getUserIdsAsEids()).to.deep.equal(createEidsArray((getGlobal()).getUserIds()));
     });
 
-    it('pbjs.refreshUserIds', function() {
+    it('pbjs.refreshUserIds refreshes', function() {
       let sandbox = sinon.createSandbox();
 
       let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
 
-      const mockIdSystem = {
+      let mockIdSystem = {
         name: 'mockId',
         decode: function(value) {
           return {
@@ -347,7 +347,62 @@ describe('User ID', function() {
         }
       });
 
-      getGlobal().refreshUserIds({submoduleNames: 'mockId'});
+      getGlobal().refreshUserIds();
+      expect(mockIdCallback.callCount).to.equal(1);
+    });
+
+    it('pbjs.refreshUserIds refreshes single', function() {
+      coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie('REFRESH', '', EXPIRED_COOKIE_DATE);
+
+      let sandbox = sinon.createSandbox();
+      let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
+
+      let mockIdSystem = {
+        name: 'mockId',
+        decode: function(value) {
+          return {
+            'mid': value['MOCKID']
+          };
+        },
+        getId: mockIdCallback
+      };
+
+      let refreshedIdCallback = sandbox.stub().returns({id: {'REFRESH': '1111'}});
+
+      let refreshedIdSystem = {
+        name: 'refreshedId',
+        decode: function(value) {
+          return {
+            'refresh': value['REFRESH']
+          };
+        },
+        getId: refreshedIdCallback
+      };
+
+      setSubmoduleRegistry([refreshedIdSystem, mockIdSystem]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [
+            {
+              name: 'mockId',
+              storage: {name: 'MOCKID', type: 'cookie'},
+            },
+            {
+              name: 'refreshedId',
+              storage: {name: 'refreshedid', type: 'cookie'},
+            }
+          ]
+        }
+      });
+
+      getGlobal().getUserIds(); // force initialization
+
+      getGlobal().refreshUserIds({submoduleNames: 'refreshedId'});
+
+      expect(refreshedIdCallback.callCount).to.equal(2);
       expect(mockIdCallback.callCount).to.equal(1);
     });
   });
