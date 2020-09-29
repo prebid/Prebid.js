@@ -38,6 +38,8 @@ const BIDDER_VIDEO_RESPONSE = {'prebidResponse': [{
   'format': 'video'
 }]}
 
+const BIDDER_NO_BID_RESPONSE = ''
+
 describe('qwarryBidAdapter', function () {
   const adapter = newBidder(spec)
 
@@ -54,6 +56,8 @@ describe('qwarryBidAdapter', function () {
 
     it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, REQUEST)
+      delete bid.params.zoneToken
+      expect(spec.isBidRequestValid(bid)).to.equal(false)
       delete bid.params
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
@@ -68,6 +72,7 @@ describe('qwarryBidAdapter', function () {
       expect(bidderRequest.data.requestId).to.equal('123')
       expect(bidderRequest.data.bids).to.deep.contains({ bidId: '456', zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f' })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
+      expect(bidderRequest.options.contentType).to.equal('application/json')
       expect(bidderRequest.url).to.equal(ENDPOINT)
     })
   })
@@ -104,6 +109,14 @@ describe('qwarryBidAdapter', function () {
       expect(result[0]).to.have.property('winUrl').equal('http://test.com')
       expect(result[0]).to.have.property('format').equal('video')
       expect(result[0]).to.have.property('vastXml').equal('<xml>vast</xml>')
+    })
+
+    it('handles no bid response : should get empty array', function () {
+      let result = spec.interpretResponse({ body: undefined }, {})
+      expect(result).to.deep.equal([])
+
+      result = spec.interpretResponse({ body: BIDDER_NO_BID_RESPONSE }, {})
+      expect(result).to.deep.equal([])
     })
   })
 })

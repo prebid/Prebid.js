@@ -3,7 +3,7 @@
 ```
 Module Name: Qwarry Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: akasheev@asteriosoft.com
+Maintainer: akascheev@asteriosoft.com
 ```
 
 # Description

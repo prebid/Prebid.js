@@ -38,11 +38,11 @@ export const spec = {
 
   interpretResponse: function (serverResponse, request) {
     const serverBody = serverResponse.body;
-    const { prebidResponse } = serverBody;
-
     if (!serverBody || typeof serverBody !== 'object') {
       return [];
     }
+
+    const { prebidResponse } = serverBody;
     if (!prebidResponse || typeof prebidResponse !== 'object') {
       return [];
     }
