@@ -15,22 +15,31 @@
         var FAILSAFE_TIMEOUT = 3300;
         var PREBID_TIMEOUT = 1000;
 
-        var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
-            mediaTypes: {
-                banner: {
-                    sizes: [[300, 250], [300,600]],
-                }
-            },
-            // Replace this object to test a new Adapter!
-            bids: [{
-                bidder: 'appnexus',
-                params: {
-                    placementId: 13144370
-                }
-            }]
-
-        }];
+        var adUnits = [
+            {
+                code: 'div-gpt-ad-1460505748561-0',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]],  // a display size
+                    }
+                },
+                bids: [
+                    {
+                        bidder: 'Zeta Global',
+                        bidId: 12345,
+                        params: {
+                            placement: 12345,
+                            user: {
+                                uid: 12345,
+                                buyeruid: 12345
+                            },
+                            ip: '111.222.33.44',
+                            test: 1
+                        }
+                    }
+                ]
+            }
+        ];
 
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
