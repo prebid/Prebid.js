@@ -69,7 +69,7 @@ function getSegmentsAsync(adUnits, onDone) {
     return;
   }
 
-  const url = `https://seg.ad.gt/api/v1/rtb_segments`;
+  const url = `https://seg.halo.ad.gt/api/v1/rtb_segments`;
 
   ajax(url, {
     success: function (response, req) {
