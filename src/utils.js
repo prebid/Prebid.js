@@ -718,6 +718,11 @@ export function replaceAuctionPrice(str, cpm) {
   return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
 }
 
+export function replaceClickThrough(str, clicktag) {
+  if (!str) return;
+  return str.replace(/\$\{CLICKTHROUGH\}/g, clicktag);
+}
+
 export function timestamp() {
   return new Date().getTime();
 }
