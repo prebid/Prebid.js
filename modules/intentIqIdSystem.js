@@ -29,10 +29,9 @@ function isValidId(id) {
  */
 function isValidResponse(obj) {
   try {
-    obj = JSON.parse(response);
+    obj = JSON.parse(obj);
     return obj && obj['RESULT'] != NOT_AVAILABLE;
   } catch (error) {
-    utils.logError(error);
     return true;
   }
 }
@@ -76,7 +75,6 @@ export const intentIqIdSubmodule = {
           if (isValidId(response)) {
             callback(response);
           } else {
-            utils.logError(`${MODULE_NAME}: ID fetch got an invalid response`);
             callback();
           }
         },
