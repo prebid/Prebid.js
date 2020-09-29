@@ -32,6 +32,7 @@ function isValidResponse(obj) {
     obj = JSON.parse(obj);
     return obj && obj['RESULT'] != NOT_AVAILABLE;
   } catch (error) {
+    utils.logError(error);
     return true;
   }
 }
