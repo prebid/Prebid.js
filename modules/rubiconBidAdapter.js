@@ -559,6 +559,17 @@ export const spec = {
     const configUserId = config.getConfig('user.id');
     if (configUserId) {
       data['ppuid'] = configUserId;
+    } else {
+      // if config.getConfig('user.id') doesn't return anything, then look for the first eid.uids[*].ext.stype === 'ppuid'
+      for (let i = 0; bidRequest.userIdAsEids && i < bidRequest.userIdAsEids.length; i++) {
+        if (bidRequest.userIdAsEids[i].uids) {
+          const pubProvidedId = find(bidRequest.userIdAsEids[i].uids, uid => uid.ext && uid.ext.stype === 'ppuid');
+          if (pubProvidedId && pubProvidedId.id) {
+            data['ppuid'] = pubProvidedId.id;
+            break;
+          }
+        }
+      }
     }
 
     if (bidderRequest.gdprConsent) {
