@@ -399,15 +399,18 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   function adapterDone() {
     let bidderRequest = this;
     let bidderRequests = auctionInstance.getBidRequests();
+    const auctionOptionsConfig = config.getConfig('auctionOptions');
 
     bidderRequestsDone.add(bidderRequest);
-    allAdapterCalledDone = bidderRequests.filter(request => {
-      const auctionOptionsConfig = config.getConfig('auctionOptions');
-      if (auctionOptionsConfig && auctionOptionsConfig.secondaryBidders && !bidderRequests.every(bidder => includes(auctionOptionsConfig.secondaryBidders, bidder.bidderCode))) {
-        return !includes(auctionOptionsConfig.secondaryBidders, request.bidderCode)
+
+    if (auctionOptionsConfig && !utils.isEmpty(auctionOptionsConfig)) {
+      const secondaryBidders = auctionOptionsConfig.secondaryBidders;
+      if (secondaryBidders && !bidderRequests.every(bidder => includes(secondaryBidders, bidder.bidderCode))) {
+        bidderRequests = bidderRequests.filter(request => !includes(secondaryBidders, request.bidderCode));
       }
-      return request;
-    }).every(bidderRequest => bidderRequestsDone.has(bidderRequest));
+    }
+
+    allAdapterCalledDone = bidderRequests.every(bidderRequest => bidderRequestsDone.has(bidderRequest));
 
     bidderRequest.bids.forEach(bid => {
       if (!bidResponseMap[bid.bidId]) {
