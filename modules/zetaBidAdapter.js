@@ -68,7 +68,7 @@ export const spec = {
         uid: params.user.uid
       },
     };
-    if (!!params.test) {
+    if (params.test) {
       payload.test = params.test;
     }
     if (request.gdprConsent) {
