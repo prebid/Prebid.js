@@ -55,7 +55,7 @@ export let _floorDataForAuction = {};
  * @summary Simple function to round up to a certain decimal degree
  */
 function roundUp(number, precision) {
-  return Math.ceil(parseFloat(number) * Math.pow(10, precision)) / Math.pow(10, precision);
+  return Math.ceil((parseFloat(number) * Math.pow(10, precision)).toFixed(1)) / Math.pow(10, precision);
 }
 
 let referrerHostname;
@@ -98,7 +98,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
   let fieldValues = enumeratePossibleFieldValues(utils.deepAccess(floorData, 'schema.fields') || [], bidObject, responseObject);
   if (!fieldValues.length) return { matchingFloor: floorData.default };
 
-  // look to see iof a request for this context was made already
+  // look to see if a request for this context was made already
   let matchingInput = fieldValues.map(field => field[0]).join('-');
   // if we already have gotten the matching rule from this matching input then use it! No need to look again
   let previousMatch = utils.deepAccess(floorData, `matchingInputs.${matchingInput}`);
@@ -113,6 +113,14 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
     matchingRule
   };
+
+  // check that floorMin is greater than 0 and set values accordingly
+  if (utils.deepAccess(_floorsConfig, 'floorMin')) {
+    matchingData.floorMin = utils.deepAccess(_floorsConfig, 'floorMin');
+    matchingData.floorRuleValue = matchingData.matchingFloor;
+    if (matchingData.floorMin > matchingData.floorRuleValue) matchingData.matchingFloor = matchingData.floorMin;
+  }
+
   // save for later lookup if needed
   utils.deepSetValue(floorData, `matchingInputs.${matchingInput}`, {...matchingData});
   return matchingData;
@@ -189,10 +197,12 @@ function updateRequestParamsFromContext(bidRequest, requestParams) {
 export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size: '*'}) {
   let bidRequest = this;
   let floorData = _floorDataForAuction[bidRequest.auctionId];
+
   if (!floorData || floorData.skipped) return {};
 
   requestParams = updateRequestParamsFromContext(bidRequest, requestParams);
   let floorInfo = getFirstMatchingFloor(floorData.data, {...bidRequest}, {mediaType: requestParams.mediaType, size: requestParams.size});
+
   let currency = requestParams.currency || floorData.data.currency;
 
   // if bidder asked for a currency which is not what floors are set in convert
@@ -230,6 +240,7 @@ export function getFloorsDataForAuction(floorData, adUnitCode) {
   auctionFloorData.values = normalizeRulesForAuction(auctionFloorData, adUnitCode);
   // default the currency to USD if not passed in
   auctionFloorData.currency = auctionFloorData.currency || 'USD';
+
   return auctionFloorData;
 }
 
@@ -282,6 +293,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
       } else {
         bid.getFloor = getFloor;
       }
+
       // information for bid and analytics adapters
       bid.auctionId = auctionId;
       bid.floorData = {
@@ -291,6 +303,40 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
         location: utils.deepAccess(floorData, 'data.location', 'noData'),
         floorProvider: floorData.floorProvider,
         fetchStatus: _floorsConfig.fetchStatus
+      };
+
+      if (utils.deepAccess(floorData, 'floorMin')) {
+        bid.floorData.floorMin = utils.deepAccess(floorData, 'floorMin');
+      }
+    });
+  });
+}
+
+/**
+ * @summary This function takes the adUnits for the auction and update them accordingly as well as returns the rules hashmap for the auction
+ */
+export function updateAdUnitFloorData(adUnits, floorData, auctionId) {
+  adUnits.forEach((adUnit) => {
+    adUnit.bids.forEach(bid => {
+      if (floorData.skipped) {
+        delete bid.getFloor;
+      } else {
+        bid.getFloor = getFloor;
+      }
+
+      // information for bid and analytics adapters
+      bid.auctionId = auctionId;
+      bid.floorData = {
+        skipped: floorData.skipped,
+        skipRate: floorData.skipRate,
+        modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
+        location: utils.deepAccess(floorData, 'data.location', 'noData'),
+        floorProvider: floorData.floorProvider,
+        fetchStatus: _floorsConfig.fetchStatus
+      };
+
+      if (utils.deepAccess(floorData, 'floorMin')) {
+        bid.floorData.floorMin = utils.deepAccess(floorData, 'floorMin');
       }
     });
   });
@@ -568,6 +614,7 @@ function addFieldOverrides(overrides) {
  */
 export function handleSetFloorsConfig(config) {
   _floorsConfig = utils.pick(config, [
+    'floorMin', floorMin => floorMin,
     'enabled', enabled => enabled !== false, // defaults to true
     'auctionDelay', auctionDelay => auctionDelay || 0,
     'floorProvider', floorProvider => utils.deepAccess(config, 'data.floorProvider', floorProvider),
@@ -628,6 +675,11 @@ function addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm) {
     enforcements: {...floorData.enforcement},
     matchedFields: {}
   };
+
+  if (floorInfo.floorRuleValue) {
+    bid.floorData.floorRuleValue = floorInfo.floorRuleValue;
+  }
+
   floorData.data.schema.fields.forEach((field, index) => {
     let matchedValue = floorInfo.matchingData.split(floorData.data.schema.delimiter)[index];
     bid.floorData.matchedFields[field] = matchedValue;
@@ -650,6 +702,7 @@ function shouldFloorBid(floorData, floorInfo, bid) {
  */
 export function addBidResponseHook(fn, adUnitCode, bid) {
   let floorData = _floorDataForAuction[this.bidderRequest.auctionId];
+
   // if no floor data or associated bidRequest then bail
   const matchingBidRequest = find(this.bidderRequest.bids, bidRequest => bidRequest.bidId && bidRequest.bidId === bid.requestId);
   if (!floorData || !bid || floorData.skipped || !matchingBidRequest) {

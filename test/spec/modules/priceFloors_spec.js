@@ -46,6 +46,32 @@ describe('the price floors module', function () {
     },
     data: basicFloorData
   }
+  const minFloorConfigHigh = {
+    enabled: true,
+    auctionDelay: 0,
+    floorMin: 7,
+    endpoint: {},
+    enforcement: {
+      enforceJS: true,
+      enforcePBS: false,
+      floorDeals: false,
+      bidAdjustment: true
+    },
+    data: basicFloorData
+  }
+  const minFloorConfigLow = {
+    enabled: true,
+    auctionDelay: 0,
+    floorMin: 2.3,
+    endpoint: {},
+    enforcement: {
+      enforceJS: true,
+      enforcePBS: false,
+      floorDeals: false,
+      bidAdjustment: true
+    },
+    data: basicFloorData
+  }
   const basicBidRequest = {
     bidder: 'rubicon',
     adUnitCode: 'test_div_1',
@@ -180,6 +206,30 @@ describe('the price floors module', function () {
         matchingFloor: 2.5,
         matchingData: 'native',
         matchingRule: '*'
+      });
+      // banner with floorMin higher than matching rule
+      handleSetFloorsConfig({
+        ...minFloorConfigHigh,
+        data: undefined
+      });
+      expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 7,
+        floorRuleValue: 1.0,
+        matchingFloor: 7,
+        matchingData: 'banner',
+        matchingRule: 'banner'
+      });
+      // banner with floorMin higher than matching rule
+      handleSetFloorsConfig({
+        ...minFloorConfigLow,
+        data: undefined
+      });
+      expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'video', size: '*'})).to.deep.equal({
+        floorMin: 2.3,
+        floorRuleValue: 5,
+        matchingFloor: 5,
+        matchingData: 'video',
+        matchingRule: 'video'
       });
     });
     it('does not alter cached matched input if conversion occurs', function () {
@@ -363,6 +413,40 @@ describe('the price floors module', function () {
         modelVersion: 'adUnit Model Version',
         location: 'adUnit',
         skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined
+      });
+    });
+    it('should use adUnit level data and minFloor should be set', function () {
+      handleSetFloorsConfig({
+        ...minFloorConfigHigh,
+        data: undefined
+      });
+      // attach floor data onto an adUnit and run an auction
+      let adUnitWithFloors1 = {
+        ...getAdUnitMock('adUnit-Div-1'),
+        floors: {
+          ...basicFloorData,
+          modelVersion: 'adUnit Model Version', // change the model name
+        }
+      };
+      let adUnitWithFloors2 = {
+        ...getAdUnitMock('adUnit-Div-2'),
+        floors: {
+          ...basicFloorData,
+          values: {
+            'banner': 5.0,
+            '*': 10.4
+          }
+        }
+      };
+      runStandardAuction([adUnitWithFloors1, adUnitWithFloors2]);
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'adUnit Model Version',
+        location: 'adUnit',
+        skipRate: 0,
+        floorMin: 7,
         fetchStatus: undefined,
         floorProvider: undefined
       });

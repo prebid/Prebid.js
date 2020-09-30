@@ -117,6 +117,7 @@ function sendMessage(auctionId, bidWonId) {
         'dimensions',
         'mediaType',
         'floorValue',
+        'floorRuleValue',
         'floorRule'
       ]) : undefined
     ]);
@@ -224,6 +225,8 @@ function sendMessage(auctionId, bidWonId) {
           'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),
           'skipRate',
           'fetchStatus',
+          'floorMin',
+          'floorRuleValue',
           'floorProvider as provider'
         ]);
       }
@@ -323,6 +326,7 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
   if (previousBidResponse && previousBidResponse.bidPriceUSD > responsePrice) {
     return previousBidResponse;
   }
+
   return utils.pick(bid, [
     'bidPriceUSD', () => responsePrice,
     'dealId',
@@ -335,6 +339,7 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
     },
     'seatBidId',
     'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
+    'floorRuleValue', () => utils.deepAccess(bid, 'floorData.floorRuleValue'),
     'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined
   ]);
 }
@@ -499,6 +504,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.bidsWon = {};
         cacheEntry.referrer = utils.deepAccess(args, 'bidderRequests.0.refererInfo.referer');
         const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
+
         if (floorData) {
           cacheEntry.floorData = {...floorData};
         }
