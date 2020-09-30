@@ -406,6 +406,7 @@ function createOutstreamScript(bid) {
   dataSpotXParams['data-spotx_channel_id'] = '' + bid.channel_id;
   dataSpotXParams['data-spotx_vast_url'] = '' + bid.vastUrl;
   dataSpotXParams['data-spotx_content_page_url'] = bid.renderer.config.content_page_url;
+  dataSpotXParams['data-spotx-custom_container_styles'] = bid.renderer.config.custom_container_styles;
   dataSpotXParams['data-spotx_ad_unit'] = 'incontent';
 
   utils.logMessage('[SPOTX][renderer] Default beahavior');
