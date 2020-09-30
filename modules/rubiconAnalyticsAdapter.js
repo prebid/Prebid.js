@@ -326,7 +326,6 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
   if (previousBidResponse && previousBidResponse.bidPriceUSD > responsePrice) {
     return previousBidResponse;
   }
-
   return utils.pick(bid, [
     'bidPriceUSD', () => responsePrice,
     'dealId',
@@ -504,7 +503,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.bidsWon = {};
         cacheEntry.referrer = utils.deepAccess(args, 'bidderRequests.0.refererInfo.referer');
         const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
-
         if (floorData) {
           cacheEntry.floorData = {...floorData};
         }

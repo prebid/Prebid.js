@@ -197,12 +197,10 @@ function updateRequestParamsFromContext(bidRequest, requestParams) {
 export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size: '*'}) {
   let bidRequest = this;
   let floorData = _floorDataForAuction[bidRequest.auctionId];
-
   if (!floorData || floorData.skipped) return {};
 
   requestParams = updateRequestParamsFromContext(bidRequest, requestParams);
   let floorInfo = getFirstMatchingFloor(floorData.data, {...bidRequest}, {mediaType: requestParams.mediaType, size: requestParams.size});
-
   let currency = requestParams.currency || floorData.data.currency;
 
   // if bidder asked for a currency which is not what floors are set in convert
@@ -240,7 +238,6 @@ export function getFloorsDataForAuction(floorData, adUnitCode) {
   auctionFloorData.values = normalizeRulesForAuction(auctionFloorData, adUnitCode);
   // default the currency to USD if not passed in
   auctionFloorData.currency = auctionFloorData.currency || 'USD';
-
   return auctionFloorData;
 }
 
@@ -323,7 +320,6 @@ export function updateAdUnitFloorData(adUnits, floorData, auctionId) {
       } else {
         bid.getFloor = getFloor;
       }
-
       // information for bid and analytics adapters
       bid.auctionId = auctionId;
       bid.floorData = {
@@ -702,7 +698,6 @@ function shouldFloorBid(floorData, floorInfo, bid) {
  */
 export function addBidResponseHook(fn, adUnitCode, bid) {
   let floorData = _floorDataForAuction[this.bidderRequest.auctionId];
-
   // if no floor data or associated bidRequest then bail
   const matchingBidRequest = find(this.bidderRequest.bids, bidRequest => bidRequest.bidId && bidRequest.bidId === bid.requestId);
   if (!floorData || !bid || floorData.skipped || !matchingBidRequest) {
