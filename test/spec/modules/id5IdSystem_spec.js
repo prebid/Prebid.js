@@ -1,20 +1,19 @@
 import { init, requestBidsHook, setSubmoduleRegistry, coreStorage } from 'modules/userId/index.js';
 import { config } from 'src/config.js';
-import { id5IdSubmodule } from 'modules/id5IdSystem.js';
+import { id5IdSubmodule, ID5_STORAGE_NAME } from 'modules/id5IdSystem.js';
 import { server } from 'test/mocks/xhr.js';
 import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 
 let expect = require('chai').expect;
 
-describe('ID5 ID System', function() {
+describe.only('ID5 ID System', function() {
   const ID5_MODULE_NAME = 'id5Id';
   const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';
   const ID5_PARTNER = 173;
   const ID5_ENDPOINT = `https://id5-sync.com/g/v2/${ID5_PARTNER}.json`;
-  const ID5_COOKIE_NAME = 'id5idcookie';
-  const ID5_NB_COOKIE_NAME = `id5id.1st_${ID5_PARTNER}_nb`;
+  const ID5_NB_COOKIE_NAME = `id5id_${ID5_PARTNER}_nb`;
   const ID5_EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
   const ID5_STORED_ID = 'storedid5id';
   const ID5_STORED_SIGNATURE = '123456';
@@ -33,7 +32,7 @@ describe('ID5 ID System', function() {
     'link_type': 0
   };
 
-  function getId5FetchConfig(storageName = ID5_COOKIE_NAME, storageType = 'cookie') {
+  function getId5FetchConfig(storageName = ID5_STORAGE_NAME, storageType = 'cookie') {
     return {
       name: ID5_MODULE_NAME,
       params: {
@@ -68,7 +67,7 @@ describe('ID5 ID System', function() {
     return getUserSyncConfig([getId5FetchConfig()]);
   }
   function getFetchLocalStorageConfig() {
-    return getUserSyncConfig([getId5FetchConfig(ID5_COOKIE_NAME, 'html5')]);
+    return getUserSyncConfig([getId5FetchConfig(ID5_STORAGE_NAME, 'html5')]);
   }
   function getValueConfig(value) {
     return getUserSyncConfig([getId5ValueConfig(value)]);
@@ -218,21 +217,21 @@ describe('ID5 ID System', function() {
 
     beforeEach(function() {
       sinon.stub(events, 'getEvents').returns([]);
-      coreStorage.setCookie(ID5_COOKIE_NAME, '', ID5_EXPIRED_COOKIE_DATE);
-      coreStorage.setCookie(`${ID5_COOKIE_NAME}_last`, '', ID5_EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie(ID5_STORAGE_NAME, '', ID5_EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie(`${ID5_STORAGE_NAME}_last`, '', ID5_EXPIRED_COOKIE_DATE);
       coreStorage.setCookie(ID5_NB_COOKIE_NAME, '', ID5_EXPIRED_COOKIE_DATE);
       adUnits = [getAdUnitMock()];
     });
     afterEach(function() {
       events.getEvents.restore();
-      coreStorage.setCookie(ID5_COOKIE_NAME, '', ID5_EXPIRED_COOKIE_DATE);
-      coreStorage.setCookie(`${ID5_COOKIE_NAME}_last`, '', ID5_EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie(ID5_STORAGE_NAME, '', ID5_EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie(`${ID5_STORAGE_NAME}_last`, '', ID5_EXPIRED_COOKIE_DATE);
       coreStorage.setCookie(ID5_NB_COOKIE_NAME, '', ID5_EXPIRED_COOKIE_DATE);
     });
 
     it('should add stored ID from cookie to bids', function (done) {
       let expStr = (new Date(Date.now() + 25000).toUTCString());
-      coreStorage.setCookie(ID5_COOKIE_NAME, JSON.stringify(ID5_STORED_OBJ), expStr);
+      coreStorage.setCookie(ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), expStr);
 
       setSubmoduleRegistry([id5IdSubmodule]);
       init(config);
@@ -278,7 +277,7 @@ describe('ID5 ID System', function() {
 
     it('should set nb=1 in cookie when no stored value exists', function () {
       let expStr = (new Date(Date.now() + 25000).toUTCString());
-      coreStorage.setCookie(ID5_COOKIE_NAME, JSON.stringify(ID5_STORED_OBJ), expStr);
+      coreStorage.setCookie(ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), expStr);
       coreStorage.setCookie(ID5_NB_COOKIE_NAME, '', ID5_EXPIRED_COOKIE_DATE);
 
       setSubmoduleRegistry([id5IdSubmodule]);
@@ -293,7 +292,7 @@ describe('ID5 ID System', function() {
 
     it('should increment nb in cookie when stored value exists', function () {
       let expStr = (new Date(Date.now() + 25000).toUTCString());
-      coreStorage.setCookie(ID5_COOKIE_NAME, JSON.stringify(ID5_STORED_OBJ), expStr);
+      coreStorage.setCookie(ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), expStr);
       coreStorage.setCookie(ID5_NB_COOKIE_NAME, '1', expStr);
 
       setSubmoduleRegistry([id5IdSubmodule]);
@@ -308,8 +307,8 @@ describe('ID5 ID System', function() {
 
     it('should call ID5 servers with signature and incremented nb post auction if refresh needed', function () {
       let expStr = (new Date(Date.now() + 25000).toUTCString());
-      coreStorage.setCookie(ID5_COOKIE_NAME, JSON.stringify(ID5_STORED_OBJ), expStr);
-      coreStorage.setCookie(`${ID5_COOKIE_NAME}_last`, (new Date(Date.now() - 50000).toUTCString()), expStr);
+      coreStorage.setCookie(ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ), expStr);
+      coreStorage.setCookie(`${ID5_STORAGE_NAME}_last`, (new Date(Date.now() - 50000).toUTCString()), expStr);
       coreStorage.setCookie(ID5_NB_COOKIE_NAME, '1', expStr);
 
       let id5Config = getFetchCookieConfig();
@@ -336,14 +335,14 @@ describe('ID5 ID System', function() {
       const responseHeader = { 'Content-Type': 'application/json' };
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
 
-      expect(coreStorage.getCookie(ID5_COOKIE_NAME)).to.be.eq(JSON.stringify(ID5_JSON_RESPONSE));
+      expect(coreStorage.getCookie(ID5_STORAGE_NAME)).to.be.eq(JSON.stringify(ID5_JSON_RESPONSE));
       expect(coreStorage.getCookie(ID5_NB_COOKIE_NAME)).to.be.eq('0');
     });
 
     it('should call ID5 servers with 1puid and nb=1 post auction if refresh needed for legacy stored object', function () {
       let expStr = (new Date(Date.now() + 25000).toUTCString());
-      coreStorage.setCookie(ID5_COOKIE_NAME, JSON.stringify(ID5_LEGACY_STORED_OBJ), expStr);
-      coreStorage.setCookie(`${ID5_COOKIE_NAME}_last`, (new Date(Date.now() - 50000).toUTCString()), expStr);
+      coreStorage.setCookie(ID5_STORAGE_NAME, JSON.stringify(ID5_LEGACY_STORED_OBJ), expStr);
+      coreStorage.setCookie(`${ID5_STORAGE_NAME}_last`, (new Date(Date.now() - 50000).toUTCString()), expStr);
 
       let id5Config = getFetchCookieConfig();
       id5Config.userSync.userIds[0].storage.refreshInSeconds = 2;
@@ -369,7 +368,7 @@ describe('ID5 ID System', function() {
       const responseHeader = { 'Content-Type': 'application/json' };
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
 
-      expect(coreStorage.getCookie(ID5_COOKIE_NAME)).to.be.eq(JSON.stringify(ID5_JSON_RESPONSE));
+      expect(coreStorage.getCookie(ID5_STORAGE_NAME)).to.be.eq(JSON.stringify(ID5_JSON_RESPONSE));
       expect(coreStorage.getCookie(ID5_NB_COOKIE_NAME)).to.be.eq('0');
     });
   });

@@ -13,8 +13,8 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
-const BASE_NB_COOKIE_NAME = 'id5id.1st';
-const NB_COOKIE_EXP_DAYS = (30 * 24 * 60 * 60 * 1000); // 30 days
+const NB_EXP_DAYS = (30 * 24 * 60 * 60 * 1000); // 30 days
+export const ID5_STORAGE_NAME = 'id5id';
 
 const storage = getStorageManager(GVLID, MODULE_NAME);
 
@@ -143,13 +143,13 @@ function hasRequiredParams(configParams) {
   return true;
 }
 function nbCookieName(configParams) {
-  return hasRequiredParams(configParams) ? `${BASE_NB_COOKIE_NAME}_${configParams.partner}_nb` : undefined;
+  return hasRequiredParams(configParams) ? `${ID5_STORAGE_NAME}_${configParams.partner}_nb` : undefined;
 }
 function nbCookieExpStr(expDays) {
   return (new Date(Date.now() + expDays)).toUTCString();
 }
 function storeNbInCookie(configParams, nb) {
-  storage.setCookie(nbCookieName(configParams), nb, nbCookieExpStr(NB_COOKIE_EXP_DAYS), 'Lax');
+  storage.setCookie(nbCookieName(configParams), nb, nbCookieExpStr(NB_EXP_DAYS), 'Lax');
 }
 function getNbFromCookie(configParams) {
   const cacheNb = storage.getCookie(nbCookieName(configParams));
