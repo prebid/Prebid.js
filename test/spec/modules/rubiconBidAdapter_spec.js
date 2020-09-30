@@ -245,7 +245,8 @@ describe('the rubicon adapter', function () {
         uids: [{
           id: '4444444'
         }]
-      }]
+      }],
+      criteoId: '1111'
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
@@ -1371,6 +1372,20 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          describe('Criteo support', function () {
+            it('should send eid_criteo.com when userIdAsEids contains criteo', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                criteoId: '1111'
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_criteo.com']).to.equal('1111^1');
+            });
+          });
+
           describe('SharedID support', function () {
             it('should send sharedid when userIdAsEids contains sharedId', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
@@ -1654,6 +1669,10 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
           expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
           expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
+          // CriteoId should exist
+          expect(post.user.ext.eids[5].source).to.equal('criteo.com');
+          expect(post.user.ext.eids[5].uids[0].id).to.equal('1111');
+          expect(post.user.ext.eids[5].uids[0].atype).to.equal(1);
 
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
