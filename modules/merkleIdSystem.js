@@ -31,11 +31,12 @@ export const merkleIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleParams} [config]
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams, consentData) {
+  getId(config, consentData) {
+    const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.pubid !== 'string') {
       utils.logError('User ID - merkleId submodule requires a valid pubid to be defined');
       return;

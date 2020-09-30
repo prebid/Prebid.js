@@ -34,10 +34,11 @@ export const identityLinkSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {ConsentData} [consentData]
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleParams} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams, consentData) {
+  getId(config, consentData) {
+    const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.pid !== 'string') {
       utils.logError('identityLink submodule requires partner id to be defined');
       return;

@@ -34,10 +34,11 @@ export const pubProvidedIdSubmodule = {
   /**
    * performs action to obtain id and return a value.
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleParams} [config]
    * @returns {{id: array}}
    */
-  getId(configParams) {
+  getId(config) {
+    const configParams = (config && config.params) || {};
     let res = [];
     if (utils.isArray(configParams.eids)) {
       res = res.concat(configParams.eids);

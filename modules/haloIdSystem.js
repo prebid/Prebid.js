@@ -30,10 +30,10 @@ export const haloIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleParams} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams) {
+  getId(config) {
     const url = `https://id.halo.ad.gt/api/v1/pbhid`;
 
     const resp = function (callback) {

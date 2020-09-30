@@ -41,7 +41,7 @@ export const zeotapIdPlusSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} configParams
+   * @param {SubmoduleParams} config
    * @return {{id: string | undefined} | undefined}
    */
   getId() {

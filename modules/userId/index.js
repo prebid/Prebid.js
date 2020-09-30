@@ -14,7 +14,7 @@
  *  If IdResponse#callback is defined, then it'll called at the end of auction.
  *  It's permissible to return neither, one, or both fields.
  * @name Submodule#getId
- * @param {SubmoduleParams} configParams
+ * @param {SubmoduleParams} config
  * @param {ConsentData|undefined} consentData
  * @param {(Object|undefined)} cacheIdObj
  * @return {(IdResponse|undefined)} A response object that contains id and/or callback.
@@ -27,7 +27,7 @@
  *  If IdResponse#callback is defined, then it'll called at the end of auction.
  *  It's permissible to return neither, one, or both fields.
  * @name Submodule#extendId
- * @param {SubmoduleParams} configParams
+ * @param {SubmoduleParams} config
  * @param {Object} storedId - existing id, if any
  * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
  */
@@ -37,7 +37,7 @@
  * @summary decode a stored value for passing to bid requests
  * @name Submodule#decode
  * @param {Object|string} value
- * @param {SubmoduleParams|undefined} configParams
+ * @param {SubmoduleParams|undefined} config
  * @return {(Object|undefined)}
  */
 
@@ -322,7 +322,7 @@ function processSubmoduleCallbacks(submodules, cb) {
           setStoredValue(submodule, idObj);
         }
         // cache decoded value (this is copied to every adUnit bid)
-        submodule.idObj = submodule.submodule.decode(idObj);
+        submodule.idObj = submodule.submodule.decode(idObj, submodule.config);
       } else {
         utils.logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
@@ -505,10 +505,10 @@ function initSubmodules(submodules, consentData) {
 
       if (!storedId || refreshNeeded || !storedConsentDataMatchesConsentData(storedConsentData, consentData)) {
         // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-        response = submodule.submodule.getId(submodule.config.params, consentData, storedId);
+        response = submodule.submodule.getId(submodule.config, consentData, storedId);
       } else if (typeof submodule.submodule.extendId === 'function') {
         // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-        response = submodule.submodule.extendId(submodule.config.params, storedId);
+        response = submodule.submodule.extendId(submodule.config, storedId);
       }
 
       if (utils.isPlainObject(response)) {
@@ -526,16 +526,16 @@ function initSubmodules(submodules, consentData) {
 
       if (storedId) {
         // cache decoded value (this is copied to every adUnit bid)
-        submodule.idObj = submodule.submodule.decode(storedId, submodule.config.params);
+        submodule.idObj = submodule.submodule.decode(storedId, submodule.config);
       }
     } else if (submodule.config.value) {
       // cache decoded value (this is copied to every adUnit bid)
       submodule.idObj = submodule.config.value;
     } else {
-      const response = submodule.submodule.getId(submodule.config.params, consentData, undefined);
+      const response = submodule.submodule.getId(submodule.config, consentData, undefined);
       if (utils.isPlainObject(response)) {
         if (typeof response.callback === 'function') { submodule.callback = response.callback; }
-        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config.params); }
+        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
       }
     }
     carry.push(submodule);

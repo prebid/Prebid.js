@@ -28,17 +28,17 @@ describe('BritePool Submodule', () => {
   });
 
   it('trigger id resolution pixel when no identifiers set', () => {
-    britepoolIdSubmodule.getId({});
+    britepoolIdSubmodule.getId({ params: {} });
     expect(triggerPixelStub.called).to.be.true;
   });
 
   it('trigger id resolution pixel when no identifiers set with api_key param', () => {
-    britepoolIdSubmodule.getId({ api_key });
+    britepoolIdSubmodule.getId({ params: { api_key } });
     expect(triggerPixelStub.called).to.be.true;
   });
 
   it('does not trigger id resolution pixel when identifiers set', () => {
-    britepoolIdSubmodule.getId({ api_key, aaid });
+    britepoolIdSubmodule.getId({ params: { api_key, aaid } });
     expect(triggerPixelStub.called).to.be.false;
   });
 
@@ -110,7 +110,7 @@ describe('BritePool Submodule', () => {
     expect(getter).to.equal(getter_override);
     // Making sure it did not become part of params
     expect(params.getter).to.be.undefined;
-    const response = britepoolIdSubmodule.getId({ api_key, aaid, url: url_override, getter: getter_override });
+    const response = britepoolIdSubmodule.getId({ params: { api_key, aaid, url: url_override, getter: getter_override } });
     assert.deepEqual(response, { id: { 'primaryBPID': bpid } });
   });
 
@@ -119,7 +119,7 @@ describe('BritePool Submodule', () => {
     expect(getter).to.equal(getter_callback_override);
     // Making sure it did not become part of params
     expect(params.getter).to.be.undefined;
-    const response = britepoolIdSubmodule.getId({ api_key, aaid, url: url_override, getter: getter_callback_override });
+    const response = britepoolIdSubmodule.getId({ params: { api_key, aaid, url: url_override, getter: getter_callback_override } });
     expect(response.callback).to.not.be.undefined;
     response.callback(result => {
       assert.deepEqual(result, { 'primaryBPID': bpid });

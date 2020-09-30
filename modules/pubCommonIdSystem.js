@@ -54,10 +54,10 @@ export const pubCommonIdSubmodule = {
   /**
    * performs action to obtain id
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleParams} [config]
    * @returns {IdResponse}
    */
-  getId: function ({create = true, pixelUrl} = {}) {
+  getId: function ({params: {create = true, pixelUrl} = {}} = {}) {
     try {
       if (typeof window[PUB_COMMON_ID] === 'object') {
         // If the page includes its own pubcid module, then save a copy of id.
@@ -75,11 +75,11 @@ export const pubCommonIdSubmodule = {
   /**
    * performs action to extend an id
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleParams} [config]
    * @param {Object} storedId existing id
    * @returns {IdResponse|undefined}
    */
-  extendId: function({extend = false, pixelUrl} = {}, storedId) {
+  extendId: function({params: {extend = false, pixelUrl} = {}} = {}, storedId) {
     try {
       if (typeof window[PUB_COMMON_ID] === 'object') {
         // If the page includes its onw pubcid module, then there is nothing to do.

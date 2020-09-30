@@ -29,11 +29,12 @@ export const britepoolIdSubmodule = {
   /**
    * Performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [submoduleConfigParams]
+   * @param {SubmoduleParams} [submoduleConfig]
    * @param {ConsentData|undefined} consentData
    * @returns {function(callback:function)}
    */
-  getId(submoduleConfigParams, consentData) {
+  getId(submoduleConfig, consentData) {
+    const submoduleConfigParams = (submoduleConfig && submoduleConfig.params) || {};
     const { params, headers, url, getter, errors } = britepoolIdSubmodule.createParams(submoduleConfigParams, consentData);
     let getterResponse = null;
     if (typeof getter === 'function') {

@@ -30,10 +30,11 @@ export const intentIqIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleParams} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams) {
+  getId(config) {
+    const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.partner !== 'number') {
       utils.logError('User ID - intentIqId submodule requires a valid partner to be defined');
       return;
