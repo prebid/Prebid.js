@@ -13,6 +13,18 @@ Compile the audigent RTD module into your Prebid build:
 
 `gulp build --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,rubiconBidAdapter`
 
+Configure Prebid to add the Audigent RTD Segment Handler:
+```
+pbjs.setConfig(
+	...
+    realTimeData: {
+        auctionDelay: 1000,
+        dataProviders: [{name: "audigent"}]
+    }
+    ...
+}
+```
+
 Audigent segments will then be attached to each bid request objects in
 `bid.realTimeData.audigent_segments`
 
