@@ -514,7 +514,8 @@ describe('the spotx adapter', function () {
                 custom_override: {
                   digitrust_opt_out: 1,
                   vast_url: 'bad_vast'
-                }
+                },
+                custom_container_styles: 'position: absolute;'
               },
             }
           }]
@@ -564,6 +565,7 @@ describe('the spotx adapter', function () {
       expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('400');
       expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('300');
       expect(scriptTag.getAttribute('data-spotx_ad_mute')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_custom_container_styles')).to.equal('postion: absolute;');
       window.document.getElementById.restore();
     });
 
