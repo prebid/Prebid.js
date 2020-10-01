@@ -571,7 +571,9 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
     const response = submodule.submodule.getId(submodule.config.params, consentData, undefined);
     if (utils.isPlainObject(response)) {
       if (typeof response.callback === 'function') { submodule.callback = response.callback; }
-      if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config.params); }
+      if (response.id) {
+        submodule.idObj = submodule.submodule.decode(response.id, submodule.config.params);
+      }
     }
   }
 }
