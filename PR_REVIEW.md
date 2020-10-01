@@ -14,7 +14,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 - Review for obvious errors or bad coding practice / use best judgement here.
 - If the change is a new feature / change to core prebid.js - review the change with a Tech Lead on the project and make sure they agree with the nature of change.
 - If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
-  - Below are some examples of bidder specific updates that should require docs update (in their dev-docs/bidders/bidder.md file):
+  - Below are some examples of bidder specific updates that should require docs update (in their dev-docs/bidders/BIDDER.md file):
     - If they support the GDPR consentManagement module and TCF1, add `gdpr_supported: true`
     - If they support the GDPR consentManagement module and TCF2, add `tcf2_supported: true`
     - If they support the US Privacy consentManagementUsp module, add `usp_supported: true`
@@ -23,7 +23,8 @@ For modules and core platform updates, the initial reviewer should request an ad
     - If they support COPPA, add `coppa_supported: true`
     - If they support SChain, add `schain_supported: true`
     - If their bidder doesn't work well with safeframed creatives, add `safeframes_ok: false`. This will alert publishers to not use safeframed creatives when creating the ad server entries for their bidder.
-    - If they're a member of Prebid.org, add `prebid_member: true`
+    - If they're setting a deal ID in some scenarios, add `bidder_supports_deals: true`
+    - If they have an IAB Global Vendor List ID, add `gvl_id: ID`. There's no default.
 - If all above is good, add a `LGTM` comment and request 1 additional core member to review.
 - Once there is 2 `LGTM` on the PR, merge to master
 - Ask the submitter to add a PR for documentation if applicable.
@@ -34,17 +35,17 @@ For modules and core platform updates, the initial reviewer should request an ad
 - Follow steps above for general review process. In addition, please verify the following:
 - Verify that bidder has submitted valid bid params and that bids are being received.
 - Verify that bidder is not manipulating the prebid.js auction in any way or doing things that go against the principles of the project. If unsure check with the Tech Lead.
-- Verify that the bidder is being as efficient as possible, ideally not loading an external library, however if they do load a library it should be cached.
 - Verify that code re-use is being done properly and that changes introduced by a bidder don't impact other bidders.
 - If the adapter being submitted is an alias type, check with the bidder contact that is being aliased to make sure it's allowed.
-- If the adapter is triggering any user syncs make sure they are using the user sync module in the Prebid.js core.
-- Requests to the bidder should support HTTPS
-- Responses from the bidder should be compressed (such as gzip, compress, deflate)
-- Bid responses may not use JSONP: All requests must be AJAX with JSON responses
-- All user-sync (aka pixel) activity must be registered via the provided functions
-- Adapters may not use the $$PREBID_GLOBAL$$ variable
-- All adapters must support the creation of multiple concurrent instances. This means, for example, that adapters cannot rely on mutable global variables.
-- Adapters may not globally override or default the standard ad server targeting values: hb_adid, hb_bidder, hb_pb, hb_deal, or hb_size, hb_source, hb_format.
+- All required global and bidder-adapter rules defined in the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html) must be followed. Please review these rules often - we depend on reviewers to enforce them.
+- All bidder parameter conventions must be followed:
+    - Video params must be read from AdUnit.mediaTypes.video when available; however bidder config can override the ad unit. 
+    - First party data must be read from [`fpd.context` and `fpd.user`](https://docs.prebid.org/dev-docs/publisher-api-reference.html#setConfig-fpd).
+    - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloors()` function.
+    - Adapters cannot accept an schain parameter. Rather, they must look for the schain parameter at bidRequest.schain.
+    - The bidRequest page referrer must checked in addition to any bidder-specific parameter.
+    - If they're getting the COPPA flag, it must come from config.getConfig('coppa');
+
 - After a new adapter is approved, let the submitter know they may open a PR in the [headerbid-expert repository](https://github.com/prebid/headerbid-expert) to have their adapter recognized by the [Headerbid Expert extension](https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop). The PR should be to the [bidder patterns file](https://github.com/prebid/headerbid-expert/blob/master/bidderPatterns.js), adding an entry with their adapter's name and the url the adapter uses to send and receive bid responses.
 
 ## Ticket Coordinator

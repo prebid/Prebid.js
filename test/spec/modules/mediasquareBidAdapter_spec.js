@@ -53,7 +53,7 @@ describe('MediaSquare bid adapter tests', function () {
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
     },
     uspConsent: '111222333',
-    userId: {'id5id': '1111'},
+    userId: { 'id5id': { uid: '1111' } },
     schain: {
       'ver': '1.0',
       'complete': 1,

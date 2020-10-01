@@ -1115,4 +1115,87 @@ describe('Utils', function () {
       });
     });
   });
+
+  describe('deepEqual', function() {
+    it('should return "true" if comparing the same object', function() {
+      const obj1 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      const obj2 = obj1;
+      expect(utils.deepEqual(obj1, obj2)).to.equal(true);
+    });
+    it('should return "true" if two deeply nested objects are equal', function() {
+      const obj1 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      const obj2 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      expect(utils.deepEqual(obj1, obj2)).to.equal(true);
+    });
+    it('should return "true" if comparting the same primitive values', function() {
+      const primitive1 = 'Prebid.js';
+      const primitive2 = 'Prebid.js';
+      expect(utils.deepEqual(primitive1, primitive2)).to.equal(true);
+    });
+    it('should return "false" if comparing two different primitive values', function() {
+      const primitive1 = 12;
+      const primitive2 = 123;
+      expect(utils.deepEqual(primitive1, primitive2)).to.equal(false);
+    });
+    it('should return "false" if comparing two different deeply nested objects', function() {
+      const obj1 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      const obj2 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [728, 90]] },
+          ],
+        },
+      }
+      expect(utils.deepEqual(obj1, obj2)).to.equal(false);
+    });
+
+    describe('cyrb53Hash', function() {
+      it('should return the same hash for the same string', function() {
+        const stringOne = 'string1';
+        expect(utils.cyrb53Hash(stringOne)).to.equal(utils.cyrb53Hash(stringOne));
+      });
+      it('should return a different hash for the same string with different seeds', function() {
+        const stringOne = 'string1';
+        expect(utils.cyrb53Hash(stringOne, 1)).to.not.equal(utils.cyrb53Hash(stringOne, 2));
+      });
+      it('should return a different hash for different strings with the same seed', function() {
+        const stringOne = 'string1';
+        const stringTwo = 'string2';
+        expect(utils.cyrb53Hash(stringOne)).to.not.equal(utils.cyrb53Hash(stringTwo));
+      });
+      it('should return a string value, not a number', function() {
+        const stringOne = 'string1';
+        expect(typeof utils.cyrb53Hash(stringOne)).to.equal('string');
+      });
+    });
+  });
 });

@@ -37,7 +37,7 @@ export const spec = {
     utils._each(validBidRequests, function (bid) {
       adslotIds.push(bid.params.adslotId)
       if (bid.params.targeting) {
-        query.t = createQueryString(bid.params.targeting)
+        query.t = createTargetingString(bid.params.targeting)
       }
       if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
         query.ids = createUserIdString(bid.userIdAsEids)
@@ -47,12 +47,21 @@ export const spec = {
           query[prop] = bid.params.customParams[prop]
         }
       }
+      if (bid.schain && utils.isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
+        query.schain = createSchainString(bid.schain)
+      }
     })
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
-      if (query.gdpr) {
-        query.consent = bidderRequest.gdprConsent.consentString
+    if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        query.pubref = bidderRequest.refererInfo.referer
+      }
+
+      if (bidderRequest.gdprConsent) {
+        query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        if (query.gdpr) {
+          query.consent = bidderRequest.gdprConsent.consentString
+        }
       }
     }
 
@@ -62,7 +71,8 @@ export const spec = {
     return {
       method: 'GET',
       url: `${ENDPOINT}/yp/${adslots}?${queryString}`,
-      validBidRequests: validBidRequests
+      validBidRequests: validBidRequests,
+      queryParams: query
     }
   },
 
@@ -74,6 +84,7 @@ export const spec = {
   interpretResponse: function (serverResponse, originalBidRequest) {
     const bidResponses = []
     const timestamp = Date.now()
+    const reqParams = originalBidRequest.queryParams
 
     originalBidRequest.validBidRequests.forEach(function (bidRequest) {
       if (!serverResponse.body) {
@@ -89,6 +100,8 @@ export const spec = {
         const customsize = bidRequest.params.adSize !== undefined ? parseSize(bidRequest.params.adSize) : primarysize
         const extId = bidRequest.params.extId !== undefined ? '&id=' + bidRequest.params.extId : ''
         const adType = matchedBid.adtype !== undefined ? matchedBid.adtype : ''
+        const gdprApplies = reqParams.gdpr ? '&gdpr=' + reqParams.gdpr : ''
+        const gdprConsent = reqParams.consent ? '&consent=' + reqParams.consent : ''
 
         const bidResponse = {
           requestId: bidRequest.bidId,
@@ -101,7 +114,7 @@ export const spec = {
           netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}"></script>`
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}"></script>`
         }
 
         if (isVideo(bidRequest, adType)) {
@@ -111,7 +124,7 @@ export const spec = {
             bidResponse.height = playersize[1]
           }
           bidResponse.mediaType = VIDEO
-          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}`
+          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}`
 
           if (isOutstream(bidRequest)) {
             const renderer = Renderer.install({
@@ -192,10 +205,56 @@ function createQueryString (obj) {
   let str = []
   for (var p in obj) {
     if (obj.hasOwnProperty(p)) {
-      str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]))
+      let val = obj[p]
+      if (p !== 'schain') {
+        str.push(encodeURIComponent(p) + '=' + encodeURIComponent(val))
+      } else {
+        str.push(p + '=' + val)
+      }
     }
   }
   return str.join('&')
+}
+
+/**
+ * Creates an unencoded targeting string out of an object with key-values
+ * @param {Object} obj
+ * @returns {String}
+ */
+function createTargetingString (obj) {
+  let str = []
+  for (var p in obj) {
+    if (obj.hasOwnProperty(p)) {
+      let key = p
+      let val = obj[p]
+      str.push(key + '=' + val)
+    }
+  }
+  return str.join('&')
+}
+
+/**
+ * Creates a string out of a schain object
+ * @param {Object} schain
+ * @returns {String}
+ */
+function createSchainString (schain) {
+  const ver = schain.ver || ''
+  const complete = schain.complete || ''
+  const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']
+  const nodesString = schain.nodes.reduce((acc, node) => {
+    return acc += `!${keys.map(key => node[key] ? encodeURIComponentWithBangIncluded(node[key]) : '').join(',')}`
+  }, '')
+  return `${ver},${complete}${nodesString}`
+}
+
+/**
+ * Encodes URI Component with exlamation mark included. Needed for schain object.
+ * @param {String} str
+ * @returns {String}
+ */
+function encodeURIComponentWithBangIncluded(str) {
+  return encodeURIComponent(str).replace(/!/g, '%21')
 }
 
 /**
