@@ -113,8 +113,15 @@ function getWindowSize() {
   }
 }
 
-function getCoordinates(id) {
-  const element = document.getElementById(id);
+function getCoordinates(adUnitCode) {
+  let element = document.getElementById(adUnitCode);
+  if (!element && adUnitCode.indexOf('/') !== -1) {
+    // now it means that adUnitCode is GAM AdUnitPath
+    const {divId} = utils.getGptSlotInfoForAdUnitCode(adUnitCode);
+    if (utils.isStr(divId)) {
+      element = document.getElementById(divId);
+    }
+  }
   if (element && element.getBoundingClientRect) {
     const rect = element.getBoundingClientRect();
     let coordinates = {};
