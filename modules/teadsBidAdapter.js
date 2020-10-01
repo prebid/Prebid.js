@@ -150,7 +150,7 @@ function getTimeToFirstByte(win) {
     performance.timing.requestStart >= 0 &&
     performance.timing.responseStart - performance.timing.requestStart;
 
-  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
+  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '0';
 }
 
 function findGdprStatus(gdprApplies, gdprData, apiVersion) {
