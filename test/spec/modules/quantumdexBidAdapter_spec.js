@@ -235,25 +235,25 @@ describe('QuantumdexBidAdapter', function () {
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/adapter')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/quantumdex')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
     })
 
     it('should return a properly formatted request with GDPR applies set to true', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/adapter')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/quantumdex')
       expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal('true')
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(true)
       expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
     })
 
     it('should return a properly formatted request with GDPR applies set to false', function () {
       bidderRequests.gdprConsent.gdprApplies = false;
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/adapter')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/quantumdex')
       expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal('false')
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(false)
       expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
     })
     it('should return a properly formatted request with GDPR applies set to false with no consent_string param', function () {
@@ -271,9 +271,9 @@ describe('QuantumdexBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/adapter')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/quantumdex')
       expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal('false')
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(false)
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
     })
     it('should return a properly formatted request with GDPR applies set to true with no consentString param', function () {
@@ -291,14 +291,14 @@ describe('QuantumdexBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/adapter')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/quantumdex')
       expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal('true')
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(true)
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
     })
     it('should return a properly formatted request with schain defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(JSON.parse(bidRequests.data.schain)).to.deep.equal(bidRequest[0].schain)
+      expect(bidRequests.data.schain).to.deep.equal(bidRequest[0].schain)
     });
     it('should return a properly formatted request with us_privacy included', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
@@ -309,7 +309,7 @@ describe('QuantumdexBidAdapter', function () {
   describe('.interpretResponse', function () {
     const bidRequests = {
       'method': 'POST',
-      'url': 'https://useast.quantumdex.io/auction/adapter',
+      'url': 'https://useast.quantumdex.io/auction/quantumdex',
       'withCredentials': true,
       'data': {
         'device': {

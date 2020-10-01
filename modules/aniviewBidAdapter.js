@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'aniview';
+const GVLID = 780;
 const TTL = 600;
 
 function avRenderer(bid) {
@@ -24,9 +25,28 @@ function avRenderer(bid) {
 }
 
 function newRenderer(bidRequest) {
+  let playerDomain = 'player.aniview.com';
+  const config = {};
+
+  if (bidRequest && bidRequest.bidRequest && bidRequest.bidRequest.params) {
+    const params = bidRequest.bidRequest.params
+
+    if (params.playerDomain) {
+      playerDomain = params.playerDomain;
+    }
+
+    if (params.AV_PUBLISHERID) {
+      config.AV_PUBLISHERID = params.AV_PUBLISHERID;
+    }
+
+    if (params.AV_CHANNELID) {
+      config.AV_CHANNELID = params.AV_CHANNELID;
+    }
+  }
+
   const renderer = Renderer.install({
-    url: 'https://player.aniview.com/script/6.1/prebidRenderer.js',
-    config: {},
+    url: 'https://' + playerDomain + '/script/6.1/prebidRenderer.js',
+    config: config,
     loaded: false,
   });
 
@@ -167,7 +187,6 @@ function interpretResponse(serverResponse, bidRequest) {
             let cpmData = getCpmData(xml);
             if (cpmData && cpmData.cpm > 0) {
               bidResponse.requestId = bidRequest.data.bidId;
-              bidResponse.bidderCode = BIDDER_CODE;
               bidResponse.ad = '';
               bidResponse.cpm = cpmData.cpm;
               bidResponse.width = bidRequest.data.AV_WIDTH;
@@ -252,6 +271,8 @@ function getUserSyncs(syncOptions, serverResponses) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
+  aliases: ['avantisvideo', 'selectmediavideo'],
   supportedMediaTypes: [VIDEO],
   isBidRequestValid,
   buildRequests,

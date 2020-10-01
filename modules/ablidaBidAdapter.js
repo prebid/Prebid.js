@@ -1,12 +1,14 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'ablida';
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -30,19 +32,25 @@ export const spec = {
       return [];
     }
     return validBidRequests.map(bidRequest => {
-      const sizes = utils.parseSizesInput(bidRequest.sizes)[0];
-      const size = sizes.split('x');
+      let sizes = []
+      if (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER] && bidRequest.mediaTypes[BANNER].sizes) {
+        sizes = bidRequest.mediaTypes[BANNER].sizes;
+      } else if (bidRequest.mediaTypes[VIDEO] && bidRequest.mediaTypes[VIDEO].playerSize) {
+        sizes = bidRequest.mediaTypes[VIDEO].playerSize
+      }
       const jaySupported = 'atob' in window && 'currentScript' in document;
       const device = getDevice();
       const payload = {
         placementId: bidRequest.params.placementId,
-        width: size[0],
-        height: size[1],
+        sizes: sizes,
         bidId: bidRequest.bidId,
         categories: bidRequest.params.categories,
         referer: bidderRequest.refererInfo.referer,
         jaySupported: jaySupported,
-        device: device
+        device: device,
+        adapterVersion: 5,
+        mediaTypes: bidRequest.mediaTypes,
+        gdprConsent: bidderRequest.gdprConsent
       };
       return {
         method: 'POST',
@@ -69,6 +77,10 @@ export const spec = {
     });
     return bidResponses;
   },
+  onBidWon: function (bid) {
+    if (!bid['nurl']) { return; }
+    utils.triggerPixel(bid['nurl']);
+  }
 };
 
 function getDevice() {

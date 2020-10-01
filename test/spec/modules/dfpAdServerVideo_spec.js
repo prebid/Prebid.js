@@ -38,7 +38,7 @@ describe('The DFP video support module', function () {
     expect(queryParams).to.have.property('env', 'vp');
     expect(queryParams).to.have.property('gdfp_req', '1');
     expect(queryParams).to.have.property('iu', 'my/adUnit');
-    expect(queryParams).to.have.property('output', 'xml_vast3');
+    expect(queryParams).to.have.property('output', 'vast');
     expect(queryParams).to.have.property('sz', '640x480');
     expect(queryParams).to.have.property('unviewed_position_start', '1');
     expect(queryParams).to.have.property('url');
@@ -375,7 +375,7 @@ describe('The DFP video support module', function () {
         expect(queryParams).to.have.property('env', 'vp');
         expect(queryParams).to.have.property('gdfp_req', '1');
         expect(queryParams).to.have.property('iu', 'my/adUnit');
-        expect(queryParams).to.have.property('output', 'xml_vast3');
+        expect(queryParams).to.have.property('output', 'vast');
         expect(queryParams).to.have.property('sz', '640x480');
         expect(queryParams).to.have.property('unviewed_position_start', '1');
         expect(queryParams).to.have.property('url');
@@ -528,7 +528,7 @@ function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid,
     },
     'customCacheKey': `${priceIndustryDuration}_${uuid}`,
     'meta': {
-      'iabSubCatId': 'iab-1',
+      'primaryCatId': 'iab-1',
       'adServerCatId': label
     },
     'videoCacheKey': '4cf395af-8fee-4960-af0e-88d44e399f14'

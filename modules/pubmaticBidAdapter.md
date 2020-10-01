@@ -24,7 +24,8 @@ var adUnits = [
     bids: [{
       bidder: 'pubmatic',
       params: {
-        publisherId: '156209',               // required
+        publisherId: '156209',               // required, must be wrapped in quotes
+        oustreamAU: 'renderer_test_pubmatic',   // required if mediaTypes-> video-> context is 'outstream'. This value can be get by BlueBillyWig Team.
         adSlot: 'pubmatic_test2',            // optional
         pmzoneid: 'zone1, zone11',           // optional
         lat: '40.712775',                    // optional
