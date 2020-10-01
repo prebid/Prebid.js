@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {config} from 'src/config.js';
 import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter.js';
 
 describe('the spotx adapter', function () {
@@ -89,6 +90,7 @@ describe('the spotx adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
+
   describe('buildRequests', function() {
     var bid, bidRequestObj;
 
@@ -125,6 +127,7 @@ describe('the spotx adapter', function () {
         page: 'prebid.js'
       });
     });
+
     it('should change request parameters based on options sent', function() {
       var request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.data.imp.video.ext).to.deep.equal({
@@ -152,7 +155,7 @@ describe('the spotx adapter', function () {
       };
 
       bid.userId = {
-        id5id: 'id5id_1',
+        id5id: { uid: 'id5id_1' },
         tdid: 'tdid_1'
       };
 
@@ -202,7 +205,8 @@ describe('the spotx adapter', function () {
           source: 'id5-sync.com',
           uids: [{
             id: 'id5id_1'
-          }]
+          }],
+          ext: {}
         },
         {
           source: 'adserver.org',
@@ -330,6 +334,50 @@ describe('the spotx adapter', function () {
 
       expect(request.data.imp.video.ext.placement).to.equal(2);
       expect(request.data.imp.video.ext.pos).to.equal(5);
+    });
+
+    it('should pass page param and override refererInfo.referer', function() {
+      var request;
+
+      bid.params.page = 'https://example.com';
+
+      var origGetConfig = config.getConfig;
+      sinon.stub(config, 'getConfig').callsFake(function (key) {
+        if (key === 'pageUrl') {
+          return 'https://www.spotx.tv';
+        }
+        return origGetConfig.apply(config, arguments);
+      });
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.page).to.equal('https://example.com');
+      config.getConfig.restore();
+    });
+
+    it('should use pageUrl from config if page param is not passed', function() {
+      var request;
+
+      var origGetConfig = config.getConfig;
+      sinon.stub(config, 'getConfig').callsFake(function (key) {
+        if (key === 'pageUrl') {
+          return 'https://www.spotx.tv';
+        }
+        return origGetConfig.apply(config, arguments);
+      });
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.page).to.equal('https://www.spotx.tv');
+      config.getConfig.restore();
+    });
+
+    it('should use refererInfo.referer if no page or pageUrl are passed', function() {
+      var request;
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.page).to.equal('prebid.js');
     });
   });
 
@@ -515,6 +563,7 @@ describe('the spotx adapter', function () {
       expect(scriptTag.getAttribute('data-spotx_digitrust_opt_out')).to.equal('1');
       expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('400');
       expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('300');
+      expect(scriptTag.getAttribute('data-spotx_ad_mute')).to.equal('1');
       window.document.getElementById.restore();
     });
 

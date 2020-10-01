@@ -357,7 +357,7 @@ describe('Richaudience adapter tests', function () {
     });
     it('Verify build id5', function () {
       DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = 'id5-user-id';
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: 'id5-user-id' };
 
       var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
@@ -369,13 +369,23 @@ describe('Richaudience adapter tests', function () {
 
       var request;
       DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = 1;
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: 1 };
       request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
       var requestContent = JSON.parse(request[0].data);
 
       expect(requestContent.user.eids).to.equal(undefined);
 
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = [];
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: [] };
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: null };
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: {} };
       request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
       requestContent = JSON.parse(request[0].data);
       expect(requestContent.user.eids).to.equal(undefined);

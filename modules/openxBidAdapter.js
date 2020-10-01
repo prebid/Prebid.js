@@ -281,6 +281,9 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
         case 'parrableId':
           queryParams[key] = userIdObjectOrValue.eid;
           break;
+        case 'id5id':
+          queryParams[key] = userIdObjectOrValue.uid;
+          break;
         default:
           queryParams[key] = userIdObjectOrValue;
       }

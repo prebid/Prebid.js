@@ -7,11 +7,15 @@
     "britepoolIdSystem",
     "liveIntentIdSystem",
     "lotamePanoramaId",
+    "merkleIdSystem",
     "criteoIdSystem",
     "netIdSystem",
     "identityLinkIdSystem",
     "sharedIdSystem",
-    "intentIqIdSystem"
+    "intentIqIdSystem",
+    "zeotapIdPlusIdSystem",
+    "haloIdSystem",
+    "quantcastIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -19,6 +23,7 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
+    "audigentRtdProvider",
     "jwplayerRtdProvider"
   ]
 }
