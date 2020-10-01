@@ -356,9 +356,11 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
 
         // replacing clickthrough if submitted
-        const { clickThrough } = options;
-        bid.ad = utils.replaceClickThrough(bid.ad, clickThrough);
-        bid.adUrl = utils.replaceClickThrough(bid.adUrl, clickThrough);
+        if (options && options.clickThrough) {
+          const { clickThrough } = options;
+          bid.ad = utils.replaceClickThrough(bid.ad, clickThrough);
+          bid.adUrl = utils.replaceClickThrough(bid.adUrl, clickThrough);
+        }
 
         // save winning bids
         auctionManager.addWinningBid(bid);

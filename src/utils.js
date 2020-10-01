@@ -719,8 +719,8 @@ export function replaceAuctionPrice(str, cpm) {
 }
 
 export function replaceClickThrough(str, clicktag) {
-  if (!str) return;
-  return str.replace(/\$\{CLICKTHROUGH\}/g, clicktag);
+  if (!str || !clicktag || typeof clicktag !== 'string') return;
+  return str.replace(/\${CLICKTHROUGH}/g, clicktag);
 }
 
 export function timestamp() {
