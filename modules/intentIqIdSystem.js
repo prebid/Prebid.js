@@ -11,6 +11,32 @@ import {submodule} from '../src/hook.js'
 
 const MODULE_NAME = 'intentIqId';
 
+const NOT_AVAILABLE = 'NA';
+
+/**
+ * Verify the id is valid - Id value or Not Found (ignore not available response)
+ * @param id
+ * @returns {boolean|*|boolean}
+ */
+function isValidId(id) {
+  return id && id != '' && id != NOT_AVAILABLE && isValidResponse(id);
+}
+
+/**
+ * Ignore not available response JSON
+ * @param obj
+ * @returns {boolean}
+ */
+function isValidResponse(obj) {
+  try {
+    obj = JSON.parse(obj);
+    return obj && obj['RESULT'] != NOT_AVAILABLE;
+  } catch (error) {
+    utils.logError(error);
+    return true;
+  }
+}
+
 /** @type {Submodule} */
 export const intentIqIdSubmodule = {
   /**
@@ -22,10 +48,10 @@ export const intentIqIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {{string}} value
-   * @returns {{intentIqId:string}}
+   * @returns {{intentIqId: {string}}|undefined}
    */
   decode(value) {
-    return (value && value != '') ? { 'intentIqId': value } : undefined;
+    return isValidId(value) ? { 'intentIqId': value } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -47,7 +73,11 @@ export const intentIqIdSubmodule = {
     const resp = function (callback) {
       const callbacks = {
         success: response => {
-          callback(response);
+          if (isValidId(response)) {
+            callback(response);
+          } else {
+            callback();
+          }
         },
         error: error => {
           utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);

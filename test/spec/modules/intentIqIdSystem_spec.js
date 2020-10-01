@@ -55,6 +55,14 @@ describe('IntentIQ tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
+  it('should ignore NA and invalid responses', function () {
+    let resp = JSON.stringify({'RESULT': 'NA'});
+    expect(intentIqIdSubmodule.decode(resp)).to.equal(undefined);
+    expect(intentIqIdSubmodule.decode('NA')).to.equal(undefined);
+    expect(intentIqIdSubmodule.decode('')).to.equal(undefined);
+    expect(intentIqIdSubmodule.decode(undefined)).to.equal(undefined);
+  });
+
   it('should call the IntentIQ endpoint with only partner, pai', function () {
     let callBackSpy = sinon.spy();
     let submoduleCallback = intentIqIdSubmodule.getId(paiConfigParams).callback;
