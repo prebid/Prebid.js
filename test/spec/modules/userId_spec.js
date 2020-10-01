@@ -357,6 +357,7 @@ describe('User ID', function() {
 
       let sandbox = sinon.createSandbox();
       let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
+      let refreshUserIdsCallback = sandbox.stub();
 
       let mockIdSystem = {
         name: 'mockId',
@@ -400,10 +401,11 @@ describe('User ID', function() {
 
       getGlobal().getUserIds(); // force initialization
 
-      getGlobal().refreshUserIds({submoduleNames: 'refreshedId'});
+      getGlobal().refreshUserIds({submoduleNames: 'refreshedId'}, refreshUserIdsCallback);
 
       expect(refreshedIdCallback.callCount).to.equal(2);
       expect(mockIdCallback.callCount).to.equal(1);
+      expect(refreshUserIdsCallback.callCount).to.equal(1);
     });
   });
 
