@@ -59,7 +59,11 @@ describe('Fabrick ID System', function() {
     let callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    expect(request.url).to.match(new RegExp(`r=${'r'.repeat(200)}&r=`));
+    r = '';
+    for (let i = 0; i < 200; i++) {
+      r += 'r';
+    }
+    expect(request.url).to.match(new RegExp(`r=${r}&r=`));
     request.respond(
       200,
       responseHeader,
