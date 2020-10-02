@@ -211,9 +211,15 @@ describe('teadsBidAdapter', () => {
       if (ttfbExpectedV2) {
         expect(payload.timeToFirstByte).to.deep.equal(ttfbExpectedV2.toString());
       } else {
-        const ttfbExpectedV1 = performance.timing.responseStart - performance.timing.requestStart;
+        const ttfbWithTimingV1 = performance &&
+            performance.timing.responseStart &&
+            performance.timing.requestStart &&
+            performance.timing.responseStart >= 0 &&
+            performance.timing.requestStart >= 0 &&
+            performance.timing.responseStart - performance.timing.requestStart;
+        const ttfbExpectedV1 = ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
 
-        expect(payload.timeToFirstByte).to.deep.equal(ttfbExpectedV1.toString());
+        expect(payload.timeToFirstByte).to.deep.equal(ttfbExpectedV1);
       }
     });
 
