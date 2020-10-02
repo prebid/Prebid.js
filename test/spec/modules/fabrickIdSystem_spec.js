@@ -44,9 +44,13 @@ describe('Fabrick ID System', function() {
   });
 
   it('should truncate the params', function() {
+    let r = '';
+    for (let i = 0; i < 300; i++) {
+      r += 'r';
+    }
     let configParams = Object.assign({}, defaultConfigParams, {
       refererInfo: {
-        referer: 'r'.repeat(300),
+        referer: r,
         stack: ['s-0'],
         canonicalUrl: 'cu-0'
       }
