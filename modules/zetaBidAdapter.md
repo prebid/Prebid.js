@@ -14,7 +14,6 @@ Module that connects to Zeta's demand sources
 ```
         var adUnits = [
             {
-                code: 'test-div',
                 mediaTypes: {
                     banner: {
                         sizes: [[300, 250]],  // a display size
