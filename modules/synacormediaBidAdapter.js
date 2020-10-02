@@ -37,7 +37,7 @@ export const spec = {
     const openRtbBidRequest = {
       id: bidderRequest.auctionId,
       site: {
-        domain: location.hostname,
+        domain: config.getConfig('publisherDomain') || location.hostname,
         page: refererInfo.referer,
         ref: document.referrer
       },
