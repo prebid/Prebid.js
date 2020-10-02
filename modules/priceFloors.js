@@ -109,18 +109,14 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
   let matchingRule = find(allPossibleMatches, hashValue => floorData.values.hasOwnProperty(hashValue));
 
   let matchingData = {
-    matchingFloor: floorData.values[matchingRule] || floorData.default,
+    floorMin: floorData.floorMin || 0,
+    floorRuleValue: floorData.values[matchingRule] || floorData.default,
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
     matchingRule
   };
 
-  // check that floorMin is greater than 0 and set values accordingly
-  if (utils.deepAccess(_floorsConfig, 'floorMin')) {
-    matchingData.floorMin = utils.deepAccess(_floorsConfig, 'floorMin');
-    matchingData.floorRuleValue = matchingData.matchingFloor;
-    if (matchingData.floorMin > matchingData.floorRuleValue) matchingData.matchingFloor = matchingData.floorMin;
-  }
-
+  matchingData.matchingFloor = Math.max(matchingData.floorMin, matchingData.floorRuleValue);
+  
   // save for later lookup if needed
   utils.deepSetValue(floorData, `matchingInputs.${matchingInput}`, {...matchingData});
   return matchingData;
@@ -197,7 +193,9 @@ function updateRequestParamsFromContext(bidRequest, requestParams) {
 export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size: '*'}) {
   let bidRequest = this;
   let floorData = _floorDataForAuction[bidRequest.auctionId];
+
   if (!floorData || floorData.skipped) return {};
+  if (floorData.hasOwnProperty('floorMin')) floorData.data.floorMin = floorData.floorMin;
 
   requestParams = updateRequestParamsFromContext(bidRequest, requestParams);
   let floorInfo = getFirstMatchingFloor(floorData.data, {...bidRequest}, {mediaType: requestParams.mediaType, size: requestParams.size});
@@ -296,44 +294,16 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
       bid.floorData = {
         skipped: floorData.skipped,
         skipRate: floorData.skipRate,
+        floorMin: floorData.floorMin,
         modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
         location: utils.deepAccess(floorData, 'data.location', 'noData'),
         floorProvider: floorData.floorProvider,
         fetchStatus: _floorsConfig.fetchStatus
       };
 
-      if (utils.deepAccess(floorData, 'floorMin')) {
+      /* if (utils.deepAccess(floorData, 'floorMin')) {
         bid.floorData.floorMin = utils.deepAccess(floorData, 'floorMin');
-      }
-    });
-  });
-}
-
-/**
- * @summary This function takes the adUnits for the auction and update them accordingly as well as returns the rules hashmap for the auction
- */
-export function updateAdUnitFloorData(adUnits, floorData, auctionId) {
-  adUnits.forEach((adUnit) => {
-    adUnit.bids.forEach(bid => {
-      if (floorData.skipped) {
-        delete bid.getFloor;
-      } else {
-        bid.getFloor = getFloor;
-      }
-      // information for bid and analytics adapters
-      bid.auctionId = auctionId;
-      bid.floorData = {
-        skipped: floorData.skipped,
-        skipRate: floorData.skipRate,
-        modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
-        location: utils.deepAccess(floorData, 'data.location', 'noData'),
-        floorProvider: floorData.floorProvider,
-        fetchStatus: _floorsConfig.fetchStatus
-      };
-
-      if (utils.deepAccess(floorData, 'floorMin')) {
-        bid.floorData.floorMin = utils.deepAccess(floorData, 'floorMin');
-      }
+      } */
     });
   });
 }
@@ -666,15 +636,12 @@ function addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm) {
   bid.floorData = {
     floorValue: floorInfo.matchingFloor,
     floorRule: floorInfo.matchingRule,
+    floorRuleValue: floorInfo.floorRuleValue,
     floorCurrency: floorData.data.currency,
     cpmAfterAdjustments: adjustedCpm,
     enforcements: {...floorData.enforcement},
     matchedFields: {}
   };
-
-  if (floorInfo.floorRuleValue) {
-    bid.floorData.floorRuleValue = floorInfo.floorRuleValue;
-  }
 
   floorData.data.schema.fields.forEach((field, index) => {
     let matchedValue = floorInfo.matchingData.split(floorData.data.schema.delimiter)[index];
