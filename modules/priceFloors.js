@@ -114,9 +114,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
     matchingRule
   };
-
   matchingData.matchingFloor = Math.max(matchingData.floorMin, matchingData.floorRuleValue);
-  
   // save for later lookup if needed
   utils.deepSetValue(floorData, `matchingInputs.${matchingInput}`, {...matchingData});
   return matchingData;
@@ -193,7 +191,6 @@ function updateRequestParamsFromContext(bidRequest, requestParams) {
 export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size: '*'}) {
   let bidRequest = this;
   let floorData = _floorDataForAuction[bidRequest.auctionId];
-
   if (!floorData || floorData.skipped) return {};
   if (floorData.hasOwnProperty('floorMin')) floorData.data.floorMin = floorData.floorMin;
 
@@ -288,7 +285,6 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
       } else {
         bid.getFloor = getFloor;
       }
-
       // information for bid and analytics adapters
       bid.auctionId = auctionId;
       bid.floorData = {
@@ -638,7 +634,6 @@ function addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm) {
     enforcements: {...floorData.enforcement},
     matchedFields: {}
   };
-
   floorData.data.schema.fields.forEach((field, index) => {
     let matchedValue = floorInfo.matchingData.split(floorData.data.schema.delimiter)[index];
     bid.floorData.matchedFields[field] = matchedValue;
