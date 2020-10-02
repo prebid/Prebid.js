@@ -159,6 +159,7 @@ export const spec = {
 
   buildRequests: function (validBidRequests = [], bidderRequest) {
     const anyBid = bidderRequest.bids[0];
+    const win = utils.getWindowSelf();
 
     setupGlobalNamespace(anyBid);
 
@@ -174,7 +175,7 @@ export const spec = {
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : 2,
       yl2: bidRequestWithYl2 ? bidRequestWithYl2.params.yl2 : (localStorage.sdgYieldtest === '1'),
-      ab: utils.getWindowSelf()['yieldlove_ab']
+      ab: win['yieldlove_ab']
     };
 
     const userIds = anyBid.userId;
@@ -193,18 +194,51 @@ export const spec = {
       };
     }
 
-    function bidSizes(bid) {
-      return utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes /* for prebid < 3 */ || [];
-    }
-
     validBidRequests.forEach(bid => {
       payload.bids.push({
-        bid: bid.bidId, sid: bid.params.sid, siz: bidSizes(bid), viz: elementInView(bid.adUnitCode)
+        bid: bid.bidId,
+        sid: bid.params.sid,
+        siz: bidSizes(bid),
+        viz: elementInView(bid.adUnitCode),
+        context: {
+          position: bid.adUnitCode,
+          adUnits: getAdUnits(bid.adUnitCode),
+          zone: getZone(bid.adUnitCode),
+          pageType: getPageType(bid.adUnitCode),
+        }
       });
     });
 
     return {
       method: 'POST', url: buildUrl(anyBid.params), data: payload
+    }
+
+    function bidSizes(bid) {
+      return utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes /* for prebid < 3 */ || [];
+    }
+
+    function getPageType(position) {
+      try {
+        return win.SDG.getCN().getSlotByPosition(position).getPageType()
+      } catch (e) {
+        return undefined;
+      }
+    }
+
+    function getZone(position) {
+      try {
+        return win.SDG.getCN().getSlotByPosition(position).getZone()
+      } catch (e) {
+        return undefined;
+      }
+    }
+
+    function getAdUnits(position) {
+      try {
+        return win.SDG.getCN().getSlotByPosition(position).getAdUnits()
+      } catch (e) {
+        return undefined;
+      }
     }
   },
 

@@ -341,12 +341,12 @@ function injectFakeServerEndpointDev() {
 
 function startFakeServer() {
   const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${FAKE_SERVER_PORT}`]);
-    fakeServer.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
-    });
-    fakeServer.stderr.on('data', (data) => {
-      console.log(`stderr: ${data}`);
-    });
+  fakeServer.stdout.on('data', (data) => {
+    console.log(`stdout: ${data}`);
+  });
+  fakeServer.stderr.on('data', (data) => {
+    console.log(`stderr: ${data}`);
+  });
 }
 
 // support tasks

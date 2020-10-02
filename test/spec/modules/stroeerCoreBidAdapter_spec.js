@@ -253,16 +253,19 @@ describe('stroeerCore bid adapter', function () {
   }
 
   describe('slot location uses SDG API if available', () => {
-    let win;
     let queriedUnitCodes = [];
     beforeEach(() => {
-      win = setupSingleWindow(sandbox, [(createElement('div-1', 17)), (createElement('div-2', 54))]);
+      const visibleElements = [createElement('div-1', 17), createElement('div-2', 54)];
+      const invisibleElement = createElement('invisible-div-1', -10);
+      const win = setupSingleWindow(sandbox, visibleElements);
       win.SDG = {
         getCN: function () {
           return {
             getSlotByPosition: function (elementId) {
               queriedUnitCodes.push(elementId);
-              return {};
+              return {
+                getContainer: () => invisibleElement
+              }
             }
           }
         }
@@ -303,10 +306,14 @@ describe('stroeerCore bid adapter', function () {
         }],
       };
 
-      spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-      assert.equal(2, queriedUnitCodes.length);
-      assert.deepEqual(['div-1-alpha', 'div-2-alpha'], queriedUnitCodes);
+      requests.data.bids.forEach((bid) => {
+        assert.isFalse(bid.viz);
+      });
+
+      assert.deepInclude(queriedUnitCodes, 'div-1-alpha');
+      assert.deepInclude(queriedUnitCodes, 'div-2-alpha');
     });
   });
 
@@ -396,9 +403,13 @@ describe('stroeerCore bid adapter', function () {
 
       describe('should use custom url if provided', () => {
         const samples = [{
-          protocol: 'http:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'
+          protocol: 'http:',
+          params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'},
+          expected: 'https://other.com:234/xyz'
         }, {
-          protocol: 'https:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'
+          protocol: 'https:',
+          params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'},
+          expected: 'https://other.com:234/xyz'
         }, {
           protocol: 'https:',
           params: {sid: 'ODA=', host: 'other.com', port: '234', securePort: '871', path: '/xyz'},
@@ -433,7 +444,7 @@ describe('stroeerCore bid adapter', function () {
       let placementElements;
       beforeEach(() => {
         placementElements = [createElement('div-1', 17), createElement('div-2', 54)];
-        ({ topWin, win } = setupNestedWindows(sandbox, placementElements));
+        ({topWin, win} = setupNestedWindows(sandbox, placementElements));
       });
 
       afterEach(() => {
@@ -459,9 +470,21 @@ describe('stroeerCore bid adapter', function () {
           'ssat': 2,
           'yl2': false,
           'bids': [{
-            'sid': 'NDA=', 'bid': 'bid1', 'siz': [[300, 600], [160, 60]], 'viz': true
+            'sid': 'NDA=',
+            'bid': 'bid1',
+            'siz': [[300, 600], [160, 60]],
+            'viz': true,
+            'context': {
+              'position': 'div-1'
+            }
           }, {
-            'sid': 'ODA=', 'bid': 'bid2', 'siz': [[728, 90]], 'viz': true
+            'sid': 'ODA=',
+            'bid': 'bid2',
+            'siz': [[728, 90]],
+            'viz': true,
+            'context': {
+              'position': 'div-2'
+            }
           }],
           'user': {
             'euids': userIds
@@ -472,6 +495,60 @@ describe('stroeerCore bid adapter', function () {
         const actualJsonPayload = JSON.parse(JSON.stringify(serverRequestInfo.data));
 
         assert.deepEqual(actualJsonPayload, expectedJsonPayload);
+      });
+
+      it('should have expected context', () => {
+        win.SDG = buildFakeSDG({
+          'div-1': {
+            adUnits: ['adUnit-1', 'adUnit-2'],
+            zone: 'zone-1',
+            pageType: 'pageType-1'
+          },
+          'div-2': {
+            adUnits: ['adUnit-3', 'adUnit-4', 'adUnit-5'],
+            zone: 'zone-2',
+            pageType: 'pageType-2'
+          }
+        });
+        const bidReq = buildBidderRequest();
+
+        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+        assert.deepEqual(serverRequestInfo.data.bids[0].context, {
+          'position': 'div-1',
+          'adUnits': ['adUnit-1', 'adUnit-2'],
+          'zone': 'zone-1',
+          'pageType': 'pageType-1'
+        });
+
+        assert.deepEqual(serverRequestInfo.data.bids[1].context, {
+          'position': 'div-2',
+          'adUnits': ['adUnit-3', 'adUnit-4', 'adUnit-5'],
+          'zone': 'zone-2',
+          'pageType': 'pageType-2'
+        });
+
+        function buildFakeSDG(config) {
+          return {
+            getCN: function () {
+              return {
+                getSlotByPosition: function (position) {
+                  return {
+                    getAdUnits: function () {
+                      return config[position].adUnits;
+                    },
+                    getZone: function () {
+                      return config[position].zone;
+                    },
+                    getPageType: function () {
+                      return config[position].pageType;
+                    },
+                  };
+                }
+              };
+            }
+          }
+        }
       });
 
       it('should handle banner sizes for pre version 3', () => {
@@ -573,7 +650,10 @@ describe('stroeerCore bid adapter', function () {
           }
         });
 
-        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true}, {consentString: 'UGluZyBQb25n', gdprApplies: false}];
+        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true}, {
+          consentString: 'UGluZyBQb25n',
+          gdprApplies: false
+        }];
         gdprSamples.forEach((sample) => {
           it(`should add GDPR info ${JSON.stringify(sample)} when provided`, () => {
             const bidReq = buildBidderRequest();
@@ -733,22 +813,62 @@ describe('stroeerCore bid adapter', function () {
 
     describe('should add generateAd method on bid object', () => {
       const externalEncTests = [// full price text
-        {price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5DxfESCHg5CTVFw'},
+        {
+          price: '1.570000',
+          bidId: '123456789123456789',
+          exchangeRate: 1.0,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5DxfESCHg5CTVFw'
+        },
         // partial price text
-        {price: '1.59', bidId: '123456789123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg'},
+        {
+          price: '1.59',
+          bidId: '123456789123456789123456789',
+          exchangeRate: 1.0,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg'
+        },
         // large bidId will be trimmed (> 16 characters)
-        {price: '1.59', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg'},
+        {
+          price: '1.59',
+          bidId: '123456789123456789',
+          exchangeRate: 1.0,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg'
+        },
         // small bidId will be padded (< 16 characters)
         {price: '1.59', bidId: '123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MDAwMDAwMDJGF0WFzgb7CQC2Nw'},
         // float instead of text
-        {price: 1.59, bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg'},
+        {
+          price: 1.59,
+          bidId: '123456789123456789',
+          exchangeRate: 1.0,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg'
+        },
         // long price after applying exchange rate: 12.03 * 0.32 = 3.8495999999999997 (use 3.8496)
-        {price: 12.03, bidId: '123456789123456789', exchangeRate: 0.32, expectation: 'MTIzNDU2Nzg5MTIzNDU2N865AhTNThHQOG035A'},
+        {
+          price: 12.03,
+          bidId: '123456789123456789',
+          exchangeRate: 0.32,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2N865AhTNThHQOG035A'
+        },
         // long price after applying exchange rate: 22.23 * 0.26 = 5.779800000000001 (use 5.7798)
-        {price: 22.23, bidId: '123456789123456789', exchangeRate: 0.26, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8i5DRfNQBHQ4_a0lA'},
+        {
+          price: 22.23,
+          bidId: '123456789123456789',
+          exchangeRate: 0.26,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2N8i5DRfNQBHQ4_a0lA'
+        },
         // somehow empty string for price
-        {price: '', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N_2XOiD0eBHQUWJCcw'}, // handle zero
-        {price: 0, bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N82XOiD0eBHQdRlVNg'}];
+        {
+          price: '',
+          bidId: '123456789123456789',
+          exchangeRate: 1.0,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2N_2XOiD0eBHQUWJCcw'
+        }, // handle zero
+        {
+          price: 0,
+          bidId: '123456789123456789',
+          exchangeRate: 1.0,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2N82XOiD0eBHQdRlVNg'
+        }];
       externalEncTests.forEach(test => {
         it(`should replace \${AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} and exchange rate ${test.exchangeRate}`,
           () => {
@@ -774,11 +894,26 @@ describe('stroeerCore bid adapter', function () {
       });
 
       const internalEncTests = [// full price text
-        {price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'},
+        {
+          price: '1.570000',
+          bidId: '123456789123456789',
+          exchangeRate: 1.0,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'
+        },
         // ignore exchange rate
-        {price: '1.570000', bidId: '123456789123456789', exchangeRate: 0.5, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'},
+        {
+          price: '1.570000',
+          bidId: '123456789123456789',
+          exchangeRate: 0.5,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'
+        },
         // partial price text
-        {price: '2.945', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny4i5OEcHq-I-FhZIg'}
+        {
+          price: '2.945',
+          bidId: '123456789123456789',
+          exchangeRate: 1.0,
+          expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny4i5OEcHq-I-FhZIg'
+        }
         // not all combos required. Already tested on other macro (white box testing approach)
       ];
       internalEncTests.forEach(test => {
@@ -870,7 +1005,7 @@ describe('stroeerCore bid adapter', function () {
 
         const responseBid = bidderResponse.bids[0];
         responseBid.ad =
-                        '<img src=\'tracker.com?p=${AUCTION_PRICE}&e=${AUCTION_PRICE:ENC}></img>\n<script>var price=${SSP_AUCTION_PRICE:ENC}</script>';
+          '<img src=\'tracker.com?p=${AUCTION_PRICE}&e=${AUCTION_PRICE:ENC}></img>\n<script>var price=${SSP_AUCTION_PRICE:ENC}</script>';
         responseBid.bidId = '123456789123456789';
 
         const result = spec.interpretResponse({body: bidderResponse});
@@ -1007,10 +1142,13 @@ describe('stroeerCore bid adapter', function () {
 
       describe('price truncation in generateAd', function () {
         const d = new Decrpyter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=');
-        const validPrices = [{price: '1.5700000', expectation: '1.570000'}, {price: '12345678', expectation: '12345678'},
-          {price: '1234.56789', expectation: '1234.567'}, {price: '12345.1234', expectation: '12345.12'},
-          {price: '123456.10', expectation: '123456.1'}, {price: '123456.105', expectation: '123456.1'},
-          {price: '1234567.0052', expectation: '1234567'}, ];
+        const validPrices = [{price: '1.5700000', expectation: '1.570000'}, {
+          price: '12345678',
+          expectation: '12345678'
+        },
+        {price: '1234.56789', expectation: '1234.567'}, {price: '12345.1234', expectation: '12345.12'},
+        {price: '123456.10', expectation: '123456.1'}, {price: '123456.105', expectation: '123456.1'},
+        {price: '1234567.0052', expectation: '1234567'}, ];
         validPrices.forEach(test => {
           it(`should safely truncate ${test.price} to ${test.expectation}`, () => {
             const bidderResponse = buildBidderResponse();
@@ -1031,7 +1169,7 @@ describe('stroeerCore bid adapter', function () {
           });
         });
 
-        const invalidPrices = [ {price: '123456789'}, {price: '123456.15'}, {price: '1234567.0152'}, {price: '1234567.1052'}, ];
+        const invalidPrices = [{price: '123456789'}, {price: '123456.15'}, {price: '1234567.0152'}, {price: '1234567.1052'}];
         invalidPrices.forEach(test => {
           it(`should error when price is ${test.price}`, function () {
             const bidderResponse = buildBidderResponse();
@@ -1053,6 +1191,7 @@ describe('stroeerCore bid adapter', function () {
 
   describe('get user syncs entry point', () => {
     let win;
+
     beforeEach(() => {
       win = setupSingleWindow(sandbox);
 
