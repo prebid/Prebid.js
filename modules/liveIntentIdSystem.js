@@ -100,7 +100,7 @@ export const liveIntentIdSubmodule = {
    * `publisherId` params.
    * @function
    * @param {{unifiedId:string}} value
-   * @param {SubmoduleParams|undefined} [config]
+   * @param {SubmoduleConfig|undefined} config
    * @returns {{lipb:Object}}
    */
   decode(value, config) {
