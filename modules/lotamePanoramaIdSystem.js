@@ -161,7 +161,7 @@ export const lotamePanoramaIdSubmodule = {
   /**
    * Retrieve the Lotame Panorama Id
    * @function
-   * @param {SubmoduleParams} [config]
+   * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
    * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}

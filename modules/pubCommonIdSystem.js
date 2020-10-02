@@ -54,7 +54,7 @@ export const pubCommonIdSubmodule = {
   /**
    * performs action to obtain id
    * @function
-   * @param {SubmoduleParams} [config]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse}
    */
   getId: function ({params: {create = true, pixelUrl} = {}} = {}) {

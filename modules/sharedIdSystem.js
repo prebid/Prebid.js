@@ -296,7 +296,7 @@ export const sharedIdSubmodule = {
   /**
    * performs action to obtain id and return a value.
    * @function
-   * @param {SubmoduleParams} [config]
+   * @param {SubmoduleConfig} [config]
    * @returns {sharedId}
    */
   getId(config) {

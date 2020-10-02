@@ -261,7 +261,7 @@ export const parrableIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [config]
+   * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
    * @returns {function(callback:function), id:ParrableId}
    */

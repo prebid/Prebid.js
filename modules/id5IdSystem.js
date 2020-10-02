@@ -65,7 +65,7 @@ export const id5IdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function getId
-   * @param {SubmoduleParams} [config]
+   * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
    * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
@@ -124,7 +124,7 @@ export const id5IdSubmodule = {
    *  If IdResponse#callback is defined, then it'll called at the end of auction.
    *  It's permissible to return neither, one, or both fields.
    * @function extendId
-   * @param {SubmoduleParams} config
+   * @param {SubmoduleConfig} config
    * @param {Object} cacheIdObj - existing id, if any
    * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */

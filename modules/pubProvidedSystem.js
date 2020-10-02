@@ -34,7 +34,7 @@ export const pubProvidedIdSubmodule = {
   /**
    * performs action to obtain id and return a value.
    * @function
-   * @param {SubmoduleParams} [config]
+   * @param {SubmoduleConfig} [config]
    * @returns {{id: array}}
    */
   getId(config) {

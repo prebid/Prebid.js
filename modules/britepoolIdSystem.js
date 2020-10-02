@@ -29,7 +29,7 @@ export const britepoolIdSubmodule = {
   /**
    * Performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [submoduleConfig]
+   * @param {SubmoduleConfig} [submoduleConfig]
    * @param {ConsentData|undefined} consentData
    * @returns {function(callback:function)}
    */
@@ -85,7 +85,7 @@ export const britepoolIdSubmodule = {
   },
   /**
    * Helper method to create params for our API call
-   * @param {SubmoduleParams} [submoduleConfigParams]
+   * @param {SubmoduleConfig} [submoduleConfigParams]
    * @param {ConsentData|undefined} consentData
    * @returns {object} Object with parsed out params
    */

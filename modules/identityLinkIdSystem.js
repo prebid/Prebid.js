@@ -34,7 +34,7 @@ export const identityLinkSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {ConsentData} [consentData]
-   * @param {SubmoduleParams} [config]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {

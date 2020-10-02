@@ -14,7 +14,7 @@
  *  If IdResponse#callback is defined, then it'll called at the end of auction.
  *  It's permissible to return neither, one, or both fields.
  * @name Submodule#getId
- * @param {SubmoduleParams} config
+ * @param {SubmoduleConfig} config
  * @param {ConsentData|undefined} consentData
  * @param {(Object|undefined)} cacheIdObj
  * @return {(IdResponse|undefined)} A response object that contains id and/or callback.
