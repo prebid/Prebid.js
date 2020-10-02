@@ -300,10 +300,6 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
         floorProvider: floorData.floorProvider,
         fetchStatus: _floorsConfig.fetchStatus
       };
-
-      /* if (utils.deepAccess(floorData, 'floorMin')) {
-        bid.floorData.floorMin = utils.deepAccess(floorData, 'floorMin');
-      } */
     });
   });
 }
