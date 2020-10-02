@@ -1,11 +1,8 @@
 import { expect } from 'chai';
 import find from 'core-js-pure/features/array/find.js';
 import { config } from 'src/config.js';
-import { newStorageManager } from 'src/storageManager.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
-import { zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
-
-const storage = newStorageManager();
+import { storage, zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_COOKIE = 'THIS-IS-A-DUMMY-COOKIE';
@@ -50,14 +47,10 @@ describe('Zeotap ID System', function() {
     afterEach(() => {
       unsetCookie();
       unsetLocalStorage();
-    })
+    });
 
     it('provides the stored Zeotap id if a cookie exists', function() {
-      storage.setCookie(
-        ZEOTAP_COOKIE_NAME,
-        ENCODED_ZEOTAP_COOKIE,
-        (new Date(Date.now() + 5000).toUTCString()),
-      );
+      storage.setCookie(ZEOTAP_COOKIE_NAME, ENCODED_ZEOTAP_COOKIE);
       let id = zeotapIdPlusSubmodule.getId();
       expect(id).to.deep.equal({
         id: ENCODED_ZEOTAP_COOKIE

@@ -7,10 +7,12 @@ import find from 'core-js-pure/features/array/find.js';
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
 
-// always use https, regardless of whether or not current page is secure
-export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
-export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
+let rubiConf = {};
+// we are saving these as global to this module so that if a pub accidentally overwrites the entire
+// rubicon object, then we do not lose other data
+config.getConfig('rubicon', config => {
+  utils.mergeDeep(rubiConf, config.rubicon);
+});
 
 const GVLID = 52;
 const DIGITRUST_PROP_NAMES = {
@@ -177,7 +179,7 @@ export const spec = {
           prebid: {
             cache: {
               vastxml: {
-                returnCreative: false // don't return the VAST
+                returnCreative: rubiConf.returnVast === true
               }
             },
             targeting: {
@@ -188,7 +190,7 @@ export const spec = {
             },
             bidders: {
               rubicon: {
-                integration: config.getConfig('rubicon.int_type') || DEFAULT_PBS_INTEGRATION
+                integration: rubiConf.int_type || DEFAULT_PBS_INTEGRATION
               }
             }
           }
@@ -203,7 +205,7 @@ export const spec = {
       }
 
       let bidFloor;
-      if (typeof bidRequest.getFloor === 'function' && !config.getConfig('rubicon.disableFloors')) {
+      if (typeof bidRequest.getFloor === 'function' && !rubiConf.disableFloors) {
         let floorInfo;
         try {
           floorInfo = bidRequest.getFloor({
@@ -251,7 +253,7 @@ export const spec = {
       const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       if (eids && eids.length) {
         // filter out unsupported id systems
-        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1));
+        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org', 'criteo.com'].indexOf(eid.source) !== -1));
 
         // liveintent requires additional props to be set
         const liveIntentEid = find(data.user.ext.eids, eid => eid.source === 'liveintent.com');
@@ -328,19 +330,19 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: VIDEO_ENDPOINT,
+        url: `https://${rubiConf.videoHost || 'prebid-server'}.rubiconproject.com/openrtb2/auction`,
         data,
         bidRequest
       }
     });
 
-    if (config.getConfig('rubicon.singleRequest') !== true) {
+    if (rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
           method: 'GET',
-          url: FASTLANE_ENDPOINT,
+          url: `https://${rubiConf.bannerHost || 'fastlane'}.rubiconproject.com/a/api/fastlane.json`,
           data: spec.getOrderedParams(bidParams).reduce((paramString, key) => {
             const propValue = bidParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
@@ -371,7 +373,7 @@ export const spec = {
           // SRA request returns grouped bidRequest arrays not a plain bidRequest
           aggregate.push({
             method: 'GET',
-            url: FASTLANE_ENDPOINT,
+            url: `https://${rubiConf.bannerHost || 'fastlane'}.rubiconproject.com/a/api/fastlane.json`,
             data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
               const propValue = combinedSlotParams[key];
               return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
@@ -478,8 +480,6 @@ export const spec = {
 
     const [latitude, longitude] = params.latLong || [];
 
-    const configIntType = config.getConfig('rubicon.int_type');
-
     const data = {
       'account_id': params.accountId,
       'site_id': params.siteId,
@@ -488,7 +488,7 @@ export const spec = {
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
       'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
       'rp_secure': '1',
-      'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
+      'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
       'x_source.pchain': params.pchain,
       'p_screen_res': _getScreenResolution(),
@@ -500,7 +500,7 @@ export const spec = {
     };
 
     // If floors module is enabled and we get USD floor back, send it in rp_hard_floor else undfined
-    if (typeof bidRequest.getFloor === 'function' && !config.getConfig('rubicon.disableFloors')) {
+    if (typeof bidRequest.getFloor === 'function' && !rubiConf.disableFloors) {
       let floorInfo;
       try {
         floorInfo = bidRequest.getFloor({
@@ -538,12 +538,27 @@ export const spec = {
       if (sharedId) {
         data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
       }
+      const criteoId = find(bidRequest.userIdAsEids, eid => eid.source === 'criteo.com');
+      if (criteoId) {
+        data['eid_criteo.com'] = `${criteoId.uids[0].id}^${criteoId.uids[0].atype}`;
+      }
     }
 
     // set ppuid value from config value
     const configUserId = config.getConfig('user.id');
     if (configUserId) {
       data['ppuid'] = configUserId;
+    } else {
+      // if config.getConfig('user.id') doesn't return anything, then look for the first eid.uids[*].ext.stype === 'ppuid'
+      for (let i = 0; bidRequest.userIdAsEids && i < bidRequest.userIdAsEids.length; i++) {
+        if (bidRequest.userIdAsEids[i].uids) {
+          const pubProvidedId = find(bidRequest.userIdAsEids[i].uids, uid => uid.ext && uid.ext.stype === 'ppuid');
+          if (pubProvidedId && pubProvidedId.id) {
+            data['ppuid'] = pubProvidedId.id;
+            break;
+          }
+        }
+      }
     }
 
     if (bidderRequest.gdprConsent) {
@@ -672,7 +687,7 @@ export const spec = {
             cpm: bid.price || 0,
             bidderCode: seatbid.seat,
             ttl: 300,
-            netRevenue: config.getConfig('rubicon.netRevenue') !== false, // If anything other than false, netRev is true
+            netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
             width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
             height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
           };
@@ -752,7 +767,7 @@ export const spec = {
           cpm: ad.cpm || 0,
           dealId: ad.deal,
           ttl: 300, // 5 minutes
-          netRevenue: config.getConfig('rubicon.netRevenue') !== false, // If anything other than false, netRev is true
+          netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
           rubicon: {
             advertiserId: ad.advertiser, networkId: ad.network
           },
@@ -795,7 +810,7 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
-      // data is only assigned if params are available to pass to SYNC_ENDPOINT
+      // data is only assigned if params are available to pass to syncEndpoint
       let params = '';
 
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -814,7 +829,7 @@ export const spec = {
       hasSynced = true;
       return {
         type: 'iframe',
-        url: SYNC_ENDPOINT + params
+        url: `https://${rubiConf.syncHost || 'eus'}.rubiconproject.com/usync.html` + params
       };
     }
   },
@@ -1060,6 +1075,7 @@ function bidType(bid, log = false) {
   }
 }
 
+export const resetRubiConf = () => rubiConf = {};
 export function masSizeOrdering(sizes) {
   const MAS_SIZE_PRIORITY = [15, 2, 9];
 

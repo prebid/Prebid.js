@@ -1043,7 +1043,7 @@ describe('OpenxAdapter', function () {
         britepoolid: '1111-britepoolid',
         criteoId: '1111-criteoId',
         digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
-        id5id: '1111-id5id',
+        id5id: {uid: '1111-id5id'},
         idl_env: '1111-idl_env',
         lipb: {lipbid: '1111-lipb'},
         netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
@@ -1095,6 +1095,9 @@ describe('OpenxAdapter', function () {
                 break;
               case 'parrableId':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.parrableId.eid;
+                break;
+              case 'id5id':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.id5id.uid;
                 break;
               default:
                 userIdValue = EXAMPLE_DATA_BY_ATTR[userIdProviderKey];

@@ -9,7 +9,7 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.5.2';
+const SUBLIME_VERSION = '0.6.0';
 
 /**
  * Debug log message
@@ -23,7 +23,8 @@ export function log(msg, obj) {
 // Default state
 export const state = {
   zoneId: '',
-  transactionId: ''
+  transactionId: '',
+  notifyId: ''
 };
 
 /**
@@ -47,8 +48,8 @@ export function sendEvent(eventName) {
     z: state.zoneId,
     e: eventName,
     src: 'pa',
-    puid: state.transactionId,
-    trId: state.transactionId,
+    puid: state.transactionId || state.notifyId,
+    trId: state.transactionId || state.notifyId,
     ver: SUBLIME_VERSION,
   };
 
@@ -101,6 +102,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     setState({
       transactionId: bid.transactionId,
+      notifyId: bid.params.notifyId,
       zoneId: bid.params.zoneId,
       debug: bid.params.debug || false,
     });
@@ -117,6 +119,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         h: size[1],
       })),
       transactionId: bid.transactionId,
+      notifyId: bid.params.notifyId,
       zoneId: bid.params.zoneId,
     };
 
