@@ -105,8 +105,7 @@ describe('Zeotap ID System', function() {
       adUnits = [getAdUnitMock()];
       storage.setCookie(
         ZEOTAP_COOKIE_NAME,
-        ENCODED_ZEOTAP_COOKIE,
-        (new Date(Date.now() + 5000).toUTCString()),
+        ENCODED_ZEOTAP_COOKIE
       );
       setSubmoduleRegistry([zeotapIdPlusSubmodule]);
       init(config);

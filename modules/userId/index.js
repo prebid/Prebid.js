@@ -539,7 +539,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
       refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
     }
 
-    if (!storedId || refreshNeeded || !!forceRefresh || !storedConsentDataMatchesConsentData(storedConsentData, consentData)) {
+    if (!storedId || refreshNeeded || forceRefresh || !storedConsentDataMatchesConsentData(storedConsentData, consentData)) {
       // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
       response = submodule.submodule.getId(submodule.config.params, consentData, storedId);
     } else if (typeof submodule.submodule.extendId === 'function') {
@@ -571,7 +571,9 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
     const response = submodule.submodule.getId(submodule.config.params, consentData, undefined);
     if (utils.isPlainObject(response)) {
       if (typeof response.callback === 'function') { submodule.callback = response.callback; }
-      if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config.params); }
+      if (response.id) {
+        submodule.idObj = submodule.submodule.decode(response.id, submodule.config.params);
+      }
     }
   }
 }
