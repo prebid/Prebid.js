@@ -85,7 +85,7 @@ export const britepoolIdSubmodule = {
   },
   /**
    * Helper method to create params for our API call
-   * @param {SubmoduleConfig} [submoduleConfigParams]
+   * @param {SubmoduleParams} [submoduleConfigParams]
    * @param {ConsentData|undefined} consentData
    * @returns {object} Object with parsed out params
    */

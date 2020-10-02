@@ -152,6 +152,7 @@ export const lotamePanoramaIdSubmodule = {
    * Decode the stored id value for passing to bid requests
    * @function decode
    * @param {(Object|string)} value
+   * @param {SubmoduleConfig|undefined} config
    * @returns {(Object|undefined)}
    */
   decode(value, config) {

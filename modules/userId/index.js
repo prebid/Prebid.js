@@ -27,7 +27,7 @@
  *  If IdResponse#callback is defined, then it'll called at the end of auction.
  *  It's permissible to return neither, one, or both fields.
  * @name Submodule#extendId
- * @param {SubmoduleParams} config
+ * @param {SubmoduleConfig} config
  * @param {Object} storedId - existing id, if any
  * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
  */
@@ -37,7 +37,7 @@
  * @summary decode a stored value for passing to bid requests
  * @name Submodule#decode
  * @param {Object|string} value
- * @param {SubmoduleParams|undefined} config
+ * @param {SubmoduleConfig|undefined} config
  * @return {(Object|undefined)}
  */
 
@@ -85,6 +85,7 @@
  * @property {(array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
  * @property {(string|undefined)} providedIdentifierName - defines the name of an identifier that can be found in local storage or in the cookie jar that can be sent along with the getId request. This parameter should be used whenever a customer is able to provide the most stable identifier possible
  * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
+ * @property {(string|undefined)} pd - publisher provided data for reconciling ID5 IDs
  */
 
 /**

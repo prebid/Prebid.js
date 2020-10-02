@@ -65,8 +65,8 @@ export const id5IdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function getId
-   * @param {SubmoduleConfig} [config]
-   * @param {ConsentData} [consentData]
+   * @param {SubmoduleConfig} config
+   * @param {ConsentData} consentData
    * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
    */
