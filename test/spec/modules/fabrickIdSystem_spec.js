@@ -1,7 +1,7 @@
-import * as utils from '../../../src/utils';
-import {server} from '../../mocks/xhr';
+import * as utils from '../../../src/utils.js';
+import {server} from '../../mocks/xhr.js';
 
-import * as fabrickIdSystem from 'modules/fabrickIdSystem';
+import * as fabrickIdSystem from 'modules/fabrickIdSystem.js';
 
 const defaultConfigParams = {
   apiKey: '123',

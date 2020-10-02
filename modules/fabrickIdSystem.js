@@ -105,11 +105,9 @@ export const fabrickIdSubmodule = {
         };
         return {callback: resp};
       } catch (e) {
-        console.error(e);
         utils.logError(`fabrickIdSystem encountered an error`, e);
       }
     } catch (e) {
-      console.error(e)
       utils.logError(`fabrickIdSystem encountered an error`, e);
     }
   }
