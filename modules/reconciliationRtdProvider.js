@@ -17,15 +17,10 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import * as utils from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
-/** @type {string} */
-const MODULE_NAME = 'realTimeData';
-/** @type {string} */
-const SUBMODULE_NAME = 'reconciliation';
 /** @type {Object} */
 const MessageType = {
   IMPRESSION_REQUEST: 'rsdk:impression:req',
@@ -263,22 +258,19 @@ export const track = {
 
 /**
  * Set custom targetings for provided adUnits
- * call callback (onDone) when ready
- * @param {adUnit[]} adUnits
- * @param {function} onDone callback function
+ * @param {string[]} adUnitsCodes
+ * @return {Object} key-value object with custom targetings
  */
-function getReconciliationData(adUnits, onDone) {
-  let dataToReturn = adUnits.reduce((rp, cau) => {
-    const adUnitCode = cau && cau.code;
-
+function getReconciliationData(adUnitsCodes) {
+  let dataToReturn = adUnitsCodes.reduce((rp, adUnitCode) => {
     if (!adUnitCode) {
       return rp;
     }
 
     const adSlot = getSlotByCode(adUnitCode);
+
     rp[adUnitCode] = {
-      RSDK_ADID:
-        cau.transactionId || utils.generateUUID(),
+      RSDK_ADID: utils.generateUUID(),
       RSDK_AUID: adSlot ? adSlot.getAdUnitPath() : adUnitCode,
     };
 
@@ -288,7 +280,7 @@ function getReconciliationData(adUnits, onDone) {
   // Track init event
   trackInit(dataToReturn);
 
-  return onDone(dataToReturn);
+  return dataToReturn;
 }
 
 /** @type {RtdSubmodule} */
@@ -297,42 +289,25 @@ export const reconciliationSubmodule = {
    * used to link submodule with realTimeData
    * @type {string}
    */
-  name: SUBMODULE_NAME,
+  name: 'reconciliation',
   /**
    * get data and send back to realTimeData module
    * @function
-   * @param {adUnit[]} adUnits
-   * @param {function} onDone
+   * @param {string[]} adUnitsCodes
    */
-  getData: getReconciliationData,
-  init
+  getTargetingData: getReconciliationData,
+  init: init,
 };
 
-function init(config, gdpr, usp) {
+function init(moduleConfig) {
+  const params = moduleConfig.params;
+  if (params && params.publisherMemberId) {
+    _moduleParams = Object.assign({}, DEFAULT_PARAMS, params);
+    initListeners();
+  } else {
+    utils.logError('missing params for Browsi provider');
+  }
   return true;
 }
 
-export function beforeInit(config) {
-  const confListener = config.getConfig(MODULE_NAME, ({ realTimeData }) => {
-    try {
-      const params =
-        realTimeData.dataProviders &&
-        realTimeData.dataProviders.filter(
-          (pr) => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME
-        )[0].params;
-      _moduleParams = Object.assign({}, DEFAULT_PARAMS, params);
-    } catch (e) {
-      _moduleParams = {};
-    }
-
-    if (_moduleParams.publisherMemberId) {
-      confListener();
-      initListeners();
-    } else {
-      utils.logError('missing params for Reconciliation provider');
-    }
-  });
-}
-
 submodule('realTimeData', reconciliationSubmodule);
-beforeInit(config);
