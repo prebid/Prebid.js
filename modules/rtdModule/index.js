@@ -152,8 +152,8 @@ import {getGlobal} from '../../src/prebidGlobal.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
-/** @type {boolean} */
-let _smInit = false;
+/** @type {RtdSubmodule[]} */
+let registeredSubModules = [];
 /** @type {RtdSubmodule[]} */
 export let subModules = [];
 /** @type {ModuleConfig} */
@@ -168,7 +168,7 @@ let _userConsent;
  * @param {RtdSubmodule} submodule
  */
 export function attachRealTimeDataProvider(submodule) {
-  subModules.push(submodule);
+  registeredSubModules.push(submodule);
 }
 
 export function init(config) {
@@ -182,33 +182,33 @@ export function init(config) {
     _dataProviders = realTimeData.dataProviders;
     setEventsListeners();
     getGlobal().requestBids.before(setBidRequestsData, 40);
+    initSubModules();
   });
+}
+
+function getConsentData() {
+  return {
+    gdpr: gdprDataHandler.getConsentData(),
+    usp: uspDataHandler.getConsentData(),
+    coppa: !!(config.getConfig('coppa'))
+  }
 }
 
 /**
  * call each sub module init function by config order
  * if no init function / init return failure / module not configured - remove it from submodules list
  */
-export function initSubModules() {
-  if (_smInit) {
-    // only need to init once
-    return;
-  }
+function initSubModules() {
+  _userConsent = getConsentData();
   let subModulesByOrder = [];
-  _userConsent = {
-    gdpr: gdprDataHandler.getConsentData(),
-    usp: uspDataHandler.getConsentData(),
-    coppa: !!(config.getConfig('coppa'))
-  };
   _dataProviders.forEach(provider => {
-    const sm = find(subModules, s => s.name === provider.name);
+    const sm = find(registeredSubModules, s => s.name === provider.name);
     const initResponse = sm && sm.init && sm.init(provider, _userConsent);
     if (initResponse) {
       subModulesByOrder.push(Object.assign(sm, {config: provider}));
     }
   });
   subModules = subModulesByOrder;
-  _smInit = true;
 }
 
 /**
@@ -235,15 +235,11 @@ function setEventsListeners() {
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
 export function setBidRequestsData(fn, reqBidsConfigObj) {
-  initSubModules();
-
-  // delay bidding process only if auctionDelay > 0
-  if (!_moduleConfig.auctionDelay || _moduleConfig.auctionDelay < 1) {
-    return exitHook();
-  }
+  _userConsent = getConsentData();
 
   const relevantSubModules = subModules.filter(sm => typeof sm.getBidRequestData === 'function');
   const prioritySubModules = relevantSubModules.filter(sm => !!(sm.config && sm.config.waitForIt));
+  const shouldDelayAuction = prioritySubModules.length && _moduleConfig.auctionDelay && _moduleConfig.auctionDelay > 0;
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;
@@ -252,7 +248,7 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
     return exitHook();
   }
 
-  if (prioritySubModules.length) {
+  if (shouldDelayAuction) {
     waitTimeout = setTimeout(exitHook, _moduleConfig.auctionDelay);
   }
 
@@ -260,12 +256,11 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
     sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent)
   });
 
-  if (!prioritySubModules.length) {
+  if (!shouldDelayAuction) {
     return exitHook();
   }
 
-  function onGetBidRequestDataCallback(auctionId) {
-    utils.logInfo('onGetBidRequestDataCallback', auctionId, this);
+  function onGetBidRequestDataCallback() {
     if (isDone) {
       return;
     }
