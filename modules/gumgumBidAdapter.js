@@ -269,6 +269,10 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.fp = bidFloor;
     }
 
+    if (params.iriscat && typeof params.iriscat === 'string') {
+      data.iriscat = params.iriscat;
+    }
+
     if (params.zone) {
       data.t = params.zone;
       data.pi = 2; // inscreen
