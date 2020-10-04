@@ -779,7 +779,7 @@ function bidToTag(bid) {
         }
       });
 
-    if (bid.params.video.frameworks) {
+    if (bid.params.video.frameworks && utils.isArray(bid.params.video.frameworks)) {
       tag['video_frameworks'] = bid.params.video.frameworks;
     }
   }
@@ -788,7 +788,7 @@ function bidToTag(bid) {
     tag.video = Object.assign({}, tag.video, { custom_renderer_present: true });
   }
 
-  if (bid.params.frameworks) {
+  if (bid.params.frameworks && utils.isArray(bid.params.frameworks)) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
 
