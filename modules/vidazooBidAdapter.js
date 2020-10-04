@@ -117,6 +117,9 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
         case 'parrableId':
           payloadRef[key] = userId.eid;
           break;
+        case 'id5id':
+          payloadRef[key] = userId.uid;
+          break;
         default:
           payloadRef[key] = userId;
       }

@@ -1,7 +1,9 @@
 import {expect} from 'chai';
 import {spec} from 'modules/medianetBidAdapter.js';
+import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from 'src/config.js';
 
+$$PREBID_GLOBAL$$.version = $$PREBID_GLOBAL$$.version || 'version';
 let VALID_BID_REQUEST = [{
     'bidder': 'medianet',
     'params': {
@@ -1305,6 +1307,30 @@ describe('Media.net bid adapter', function () {
       let data = JSON.parse(bidReq.data);
       expect(data.imp[1].ext).to.not.have.ownPropertyDescriptor('viewability');
       expect(data.imp[1].ext.visibility).to.equal(0);
+    });
+    it('slot visibility should be calculable even in case of adUnitPath', function () {
+      const code = '/19968336/header-bid-tag-0';
+      const divId = 'div-gpt-ad-1460505748561-0';
+      window.googletag.pubads().setSlots([makeSlot({ code, divId })]);
+
+      let boundingRect = {
+        top: 1010,
+        left: 1010,
+        bottom: 1050,
+        right: 1050
+      };
+      documentStub.withArgs(divId).returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+
+      const bidRequest = [{...VALID_BID_REQUEST[0], adUnitCode: code}]
+      const bidReq = spec.buildRequests(bidRequest, VALID_AUCTIONDATA);
+      const data = JSON.parse(bidReq.data);
+      expect(data.imp[0].ext.visibility).to.equal(2);
+      expect(data.imp[0].ext.viewability).to.equal(0);
     });
   });
 

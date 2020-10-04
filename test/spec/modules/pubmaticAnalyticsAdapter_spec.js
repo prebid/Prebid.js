@@ -316,7 +316,7 @@ describe('pubmatic analytics adapter', function () {
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
       let request = requests[2]; // logger is executed late, trackers execute first
-      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999&gdEn=1');
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
       expect(data.pid).to.equal('1111');
@@ -326,8 +326,6 @@ describe('pubmatic analytics adapter', function () {
       expect(data.purl).to.equal('http://www.test.com/page.html');
       expect(data.orig).to.equal('www.test.com');
       expect(data.tst).to.equal(1519767016);
-      expect(data.cns).to.equal('here-goes-gdpr-consent-string');
-      expect(data.gdpr).to.equal(1);
       expect(data.tgid).to.equal(15);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
@@ -423,7 +421,7 @@ describe('pubmatic analytics adapter', function () {
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
       let request = requests[2]; // logger is executed late, trackers execute first
-      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999&gdEn=1');
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
       expect(data.pid).to.equal('1111');
@@ -490,7 +488,7 @@ describe('pubmatic analytics adapter', function () {
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
       let request = requests[2]; // logger is executed late, trackers execute first
-      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999&gdEn=1');
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
       expect(data.pid).to.equal('1111');
@@ -672,7 +670,7 @@ describe('pubmatic analytics adapter', function () {
       clock.tick(2000 + 1000);
       expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
       let request = requests[2]; // logger is executed late, trackers execute first
-      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999&gdEn=1');
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
