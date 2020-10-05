@@ -378,23 +378,27 @@ function getBids(bids) {
 function getEndpointsGroups(bidRequests) {
   let endpoints = [];
   const getEndpoint = bid => {
-    if (bid.params.test) {
-      return `https://mock-bapi.userreport.com/v2/${bid.params.publisherId}/bid`;
+    const publisherId = bid.params.publisherId || config.getConfig('apstream.publisherId');
+    const isTestConfig = bid.params.test || config.getConfig('apstream.test');
+
+    if (isTestConfig) {
+      return `https://mock-bapi.userreport.com/v2/${publisherId}/bid`;
     }
 
     if (bid.params.endpoint) {
-      return `${bid.params.endpoint}${bid.params.publisherId}/bid`;
+      return `${bid.params.endpoint}${publisherId}/bid`;
     }
 
-    return `https://bapi.userreport.com/v2/${bid.params.publisherId}/bid`;
+    return `https://bapi.userreport.com/v2/${publisherId}/bid`;
   }
   bidRequests.forEach(bid => {
-    const exist = endpoints.filter(item => item.endpoint.indexOf(bid.params.endpoint) > -1)[0];
+    const endpoint = getEndpoint(bid);
+    const exist = endpoints.filter(item => item.endpoint.indexOf(endpoint) > -1)[0];
     if (exist) {
       exist.bids.push(bid);
     } else {
       endpoints.push({
-        endpoint: getEndpoint(bid),
+        endpoint: endpoint,
         bids: [bid]
       });
     }
@@ -404,7 +408,8 @@ function getEndpointsGroups(bidRequests) {
 }
 
 function isBidRequestValid(bid) {
-  const isPublisherIdExist = !!bid.params.publisherId;
+  const publisherId = config.getConfig('apstream.publisherId');
+  const isPublisherIdExist = !!(publisherId || bid.params.publisherId);
   const isOneMediaType = Object.keys(bid.mediaTypes).length === 1;
 
   return isPublisherIdExist && isOneMediaType;

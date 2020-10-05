@@ -154,7 +154,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    */
   const setDataInLocalStorage = function (key, value, done) {
     let cb = function (result) {
-      if (result && result.valid) {
+      if (result && result.valid && hasLocalStorage()) {
         window.localStorage.setItem(key, value);
       }
     }
@@ -174,7 +174,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    */
   const getDataFromLocalStorage = function (key, done) {
     let cb = function (result) {
-      if (result && result.valid) {
+      if (result && result.valid && hasLocalStorage()) {
         return window.localStorage.getItem(key);
       }
       return null;
@@ -194,7 +194,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    */
   const removeDataFromLocalStorage = function (key, done) {
     let cb = function (result) {
-      if (result && result.valid) {
+      if (result && result.valid && hasLocalStorage()) {
         window.localStorage.removeItem(key);
       }
     }
