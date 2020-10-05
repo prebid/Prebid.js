@@ -519,6 +519,10 @@ export const spec = {
       if (sharedId) {
         data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
       }
+      const pubcid = find(bidRequest.userIdAsEids, eid => eid.source === 'pubcid.org');
+      if (pubcid) {
+        data['eid_pubcid.org'] = `${pubcid.uids[0].id}^${pubcid.uids[0].atype}`;
+      }
       const criteoId = find(bidRequest.userIdAsEids, eid => eid.source === 'criteo.com');
       if (criteoId) {
         data['eid_criteo.com'] = `${criteoId.uids[0].id}^${criteoId.uids[0].atype}`;

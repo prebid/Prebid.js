@@ -1145,6 +1145,20 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          describe('pubcid support', function () {
+            it('should send eid_pubcid.org when userIdAsEids contains pubcid', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                pubcid: '1111'
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_pubcid.org']).to.equal('1111^1');
+            });
+          });
+
           describe('Criteo support', function () {
             it('should send eid_criteo.com when userIdAsEids contains criteo', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
