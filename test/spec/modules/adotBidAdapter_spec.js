@@ -2062,10 +2062,11 @@ describe('Adot Adapter', function () {
         serverResponse.body.cur = 'USD';
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
         expect(ads[0].vastXml).to.equal(null);
         expect(ads[0].vastUrl).to.equal(null);
@@ -2087,10 +2088,13 @@ describe('Adot Adapter', function () {
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
 
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
+        const adm2WithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[1].adm, serverResponse.body.seatbid[0].bid[1].price);
+
         expect(ads).to.be.an('array').and.to.have.length(2);
 
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
         expect(ads[0].vastXml).to.equal(null);
         expect(ads[0].vastUrl).to.equal(null);
@@ -2104,7 +2108,7 @@ describe('Adot Adapter', function () {
         expect(ads[0].mediaType).to.exist.and.to.be.a('string').and.to.equal('banner');
         expect(ads[0].renderer).to.equal(null);
         expect(ads[1].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[1].bidId);
-        expect(ads[1].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[1].adm);
+        expect(ads[1].ad).to.exist.and.to.be.a('string').and.to.have.string(adm2WithAuctionPriceReplaced);
         expect(ads[1].adUrl).to.equal(null);
         expect(ads[1].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[1].crid);
         expect(ads[1].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[1].price);
@@ -2592,10 +2596,11 @@ describe('Adot Adapter', function () {
         const serverResponse = examples.serverResponse_banner;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
         expect(ads[0].vastXml).to.equal(null);
         expect(ads[0].vastUrl).to.equal(null);
@@ -2617,10 +2622,11 @@ describe('Adot Adapter', function () {
         serverResponse.body.seatbid[0].bid[0].nurl = undefined;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.equal(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
         expect(ads[0].vastXml).to.equal(null);
         expect(ads[0].vastUrl).to.equal(null);
@@ -2642,11 +2648,12 @@ describe('Adot Adapter', function () {
         serverResponse.body.seatbid[0].bid[0].adm = undefined;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const nurlWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].nurl, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.equal(null);
-        expect(ads[0].adUrl).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].nurl);
+        expect(ads[0].adUrl).to.exist.and.to.be.a('string').and.to.equal(nurlWithAuctionPriceReplaced);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
         expect(ads[0].currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.cur);
@@ -2721,12 +2728,13 @@ describe('Adot Adapter', function () {
         const serverResponse = examples.serverResponse_video_instream;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].vastXml).to.equal(admWithAuctionPriceReplaced);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2745,12 +2753,13 @@ describe('Adot Adapter', function () {
         const serverResponse = examples.serverResponse_video_outstream;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].vastXml).to.equal(admWithAuctionPriceReplaced);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2769,12 +2778,14 @@ describe('Adot Adapter', function () {
         const serverResponse = examples.serverResponse_video_instream_outstream;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
+        const adm2WithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[1].adm, serverResponse.body.seatbid[0].bid[1].price);
 
         expect(ads).to.be.an('array').and.to.have.length(2);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].vastXml).to.equal(admWithAuctionPriceReplaced);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2786,9 +2797,9 @@ describe('Adot Adapter', function () {
         expect(ads[0].mediaType).to.exist.and.to.be.a('string').and.to.equal('video');
         expect(ads[0].renderer).to.equal(null);
         expect(ads[1].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[1].bidId);
-        expect(ads[1].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[1].adm);
+        expect(ads[1].ad).to.exist.and.to.be.a('string').and.to.have.string(adm2WithAuctionPriceReplaced);
         expect(ads[1].adUrl).to.equal(null);
-        expect(ads[1].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[1].vastXml).to.equal(adm2WithAuctionPriceReplaced);
         expect(ads[1].vastUrl).to.equal(null);
         expect(ads[1].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[1].crid);
         expect(ads[1].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[1].price);
@@ -2808,12 +2819,13 @@ describe('Adot Adapter', function () {
         serverResponse.body.seatbid[0].bid[0].nurl = undefined;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].vastXml).to.equal(admWithAuctionPriceReplaced);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2833,13 +2845,14 @@ describe('Adot Adapter', function () {
         serverResponse.body.seatbid[0].bid[0].adm = undefined;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const nurlWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].nurl, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
         expect(ads[0].ad).to.equal(null);
-        expect(ads[0].adUrl).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].nurl);
+        expect(ads[0].adUrl).to.exist.and.to.be.a('string').and.to.have.string(nurlWithAuctionPriceReplaced);
         expect(ads[0].vastXml).to.equal(null);
-        expect(ads[0].vastUrl).to.equal(serverResponse.body.seatbid[0].bid[0].nurl);
+        expect(ads[0].vastUrl).to.equal(nurlWithAuctionPriceReplaced);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
         expect(ads[0].currency).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.cur);
@@ -2858,12 +2871,13 @@ describe('Adot Adapter', function () {
         serverResponse.body.seatbid[0].bid[0].h = 500;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].vastXml).to.equal(admWithAuctionPriceReplaced);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2883,12 +2897,13 @@ describe('Adot Adapter', function () {
         serverResponse.body.seatbid[0].bid[0].w = 500;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].vastXml).to.equal(admWithAuctionPriceReplaced);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2909,12 +2924,13 @@ describe('Adot Adapter', function () {
         serverResponse.body.seatbid[0].bid[0].h = 400;
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].vastXml).to.equal(admWithAuctionPriceReplaced);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2934,12 +2950,13 @@ describe('Adot Adapter', function () {
         const serverResponse = utils.deepClone(examples.serverResponse_video_instream);
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].vastXml).to.equal(admWithAuctionPriceReplaced);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -2959,12 +2976,13 @@ describe('Adot Adapter', function () {
         const serverResponse = utils.deepClone(examples.serverResponse_video_instream);
 
         const ads = spec.interpretResponse(serverResponse, serverRequest);
+        const admWithAuctionPriceReplaced = utils.replaceAuctionPrice(serverResponse.body.seatbid[0].bid[0].adm, serverResponse.body.seatbid[0].bid[0].price);
 
         expect(ads).to.be.an('array').and.to.have.length(1);
         expect(ads[0].requestId).to.exist.and.to.be.a('string').and.to.equal(serverRequest._adot_internal.impressions[0].bidId);
-        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].ad).to.exist.and.to.be.a('string').and.to.have.string(admWithAuctionPriceReplaced);
         expect(ads[0].adUrl).to.equal(null);
-        expect(ads[0].vastXml).to.equal(serverResponse.body.seatbid[0].bid[0].adm);
+        expect(ads[0].vastXml).to.equal(admWithAuctionPriceReplaced);
         expect(ads[0].vastUrl).to.equal(null);
         expect(ads[0].creativeId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].crid);
         expect(ads[0].cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
