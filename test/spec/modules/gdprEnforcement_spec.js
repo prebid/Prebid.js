@@ -1,11 +1,22 @@
-import { deviceAccessHook, setEnforcementConfig, userSyncHook, userIdHook, makeBidRequestsHook, validateRules, enforcementRules, purpose1Rule, purpose2Rule } from 'modules/gdprEnforcement.js';
+import {
+  deviceAccessHook,
+  setEnforcementConfig,
+  userSyncHook,
+  userIdHook,
+  makeBidRequestsHook,
+  validateRules,
+  enforcementRules,
+  purpose1Rule,
+  purpose2Rule,
+  enableAnalyticsHook,
+  getGvlid,
+  internal
+} from 'modules/gdprEnforcement.js';
 import { config } from 'src/config.js';
 import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { validateStorageEnforcement } from 'src/storageManager.js';
-import { executeStorageCallbacks } from 'src/prebid.js';
 import events from 'src/events.js';
-import { EVENTS } from 'src/constants.json';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
@@ -36,7 +47,8 @@ describe('gdpr enforcement', function () {
           'consents': {
             '1': true,
             '2': true,
-            '3': true
+            '3': true,
+            '7': true
           },
           'legitimateInterests': {
             '1': false,
@@ -87,7 +99,7 @@ describe('gdpr enforcement', function () {
 
   after(function () {
     validateStorageEnforcement.getHooks({ hook: deviceAccessHook }).remove();
-    $$PREBID_GLOBAL$$.requestBids.getHooks({ hook: executeStorageCallbacks }).remove();
+    $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
     adapterManager.makeBidRequests.getHooks({ hook: makeBidRequestsHook }).remove();
   })
 
@@ -662,8 +674,6 @@ describe('gdpr enforcement', function () {
       }], []);
 
       expect(logWarnSpy.calledOnce).to.equal(true);
-      expect(emitEventSpy.calledOnce).to.equal(true);
-      sinon.assert.calledWith(emitEventSpy, EVENTS.BIDDER_BLOCKED, 'bidder_2');
     });
 
     it('should skip validation checks if GDPR version is not equal to "2"', function () {
@@ -691,6 +701,71 @@ describe('gdpr enforcement', function () {
       sinon.assert.calledWith(nextFnSpy, sinon.match.array.deepEquals(MOCK_AD_UNITS), []);
       expect(emitEventSpy.notCalled).to.equal(true);
       expect(logWarnSpy.notCalled).to.equal(true);
+    });
+  });
+
+  describe('enableAnalyticsHook', function () {
+    let sandbox;
+    let adapterManagerStub;
+
+    const MOCK_ANALYTICS_ADAPTER_CONFIG = [{
+      provider: 'analyticsAdapter_A',
+      options: {}
+    }, {
+      provider: 'analyticsAdapter_B',
+      options: {}
+    }, {
+      provider: 'analyticsAdapter_C',
+      options: {}
+    }];
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+      gdprDataHandlerStub = sandbox.stub(gdprDataHandler, 'getConsentData');
+      adapterManagerStub = sandbox.stub(adapterManager, 'getAnalyticsAdapter');
+      logWarnSpy = sandbox.spy(utils, 'logWarn');
+      nextFnSpy = sandbox.spy();
+    });
+
+    afterEach(function() {
+      config.resetConfig();
+      sandbox.restore();
+    });
+
+    it('should block analytics adapter which does not have consent and allow the one(s) which have consent', function() {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'measurement',
+            enforcePurpose: true,
+            enforceVendor: true,
+            vendorExceptions: ['analyticsAdapter_B']
+          }]
+        }
+      });
+
+      const consentData = {};
+      consentData.vendorData = staticConfig.consentData.getTCData;
+      consentData.apiVersion = 2;
+      consentData.gdprApplies = true;
+
+      gdprDataHandlerStub.returns(consentData);
+      adapterManagerStub.withArgs('analyticsAdapter_A').returns({ gvlid: 3 });
+      adapterManagerStub.withArgs('analyticsAdapter_B').returns({ gvlid: 5 });
+      adapterManagerStub.withArgs('analyticsAdapter_C').returns({ gvlid: 1 });
+
+      enableAnalyticsHook(nextFnSpy, MOCK_ANALYTICS_ADAPTER_CONFIG);
+
+      // Assertions
+      expect(nextFnSpy.calledOnce).to.equal(true);
+      sinon.assert.calledWith(nextFnSpy, [{
+        provider: 'analyticsAdapter_B',
+        options: {}
+      }, {
+        provider: 'analyticsAdapter_C',
+        options: {}
+      }]);
+      expect(logWarnSpy.calledOnce).to.equal(true);
     });
   });
 
@@ -963,6 +1038,88 @@ describe('gdpr enforcement', function () {
       setEnforcementConfig({gdpr: { rules }});
 
       expect(enforcementRules).to.deep.equal(rules);
+    });
+  });
+
+  describe('TCF2FinalResults', function() {
+    let sandbox;
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      sandbox.spy(events, 'emit');
+    });
+    afterEach(function() {
+      config.resetConfig();
+      sandbox.restore();
+    });
+    it('should emit TCF2 enforcement data on auction end', function() {
+      const rules = [{
+        purpose: 'storage',
+        enforcePurpose: false,
+        enforceVendor: false
+      }, {
+        purpose: 'basicAds',
+        enforcePurpose: false,
+        enforceVendor: false
+      }]
+      setEnforcementConfig({gdpr: { rules }});
+
+      events.emit('auctionEnd', {})
+
+      // Assertions
+      sinon.assert.calledWith(events.emit.getCall(1), 'tcf2Enforcement', sinon.match.object);
+    })
+  });
+
+  describe('getGvlid', function() {
+    let sandbox;
+    let getGvlidForBidAdapterStub;
+    let getGvlidForUserIdModuleStub;
+    let getGvlidForAnalyticsAdapterStub;
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      getGvlidForBidAdapterStub = sandbox.stub(internal, 'getGvlidForBidAdapter');
+      getGvlidForUserIdModuleStub = sandbox.stub(internal, 'getGvlidForUserIdModule');
+      getGvlidForAnalyticsAdapterStub = sandbox.stub(internal, 'getGvlidForAnalyticsAdapter');
+    });
+    afterEach(function() {
+      sandbox.restore();
+      config.resetConfig();
+    });
+
+    it('should return "null" if called without passing any argument', function() {
+      const gvlid = getGvlid();
+      expect(gvlid).to.equal(null);
+    });
+
+    it('should return "null" if GVL ID is not defined for any of these modules: Bid adapter, UserId submodule and Analytics adapter', function() {
+      getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
+      getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
+      getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(null);
+
+      const gvlid = getGvlid('moduleA');
+      expect(gvlid).to.equal(null);
+    });
+
+    it('should return the GVL ID from gvlMapping if it is defined in setConfig', function() {
+      config.setConfig({
+        gvlMapping: {
+          moduleA: 1
+        }
+      });
+
+      // Actual GVL ID for moduleA is 2, as defined on its the bidAdapter.js file.
+      getGvlidForBidAdapterStub.withArgs('moduleA').returns(2);
+
+      const gvlid = getGvlid('moduleA');
+      expect(gvlid).to.equal(1);
+    });
+
+    it('should return the GVL ID by calling getGvlidForBidAdapter -> getGvlidForUserIdModule -> getGvlidForAnalyticsAdapter in sequence', function() {
+      getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
+      getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
+      getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(7);
+
+      expect(getGvlid('moduleA')).to.equal(7);
     });
   });
 });

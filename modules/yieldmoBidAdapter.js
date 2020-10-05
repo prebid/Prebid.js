@@ -27,6 +27,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     let serverRequest = {
+      pbav: '$prebid.version$',
       p: [],
       page_url: bidderRequest.refererInfo.referer,
       bust: new Date().getTime().toString(),
@@ -44,6 +45,11 @@ export const spec = {
       }),
       us_privacy: utils.deepAccess(bidderRequest, 'uspConsent') || ''
     };
+
+    const mtp = window.navigator.maxTouchPoints;
+    if (mtp) {
+      serverRequest.mtp = mtp;
+    }
 
     bidRequests.forEach(request => {
       serverRequest.p.push(addPlacement(request));

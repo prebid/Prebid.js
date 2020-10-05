@@ -100,9 +100,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function v2CmpResponseCallback(tcfData, success) {
     utils.logInfo('Received a response from CMP', tcfData);
     if (success) {
-      if (tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
-        cmpSuccess(tcfData, hookConfig);
-      } else if (tcfData.eventStatus === 'cmpuishown' && tcfData.tcString && tcfData.purposeOneTreatment === true) {
+      if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         cmpSuccess(tcfData, hookConfig);
       }
     } else {
@@ -223,7 +221,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     window.addEventListener('message', readPostMessageResponse, false);
 
     // call CMP
-    window[apiName](commandName, null, moduleCallback);
+    window[apiName](commandName, undefined, moduleCallback);
 
     function readPostMessageResponse(event) {
       let cmpDataPkgName = `${apiName}Return`;
@@ -369,7 +367,7 @@ function cmpFailed(errMsg, hookConfig, extraArgs) {
 }
 
 /**
- * Stores CMP data locally in module and then invokes gdprDataHandler.setConsentData() to make information available in adaptermanger.js for later in the auction
+ * Stores CMP data locally in module and then invokes gdprDataHandler.setConsentData() to make information available in adaptermanager.js for later in the auction
  * @param {object} cmpConsentObject required; an object representing user's consent choices (can be undefined in certain use-cases for this function only)
  */
 function storeConsentData(cmpConsentObject) {
@@ -384,6 +382,9 @@ function storeConsentData(cmpConsentObject) {
       consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
       vendorData: (cmpConsentObject) || undefined,
       gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
+    };
+    if (cmpConsentObject && cmpConsentObject.addtlConsent && utils.isStr(cmpConsentObject.addtlConsent)) {
+      consentData.addtlConsent = cmpConsentObject.addtlConsent;
     };
   }
   consentData.apiVersion = cmpVersion;

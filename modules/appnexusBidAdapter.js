@@ -220,15 +220,17 @@ export const spec = {
       });
     }
 
-    let eids = [];
     const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
     if (criteoId) {
-      eids.push({
-        source: 'criteo.com',
-        id: criteoId
+      let tpuids = [];
+      tpuids.push({
+        'provider': 'criteo',
+        'user_id': criteoId
       });
+      payload.tpuids = tpuids;
     }
 
+    let eids = [];
     const tdid = utils.deepAccess(bidRequests[0], `userId.tdid`);
     if (tdid) {
       eids.push({

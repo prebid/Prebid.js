@@ -8,7 +8,7 @@
 
 Connects to Livewrapped Header Bidding wrapper for bids.
 
-Livewrapped supports banner.
+Livewrapped supports banner, native and video.
 
 # Test Parameters
 
