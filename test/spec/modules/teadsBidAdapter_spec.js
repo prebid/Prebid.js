@@ -200,8 +200,8 @@ describe('teadsBidAdapter', () => {
         performance.getEntriesByType('navigation')[0] &&
         performance.getEntriesByType('navigation')[0].responseStart &&
         performance.getEntriesByType('navigation')[0].requestStart &&
-        performance.getEntriesByType('navigation')[0].responseStart >= 0 &&
-        performance.getEntriesByType('navigation')[0].requestStart >= 0 &&
+        performance.getEntriesByType('navigation')[0].responseStart > 0 &&
+        performance.getEntriesByType('navigation')[0].requestStart > 0 &&
         Math.round(
           performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
         );
@@ -214,8 +214,8 @@ describe('teadsBidAdapter', () => {
         const ttfbWithTimingV1 = performance &&
             performance.timing.responseStart &&
             performance.timing.requestStart &&
-            performance.timing.responseStart >= 0 &&
-            performance.timing.requestStart >= 0 &&
+            performance.timing.responseStart > 0 &&
+            performance.timing.requestStart > 0 &&
             performance.timing.responseStart - performance.timing.requestStart;
         const ttfbExpectedV1 = ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
 
