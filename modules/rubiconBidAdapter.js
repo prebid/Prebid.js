@@ -154,9 +154,9 @@ export const spec = {
         source: {
           tid: bidRequest.transactionId
         },
-        tmax: config.getConfig('TTL') || 1000,
+        tmax: bidderRequest.timeout,
         imp: [{
-          exp: 300,
+          exp: config.getConfig('s2sConfig.defaultTtl'),
           id: bidRequest.adUnitCode,
           secure: 1,
           ext: {

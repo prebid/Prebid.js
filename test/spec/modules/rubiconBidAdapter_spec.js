@@ -1381,11 +1381,11 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let post = request.data;
 
-          expect(post).to.have.property('imp')
+          expect(post).to.have.property('imp');
           // .with.length.of(1);
           let imp = post.imp[0];
           expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
-          expect(imp.exp).to.equal(300);
+          expect(imp.exp).to.equal(undefined); // now undefined
           expect(imp.video.w).to.equal(640);
           expect(imp.video.h).to.equal(480);
           expect(imp.video.pos).to.equal(1);
@@ -1540,6 +1540,36 @@ describe('the rubicon adapter', function () {
           // should have the imp ext bidder params be under the alias name not rubicon superRubicon
           expect(request.data.imp[0].ext).to.have.property('superRubicon').that.is.an('object');
           expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
+        });
+
+        it('should send video exp param correctly when set', function () {
+          createVideoBidderRequest();
+          config.setConfig({s2sConfig: {defaultTtl: 600}});
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+
+          // should exp set to the right value according to config
+          let imp = post.imp[0];
+          expect(imp.exp).to.equal(600);
+        });
+
+        it('should not send video exp at all if not set in s2sConfig config', function () {
+          createVideoBidderRequest();
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+
+          // should exp set to the right value according to config
+          let imp = post.imp[0];
+          // bidderFactory stringifies request body before sending so removes undefined attributes:
+          expect(imp.exp).to.equal(undefined);
+        });
+
+        it('should send tmax as the bidderRequest timeout value', function () {
+          createVideoBidderRequest();
+          bidderRequest.timeout = 3333;
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+          expect(post.tmax).to.equal(3333);
         });
 
         it('should send correct bidfloor to PBS', function () {
@@ -1891,7 +1921,7 @@ describe('the rubicon adapter', function () {
           // .with.length.of(1);
           let imp = post.imp[0];
           expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
-          expect(imp.exp).to.equal(300);
+          expect(imp.exp).to.equal(undefined);
           expect(imp.video.w).to.equal(640);
           expect(imp.video.h).to.equal(480);
           expect(imp.video.pos).to.equal(1);
