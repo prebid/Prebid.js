@@ -1456,10 +1456,13 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
           expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
           expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
+          // example should exist
+          expect(post.user.ext.eids[5].source).to.equal('example.com');
+          expect(post.user.ext.eids[5].uids[0].id).to.equal('333333');
           // CriteoId should exist
-          expect(post.user.ext.eids[5].source).to.equal('criteo.com');
-          expect(post.user.ext.eids[5].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[5].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[6].source).to.equal('criteo.com');
+          expect(post.user.ext.eids[6].uids[0].id).to.equal('1111');
+          expect(post.user.ext.eids[6].uids[0].atype).to.equal(1);
 
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
