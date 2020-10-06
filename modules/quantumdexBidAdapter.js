@@ -85,14 +85,14 @@ export const spec = {
     // Apply GDPR parameters to request.
     payload.gdpr = {};
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr.gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 'true' : 'false';
+      payload.gdpr.gdprApplies = !!bidderRequest.gdprConsent.gdprApplies;
       if (bidderRequest.gdprConsent.consentString) {
         payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
       }
     }
     // Apply schain.
     if (bids[0].schain) {
-      payload.schain = JSON.stringify(bids[0].schain)
+      payload.schain = bids[0].schain
     }
     // Apply us_privacy.
     if (bidderRequest && bidderRequest.uspConsent) {

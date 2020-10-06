@@ -14,7 +14,8 @@
     "sharedIdSystem",
     "intentIqIdSystem",
     "zeotapIdPlusIdSystem",
-    "haloIdSystem"
+    "haloIdSystem",
+    "quantcastIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
