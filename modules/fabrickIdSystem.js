@@ -35,13 +35,14 @@ export const fabrickIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function getId
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @param {ConsentData}
    * @param {Object} cacheIdObj - existing id, if any consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams, consentData, cacheIdObj) {
+  getId(config, consentData, cacheIdObj) {
     try {
+      const configParams = (config && config.params) || {};
       if (window.fabrickMod1) {
         window.fabrickMod1(configParams, consentData, cacheIdObj);
       }

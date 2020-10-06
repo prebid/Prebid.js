@@ -89,7 +89,6 @@ describe('Fabrick ID System', function() {
     request.respond(
       200,
       responseHeader,
-      // TODO - actually check the value
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
