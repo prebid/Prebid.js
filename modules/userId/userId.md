@@ -29,9 +29,9 @@ pbjs.setConfig({
                 pd: "some-pd-string"  // See https://wiki.id5.io/x/BIAZ for details
             },
             storage: {
-                type: "cookie",
-                name: "id5id.1st",
-                expires: 90, // Expiration of cookies in days
+                type: "html5",        // ID5 requires html5
+                name: "id5id",
+                expires: 90,          // Expiration of cookies in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
@@ -144,7 +144,7 @@ pbjs.setConfig({
             },
             storage: {
                 type: 'html5',
-                name: 'id5id.1st',
+                name: 'id5id',
                 expires: 90, // Expiration of cookies in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
