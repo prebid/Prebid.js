@@ -236,8 +236,7 @@ export const spec = {
 
       const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       if (eids && eids.length) {
-        // filter out unsupported id systems
-        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org', 'criteo.com'].indexOf(eid.source) !== -1));
+        utils.deepSetValue(data, 'user.ext.eids', eids);
 
         // liveintent requires additional props to be set
         const liveIntentEid = find(data.user.ext.eids, eid => eid.source === 'liveintent.com');
@@ -389,6 +388,10 @@ export const spec = {
       'tpid_tdid',
       'tpid_liveintent.com',
       'tg_v.LIseg',
+      'ppuid',
+      'eid_pubcid.org',
+      'eid_sharedid.org',
+      'eid_criteo.com',
       'rf',
       'p_geo.latitude',
       'p_geo.longitude',
@@ -518,6 +521,10 @@ export const spec = {
       const sharedId = find(bidRequest.userIdAsEids, eid => eid.source === 'sharedid.org');
       if (sharedId) {
         data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
+      }
+      const pubcid = find(bidRequest.userIdAsEids, eid => eid.source === 'pubcid.org');
+      if (pubcid) {
+        data['eid_pubcid.org'] = `${pubcid.uids[0].id}^${pubcid.uids[0].atype}`;
       }
       const criteoId = find(bidRequest.userIdAsEids, eid => eid.source === 'criteo.com');
       if (criteoId) {
