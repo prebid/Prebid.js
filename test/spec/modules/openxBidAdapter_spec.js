@@ -1043,7 +1043,7 @@ describe('OpenxAdapter', function () {
         britepoolid: '1111-britepoolid',
         criteoId: '1111-criteoId',
         digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
-        id5id: '1111-id5id',
+        id5id: {uid: '1111-id5id'},
         idl_env: '1111-idl_env',
         lipb: {lipbid: '1111-lipb'},
         netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
@@ -1096,6 +1096,9 @@ describe('OpenxAdapter', function () {
               case 'parrableId':
                 userIdValue = EXAMPLE_DATA_BY_ATTR.parrableId.eid;
                 break;
+              case 'id5id':
+                userIdValue = EXAMPLE_DATA_BY_ATTR.id5id.uid;
+                break;
               default:
                 userIdValue = EXAMPLE_DATA_BY_ATTR[userIdProviderKey];
             }
@@ -1106,7 +1109,7 @@ describe('OpenxAdapter', function () {
       });
     });
 
-    context('floors', function () {
+    describe('floors', function () {
       it('should send out custom floors on bids that have customFloors specified', function () {
         const bidRequest = Object.assign({},
           bidRequestsWithMediaTypes[0],
@@ -1126,37 +1129,85 @@ describe('OpenxAdapter', function () {
         expect(dataParams.aumfs).to.equal('1500');
       });
 
-      it('should send out floors on bids when there', function () {
-        const bidRequest1 = Object.assign({},
-          bidRequestsWithMediaTypes[0],
-          {
-            getFloor: () => {
-              return {
-                currency: 'AUS',
-                floor: 9.99
+      context('with floors module', function () {
+        let adServerCurrencyStub;
+
+        beforeEach(function () {
+          adServerCurrencyStub = sinon
+            .stub(config, 'getConfig')
+            .withArgs('currency.adServerCurrency')
+        });
+
+        afterEach(function () {
+          config.getConfig.restore();
+        });
+
+        it('should send out floors on bids', function () {
+          const bidRequest1 = Object.assign({},
+            bidRequestsWithMediaTypes[0],
+            {
+              getFloor: () => {
+                return {
+                  currency: 'AUS',
+                  floor: 9.99
+                }
               }
             }
-          }
-        );
+          );
 
-        const bidRequest2 = Object.assign({},
-          bidRequestsWithMediaTypes[1],
-          {
-            getFloor: () => {
-              return {
-                currency: 'AUS',
-                floor: 18.881
+          const bidRequest2 = Object.assign({},
+            bidRequestsWithMediaTypes[1],
+            {
+              getFloor: () => {
+                return {
+                  currency: 'AUS',
+                  floor: 18.881
+                }
               }
             }
-          }
-        );
+          );
 
-        const request = spec.buildRequests([bidRequest1, bidRequest2], mockBidderRequest);
-        const dataParams = request[0].data;
+          const request = spec.buildRequests([bidRequest1, bidRequest2], mockBidderRequest);
+          const dataParams = request[0].data;
 
-        expect(dataParams.aumfs).to.exist;
-        expect(dataParams.aumfs).to.equal('9990,18881');
-      });
+          expect(dataParams.aumfs).to.exist;
+          expect(dataParams.aumfs).to.equal('9990,18881');
+        });
+
+        it('should send out floors on bids in the default currency', function () {
+          const bidRequest1 = Object.assign({},
+            bidRequestsWithMediaTypes[0],
+            {
+              getFloor: () => {
+                return {};
+              }
+            }
+          );
+
+          let getFloorSpy = sinon.spy(bidRequest1, 'getFloor');
+
+          spec.buildRequests([bidRequest1], mockBidderRequest);
+          expect(getFloorSpy.args[0][0].currency).to.equal('USD');
+        });
+
+        it('should send out floors on bids in the ad server currency if defined', function () {
+          adServerCurrencyStub.returns('bitcoin');
+
+          const bidRequest1 = Object.assign({},
+            bidRequestsWithMediaTypes[0],
+            {
+              getFloor: () => {
+                return {};
+              }
+            }
+          );
+
+          let getFloorSpy = sinon.spy(bidRequest1, 'getFloor');
+
+          spec.buildRequests([bidRequest1], mockBidderRequest);
+          expect(getFloorSpy.args[0][0].currency).to.equal('bitcoin');
+        });
+      })
     })
   });
 

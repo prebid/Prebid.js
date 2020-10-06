@@ -34,6 +34,9 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         cache.auctions[args.auctionId].timeStamp = args.start;
 
         args.bids.forEach(function(bidRequest) {
+          cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
+          cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
+
           cache.auctions[args.auctionId].bids[bidRequest.bidId] = {
             bidder: bidRequest.bidder,
             adUnit: bidRequest.adUnitCode,
@@ -59,7 +62,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         bidResponse.cpm = args.cpm;
         bidResponse.ttr = args.timeToRespond;
         bidResponse.readyToSend = 1;
-        bidResponse.mediaType = args.mediaType == 'native' ? 2 : 1;
+        bidResponse.mediaType = args.mediaType == 'native' ? 2 : (args.mediaType == 'video' ? 4 : 1);
         if (!bidResponse.ttr) {
           bidResponse.ttr = time - bidResponse.start;
         }
@@ -116,9 +119,11 @@ livewrappedAnalyticsAdapter.enableAnalytics = function (config) {
 };
 
 livewrappedAnalyticsAdapter.sendEvents = function() {
+  var sentRequests = getSentRequests();
   var events = {
     publisherId: initOptions.publisherId,
-    requests: getSentRequests(),
+    gdpr: sentRequests.gdpr,
+    requests: sentRequests.sentRequests,
     responses: getResponses(),
     wins: getWins(),
     timeouts: getTimeouts(),
@@ -144,10 +149,23 @@ function getAdblockerRecovered() {
 
 function getSentRequests() {
   var sentRequests = [];
+  var gdpr = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
+    let auction = cache.auctions[auctionId];
+    var gdprPos = 0;
+    for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
+      if (gdpr[gdprPos].gdprApplies == auction.gdprApplies &&
+          gdpr[gdprPos].gdprConsent == auction.gdprConsent) {
+        break;
+      }
+    }
+
+    if (gdprPos == gdpr.length) {
+      gdpr[gdprPos] = {gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent};
+    }
+
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
-      let auction = cache.auctions[auctionId];
       let bid = auction.bids[bidId];
       if (!(bid.sendStatus & REQUESTSENT)) {
         bid.sendStatus |= REQUESTSENT;
@@ -155,13 +173,14 @@ function getSentRequests() {
         sentRequests.push({
           timeStamp: auction.timeStamp,
           adUnit: bid.adUnit,
-          bidder: bid.bidder
+          bidder: bid.bidder,
+          gdpr: gdprPos
         });
       }
     });
   });
 
-  return sentRequests;
+  return {gdpr: gdpr, sentRequests: sentRequests};
 }
 
 function getResponses() {

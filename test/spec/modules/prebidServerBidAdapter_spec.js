@@ -497,7 +497,7 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should not add outstrean without renderer', function () {
+    it('should not add outstream without renderer', function () {
       let ortb2Config = utils.deepClone(CONFIG);
       ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
@@ -507,6 +507,22 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.imp[0].banner).to.exist;
       expect(requestBid.imp[0].video).to.not.exist;
+    });
+
+    it('should default video placement if not defined and instream', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+
+      config.setConfig({ s2sConfig: ortb2Config });
+
+      let videoBid = utils.deepClone(VIDEO_REQUEST);
+      videoBid.ad_units[0].mediaTypes.video.context = 'instream';
+      adapter.callBids(videoBid, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.imp[0].banner).to.not.exist;
+      expect(requestBid.imp[0].video).to.exist;
+      expect(requestBid.imp[0].video.placement).to.equal(1);
     });
 
     it('exists and is a function', function () {
@@ -536,6 +552,37 @@ describe('S2S Adapter', function () {
 
         expect(requestBid.regs.ext.gdpr).is.equal(1);
         expect(requestBid.user.ext.consent).is.equal('abc123');
+
+        config.resetConfig();
+        config.setConfig({ s2sConfig: CONFIG });
+
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        requestBid = JSON.parse(server.requests[1].requestBody);
+
+        expect(requestBid.regs).to.not.exist;
+        expect(requestBid.user).to.not.exist;
+      });
+
+      it('adds additional consent information to ortb2 request depending on presence of module', function () {
+        let ortb2Config = utils.deepClone(CONFIG);
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: ortb2Config };
+        config.setConfig(consentConfig);
+
+        let gdprBidRequest = utils.deepClone(BID_REQUESTS);
+        gdprBidRequest[0].gdprConsent = {
+          consentString: 'abc123',
+          addtlConsent: 'superduperconsent',
+          gdprApplies: true
+        };
+
+        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(server.requests[0].requestBody);
+
+        expect(requestBid.regs.ext.gdpr).is.equal(1);
+        expect(requestBid.user.ext.consent).is.equal('abc123');
+        expect(requestBid.user.ext.ConsentedProvidersSettings.consented_providers).is.equal('superduperconsent');
 
         config.resetConfig();
         config.setConfig({ s2sConfig: CONFIG });
@@ -1131,7 +1178,13 @@ describe('S2S Adapter', function () {
           lipbid: 'li-xyz',
           segments: ['segA', 'segB']
         },
-        idl_env: '0000-1111-2222-3333'
+        idl_env: '0000-1111-2222-3333',
+        id5id: {
+          uid: '11111',
+          ext: {
+            linkType: 'some-link-type'
+          }
+        }
       };
       userIdBidRequest[0].bids[0].userIdAsEids = createEidsArray(userIdBidRequest[0].bids[0].userId);
 
@@ -1152,6 +1205,9 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments.length).is.equal(2);
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[0]).is.equal('segA');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[1]).is.equal('segB');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].uids[0].id).is.equal('11111');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].ext.linkType).is.equal('some-link-type');
       // LiveRamp should exist
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveramp.com')[0].uids[0].id).is.equal('0000-1111-2222-3333');
     });
@@ -1485,7 +1541,7 @@ describe('S2S Adapter', function () {
     });
 
     describe('GAM ad unit config', function () {
-      it('should not send \"imp.ext.context.data.adslot\" if \"fpd.context\" is undefined', function () {
+      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context\" is undefined', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
@@ -1500,7 +1556,7 @@ describe('S2S Adapter', function () {
         expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
       });
 
-      it('should not send \"imp.ext.context.data.adslot\" if \"fpd.context.adServer.adSlot\" is undefined', function () {
+      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context.adserver.adSlot\" is undefined', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
@@ -1516,7 +1572,7 @@ describe('S2S Adapter', function () {
         expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
       });
 
-      it('should not send \"imp.ext.context.data.adslot\" if \"fpd.context.adServer.adSlot\" is empty string', function () {
+      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context.adserver.adSlot\" is empty string', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
@@ -1538,7 +1594,7 @@ describe('S2S Adapter', function () {
         expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
       });
 
-      it('should send \"imp.ext.context.data.adslot\" if \"fpd.context.adServer.adSlot\" value is a non-empty string', function () {
+      it('should send both \"adslot\" and \"name\" from \"imp.ext.context.data.adserver\" if \"fpd.context.adserver.adSlot\" and \"fpd.context.adserver.name\" values are non-empty strings', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
@@ -1546,8 +1602,9 @@ describe('S2S Adapter', function () {
         const bidRequest = utils.deepClone(REQUEST);
         bidRequest.ad_units[0].fpd = {
           context: {
-            adServer: {
-              adSlot: '/a/b/c'
+            adserver: {
+              adSlot: '/a/b/c',
+              name: 'adserverName1'
             }
           }
         };
@@ -1557,8 +1614,10 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.adslot');
-        expect(parsedRequestBody.imp[0].ext.context.data.adslot).to.equal('/a/b/c');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.adserver.adslot');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.adserver.name');
+        expect(parsedRequestBody.imp[0].ext.context.data.adserver.adslot).to.equal('/a/b/c');
+        expect(parsedRequestBody.imp[0].ext.context.data.adserver.name).to.equal('adserverName1');
       });
     });
   });
