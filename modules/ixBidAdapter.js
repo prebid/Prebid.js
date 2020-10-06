@@ -6,7 +6,7 @@ import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
-const SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
+const SECURE_BID_URL = 'https://htlb.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BANNER_ENDPOINT_VERSION = 7.2;
 const VIDEO_ENDPOINT_VERSION = 8.1;
@@ -128,6 +128,9 @@ function parseBid(rawBid, currency, bidRequest) {
   bid.meta.networkId = utils.deepAccess(rawBid, 'ext.dspid');
   bid.meta.brandId = utils.deepAccess(rawBid, 'ext.advbrandid');
   bid.meta.brandName = utils.deepAccess(rawBid, 'ext.advbrand');
+  if (rawBid.adomain && rawBid.adomain.length > 0) {
+    bid.meta.advertiserDomains = rawBid.adomain;
+  }
 
   return bid;
 }
@@ -232,9 +235,9 @@ function addUserEids(userEids, seenIdPartners, id, source, ixlPartnerName, rtiPa
  *
  * @param  {array}  validBidRequests A list of valid bid request config objects.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
- * @param  {array}  impressions      List of impression objects describing the bids.
+ * @param  {object} impressions      An object containing a list of impression objects describing the bids for each transactionId
  * @param  {array}  version          Endpoint version denoting banner or video.
- * @return {object}                  Info describing the request to the server.
+ * @return {array}                   List of objects describing the request to the server.
  *
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
@@ -276,8 +279,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
   // Since bidderRequestId are the same for different bid request, just use the first one.
   r.id = validBidRequests[0].bidderRequestId;
-
-  r.imp = impressions;
 
   r.site = {};
   r.ext = {};
@@ -360,25 +361,108 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Use the siteId in the first bid request as the main siteId.
   payload.s = validBidRequests[0].params.siteId;
   payload.v = version;
-  payload.r = JSON.stringify(r);
   payload.ac = 'j';
   payload.sd = 1;
   if (version === VIDEO_ENDPOINT_VERSION) {
     payload.nf = 1;
   }
 
-  return {
+  const requests = [];
+
+  const request = {
     method: 'GET',
     url: baseUrl,
     data: payload
   };
-}
 
+  const BASE_REQ_SIZE = new Blob([`?${request.url}${utils.parseQueryStringParameters({...request.data, r: JSON.stringify(r)})}`]).size;
+  let currReqSize = BASE_REQ_SIZE;
+
+  r.imp = [];
+  const MAX_REQ_SIZE = 8000;
+  const MAX_REQ_LIMIT = 4;
+  let cygnusSeq = 0;
+
+  let i = 0;
+  const transactionIds = Object.keys(impressions);
+  let currMissingImps = [];
+
+  while (i < transactionIds.length && cygnusSeq < MAX_REQ_LIMIT) {
+    trimImpressions(impressions[transactionIds[i]], MAX_REQ_SIZE - BASE_REQ_SIZE);
+    let currImpsSize = new Blob([encodeURIComponent(JSON.stringify(impressions[transactionIds[i]]))]).size;
+    currReqSize += currImpsSize;
+    if (currReqSize < MAX_REQ_SIZE) {
+      // pushing ix configured sizes first
+      r.imp.push(...impressions[transactionIds[i]].ixImps);
+
+      if (impressions[transactionIds[i]].hasOwnProperty('missingImps')) {
+        currMissingImps.push(...impressions[transactionIds[i]].missingImps);
+      }
+      i++;
+    } else {
+      const clonedPayload = utils.deepClone(payload);
+      // pushing missing sizes after configured ones
+      r.imp.push(...currMissingImps);
+      clonedPayload.r = r;
+      clonedPayload.r.ext.bucketed = true;
+      clonedPayload.r.ext.cygnusSeq = cygnusSeq++;
+      clonedPayload.r = JSON.stringify(r);
+
+      requests.push({
+        method: 'GET',
+        url: baseUrl,
+        data: clonedPayload
+      });
+      currMissingImps = [];
+      currReqSize = BASE_REQ_SIZE;
+      r.imp = [];
+    }
+  }
+
+  if (currReqSize > BASE_REQ_SIZE && currReqSize < MAX_REQ_SIZE && cygnusSeq < MAX_REQ_LIMIT) {
+    const clonedPayload = utils.deepClone(payload);
+    r.imp.push(...currMissingImps);
+    clonedPayload.r = r;
+    if (requests.length > 0) {
+      clonedPayload.r.ext.bucketed = true;
+      clonedPayload.r.ext.cygnusSeq = cygnusSeq;
+    }
+    clonedPayload.r = JSON.stringify(r);
+
+    requests.push({
+      method: 'GET',
+      url: baseUrl,
+      data: clonedPayload
+    });
+  }
+
+  return requests;
+}
+/**
+ *
+ * @param {Object} impressions containing ixImps and possibly missingImps
+ *
+ */
+function trimImpressions(impressions, maxSize) {
+  let currSize = new Blob([encodeURIComponent(JSON.stringify(impressions))]).size;
+  if (currSize < maxSize) {
+    return;
+  }
+
+  while (currSize > maxSize) {
+    if (impressions.hasOwnProperty('missingImps') && impressions.missingImps.length > 0) {
+      impressions.missingImps.pop();
+    } else if (impressions.hasOwnProperty('ixImps') && impressions.ixImps.length > 0) {
+      impressions.ixImps.pop();
+    }
+    currSize = new Blob([encodeURIComponent(JSON.stringify(impressions))]).size;
+  }
+}
 /**
  *
  * @param  {array}   bannerSizeList list of banner sizes
  * @param  {array}   bannerSize the size to be removed
- * @return {boolean} true if succesfully removed, false if not found
+ * @return {boolean} true if successfully removed, false if not found
  */
 
 function removeFromSizes(bannerSizeList, bannerSize) {
@@ -493,8 +577,8 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     let reqs = [];
-    let bannerImps = [];
-    let videoImps = [];
+    let bannerImps = {};
+    let videoImps = {};
     let validBidRequest = null;
 
     // To capture the missing sizes i.e not configured for ix
@@ -505,7 +589,14 @@ export const spec = {
 
       if (validBidRequest.mediaType === VIDEO || utils.deepAccess(validBidRequest, 'mediaTypes.video')) {
         if (validBidRequest.mediaType === VIDEO || includesSize(validBidRequest.mediaTypes.video.playerSize, validBidRequest.params.size)) {
-          videoImps.push(bidToVideoImp(validBidRequest));
+          if (!videoImps.hasOwnProperty(validBidRequest.transactionId)) {
+            videoImps[validBidRequest.transactionId] = {};
+          }
+          if (!videoImps[validBidRequest.transactionId].hasOwnProperty('ixImps')) {
+            videoImps[validBidRequest.transactionId].ixImps = [];
+          }
+
+          videoImps[validBidRequest.transactionId].ixImps.push(bidToVideoImp(validBidRequest));
         } else {
           utils.logError('Bid size is not included in video playerSize')
         }
@@ -513,27 +604,43 @@ export const spec = {
       if (validBidRequest.mediaType === BANNER || utils.deepAccess(validBidRequest, 'mediaTypes.banner') ||
           (!validBidRequest.mediaType && !validBidRequest.mediaTypes)) {
         let imp = bidToBannerImp(validBidRequest);
-        bannerImps.push(imp);
+
+        if (!bannerImps.hasOwnProperty(validBidRequest.transactionId)) {
+          bannerImps[validBidRequest.transactionId] = {};
+        }
+        if (!bannerImps[validBidRequest.transactionId].hasOwnProperty('ixImps')) {
+          bannerImps[validBidRequest.transactionId].ixImps = []
+        }
+        bannerImps[validBidRequest.transactionId].ixImps.push(imp);
         updateMissingSizes(validBidRequest, missingBannerSizes, imp);
       }
     }
-    // Finding the missing banner sizes ,and making impressions for them
-    for (var transactionID in missingBannerSizes) {
-      if (missingBannerSizes.hasOwnProperty(transactionID)) {
-        let missingSizes = missingBannerSizes[transactionID].missingSizes;
+
+    // Finding the missing banner sizes, and making impressions for them
+    for (var transactionId in missingBannerSizes) {
+      if (missingBannerSizes.hasOwnProperty(transactionId)) {
+        let missingSizes = missingBannerSizes[transactionId].missingSizes;
+
+        if (!bannerImps.hasOwnProperty(transactionId)) {
+          bannerImps[transactionId] = {};
+        }
+        if (!bannerImps[transactionId].hasOwnProperty('missingImps')) {
+          bannerImps[transactionId].missingImps = [];
+        }
+
+        let origImp = missingBannerSizes[transactionId].impression;
         for (let i = 0; i < missingSizes.length; i++) {
-          let origImp = missingBannerSizes[transactionID].impression;
           let newImp = createMissingBannerImp(origImp, missingSizes[i]);
-          bannerImps.push(newImp);
+          bannerImps[transactionId].missingImps.push(newImp);
         }
       }
     }
 
-    if (bannerImps.length > 0) {
-      reqs.push(buildRequest(validBidRequests, bidderRequest, bannerImps, BANNER_ENDPOINT_VERSION));
+    if (Object.keys(bannerImps).length > 0) {
+      reqs.push(...buildRequest(validBidRequests, bidderRequest, bannerImps, BANNER_ENDPOINT_VERSION));
     }
-    if (videoImps.length > 0) {
-      reqs.push(buildRequest(validBidRequests, bidderRequest, videoImps, VIDEO_ENDPOINT_VERSION));
+    if (Object.keys(videoImps).length > 0) {
+      reqs.push(...buildRequest(validBidRequests, bidderRequest, videoImps, VIDEO_ENDPOINT_VERSION));
     }
 
     return reqs;
