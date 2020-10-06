@@ -164,7 +164,7 @@ function createEndpointQS(bidderRequest) {
 
   const domain = config.getConfig('publisherDomain');
   if (domain) {
-    qs.pubDomain = domain;
+    qs.PublisherDomain = domain;
   }
 
   return qs;
