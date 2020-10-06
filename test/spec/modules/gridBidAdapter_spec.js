@@ -579,16 +579,14 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(schain);
     });
 
-    it('if content and segment is present in realTimeData.jwTargeting, payload must have right params', function () {
+    it('if content and segment is present in jwTargeting, payload must have right params', function () {
       const jsContent = {id: 'test_jw_content_id'};
       const jsSegments = ['test_seg_1', 'test_seg_2'];
       const bidRequestsWithUserIds = bidRequests.map((bid) => {
         return Object.assign({
-          realTimeData: {
-            jwTargeting: {
-              segments: jsSegments,
-              content: jsContent
-            }
+          jwTargeting: {
+            segments: jsSegments,
+            content: jsContent
           }
         }, bid);
       });
