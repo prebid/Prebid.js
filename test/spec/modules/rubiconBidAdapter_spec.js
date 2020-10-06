@@ -245,7 +245,8 @@ describe('the rubicon adapter', function () {
         uids: [{
           id: '4444444'
         }]
-      }]
+      }],
+      criteoId: '1111'
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
@@ -701,233 +702,6 @@ describe('the rubicon adapter', function () {
           expect(data['rp_floor']).to.equal('2');
         });
 
-        it('should send digitrust params', function () {
-          window.DigiTrust = {
-            getUser: function () {
-            }
-          };
-          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-            ({
-              success: true,
-              identity: {
-                privacy: {optout: false},
-                id: 'testId',
-                keyv: 'testKeyV'
-              }
-            })
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let data = parseQuery(request.data);
-
-          let expectedQuery = {
-            'dt.id': 'testId',
-            'dt.keyv': 'testKeyV',
-            'dt.pref': '0'
-          };
-
-          // test that all values above are both present and correct
-          Object.keys(expectedQuery).forEach(key => {
-            let value = expectedQuery[key];
-            expect(data[key]).to.equal(value);
-          });
-
-          delete window.DigiTrust;
-        });
-
-        it('should not send digitrust params when DigiTrust not loaded', function () {
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let data = parseQuery(request.data);
-
-          let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-          // Test that none of the DigiTrust keys are part of the query
-          undefinedKeys.forEach(key => {
-            expect(typeof data[key]).to.equal('undefined');
-          });
-        });
-
-        it('should not send digitrust params due to optout', function () {
-          window.DigiTrust = {
-            getUser: function () {
-            }
-          };
-          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-            ({
-              success: true,
-              identity: {
-                privacy: {optout: true},
-                id: 'testId',
-                keyv: 'testKeyV'
-              }
-            })
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let data = parseQuery(request.data);
-
-          let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-          // Test that none of the DigiTrust keys are part of the query
-          undefinedKeys.forEach(key => {
-            expect(typeof data[key]).to.equal('undefined');
-          });
-
-          delete window.DigiTrust;
-        });
-
-        it('should not send digitrust params due to failure', function () {
-          window.DigiTrust = {
-            getUser: function () {
-            }
-          };
-          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-            ({
-              success: false,
-              identity: {
-                privacy: {optout: false},
-                id: 'testId',
-                keyv: 'testKeyV'
-              }
-            })
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let data = parseQuery(request.data);
-
-          let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-          // Test that none of the DigiTrust keys are part of the query
-          undefinedKeys.forEach(key => {
-            expect(typeof data[key]).to.equal('undefined');
-          });
-
-          delete window.DigiTrust;
-        });
-
-        describe('digiTrustId config', function () {
-          beforeEach(function () {
-            window.DigiTrust = {
-              getUser: sandbox.spy()
-            };
-          });
-
-          afterEach(function () {
-            delete window.DigiTrust;
-          });
-
-          it('should send digiTrustId config params', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {
-                digiTrustId: {
-                  success: true,
-                  identity: {
-                    privacy: {optout: false},
-                    id: 'testId',
-                    keyv: 'testKeyV'
-                  }
-                }
-              };
-              return config[key];
-            });
-
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            let data = parseQuery(request.data);
-
-            let expectedQuery = {
-              'dt.id': 'testId',
-              'dt.keyv': 'testKeyV'
-            };
-
-            // test that all values above are both present and correct
-            Object.keys(expectedQuery).forEach(key => {
-              let value = expectedQuery[key];
-              expect(data[key]).to.equal(value);
-            });
-
-            // should not have called DigiTrust.getUser()
-            expect(window.DigiTrust.getUser.notCalled).to.equal(true);
-          });
-
-          it('should not send digiTrustId config params due to optout', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {
-                digiTrustId: {
-                  success: true,
-                  identity: {
-                    privacy: {optout: true},
-                    id: 'testId',
-                    keyv: 'testKeyV'
-                  }
-                }
-              }
-              return config[key];
-            });
-
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            let data = parseQuery(request.data);
-
-            let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-            // Test that none of the DigiTrust keys are part of the query
-            undefinedKeys.forEach(key => {
-              expect(typeof data[key]).to.equal('undefined');
-            });
-
-            // should not have called DigiTrust.getUser()
-            expect(window.DigiTrust.getUser.notCalled).to.equal(true);
-          });
-
-          it('should not send digiTrustId config params due to failure', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {
-                digiTrustId: {
-                  success: false,
-                  identity: {
-                    privacy: {optout: false},
-                    id: 'testId',
-                    keyv: 'testKeyV'
-                  }
-                }
-              }
-              return config[key];
-            });
-
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            let data = parseQuery(request.data);
-
-            let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-            // Test that none of the DigiTrust keys are part of the query
-            undefinedKeys.forEach(key => {
-              expect(typeof data[key]).to.equal('undefined');
-            });
-
-            // should not have called DigiTrust.getUser()
-            expect(window.DigiTrust.getUser.notCalled).to.equal(true);
-          });
-
-          it('should not send digiTrustId config params if they do not exist', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {};
-              return config[key];
-            });
-
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            let data = parseQuery(request.data);
-
-            let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-            // Test that none of the DigiTrust keys are part of the query
-            undefinedKeys.forEach(key => {
-              expect(typeof data[key]).to.equal('undefined');
-            });
-
-            // should have called DigiTrust.getUser() once
-            expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
-          });
-        });
-
         describe('GDPR consent config', function () {
           it('should send "gdpr" and "gdpr_consent", when gdprConsent defines consentString and gdprApplies', function () {
             createGdprBidderRequest(true);
@@ -1371,6 +1145,20 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          describe('Criteo support', function () {
+            it('should send eid_criteo.com when userIdAsEids contains criteo', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                criteoId: '1111'
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_criteo.com']).to.equal('1111^1');
+            });
+          });
+
           describe('SharedID support', function () {
             it('should send sharedid when userIdAsEids contains sharedId', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
@@ -1593,11 +1381,11 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let post = request.data;
 
-          expect(post).to.have.property('imp')
+          expect(post).to.have.property('imp');
           // .with.length.of(1);
           let imp = post.imp[0];
           expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
-          expect(imp.exp).to.equal(300);
+          expect(imp.exp).to.equal(undefined); // now undefined
           expect(imp.video.w).to.equal(640);
           expect(imp.video.h).to.equal(480);
           expect(imp.video.pos).to.equal(1);
@@ -1654,6 +1442,10 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
           expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
           expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
+          // CriteoId should exist
+          expect(post.user.ext.eids[5].source).to.equal('criteo.com');
+          expect(post.user.ext.eids[5].uids[0].id).to.equal('1111');
+          expect(post.user.ext.eids[5].uids[0].atype).to.equal(1);
 
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
@@ -1748,6 +1540,36 @@ describe('the rubicon adapter', function () {
           // should have the imp ext bidder params be under the alias name not rubicon superRubicon
           expect(request.data.imp[0].ext).to.have.property('superRubicon').that.is.an('object');
           expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
+        });
+
+        it('should send video exp param correctly when set', function () {
+          createVideoBidderRequest();
+          config.setConfig({s2sConfig: {defaultTtl: 600}});
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+
+          // should exp set to the right value according to config
+          let imp = post.imp[0];
+          expect(imp.exp).to.equal(600);
+        });
+
+        it('should not send video exp at all if not set in s2sConfig config', function () {
+          createVideoBidderRequest();
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+
+          // should exp set to the right value according to config
+          let imp = post.imp[0];
+          // bidderFactory stringifies request body before sending so removes undefined attributes:
+          expect(imp.exp).to.equal(undefined);
+        });
+
+        it('should send tmax as the bidderRequest timeout value', function () {
+          createVideoBidderRequest();
+          bidderRequest.timeout = 3333;
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+          expect(post.tmax).to.equal(3333);
         });
 
         it('should send correct bidfloor to PBS', function () {
@@ -2099,7 +1921,7 @@ describe('the rubicon adapter', function () {
           // .with.length.of(1);
           let imp = post.imp[0];
           expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
-          expect(imp.exp).to.equal(300);
+          expect(imp.exp).to.equal(undefined);
           expect(imp.video.w).to.equal(640);
           expect(imp.video.h).to.equal(480);
           expect(imp.video.pos).to.equal(1);
