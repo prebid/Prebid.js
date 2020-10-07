@@ -774,6 +774,9 @@ function bidToTag(bid) {
             type = (utils.isArray(type)) ? type[0] : type;
             tag.video[param] = VIDEO_MAPPING[param][type];
             break;
+          // Deprecating tags[].video.frameworks in favor of tags[].video_frameworks
+          case 'frameworks':
+            break;
           default:
             tag.video[param] = bid.params.video[param];
         }

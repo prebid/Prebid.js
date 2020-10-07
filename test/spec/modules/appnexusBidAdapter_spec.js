@@ -851,6 +851,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].banner_frameworks).to.deep.equal([1, 2, 5, 6]);
       expect(payload.tags[0].video_frameworks).to.be.an('array');
       expect(payload.tags[0].video_frameworks).to.deep.equal([1, 2, 5, 6]);
+      expect(payload.tags[0].video.frameworks).to.not.exist;
 
       // without bid.params.frameworks
       const bidRequest_B = Object.assign({}, bidRequests[0]);
