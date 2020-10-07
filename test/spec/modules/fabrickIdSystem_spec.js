@@ -30,7 +30,10 @@ describe('Fabrick ID System', function() {
   });
 
   it('should error on json parsing', function() {
-    let submoduleCallback = fabrickIdSubmodule.getId(defaultConfigParams).callback;
+    let submoduleCallback = fabrickIdSubmodule.getId({
+      name: 'fabrickId',
+      params: defaultConfigParams
+    }).callback;
     let callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
@@ -55,7 +58,10 @@ describe('Fabrick ID System', function() {
         canonicalUrl: 'cu-0'
       }
     });
-    let submoduleCallback = fabrickIdSubmodule.getId(configParams).callback;
+    let submoduleCallback = fabrickIdSubmodule.getId({
+      name: 'fabrickId',
+      params: configParams
+    }).callback;
     let callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
@@ -81,7 +87,10 @@ describe('Fabrick ID System', function() {
         canonicalUrl: 'cu-0'
       }
     });
-    let submoduleCallback = fabrickIdSubmodule.getId(configParams).callback;
+    let submoduleCallback = fabrickIdSubmodule.getId({
+      name: 'fabrickId',
+      params: configParams
+    }).callback;
     let callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
