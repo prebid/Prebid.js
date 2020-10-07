@@ -44,9 +44,7 @@ Module that connects to krushmedia demand sources
                             bidder: 'krushmedia',
                             params: {
                                 key: 783,
-                                traffic: 'video',
-                                keywords: ['cat_1', 'cat_2']
-
+                                traffic: 'video'
                             }
                         }
                     ]
