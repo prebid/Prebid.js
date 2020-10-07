@@ -24,6 +24,7 @@ For modules and core platform updates, the initial reviewer should request an ad
     - If they support SChain, add `schain_supported: true`
     - If their bidder doesn't work well with safeframed creatives, add `safeframes_ok: false`. This will alert publishers to not use safeframed creatives when creating the ad server entries for their bidder.
     - If they're setting a deal ID in some scenarios, add `bidder_supports_deals: true`
+    - If they have an IAB Global Vendor List ID, add `gvl_id: ID`. There's no default.
 - If all above is good, add a `LGTM` comment and request 1 additional core member to review.
 - Once there is 2 `LGTM` on the PR, merge to master
 - Ask the submitter to add a PR for documentation if applicable.

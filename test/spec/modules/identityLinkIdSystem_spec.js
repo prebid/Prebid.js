@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 import {server} from 'test/mocks/xhr.js';
 
 const pid = '14';
-const defaultConfigParams = {pid: pid};
+const defaultConfigParams = { params: {pid: pid} };
 const responseHeader = {'Content-Type': 'application/json'}
 
 describe('IdentityLinkId tests', function () {
@@ -18,12 +18,12 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should log an error if no configParams were passed when getId', function () {
-    identityLinkSubmodule.getId();
+    identityLinkSubmodule.getId({ params: {} });
     expect(logErrorStub.calledOnce).to.be.true;
   });
 
   it('should log an error if pid configParam was not passed when getId', function () {
-    identityLinkSubmodule.getId({});
+    identityLinkSubmodule.getId({ params: {} });
     expect(logErrorStub.calledOnce).to.be.true;
   });
 

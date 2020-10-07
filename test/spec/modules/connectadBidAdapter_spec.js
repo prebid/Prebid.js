@@ -84,7 +84,6 @@ describe('ConnectAd Adapter', function () {
           }
         };
         const isValid = spec.isBidRequestValid(validBid);
-
         expect(isValid).to.equal(true);
       });
 
@@ -162,13 +161,19 @@ describe('ConnectAd Adapter', function () {
         bidRequests[0].getFloor = () => floorInfo;
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const requestparse = JSON.parse(request.data);
-        expect(requestparse.placements[0].floor).to.equal(5.20);
+        expect(requestparse.placements[0].bidfloor).to.equal(5.20);
       });
 
-      it('should be 0 if no floormodule is available', function() {
+      it('should be bidfloor if no floormodule is available', function() {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const requestparse = JSON.parse(request.data);
-        expect(requestparse.placements[0].floor).to.equal(0);
+        expect(requestparse.placements[0].bidfloor).to.equal(0.50);
+      });
+
+      it('should have 0 bidfloor value', function() {
+        const request = spec.buildRequests(bidRequestsUserIds, bidderRequest);
+        const requestparse = JSON.parse(request.data);
+        expect(requestparse.placements[0].bidfloor).to.equal(0);
       });
 
       it('should contain gdpr info', function () {

@@ -281,7 +281,7 @@ describe('AdxcgAdapter', function () {
     let bid = deepClone([bidBanner]);
     let bidderRequests = {};
 
-    bid[0].userId = {id5id: 'id5idsample'};
+    bid[0].userId = {id5id: {uid: 'id5idsample'}};
 
     it('should send pubcid if available', function () {
       let request = spec.buildRequests(bid, bidderRequests);

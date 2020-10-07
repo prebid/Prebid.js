@@ -331,13 +331,6 @@ function createOutstreamScript(bid) {
   // const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
   utils.logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
   const elementId = bid.adUnitCode;
-  // eslint-disable-next-line camelcase
-  var sc_smartIntxtStart;
-  // eslint-disable-next-line camelcase
-  var sc_smartIntxtNoad;
-  // eslint-disable-next-line camelcase
-  var sc_smartIntxtEnd;
-  var SmartPlay;
   let smartPlayObj = {
     minAdWidth: 290,
     maxAdWidth: 900,
@@ -348,20 +341,19 @@ function createOutstreamScript(bid) {
     },
     onStartCallback: function (m, n) {
       try {
-        sc_smartIntxtStart(n);
+        window.sc_smartIntxtStart(n);
       } catch (f) {}
     },
     onCappedCallback: function (m, n) {
       try {
-        sc_smartIntxtNoad(n);
+        window.sc_smartIntxtNoad(n);
       } catch (f) {}
     },
     onEndCallback: function (m, n) {
       try {
-        sc_smartIntxtEnd(n);
+        window.sc_smartIntxtEnd(n);
       } catch (f) {}
     },
-    debug: true
   };
   smartPlayObj.adResponse = bid.vastContent;
   const script = window.document.createElement('script');
@@ -372,7 +364,7 @@ function createOutstreamScript(bid) {
     var rs = this.readyState;
     if (rs && rs != 'complete' && rs != 'loaded') return;
     try {
-      SmartPlay(elementId, smartPlayObj);
+      window.SmartPlay(elementId, smartPlayObj);
     } catch (e) {
       utils.logError('error caught : ' + e);
     }

@@ -1,7 +1,7 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal.js';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, isArrayOfNums } from './utils.js';
+import { adUnitsFilter, flatten, isArrayOfNums, isGptPubadsDefined, uniques } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
 import { config } from './config.js';
@@ -11,7 +11,7 @@ import { hook } from './hook.js';
 import { sessionLoader } from './debugging.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { adunitCounter } from './adUnits.js';
-import { isRendererRequired, executeRenderer } from './Renderer.js';
+import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
 
@@ -540,6 +540,7 @@ export function executeCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);
   runAll(enableAnalyticsCallbacks);
   fn.call(this, reqBidsConfigObj);
+
   function runAll(queue) {
     var queued;
     while ((queued = queue.shift())) {
@@ -612,6 +613,16 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
   }
 
   events.off(event, handler, id);
+};
+
+/**
+ * Return a copy of all events emitted
+ *
+ * @alias module:pbjs.getEvents
+ */
+$$PREBID_GLOBAL$$.getEvents = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getEvents');
+  return events.getEvents();
 };
 
 /*
@@ -730,12 +741,12 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias, options) {
  * @property {string} adserverTargeting.hb_adid The ad ID of the creative, as understood by the ad server.
  * @property {string} adserverTargeting.hb_pb The price paid to show the creative, as logged in the ad server.
  * @property {string} adserverTargeting.hb_bidder The winning bidder whose ad creative will be served by the ad server.
-*/
+ */
 
 /**
  * Get all of the bids that have been rendered.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
  * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
-*/
+ */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return auctionManager.getAllWinningBids();
 };
@@ -767,7 +778,7 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
  * @property {string} adId The id representing the ad we want to mark
  *
  * @alias module:pbjs.markWinningBidAsUsed
-*/
+ */
 $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
   let bids = [];
 
@@ -779,7 +790,7 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
   } else if (markBidRequest.adId) {
     bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
   } else {
-    utils.logWarn('Inproper usage of markWinningBidAsUsed. It\'ll need an adUnitCode and/or adId to function.');
+    utils.logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
   }
 
   if (bids.length > 0) {

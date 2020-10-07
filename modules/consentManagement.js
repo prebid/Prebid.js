@@ -100,11 +100,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function v2CmpResponseCallback(tcfData, success) {
     utils.logInfo('Received a response from CMP', tcfData);
     if (success) {
-      if (tcfData.gdprApplies === false) {
-        cmpSuccess(tcfData, hookConfig);
-      } else if (tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
-        cmpSuccess(tcfData, hookConfig);
-      } else if (tcfData.eventStatus === 'cmpuishown' && tcfData.tcString && tcfData.purposeOneTreatment === true) {
+      if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         cmpSuccess(tcfData, hookConfig);
       }
     } else {
@@ -225,7 +221,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     window.addEventListener('message', readPostMessageResponse, false);
 
     // call CMP
-    window[apiName](commandName, null, moduleCallback);
+    window[apiName](commandName, undefined, moduleCallback);
 
     function readPostMessageResponse(event) {
       let cmpDataPkgName = `${apiName}Return`;
@@ -387,7 +383,7 @@ function storeConsentData(cmpConsentObject) {
       vendorData: (cmpConsentObject) || undefined,
       gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
     };
-    if (cmpConsentObject.addtlConsent && utils.isStr(cmpConsentObject.addtlConsent)) {
+    if (cmpConsentObject && cmpConsentObject.addtlConsent && utils.isStr(cmpConsentObject.addtlConsent)) {
       consentData.addtlConsent = cmpConsentObject.addtlConsent;
     };
   }
