@@ -6,8 +6,8 @@
  */
 
 import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook.js';
+import { ajax } from '../src/ajax.js';
+import { submodule } from '../src/hook.js';
 
 /** @type {Submodule} */
 export const identityLinkSubmodule = {
@@ -16,6 +16,11 @@ export const identityLinkSubmodule = {
    * @type {string}
    */
   name: 'identityLink',
+  /**
+   * used to specify vendor id
+   * @type {number}
+   */
+  gvlid: 97,
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -29,20 +34,26 @@ export const identityLinkSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {ConsentData} [consentData]
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams, consentData) {
+  getId(config, consentData) {
+    const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.pid !== 'string') {
       utils.logError('identityLink submodule requires partner id to be defined');
       return;
     }
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
+    const tcfPolicyV2 = utils.deepAccess(consentData, 'vendorData.tcfPolicyVersion') === 2;
     // use protocol relative urls for http or https
-    const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}${hasGdpr ? '&ct=1&cv=' + gdprConsentString : ''}`;
+    if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
+      utils.logInfo('Consent string is required to call envelope API.');
+      return;
+    }
+    const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}${hasGdpr ? (tcfPolicyV2 ? '&ct=4&cv=' : '&ct=1&cv=') + gdprConsentString : ''}`;
     let resp;
-    resp = function(callback) {
+    resp = function (callback) {
       // Check ats during callback so it has a chance to initialise.
       // If ats library is available, use it to retrieve envelope. If not use standard third party endpoint
       if (window.ats) {
@@ -60,7 +71,7 @@ export const identityLinkSubmodule = {
       }
     };
 
-    return {callback: resp};
+    return { callback: resp };
   }
 };
 // return envelope from third party endpoint
@@ -83,7 +94,7 @@ function getEnvelope(url, callback) {
       callback();
     }
   };
-  ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
+  ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
 }
 
 submodule('userId', identityLinkSubmodule);

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <meta charset="UTF-8">
+    <title>JW Player RTD Provider Example</title>
+    <script>
+      var FAILSAFE_TIMEOUT = 3300;
+      var PREBID_TIMEOUT = 1000;
+
+      var adUnits = [{
+        code: 'div-gpt-ad-1460505748561-0',
+        jwTargeting: {
+          playerID: '123',
+          mediaID: 'abc'
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300,600]],
+          }
+        },
+        // Replace this object to test a new Adapter!
+        bids: [{
+          bidder: 'appnexus',
+          params: {
+            placementId: 13144370
+          }
+        }]
+
+      }];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+    </script>
+
+    <script>
+      var googletag = googletag || {};
+      googletag.cmd = googletag.cmd || [];
+      googletag.cmd.push(function() {
+        googletag.pubads().disableInitialLoad();
+      });
+
+      pbjs.que.push(function() {
+        pbjs.setConfig({
+          realTimeData: {
+            dataProviders: [{
+              name: "jwplayer",
+              params: {
+                mediaIDs: ['abc', 'def', 'ghi', 'jkl']
+              }
+            }]
+          }
+        });
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          bidsBackHandler: sendAdserverRequest,
+          timeout: PREBID_TIMEOUT
+        });
+      });
+
+      function sendAdserverRequest() {
+        if (pbjs.adserverRequestSent) return;
+        pbjs.adserverRequestSent = true;
+        googletag.cmd.push(function() {
+          pbjs.que.push(function() {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        });
+      }
+
+      setTimeout(function() {
+        sendAdserverRequest();
+      }, FAILSAFE_TIMEOUT);
+
+    </script>
+
+    <script>
+      googletag.cmd.push(function () {
+        googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+    </script>
+</head>
+
+<body>
+<h5>Div-1</h5>
+<div id='div-gpt-ad-1460505748561-0'>
+    <script type='text/javascript'>
+      googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+    </script>
+</div>
+</body>
+</html>

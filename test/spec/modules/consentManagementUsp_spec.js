@@ -185,7 +185,10 @@ describe('consentManagement', function () {
         resetConsentData();
       });
 
-      it('should bypass CMP and simply use previously stored consentData', function () {
+      // from prebid 4425 - "the USP (CCPA) api function __uspapi() always responds synchronously, whether or not privacy data is available, while the GDPR CMP may respond asynchronously
+      // Because the USP API does not wait for a user response, if it was not successfully obtained before the first auction, we should try again to retrieve privacy data before each subsequent auction.
+
+      it('should not bypass CMP and simply use previously stored consentData', function () {
         let testConsentData = {
           uspString: '1YY'
         };
@@ -208,7 +211,7 @@ describe('consentManagement', function () {
         let consent = uspDataHandler.getConsentData();
         expect(didHookReturn).to.be.true;
         expect(consent).to.equal(testConsentData.uspString);
-        sinon.assert.notCalled(uspStub);
+        sinon.assert.called(uspStub);
       });
     });
 
