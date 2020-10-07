@@ -21,6 +21,7 @@ let consoleLogExists = Boolean(consoleExists && window.console.log);
 let consoleInfoExists = Boolean(consoleExists && window.console.info);
 let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
+var events = require('./events.js');
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
@@ -261,6 +262,7 @@ export function logError() {
   if (debugTurnedOn() && consoleErrorExists) {
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
+  events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
 }
 
 function decorateLog(args, prefix) {
