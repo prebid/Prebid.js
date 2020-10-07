@@ -70,36 +70,45 @@ export function fetchTargetingInformation(jwTargeting) {
 
 export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder(requestTimeout);
+  // TODO: Avoid checking undefined vs null by setting a callback to pendingRequests.
   pendingRequests[mediaId] = null;
   ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
     success: function (response) {
-      let segmentObtained = false;
-      try {
-        const data = JSON.parse(response);
-        if (!data) {
-          throw ('Empty response');
-        }
-
-        const playlist = data.playlist;
-        if (!playlist || !playlist.length) {
-          throw ('Empty playlist');
-        }
-
-        const jwpseg = playlist[0].jwpseg;
-        if (jwpseg) {
-          segCache[mediaId] = jwpseg;
-          segmentObtained = true;
-        }
-      } catch (err) {
-        logError(err);
-      }
-      onRequestCompleted(mediaId, segmentObtained);
+      const segment = parseSegment(response);
+      cacheSegment(segment, mediaId);
+      onRequestCompleted(mediaId, !!segment);
     },
     error: function () {
       logError('failed to retrieve targeting information');
       onRequestCompleted(mediaId, false);
     }
   });
+}
+
+function parseSegment(response) {
+  let segment;
+  try {
+    const data = JSON.parse(response);
+    if (!data) {
+      throw ('Empty response');
+    }
+
+    const playlist = data.playlist;
+    if (!playlist || !playlist.length) {
+      throw ('Empty playlist');
+    }
+
+    segment = playlist[0].jwpseg;
+  } catch (err) {
+    logError(err);
+  }
+  return segment;
+}
+
+function cacheSegment(jwpseg, mediaId) {
+  if (jwpseg) {
+    segCache[mediaId] = jwpseg;
+  }
 }
 
 function onRequestCompleted(mediaID, success) {
@@ -123,7 +132,7 @@ function onRequestCompleted(mediaID, success) {
 function getBidRequestData (bidReqConfig, onDone) {
   activeRequestCount = 0;
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits;
-  getSegments(adUnits);
+  getVatForAdUnits(adUnits);
   if (activeRequestCount <= 0) {
     onDone();
   } else {
