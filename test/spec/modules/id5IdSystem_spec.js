@@ -95,10 +95,12 @@ describe('ID5 ID System', function() {
 
     it('should fail if no partner is provided in the config', function() {
       expect(id5IdSubmodule.getId()).to.be.eq(undefined);
+      expect(id5IdSubmodule.getId({ })).to.be.eq(undefined);
+      expect(id5IdSubmodule.getId({ params: { } })).to.be.eq(undefined);
     });
 
     it('should call the ID5 server with 1puid field for legacy storedObj format', function () {
-      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig().params, undefined, ID5_LEGACY_STORED_OBJ).callback;
+      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, ID5_LEGACY_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -115,7 +117,7 @@ describe('ID5 ID System', function() {
     });
 
     it('should call the ID5 server with signature field for new storedObj format', function () {
-      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig().params, undefined, ID5_STORED_OBJ).callback;
+      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -134,8 +136,8 @@ describe('ID5 ID System', function() {
     it('should call the ID5 server with pd field when pd config is set', function () {
       const pubData = 'b50ca08271795a8e7e4012813f23d505193d75c0f2e2bb99baa63aa822f66ed3';
 
-      let config = getId5FetchConfig().params;
-      config.pd = pubData;
+      let config = getId5FetchConfig();
+      config.params.pd = pubData;
 
       let submoduleCallback = id5IdSubmodule.getId(config, undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
@@ -154,8 +156,8 @@ describe('ID5 ID System', function() {
     });
 
     it('should call the ID5 server with empty pd field when pd config is not set', function () {
-      let config = getId5FetchConfig().params;
-      config.pd = undefined;
+      let config = getId5FetchConfig();
+      config.params.pd = undefined;
 
       let submoduleCallback = id5IdSubmodule.getId(config, undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
@@ -174,7 +176,7 @@ describe('ID5 ID System', function() {
     it('should call the ID5 server with nb=1 when no stored value exists', function () {
       coreStorage.setCookie(ID5_NB_COOKIE_NAME, '', ID5_EXPIRED_COOKIE_DATE);
 
-      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig().params, undefined, ID5_STORED_OBJ).callback;
+      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -194,7 +196,7 @@ describe('ID5 ID System', function() {
       let expStr = (new Date(Date.now() + 25000).toUTCString());
       coreStorage.setCookie(ID5_NB_COOKIE_NAME, '1', expStr);
 
-      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig().params, undefined, ID5_STORED_OBJ).callback;
+      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
