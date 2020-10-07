@@ -17,10 +17,10 @@ import find from 'core-js-pure/features/array/find.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
-let requestCount = 0;
 let requestTimeout = 150;
 const segCache = {};
 const pendingRequests = {};
+let activeRequestCount = 0;
 let resumeBidRequest;
 
 /** @type {RtdSubmodule} */
@@ -70,10 +70,10 @@ export function fetchTargetingInformation(jwTargeting) {
 
 export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder(requestTimeout);
-  requestCount++;
   pendingRequests[mediaId] = null;
   ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
     success: function (response) {
+      let segmentObtained = false;
       try {
         const data = JSON.parse(response);
         if (!data) {
@@ -88,23 +88,29 @@ export function fetchTargetingForMediaId(mediaId) {
         const jwpseg = playlist[0].jwpseg;
         if (jwpseg) {
           segCache[mediaId] = jwpseg;
+          segmentObtained = true;
         }
       } catch (err) {
         logError(err);
       }
-      onRequestCompleted();
+      onRequestCompleted(mediaId, segmentObtained);
     },
     error: function () {
       logError('failed to retrieve targeting information');
-      onRequestCompleted();
+      onRequestCompleted(mediaId, false);
     }
   });
-
 }
 
-function onRequestCompleted() {
-  requestCount--;
-  if (requestCount > 0) {
+function onRequestCompleted(mediaID, success) {
+  const callback = pendingRequests[mediaID];
+  if (callback) {
+    callback(success ? getTargetingFromCache(mediaID) : { mediaID });
+    activeRequestCount--;
+  }
+  delete pendingRequests[mediaID];
+
+  if (activeRequestCount > 0) {
     return;
   }
 
@@ -115,9 +121,14 @@ function onRequestCompleted() {
 }
 
 function getBidRequestData (bidReqConfig, onDone) {
+  activeRequestCount = 0;
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits;
   getSegments(adUnits);
-  onDone();
+  if (activeRequestCount <= 0) {
+    onDone();
+  } else {
+    resumeBidRequest = onDone;
+  }
 }
 
 /**
@@ -126,16 +137,72 @@ function getBidRequestData (bidReqConfig, onDone) {
  * @param {adUnit[]} adUnits
  * @param {function} onDone
  */
-function getSegments(adUnits) {
+function getVatForAdUnits(adUnits) {
   adUnits.forEach(adUnit => {
-    const vat = getTargetingForBid(adUnit) || { segments: ['1234'], mediaID: 'karim' };
-    if (!vat) {
-      return;
-    }
-
-    const jwTargeting = formatTargetingResponse(vat);
-    addTargetingToBids(jwTargeting, adUnit.bids);
+    const onVatResponse = function (vat) {
+      if (!vat) {
+        return;
+      }
+      const targeting = formatTargetingResponse(vat);
+      addTargetingToBids(targeting, adUnit.bids);
+    };
+    getTargeting(adUnit.jwTargeting || { segments: ['1234'], mediaID: 'karim' }, onVatResponse);
   });
+}
+
+function getTargeting(configParams, callback) {
+  const playerID = configParams.playerID;
+  let mediaID = configParams.mediaID;
+
+  if (pendingRequests[mediaID] !== undefined) {
+    getTargetingForPendingRequest(playerID, mediaID, callback);
+  } else {
+    const targeting = getTargetingFromCache(mediaID) || getTargetingFromPlayer(playerID, mediaID) || { mediaID };
+    callback(targeting);
+  }
+}
+
+function getTargetingForPendingRequest(playerID, mediaID, callback) {
+  const targeting = getTargetingFromPlayer(playerID, mediaID);
+  if (targeting) {
+    callback(targeting);
+  } else {
+    activeRequestCount++;
+    pendingRequests[mediaID] = callback;
+  }
+}
+
+function getTargetingFromCache(mediaID) {
+  let segments = segCache[mediaID];
+  if (segments) {
+    return {
+      segments,
+      mediaID
+    };
+  }
+}
+
+function getTargetingFromPlayer(playerID, mediaID) {
+  const player = getPlayer(playerID);
+  if (!player) {
+    return null;
+  }
+
+  const item = mediaID ? find(player.getPlaylist(), item => item.mediaid === mediaID) : player.getPlaylistItem();
+  if (!item) {
+    return null;
+  }
+
+  mediaID = mediaID || item.mediaid;
+  const segments = item.jwpseg;
+  if (segments && mediaID) {
+    segCache[mediaID] = segments;
+  }
+
+  return {
+    segments,
+    mediaID
+  };
 }
 
 function formatTargetingResponse(vat) {
@@ -159,14 +226,6 @@ function addTargetingToBids(targeting, bids) {
     bid.jwTargeting = targeting;
   });
 }
-
-// function executeAfterPrefetch(callback) {
-//   if (requestCount > 0) {
-//     resumeBidRequest = callback;
-//   } else {
-//     callback();
-//   }
-// }
 
 /**
  * Retrieves the targeting information pertaining to a bid request.
