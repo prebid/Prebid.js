@@ -15,17 +15,6 @@ config.getConfig('rubicon', config => {
 });
 
 const GVLID = 52;
-const DIGITRUST_PROP_NAMES = {
-  FASTLANE: {
-    id: 'dt.id',
-    keyv: 'dt.keyv',
-    pref: 'dt.pref'
-  },
-  PREBID_SERVER: {
-    id: 'id',
-    keyv: 'keyv'
-  }
-};
 
 var sizeMap = {
   1: '468x60',
@@ -165,9 +154,9 @@ export const spec = {
         source: {
           tid: bidRequest.transactionId
         },
-        tmax: config.getConfig('TTL') || 1000,
+        tmax: bidderRequest.timeout,
         imp: [{
-          exp: 300,
+          exp: config.getConfig('s2sConfig.defaultTtl'),
           id: bidRequest.adUnitCode,
           secure: 1,
           ext: {
@@ -230,11 +219,6 @@ export const spec = {
 
       addVideoParameters(data, bidRequest);
 
-      const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
-      if (digiTrust) {
-        utils.deepSetValue(data, 'user.ext.digitrust', digiTrust);
-      }
-
       if (bidderRequest.gdprConsent) {
         // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
         let gdprApplies;
@@ -252,8 +236,7 @@ export const spec = {
 
       const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       if (eids && eids.length) {
-        // filter out unsupported id systems
-        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org'].indexOf(eid.source) !== -1));
+        utils.deepSetValue(data, 'user.ext.eids', eids);
 
         // liveintent requires additional props to be set
         const liveIntentEid = find(data.user.ext.eids, eid => eid.source === 'liveintent.com');
@@ -405,9 +388,10 @@ export const spec = {
       'tpid_tdid',
       'tpid_liveintent.com',
       'tg_v.LIseg',
-      'dt.id',
-      'dt.keyv',
-      'dt.pref',
+      'ppuid',
+      'eid_pubcid.org',
+      'eid_sharedid.org',
+      'eid_criteo.com',
       'rf',
       'p_geo.latitude',
       'p_geo.longitude',
@@ -538,6 +522,14 @@ export const spec = {
       if (sharedId) {
         data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
       }
+      const pubcid = find(bidRequest.userIdAsEids, eid => eid.source === 'pubcid.org');
+      if (pubcid) {
+        data['eid_pubcid.org'] = `${pubcid.uids[0].id}^${pubcid.uids[0].atype}`;
+      }
+      const criteoId = find(bidRequest.userIdAsEids, eid => eid.source === 'criteo.com');
+      if (criteoId) {
+        data['eid_criteo.com'] = `${criteoId.uids[0].id}^${criteoId.uids[0].atype}`;
+      }
     }
 
     // set ppuid value from config value
@@ -612,10 +604,6 @@ export const spec = {
     if (typeof gamAdUnit === 'string' && gamAdUnit) {
       data['tg_i.dfp_ad_unit_code'] = gamAdUnit.replace(/^\/+/, '');
     }
-
-    // digitrust properties
-    const digitrustParams = _getDigiTrustQueryParams(bidRequest, 'FASTLANE');
-    Object.assign(data, digitrustParams);
 
     if (config.getConfig('coppa') === true) {
       data['coppa'] = 1;
@@ -846,38 +834,6 @@ export const spec = {
 
 function _getScreenResolution() {
   return [window.screen.width, window.screen.height].join('x');
-}
-
-function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
-  if (!endpointName || !DIGITRUST_PROP_NAMES[endpointName]) {
-    return null;
-  }
-  const propNames = DIGITRUST_PROP_NAMES[endpointName];
-
-  function getDigiTrustId() {
-    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
-    if (bidRequestDigitrust) {
-      return bidRequestDigitrust;
-    }
-
-    let digiTrustUser = (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-
-  const digiTrustQueryParams = {
-    [propNames.id]: digiTrustId.id,
-    [propNames.keyv]: digiTrustId.keyv
-  };
-  if (propNames.pref) {
-    digiTrustQueryParams[propNames.pref] = 0;
-  }
-  return digiTrustQueryParams;
 }
 
 /**
