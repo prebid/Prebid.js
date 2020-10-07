@@ -14,11 +14,13 @@ import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { logError } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
 let requestCount = 0;
 let requestTimeout = 150;
 const segCache = {};
+const pendingRequests = {};
 let resumeBidRequest;
 
 /** @type {RtdSubmodule} */
@@ -29,12 +31,12 @@ export const jwplayerSubmodule = {
      */
   name: SUBMODULE_NAME,
   /**
-     * get data and send back to realTimeData module
+     * get data and signal completion to realTimeData module
      * @function
-     * @param {adUnit[]} adUnits
+     * @param {Obj} bidReqConfig
      * @param {function} onDone
      */
-  getData: getSegments,
+  getBidRequestData,
   init
 };
 
@@ -45,14 +47,14 @@ config.getConfig('realTimeData', ({realTimeData}) => {
   if (!params) {
     return;
   }
-  const rtdModuleTimeout = params.auctionDelay || params.timeout;
+  const rtdModuleTimeout = params.auctionDelay || params.timeout || realTimeData.auctionDelay;
   requestTimeout = rtdModuleTimeout === undefined ? requestTimeout : Math.max(rtdModuleTimeout - 1, 0);
   fetchTargetingInformation(params);
 });
 
 submodule('realTimeData', jwplayerSubmodule);
 
-function init(config, gdpr, usp) {
+function init(provider, userConsent) {
   return true;
 }
 
@@ -69,6 +71,7 @@ export function fetchTargetingInformation(jwTargeting) {
 export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder(requestTimeout);
   requestCount++;
+  pendingRequests[mediaId] = null;
   ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
     success: function (response) {
       try {
@@ -96,6 +99,7 @@ export function fetchTargetingForMediaId(mediaId) {
       onRequestCompleted();
     }
   });
+
 }
 
 function onRequestCompleted() {
@@ -110,44 +114,59 @@ function onRequestCompleted() {
   }
 }
 
-function getSegments(adUnits, onDone) {
-  executeAfterPrefetch(() => {
-    const realTimeData = adUnits.reduce((data, adUnit) => {
-      const code = adUnit.code;
-      const vat = code && getTargetingForBid(adUnit);
-      if (!vat) {
-        return data;
-      }
+function getBidRequestData (bidReqConfig, onDone) {
+  const adUnits = bidReqConfig.adUnits || getGlobal().adUnits;
+  getSegments(adUnits);
+  onDone();
+}
 
-      const { segments, mediaID } = vat;
-      const jwTargeting = {};
-      if (segments && segments.length) {
-        jwTargeting.segments = segments;
-      }
+/**
+ * get targeting data and write to bids
+ * @function
+ * @param {adUnit[]} adUnits
+ * @param {function} onDone
+ */
+function getSegments(adUnits) {
+  adUnits.forEach(adUnit => {
+    const vat = getTargetingForBid(adUnit) || { segments: ['1234'], mediaID: 'karim' };
+    if (!vat) {
+      return;
+    }
 
-      if (mediaID) {
-        const id = 'jw_' + mediaID;
-        jwTargeting.content = {
-          id
-        }
-      }
-
-      data[code] = {
-        jwTargeting
-      };
-      return data;
-    }, {});
-    onDone(realTimeData);
+    const jwTargeting = formatTargetingResponse(vat);
+    addTargetingToBids(jwTargeting, adUnit.bids);
   });
 }
 
-function executeAfterPrefetch(callback) {
-  if (requestCount > 0) {
-    resumeBidRequest = callback;
-  } else {
-    callback();
+function formatTargetingResponse(vat) {
+  const { segments, mediaID } = vat;
+  const jwTargeting = {};
+  if (segments && segments.length) {
+    jwTargeting.segments = segments;
   }
+
+  if (mediaID) {
+    const id = 'jw_' + mediaID;
+    jwTargeting.content = {
+      id
+    }
+  }
+  return jwTargeting;
 }
+
+function addTargetingToBids(targeting, bids) {
+  bids.forEach(bid => {
+    bid.jwTargeting = targeting;
+  });
+}
+
+// function executeAfterPrefetch(callback) {
+//   if (requestCount > 0) {
+//     resumeBidRequest = callback;
+//   } else {
+//     callback();
+//   }
+// }
 
 /**
  * Retrieves the targeting information pertaining to a bid request.
