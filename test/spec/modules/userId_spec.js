@@ -1669,7 +1669,7 @@ describe('User ID', function () {
             'mid': value['MOCKID']
           };
         },
-        getId: function (params, storedId) {
+        getId: function (config, storedId) {
           if (storedId) return {};
           return {id: {'MOCKID': '1234'}};
         }

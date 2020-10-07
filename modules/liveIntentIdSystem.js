@@ -100,10 +100,11 @@ export const liveIntentIdSubmodule = {
    * `publisherId` params.
    * @function
    * @param {{unifiedId:string}} value
-   * @param {SubmoduleParams|undefined} [configParams]
+   * @param {SubmoduleConfig|undefined} config
    * @returns {{lipb:Object}}
    */
-  decode(value, configParams) {
+  decode(value, config) {
+    const configParams = (config && config.params) || {};
     function composeIdObject(value) {
       const base = { 'lipbid': value['unifiedId'] };
       delete value.unifiedId;
@@ -121,10 +122,11 @@ export const liveIntentIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams) {
+  getId(config) {
+    const configParams = (config && config.params) || {};
     const liveConnect = initializeLiveConnect(configParams);
     if (!liveConnect) {
       return;

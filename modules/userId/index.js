@@ -14,7 +14,7 @@
  *  If IdResponse#callback is defined, then it'll called at the end of auction.
  *  It's permissible to return neither, one, or both fields.
  * @name Submodule#getId
- * @param {SubmoduleParams} configParams
+ * @param {SubmoduleConfig} config
  * @param {ConsentData|undefined} consentData
  * @param {(Object|undefined)} cacheIdObj
  * @return {(IdResponse|undefined)} A response object that contains id and/or callback.
@@ -27,7 +27,7 @@
  *  If IdResponse#callback is defined, then it'll called at the end of auction.
  *  It's permissible to return neither, one, or both fields.
  * @name Submodule#extendId
- * @param {SubmoduleParams} configParams
+ * @param {SubmoduleConfig} config
  * @param {Object} storedId - existing id, if any
  * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
  */
@@ -37,7 +37,7 @@
  * @summary decode a stored value for passing to bid requests
  * @name Submodule#decode
  * @param {Object|string} value
- * @param {SubmoduleParams|undefined} configParams
+ * @param {SubmoduleConfig|undefined} config
  * @return {(Object|undefined)}
  */
 
@@ -85,6 +85,7 @@
  * @property {(array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
  * @property {(string|undefined)} providedIdentifierName - defines the name of an identifier that can be found in local storage or in the cookie jar that can be sent along with the getId request. This parameter should be used whenever a customer is able to provide the most stable identifier possible
  * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
+ * @property {(string|undefined)} pd - publisher provided data for reconciling ID5 IDs
  */
 
 /**
@@ -327,7 +328,7 @@ function processSubmoduleCallbacks(submodules, cb) {
           setStoredValue(submodule, idObj);
         }
         // cache decoded value (this is copied to every adUnit bid)
-        submodule.idObj = submodule.submodule.decode(idObj);
+        submodule.idObj = submodule.submodule.decode(idObj, submodule.config);
       } else {
         utils.logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
@@ -541,10 +542,10 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
 
     if (!storedId || refreshNeeded || forceRefresh || !storedConsentDataMatchesConsentData(storedConsentData, consentData)) {
       // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-      response = submodule.submodule.getId(submodule.config.params, consentData, storedId);
+      response = submodule.submodule.getId(submodule.config, consentData, storedId);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-      response = submodule.submodule.extendId(submodule.config.params, storedId);
+      response = submodule.submodule.extendId(submodule.config, storedId);
     }
 
     if (utils.isPlainObject(response)) {
@@ -562,18 +563,16 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
 
     if (storedId) {
       // cache decoded value (this is copied to every adUnit bid)
-      submodule.idObj = submodule.submodule.decode(storedId, submodule.config.params);
+      submodule.idObj = submodule.submodule.decode(storedId, submodule.config);
     }
   } else if (submodule.config.value) {
     // cache decoded value (this is copied to every adUnit bid)
     submodule.idObj = submodule.config.value;
   } else {
-    const response = submodule.submodule.getId(submodule.config.params, consentData, undefined);
+    const response = submodule.submodule.getId(submodule.config, consentData, undefined);
     if (utils.isPlainObject(response)) {
       if (typeof response.callback === 'function') { submodule.callback = response.callback; }
-      if (response.id) {
-        submodule.idObj = submodule.submodule.decode(response.id, submodule.config.params);
-      }
+      if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
     }
   }
 }
