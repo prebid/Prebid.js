@@ -56,7 +56,7 @@ describe('KrushmediabBidAdapter', function () {
       expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
       expect(placement).to.have.keys('key', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer', 'schain');
-      expect(placement.key).to.equal(0);
+      expect(placement.key).to.equal(783);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal(BANNER);
       expect(placement.schain).to.be.an('object');
