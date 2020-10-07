@@ -342,7 +342,7 @@ function emitAdRenderFail({ reason, message, bid, id }) {
  * @param  {string} id bid id to locate the ad
  * @alias module:pbjs.renderAd
  */
-$$PREBID_GLOBAL$$.renderAd = function (doc, id) {
+$$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
 
@@ -354,6 +354,14 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
+
+        // replacing clickthrough if submitted
+        if (options && options.clickThrough) {
+          const { clickThrough } = options;
+          bid.ad = utils.replaceClickThrough(bid.ad, clickThrough);
+          bid.adUrl = utils.replaceClickThrough(bid.adUrl, clickThrough);
+        }
+
         // save winning bids
         auctionManager.addWinningBid(bid);
 

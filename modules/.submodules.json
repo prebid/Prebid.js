@@ -16,7 +16,8 @@
     "zeotapIdPlusIdSystem",
     "haloIdSystem",
     "quantcastIdSystem",
-    "idxIdSystem"
+    "idxIdSystem",
+    "fabrickIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
