@@ -1,5 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const VERSION = '1.0';
@@ -104,15 +105,6 @@ function getHostname(bidderRequest) {
   return '';
 }
 
-/* Get current page referrer url */
-function getReferrerUrl(bidderRequest) {
-  let referer = '';
-  if (bidderRequest && bidderRequest.refererInfo) {
-    referer = bidderRequest.refererInfo.referer;
-  }
-  return referer;
-}
-
 /* Get current page canonical url */
 function getCanonicalUrl() {
   let link;
@@ -155,14 +147,24 @@ function createEndpoint(bidRequests, bidderRequest) {
 function createEndpointQS(bidderRequest) {
   const qs = {};
 
-  const ref = getReferrerUrl(bidderRequest);
-  if (ref) {
-    qs.RefererUrl = encodeURIComponent(ref);
+  if (bidderRequest) {
+    const ref = bidderRequest.refererInfo;
+    if (ref) {
+      qs.RefererUrl = encodeURIComponent(ref.referer);
+      if (ref.numIframes > 0) {
+        qs.SafeFrame = true;
+      }
+    }
   }
 
   const can = getCanonicalUrl();
   if (can) {
     qs.CanonicalUrl = encodeURIComponent(can);
+  }
+
+  const domain = config.getConfig('publisherDomain');
+  if (domain) {
+    qs.PublisherDomain = encodeURIComponent(domain);
   }
 
   return qs;
