@@ -73,6 +73,7 @@ export const spec = {
 
       placements.push({
         key: bid.params.key,
+        test: bid.params.test || 0,
         bidId: bid.bidId,
         sizes: sizes || [],
         wPlayer: sizes ? sizes[0] : 0,
