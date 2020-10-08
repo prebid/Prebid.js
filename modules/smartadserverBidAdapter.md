@@ -110,9 +110,11 @@ Please reach out to your Technical account manager for more information.
 			renderer: {
 				url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
 				render: function (bid) {
-					ANOutstreamVideo.renderAd({
-						targetId: bid.adUnitCode,
-						adResponse: bid
+					bid.renderer.push(() => { 
+						ANOutstreamVideo.renderAd({ 
+							targetId: bid.adUnitCode,
+							adResponse: bid 
+						}); 
 					});
 				}
 			},
