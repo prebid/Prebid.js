@@ -146,7 +146,7 @@ function enrichBidRequest(bidReqConfig, onDone) {
  * @param {adUnit[]} adUnits
  * @param {function} onDone
  */
-function enrichAdUnits(adUnits) {
+export function enrichAdUnits(adUnits) {
   adUnits.forEach(adUnit => {
     const onVatResponse = function (vat) {
       if (!vat) {
@@ -181,17 +181,20 @@ function loadVatForPendingRequest(playerID, mediaID, callback) {
   }
 }
 
-function getVatFromCache(mediaID) {
-  let segments = segCache[mediaID];
-  if (segments) {
-    return {
-      segments,
-      mediaID
-    };
+export function getVatFromCache(mediaID) {
+  const segments = segCache[mediaID];
+
+  if (!segments) {
+    return null;
   }
+
+  return {
+    segments,
+    mediaID
+  };
 }
 
-function getVatFromPlayer(playerID, mediaID) {
+export function getVatFromPlayer(playerID, mediaID) {
   const player = getPlayer(playerID);
   if (!player) {
     return null;
@@ -214,7 +217,7 @@ function getVatFromPlayer(playerID, mediaID) {
   };
 }
 
-function formatTargetingResponse(vat) {
+export function formatTargetingResponse(vat) {
   const { segments, mediaID } = vat;
   const targeting = {};
   if (segments && segments.length) {
