@@ -787,7 +787,7 @@ describe('Livewrapped adapter tests', function () {
     let testbidRequest = clone(bidderRequest);
     delete testbidRequest.bids[0].params.userId;
     testbidRequest.bids[0].userId = {};
-    testbidRequest.bids[0].userId.id5id = 'id5-user-id';
+    testbidRequest.bids[0].userId.id5id = { uid: 'id5-user-id' };
     let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
     let data = JSON.parse(result.data);
 

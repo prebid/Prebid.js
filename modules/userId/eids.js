@@ -30,8 +30,16 @@ const USER_IDS_CONFIG = {
 
   // id5Id
   'id5id': {
+    getValue: function(data) {
+      return data.uid
+    },
     source: 'id5-sync.com',
-    atype: 1
+    atype: 1,
+    getEidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
   },
 
   // parrableId
@@ -142,7 +150,13 @@ const USER_IDS_CONFIG = {
   'quantcastId': {
     source: 'quantcast.com',
     atype: 1
-  }
+  },
+
+  // IDx
+  'idx': {
+    source: 'idx.lat',
+    atype: 1
+  },
 };
 
 // this function will create an eid object for the given UserId sub-module
@@ -182,9 +196,13 @@ export function createEidsArray(bidRequestUserId) {
   let eids = [];
   for (const subModuleKey in bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
-      const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
-      if (eid) {
-        eids.push(eid);
+      if (subModuleKey === 'pubProvidedId') {
+        eids = eids.concat(bidRequestUserId['pubProvidedId']);
+      } else {
+        const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
+        if (eid) {
+          eids.push(eid);
+        }
       }
     }
   }

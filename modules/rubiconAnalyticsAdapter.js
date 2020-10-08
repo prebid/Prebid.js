@@ -51,6 +51,18 @@ const cache = {
 
 const BID_REJECTED_IPF = 'rejected-ipf';
 
+export let rubiConf = {
+  pvid: utils.generateUUID().slice(0, 8)
+};
+// we are saving these as global to this module so that if a pub accidentally overwrites the entire
+// rubicon object, then we do not lose other data
+config.getConfig('rubicon', config => {
+  utils.mergeDeep(rubiConf, config.rubicon);
+  if (utils.deepAccess(config, 'rubicon.updatePageView') === true) {
+    rubiConf.pvid = utils.generateUUID().slice(0, 8)
+  }
+});
+
 export function getHostNameFromReferer(referer) {
   try {
     rubiconAdapter.referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
@@ -140,17 +152,14 @@ function sendMessage(auctionId, bidWonId) {
   let referrer = config.getConfig('pageUrl') || (auctionCache && auctionCache.referrer);
   let message = {
     eventTimeMillis: Date.now(),
-    integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
-    ruleId: config.getConfig('rubicon.rule_name'),
+    integration: rubiConf.int_type || DEFAULT_INTEGRATION,
+    ruleId: rubiConf.rule_name,
     version: '$prebid.version$',
     referrerUri: referrer,
     referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer),
-    channel: 'web'
+    channel: 'web',
+    wrapperName: rubiConf.wrapperName
   };
-  const wrapperName = config.getConfig('rubicon.wrapperName');
-  if (wrapperName) {
-    message.wrapperName = wrapperName;
-  }
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
       let bid = auctionCache.bids[bidId];
@@ -339,17 +348,9 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
   ]);
 }
 
-function getDynamicKvps() {
-  if (prebidGlobal.rp && typeof prebidGlobal.rp.getCustomTargeting === 'function') {
-    return prebidGlobal.rp.getCustomTargeting();
-  }
-  return {};
-}
-
-function getPageViewId() {
-  if (prebidGlobal.rp && typeof prebidGlobal.rp.generatePageViewId === 'function') {
-    return prebidGlobal.rp.generatePageViewId(false);
-  }
+function getFpkvs() {
+  const isValid = rubiConf.fpkvs && typeof rubiConf.fpkvs === 'object' && Object.keys(rubiConf.fpkvs).every(key => typeof rubiConf.fpkvs[key] === 'string');
+  return isValid ? rubiConf.fpkvs : {};
 }
 
 let samplingFactor = 1;
@@ -407,8 +408,8 @@ function updateRpaCookie() {
   // possible that decodedRpaCookie is undefined, and if it is, we probably are blocked by storage or some other exception
   if (Object.keys(decodedRpaCookie).length) {
     decodedRpaCookie.lastSeen = currentTime;
-    decodedRpaCookie.fpkvs = {...decodedRpaCookie.fpkvs, ...getDynamicKvps()};
-    decodedRpaCookie.pvid = getPageViewId();
+    decodedRpaCookie.fpkvs = {...decodedRpaCookie.fpkvs, ...getFpkvs()};
+    decodedRpaCookie.pvid = rubiConf.pvid;
     setRpaCookie(decodedRpaCookie)
   }
   return decodedRpaCookie;
@@ -482,7 +483,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   },
   disableAnalytics() {
     this.getUrl = baseAdapter.getUrl;
-    accountId = null;
+    accountId = undefined;
+    rubiConf = {};
     cache.gpt.registered = false;
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
