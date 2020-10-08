@@ -3,6 +3,7 @@
 ```
 Module Name: krushmedia Bidder Adapter
 Module Type: krushmedia Bidder Adapter
+Maintainer: adapter@krushmedia.com
 ```
 
 # Description
