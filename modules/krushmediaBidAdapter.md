@@ -24,9 +24,8 @@ Module that connects to krushmedia demand sources
                         {
                             bidder: 'krushmedia',
                             params: {
-                                key: 783,
-                                traffic: 'banner',
-                                test: 1
+                                key: 0,
+                                traffic: 'banner'
                             }
                         }
                     ]
@@ -44,9 +43,8 @@ Module that connects to krushmedia demand sources
                         {
                             bidder: 'krushmedia',
                             params: {
-                                key: 783,
-                                traffic: 'video',
-                                test: 1
+                                key: 0,
+                                traffic: 'video'
                             }
                         }
                     ]
