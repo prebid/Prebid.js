@@ -31,12 +31,12 @@ export const jwplayerSubmodule = {
      */
   name: SUBMODULE_NAME,
   /**
-     * get data and signal completion to realTimeData module
+     * add targeting data to bids and signal completion to realTimeData module
      * @function
      * @param {Obj} bidReqConfig
      * @param {function} onDone
      */
-  getBidRequestData,
+  getBidRequestData: enrichBidRequest,
   init
 };
 
@@ -114,7 +114,7 @@ function cacheSegment(jwpseg, mediaId) {
 function onRequestCompleted(mediaID, success) {
   const callback = pendingRequests[mediaID];
   if (callback) {
-    callback(success ? getTargetingFromCache(mediaID) : { mediaID });
+    callback(success ? getVatFromCache(mediaID) : { mediaID });
     activeRequestCount--;
   }
   delete pendingRequests[mediaID];
@@ -129,10 +129,10 @@ function onRequestCompleted(mediaID, success) {
   }
 }
 
-function getBidRequestData (bidReqConfig, onDone) {
+function enrichBidRequest(bidReqConfig, onDone) {
   activeRequestCount = 0;
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits;
-  getVatForAdUnits(adUnits);
+  enrichAdUnits(adUnits);
   if (activeRequestCount <= 0) {
     onDone();
   } else {
@@ -146,42 +146,42 @@ function getBidRequestData (bidReqConfig, onDone) {
  * @param {adUnit[]} adUnits
  * @param {function} onDone
  */
-function getVatForAdUnits(adUnits) {
+function enrichAdUnits(adUnits) {
   adUnits.forEach(adUnit => {
     const onVatResponse = function (vat) {
       if (!vat) {
         return;
       }
       const targeting = formatTargetingResponse(vat);
-      addTargetingToBids(targeting, adUnit.bids);
+      addTargetingToBids(adUnit.bids, targeting);
     };
-    getTargeting(adUnit.jwTargeting || { segments: ['1234'], mediaID: 'karim' }, onVatResponse);
+
+    loadVat(adUnit.jwTargeting, onVatResponse);
   });
 }
 
-function getTargeting(configParams, callback) {
-  const playerID = configParams.playerID;
-  let mediaID = configParams.mediaID;
+function loadVat(params, onCompletion) {
+  const { playerID, mediaID } = params;
 
   if (pendingRequests[mediaID] !== undefined) {
-    getTargetingForPendingRequest(playerID, mediaID, callback);
+    loadVatForPendingRequest(playerID, mediaID, onCompletion);
   } else {
-    const targeting = getTargetingFromCache(mediaID) || getTargetingFromPlayer(playerID, mediaID) || { mediaID };
-    callback(targeting);
+    const vat = getVatFromCache(mediaID) || getVatFromPlayer(playerID, mediaID) || { mediaID };
+    onCompletion(vat);
   }
 }
 
-function getTargetingForPendingRequest(playerID, mediaID, callback) {
-  const targeting = getTargetingFromPlayer(playerID, mediaID);
-  if (targeting) {
-    callback(targeting);
+function loadVatForPendingRequest(playerID, mediaID, callback) {
+  const vat = getVatFromPlayer(playerID, mediaID);
+  if (vat) {
+    callback(vat);
   } else {
     activeRequestCount++;
     pendingRequests[mediaID] = callback;
   }
 }
 
-function getTargetingFromCache(mediaID) {
+function getVatFromCache(mediaID) {
   let segments = segCache[mediaID];
   if (segments) {
     return {
@@ -191,7 +191,7 @@ function getTargetingFromCache(mediaID) {
   }
 }
 
-function getTargetingFromPlayer(playerID, mediaID) {
+function getVatFromPlayer(playerID, mediaID) {
   const player = getPlayer(playerID);
   if (!player) {
     return null;
@@ -216,68 +216,24 @@ function getTargetingFromPlayer(playerID, mediaID) {
 
 function formatTargetingResponse(vat) {
   const { segments, mediaID } = vat;
-  const jwTargeting = {};
+  const targeting = {};
   if (segments && segments.length) {
-    jwTargeting.segments = segments;
+    targeting.segments = segments;
   }
 
   if (mediaID) {
     const id = 'jw_' + mediaID;
-    jwTargeting.content = {
+    targeting.content = {
       id
     }
   }
-  return jwTargeting;
+  return targeting;
 }
 
-function addTargetingToBids(targeting, bids) {
+function addTargetingToBids(bids, targeting) {
   bids.forEach(bid => {
     bid.jwTargeting = targeting;
   });
-}
-
-/**
- * Retrieves the targeting information pertaining to a bid request.
- * @param bidRequest {object} - the bid which is passed to a prebid adapter for use in `buildRequests`. It must contain
- * a jwTargeting property.
- * @returns targetingInformation {object} nullable - contains the media ID as well as the jwpseg targeting segments
- * found for the given bidRequest information
- */
-export function getTargetingForBid(bidRequest) {
-  const jwTargeting = bidRequest.jwTargeting;
-  if (!jwTargeting) {
-    return null;
-  }
-  const playerID = jwTargeting.playerID;
-  let mediaID = jwTargeting.mediaID;
-  let segments = segCache[mediaID];
-  if (segments) {
-    return {
-      segments,
-      mediaID
-    };
-  }
-
-  const player = getPlayer(playerID);
-  if (!player) {
-    return null;
-  }
-
-  const item = mediaID ? find(player.getPlaylist(), item => item.mediaid === mediaID) : player.getPlaylistItem();
-  if (!item) {
-    return null;
-  }
-
-  mediaID = mediaID || item.mediaid;
-  segments = item.jwpseg;
-  if (segments && mediaID) {
-    segCache[mediaID] = segments;
-  }
-
-  return {
-    segments,
-    mediaID
-  };
 }
 
 function getPlayer(playerID) {
