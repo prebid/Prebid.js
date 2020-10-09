@@ -298,7 +298,7 @@ export function getAdUnitTargeting(auction) {
     return;
   }
   let targeting = [];
-  for (let i = relevantSubModules.length; i--; i > 0) {
+  for (let i = relevantSubModules.length; i > 0; i--) {
     const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent);
     if (smTargeting && typeof smTargeting === 'object') {
       targeting.push(smTargeting);
