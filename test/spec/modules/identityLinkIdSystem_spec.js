@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 import {server} from 'test/mocks/xhr.js';
 
 const pid = '14';
-const defaultConfigParams = {pid: pid};
+const defaultConfigParams = { params: {pid: pid} };
 const responseHeader = {'Content-Type': 'application/json'}
 
 describe('IdentityLinkId tests', function () {
@@ -18,12 +18,12 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should log an error if no configParams were passed when getId', function () {
-    identityLinkSubmodule.getId();
+    identityLinkSubmodule.getId({ params: {} });
     expect(logErrorStub.calledOnce).to.be.true;
   });
 
   it('should log an error if pid configParam was not passed when getId', function () {
-    identityLinkSubmodule.getId({});
+    identityLinkSubmodule.getId({ params: {} });
     expect(logErrorStub.calledOnce).to.be.true;
   });
 
@@ -41,7 +41,22 @@ describe('IdentityLinkId tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should call the LiveRamp envelope endpoint with consent string', function () {
+  it('should NOT call the LiveRamp envelope endpoint if gdpr applies but consent string is empty string', function () {
+    let consentData = {
+      gdprApplies: true,
+      consentString: ''
+    };
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData);
+    expect(submoduleCallback).to.be.undefined;
+  });
+
+  it('should NOT call the LiveRamp envelope endpoint if gdpr applies but consent string is missing', function () {
+    let consentData = { gdprApplies: true };
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData);
+    expect(submoduleCallback).to.be.undefined;
+  });
+
+  it('should call the LiveRamp envelope endpoint with IAB consent string v1', function () {
     let callBackSpy = sinon.spy();
     let consentData = {
       gdprApplies: true,
@@ -51,6 +66,27 @@ describe('IdentityLinkId tests', function () {
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&ct=1&cv=BOkIpDSOkIpDSADABAENCc-AAAApOAFAAMAAsAMIAcAA_g');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should call the LiveRamp envelope endpoint with IAB consent string v2', function () {
+    let callBackSpy = sinon.spy();
+    let consentData = {
+      gdprApplies: true,
+      consentString: 'CO4VThZO4VTiuADABBENAzCgAP_AAEOAAAAAAwwAgAEABhAAgAgAAA.YAAAAAAAAAA',
+      vendorData: {
+        tcfPolicyVersion: 2
+      }
+    };
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&ct=4&cv=CO4VThZO4VTiuADABBENAzCgAP_AAEOAAAAAAwwAgAEABhAAgAgAAA.YAAAAAAAAAA');
     request.respond(
       200,
       responseHeader,

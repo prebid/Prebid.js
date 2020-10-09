@@ -1,15 +1,25 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'quantumdex';
-const ENDPOINT = 'https://useast.quantumdex.io/auction/adapter';
-const USER_SYNC_URL = 'https://sync.quantumdex.io/usersync/adapter';
+const CONFIG = {
+  'quantumdex': {
+    'ENDPOINT': 'https://useast.quantumdex.io/auction/quantumdex',
+    'USERSYNC': 'https://sync.quantumdex.io/usersync/quantumdex'
+  },
+  'valueimpression': {
+    'ENDPOINT': 'https://useast.quantumdex.io/auction/adapter',
+    'USERSYNC': 'https://sync.quantumdex.io/usersync/adapter'
+  }
+};
+
+var bidderConfig = CONFIG['quantumdex'];
 var bySlotTargetKey = {};
 var bySlotSizesCount = {}
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner', 'video'],
-  aliases: ['qde'],
+  aliases: ['valueimpression'],
   isBidRequestValid: function (bid) {
     if (!bid.params) {
       return false;
@@ -36,6 +46,7 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     var bids = JSON.parse(JSON.stringify(validBidRequests))
+    bidderConfig = CONFIG[bids[0].bidder];
     const payload = {};
 
     bids.forEach(bidReq => {
@@ -74,14 +85,14 @@ export const spec = {
     // Apply GDPR parameters to request.
     payload.gdpr = {};
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr.gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 'true' : 'false';
+      payload.gdpr.gdprApplies = !!bidderRequest.gdprConsent.gdprApplies;
       if (bidderRequest.gdprConsent.consentString) {
         payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
       }
     }
     // Apply schain.
     if (bids[0].schain) {
-      payload.schain = JSON.stringify(bids[0].schain)
+      payload.schain = bids[0].schain
     }
     // Apply us_privacy.
     if (bidderRequest && bidderRequest.uspConsent) {
@@ -92,7 +103,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: ENDPOINT,
+      url: bidderConfig.ENDPOINT,
       data: payload,
       withCredentials: true,
       bidderRequests: bids
@@ -138,15 +149,23 @@ export const spec = {
       if (syncOptions.iframeEnabled) {
         syncs.push({
           type: 'iframe',
-          url: USER_SYNC_URL
+          url: bidderConfig.USERSYNC
         });
       }
-      if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+      if (serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.pixel) {
         serverResponses[0].body.pixel.forEach(px => {
-          syncs.push({
-            type: px.type,
-            url: px.url
-          });
+          if (px.type === 'image' && syncOptions.pixelEnabled) {
+            syncs.push({
+              type: 'image',
+              url: px.url
+            });
+          }
+          if (px.type === 'iframe' && syncOptions.iframeEnabled) {
+            syncs.push({
+              type: 'iframe',
+              url: px.url
+            });
+          }
         });
       }
     } catch (e) { }

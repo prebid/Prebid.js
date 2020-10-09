@@ -140,12 +140,13 @@ describe('YieldmoAdapter', function () {
       expect(data.hasOwnProperty('pr')).to.be.true;
       expect(data.hasOwnProperty('scrd')).to.be.true;
       expect(data.dnt).to.be.false;
-      expect(data.e).to.equal(90);
       expect(data.hasOwnProperty('description')).to.be.true;
       expect(data.hasOwnProperty('title')).to.be.true;
       expect(data.hasOwnProperty('h')).to.be.true;
       expect(data.hasOwnProperty('w')).to.be.true;
       expect(data.hasOwnProperty('pubcid')).to.be.true;
+      expect(data.userConsent).to.equal('{"gdprApplies":"","cmp":""}');
+      expect(data.us_privacy).to.equal('');
     });
 
     it('should add pubcid as parameter of request', function () {

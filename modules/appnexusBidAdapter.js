@@ -63,7 +63,20 @@ const storage = getStorageManager(GVLID, BIDDER_CODE);
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'adasta', 'beintoo'],
+  aliases: [
+    { code: 'appnexusAst', gvlid: 32 },
+    { code: 'brealtime' },
+    { code: 'emxdigital', gvlid: 183 },
+    { code: 'pagescience' },
+    { code: 'defymedia' },
+    { code: 'gourmetads' },
+    { code: 'matomy' },
+    { code: 'featureforward' },
+    { code: 'oftmedia' },
+    { code: 'districtm', gvlid: 144 },
+    { code: 'adasta' },
+    { code: 'beintoo', gvlid: 618 },
+  ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -72,7 +85,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
   },
 
@@ -82,12 +95,12 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj = {};
     if (config.getConfig('coppa') === true) {
-      userObj = {'coppa': true};
+      userObj = { 'coppa': true };
     }
     if (userObjBid) {
       Object.keys(userObjBid.params.user)
@@ -144,6 +157,7 @@ export const spec = {
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
     const schain = bidRequests[0].schain;
+    const omidSupport = find(bidRequests, hasOmidSupport);
 
     const payload = {
       tags: [...tags],
@@ -154,6 +168,13 @@ export const spec = {
       },
       schain: schain
     };
+
+    if (omidSupport) {
+      payload['iab_support'] = {
+        omidpn: 'Appnexus',
+        omidpv: '$prebid.version$'
+      }
+    }
 
     if (member > 0) {
       payload.member_id = member;
@@ -207,15 +228,17 @@ export const spec = {
       });
     }
 
-    let eids = [];
     const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
     if (criteoId) {
-      eids.push({
-        source: 'criteo.com',
-        id: criteoId
+      let tpuids = [];
+      tpuids.push({
+        'provider': 'criteo',
+        'user_id': criteoId
       });
+      payload.tpuids = tpuids;
     }
 
+    let eids = [];
     const tdid = utils.deepAccess(bidRequests[0], `userId.tdid`);
     if (tdid) {
       eids.push({
@@ -243,7 +266,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function (serverResponse, { bidderRequest }) {
     serverResponse = serverResponse.body;
     const bids = [];
     if (!serverResponse || serverResponse.error) {
@@ -295,23 +318,23 @@ export const spec = {
    * Returns mapping file info. This info will be used by bidderFactory to preload mapping file and store data in local storage
    * @returns {mappingFileInfo}
    */
-  getMappingFileInfo: function() {
+  getMappingFileInfo: function () {
     return {
       url: mappingFileUrl,
       refreshInDays: 2
     }
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function (syncOptions) {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: 'https://acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+        url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
       }];
     }
   },
 
-  transformBidParams: function(params, isOpenRtb) {
+  transformBidParams: function (params, isOpenRtb) {
     params = utils.convertTypes({
       'member': 'string',
       'invCode': 'string',
@@ -344,7 +367,7 @@ export const spec = {
    * Add element selector to javascript tracker to improve native viewability
    * @param {Bid} bid
    */
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     if (bid.native) {
       reloadViewabilityScriptWithCorrectParameters(bid);
     }
@@ -645,9 +668,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       ad: rtbBid.rtb.banner.content
     });
     try {
-      const url = rtbBid.rtb.trackers[0].impression_urls[0];
-      const tracker = utils.createTrackPixelHtml(url);
-      bid.ad += tracker;
+      if (rtbBid.rtb.trackers) {
+        const url = rtbBid.rtb.trackers[0].impression_urls[0];
+        const tracker = utils.createTrackPixelHtml(url);
+        bid.ad += tracker;
+      }
     } catch (error) {
       utils.logError('Error appending tracking pixel', error);
     }
@@ -675,7 +700,7 @@ function bidToTag(bid) {
     tag.reserve = bid.params.reserve;
   }
   if (bid.params.position) {
-    tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
+    tag.position = { 'above': 1, 'below': 2 }[bid.params.position] || 0;
   }
   if (bid.params.trafficSourceCode) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
@@ -715,7 +740,7 @@ function bidToTag(bid) {
 
     if (bid.nativeParams) {
       const nativeRequest = buildNativeRequest(bid.nativeParams);
-      tag[NATIVE] = {layouts: [nativeRequest]};
+      tag[NATIVE] = { layouts: [nativeRequest] };
     }
   }
 
@@ -749,14 +774,25 @@ function bidToTag(bid) {
             type = (utils.isArray(type)) ? type[0] : type;
             tag.video[param] = VIDEO_MAPPING[param][type];
             break;
+          // Deprecating tags[].video.frameworks in favor of tags[].video_frameworks
+          case 'frameworks':
+            break;
           default:
             tag.video[param] = bid.params.video[param];
         }
       });
+
+    if (bid.params.video.frameworks && utils.isArray(bid.params.video.frameworks)) {
+      tag['video_frameworks'] = bid.params.video.frameworks;
+    }
   }
 
   if (bid.renderer) {
-    tag.video = Object.assign({}, tag.video, {custom_renderer_present: true});
+    tag.video = Object.assign({}, tag.video, { custom_renderer_present: true });
+  }
+
+  if (bid.params.frameworks && utils.isArray(bid.params.frameworks)) {
+    tag['banner_frameworks'] = bid.params.frameworks;
   }
 
   let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
@@ -825,6 +861,19 @@ function hasAdPod(bid) {
     bid.mediaTypes.video &&
     bid.mediaTypes.video.context === ADPOD
   );
+}
+
+function hasOmidSupport(bid) {
+  let hasOmid = false;
+  const bidderParams = bid.params;
+  const videoParams = bid.params.video;
+  if (bidderParams.frameworks && utils.isArray(bidderParams.frameworks)) {
+    hasOmid = includes(bid.params.frameworks, 6);
+  }
+  if (!hasOmid && videoParams && videoParams.frameworks && utils.isArray(videoParams.frameworks)) {
+    hasOmid = includes(bid.params.video.frameworks, 6);
+  }
+  return hasOmid;
 }
 
 /**

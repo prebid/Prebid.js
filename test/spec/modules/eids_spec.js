@@ -29,26 +29,64 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('id5Id', function() {
-    const userId = {
-      id5id: 'some-random-id-value'
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'id5-sync.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+  describe('id5Id', function() {
+    it('does not include an ext if not provided', function() {
+      const userId = {
+        id5id: {
+          uid: 'some-random-id-value'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'id5-sync.com',
+        uids: [{ id: 'some-random-id-value', atype: 1 }]
+      });
+    });
+
+    it('includes ext if provided', function() {
+      const userId = {
+        id5id: {
+          uid: 'some-random-id-value',
+          ext: {
+            linkType: 0
+          }
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'id5-sync.com',
+        uids: [{ id: 'some-random-id-value', atype: 1 }],
+        ext: {
+          linkType: 0
+        }
+      });
     });
   });
 
   it('parrableId', function() {
     const userId = {
-      parrableid: 'some-random-id-value'
+      parrableId: {
+        eid: 'some-random-id-value'
+      }
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'parrable.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('merkleId', function() {
+    const userId = {
+      merkleId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'merkleinc.com',
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
@@ -107,19 +145,15 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('DigiTrust; getValue call', function() {
+  it('lotamePanoramaId', function () {
     const userId = {
-      digitrustid: {
-        data: {
-          id: 'some-random-id-value'
-        }
-      }
+      lotamePanoramaId: 'some-random-id-value',
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
-      source: 'digitru.st',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      source: 'crwdcntrl.net',
+      uids: [{ id: 'some-random-id-value', atype: 1 }],
     });
   });
 
@@ -182,8 +216,87 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
-});
 
+  it('zeotapIdPlus', function() {
+    const userId = {
+      IDP: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'zeotap.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
+
+  it('haloId', function() {
+    const userId = {
+      haloId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'audigent.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
+
+  it('quantcastId', function() {
+    const userId = {
+      quantcastId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'quantcast.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
+  it('pubProvidedId', function() {
+    const userId = {
+      pubProvidedId: [{
+        source: 'example.com',
+        uids: [{
+          id: 'value read from cookie or local storage',
+          ext: {
+            stype: 'ppuid'
+          }
+        }]
+      }, {
+        source: 'id-partner.com',
+        uids: [{
+          id: 'value read from cookie or local storage'
+        }]
+      }]
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(2);
+    expect(newEids[0]).to.deep.equal({
+      source: 'example.com',
+      uids: [{
+        id: 'value read from cookie or local storage',
+        ext: {
+          stype: 'ppuid'
+        }
+      }]
+    });
+    expect(newEids[1]).to.deep.equal({
+      source: 'id-partner.com',
+      uids: [{
+        id: 'value read from cookie or local storage'
+      }]
+    });
+  });
+});
 describe('Negative case', function() {
   it('eids array generation for UN-known sub-module', function() {
     // UnknownCommonId
