@@ -142,7 +142,8 @@ describe('mediaforce bid adapter', function () {
 
     const requestUrl = `${baseUrl}/header_bid`;
     const dnt = utils.getDNT() ? 1 : 0;
-    const secure = 1;
+    const secure = window.location.protocol === 'https' ? 1 : 0;
+    const pageUrl = window.location.href;
     const timeout = 1500;
 
     it('should return undefined if no validBidRequests passed', function () {
@@ -181,7 +182,7 @@ describe('mediaforce bid adapter', function () {
           id: bid.params.publisher_id,
           publisher: {id: bid.params.publisher_id},
           ref: encodeURIComponent(refererInfo.referer),
-          page: encodeURIComponent(refererInfo.referer),
+          page: pageUrl,
         },
         device: {
           ua: navigator.userAgent,
@@ -218,7 +219,7 @@ describe('mediaforce bid adapter', function () {
       assert.deepEqual(request, {
         method: 'POST',
         url: requestUrl,
-        data: '{"id":"' + data.id + '","site":{"page":"https%3A%2F%2Fwww.prebid.org","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + language + '"},"ext":{"mediaforce":{"hb_key":"210a474e-88f0-4646-837f-4253b7cf14fb"}},"tmax":1500,"imp":[{"tagid":"202","secure":1,"bidfloor":0.5,"ext":{"mediaforce":{"transactionId":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b"}},"banner":{"w":300,"h":250},"native":{"ver":"1.2","request":{"assets":[{"required":1,"id":1,"title":{"len":800}},{"required":1,"id":3,"img":{"type":3,"w":300,"h":250}},{"required":1,"id":5,"data":{"type":1}}],"context":1,"plcmttype":1,"ver":"1.2"}}}]}',
+        data: '{"id":"' + data.id + '","site":{"page":"' + pageUrl + '","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + language + '"},"ext":{"mediaforce":{"hb_key":"210a474e-88f0-4646-837f-4253b7cf14fb"}},"tmax":1500,"imp":[{"tagid":"202","secure":' + secure + ',"bidfloor":0.5,"ext":{"mediaforce":{"transactionId":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b"}},"banner":{"w":300,"h":250},"native":{"ver":"1.2","request":{"assets":[{"required":1,"id":1,"title":{"len":800}},{"required":1,"id":3,"img":{"type":3,"w":300,"h":250}},{"required":1,"id":5,"data":{"type":1}}],"context":1,"plcmttype":1,"ver":"1.2"}}}]}',
       });
     });
 
@@ -265,7 +266,7 @@ describe('mediaforce bid adapter', function () {
               id: 'pub123',
               publisher: {id: 'pub123'},
               ref: encodeURIComponent(refererInfo.referer),
-              page: encodeURIComponent(refererInfo.referer),
+              page: pageUrl,
             },
             device: {
               ua: navigator.userAgent,
@@ -321,7 +322,7 @@ describe('mediaforce bid adapter', function () {
               id: 'pub124',
               publisher: {id: 'pub124'},
               ref: encodeURIComponent(refererInfo.referer),
-              page: encodeURIComponent(refererInfo.referer),
+              page: pageUrl,
             },
             device: {
               ua: navigator.userAgent,

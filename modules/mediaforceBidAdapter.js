@@ -128,7 +128,7 @@ export const spec = {
       let impObj = {
         id: bid.bidId,
         tagid: tagid,
-        secure: 1,
+        secure: window.location.protocol === 'https' ? 1 : 0,
         bidfloor: bidfloor,
         ext: {
           mediaforce: {
@@ -156,7 +156,7 @@ export const spec = {
         request = {
           id: Math.round(Math.random() * 1e16).toString(16),
           site: {
-            page: referer,
+            page: window.location.href,
             ref: referer,
             id: bid.params.publisher_id,
             publisher: {
