@@ -1,5 +1,5 @@
 import { fetchTargetingForMediaId, enrichBidRequest,
-  getVatFromCache, formatTargetingResponse,
+  getVatFromCache, formatTargetingResponse, getVatFromPlayer, enrichAdUnits,
   fetchTargetingInformation, jwplayerSubmodule } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -93,7 +93,34 @@ describe('jwplayerRtdProvider', function() {
     });
   });
 
-  describe('Get targeting for bid', function() {
+  describe('Format targeting response', function () {
+    it('should exclude segment key when absent', function () {
+      const targeting = formatTargetingResponse({ mediaID: 'test' });
+      expect(targeting).to.not.have.property('segments');
+    });
+
+    it('should exclude content block when mediaId is absent', function () {
+      const targeting = formatTargetingResponse({ segments: ['test'] });
+      expect(targeting).to.not.have.property('content');
+    });
+
+    it('should return proper format', function () {
+      const segments = ['123'];
+      const mediaID = 'test';
+      const expectedContentId = 'jw_' + mediaID;
+      const expectedContent = {
+        id: expectedContentId
+      };
+      const targeting = formatTargetingResponse({
+        segments,
+        mediaID
+      });
+      expect(targeting).to.have.deep.property('segments', segments);
+      expect(targeting).to.have.deep.property('content', expectedContent);
+    });
+  });
+
+  describe('Get VAT from player', function () {
     const mediaIdWithSegment = 'media_ID_1';
     const mediaIdNoSegment = 'media_ID_2';
     const mediaIdForCurrentItem = 'media_ID_current';
@@ -102,18 +129,8 @@ describe('jwplayerRtdProvider', function() {
     const validPlayerID = 'player_test_ID_valid';
     const invalidPlayerID = 'player_test_ID_invalid';
 
-    it('returns null when targeting block is missing', function () {
-      const targeting = getTargetingForBid({});
-      expect(targeting).to.be.null;
-    });
-
     it('returns null when jwplayer.js is absent from page', function () {
-      const targeting = getTargetingForBid({
-        jwTargeting: {
-          playerID: invalidPlayerID,
-          mediaID: mediaIdNotCached
-        }
-      });
+      const targeting = getVatFromPlayer(invalidPlayerID, mediaIdNotCached);
       expect(targeting).to.be.null;
     });
 
@@ -165,76 +182,36 @@ describe('jwplayerRtdProvider', function() {
       });
 
       it('returns null when player ID does not match player on page', function () {
-        const targeting = getTargetingForBid({
-          jwTargeting: {
-            playerID: invalidPlayerID,
-            mediaID: mediaIdNotCached
-          }
-        });
+        const targeting = getVatFromPlayer(invalidPlayerID, mediaIdNotCached);
         expect(targeting).to.be.null;
       });
 
       it('returns segments when media ID matches a playlist item with segments', function () {
-        const targeting = getTargetingForBid({
-          jwTargeting: {
-            playerID: validPlayerID,
-            mediaID: mediaIdWithSegment
-          }
-        });
+        const targeting = getVatFromPlayer(validPlayerID, mediaIdWithSegment);
         expect(targeting).to.deep.equal(targetingForMediaWithSegment);
       });
 
-      it('caches segments media ID matches a playist item with segments', function () {
-        getTargetingForBid({
-          jwTargeting: {
-            playerID: validPlayerID,
-            mediaID: mediaIdWithSegment
-          }
-        });
-
-        window.jwplayer = null;
-        const targeting2 = getTargetingForBid({
-          jwTargeting: {
-            playerID: invalidPlayerID,
-            mediaID: mediaIdWithSegment
-          }
-        });
-        expect(targeting2).to.deep.equal(targetingForMediaWithSegment);
+      it('caches segments when media ID matches a playist item with segments', function () {
+        getVatFromPlayer(validPlayerID, mediaIdWithSegment);
+        const vat = getVatFromCache(mediaIdWithSegment);
+        expect(vat.segments).to.deep.equal(validSegments);
       });
 
       it('returns segments of current item when media ID is missing', function () {
-        const targeting = getTargetingForBid({
-          jwTargeting: {
-            playerID: validPlayerID
-          }
-        });
+        const targeting = getVatFromPlayer(validPlayerID);
         expect(targeting).to.deep.equal(targetingForCurrentItem);
       });
 
       it('caches segments from the current item', function () {
-        getTargetingForBid({
-          jwTargeting: {
-            playerID: validPlayerID
-          }
-        });
+        getVatFromPlayer(validPlayerID);
 
         window.jwplayer = null;
-        const targeting2 = getTargetingForBid({
-          jwTargeting: {
-            playerID: invalidPlayerID,
-            mediaID: mediaIdForCurrentItem
-          }
-        });
-        expect(targeting2).to.deep.equal(targetingForCurrentItem);
+        const targeting = getVatFromCache(mediaIdForCurrentItem);
+        expect(targeting).to.deep.equal(targetingForCurrentItem);
       });
 
       it('returns undefined segments when segments are absent', function () {
-        const targeting = getTargetingForBid({
-          jwTargeting: {
-            playerID: validPlayerID,
-            mediaID: mediaIdNoSegment
-          }
-        });
+        const targeting = getVatFromPlayer(validPlayerID, mediaIdNoSegment);
         expect(targeting).to.deep.equal({
           mediaID: mediaIdNoSegment,
           segments: undefined
@@ -243,18 +220,160 @@ describe('jwplayerRtdProvider', function() {
     });
   });
 
+  describe('Enrich ad units', function () {
+    const contentIdForSuccess = 'jw_' + testIdForSuccess;
+    const expectedTargetingForSuccess = {
+      segments: validSegments,
+      content: {
+        id: contentIdForSuccess
+      }
+    };
+    let bidRequestSpy;
+    let fakeServer;
+    let clock;
+
+    beforeEach(function () {
+      bidRequestSpy = sinon.spy();
+
+      fakeServer = sinon.createFakeServer();
+      fakeServer.respondImmediately = false;
+      fakeServer.autoRespond = false;
+
+      clock = sinon.useFakeTimers();
+    });
+
+    afterEach(function () {
+      clock.restore();
+      fakeServer.respond();
+    });
+
+    it('adds targeting when pending request succeeds', function () {
+      fetchTargetingForMediaId(testIdForSuccess);
+      const bids = [
+        {
+          id: 'bid1'
+        },
+        {
+          id: 'bid2'
+        }
+      ];
+      const adUnit = {
+        jwTargeting: {
+          mediaID: testIdForSuccess
+        },
+        bids
+      };
+
+      enrichAdUnits([adUnit]);
+      const bid1 = bids[0];
+      const bid2 = bids[1];
+      expect(bid1).to.not.have.property('jwTargeting');
+      expect(bid2).to.not.have.property('jwTargeting');
+
+      const request = fakeServer.requests[0];
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({
+          playlist: [
+            {
+              file: 'test.mp4',
+              jwpseg: validSegments
+            }
+          ]
+        })
+      );
+
+      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
+      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
+    });
+
+    it('immediately adds cached targeting', function () {
+      fetchTargetingForMediaId(testIdForSuccess);
+      const bids = [
+        {
+          id: 'bid1'
+        },
+        {
+          id: 'bid2'
+        }
+      ];
+      const adUnit = {
+        jwTargeting: {
+          mediaID: testIdForSuccess
+        },
+        bids
+      };
+      const request = fakeServer.requests[0];
+      request.respond(
+        200,
+        responseHeader,
+        JSON.stringify({
+          playlist: [
+            {
+              file: 'test.mp4',
+              jwpseg: validSegments
+            }
+          ]
+        })
+      );
+
+      enrichAdUnits([adUnit]);
+      const bid1 = bids[0];
+      const bid2 = bids[1];
+      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
+      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
+    });
+
+    it('adds content block when segments are absent and no request is pending', function () {
+      const expectedTargetingForFailure = {
+        content: {
+          id: 'jw_' + testIdForFailure
+        }
+      };
+      const bids = [
+        {
+          id: 'bid1'
+        },
+        {
+          id: 'bid2'
+        }
+      ];
+      const adUnit = {
+        jwTargeting: {
+          mediaID: testIdForFailure
+        },
+        bids
+      };
+
+      enrichAdUnits([adUnit]);
+      const bid1 = bids[0];
+      const bid2 = bids[1];
+      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
+      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
+    });
+  });
+
   describe('jwplayerSubmodule', function () {
     it('successfully instantiates', function () {
       expect(jwplayerSubmodule.init()).to.equal(true);
     });
 
-    describe('getData', function () {
+    describe('Get Bid Request Data', function () {
       const validMediaIDs = ['media_ID_1', 'media_ID_2', 'media_ID_3'];
       let bidRequestSpy;
       let fakeServer;
       let clock;
+      let bidReqConfig;
 
       beforeEach(function () {
+        bidReqConfig = {
+          adUnits: [
+            {
+
+            }
+          ]
+        };
         bidRequestSpy = sinon.spy();
 
         fakeServer = sinon.createFakeServer();
@@ -269,19 +388,36 @@ describe('jwplayerRtdProvider', function() {
         fakeServer.respond();
       });
 
+      it('executes callback immediately when ad units are missing', function () {
+        jwplayerSubmodule.getBidRequestData({ adUnits: [] }, bidRequestSpy);
+        expect(bidRequestSpy.calledOnce).to.be.true;
+      });
+
       it('executes callback immediately when no requests are pending', function () {
         fetchTargetingInformation({
           mediaIDs: []
         });
-        jwplayerSubmodule.getData([], bidRequestSpy);
+        jwplayerSubmodule.getBidRequestData(bidReqConfig, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
       });
 
-      it('executes callback after requests complete', function() {
+      it('executes callback only after requests in adUnit complete', function() {
         fetchTargetingInformation({
           mediaIDs: validMediaIDs
         });
-        jwplayerSubmodule.getData([], bidRequestSpy);
+        const adUnits = [
+          {
+            jwTargeting: {
+              mediaID: validMediaIDs[0]
+            }
+          },
+          {
+            jwTargeting: {
+              mediaID: validMediaIDs[1]
+            }
+          }
+        ]
+        jwplayerSubmodule.getBidRequestData({ adUnits }, bidRequestSpy);
         expect(bidRequestSpy.notCalled).to.be.true;
 
         const req1 = fakeServer.requests[0];
@@ -292,7 +428,7 @@ describe('jwplayerRtdProvider', function() {
         expect(bidRequestSpy.notCalled).to.be.true;
 
         req2.respond();
-        expect(bidRequestSpy.notCalled).to.be.true;
+        expect(bidRequestSpy.calledOnce).to.be.true;
 
         req3.respond();
         expect(bidRequestSpy.calledOnce).to.be.true;
@@ -374,170 +510,6 @@ describe('jwplayerRtdProvider', function() {
 
         jwplayerSubmodule.getData([adUnitWithMediaId, adUnitEmpty], bidRequestSpy);
         expect(bidRequestSpy.calledOnceWithExactly({})).to.be.true;
-      });
-    });
-  });
-
-  describe('Format targeting response', function () {
-    it('should exclude segment key when absent', function () {
-      const targeting = formatTargetingResponse({ mediaID: 'test' });
-      expect(targeting).to.not.have.property('segments');
-    });
-
-    it('should exclude content block when mediaId is absent', function () {
-      const targeting = formatTargetingResponse({ segments: ['test'] });
-      expect(targeting).to.not.have.property('content');
-    });
-
-    it('should return proper format', function () {
-      const segments = ['123'];
-      const mediaID = 'test';
-      const expectedContentId = 'jw_' + mediaID;
-      const expectedContent = {
-        id: expectedContentId
-      };
-      const targeting = formatTargetingResponse({
-        segments,
-        mediaID
-      });
-      expect(targeting).to.have.deep.property('segments', segments);
-      expect(targeting).to.have.deep.property('content', expectedContent);
-    });
-  });
-
-  describe('Get VAT from player', function () {
-    it('returns null when jwplayer.js is absent from page', function () {
-      const targeting = getTargetingForBid({
-        jwTargeting: {
-          playerID: invalidPlayerID,
-          mediaID: mediaIdNotCached
-        }
-      });
-      expect(targeting).to.be.null;
-    });
-
-    describe('When jwplayer.js is on page', function () {
-      const playlistItemWithSegmentMock = {
-        mediaid: mediaIdWithSegment,
-        jwpseg: validSegments
-      };
-
-      const targetingForMediaWithSegment = {
-        segments: validSegments,
-        mediaID: mediaIdWithSegment
-      };
-
-      const playlistItemNoSegmentMock = {
-        mediaid: mediaIdNoSegment
-      };
-
-      const currentItemSegments = ['test_seg_3', 'test_seg_4'];
-      const currentPlaylistItemMock = {
-        mediaid: mediaIdForCurrentItem,
-        jwpseg: currentItemSegments
-      };
-      const targetingForCurrentItem = {
-        segments: currentItemSegments,
-        mediaID: mediaIdForCurrentItem
-      };
-
-      const playerInstanceMock = {
-        getPlaylist: function () {
-          return [playlistItemWithSegmentMock, playlistItemNoSegmentMock];
-        },
-
-        getPlaylistItem: function () {
-          return currentPlaylistItemMock;
-        }
-      };
-
-      const jwplayerMock = function(playerID) {
-        if (playerID === validPlayerID) {
-          return playerInstanceMock;
-        } else {
-          return {};
-        }
-      };
-
-      beforeEach(function () {
-        window.jwplayer = jwplayerMock;
-      });
-
-      it('returns null when player ID does not match player on page', function () {
-        const targeting = getTargetingForBid({
-          jwTargeting: {
-            playerID: invalidPlayerID,
-            mediaID: mediaIdNotCached
-          }
-        });
-        expect(targeting).to.be.null;
-      });
-
-      it('returns segments when media ID matches a playlist item with segments', function () {
-        const targeting = getTargetingForBid({
-          jwTargeting: {
-            playerID: validPlayerID,
-            mediaID: mediaIdWithSegment
-          }
-        });
-        expect(targeting).to.deep.equal(targetingForMediaWithSegment);
-      });
-
-      it('caches segments media ID matches a playist item with segments', function () {
-        getTargetingForBid({
-          jwTargeting: {
-            playerID: validPlayerID,
-            mediaID: mediaIdWithSegment
-          }
-        });
-
-        window.jwplayer = null;
-        const targeting2 = getTargetingForBid({
-          jwTargeting: {
-            playerID: invalidPlayerID,
-            mediaID: mediaIdWithSegment
-          }
-        });
-        expect(targeting2).to.deep.equal(targetingForMediaWithSegment);
-      });
-
-      it('returns segments of current item when media ID is missing', function () {
-        const targeting = getTargetingForBid({
-          jwTargeting: {
-            playerID: validPlayerID
-          }
-        });
-        expect(targeting).to.deep.equal(targetingForCurrentItem);
-      });
-
-      it('caches segments from the current item', function () {
-        getTargetingForBid({
-          jwTargeting: {
-            playerID: validPlayerID
-          }
-        });
-
-        window.jwplayer = null;
-        const targeting2 = getTargetingForBid({
-          jwTargeting: {
-            playerID: invalidPlayerID,
-            mediaID: mediaIdForCurrentItem
-          }
-        });
-        expect(targeting2).to.deep.equal(targetingForCurrentItem);
-      });
-
-      it('returns undefined segments when segments are absent', function () {
-        const targeting = getTargetingForBid({
-          jwTargeting: {
-            playerID: validPlayerID,
-            mediaID: mediaIdNoSegment
-          }
-        });
-        expect(targeting).to.deep.equal({
-          mediaID: mediaIdNoSegment,
-          segments: undefined
-        });
       });
     });
   });
