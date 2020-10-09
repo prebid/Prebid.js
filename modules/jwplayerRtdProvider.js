@@ -75,7 +75,7 @@ export function fetchTargetingForMediaId(mediaId) {
   ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
     success: function (response) {
       const segment = parseSegment(response);
-      cacheSegment(segment, mediaId);
+      cacheSegments(segment, mediaId);
       onRequestCompleted(mediaId, !!segment);
     },
     error: function () {
@@ -105,8 +105,8 @@ function parseSegment(response) {
   return segment;
 }
 
-function cacheSegment(jwpseg, mediaId) {
-  if (jwpseg) {
+function cacheSegments(jwpseg, mediaId) {
+  if (jwpseg && mediaId) {
     segCache[mediaId] = jwpseg;
   }
 }
@@ -161,14 +161,19 @@ export function enrichAdUnits(adUnits) {
 }
 
 function loadVat(params, onCompletion) {
+  if (!params) {
+    return;
+  }
+
   const { playerID, mediaID } = params;
 
   if (pendingRequests[mediaID] !== undefined) {
     loadVatForPendingRequest(playerID, mediaID, onCompletion);
-  } else {
-    const vat = getVatFromCache(mediaID) || getVatFromPlayer(playerID, mediaID) || { mediaID };
-    onCompletion(vat);
+    return;
   }
+
+  const vat = getVatFromCache(mediaID) || getVatFromPlayer(playerID, mediaID) || { mediaID };
+  onCompletion(vat);
 }
 
 function loadVatForPendingRequest(playerID, mediaID, callback) {
@@ -207,9 +212,7 @@ export function getVatFromPlayer(playerID, mediaID) {
 
   mediaID = mediaID || item.mediaid;
   const segments = item.jwpseg;
-  if (segments && mediaID) {
-    segCache[mediaID] = segments;
-  }
+  cacheSegments(segments, mediaID)
 
   return {
     segments,
@@ -234,6 +237,10 @@ export function formatTargetingResponse(vat) {
 }
 
 function addTargetingToBids(bids, targeting) {
+  if (!bids || !targeting) {
+    return;
+  }
+
   bids.forEach(bid => {
     bid.jwTargeting = targeting;
   });
