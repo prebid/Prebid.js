@@ -106,6 +106,7 @@ describe('stroeerCore bid adapter', function () {
 
   const createWindow = (href, params = {}) => {
     let {parent, referrer, top, frameElement, placementElements = []} = params;
+
     const protocol = (href.indexOf('https') === 0) ? 'https:' : 'http:';
     const win = {
       frameElement,
