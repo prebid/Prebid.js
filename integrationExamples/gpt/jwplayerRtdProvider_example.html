@@ -32,7 +32,6 @@
 
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
-
     </script>
 
     <script>
@@ -45,8 +44,10 @@
       pbjs.que.push(function() {
         pbjs.setConfig({
           realTimeData: {
+            auctionDelay: 5000,
             dataProviders: [{
               name: "jwplayer",
+              waitForIt: true,
               params: {
                 mediaIDs: ['abc', 'def', 'ghi', 'jkl']
               }
