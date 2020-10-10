@@ -17,7 +17,6 @@ import find from 'core-js-pure/features/array/find.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
-let requestTimeout = 150;
 const segCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
@@ -47,8 +46,6 @@ config.getConfig('realTimeData', ({realTimeData}) => {
   if (!params) {
     return;
   }
-  const rtdModuleTimeout = params.auctionDelay || params.timeout || realTimeData.auctionDelay;
-  requestTimeout = rtdModuleTimeout === undefined ? requestTimeout : Math.max(rtdModuleTimeout - 1, 0);
   fetchTargetingInformation(params);
 });
 
@@ -69,7 +66,7 @@ export function fetchTargetingInformation(jwTargeting) {
 }
 
 export function fetchTargetingForMediaId(mediaId) {
-  const ajax = ajaxBuilder(requestTimeout);
+  const ajax = ajaxBuilder();
   // TODO: Avoid checking undefined vs null by setting a callback to pendingRequests.
   pendingRequests[mediaId] = null;
   ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
@@ -166,7 +163,6 @@ function loadVat(params, onCompletion) {
   }
 
   const { playerID, mediaID } = params;
-
   if (pendingRequests[mediaID] !== undefined) {
     loadVatForPendingRequest(playerID, mediaID, onCompletion);
     return;
