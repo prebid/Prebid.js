@@ -259,7 +259,7 @@ function getTopWindowReferrer() {
 
 function getVideoTargetingParams(bid) {
   const result = {};
-  const excludeProps = ['playerSize', 'context'];
+  const excludeProps = ['playerSize', 'context', 'w', 'h'];
   Object.keys(Object(bid.mediaTypes.video))
     .filter(key => !includes(excludeProps, key))
     .forEach(key => {
