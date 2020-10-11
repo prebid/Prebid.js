@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 
+const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
 const DEFAULT_HOST = 'hb.adscale.de';
 const DEFAULT_PATH = '/dsh';
@@ -80,6 +81,7 @@ function getGdprParams(gdprConsent) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: (function () {
