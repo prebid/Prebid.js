@@ -474,7 +474,7 @@ describe('stroeerCore bid adapter', function () {
             'bid': 'bid1',
             'siz': [[300, 600], [160, 60]],
             'viz': true,
-            'context': {
+            'ctx': {
               'position': 'div-1'
             }
           }, {
@@ -482,7 +482,7 @@ describe('stroeerCore bid adapter', function () {
             'bid': 'bid2',
             'siz': [[728, 90]],
             'viz': true,
-            'context': {
+            'ctx': {
               'position': 'div-2'
             }
           }],
@@ -514,14 +514,14 @@ describe('stroeerCore bid adapter', function () {
 
         const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
-        assert.deepEqual(serverRequestInfo.data.bids[0].context, {
+        assert.deepEqual(serverRequestInfo.data.bids[0].ctx, {
           'position': 'div-1',
           'adUnits': ['adUnit-1', 'adUnit-2'],
           'zone': 'zone-1',
           'pageType': 'pageType-1'
         });
 
-        assert.deepEqual(serverRequestInfo.data.bids[1].context, {
+        assert.deepEqual(serverRequestInfo.data.bids[1].ctx, {
           'position': 'div-2',
           'adUnits': ['adUnit-3', 'adUnit-4', 'adUnit-5'],
           'zone': 'zone-2',

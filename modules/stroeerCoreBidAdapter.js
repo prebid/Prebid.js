@@ -200,7 +200,7 @@ export const spec = {
         sid: bid.params.sid,
         siz: bidSizes(bid),
         viz: elementInView(bid.adUnitCode),
-        context: {
+        ctx: {
           position: bid.adUnitCode,
           adUnits: getAdUnits(bid.adUnitCode),
           zone: getZone(bid.adUnitCode),
