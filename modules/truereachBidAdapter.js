@@ -5,7 +5,8 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'truereach';
-const BIDDER_URL = 'https://ads.momagic.com/exchange/openrtb25/';
+// const BIDDER_URL = 'https://ads.momagic.com/exchange/openrtb25/';
+const BIDDER_URL = 'http://adt.truereach.co.in/exchange/kritterx/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -79,6 +80,26 @@ export const spec = {
 
     return bidResponses;
   },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = []
+
+    var gdprParams = '';
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `?gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'http://ads.momagic.com/jsp/usersync.jsp' + gdprParams
+      });
+    }
+    return syncs;
+  }
 
 };
 
