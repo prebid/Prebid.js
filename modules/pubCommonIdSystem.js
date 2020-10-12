@@ -8,12 +8,105 @@
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
-
 const MODULE_NAME = 'pubCommonId';
 
+const COOKIE = 'cookie';
+const LOCAL_STORAGE = 'html5';
+const SHAREDID_OPT_OUT_VALUE = '00000000000000000000000000';
+const SHAREDID_URL = 'https://id.sharedid.org/id';
+const SHAREDID_SUFFIX = '_sharedid';
+
 const storage = getStorageManager(null, 'pubCommonId');
+
+/**
+ * Store sharedid in either cookie or local storage
+ * @param {Object} config Need config.storage object to derive key, expiry time, and storay type.
+ * @param {string} value Shareid value to store
+ */
+
+function storeData(config, value) {
+  if (value) {
+    const key = config.storage.name + SHAREDID_SUFFIX;
+    if (config.storage.type === COOKIE) {
+      if (storage.cookiesAreEnabled()) {
+        const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
+        storage.setCookie(key, value, expiresStr, 'LAX', COOKIE_DOMAIN);
+      }
+    } else if (config.storage.type === LOCAL_STORAGE) {
+      if (storage.hasLocalStorage()) {
+        storage.setDataInLocalStorage(key, value);
+      }
+    }
+  }
+}
+
+/**
+ * Read sharedid from cookie or local storage
+ * @param config Need config.storage to derive key and storage type
+ * @return {string}
+ */
+function readData(config) {
+  const key = config.storage.name + SHAREDID_SUFFIX;
+  if (config.storage.type === COOKIE) {
+    if (storage.cookiesAreEnabled()) { return storage.getCookie(key); }
+  } else if (config.storage.type === LOCAL_STORAGE) {
+    if (storage.hasLocalStorage()) {
+      return storage.getDataFromLocalStorage(key);
+    }
+  }
+}
+
+/**
+ * setup success and error handler for sharedid callback thru ajax
+ * @param {string} pubcid Current pubcommon id
+ * @param {function} callback userId module callback.
+ * @param {Object} config Need config.storage to derive sharedid storage params
+ * @return {{success: success, error: error}}
+ */
+
+function handleResponse(pubcid, callback, config) {
+  return {
+    success: function (responseBody) {
+      if (responseBody) {
+        try {
+          let responseObj = JSON.parse(responseBody);
+          utils.logInfo('SharedId: Generated SharedId: ' + responseObj.sharedId);
+          if (responseObj.sharedId && responseObj.sharedId !== SHAREDID_OPT_OUT_VALUE) {
+            // Store sharedId locally
+            storeData(config, responseObj.sharedId);
+          }
+          // Pass pubcid even thought there is no change in order to trigger decode
+          callback(pubcid);
+        } catch (error) {
+          utils.logError(error);
+        }
+      }
+    },
+    error: function (statusText, responseBody) {
+      utils.logInfo('SharedId: failed to get id');
+    }
+  }
+}
+
+/**
+ * Wraps pixelCallback in order to call sharedid sync
+ * @param {string} pubcid Pubcommon id value
+ * @param {function|undefined} pixelCallback fires a pixel to first party server
+ * @param {Object} config Need config.storage to derive sharedid storage params.
+ * @return {function(...[*]=)}
+ */
+
+function getIdCallback(pubcid, pixelCallback, config) {
+  return function (callback) {
+    if (typeof pixelCallback === 'function') {
+      pixelCallback();
+    }
+    ajax(SHAREDID_URL, handleResponse(pubcid, callback, config), undefined, {method: 'GET', withCredentials: true});
+  }
+}
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {
@@ -22,6 +115,7 @@ export const pubCommonIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+
   /**
    * Return a callback function that calls the pixelUrl with id as a query parameter
    * @param pixelUrl
@@ -46,10 +140,14 @@ export const pubCommonIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
+   * @param {SubmoduleConfig} config
    * @returns {{pubcid:string}}
    */
-  decode(value) {
-    return { 'pubcid': value }
+  decode(value, config) {
+    const sharedId = readData(config);
+    const idObj = {'pubcid': value};
+    if (sharedId) idObj['sharedid'] = {id: sharedId};
+    return idObj;
   },
   /**
    * performs action to obtain id
@@ -57,41 +155,63 @@ export const pubCommonIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse}
    */
-  getId: function ({params: {create = true, pixelUrl} = {}} = {}) {
+  getId: function (config = {}) {
+    const {params: {create = true, pixelUrl} = {}} = config;
+    let newId;
     try {
       if (typeof window[PUB_COMMON_ID] === 'object') {
         // If the page includes its own pubcid module, then save a copy of id.
-        return {id: window[PUB_COMMON_ID].getId()};
+        newId = window[PUB_COMMON_ID].getId();
       }
     } catch (e) {
     }
 
-    const newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
+    if (!newId) newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
     return {
       id: newId,
-      callback: this.makeCallback(pixelUrl, newId)
+      callback: getIdCallback(newId, this.makeCallback(pixelUrl, newId), config)
     }
   },
   /**
-   * performs action to extend an id
+   * performs action to extend an id.  There are generally two ways to extend the expiration time
+   * of stored id: using pixelUrl or return the id and let main user id module write it again with
+   * the new expiration time.
+   *
+   * PixelUrl, f defined, should point back to a first party domain endpoint.  On the server
+   * side, there is either a plugin, or customized logic to read and write back the pubcid cookie.
+   * The extendId function itself should return only the callback, and not the id itself to avoid
+   * having the script-side overwriting server-side.  This applies to both pubcid and sharedid.
+   *
+   * On the other hand, if there is no pixelUrl, then the extendId should return storedId so that
+   * its expiration time is updated.  Sharedid, however, will have to be updated by this submodule
+   * separately.
+   *
    * @function
    * @param {SubmoduleParams} [config]
    * @param {Object} storedId existing id
    * @returns {IdResponse|undefined}
    */
-  extendId: function({params: {extend = false, pixelUrl} = {}} = {}, storedId) {
-    try {
-      if (typeof window[PUB_COMMON_ID] === 'object') {
-        // If the page includes its onw pubcid module, then there is nothing to do.
-        return;
-      }
-    } catch (e) {
-    }
+  extendId: function(config = {}, storedId) {
+    const {params: {extend = false, pixelUrl} = {}} = config;
 
     if (extend) {
-      // When extending, only one of response fields is needed
-      const callback = this.makeCallback(pixelUrl, storedId);
-      return callback ? {callback: callback} : {id: storedId};
+      try {
+        if (typeof window[PUB_COMMON_ID] === 'object') {
+          // If the page includes its onw pubcid module, then there is nothing to do
+          // except to update sharedid
+          storeData(config, readData(config));
+          return;
+        }
+      } catch (e) {
+      }
+
+      if (pixelUrl) {
+        const callback = this.makeCallback(pixelUrl, storedId);
+        return {callback: callback};
+      } else {
+        storeData(config, readData(config));
+        return {id: storedId};
+      }
     }
   },
 
@@ -122,5 +242,7 @@ export const pubCommonIdSubmodule = {
     }
   }
 };
+
+const COOKIE_DOMAIN = pubCommonIdSubmodule.domainOverride();
 
 submodule('userId', pubCommonIdSubmodule);
