@@ -19,6 +19,7 @@ pbjs.setConfig(
 	...
     realTimeData: {
         auctionDelay: 1000,
+        waitForIt: true,
         dataProviders: [{name: "audigent"}]
     }
     ...

@@ -42,10 +42,7 @@ function addSegmentData(adUnits, data) {
   adUnits.forEach(adUnit => {
     if (adUnit.hasOwnProperty('bids')) {
       adUnit.bids.forEach(bid => {
-        if (!bid.hasOwnProperty('realTimeData')) {
-          bid.realTimeData = Object();
-        }
-        bid.realTimeData.audigent_segments = data;
+        bid.audigent_segments = data;
       })
     }
   })
@@ -53,32 +50,34 @@ function addSegmentData(adUnits, data) {
   return adUnits;
 }
 
-function getSegments(reqBidsConfigObj, callback, config, userConsent) {
+function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
+  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+
   try {
     let jsonData = storage.getDataFromLocalStorage('__adgntseg');
     if (jsonData) {
       let data = JSON.parse(jsonData);
       if (data.audigent_segments) {
-        reqBidsConfigObj.adUnits = addSegmentData(reqBidsConfigObj.adUnits, data);
-        callback(reqBidsConfigObj.auctionId);
+        addSegmentData(adUnits, data);
+        onDone();
         return;
       }
     }
-    getSegmentsAsync(reqBidsConfigObj, callback, config, userConsent);
+    getSegmentsAsync(adUnits, onDone, config, userConsent);
   } catch (e) {
-    getSegmentsAsync(reqBidsConfigObj, callback, config, userConsent);
+    getSegmentsAsync(adUnits, onDone, config, userConsent);
   }
 }
 
-function getSegmentsAsync(reqBidsConfigObj, callback, config, userConsent) {
-  let queryConfig = {}
+function getSegmentsAsync(adUnits, onDone, config, userConsent) {
+  let reqParams = {}
   if (typeof config == 'object' && config == null && Object.keys(config).length > 0) {
-    queryConfig = config
+    reqParams = config.params
   }
 
   const userIds = (getGlobal()).getUserIds();
   if (typeof userIds == 'undefined' || userIds == null) {
-    callback(reqBidsConfigObj.auctionId);
+    onDone();
     return;
   }
 
@@ -90,37 +89,33 @@ function getSegmentsAsync(reqBidsConfigObj, callback, config, userConsent) {
         try {
           const data = JSON.parse(response);
           if (data && data.audigent_segments) {
-            reqBidsConfigObj.adUnits = addSegmentData(reqBidsConfigObj.adUnits, data);
-            callback(reqBidsConfigObj.auctionId);
+            addSegmentData(adUnits, data);
+            onDone();
             setData(data);
           } else {
-            callback(reqBidsConfigObj.auctionId);
+            onDone();
           }
         } catch (err) {
           utils.logError('unable to parse audigent segment data');
-          callback(reqBidsConfigObj.auctionId);
+          onDone();
         }
       } else if (req.status === 204) {
         // unrecognized partner config
-        callback(reqBidsConfigObj.auctionId);
+        onDone();
       }
     },
     error: function () {
-      callback(reqBidsConfigObj.auctionId);
+      onDone();
       utils.logError('unable to get audigent segment data');
     }
   },
-  JSON.stringify({'userIds': userIds, 'config': queryConfig}),
+  JSON.stringify({'userIds': userIds, 'config': reqParams}),
   {contentType: 'application/json'}
   );
 }
 
 /** @type {RtdSubmodule} */
 export const audigentSubmodule = {
-  /**
-   * used to link submodule with realTimeData
-   * @type {string}
-   */
   name: 'audigent',
   getBidRequestData: getSegments
 };
