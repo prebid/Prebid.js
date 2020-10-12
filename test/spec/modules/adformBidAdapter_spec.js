@@ -2,6 +2,7 @@ import {assert, expect} from 'chai';
 import {spec} from 'modules/adformBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Adform adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -127,6 +128,25 @@ describe('Adform adapter', function () {
       parsedUrl = parseUrl(request.url);
 
       assert.equal(parsedUrl.query.pt, 'gross');
+    });
+
+    it('should pass extended ids', function () {
+      bids[0].userIdAsEids = createEidsArray({
+        tdid: 'TTD_ID_FROM_USER_ID_MODULE',
+        pubcid: 'pubCommonId_FROM_USER_ID_MODULE'
+      });
+      let request = spec.buildRequests(bids);
+      let eids = parseUrl(request.url).query.eids;
+
+      assert.equal(eids, 'eyJhZHNlcnZlci5vcmciOnsiVFREX0lEX0ZST01fVVNFUl9JRF9NT0RVTEUiOlsxXX0sInB1YmNpZC5vcmciOnsicHViQ29tbW9uSWRfRlJPTV9VU0VSX0lEX01PRFVMRSI6WzFdfX0%3D');
+      assert.deepEqual(JSON.parse(atob(decodeURIComponent(eids))), {
+        'adserver.org': {
+          'TTD_ID_FROM_USER_ID_MODULE': [1]
+        },
+        'pubcid.org': {
+          'pubCommonId_FROM_USER_ID_MODULE': [1]
+        }
+      });
     });
 
     describe('user privacy', function () {

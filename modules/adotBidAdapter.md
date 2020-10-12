@@ -114,39 +114,37 @@ const adUnit = {
     code: 'test-div',
     mediaTypes: {
         native: {
-            native: {
-                image: {
-                    // Field required status
-                    required: false,
-                    // Image dimensions supported by the native ad unit.
-                    // Each ad unit size is formatted as follows: [width, height].
-                    sizes: [100, 50]
-                },
-                title: {
-                    // Field required status
-                    required: false,
-                    // Maximum length of the title
-                    len: 140
-                },
-                sponsoredBy: {
-                    // Field required status
-                    required: false
-                },
-                clickUrl: {
-                    // Field required status
-                    required: false
-                },
-                body: {
-                    // Field required status
-                    required: false
-                },
-                icon: {
-                    // Field required status
-                    required: false,
-                    // Icon dimensions supported by the native ad unit.
-                    // Each ad unit size is formatted as follows: [width, height].
-                    sizes: [50, 50]
-                }
+            image: {
+                // Field required status
+                required: false,
+                // Image dimensions supported by the native ad unit.
+                // Each ad unit size is formatted as follows: [width, height].
+                sizes: [100, 50]
+            },
+            title: {
+                // Field required status
+                required: false,
+                // Maximum length of the title
+                len: 140
+            },
+            sponsoredBy: {
+                // Field required status
+                required: false
+            },
+            clickUrl: {
+                // Field required status
+                required: false
+            },
+            body: {
+                // Field required status
+                required: false
+            },
+            icon: {
+                // Field required status
+                required: false,
+                // Icon dimensions supported by the native ad unit.
+                // Each ad unit size is formatted as follows: [width, height].
+                sizes: [50, 50]
             }
         }
     },

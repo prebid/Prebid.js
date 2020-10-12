@@ -8,7 +8,7 @@ pbjs.setConfig({
 
 	// your existing userIds config
 
-	usersync: {
+	userSync: {
 		userIds: [{...}, ...]
 	},
 

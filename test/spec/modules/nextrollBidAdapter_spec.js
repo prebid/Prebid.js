@@ -124,6 +124,13 @@ describe('nextrollBidAdapter', function() {
       expect(bannerObject.format[0].w).to.be.equal(300);
       expect(bannerObject.format[0].h).to.be.equal(200);
     });
+
+    it('sets the CCPA consent string', function () {
+      const us_privacy = '1YYY';
+      const request = spec.buildRequests([validBid], {'uspConsent': us_privacy})[0];
+
+      expect(request.data.regs.ext.us_privacy).to.be.equal(us_privacy);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -258,43 +265,4 @@ describe('nextrollBidAdapter', function() {
       expect(response[0].native).to.be.deep.equal(expectedResponse)
     })
   })
-
-  describe('hasCCPAConsent', function() {
-    function ccpaRequest(consentString) {
-      return {
-        bidderCode: 'bidderX',
-        auctionId: 'e3a336ad-2222-4a1c-bbbb-ecc7c5554a34',
-        uspConsent: consentString
-      };
-    }
-
-    const noNoticeCases = ['1NYY', '1NNN', '1N--'];
-    noNoticeCases.forEach((ccpaString, index) => {
-      it(`No notice should indicate no consent (case ${index})`, function () {
-        const req = ccpaRequest(ccpaString);
-        expect(hasCCPAConsent(req)).to.be.false;
-      });
-    });
-
-    const noConsentCases = ['1YYY', '1YYN', '1YY-'];
-    noConsentCases.forEach((ccpaString, index) => {
-      it(`Opt-Out should indicate no consent (case ${index})`, function () {
-        const req = ccpaRequest(ccpaString);
-        expect(hasCCPAConsent(req)).to.be.false;
-      });
-    });
-
-    const consentCases = [undefined, '1YNY', '1YN-', '1Y--', '1---'];
-    consentCases.forEach((ccpaString, index) => {
-      it(`should indicate consent (case ${index})`, function() {
-        const req = ccpaRequest(ccpaString);
-        expect(hasCCPAConsent(req)).to.be.true;
-      })
-    });
-
-    it('builds a request with no credentials', function () {
-      const noConsent = ccpaRequest('1YYY');
-      expect(spec.buildRequests([validBid], noConsent)[0].options.withCredentials).to.be.false;
-    });
-  });
 });

@@ -61,6 +61,7 @@ export const spec = {
     const siteId = setOnAny(validBidRequests, 'params.siteId');
     const currency = config.getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];
+    const eids = setOnAny(validBidRequests, 'userIdAsEids');
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
@@ -131,6 +132,10 @@ export const spec = {
 
     if (bidderRequest.uspConsent) {
       utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    if (eids) {
+      utils.deepSetValue(request, 'user.ext.eids', eids);
     }
 
     return {

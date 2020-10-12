@@ -1197,6 +1197,14 @@ describe('Unit: Prebid Module', function () {
       assert.deepEqual($$PREBID_GLOBAL$$.getAllWinningBids()[0], adResponse);
     });
 
+    it('should replace ${CLICKTHROUGH} macro in winning bids response', function () {
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js?clickthrough=${CLICKTHROUGH}'></script>"
+      });
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId, {clickThrough: 'https://someadserverclickurl.com'});
+      expect(adResponse).to.have.property('ad').and.to.match(/https:\/\/someadserverclickurl\.com/i);
+    });
+
     it('fires billing url if present on s2s bid', function () {
       const burl = 'http://www.example.com/burl';
       pushBidResponseToAuction({
@@ -1770,8 +1778,6 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('multiformat requests', function () {
-      let spyCallBids;
-      let createAuctionStub;
       let adUnits;
 
       beforeEach(function () {
@@ -1791,14 +1797,10 @@ describe('Unit: Prebid Module', function () {
         }];
         adUnitCodes = ['adUnit-code'];
         configObj.setConfig({maxRequestsPerOrigin: Number.MAX_SAFE_INTEGER || 99999999});
-        let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-        spyCallBids = sinon.spy(adapterManager, 'callBids');
-        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-        createAuctionStub.returns(auction);
+        sinon.spy(adapterManager, 'callBids');
       })
 
       afterEach(function () {
-        auctionModule.newAuction.restore();
         adapterManager.callBids.restore();
       });
 
@@ -1821,7 +1823,6 @@ describe('Unit: Prebid Module', function () {
 
         const spyArgs = adapterManager.callBids.getCall(0);
         const biddersCalled = spyArgs.args[0][0].bids;
-
         // only appnexus supports native
         expect(biddersCalled.length).to.equal(1);
       });

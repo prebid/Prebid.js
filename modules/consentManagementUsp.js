@@ -158,11 +158,6 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     timer: null
   };
 
-  // in case we already have consent (eg during bid refresh)
-  if (consentData) {
-    return exitModule(null, hookConfig);
-  }
-
   if (!uspCallMap[consentAPI]) {
     utils.logWarn(`USP framework (${consentAPI}) is not a supported framework. Aborting consentManagement module and resuming auction.`);
     return hookConfig.nextFn.apply(hookConfig.context, hookConfig.args);
