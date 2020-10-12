@@ -134,6 +134,30 @@
                 // },
                 userSync: {
                     userIds: [{
+                        name: "pubProvidedId",
+                        params: {
+                            eids: [{
+                                source: "domain.com",
+                                uids:[{
+                                    id: "value read from cookie or local storage",
+                                    atype: 1,
+                                    ext: {
+                                        stype: "ppuid" // allowable options are sha256email, DMP, ppuid for now
+                                    }
+                                }]
+                            },{
+                                source: "3rdpartyprovided.com",
+                                uids:[{
+                                    id: "value read from cookie or local storage",
+                                    atype: 3,
+                                    ext: {
+                                        stype: "sha256email"
+                                    }
+                                }]
+                            }],
+                            eidsFunction: getHashedEmail  // any user defined function that exists in the page
+                        }
+                    },{
                         name: "unifiedId",
                         params: {
                             partner: "prebid",

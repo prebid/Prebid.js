@@ -252,6 +252,25 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.include.any.keys('t');
       expect(bidRequest.data).to.include.any.keys('fp');
     });
+    it('should set iriscat parameter if iriscat param is found and is of type string', function () {
+      const iriscat = 'segment';
+      const request = { ...bidRequests[0] };
+      request.params = { ...request.params, iriscat };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.iriscat).to.equal(iriscat);
+    });
+    it('should not send iriscat parameter if iriscat param is not found', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.iriscat).to.be.undefined;
+    });
+    it('should not send iriscat parameter if iriscat param is not of type string', function () {
+      const iriscat = 123;
+      const request = { ...bidRequests[0] };
+      request.params = { ...request.params, iriscat };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.iriscat).to.be.undefined;
+    });
     it('should send pubId if inScreenPubID param is specified', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;

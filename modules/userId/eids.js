@@ -150,7 +150,13 @@ const USER_IDS_CONFIG = {
   'quantcastId': {
     source: 'quantcast.com',
     atype: 1
-  }
+  },
+
+  // IDx
+  'idx': {
+    source: 'idx.lat',
+    atype: 1
+  },
 };
 
 // this function will create an eid object for the given UserId sub-module
@@ -190,9 +196,13 @@ export function createEidsArray(bidRequestUserId) {
   let eids = [];
   for (const subModuleKey in bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
-      const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
-      if (eid) {
-        eids.push(eid);
+      if (subModuleKey === 'pubProvidedId') {
+        eids = eids.concat(bidRequestUserId['pubProvidedId']);
+      } else {
+        const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
+        if (eid) {
+          eids.push(eid);
+        }
       }
     }
   }
