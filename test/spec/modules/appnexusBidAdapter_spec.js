@@ -808,7 +808,7 @@ describe('AppNexusAdapter', function () {
       expect(request.options).to.deep.equal({withCredentials: false});
     });
 
-    it('should populate eids array when ttd id and criteo is available', function () {
+    it('should populate eids and tpuids when ttd id and criteo is available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
           tdid: 'sample-userid',
@@ -824,9 +824,9 @@ describe('AppNexusAdapter', function () {
         rti_partner: 'TDID'
       });
 
-      expect(payload.eids).to.deep.include({
-        source: 'criteo.com',
-        id: 'sample-criteo-userid',
+      expect(payload.tpuids).to.deep.include({
+        provider: 'criteo',
+        user_id: 'sample-criteo-userid',
       });
     });
   })

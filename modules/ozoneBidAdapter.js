@@ -539,7 +539,7 @@ export const spec = {
    */
   findAllUserIds(bidRequest) {
     var ret = {};
-    let searchKeysSingle = ['pubcid', 'tdid', 'id5id', 'parrableId', 'idl_env', 'digitrustid', 'criteortus'];
+    let searchKeysSingle = ['pubcid', 'tdid', 'parrableId', 'idl_env', 'digitrustid', 'criteortus'];
     if (bidRequest.hasOwnProperty('userId')) {
       for (let arrayId in searchKeysSingle) {
         let key = searchKeysSingle[arrayId];
@@ -550,6 +550,10 @@ export const spec = {
       var lipbid = utils.deepAccess(bidRequest.userId, 'lipb.lipbid');
       if (lipbid) {
         ret['lipb'] = {'lipbid': lipbid};
+      }
+      var id5id = utils.deepAccess(bidRequest.userId, 'id5id.uid');
+      if (id5id) {
+        ret['id5id'] = id5id;
       }
     }
     if (!ret.hasOwnProperty('pubcid')) {
@@ -675,7 +679,7 @@ export const spec = {
     if (bidRequest && bidRequest.userId) {
       this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid', 1);
       this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
-      this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
+      this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 1);
       this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteortus.${BIDDER_CODE}.userid`), 'criteortus', 1);
       this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
       this.addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.lipb.lipbid`), 'liveintent.com', 1);

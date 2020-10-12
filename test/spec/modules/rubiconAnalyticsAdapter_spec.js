@@ -3,6 +3,7 @@ import rubiconAnalyticsAdapter, {
   parseBidResponse,
   getHostNameFromReferer,
   storage,
+  rubiConf,
 } from 'modules/rubiconAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
@@ -12,9 +13,6 @@ import {
   setConfig,
   addBidResponseHook,
 } from 'modules/currency.js';
-import { getGlobal } from 'src/prebidGlobal.js';
-
-let prebidGlobal = getGlobal();
 let Ajv = require('ajv');
 let schema = require('./rubiconAnalyticsSchema.json');
 let ajv = new Ajv({
@@ -559,6 +557,73 @@ describe('rubicon analytics adapter', function () {
     expect(utils.logError.called).to.equal(true);
   });
 
+  describe('config subscribe', function() {
+    it('should update the pvid if user asks', function () {
+      expect(utils.generateUUID.called).to.equal(false);
+      config.setConfig({rubicon: {updatePageView: true}});
+      expect(utils.generateUUID.called).to.equal(true);
+    });
+    it('should merge in and preserve older set configs', function () {
+      config.setConfig({
+        rubicon: {
+          wrapperName: '1001_general',
+          int_type: 'dmpbjs',
+          fpkvs: {
+            source: 'fb'
+          }
+        }
+      });
+      expect(rubiConf).to.deep.equal({
+        pvid: '12345678',
+        wrapperName: '1001_general',
+        int_type: 'dmpbjs',
+        fpkvs: {
+          source: 'fb'
+        },
+        updatePageView: true
+      });
+
+      // update it with stuff
+      config.setConfig({
+        rubicon: {
+          fpkvs: {
+            link: 'email'
+          }
+        }
+      });
+      expect(rubiConf).to.deep.equal({
+        pvid: '12345678',
+        wrapperName: '1001_general',
+        int_type: 'dmpbjs',
+        fpkvs: {
+          source: 'fb',
+          link: 'email'
+        },
+        updatePageView: true
+      });
+
+      // overwriting specific edge keys should update them
+      config.setConfig({
+        rubicon: {
+          fpkvs: {
+            link: 'iMessage',
+            source: 'twitter'
+          }
+        }
+      });
+      expect(rubiConf).to.deep.equal({
+        pvid: '12345678',
+        wrapperName: '1001_general',
+        int_type: 'dmpbjs',
+        fpkvs: {
+          link: 'iMessage',
+          source: 'twitter'
+        },
+        updatePageView: true
+      });
+    });
+  });
+
   describe('sampling', function () {
     beforeEach(function () {
       sandbox.stub(Math, 'random').returns(0.08);
@@ -865,17 +930,9 @@ describe('rubicon analytics adapter', function () {
     });
 
     describe('with session handling', function () {
-      let pvid, kvps;
+      const expectedPvid = STUBBED_UUID.slice(0, 8);
       beforeEach(function () {
-        // custom dm stuff
-        prebidGlobal.rp = {
-          getCustomTargeting: () => kvps,
-          generatePageViewId: () => pvid
-        }
-      });
-
-      afterEach(function () {
-        prebidGlobal.rp = pvid = kvps = undefined;
+        config.setConfig({rubicon: {updatePageView: true}});
       });
 
       it('should not log any session data if local storage is not enabled', function () {
@@ -899,7 +956,6 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should should pass along custom rubicon kv and pvid when defined', function () {
-        pvid = '1a2b3c';
         config.setConfig({rubicon: {
           fpkvs: {
             source: 'fb',
@@ -913,7 +969,7 @@ describe('rubicon analytics adapter', function () {
         validate(message);
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
-        expectedMessage.session.pvid = '1a2b3c';
+        expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
         expectedMessage.fpkvs = [
           {key: 'source', value: 'fb'},
           {key: 'link', value: 'email'}
@@ -932,7 +988,6 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        pvid = '1a2b3c';
         config.setConfig({rubicon: {
           fpkvs: {
             link: 'email' // should merge this with what is in the localStorage!
@@ -949,7 +1004,7 @@ describe('rubicon analytics adapter', function () {
           id: '987654',
           start: 1519766113781,
           expires: 1519787713781,
-          pvid: '1a2b3c'
+          pvid: expectedPvid
         }
         expectedMessage.fpkvs = [
           {key: 'source', value: 'tw'},
@@ -970,7 +1025,7 @@ describe('rubicon analytics adapter', function () {
           expires: 1519787713781, // should have stayed same
           lastSeen: 1519767013781, // lastSeen updated to our "now"
           fpkvs: { source: 'tw', link: 'email' }, // link merged in
-          pvid: '1a2b3c' // new pvid stored
+          pvid: expectedPvid // new pvid stored
         });
       });
 
@@ -985,7 +1040,6 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        pvid = '1a2b3c';
         config.setConfig({rubicon: {
           fpkvs: {
             link: 'email' // should merge this with what is in the localStorage!
@@ -1000,7 +1054,7 @@ describe('rubicon analytics adapter', function () {
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         // session should match what is already in ANALYTICS_MESSAGE, just need to add pvid
-        expectedMessage.session.pvid = '1a2b3c';
+        expectedMessage.session.pvid = expectedPvid;
 
         // the saved fpkvs should have been thrown out since session expired
         expectedMessage.fpkvs = [
@@ -1021,7 +1075,7 @@ describe('rubicon analytics adapter', function () {
           expires: 1519788613781, // should have stayed same
           lastSeen: 1519767013781, // lastSeen updated to our "now"
           fpkvs: { link: 'email' }, // link merged in
-          pvid: '1a2b3c' // new pvid stored
+          pvid: expectedPvid // new pvid stored
         });
       });
 
@@ -1036,7 +1090,6 @@ describe('rubicon analytics adapter', function () {
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
-        pvid = '1a2b3c';
         config.setConfig({rubicon: {
           fpkvs: {
             link: 'email' // should merge this with what is in the localStorage!
@@ -1051,7 +1104,7 @@ describe('rubicon analytics adapter', function () {
 
         let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
         // session should match what is already in ANALYTICS_MESSAGE, just need to add pvid
-        expectedMessage.session.pvid = '1a2b3c';
+        expectedMessage.session.pvid = expectedPvid;
 
         // the saved fpkvs should have been thrown out since session expired
         expectedMessage.fpkvs = [
@@ -1072,7 +1125,7 @@ describe('rubicon analytics adapter', function () {
           expires: 1519788613781, // should have stayed same
           lastSeen: 1519767013781, // lastSeen updated to our "now"
           fpkvs: { link: 'email' }, // link merged in
-          pvid: '1a2b3c' // new pvid stored
+          pvid: expectedPvid // new pvid stored
         });
       });
     });

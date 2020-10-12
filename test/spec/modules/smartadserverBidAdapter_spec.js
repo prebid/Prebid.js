@@ -71,7 +71,7 @@ describe('Smart bid adapter tests', function () {
       britepoolid: '1111',
       criteoId: '1111',
       digitrustid: { data: { id: 'DTID', keyv: 4, privacy: { optout: false }, producer: 'ABC', version: 2 } },
-      id5id: '1111',
+      id5id: { uid: '1111' },
       idl_env: '1111',
       lipbid: '1111',
       parrableid: 'eidVersion.encryptionKeyReference.encryptedValue',

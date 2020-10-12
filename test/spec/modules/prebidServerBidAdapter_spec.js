@@ -1178,7 +1178,13 @@ describe('S2S Adapter', function () {
           lipbid: 'li-xyz',
           segments: ['segA', 'segB']
         },
-        idl_env: '0000-1111-2222-3333'
+        idl_env: '0000-1111-2222-3333',
+        id5id: {
+          uid: '11111',
+          ext: {
+            linkType: 'some-link-type'
+          }
+        }
       };
       userIdBidRequest[0].bids[0].userIdAsEids = createEidsArray(userIdBidRequest[0].bids[0].userId);
 
@@ -1199,6 +1205,9 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments.length).is.equal(2);
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[0]).is.equal('segA');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[1]).is.equal('segB');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].uids[0].id).is.equal('11111');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].ext.linkType).is.equal('some-link-type');
       // LiveRamp should exist
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveramp.com')[0].uids[0].id).is.equal('0000-1111-2222-3333');
     });

@@ -15,18 +15,15 @@
  * @property {?string} keyName
  */
 
-import {config} from '../src/config.js';
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const storage = getStorageManager();
 
-/** @type {string} */
-const MODULE_NAME = 'realTimeData';
 /** @type {ModuleParams} */
 let _moduleParams = {};
 /** @type {null|Object} */
@@ -88,13 +85,17 @@ export function setData(data) {
 function sendDataToModule(adUnitsCodes) {
   try {
     const _predictions = (_predictionsData && _predictionsData.p) || {};
-    let dataToReturn = adUnitsCodes.reduce((rp, adUnitCode) => {
-      if (!adUnitCode) { return rp }
+    return adUnitsCodes.reduce((rp, adUnitCode) => {
+      if (!adUnitCode) {
+        return rp
+      }
       const adSlot = getSlotByCode(adUnitCode);
       const identifier = adSlot ? getMacroId(_predictionsData['pmd'], adSlot) : adUnitCode;
       const predictionData = _predictions[identifier];
       rp[adUnitCode] = getKVObject(-1, _predictionsData['kn']);
-      if (!predictionData) { return rp }
+      if (!predictionData) {
+        return rp
+      }
       if (predictionData.p) {
         if (!isIdMatchingAdUnit(adSlot, predictionData.w)) {
           return rp;
@@ -103,7 +104,6 @@ function sendDataToModule(adUnitsCodes) {
       }
       return rp;
     }, {});
-    return dataToReturn;
   } catch (e) {
     return {};
   }
@@ -254,33 +254,17 @@ export const browsiSubmodule = {
   init: init,
 };
 
-function init() {
-  return true;
-}
-
-function beforeInit(config) {
-  const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
-    setModuleData(realTimeData);
-    confListener();
-    if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
-      collectData();
-    } else {
-      utils.logError('missing params for Browsi provider');
-    }
-  });
-}
-
-export function setModuleData(realTimeData) {
-  try {
-    _moduleParams = realTimeData.dataProviders && realTimeData.dataProviders.filter(
-      pr => pr.name && pr.name.toLowerCase() === 'browsi')[0].params;
-  } catch (e) {
-    _moduleParams = {};
+function init(moduleConfig) {
+  _moduleParams = moduleConfig.params;
+  if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
+    collectData();
+  } else {
+    utils.logError('missing params for Browsi provider');
   }
+  return true;
 }
 
 function registerSubModule() {
   submodule('realTimeData', browsiSubmodule);
 }
 registerSubModule();
-beforeInit(config);

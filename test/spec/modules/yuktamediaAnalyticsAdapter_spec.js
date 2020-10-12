@@ -30,7 +30,7 @@ let prebidAuction = {
           }
         },
         'userId': {
-          'id5id': 'ID5-ZHMOxXeRXPe3inZKGD-Lj0g7y8UWdDbsYXQ_n6aWMQ',
+          'id5id': { uid: 'ID5-ZHMOxXeRXPe3inZKGD-Lj0g7y8UWdDbsYXQ_n6aWMQ' },
           'parrableid': '01.1595590997.46d951017bdc272ca50b88dbcfb0545cfc636bec3e3d8c02091fb1b413328fb2fd3baf65cb4114b3f782895fd09f82f02c9042b85b42c4654d08ba06dc77f0ded936c8ea3fc4085b4a99',
           'pubcid': '100a8bc9-f588-4c22-873e-a721cb68bc34'
         },
