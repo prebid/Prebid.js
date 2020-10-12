@@ -71,7 +71,7 @@ describe('Smart bid adapter tests', function () {
       britepoolid: '1111',
       criteoId: '1111',
       digitrustid: { data: { id: 'DTID', keyv: 4, privacy: { optout: false }, producer: 'ABC', version: 2 } },
-      id5id: '1111',
+      id5id: { uid: '1111' },
       idl_env: '1111',
       lipbid: '1111',
       parrableid: 'eidVersion.encryptionKeyReference.encryptedValue',
@@ -425,6 +425,7 @@ describe('Smart bid adapter tests', function () {
       expect(bid.mediaType).to.equal('video');
       expect(bid.vastUrl).to.equal('http://awesome.fake-vast.url');
       expect(bid.vastXml).to.equal('<VAST version="4.0"></VAST>');
+      expect(bid.content).to.equal('<VAST version="4.0"></VAST>');
       expect(bid.width).to.equal(640);
       expect(bid.height).to.equal(480);
       expect(bid.creativeId).to.equal('zioeufg');
@@ -470,6 +471,109 @@ describe('Smart bid adapter tests', function () {
       }, INSTREAM_DEFAULT_PARAMS[0]]);
       expect(request[0]).to.be.empty;
       expect(request[1]).to.not.be.empty;
+    });
+  });
+
+  describe('Outstream video tests', function () {
+    afterEach(function () {
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+    });
+
+    const OUTSTREAM_DEFAULT_PARAMS = [{
+      adUnitCode: 'sas_43',
+      bidId: 'abcd1234',
+      bidder: 'smartadserver',
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          playerSize: [[800, 600]] // It seems prebid.js transforms the player size array into an array of array...
+        }
+      },
+      params: {
+        siteId: '1234',
+        pageId: '5678',
+        formatId: '91',
+        target: 'test=prebid-outstream',
+        bidfloor: 0.430,
+        buId: '7579',
+        appName: 'Mozilla',
+        ckId: 43,
+        video: {
+          protocol: 7
+        }
+      },
+      requestId: 'efgh5679',
+      transactionId: 'zsfgzzga'
+    }];
+
+    var OUTSTREAM_BID_RESPONSE = {
+      body: {
+        cpm: 14,
+        width: 800,
+        height: 600,
+        creativeId: 'zioeufga',
+        currency: 'USD',
+        isNetCpm: true,
+        ttl: 300,
+        adUrl: 'http://awesome.fake-vast2.url',
+        ad: '<VAST version="4.0"><!--Outstream--></VAST>',
+        cSyncUrl: 'http://awesome.fake2.csync.url'
+      }
+    };
+
+    it('Verify outstream video build request', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        }
+      });
+      const request = spec.buildRequests(OUTSTREAM_DEFAULT_PARAMS);
+      expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
+      expect(request[0]).to.have.property('method').and.to.equal('POST');
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('siteid').and.to.equal('1234');
+      expect(requestContent).to.have.property('pageid').and.to.equal('5678');
+      expect(requestContent).to.have.property('formatid').and.to.equal('91');
+      expect(requestContent).to.have.property('currencyCode').and.to.equal('EUR');
+      expect(requestContent).to.have.property('bidfloor').and.to.equal(0.43);
+      expect(requestContent).to.have.property('targeting').and.to.equal('test=prebid-outstream');
+      expect(requestContent).to.have.property('tagId').and.to.equal('sas_43');
+      expect(requestContent).to.not.have.property('pageDomain');
+      expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
+      expect(requestContent).to.have.property('buid').and.to.equal('7579');
+      expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
+      expect(requestContent).to.have.property('ckid').and.to.equal(43);
+      expect(requestContent).to.have.property('isVideo').and.to.equal(false);
+      expect(requestContent).to.have.property('videoData');
+      expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(7);
+      expect(requestContent.videoData).to.have.property('playerWidth').and.to.equal(800);
+      expect(requestContent.videoData).to.have.property('playerHeight').and.to.equal(600);
+    });
+
+    it('Verify outstream parse response', function () {
+      const request = spec.buildRequests(OUTSTREAM_DEFAULT_PARAMS);
+      const bids = spec.interpretResponse(OUTSTREAM_BID_RESPONSE, request[0]);
+      expect(bids).to.have.lengthOf(1);
+      const bid = bids[0];
+      expect(bid.cpm).to.equal(14);
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.vastUrl).to.equal('http://awesome.fake-vast2.url');
+      expect(bid.vastXml).to.equal('<VAST version="4.0"><!--Outstream--></VAST>');
+      expect(bid.content).to.equal('<VAST version="4.0"><!--Outstream--></VAST>');
+      expect(bid.width).to.equal(800);
+      expect(bid.height).to.equal(600);
+      expect(bid.creativeId).to.equal('zioeufga');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.ttl).to.equal(300);
+      expect(bid.requestId).to.equal(OUTSTREAM_DEFAULT_PARAMS[0].bidId);
+
+      expect(function () {
+        spec.interpretResponse(OUTSTREAM_BID_RESPONSE, {
+          data: 'invalid Json'
+        })
+      }).to.not.throw();
     });
   });
 

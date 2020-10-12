@@ -106,7 +106,7 @@ export const spec = {
     let eids = [];
     if (bidRequest[0] && bidRequest[0].userId) {
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.idl_env`), 'liveramp.com', 1);
-      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.id5id`), 'id5-sync.com', 1);
+      bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.id5id.uid`), 'id5-sync.com', 1);
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.pubcid`), 'pubcid.org', 1);
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.tdid`), 'adserver.org', 1);
       bindUserId(eids, utils.deepAccess(bidRequest[0], `userId.criteoId`), 'criteo.com', 1);

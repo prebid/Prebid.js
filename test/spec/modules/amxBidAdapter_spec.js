@@ -224,7 +224,7 @@ describe('AmxBidAdapter', () => {
         britepoolid: 'sample-britepool',
         criteoId: 'sample-criteo',
         digitrustid: {data: {id: 'sample-digitrust'}},
-        id5id: 'sample-id5',
+        id5id: {uid: 'sample-id5'},
         idl_env: 'sample-liveramp',
         lipb: {lipbid: 'sample-liveintent'},
         netId: 'sample-netid',
