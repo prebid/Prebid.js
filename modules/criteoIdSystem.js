@@ -103,7 +103,9 @@ function callCriteoUserSync(parsedCriteoData, gdprString) {
       } else if (jsonResponse.bundle) {
         saveOnAllStorages(bundleStorageKey, jsonResponse.bundle);
       }
-    }
+    },
+    undefined,
+    { method: 'GET', contentType: 'application/json', withCredentials: true }
   );
 }
 
