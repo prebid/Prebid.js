@@ -313,10 +313,12 @@ describe('TheMediaGrid Adapter', function () {
       const bidRequestsWithUserIds = bidRequests.map((bid) => {
         return Object.assign({
           userId: {
-            id5id: { uid: 'id5id_1' },
+            id5id: { uid: 'id5id_1', ext: { linkType: 2 } },
             tdid: 'tdid_1',
             digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
-            lipb: {lipbid: 'lipb_1'}
+            lipb: {lipbid: 'lipb_1'},
+            idl_env: 'idl_env_1',
+            criteoId: 'criteoId_1'
           }
         }, bid);
       });
@@ -325,10 +327,51 @@ describe('TheMediaGrid Adapter', function () {
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('user');
       expect(payload.user).to.have.property('ext');
-      expect(payload.user.ext).to.have.property('unifiedid', 'tdid_1');
-      expect(payload.user.ext).to.have.property('id5id', 'id5id_1');
-      expect(payload.user.ext).to.have.property('digitrustid', 'DTID');
-      expect(payload.user.ext).to.have.property('liveintentid', 'lipb_1');
+      expect(payload.user.ext.digitrust).to.deep.equal({
+        id: 'DTID',
+        keyv: 4,
+        privacy: {
+          optout: false
+        },
+        producer: 'ABC',
+        version: 2
+      });
+      expect(payload.user.ext.eids).to.deep.equal([
+        {
+          source: 'adserver.org',
+          uids: [{
+            id: 'tdid_1',
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        },
+        {
+          source: 'id5-sync.com',
+          uids: [{
+            id: 'id5id_1'
+          }],
+          ext: { linkType: 2 }
+        },
+        {
+          source: 'liveintent.com',
+          uids: [{
+            id: 'lipb_1'
+          }]
+        },
+        {
+          source: 'identityLink',
+          uids: [{
+            id: 'idl_env_1'
+          }]
+        },
+        {
+          source: 'criteo.com',
+          uids: [{
+            id: 'criteoId_1'
+          }]
+        }
+      ]);
     });
 
     it('if schain is present payload must have source.ext.schain param', function () {

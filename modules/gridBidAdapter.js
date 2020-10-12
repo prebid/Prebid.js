@@ -156,18 +156,68 @@ export const spec = {
     }
 
     if (userId) {
-      userExt = userExt || {};
       if (userId.tdid) {
-        userExt.unifiedid = userId.tdid;
+        userExt = userExt || {};
+        userExt.eids = userExt.eids || [];
+        userExt.eids.push({
+          source: 'adserver.org', // Unified ID
+          uids: [{
+            id: userId.tdid,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        });
+        // userExt.unifiedid = userId.tdid;
       }
       if (userId.id5id && userId.id5id.uid) {
-        userExt.id5id = userId.id5id.uid;
-      }
-      if (userId.digitrustid && userId.digitrustid.data && userId.digitrustid.data.id) {
-        userExt.digitrustid = userId.digitrustid.data.id;
+        userExt = userExt || {};
+        userExt.eids = userExt.eids || [];
+        userExt.eids.push({
+          source: 'id5-sync.com',
+          uids: [{
+            id: userId.id5id.uid
+          }],
+          ext: userId.id5id.ext
+        });
+        // userExt.id5id = userId.id5id.uid;
       }
       if (userId.lipb && userId.lipb.lipbid) {
-        userExt.liveintentid = userId.lipb.lipbid;
+        userExt = userExt || {};
+        userExt.eids = userExt.eids || [];
+        userExt.eids.push({
+          source: 'liveintent.com',
+          uids: [{
+            id: userId.lipb.lipbid
+          }]
+        });
+        // userExt.liveintentid = userId.lipb.lipbid;
+      }
+      if (userId.idl_env) {
+        userExt = userExt || {};
+        userExt.eids = userExt.eids || [];
+        userExt.eids.push({
+          source: 'identityLink',
+          uids: [{
+            id: userId.idl_env
+          }]
+        });
+      }
+      if (userId.criteoId) {
+        userExt = userExt || {};
+        userExt.eids = userExt.eids || [];
+        userExt.eids.push({
+          source: 'criteo.com',
+          uids: [{
+            id: userId.criteoId
+          }]
+        });
+      }
+
+      if (userId.digitrustid && userId.digitrustid.data && userId.digitrustid.data.id) {
+        userExt = userExt || {};
+        userExt.digitrust = Object.assign({}, userId.digitrustid.data);
+        // userExt.digitrustid = userId.digitrustid.data.id;
       }
     }
 
