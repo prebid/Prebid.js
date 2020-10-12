@@ -133,7 +133,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.exist;
       expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.exist;
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe')
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://console.brightmountainmedia.com:4444/cookieSync')
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://console.brightmountainmedia.com:8443/cookieSync')
     });
   });
 });

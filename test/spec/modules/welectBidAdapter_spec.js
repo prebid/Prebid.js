@@ -95,8 +95,8 @@ describe('WelectAdapter', function () {
       width: 640,
       height: 360,
       gdpr_consent: {
-        gdpr_applies: 1,
-        gdpr_consent: 'some_string'
+        gdprApplies: 1,
+        tcString: 'some_string'
       }
     }
 
@@ -166,8 +166,8 @@ describe('WelectAdapter', function () {
         width: 640,
         height: 320,
         gdpr_consent: {
-          gdpr_applies: 1,
-          gdpr_consent: 'some_string'
+          gdprApplies: 1,
+          tcString: 'some_string'
         }
       },
       method: 'POST',
