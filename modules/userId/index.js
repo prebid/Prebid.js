@@ -109,6 +109,11 @@
  * @property {(function|undefined)} callback - function that will return an id
  */
 
+/**
+  * @typedef {Object} RefreshUserIdsOptions
+  * @property {(string[]|undefined)} submoduleNames - submodules to refresh
+  */
+
 import find from 'core-js-pure/features/array/find.js';
 import {config} from '../../src/config.js';
 import events from '../../src/events.js';
@@ -467,11 +472,110 @@ function getUserIdsAsEids() {
 }
 
 /**
+* This function will be exposed in the global-name-space so that userIds can be refreshed after initialization.
+* @param {RefreshUserIdsOptions} options
+*/
+function refreshUserIds(options, callback) {
+  let submoduleNames = options ? options.submoduleNames : null;
+  if (!submoduleNames) {
+    submoduleNames = [];
+  }
+
+  initializeSubmodulesAndExecuteCallbacks(function() {
+    let consentData = gdprDataHandler.getConsentData()
+
+    const storedConsentData = getStoredConsentData();
+    setStoredConsentData(consentData);
+
+    // gdpr consent with purpose one is required, otherwise exit immediately
+    let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
+    if (!hasValidated && !hasGDPRConsent(consentData)) {
+      utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
+      return;
+    }
+
+    let callbackSubmodules = [];
+    for (let submodule of userIdModules) {
+      if (submoduleNames.length > 0 &&
+        submoduleNames.indexOf(submodule.submodule.name) === -1) {
+        continue;
+      }
+
+      utils.logInfo(`${MODULE_NAME} - refreshing ${submodule.submodule.name}`);
+      populateSubmoduleId(submodule, consentData, storedConsentData, true);
+
+      if (utils.isFn(submodule.callback)) {
+        callbackSubmodules.push(submodule);
+      }
+    }
+
+    if (callbackSubmodules.length > 0) {
+      processSubmoduleCallbacks(callbackSubmodules);
+    }
+
+    if (callback) {
+      callback();
+    }
+  });
+}
+
+/**
  * This hook returns updated list of submodules which are allowed to do get user id based on TCF 2 enforcement rules configured
  */
 export const validateGdprEnforcement = hook('sync', function (submodules, consentData) {
   return {userIdModules: submodules, hasValidated: consentData && consentData.hasValidated};
 }, 'validateGdprEnforcement');
+
+function populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh) {
+  // There are two submodule configuration types to handle: storage or value
+  // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
+  // 2. value: pass directly to bids
+  if (submodule.config.storage) {
+    let storedId = getStoredValue(submodule.config.storage);
+    let response;
+
+    let refreshNeeded = false;
+    if (typeof submodule.config.storage.refreshInSeconds === 'number') {
+      const storedDate = new Date(getStoredValue(submodule.config.storage, 'last'));
+      refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
+    }
+
+    if (!storedId || refreshNeeded || forceRefresh || !storedConsentDataMatchesConsentData(storedConsentData, consentData)) {
+      // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
+      response = submodule.submodule.getId(submodule.config, consentData, storedId);
+    } else if (typeof submodule.submodule.extendId === 'function') {
+      // If the id exists already, give submodule a chance to decide additional actions that need to be taken
+      response = submodule.submodule.extendId(submodule.config, storedId);
+    }
+
+    if (utils.isPlainObject(response)) {
+      if (response.id) {
+        // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
+        setStoredValue(submodule, response.id);
+        storedId = response.id;
+      }
+
+      if (typeof response.callback === 'function') {
+        // Save async callback to be invoked after auction
+        submodule.callback = response.callback;
+      }
+    }
+
+    if (storedId) {
+      // cache decoded value (this is copied to every adUnit bid)
+      submodule.idObj = submodule.submodule.decode(storedId, submodule.config);
+    }
+  } else if (submodule.config.value) {
+    // cache decoded value (this is copied to every adUnit bid)
+    submodule.idObj = submodule.config.value;
+  } else {
+    const response = submodule.submodule.getId(submodule.config, consentData, undefined);
+    if (utils.isPlainObject(response)) {
+      if (typeof response.callback === 'function') { submodule.callback = response.callback; }
+      if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
+    }
+  }
+}
 
 /**
  * @param {SubmoduleContainer[]} submodules
@@ -491,54 +595,7 @@ function initSubmodules(submodules, consentData) {
   }
 
   return userIdModules.reduce((carry, submodule) => {
-    // There are two submodule configuration types to handle: storage or value
-    // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
-    // 2. value: pass directly to bids
-    if (submodule.config.storage) {
-      let storedId = getStoredValue(submodule.config.storage);
-      let response;
-
-      let refreshNeeded = false;
-      if (typeof submodule.config.storage.refreshInSeconds === 'number') {
-        const storedDate = new Date(getStoredValue(submodule.config.storage, 'last'));
-        refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
-      }
-
-      if (!storedId || refreshNeeded || !storedConsentDataMatchesConsentData(storedConsentData, consentData)) {
-        // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-        response = submodule.submodule.getId(submodule.config, consentData, storedId);
-      } else if (typeof submodule.submodule.extendId === 'function') {
-        // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-        response = submodule.submodule.extendId(submodule.config, storedId);
-      }
-
-      if (utils.isPlainObject(response)) {
-        if (response.id) {
-          // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
-          setStoredValue(submodule, response.id);
-          storedId = response.id;
-        }
-
-        if (typeof response.callback === 'function') {
-          // Save async callback to be invoked after auction
-          submodule.callback = response.callback;
-        }
-      }
-
-      if (storedId) {
-        // cache decoded value (this is copied to every adUnit bid)
-        submodule.idObj = submodule.submodule.decode(storedId, submodule.config);
-      }
-    } else if (submodule.config.value) {
-      // cache decoded value (this is copied to every adUnit bid)
-      submodule.idObj = submodule.config.value;
-    } else {
-      const response = submodule.submodule.getId(submodule.config, consentData, undefined);
-      if (utils.isPlainObject(response)) {
-        if (typeof response.callback === 'function') { submodule.callback = response.callback; }
-        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
-      }
-    }
+    populateSubmoduleId(submodule, consentData, storedConsentData, false);
     carry.push(submodule);
     return carry;
   }, []);
@@ -661,6 +718,7 @@ export function init(config) {
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
+  (getGlobal()).refreshUserIds = refreshUserIds;
 }
 
 // init config update listener to start the application

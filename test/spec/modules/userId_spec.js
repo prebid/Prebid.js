@@ -311,6 +311,108 @@ describe('User ID', function () {
       expect(typeof (getGlobal()).getUserIdsAsEids).to.equal('function');
       expect((getGlobal()).getUserIdsAsEids()).to.deep.equal(createEidsArray((getGlobal()).getUserIds()));
     });
+
+    it('pbjs.refreshUserIds refreshes', function() {
+      let sandbox = sinon.createSandbox();
+
+      let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
+
+      let mockIdSystem = {
+        name: 'mockId',
+        decode: function(value) {
+          return {
+            'mid': value['MOCKID']
+          };
+        },
+        getId: mockIdCallback
+      };
+
+      setSubmoduleRegistry([mockIdSystem]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'mockId',
+            value: {id: {mockId: '1111'}}
+          }]
+        }
+      });
+      expect(typeof (getGlobal()).refreshUserIds).to.equal('function');
+
+      getGlobal().getUserIds(); // force initialization
+
+      // update config so that getId will be called
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'mockId',
+            storage: {name: 'mockid', type: 'cookie'},
+          }]
+        }
+      });
+
+      getGlobal().refreshUserIds();
+      expect(mockIdCallback.callCount).to.equal(1);
+    });
+
+    it('pbjs.refreshUserIds refreshes single', function() {
+      coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie('REFRESH', '', EXPIRED_COOKIE_DATE);
+
+      let sandbox = sinon.createSandbox();
+      let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
+      let refreshUserIdsCallback = sandbox.stub();
+
+      let mockIdSystem = {
+        name: 'mockId',
+        decode: function(value) {
+          return {
+            'mid': value['MOCKID']
+          };
+        },
+        getId: mockIdCallback
+      };
+
+      let refreshedIdCallback = sandbox.stub().returns({id: {'REFRESH': '1111'}});
+
+      let refreshedIdSystem = {
+        name: 'refreshedId',
+        decode: function(value) {
+          return {
+            'refresh': value['REFRESH']
+          };
+        },
+        getId: refreshedIdCallback
+      };
+
+      setSubmoduleRegistry([refreshedIdSystem, mockIdSystem]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [
+            {
+              name: 'mockId',
+              storage: {name: 'MOCKID', type: 'cookie'},
+            },
+            {
+              name: 'refreshedId',
+              storage: {name: 'refreshedid', type: 'cookie'},
+            }
+          ]
+        }
+      });
+
+      getGlobal().getUserIds(); // force initialization
+
+      getGlobal().refreshUserIds({submoduleNames: 'refreshedId'}, refreshUserIdsCallback);
+
+      expect(refreshedIdCallback.callCount).to.equal(2);
+      expect(mockIdCallback.callCount).to.equal(1);
+      expect(refreshUserIdsCallback.callCount).to.equal(1);
+    });
   });
 
   describe('Opt out', function () {
