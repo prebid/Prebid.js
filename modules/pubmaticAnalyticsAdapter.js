@@ -152,6 +152,7 @@ function parseBidResponse(bid) {
     'mediaType',
     'params',
     'mi',
+    'regexPattern', () => bid.regexPattern || undefined,
     'partnerImpId', // partner impression ID
     'dimensions', () => utils.pick(bid, [
       'width',
@@ -166,6 +167,18 @@ function getDomainFromUrl(url) {
   return a.hostname;
 }
 
+function getValueForKgpv(bid, adUnitId) {
+  if (bid.params.regexPattern) {
+    return bid.params.regexPattern;
+  } else if (bid.bidResponse && bid.bidResponse.regexPattern) {
+    return bid.bidResponse.regexPattern;
+  } else if (bid.params.kgpv) {
+    return bid.params.kgpv;
+  } else {
+    return adUnitId;
+  }
+}
+
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
@@ -174,7 +187,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'pn': bid.bidder,
       'bidid': bid.bidId,
       'db': bid.bidResponse ? 0 : 1,
-      'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
+      'kgpv': getValueForKgpv(bid, adUnitId),
       'kgpsv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
       'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
       'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
@@ -268,7 +281,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&pn=' + enc(winningBid.bidder);
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
-  pixelURL += '&kgpv=' + enc(winningBid.params.kgpv || adUnitId);
+  pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
   ajax(
     pixelURL,
