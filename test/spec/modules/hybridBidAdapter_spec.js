@@ -28,11 +28,11 @@ describe('Hybrid.ai Adapter', function() {
   const inImageMandatoryParams = {
     placeId: PLACE_ID,
     placement: 'inImage',
-    imageUrl: "https://hybrid.ai/images/image.jpg"
+    imageUrl: 'https://hybrid.ai/images/image.jpg'
   }
   const validBidRequests = [
     getSlotConfigs({ banner: {} }, bannerMandatoryParams),
-    getSlotConfigs({ video: {playerSize: [[640, 480]], context: 'outstream'}}, videoMandatoryParams),
+    getSlotConfigs({ video: {playerSize: [[640, 480]], context: 'outstream'} }, videoMandatoryParams),
     getSlotConfigs({ banner: {sizes: [0, 0]} }, inImageMandatoryParams)
   ]
   describe('isBidRequestValid method', function() {
