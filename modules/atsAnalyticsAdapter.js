@@ -165,7 +165,8 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: atsAnalyticsAdapter,
-  code: 'atsAnalytics'
+  code: 'atsAnalytics',
+  gvlid: 97
 });
 
 export default atsAnalyticsAdapter;

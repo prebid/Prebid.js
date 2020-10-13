@@ -79,7 +79,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: 'https://console.brightmountainmedia.com:4444/cookieSync'
+        url: 'https://console.brightmountainmedia.com:8443/cookieSync'
       }];
     }
   },

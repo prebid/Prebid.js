@@ -11,6 +11,7 @@ const SUPPORTED_MEDIA_TYPES = [BANNER];
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 138,
   aliases: [ BIDDER_CODE_ALIAS ],
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
@@ -81,8 +82,10 @@ export const spec = {
         pisze: bid.mediaTypes.banner.sizes[0] || bid.sizes[0],
         sizes: bid.mediaTypes.banner.sizes,
         adTypes: getSize(bid.mediaTypes.banner.sizes || bid.sizes),
-        floor: getBidFloor(bid)
-      }, bid.params);
+        bidfloor: getBidFloor(bid),
+        siteId: bid.params.siteId,
+        networkId: bid.params.networkId
+      });
 
       if (placement.networkId && placement.siteId) {
         data.placements.push(placement);
@@ -132,6 +135,13 @@ export const spec = {
     }
 
     return bidResponses;
+  },
+
+  transformBidParams: function (params, isOpenRtb) {
+    return utils.convertTypes({
+      'siteId': 'number',
+      'networkId': 'number'
+    }, params);
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
@@ -227,7 +237,7 @@ function getBidFloor(bidRequest) {
     });
   }
 
-  let floor = floorInfo.floor || 0;
+  let floor = floorInfo.floor || bidRequest.params.bidfloor || bidRequest.params.floorprice || 0;
 
   return floor;
 }

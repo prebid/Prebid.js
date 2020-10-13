@@ -27,6 +27,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     let serverRequest = {
+      pbav: '$prebid.version$',
       p: [],
       page_url: bidderRequest.refererInfo.referer,
       bust: new Date().getTime().toString(),
