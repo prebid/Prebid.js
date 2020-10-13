@@ -197,7 +197,7 @@ describe('oolo Prebid Analytic', () => {
       const pbjsConfig = config.getConfig()
 
       Object.keys(pbjsConfig).forEach(key => {
-        if (!key.startsWith('_')) {
+        if (key[0] !== '_') {
           conf[key] = pbjsConfig[key]
         }
       })
@@ -216,21 +216,22 @@ describe('oolo Prebid Analytic', () => {
       clock.next()
 
       expect(server.requests[0].url).to.contain('?pid=123')
-      expect(Object.keys(JSON.parse(server.requests[2].requestBody))).to.deep.equal([
-        'timestamp',
-        'screenWidth',
-        'screenHeight',
-        'url',
-        'protocol',
-        'origin',
-        'referrer',
-        'pbVersion',
-        'pvid',
-        'pid',
-        'pbModuleVersion',
-        'domContentLoadTime',
-        'pageLoadTime',
-      ])
+
+      const pageData = JSON.parse(server.requests[2].requestBody)
+
+      expect(pageData).to.have.property('timestamp')
+      expect(pageData).to.have.property('screenWidth')
+      expect(pageData).to.have.property('screenHeight')
+      expect(pageData).to.have.property('url')
+      expect(pageData).to.have.property('protocol')
+      expect(pageData).to.have.property('origin')
+      expect(pageData).to.have.property('referrer')
+      expect(pageData).to.have.property('pbVersion')
+      expect(pageData).to.have.property('pvid')
+      expect(pageData).to.have.property('pid')
+      expect(pageData).to.have.property('pbModuleVersion')
+      expect(pageData).to.have.property('domContentLoadTime')
+      expect(pageData).to.have.property('pageLoadTime')
     })
   })
 
@@ -567,7 +568,6 @@ describe('oolo Prebid Analytic', () => {
 
       const request = JSON.parse(server.requests[3].requestBody)
 
-      expect(request.winningBids).to.deep.equal([])
       expect(request.adUnits[0].bids[0].transactionId).to.equal('123')
       expect(request.adUnits[0].bids[0].adUrl).to.equal('...')
       expect(request.adUnits[0].bids[0].statusMessage).to.equal('msg2')
