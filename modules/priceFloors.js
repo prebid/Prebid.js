@@ -192,7 +192,6 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
   let bidRequest = this;
   let floorData = _floorDataForAuction[bidRequest.auctionId];
   if (!floorData || floorData.skipped) return {};
-  if (floorData.hasOwnProperty('floorMin')) floorData.data.floorMin = floorData.floorMin;
 
   requestParams = updateRequestParamsFromContext(bidRequest, requestParams);
   let floorInfo = getFirstMatchingFloor(floorData.data, {...bidRequest}, {mediaType: requestParams.mediaType, size: requestParams.size});
@@ -340,6 +339,8 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
     const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
     resolvedFloorsData.skipped = isSkipped;
   }
+  // copy FloorMin to floorData.data
+  if (resolvedFloorsData.hasOwnProperty('floorMin')) resolvedFloorsData.data.floorMin = resolvedFloorsData.floorMin;
   // add floorData to bids
   updateAdUnitsForAuction(adUnits, resolvedFloorsData, auctionId);
   return resolvedFloorsData;
@@ -572,7 +573,7 @@ function addFieldOverrides(overrides) {
  */
 export function handleSetFloorsConfig(config) {
   _floorsConfig = utils.pick(config, [
-    'floorMin', floorMin => floorMin,
+    'floorMin',
     'enabled', enabled => enabled !== false, // defaults to true
     'auctionDelay', auctionDelay => auctionDelay || 0,
     'floorProvider', floorProvider => utils.deepAccess(config, 'data.floorProvider', floorProvider),

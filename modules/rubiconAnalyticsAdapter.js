@@ -226,7 +226,6 @@ function sendMessage(auctionId, bidWonId) {
           'skipRate',
           'fetchStatus',
           'floorMin',
-          'floorRuleValue',
           'floorProvider as provider'
         ]);
       }
