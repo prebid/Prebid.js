@@ -113,8 +113,6 @@ function buildBid(bidData) {
     actionUrls.stopAnimationUrls = bidData.inImage.stopanimationtrackers || [];
     actionUrls.closeBannerUrls = bidData.inImage.closebannertrackers || [];
 
-    bidData.inImage.but = true;
-
     if (bidData.inImage.but) {
       let inImageOptions = bid.inImageContent.content.inImageOptions = {};
       inImageOptions.hasButton = true;
