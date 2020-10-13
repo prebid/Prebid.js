@@ -5,9 +5,19 @@ import * as utils from '../src/utils.js';
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
-const MEDIA_TYPE = 'banner';
+const MEDIA_TYPE = {
+  BANNER: 'banner',
+  VIDEO: 'video'
+};
+
 const CURRENCY = 'USD';
 const GUID_PATTERN = /^[a-zA-Z0-9_-]{22}$/;
+
+const PRODUCT = {
+  SIAB: 'siab',
+  INVIEW: 'inview',
+  INSTREAM: 'instream'
+};
 
 const adapterState = {
   uniqueSiteIds: []
@@ -107,46 +117,26 @@ function buildRequests(bidRequests, bidderRequest) {
 function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl}) {
   const ttxRequest = {};
   const params = bidRequest.params;
-  const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
-  const sizes = _transformSizes(bidRequest.sizes);
-
-  let format;
-
-  // We support size based bidfloors so obtain one if there's a rule associated
-  if (typeof bidRequest.getFloor === 'function') {
-    let getFloor = bidRequest.getFloor.bind(bidRequest);
-
-    format = sizes.map((size) => {
-      const formatExt = _getBidFloors(getFloor, size);
-
-      return Object.assign({}, size, formatExt);
-    });
-  } else {
-    format = sizes;
-  }
-
-  const minSize = _getMinSize(sizes);
-
-  const viewabilityAmount = _isViewabilityMeasurable(element)
-    ? _getViewability(element, utils.getWindowTop(), minSize)
-    : NON_MEASURABLE;
-
-  const contributeViewability = ViewabilityContributor(viewabilityAmount);
 
   /*
    * Infer data for the request payload
    */
-  ttxRequest.imp = [];
-  ttxRequest.imp[0] = {
-    banner: {
-      format
-    },
-    ext: {
-      ttx: {
-        prod: params.productId
-      }
+  ttxRequest.imp = [{}];
+
+  if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
+    const { format, contributeViewability } = _buildBannerORTB(bidRequest);
+    ttxRequest.imp[0].banner = {
+      format,
+      ext: contributeViewability()
+    }
+  }
+
+  ttxRequest.imp[0].ext = {
+    ttx: {
+      prod: _getProduct(bidRequest)
     }
   };
+
   ttxRequest.site = { id: params.siteId };
 
   if (pageUrl) {
@@ -208,31 +198,103 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
   return {
     'method': 'POST',
     'url': url,
-    'data': JSON.stringify(contributeViewability(ttxRequest)),
+    'data': JSON.stringify(ttxRequest),
     'options': options
   }
 }
 
-// **************************** BUILD REQUESTS: BIDFLOORS *************************** //
-function _getBidFloors(getFloor, size) {
+// BUILD REQUESTS: SIZE INFERENCE
+function _transformSizes(sizes) {
+  if (utils.isArray(sizes) && sizes.length === 2 && !utils.isArray(sizes[0])) {
+    return [ _getSize(sizes) ];
+  }
+
+  return sizes.map(_getSize);
+}
+
+function _getSize(size) {
+  return {
+    w: parseInt(size[0], 10),
+    h: parseInt(size[1], 10)
+  }
+}
+
+// BUILD REQUESTS: PRODUCT INFERENCE
+function _getProduct(bidRequest) {
+  const { params, mediaTypes } = bidRequest;
+  const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
+  const { context } = videoAdUnit;
+
+  const { banner, video } = mediaTypes;
+
+  if ((video && !banner) && context === 'instream') {
+    return PRODUCT.INSTREAM;
+  }
+
+  return (params.productId === PRODUCT.INVIEW) ? (params.productId) : PRODUCT.SIAB;
+}
+
+// BUILD REQUESTS: BANNER
+function _buildBannerORTB(bidRequest) {
+  const bannerAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.banner', {});
+  const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
+
+  const sizes = _transformSizes(bannerAdUnit.sizes);
+
+  let format;
+
+  // We support size based bidfloors so obtain one if there's a rule associated
+  if (typeof bidRequest.getFloor === 'function') {
+    let getFloor = bidRequest.getFloor.bind(bidRequest);
+
+    format = sizes.map((size) => {
+      const bidfloors = _getBidFloors(getFloor, size, MEDIA_TYPE.BANNER);
+
+      let formatExt;
+      if (bidfloors) {
+        formatExt = {
+          ext: {
+            ttx: {
+              bidfloors: [ bidfloors ]
+            }
+          }
+        }
+      }
+
+      return Object.assign({}, size, formatExt);
+    });
+  } else {
+    format = sizes;
+  }
+
+  const minSize = _getMinSize(sizes);
+
+  const viewabilityAmount = _isViewabilityMeasurable(element)
+    ? _getViewability(element, utils.getWindowTop(), minSize)
+    : NON_MEASURABLE;
+
+  const contributeViewability = ViewabilityContributor(viewabilityAmount);
+
+  return {
+    format,
+    contributeViewability
+  }
+}
+
+// BUILD REQUESTS: BIDFLOORS
+function _getBidFloors(getFloor, size, mediaType) {
   const bidFloors = getFloor({
     currency: CURRENCY,
-    mediaType: MEDIA_TYPE,
+    mediaType,
     size: [ size.w, size.h ]
   });
 
   if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
-    return {
-      ext: {
-        ttx: {
-          bidfloors: [ bidFloors.floor ]
-        }
-      }
-    }
+    return bidFloors.floor;
   }
 }
 
-// **************************** BUILD REQUESTS: VIEWABILITY *************************** //
+// BUILD REQUESTS: VIEWABILITY
 function _isViewabilityMeasurable(element) {
   return !_isIframe() && element !== null;
 }
@@ -270,13 +332,6 @@ function _getAdSlotHTMLElement(adUnitCode) {
     document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 }
 
-function _getSize(size) {
-  return {
-    w: parseInt(size[0], 10),
-    h: parseInt(size[1], 10)
-  }
-}
-
 function _getMinSize(sizes) {
   return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
@@ -292,14 +347,6 @@ function _getBoundingBox(element, { w, h } = {}) {
   }
 
   return { width, height, left, top, right, bottom };
-}
-
-function _transformSizes(sizes) {
-  if (utils.isArray(sizes) && sizes.length === 2 && !utils.isArray(sizes[0])) {
-    return [ _getSize(sizes) ];
-  }
-
-  return sizes.map(_getSize);
 }
 
 function _getIntersectionOfRects(rects) {
@@ -363,16 +410,13 @@ function _getPercentInView(element, topWin, { w, h } = {}) {
  * Viewability contribution to request..
  */
 function ViewabilityContributor(viewabilityAmount) {
-  function contributeViewability(ttxRequest) {
-    const req = Object.assign({}, ttxRequest);
-    const imp = req.imp = req.imp.map(impItem => Object.assign({}, impItem));
-    const banner = imp[0].banner = Object.assign({}, imp[0].banner);
-    const ext = banner.ext = Object.assign({}, banner.ext);
+  function contributeViewability() {
+    const ext = {};
     const ttx = ext.ttx = Object.assign({}, ext.ttx);
 
     ttx.viewability = { amount: isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount) };
 
-    return req;
+    return ext;
   }
 
   return contributeViewability;
