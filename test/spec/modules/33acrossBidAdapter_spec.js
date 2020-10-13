@@ -248,72 +248,172 @@ describe('33acrossBidAdapter:', function () {
   });
 
   describe('isBidRequestValid:', function() {
-    it('returns true when valid bid request is sent', function() {
-      const validBid = {
-        bidder: BIDDER_CODE,
-        params: {
-          siteId: SITE_ID,
-          productId: PRODUCT_ID
-        }
-      };
+    context('basic validation', function() {
+      it('returns true for valid guid values', function() {
+        // NOTE: We ignore whitespace at the start and end since
+        // in our experience these are common typos
+        const validGUIDs = [
+          'cxBE0qjUir6iopaKkGJozW',
+          'cxBE0qjUir6iopaKkGJozW ',
+          ' cxBE0qjUir6iopaKkGJozW',
+          ' cxBE0qjUir6iopaKkGJozW '
+        ];
 
-      expect(spec.isBidRequestValid(validBid)).to.be.true;
+        validGUIDs.forEach((siteId) => {
+          const bid = {
+            bidder: '33across',
+            params: {
+              siteId
+            }
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.be.true;
+        });
+      });
+
+      it('returns false for invalid guid values', function() {
+        const invalidGUIDs = [
+          undefined,
+          'siab'
+        ];
+
+        invalidGUIDs.forEach((siteId) => {
+          const bid = {
+            bidder: '33across',
+            params: {
+              siteId
+            }
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.be.false;
+        });
+      });
     });
 
-    it('returns true when valid test bid request is sent', function() {
-      const validBid = {
-        bidder: BIDDER_CODE,
-        params: {
-          siteId: SITE_ID,
-          productId: PRODUCT_ID,
-          test: 1
-        }
-      };
+    context('banner validation', function() {
+      it('returns true when banner mediaType does not exist', function() {
+        const bid = {
+          bidder: '33across',
+          params: {
+            siteId: 'cxBE0qjUir6iopaKkGJozW'
+          }
+        };
 
-      expect(spec.isBidRequestValid(validBid)).to.be.true;
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+      });
+
+      it('returns true when banner sizes are defined', function() {
+        const bid = {
+          bidder: '33across',
+          mediaTypes: {
+            banner: {
+              sizes: [[250, 300]]
+            }
+          },
+          params: {
+            siteId: 'cxBE0qjUir6iopaKkGJozW'
+          }
+        };
+
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+      });
+
+      it('returns false when banner sizes are invalid', function() {
+        const invalidSizes = [
+          undefined,
+          '16:9',
+          300,
+          'foo'
+        ];
+
+        invalidSizes.forEach((sizes) => {
+          const bid = {
+            bidder: '33across',
+            mediaTypes: {
+              banner: {
+                sizes
+              }
+            },
+            params: {
+              siteId: 'cxBE0qjUir6iopaKkGJozW'
+            }
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.be.false;
+        });
+      });
     });
 
-    it('returns false when bidder not set to "33across"', function() {
-      const invalidBid = {
-        bidder: 'foo',
-        params: {
-          siteId: SITE_ID,
-          productId: PRODUCT_ID
-        }
-      };
+    context('video validation', function() {
+      it('returns true when video mediaType does not exist', function() {
+        const bid = {
+          bidder: '33across',
+          params: {
+            siteId: 'cxBE0qjUir6iopaKkGJozW'
+          }
+        };
 
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
-    });
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+      });
 
-    it('returns false when params not set', function() {
-      const invalidBid = {
-        bidder: 'foo'
-      };
+      it('returns true when valid video mediaType is defined', function() {
+        const bid = {
+          bidder: '33across',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [250, 300]
+            }
+          },
+          params: {
+            siteId: 'cxBE0qjUir6iopaKkGJozW'
+          }
+        };
 
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
-    });
+        expect(spec.isBidRequestValid(bid)).to.be.true;
+      });
 
-    it('returns false when site ID is not set in params', function() {
-      const invalidBid = {
-        bidder: 'foo',
-        params: {
-          productId: PRODUCT_ID
-        }
-      };
+      it('returns false when video context is not defined', function() {
+        const bid = {
+          bidder: '33across',
+          mediaTypes: {
+            video: {
+              placement: 2
+            }
+          },
+          params: {
+            siteId: 'cxBE0qjUir6iopaKkGJozW'
+          }
+        };
 
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
-    });
+        expect(spec.isBidRequestValid(bid)).to.be.false;
+      });
 
-    it('returns false when product ID not set in params', function() {
-      const invalidBid = {
-        bidder: 'foo',
-        params: {
-          siteId: SITE_ID
-        }
-      };
+      it('returns false when video playserSize is invalid', function() {
+        const invalidSizes = [
+          undefined,
+          '16:9',
+          300,
+          'foo'
+        ];
 
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
-    });
+        invalidSizes.forEach((playerSize) => {
+          const bid = {
+            bidder: '33across',
+            mediaTypes: {
+              video: {
+                playerSize
+              }
+            },
+            params: {
+              siteId: 'cxBE0qjUir6iopaKkGJozW'
+            }
+          };
+
+          expect(spec.isBidRequestValid(bid)).to.be.false;
+        });
+      });
+    })
   });
 
   describe('buildRequests:', function() {

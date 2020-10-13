@@ -7,6 +7,7 @@ const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
 const MEDIA_TYPE = 'banner';
 const CURRENCY = 'USD';
+const GUID_PATTERN = /^[a-zA-Z0-9_-]{22}$/;
 
 const adapterState = {
   uniqueSiteIds: []
@@ -14,57 +15,91 @@ const adapterState = {
 
 const NON_MEASURABLE = 'nm';
 
-// All this assumes that only one bid is ever returned by ttx
-function _createBidResponse(response) {
-  return {
-    requestId: response.id,
-    bidderCode: BIDDER_CODE,
-    cpm: response.seatbid[0].bid[0].price,
-    width: response.seatbid[0].bid[0].w,
-    height: response.seatbid[0].bid[0].h,
-    ad: response.seatbid[0].bid[0].adm,
-    ttl: response.seatbid[0].bid[0].ttl || 60,
-    creativeId: response.seatbid[0].bid[0].crid,
-    currency: response.cur,
-    netRevenue: true
-  }
+// **************************** VALIDATION *************************** //
+function isBidRequestValid(bid) {
+  return (
+    _validateBasic(bid) &&
+    _validateBanner(bid) &&
+    _validateVideo(bid)
+  );
 }
 
-function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null;
-}
-
-function _getViewability(element, topWin, { w, h } = {}) {
-  return topWin.document.visibilityState === 'visible'
-    ? _getPercentInView(element, topWin, { w, h })
-    : 0;
-}
-
-function _mapAdUnitPathToElementId(adUnitCode) {
-  if (utils.isGptPubadsDefined()) {
-    // eslint-disable-next-line no-undef
-    const adSlots = googletag.pubads().getSlots();
-    const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(adUnitCode);
-
-    for (let i = 0; i < adSlots.length; i++) {
-      if (isMatchingAdSlot(adSlots[i])) {
-        const id = adSlots[i].getSlotElementId();
-
-        utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
-
-        return id;
-      }
-    }
+function _validateBasic(bid) {
+  if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+    return false;
   }
 
-  utils.logWarn(`[33Across Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`);
+  if (!_validateGUID(bid)) {
+    return false;
+  }
 
-  return null;
+  return true;
 }
 
-function _getAdSlotHTMLElement(adUnitCode) {
-  return document.getElementById(adUnitCode) ||
-    document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
+function _validateGUID(bid) {
+  const siteID = utils.deepAccess(bid, 'params.siteId', '') || '';
+  if (siteID.trim().match(GUID_PATTERN) === null) {
+    return false;
+  }
+
+  return true;
+}
+
+function _validateBanner(bid) {
+  const banner = utils.deepAccess(bid, 'mediaTypes.banner');
+  // If there's no banner no need to validate against banner rules
+  if (banner === undefined) {
+    return true;
+  }
+
+  if (!Array.isArray(banner.sizes)) {
+    return false;
+  }
+
+  return true;
+}
+
+function _validateVideo(bid) {
+  const videoAdUnit = utils.deepAccess(bid, 'mediaTypes.video');
+
+  // If there's no video no need to validate against video rules
+  if (videoAdUnit === undefined) {
+    return true;
+  }
+
+  if (!Array.isArray(videoAdUnit.playerSize)) {
+    return false;
+  }
+
+  if (!videoAdUnit.context) {
+    return false;
+  }
+
+  return true;
+}
+
+// **************************** BUILD REQUESTS *************************** //
+// NOTE: With regards to gdrp consent data, the server will independently
+// infer the gdpr applicability therefore, setting the default value to false
+function buildRequests(bidRequests, bidderRequest) {
+  const gdprConsent = Object.assign({
+    consentString: undefined,
+    gdprApplies: false
+  }, bidderRequest && bidderRequest.gdprConsent);
+
+  const uspConsent = bidderRequest && bidderRequest.uspConsent;
+  const pageUrl = (bidderRequest && bidderRequest.refererInfo) ? (bidderRequest.refererInfo.referer) : (undefined);
+
+  adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
+
+  return bidRequests.map(bidRequest => _createServerRequest(
+    {
+      bidRequest,
+      gdprConsent,
+      uspConsent,
+      pageUrl
+    })
+  );
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
@@ -178,25 +213,7 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
   }
 }
 
-// Sync object will always be of type iframe for TTX
-function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent }) {
-  const ttxSettings = config.getConfig('ttxSettings');
-  const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
-
-  const { consentString, gdprApplies } = gdprConsent;
-
-  const sync = {
-    type: 'iframe',
-    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}`
-  };
-
-  if (typeof gdprApplies === 'boolean') {
-    sync.url += `&gdpr=${Number(gdprApplies)}`;
-  }
-
-  return sync;
-}
-
+// **************************** BUILD REQUESTS: BIDFLOORS *************************** //
 function _getBidFloors(getFloor, size) {
   const bidFloors = getFloor({
     currency: CURRENCY,
@@ -213,6 +230,44 @@ function _getBidFloors(getFloor, size) {
       }
     }
   }
+}
+
+// **************************** BUILD REQUESTS: VIEWABILITY *************************** //
+function _isViewabilityMeasurable(element) {
+  return !_isIframe() && element !== null;
+}
+
+function _getViewability(element, topWin, { w, h } = {}) {
+  return topWin.document.visibilityState === 'visible'
+    ? _getPercentInView(element, topWin, { w, h })
+    : 0;
+}
+
+function _mapAdUnitPathToElementId(adUnitCode) {
+  if (utils.isGptPubadsDefined()) {
+    // eslint-disable-next-line no-undef
+    const adSlots = googletag.pubads().getSlots();
+    const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(adUnitCode);
+
+    for (let i = 0; i < adSlots.length; i++) {
+      if (isMatchingAdSlot(adSlots[i])) {
+        const id = adSlots[i].getSlotElementId();
+
+        utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
+
+        return id;
+      }
+    }
+  }
+
+  utils.logWarn(`[33Across Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`);
+
+  return null;
+}
+
+function _getAdSlotHTMLElement(adUnitCode) {
+  return document.getElementById(adUnitCode) ||
+    document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 }
 
 function _getSize(size) {
@@ -331,42 +386,9 @@ function _isIframe() {
   }
 }
 
-function isBidRequestValid(bid) {
-  if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
-    return false;
-  }
-
-  if (typeof bid.params.siteId === 'undefined' || typeof bid.params.productId === 'undefined') {
-    return false;
-  }
-
-  return true;
-}
-
-// NOTE: With regards to gdrp consent data,
-// - the server independently infers gdpr applicability therefore, setting the default value to false
-function buildRequests(bidRequests, bidderRequest) {
-  const gdprConsent = Object.assign({
-    consentString: undefined,
-    gdprApplies: false
-  }, bidderRequest && bidderRequest.gdprConsent);
-
-  const uspConsent = bidderRequest && bidderRequest.uspConsent;
-  const pageUrl = (bidderRequest && bidderRequest.refererInfo) ? (bidderRequest.refererInfo.referer) : (undefined);
-
-  adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
-
-  return bidRequests.map(bidRequest => _createServerRequest(
-    {
-      bidRequest,
-      gdprConsent,
-      uspConsent,
-      pageUrl
-    })
-  );
-}
-
-// NOTE: At this point, the response from 33exchange will only ever contain one bid i.e. the highest bid
+// **************************** INTERPRET RESPONSE ******************************** //
+// NOTE: At this point, the response from 33exchange will only ever contain one bid
+// i.e. the highest bid
 function interpretResponse(serverResponse, bidRequest) {
   const bidResponses = [];
 
@@ -378,6 +400,23 @@ function interpretResponse(serverResponse, bidRequest) {
   return bidResponses;
 }
 
+// All this assumes that only one bid is ever returned by ttx
+function _createBidResponse(response) {
+  return {
+    requestId: response.id,
+    bidderCode: BIDDER_CODE,
+    cpm: response.seatbid[0].bid[0].price,
+    width: response.seatbid[0].bid[0].w,
+    height: response.seatbid[0].bid[0].h,
+    ad: response.seatbid[0].bid[0].adm,
+    ttl: response.seatbid[0].bid[0].ttl || 60,
+    creativeId: response.seatbid[0].bid[0].crid,
+    currency: response.cur,
+    netRevenue: true
+  }
+}
+
+// **************************** USER SYNC *************************** //
 // Register one sync per unique guid so long as iframe is enable
 // Else no syncs
 // For logic on how we handle gdpr data see _createSyncs and module's unit tests
@@ -393,6 +432,25 @@ function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
   adapterState.uniqueSiteIds = [];
 
   return syncUrls;
+}
+
+// Sync object will always be of type iframe for TTX
+function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent }) {
+  const ttxSettings = config.getConfig('ttxSettings');
+  const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
+
+  const { consentString, gdprApplies } = gdprConsent;
+
+  const sync = {
+    type: 'iframe',
+    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}`
+  };
+
+  if (typeof gdprApplies === 'boolean') {
+    sync.url += `&gdpr=${Number(gdprApplies)}`;
+  }
+
+  return sync;
 }
 
 export const spec = {
