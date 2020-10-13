@@ -1783,7 +1783,7 @@ describe('User ID', function () {
       expect(server.requests[0].url).to.equal('https://match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
     });
 
-    it('handle sharedid callback', function () {
+    it('handle sharedid callback via pubcid', function () {
       let adUnits = [getAdUnitMock()];
       let innerAdUnits;
       let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
@@ -1807,6 +1807,33 @@ describe('User ID', function () {
 
       expect(server.requests[0].url).to.equal('https://id.sharedid.org/id');
       expect(coreStorage.getCookie('pubcid_sharedid')).to.equal('testsharedid');
+    });
+
+    it('handle sharedid optout via pubcid', function () {
+      let adUnits = [getAdUnitMock()];
+      let innerAdUnits;
+      let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+      customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url'});
+      coreStorage.setCookie('pubcid_sharedid', 'testsharedid', (new Date(Date.now() + 5000).toUTCString()));
+
+      server.respondWith('https://id.sharedid.org/id', function(xhr) {
+        xhr.respond(200, {}, '{"sharedId":"00000000000000000000000000"}');
+      });
+      server.respondImmediately = true;
+
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+      config.setConfig(customCfg);
+      requestBidsHook((config) => {
+        innerAdUnits = config.adUnits
+      }, {adUnits});
+
+      expect(utils.triggerPixel.called).to.be.false;
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+      expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/pubcid/url');
+
+      expect(server.requests[0].url).to.equal('https://id.sharedid.org/id');
+      expect(coreStorage.getCookie('pubcid_sharedid')).to.be.null;
     });
   });
 

@@ -18,6 +18,7 @@ const LOCAL_STORAGE = 'html5';
 const SHAREDID_OPT_OUT_VALUE = '00000000000000000000000000';
 const SHAREDID_URL = 'https://id.sharedid.org/id';
 const SHAREDID_SUFFIX = '_sharedid';
+const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 
 const storage = getStorageManager(null, 'pubCommonId');
 
@@ -60,6 +61,21 @@ function readData(config) {
 }
 
 /**
+ * Delete sharedid from cookie or local storage
+ * @param config Need config.storage to derive key and storage type
+ */
+function delData(config) {
+  const key = config.storage.name + SHAREDID_SUFFIX;
+  if (config.storage.type === COOKIE) {
+    if (storage.cookiesAreEnabled()) {
+      storage.setCookie(key, '', EXPIRED_COOKIE_DATE);
+    }
+  } else if (config.storage.type === LOCAL_STORAGE) {
+    storage.removeDataFromLocalStorage(key);
+  }
+}
+
+/**
  * setup success and error handler for sharedid callback thru ajax
  * @param {string} pubcid Current pubcommon id
  * @param {function} callback userId module callback.
@@ -74,9 +90,14 @@ function handleResponse(pubcid, callback, config) {
         try {
           let responseObj = JSON.parse(responseBody);
           utils.logInfo('SharedId: Generated SharedId: ' + responseObj.sharedId);
-          if (responseObj.sharedId && responseObj.sharedId !== SHAREDID_OPT_OUT_VALUE) {
-            // Store sharedId locally
-            storeData(config, responseObj.sharedId);
+          if (responseObj.sharedId) {
+            if (responseObj.sharedId !== SHAREDID_OPT_OUT_VALUE) {
+              // Store sharedId locally
+              storeData(config, responseObj.sharedId);
+            } else {
+              // Delete local copy if the user has opted out
+              delData(config);
+            }
           }
           // Pass pubcid even though there is no change in order to trigger decode
           callback(pubcid);
@@ -152,21 +173,26 @@ export const pubCommonIdSubmodule = {
   /**
    * performs action to obtain id
    * @function
-   * @param {SubmoduleConfig} [config]
+   * @param {SubmoduleConfig} [config] Config object with params and storage properties
+   * @param {Object} consentData
+   * @param {string} storedId Existing pubcommon id
    * @returns {IdResponse}
    */
-  getId: function (config = {}) {
+  getId: function (config = {}, consentData, storedId) {
     const {params: {create = true, pixelUrl} = {}} = config;
-    let newId;
-    try {
-      if (typeof window[PUB_COMMON_ID] === 'object') {
-        // If the page includes its own pubcid module, then save a copy of id.
-        newId = window[PUB_COMMON_ID].getId();
+    let newId = storedId;
+    if (!newId) {
+      try {
+        if (typeof window[PUB_COMMON_ID] === 'object') {
+          // If the page includes its own pubcid module, then save a copy of id.
+          newId = window[PUB_COMMON_ID].getId();
+        }
+      } catch (e) {
       }
-    } catch (e) {
+
+      if (!newId) newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
     }
 
-    if (!newId) newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
     return {
       id: newId,
       callback: getIdCallback(newId, this.makeCallback(pixelUrl, newId), config)
@@ -198,7 +224,7 @@ export const pubCommonIdSubmodule = {
       try {
         if (typeof window[PUB_COMMON_ID] === 'object') {
           // If the page includes its own pubcid module, then there is nothing to do
-          // except to update sharedid
+          // except to update sharedid's expiration time
           storeData(config, readData(config));
           return;
         }
@@ -209,6 +235,7 @@ export const pubCommonIdSubmodule = {
         const callback = this.makeCallback(pixelUrl, storedId);
         return {callback: callback};
       } else {
+        // Update with the same value to extend expiration time
         storeData(config, readData(config));
         return {id: storedId};
       }
