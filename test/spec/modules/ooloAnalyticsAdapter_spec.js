@@ -266,8 +266,8 @@ describe('oolo Prebid Analytic', () => {
       expect(request.pvid).to.be.a('number')
       expect(request.adUnits).to.have.length(2)
 
-      const auctionAdUnit1 = request.adUnits.find(adUnit => adUnit.adunid === adUnit1)
-      const auctionAdUnit2 = request.adUnits.find(adUnit => adUnit.adunid === adUnit2)
+      const auctionAdUnit1 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit1)[0]
+      const auctionAdUnit2 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit2)[0]
 
       expect(auctionAdUnit1.auctionId).to.equal(auctionId)
       expect(auctionAdUnit1.bids).to.be.an('array')
@@ -347,8 +347,8 @@ describe('oolo Prebid Analytic', () => {
       expect(request.pvid).to.be.a('number')
       expect(request.adUnits).to.have.length(2)
 
-      const auctionAdUnit1 = request.adUnits.find(adUnit => adUnit.adunid === adUnit1)
-      const auctionAdUnit2 = request.adUnits.find(adUnit => adUnit.adunid === adUnit2)
+      const auctionAdUnit1 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit1)[0]
+      const auctionAdUnit2 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit2)[0]
 
       expect(auctionAdUnit1.auctionId).to.equal(auctionId)
       expect(auctionAdUnit1.bids).to.be.an('array')
@@ -409,8 +409,8 @@ describe('oolo Prebid Analytic', () => {
 
       const request = JSON.parse(server.requests[3].requestBody);
 
-      const auctionAdUnit1 = request.adUnits.find(adUnit => adUnit.adunid === adUnit1)
-      const auctionAdUnit2 = request.adUnits.find(adUnit => adUnit.adunid === adUnit2)
+      const auctionAdUnit1 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit1)[0]
+      const auctionAdUnit2 = request.adUnits.filter(adUnit => adUnit.adunid === adUnit2)[0]
 
       expect(auctionAdUnit1.code).to.equal(undefined)
       expect(auctionAdUnit1.transactionId).to.equal(undefined)
