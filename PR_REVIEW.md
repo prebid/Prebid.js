@@ -58,7 +58,27 @@ Documentation they're supposed to be following is https://docs.prebid.org/dev-do
 
 Follow steps above for general review process. In addition:
 - Try running the new user ID module with a basic config and confirm it hits the endpoint and stores the results.
-- (under construction)
+- the filename should be camel case ending with `IdSystem` (e.g. `myCompanyIdSystem.js`)
+- the `const MODULE_NAME` value should be camel case ending with `Id` (e.g. `myCompanyId` )
+- the response of the `decode` method should be an object with the key being ideally camel case similar to the module name and ending in `id` or `Id`, but in some cases this value is a shortened name and sometimes with the `id` part being all lowercase, provided there are no other uppercase letters. if there's no id or it's an invalid object, the response should be `undefined`. example "valid" values (although this is more style than a requirement)
+   - `mcid`
+   - `mcId`
+   - `myCompanyId`
+- make sure they've added references of their new module everywhere required:
+  - modules/.submodules.json
+  - modules/userId/eids.js
+  - modules/userId/eids.md
+  - modules/userId/userId.md
+- tests can go either within the userId_spec.js file or in their own _spec file if they wish
+- GVLID is recommended in the *IdSystem file if they operate in EU
+- make sure example configurations align to the actual code (some modules use the userId storage settings and allow pub configuration, while others handle reading/writing cookies on their own, so should not include the storage params in examples)
+- the 3 available methods (getId, extendId, decode) should be used as they were intended
+  - decode (required method) should not be making requests to retrieve a new ID, it should just be decoding a response
+  - extendId (optional method) should not be making requests to retrieve a new ID, it should just be adding additional data to the id object
+  - getId (required method) should be the only method that gets a new ID (from ajax calls or a cookie/local storage). this ensures that decode and extend do not unnecessarily delay the auction in places where it is not expected.
+- in the eids.js file, the source should be the actual domain of the provider, not a made up domain.
+- in the eids.js file, the key in the array should be the same value as the key in the decode function
+- make sure all supported config params align in the submodule js file and the docs / examples
 
 ### Reviewing a New or Updated Real-Time-Data Sub-Module
 Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/add-rtd-submodule.html
