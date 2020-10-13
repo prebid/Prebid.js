@@ -31,7 +31,7 @@ function areCookiesWriteable() {
 }
 
 function extractProtocolHost (url, returnOnlyHost = false) {
-  const parsedUrl = utils.parseUrl(url)
+  const parsedUrl = utils.parseUrl(url, {noDecodeWholeURL: true})
   return returnOnlyHost
     ? `${parsedUrl.hostname}`
     : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
