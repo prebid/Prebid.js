@@ -283,6 +283,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r.site = {};
   r.ext = {};
   r.ext.source = 'prebid';
+  r.ext.ixdiag = {};
 
   // if an schain is provided, send it along
   if (validBidRequests[0].schain) {
@@ -356,6 +357,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (typeof otherIxConfig.timeout === 'number') {
       payload.t = otherIxConfig.timeout;
     }
+
+    if (typeof otherIxConfig.detectMissingSizes === 'boolean') {
+      r.ext.ixdiag.dms = otherIxConfig.detectMissingSizes;
+    } else {
+      r.ext.ixdiag.dms = true;
+    }
   }
 
   // Use the siteId in the first bid request as the main siteId.
@@ -375,37 +382,54 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     data: payload
   };
 
-  const BASE_REQ_SIZE = new Blob([`?${request.url}${utils.parseQueryStringParameters({...request.data, r: JSON.stringify(r)})}`]).size;
+  const BASE_REQ_SIZE = new Blob([`${request.url}${utils.parseQueryStringParameters({...request.data, r: JSON.stringify(r)})}`]).size;
   let currReqSize = BASE_REQ_SIZE;
 
-  r.imp = [];
   const MAX_REQ_SIZE = 8000;
   const MAX_REQ_LIMIT = 4;
-  let cygnusSeq = 0;
-
+  let sn = 0;
+  let msi = 0;
+  let msd = 0;
+  r.ext.ixdiag.msd = 0;
+  r.ext.ixdiag.msi = 0;
+  r.imp = [];
   let i = 0;
   const transactionIds = Object.keys(impressions);
   let currMissingImps = [];
 
-  while (i < transactionIds.length && cygnusSeq < MAX_REQ_LIMIT) {
+  while (i < transactionIds.length && requests.length < MAX_REQ_LIMIT) {
+    if (impressions[transactionIds[i]].hasOwnProperty('missingCount')) {
+      msd = impressions[transactionIds[i]].missingCount;
+    }
+
     trimImpressions(impressions[transactionIds[i]], MAX_REQ_SIZE - BASE_REQ_SIZE);
+
+    if (impressions[transactionIds[i]].hasOwnProperty('missingImps')) {
+      msi = impressions[transactionIds[i]].missingImps.length;
+    }
+
     let currImpsSize = new Blob([encodeURIComponent(JSON.stringify(impressions[transactionIds[i]]))]).size;
     currReqSize += currImpsSize;
     if (currReqSize < MAX_REQ_SIZE) {
       // pushing ix configured sizes first
       r.imp.push(...impressions[transactionIds[i]].ixImps);
+      // update msd msi
+      r.ext.ixdiag.msd += msd;
+      r.ext.ixdiag.msi += msi;
 
       if (impressions[transactionIds[i]].hasOwnProperty('missingImps')) {
         currMissingImps.push(...impressions[transactionIds[i]].missingImps);
       }
+
       i++;
     } else {
-      const clonedPayload = utils.deepClone(payload);
       // pushing missing sizes after configured ones
+      const clonedPayload = utils.deepClone(payload);
+
       r.imp.push(...currMissingImps);
-      clonedPayload.r = r;
-      clonedPayload.r.ext.bucketed = true;
-      clonedPayload.r.ext.cygnusSeq = cygnusSeq++;
+      r.ext.ixdiag.sn = sn;
+      clonedPayload.sn = sn;
+      sn++;
       clonedPayload.r = JSON.stringify(r);
 
       requests.push({
@@ -416,16 +440,20 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       currMissingImps = [];
       currReqSize = BASE_REQ_SIZE;
       r.imp = [];
+      msd = 0;
+      msi = 0;
+      r.ext.ixdiag.msd = 0;
+      r.ext.ixdiag.msi = 0;
     }
   }
 
-  if (currReqSize > BASE_REQ_SIZE && currReqSize < MAX_REQ_SIZE && cygnusSeq < MAX_REQ_LIMIT) {
+  if (currReqSize > BASE_REQ_SIZE && currReqSize < MAX_REQ_SIZE && requests.length < MAX_REQ_LIMIT) {
     const clonedPayload = utils.deepClone(payload);
     r.imp.push(...currMissingImps);
-    clonedPayload.r = r;
+
     if (requests.length > 0) {
-      clonedPayload.r.ext.bucketed = true;
-      clonedPayload.r.ext.cygnusSeq = cygnusSeq;
+      r.ext.ixdiag.sn = sn;
+      clonedPayload.sn = sn;
     }
     clonedPayload.r = JSON.stringify(r);
 
@@ -584,6 +612,12 @@ export const spec = {
     // To capture the missing sizes i.e not configured for ix
     let missingBannerSizes = {};
 
+    const DEFAULT_IX_CONFIG = {
+      detectMissingSizes: true,
+    };
+
+    const ixConfig = {...DEFAULT_IX_CONFIG, ...config.getConfig('ix')};
+
     for (let i = 0; i < validBidRequests.length; i++) {
       validBidRequest = validBidRequests[i];
 
@@ -612,7 +646,9 @@ export const spec = {
           bannerImps[validBidRequest.transactionId].ixImps = []
         }
         bannerImps[validBidRequest.transactionId].ixImps.push(imp);
-        updateMissingSizes(validBidRequest, missingBannerSizes, imp);
+        if (ixConfig.hasOwnProperty('detectMissingSizes') && ixConfig.detectMissingSizes) {
+          updateMissingSizes(validBidRequest, missingBannerSizes, imp);
+        }
       }
     }
 
@@ -626,12 +662,14 @@ export const spec = {
         }
         if (!bannerImps[transactionId].hasOwnProperty('missingImps')) {
           bannerImps[transactionId].missingImps = [];
+          bannerImps[transactionId].missingCount = 0;
         }
 
         let origImp = missingBannerSizes[transactionId].impression;
         for (let i = 0; i < missingSizes.length; i++) {
           let newImp = createMissingBannerImp(origImp, missingSizes[i]);
           bannerImps[transactionId].missingImps.push(newImp);
+          bannerImps[transactionId].missingCount++;
         }
       }
     }

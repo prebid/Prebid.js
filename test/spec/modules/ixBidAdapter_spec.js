@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/ixBidAdapter.js';
 
-describe('IndexexchangeAdapter', function () {
+describe.only('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/cygnus';
   const VIDEO_ENDPOINT_VERSION = 8.1;
   const BANNER_ENDPOINT_VERSION = 7.2;
@@ -1037,7 +1037,7 @@ describe('IndexexchangeAdapter', function () {
       expect(videoImp.video.h).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[1]);
     });
 
-    it('single request under 8k size limit for large ad unit', function() {
+    it('single request under 8k size limit for large ad unit', function () {
       const options = {};
       const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid1.mediaTypes.banner.sizes = div_many_sizes;
@@ -1060,6 +1060,8 @@ describe('IndexexchangeAdapter', function () {
       const requests = spec.buildRequests([bid1, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
       expect(requests).to.be.an('array');
       expect(requests).to.have.lengthOf(2);
+      expect(requests[0].data.sn).to.be.equal(0);
+      expect(requests[1].data.sn).to.be.equal(1);
     });
 
     it('6 ad units should generate only 4 requests', function () {
@@ -1090,18 +1092,19 @@ describe('IndexexchangeAdapter', function () {
       expect(requests).to.be.an('array');
       expect(requests).to.have.lengthOf(4);
 
-      // check if bucketed flag is set and seq number increases
+      // check if seq number increases
       for (var i = 0; i < requests.length; i++) {
         const reqSize = new Blob([`${requests[i].url}?${utils.parseQueryStringParameters(requests[i].data)}`]).size;
         expect(reqSize).to.be.lessThan(8000);
         let payload = JSON.parse(requests[i].data.r);
-        expect(payload.ext.bucketed).to.equal(true);
-        expect(payload.ext.cygnusSeq).to.equal(i);
+        if (requests.length > 1) {
+          expect(requests[i].data.sn).to.equal(i);
+        }
         expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       }
     });
 
-    it('multiple ad units in one request', function() {
+    it('multiple ad units in one request', function () {
       const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid1.mediaTypes.banner.sizes = [[300, 250], [300, 600], [100, 200]];
       bid1.params.siteId = '121';
@@ -1200,6 +1203,28 @@ describe('IndexexchangeAdapter', function () {
 
       expect(impressions).to.be.an('array');
       expect(impressions).to.have.lengthOf(1);
+    });
+
+    describe('detect missing sizes', function () {
+      beforeEach(function () {
+        config.setConfig({
+          ix: {
+            detectMissingSizes: false
+          }
+        });
+      })
+
+      it('request should not contain missing sizes if detectMissingSizes = false', function () {
+        const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+        bid1.mediaTypes.banner.sizes = div_many_sizes;
+
+        const requests = spec.buildRequests([bid1, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
+
+        const impressions = JSON.parse(requests[0].data.r).imp;
+
+        expect(impressions).to.be.an('array');
+        expect(impressions).to.have.lengthOf(2);
+      });
     });
   });
 
