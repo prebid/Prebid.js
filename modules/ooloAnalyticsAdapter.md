@@ -13,7 +13,7 @@ Analytics adapter for oolo. Contact admin@oolo.io for information.
 pbjs.enableAnalytics({
   provider: 'oolo',
   options: {
-    pid: id_provided_by_oolo
+    pid: 12345 // id provided by oolo
   }
 })
 ```
