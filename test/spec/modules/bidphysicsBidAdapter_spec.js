@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/bidphysicsBidAdapter';
+import {spec} from 'modules/bidphysicsBidAdapter.js';
 
 const REQUEST = {
   'bidderCode': 'bidphysics',
@@ -50,7 +50,7 @@ const RESPONSE = {
             'adm': '<script>adm</script>',
             'adid': '144762342',
             'adomain': [
-              'http://dummydomain.com'
+              'https://dummydomain.com'
             ],
             'iurl': 'iurl',
             'cid': '109',
@@ -79,7 +79,7 @@ const RESPONSE = {
             'adm': '<script>adm2</script>',
             'adid': '144762342',
             'adomain': [
-              'http://dummydomain.com'
+              'https://dummydomain.com'
             ],
             'iurl': 'iurl',
             'cid': '109',

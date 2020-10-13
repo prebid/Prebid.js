@@ -1,7 +1,6 @@
 import {expect} from 'chai';
-import {spec, _getUrlVars} from 'modules/7xbidBidAdapter';
-import * as utils from 'src/utils';
-import {config} from 'src/config';
+import {spec, _getUrlVars} from 'modules/7xbidBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 const BASE_URI = '//bidder.7xbid.com/api/v1/prebid/banner'
 const NATIVE_BASE_URI = '//bidder.7xbid.com/api/v1/prebid/native'

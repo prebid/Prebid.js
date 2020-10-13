@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { isInteger } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { isInteger } from '../src/utils.js';
 
 const BIDDER_CODE = 'getintent';
 const IS_NET_REVENUE = true;
@@ -83,7 +83,7 @@ export const spec = {
 }
 
 function buildUrl(bid) {
-  return '//' + BID_HOST + (bid.is_video ? BID_VIDEO_PATH : BID_BANNER_PATH);
+  return 'https://' + BID_HOST + (bid.is_video ? BID_VIDEO_PATH : BID_BANNER_PATH);
 }
 
 /**

@@ -1,11 +1,11 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import * as url from '../src/url';
-import { BANNER, NATIVE } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'medianet';
-const BID_URL = '//prebid.media.net/rtb/prebid';
+const BID_URL = 'https://prebid.media.net/rtb/prebid';
 const SLOT_VISIBILITY = {
   NOT_DETERMINED: 0,
   ABOVE_THE_FOLD: 1,
@@ -17,16 +17,32 @@ const EVENTS = {
 };
 const EVENT_PIXEL_URL = 'qsearch-a.akamaihd.net/log';
 
-let mnData = {};
+let refererInfo = getRefererInfo();
 
-$$PREBID_GLOBAL$$.medianetGlobals = {};
+let mnData = {};
+mnData.urlData = {
+  domain: utils.parseUrl(refererInfo.referer).hostname,
+  page: refererInfo.referer,
+  isTop: refererInfo.reachedTop
+}
+
+$$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
+
+function getTopWindowReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return document.referrer;
+  }
+}
 
 function siteDetails(site) {
   site = site || {};
   let siteData = {
-    domain: site.domain || utils.getTopWindowLocation().host,
-    page: site.page || utils.getTopWindowUrl(),
-    ref: site.ref || utils.getTopWindowReferrer()
+    domain: site.domain || mnData.urlData.domain,
+    page: site.page || mnData.urlData.page,
+    ref: site.ref || getTopWindowReferrer(),
+    isTop: site.isTop || mnData.urlData.isTop
   };
 
   return Object.assign(siteData, getPageMeta());
@@ -97,8 +113,15 @@ function getWindowSize() {
   }
 }
 
-function getCoordinates(id) {
-  const element = document.getElementById(id);
+function getCoordinates(adUnitCode) {
+  let element = document.getElementById(adUnitCode);
+  if (!element && adUnitCode.indexOf('/') !== -1) {
+    // now it means that adUnitCode is GAM AdUnitPath
+    const {divId} = utils.getGptSlotInfoForAdUnitCode(adUnitCode);
+    if (utils.isStr(divId)) {
+      element = document.getElementById(divId);
+    }
+  }
   if (element && element.getBoundingClientRect) {
     const rect = element.getBoundingClientRect();
     let coordinates = {};
@@ -115,20 +138,29 @@ function getCoordinates(id) {
   return null;
 }
 
-function extParams(params, gdpr) {
-  let ext = {
-    customer_id: params.cid,
-    prebid_version: $$PREBID_GLOBAL$$.version
-  };
-  ext.gdpr_applies = !!(gdpr && gdpr.gdprApplies);
-  if (ext.gdpr_applies) {
-    ext.gdpr_consent_string = gdpr.consentString || '';
-  }
-  let windowSize = spec.getWindowSize();
-  if (windowSize.w !== -1 && windowSize.h !== -1) {
-    ext.screen = windowSize;
-  }
-  return ext;
+function extParams(bidRequest, bidderRequests) {
+  const params = utils.deepAccess(bidRequest, 'params');
+  const gdpr = utils.deepAccess(bidderRequests, 'gdprConsent');
+  const uspConsent = utils.deepAccess(bidderRequests, 'uspConsent');
+  const userId = utils.deepAccess(bidRequest, 'userId');
+  const sChain = utils.deepAccess(bidRequest, 'schain') || {};
+  const windowSize = spec.getWindowSize();
+  const gdprApplies = !!(gdpr && gdpr.gdprApplies);
+  const uspApplies = !!(uspConsent);
+  const coppaApplies = !!(config.getConfig('coppa'));
+  return Object.assign({},
+    { customer_id: params.cid },
+    { prebid_version: $$PREBID_GLOBAL$$.version },
+    { gdpr_applies: gdprApplies },
+    (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
+    { usp_applies: uspApplies },
+    uspApplies && { usp_consent_string: uspConsent || '' },
+    {coppa_applies: coppaApplies},
+    windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
+    userId && { user_id: userId },
+    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true },
+    !utils.isEmpty(sChain) && {schain: sChain}
+  );
 }
 
 function slotParams(bidRequest) {
@@ -141,8 +173,18 @@ function slotParams(bidRequest) {
     },
     all: bidRequest.params
   };
-  if (bidRequest.sizes.length > 0) {
-    params.banner = transformSizes(bidRequest.sizes);
+  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
+
+  const videoInMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
+  const videoInParams = utils.deepAccess(bidRequest, 'params.video') || {};
+  const videoCombinedObj = Object.assign({}, videoInParams, videoInMediaType);
+
+  if (!utils.isEmpty(videoCombinedObj)) {
+    params.video = videoCombinedObj;
+  }
+
+  if (bannerSizes.length > 0) {
+    params.banner = transformSizes(bannerSizes);
   }
   if (bidRequest.nativeParams) {
     try {
@@ -218,10 +260,14 @@ function normalizeCoordinates(coordinates) {
   }
 }
 
+function getBidderURL(cid) {
+  return BID_URL + '?cid=' + encodeURIComponent(cid);
+}
+
 function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site),
-    ext: extParams(bidRequests[0].params, bidderRequests.gdprConsent),
+    ext: extParams(bidRequests[0], bidderRequests),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
     tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
@@ -252,8 +298,9 @@ function getLoggingData(event, data) {
   params.cid = $$PREBID_GLOBAL$$.medianetGlobals.cid || '';
   params.crid = data.map((adunit) => utils.deepAccess(adunit, 'params.0.crid') || adunit.adUnitCode).join('|');
   params.adunit_count = data.length || 0;
-  params.dn = utils.getTopWindowLocation().host || '';
-  params.requrl = utils.getTopWindowUrl() || '';
+  params.dn = mnData.urlData.domain || '';
+  params.requrl = mnData.urlData.page || '';
+  params.istop = mnData.urlData.isTop || '';
   params.event = event.name || '';
   params.value = event.value || '';
   params.rd = event.related_data || '';
@@ -267,7 +314,7 @@ function logEvent (event, data) {
     hostname: EVENT_PIXEL_URL,
     search: getLoggingData(event, data)
   };
-  utils.triggerPixel(url.format(getParams));
+  utils.triggerPixel(utils.buildUrl(getParams));
 }
 
 function clearMnData() {
@@ -277,8 +324,9 @@ function clearMnData() {
 export const spec = {
 
   code: BIDDER_CODE,
+  gvlid: 142,
 
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -313,7 +361,7 @@ export const spec = {
     let payload = generatePayload(bidRequests, bidderRequests);
     return {
       method: 'POST',
-      url: BID_URL,
+      url: getBidderURL(payload.ext.customer_id),
       data: JSON.stringify(payload)
     };
   },

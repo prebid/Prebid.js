@@ -3,7 +3,7 @@
 ```
 Module Name: Mars Media Group (mars.media) Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: vladi@mars.media
+Maintainer: prebid@mars.media
 ```
 
 # Description
@@ -14,19 +14,34 @@ Prebid adapter for Mars Media Group RTB. Requires approval and account setup.
 
 ## Web
 ```
-    var adUnits = [
-           {
-               code: 'test-div',
-               sizes: [[300, 250]],
-               bids: [
-                   {
-                       bidder: "marsmedia",
-                       params: {
-                           publisherID: 9999, 
-                           floor: 0.11
-                       }
-                   }
-               ]
-           }
-       ];
+    var adUnits = [{
+        code: 'banner-ad-div',
+        mediaTypes: {
+            banner: {
+                sizes: [
+                    [300, 200] // banner sizes
+                ],
+            }
+        },
+        bids: [{
+            bidder: 'marsmedia',
+            params: {
+                zoneId: 9999
+            }
+        }]
+    }, {
+        code: 'video-ad-player',
+        mediaTypes: {
+            video: {
+                context: 'instream', // or 'outstream'
+                playerSize: [640, 480] // video player size        	
+            }
+        },
+        bids: [{
+            bidder: 'marsmedia',
+            params: {
+                zoneId: 9999
+            }
+        }]
+    }];
 ```

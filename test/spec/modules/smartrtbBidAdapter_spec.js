@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/smartrtbBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
+import { spec, _getPlatform } from 'modules/smartrtbBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const br = {
   body: {
@@ -13,8 +13,8 @@ const br = {
       crid: 'crid'
     }],
     pixels: [
-      { type: 'image', url: 'http://smrtb.com/image' },
-      { type: 'iframe', url: 'http://smrtb.com/iframe' }
+      { type: 'image', url: 'https://smrtb.com/image' },
+      { type: 'iframe', url: 'https://smrtb.com/iframe' }
     ]
   }
 }
@@ -30,8 +30,8 @@ const vr = {
       crid: 'video_crid'
     }],
     pixels: [
-      { type: 'image', url: 'http://smrtb.com/image' },
-      { type: 'iframe', url: 'http://smrtb.com/iframe' }
+      { type: 'image', url: 'https://smrtb.com/image' },
+      { type: 'iframe', url: 'https://smrtb.com/iframe' }
     ]
   }
 }

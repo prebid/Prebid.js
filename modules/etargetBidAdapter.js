@@ -1,7 +1,7 @@
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'etarget';
 const countryMap = {
@@ -39,7 +39,7 @@ export const spec = {
       request.push(formRequestUrl(reqParams));
     }
 
-    request.unshift('//' + lastCountry + '.search.etargetnet.com/hb/?hbget=1');
+    request.unshift('https://' + lastCountry + '.search.etargetnet.com/hb/?hbget=1');
     netRevenue = 'net';
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {

@@ -1,10 +1,10 @@
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes'
-import * as utils from '../src/utils'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import * as utils from '../src/utils.js'
 
 const BIDDER_CODE = 'decenterads'
-const URL = '//supply.decenterads.com/?c=o&m=multi'
-const URL_SYNC = '//supply.decenterads.com/?c=o&m=cookie'
+const URL = 'https://supply.decenterads.com/?c=o&m=multi'
+const URL_SYNC = 'https://supply.decenterads.com/?c=o&m=cookie'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -22,7 +22,7 @@ export const spec = {
       winTop = window.top
     } catch (e) { utils.logMessage(e) }
 
-    const location = utils.getTopWindowLocation()
+    const location = utils.getWindowLocation()
     const placements = []
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -43,7 +43,7 @@ export const spec = {
         deviceHeight: winTop.screen.height,
         language: (navigator && navigator.language) ? navigator.language : '',
         secure: +(location.protocol === 'https:'),
-        host: location.host,
+        host: location.hostname,
         page: location.pathname,
         placements: placements
       }

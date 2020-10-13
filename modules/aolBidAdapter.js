@@ -1,9 +1,10 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const AOL_BIDDERS_CODES = {
   AOL: 'aol',
+  VERIZON: 'verizon',
   ONEMOBILE: 'onemobile',
   ONEDISPLAY: 'onedisplay'
 };
@@ -48,10 +49,10 @@ const NUMERIC_VALUES = {
 };
 
 function template(strings, ...keys) {
-  return function(...values) {
+  return function (...values) {
     let dict = values[values.length - 1] || {};
     let result = [strings[0]];
-    keys.forEach(function(key, i) {
+    keys.forEach(function (key, i) {
       let value = utils.isInteger(key) ? values[key] : dict[key];
       result.push(value, strings[i + 1]);
     });
@@ -59,12 +60,16 @@ function template(strings, ...keys) {
   };
 }
 
-function _isMarketplaceBidder(bidder) {
-  return bidder === AOL_BIDDERS_CODES.AOL || bidder === AOL_BIDDERS_CODES.ONEDISPLAY;
+function _isMarketplaceBidder(bidderCode) {
+  return bidderCode === AOL_BIDDERS_CODES.AOL ||
+    bidderCode === AOL_BIDDERS_CODES.VERIZON ||
+    bidderCode === AOL_BIDDERS_CODES.ONEDISPLAY;
 }
 
 function _isOneMobileBidder(bidderCode) {
-  return bidderCode === AOL_BIDDERS_CODES.AOL || bidderCode === AOL_BIDDERS_CODES.ONEMOBILE;
+  return bidderCode === AOL_BIDDERS_CODES.AOL ||
+    bidderCode === AOL_BIDDERS_CODES.VERIZON ||
+    bidderCode === AOL_BIDDERS_CODES.ONEMOBILE;
 }
 
 function _isNexageRequestPost(bid) {
@@ -100,13 +105,22 @@ function resolveEndpointCode(bid) {
 
 export const spec = {
   code: AOL_BIDDERS_CODES.AOL,
-  aliases: [AOL_BIDDERS_CODES.ONEMOBILE, AOL_BIDDERS_CODES.ONEDISPLAY],
+  gvlid: 25,
+  aliases: [
+    AOL_BIDDERS_CODES.ONEMOBILE,
+    AOL_BIDDERS_CODES.ONEDISPLAY,
+    AOL_BIDDERS_CODES.VERIZON
+  ],
   supportedMediaTypes: [BANNER],
   isBidRequestValid(bid) {
     return isMarketplaceBid(bid) || isMobileBid(bid);
   },
   buildRequests(bids, bidderRequest) {
-    let consentData = bidderRequest ? bidderRequest.gdprConsent : null;
+    const consentData = {};
+    if (bidderRequest) {
+      consentData.gdpr = bidderRequest.gdprConsent;
+      consentData.uspConsent = bidderRequest.uspConsent;
+    }
 
     return bids.map(bid => {
       const endpointCode = resolveEndpointCode(bid);
@@ -116,7 +130,7 @@ export const spec = {
       }
     });
   },
-  interpretResponse({body}, bidRequest) {
+  interpretResponse({ body }, bidRequest) {
     if (!body) {
       utils.logError('Empty bid response', bidRequest.bidderCode, body);
     } else {
@@ -211,11 +225,11 @@ export const spec = {
     }));
   },
   buildOneMobileGetUrl(bid, consentData) {
-    let {dcn, pos, ext} = bid.params;
+    let { dcn, pos, ext } = bid.params;
     let nexageApi = this.buildOneMobileBaseUrl(bid);
     if (dcn && pos) {
       let dynamicParams = this.formatOneMobileDynamicParams(ext, consentData);
-      nexageApi += nexageGetApiTemplate({dcn, pos, dynamicParams});
+      nexageApi += nexageGetApiTemplate({ dcn, pos, dynamicParams });
     }
     return nexageApi;
   },
@@ -230,7 +244,7 @@ export const spec = {
     }
     return (url.indexOf('//') === 0) ? `${DEFAULT_PROTO}:${url}` : `${DEFAULT_PROTO}://${url}`;
   },
-  formatMarketplaceDynamicParams(params = {}, consentData) {
+  formatMarketplaceDynamicParams(params = {}, consentData = {}) {
     let queryParams = {};
 
     if (params.bidFloor) {
@@ -247,7 +261,7 @@ export const spec = {
 
     return paramsFormatted;
   },
-  formatOneMobileDynamicParams(params = {}, consentData) {
+  formatOneMobileDynamicParams(params = {}, consentData = {}) {
     if (this.isSecureProtocol()) {
       params.secure = NUMERIC_VALUES.TRUE;
     }
@@ -261,32 +275,27 @@ export const spec = {
 
     return paramsFormatted;
   },
-  buildOpenRtbRequestData(bid, consentData) {
+  buildOpenRtbRequestData(bid, consentData = {}) {
     let openRtbObject = {
       id: bid.params.id,
       imp: bid.params.imp
     };
 
-    if (this.isConsentRequired(consentData)) {
-      openRtbObject.regs = {
-        ext: {
-          gdpr: NUMERIC_VALUES.TRUE
-        }
-      };
-
-      if (consentData.consentString) {
-        openRtbObject.user = {
-          ext: {
-            consent: consentData.consentString
-          }
-        };
+    if (this.isEUConsentRequired(consentData)) {
+      utils.deepSetValue(openRtbObject, 'regs.ext.gdpr', NUMERIC_VALUES.TRUE);
+      if (consentData.gdpr.consentString) {
+        utils.deepSetValue(openRtbObject, 'user.ext.consent', consentData.gdpr.consentString);
       }
+    }
+
+    if (consentData.uspConsent) {
+      utils.deepSetValue(openRtbObject, 'regs.ext.us_privacy', consentData.uspConsent);
     }
 
     return openRtbObject;
   },
-  isConsentRequired(consentData) {
-    return !!(consentData && consentData.gdprApplies);
+  isEUConsentRequired(consentData) {
+    return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
   },
   formatKeyValues(keyValues) {
     let keyValuesHash = {};
@@ -300,12 +309,16 @@ export const spec = {
   formatConsentData(consentData) {
     let params = {};
 
-    if (this.isConsentRequired(consentData)) {
+    if (this.isEUConsentRequired(consentData)) {
       params.gdpr = NUMERIC_VALUES.TRUE;
 
-      if (consentData.consentString) {
-        params.euconsent = consentData.consentString;
+      if (consentData.gdpr.consentString) {
+        params.euconsent = consentData.gdpr.consentString;
       }
+    }
+
+    if (consentData.uspConsent) {
+      params.us_privacy = consentData.uspConsent;
     }
 
     return params;
@@ -353,7 +366,7 @@ export const spec = {
       cpm = bidData.price;
 
       if (cpm === null || isNaN(cpm)) {
-        utils.logError('Invalid price in bid response', AOL_BIDDERS_CODES.AOL, bid);
+        utils.logError('Invalid price in bid response', AOL_BIDDERS_CODES.AOL, bidData);
         return;
       }
     }

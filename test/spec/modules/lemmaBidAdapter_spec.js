@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/lemmaBidAdapter';
-import * as utils from 'src/utils';
+import { spec } from 'modules/lemmaBidAdapter.js';
+import * as utils from 'src/utils.js';
 const constants = require('src/constants.json');
 
 describe('lemmaBidAdapter', function() {
@@ -151,7 +151,7 @@ describe('lemmaBidAdapter', function() {
       });
       it('Endpoint checking', function() {
         var request = spec.buildRequests(bidRequests);
-        expect(request.url).to.equal('//ads.lemmatechnologies.com/lemma/servad?pid=1001&aid=1');
+        expect(request.url).to.equal('https://ads.lemmatechnologies.com/lemma/servad?pid=1001&aid=1');
         expect(request.method).to.equal('POST');
       });
       it('Request params check', function() {

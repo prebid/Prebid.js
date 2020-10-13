@@ -75,7 +75,7 @@ describe('mobfox adapter tests', function () {
       body: {
         request: {
           clicktype: 'safari',
-          clickurl: 'http://tokyo-my.mobfox.com/exchange.click.php?h=494ef76d5b0287a8b5ac8724855cb5e0',
+          clickurl: 'https://tokyo-my.mobfox.com/exchange.click.php?h=494ef76d5b0287a8b5ac8724855cb5e0',
           cpmPrice: 50,
           htmlString: 'test',
           refresh: '30',
@@ -104,7 +104,7 @@ describe('mobfox adapter tests', function () {
       expect(bidResponses[0].currency).to.equal('USD');
       expect(bidResponses[0].height).to.equal('480');
       expect(bidResponses[0].netRevenue).to.equal(true);
-      expect(bidResponses[0].referrer).to.equal('http://tokyo-my.mobfox.com/exchange.click.php?h=494ef76d5b0287a8b5ac8724855cb5e0');
+      expect(bidResponses[0].referrer).to.equal('https://tokyo-my.mobfox.com/exchange.click.php?h=494ef76d5b0287a8b5ac8724855cb5e0');
       expect(bidResponses[0].ttl).to.equal(360);
       expect(bidResponses[0].width).to.equal('320');
     });

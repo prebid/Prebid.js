@@ -1,13 +1,13 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { VIDEO, BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'trustx';
-const ENDPOINT_URL = '//sofia.trustx.org/hb';
+const ENDPOINT_URL = 'https://sofia.trustx.org/hb';
 const TIME_TO_LIVE = 360;
-const ADAPTER_SYNC_URL = '//sofia.trustx.org/push_sync';
-const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const ADAPTER_SYNC_URL = 'https://sofia.trustx.org/push_sync';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -120,6 +120,9 @@ export const spec = {
         payload.gdpr_applies =
           (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
             ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
+      if (bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
       }
     }
 

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/padsquadBidAdapter';
+import {spec} from 'modules/padsquadBidAdapter.js';
 
 const REQUEST = {
   'bidderCode': 'padsquad',
@@ -50,7 +50,7 @@ const RESPONSE = {
             'adm': '<script>adm</script>',
             'adid': '144762342',
             'adomain': [
-              'http://dummydomain.com'
+              'https://dummydomain.com'
             ],
             'iurl': 'iurl',
             'cid': '109',
@@ -79,7 +79,7 @@ const RESPONSE = {
             'adm': '<script>adm2</script>',
             'adid': '144762342',
             'adomain': [
-              'http://dummydomain.com'
+              'https://dummydomain.com'
             ],
             'iurl': 'iurl',
             'cid': '109',
@@ -212,6 +212,7 @@ describe('Padsquad bid adapter', function () {
         expect(bids[index]).to.have.property('height', RESPONSE.body.seatbid[0].bid[index].h);
         expect(bids[index]).to.have.property('ad', RESPONSE.body.seatbid[0].bid[index].adm);
         expect(bids[index]).to.have.property('creativeId', RESPONSE.body.seatbid[0].bid[index].crid);
+        expect(bids[index].meta.advertiserDomains).to.deep.equal(RESPONSE.body.seatbid[0].bid[index].adomain);
         expect(bids[index]).to.have.property('ttl', 30);
         expect(bids[index]).to.have.property('netRevenue', true);
       }

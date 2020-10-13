@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = '7xbid';
 const BIDDER_ALIAS = '7xb';
@@ -10,6 +10,10 @@ const SUPPORTED_MEDIA_TYPES = ['banner', 'native'];
 const SUPPORTED_CURRENCIES = ['USD', 'JPY'];
 const DEFAULT_CURRENCY = 'JPY';
 const NET_REVENUE = true;
+
+/**
+  * updated to support prebid 3.0 - remove utils.getTopWindowUrl()
+  */
 
 const _encodeURIComponent = function(a) {
   let b = window.encodeURIComponent(a);
@@ -57,15 +61,13 @@ export const spec = {
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
     }
-    var g = (typeof (geparams) !== 'undefined' && typeof (geparams) == 'object' && geparams) ? geparams : {};
     validBidRequests.forEach((bid, i) => {
       let endpoint = ENDPOINT_BANNER
       let data = {
         'placementid': bid.params.placementId,
         'cur': bid.params.hasOwnProperty('currency') ? bid.params.currency : DEFAULT_CURRENCY,
         'ua': navigator.userAgent,
-        'adtk': _encodeURIComponent(g.lat ? '0' : '1'),
-        'loc': utils.getTopWindowUrl(),
+        'loc': utils.deepAccess(bidderRequest, 'refererInfo.referer'),
         'topframe': (window.parent === window.self) ? 1 : 0,
         'sw': screen && screen.width,
         'sh': screen && screen.height,

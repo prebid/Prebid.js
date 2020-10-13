@@ -1,79 +1,107 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'adman';
+const AD_URL = 'https://pub.admanmedia.com/?c=o&m=multi';
+const URL_SYNC = 'https://pub.admanmedia.com/?c=o&m=sync';
+
+function isBidResponseValid(bid) {
+  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
+    !bid.ttl || !bid.currency) {
+    return false;
+  }
+  switch (bid['mediaType']) {
+    case BANNER:
+      return Boolean(bid.width && bid.height && bid.ad);
+    case VIDEO:
+      return Boolean(bid.vastUrl);
+    case NATIVE:
+      return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
+    default:
+      return false;
+  }
+}
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['video', 'banner'],
-  isBidRequestValid: function(bid) {
-    const isValid = _validateId(utils.deepAccess(bid, 'params.id'));
-    if (!isValid) {
-      utils.logError('Adman id parameter is required. Bid aborted.');
-    }
-    return isValid;
-  },
-  buildRequests: function(validBidRequests, bidderRequest) {
-    const ENDPOINT_URL = '//bidtor.admanmedia.com/prebid';
-    const bids = validBidRequests.map(buildRequestObject);
-    const payload = {
-      referer: utils.getTopWindowUrl(),
-      bids,
-      deviceWidth: screen.width
-    };
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr = {
-        consent: bidderRequest.gdprConsent.consentString,
-        applies: bidderRequest.gdprConsent.gdprApplies
-      };
-    } else {
-      payload.gdpr = {
-        consent: ''
+  isBidRequestValid: (bid) => {
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.placementId));
+  },
+
+  buildRequests: (validBidRequests = [], bidderRequest) => {
+    let winTop = window;
+    let location;
+    try {
+      location = new URL(bidderRequest.refererInfo.referer)
+      winTop = window.top;
+    } catch (e) {
+      location = winTop.location;
+      utils.logMessage(e);
+    };
+    let placements = [];
+    let request = {
+      'deviceWidth': winTop.screen.width,
+      'deviceHeight': winTop.screen.height,
+      'language': (navigator && navigator.language) ? navigator.language : '',
+      'secure': 1,
+      'host': location.host,
+      'page': location.pathname,
+      'placements': placements
+    };
+    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
+    if (bidderRequest) {
+      if (bidderRequest.uspConsent) {
+        request.ccpa = bidderRequest.uspConsent;
+      }
+      if (bidderRequest.gdprConsent) {
+        request.gdpr = bidderRequest.gdprConsent
       }
     }
+    const len = validBidRequests.length;
 
-    const payloadString = JSON.stringify(payload);
+    for (let i = 0; i < len; i++) {
+      let bid = validBidRequests[i];
+      let traff = bid.params.traffic || BANNER
+
+      placements.push({
+        placementId: bid.params.placementId,
+        bidId: bid.bidId,
+        sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
+        traffic: traff
+      });
+      if (bid.schain) {
+        placements.schain = bid.schain;
+      }
+    }
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
-      data: payloadString,
+      url: AD_URL,
+      data: request
     };
   },
-  interpretResponse: function(serverResponse) {
+
+  interpretResponse: (serverResponse) => {
+    let response = [];
     serverResponse = serverResponse.body;
-    if (serverResponse && typeof serverResponse.bids === 'object') {
-      return serverResponse.bids;
+    for (let i = 0; i < serverResponse.length; i++) {
+      let resItem = serverResponse[i];
+      if (isBidResponseValid(resItem)) {
+        response.push(resItem);
+      }
     }
-    return [];
+    return response;
   },
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: '//cs.admanmedia.com/sync_tag/html'
-      }];
-    }
+
+  getUserSyncs: (syncOptions, serverResponses) => {
+    return [{
+      type: 'image',
+      url: URL_SYNC
+    }];
   }
+
 };
-
-function buildRequestObject(bid) {
-  return {
-    params: {
-      id: utils.getValue(bid.params, 'id'),
-      bidId: bid.bidId
-    },
-    sizes: bid.sizes,
-    bidId: utils.getBidIdParameter('bidId', bid),
-    bidderRequestId: utils.getBidIdParameter('bidderRequestId', bid),
-    adUnitCode: utils.getBidIdParameter('adUnitCode', bid),
-    auctionId: utils.getBidIdParameter('auctionId', bid),
-    transactionId: utils.getBidIdParameter('transactionId', bid)
-  };
-}
-
-function _validateId(id = '') {
-  return (id.length === 8);
-}
 
 registerBidder(spec);

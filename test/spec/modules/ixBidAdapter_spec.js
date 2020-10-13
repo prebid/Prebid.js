@@ -1,12 +1,31 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { spec } from 'modules/ixBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec } from 'modules/ixBidAdapter.js';
 
 describe('IndexexchangeAdapter', function () {
-  const IX_SECURE_ENDPOINT = 'https://as-sec.casalemedia.com/cygnus';
-  const BIDDER_VERSION = 7.2;
+  const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/cygnus';
+  const VIDEO_ENDPOINT_VERSION = 8.1;
+  const BANNER_ENDPOINT_VERSION = 7.2;
+
+  const SAMPLE_SCHAIN = {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'indirectseller.com',
+        'sid': '00001',
+        'hp': 1
+      },
+
+      {
+        'asi': 'indirectseller-2.com',
+        'sid': '00002',
+        'hp': 2
+      }
+    ]
+  };
 
   const DEFAULT_BANNER_VALID_BID = [
     {
@@ -25,20 +44,42 @@ describe('IndexexchangeAdapter', function () {
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
-      auctionId: '1aa2bb3cc4dd'
+      auctionId: '1aa2bb3cc4dd',
+      schain: SAMPLE_SCHAIN
     }
   ];
-  const DEFAULT_BANNER_OPTION = {
-    gdprConsent: {
-      gdprApplies: true,
-      consentString: '3huaa11=qu3198ae',
-      vendorData: {}
-    },
-    refererInfo: {
-      referer: 'http://www.prebid.org',
-      canonicalUrl: 'http://www.prebid.org/the/link/to/the/page'
+
+  const DEFAULT_VIDEO_VALID_BID = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '456',
+        video: {
+          skippable: false,
+          mimes: [
+            'video/mp4',
+            'video/webm'
+          ],
+          minduration: 0
+        },
+        size: [400, 100]
+      },
+      sizes: [[400, 100], [200, 400]],
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [[400, 100], [200, 400]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
     }
-  };
+  ];
+
   const DEFAULT_BANNER_BID_RESPONSE = {
     cur: 'USD',
     id: '11a22b33c44d',
@@ -61,13 +102,84 @@ describe('IndexexchangeAdapter', function () {
               advbrandid: 303325,
               advbrand: 'OECTA'
             },
-            adm: '<a target="_blank" href="http://www.indexexchange.com"></a>'
+            adm: '<a target="_blank" href="https://www.indexexchange.com"></a>'
           }
         ],
         seat: '3970'
       }
     ]
   };
+
+  const DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN = {
+    cur: 'USD',
+    id: '11a22b33c44d',
+    seatbid: [
+      {
+        bid: [
+          {
+            crid: '12345',
+            adid: '14851455',
+            impid: '1a2b3c4d',
+            cid: '3051266',
+            price: 100,
+            w: 300,
+            h: 250,
+            id: '1',
+            ext: {
+              dspid: 50,
+              pricelevel: '_100',
+              advbrandid: 303325,
+              advbrand: 'OECTA'
+            },
+            adm: '<a target="_blank" href="https://www.indexexchange.com"></a>'
+          }
+        ],
+        seat: '3970'
+      }
+    ]
+  };
+
+  const DEFAULT_VIDEO_BID_RESPONSE = {
+    cur: 'USD',
+    id: '1aa2bb3cc4de',
+    seatbid: [
+      {
+        bid: [
+          {
+            crid: '12346',
+            adomain: ['www.abcd.com'],
+            adid: '14851456',
+            impid: '1a2b3c4e',
+            cid: '3051267',
+            price: 110,
+            id: '2',
+            ext: {
+              vasturl: 'www.abcd.com/vast',
+              errorurl: 'www.abcd.com/error',
+              dspid: 51,
+              pricelevel: '_110',
+              advbrandid: 303326,
+              advbrand: 'OECTB'
+            }
+          }
+        ],
+        seat: '3971'
+      }
+    ]
+  };
+
+  const DEFAULT_OPTION = {
+    gdprConsent: {
+      gdprApplies: true,
+      consentString: '3huaa11=qu3198ae',
+      vendorData: {}
+    },
+    refererInfo: {
+      referer: 'https://www.prebid.org',
+      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
+    }
+  };
+
   const DEFAULT_IDENTITY_RESPONSE = {
     IdentityIp: {
       responsePending: false,
@@ -82,6 +194,47 @@ describe('IndexexchangeAdapter', function () {
     }
   };
 
+  const DEFAULT_BIDDER_REQUEST_DATA = {
+    ac: 'j',
+    r: JSON.stringify({
+      id: '345',
+      imp: [
+        {
+          id: '1a2b3c4e',
+          video: {
+            w: 640,
+            h: 480,
+            placement: 1
+          }
+        }
+      ],
+      site: {
+        ref: 'https://ref.com/ref.html',
+        page: 'https://page.com'
+      },
+    }),
+    s: '21',
+    sd: 1,
+    t: 1000,
+    v: 8.1
+  };
+
+  const DEFAULT_USERID_DATA = {
+    idl_env: '1234-5678-9012-3456', // Liveramp
+  };
+
+  const DEFAULT_USERID_PAYLOAD = [
+    {
+      source: 'liveramp.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA.idl_env,
+        ext: {
+          rtiPartner: 'idl'
+        }
+      }]
+    }
+  ];
+
   describe('inherited functions', function () {
     it('should exists and is a function', function () {
       const adapter = newBidder(spec);
@@ -89,12 +242,33 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
-  describe('isBidRequestValid', function () {
-    it('should return true when required params found for a banner ad', function () {
-      expect(spec.isBidRequestValid(DEFAULT_BANNER_VALID_BID[0])).to.equal(true);
+  describe('getUserSync tests', function () {
+    it('UserSync test : check type = iframe, check usermatch URL', function () {
+      const syncOptions = {
+        'iframeEnabled': true
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync[0].type).to.equal('iframe');
+      const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
+      expect(userSync[0].url).to.equal(USER_SYNC_URL);
     });
 
-    it('should return true when optional params found for a banner ad', function () {
+    it('When iframeEnabled is false, no userSync should be returned', function () {
+      const syncOptions = {
+        'iframeEnabled': false
+      }
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found for a banner or video ad', function () {
+      expect(spec.isBidRequestValid(DEFAULT_BANNER_VALID_BID[0])).to.equal(true);
+      expect(spec.isBidRequestValid(DEFAULT_VIDEO_VALID_BID[0])).to.equal(true);
+    });
+
+    it('should return true when optional bidFloor params found for an ad', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
       bid.params.bidFloorCur = 'USD';
@@ -135,10 +309,10 @@ describe('IndexexchangeAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when mediaTypes is not banner', function () {
+    it('should return false when mediaTypes is not banner or video', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.mediaTypes = {
-        video: {
+        native: {
           sizes: [[300, 250]]
         }
       };
@@ -155,19 +329,13 @@ describe('IndexexchangeAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when mediaType is not banner', function () {
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      delete bid.params.mediaTypes;
-      bid.mediaType = 'banne';
-      bid.sizes = [[300, 250]];
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return false when mediaType is video', function () {
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      delete bid.params.mediaTypes;
-      bid.mediaType = 'video';
-      bid.sizes = [[300, 250]];
+    it('should return false when mediaTypes.video does not have sizes', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes = {
+        video: {
+          size: [[300, 250]]
+        }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
@@ -191,6 +359,14 @@ describe('IndexexchangeAdapter', function () {
       delete bid.mediaTypes;
       bid.mediaType = 'banner';
       bid.sizes = [[300, 250]];
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true when mediaType is video', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      delete bid.mediaTypes;
+      bid.mediaType = 'video';
+      bid.sizes = [[400, 100]];
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
@@ -226,21 +402,24 @@ describe('IndexexchangeAdapter', function () {
     let query;
     let testCopy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       window.headertag = {};
-      window.headertag.getIdentityInfo = function() {
+      window.headertag.getIdentityInfo = function () {
         return testCopy;
       };
-      request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+      request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       query = request.data;
     });
-    afterEach(function() {
+
+    afterEach(function () {
       delete window.headertag;
     });
-    describe('buildRequestSingleRTI', function() {
-      before(function() {
+
+    describe('buildRequestSingleRTI', function () {
+      before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
       });
+
       it('payload should have correct format and value (single identity partner)', function () {
         const payload = JSON.parse(query.r);
 
@@ -257,16 +436,19 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
-    describe('buildRequestMultipleIds', function() {
-      before(function() {
+    describe('buildRequestMultipleIds', function () {
+      before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
-        testCopy.IdentityIp.data.uids.push({
-          id: '1234567'
-        },
-        {
-          id: '2019-04-01TF2:34:41'
-        });
+        testCopy.IdentityIp.data.uids.push(
+          {
+            id: '1234567'
+          },
+          {
+            id: '2019-04-01TF2:34:41'
+          }
+        );
       });
+
       it('payload should have correct format and value (single identity w/ multi ids)', function () {
         const payload = JSON.parse(query.r);
 
@@ -284,8 +466,8 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
-    describe('buildRequestMultipleRTI', function() {
-      before(function() {
+    describe('buildRequestMultipleRTI', function () {
+      before(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
         testCopy.JackIp = {
           responsePending: false,
@@ -310,6 +492,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       });
+
       it('payload should have correct format and value (multiple identity partners)', function () {
         const payload = JSON.parse(query.r);
 
@@ -333,16 +516,16 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
-    describe('buildRequestNoData', function() {
-      beforeEach(function() {
+    describe('buildRequestNoData', function () {
+      beforeEach(function () {
         testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
       });
 
       it('payload should not have any user eids with an undefined identity data response', function () {
-        window.headertag.getIdentityInfo = function() {
+        window.headertag.getIdentityInfo = function () {
           return undefined;
         };
-        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         query = request.data;
         const payload = JSON.parse(query.r);
 
@@ -355,7 +538,7 @@ describe('IndexexchangeAdapter', function () {
           responsePending: true,
           data: {}
         }
-        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         query = request.data;
         const payload = JSON.parse(query.r);
 
@@ -365,7 +548,7 @@ describe('IndexexchangeAdapter', function () {
 
       it('payload should not have any user eids if identity data is pending for all partners', function () {
         testCopy.IdentityIp.responsePending = true;
-        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         query = request.data;
         const payload = JSON.parse(query.r);
 
@@ -376,7 +559,7 @@ describe('IndexexchangeAdapter', function () {
       it('payload should not have any user eids if identity data is pending or not available for all partners', function () {
         testCopy.IdentityIp.responsePending = false;
         testCopy.IdentityIp.data = {};
-        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         query = request.data;
         const payload = JSON.parse(query.r);
 
@@ -386,16 +569,192 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
-  describe('buildRequestsBanner', function () {
-    const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+  describe('buildRequestsUserId', function () {
+    let validIdentityResponse;
+    let validUserIdPayload;
+
+    beforeEach(function () {
+      window.headertag = {};
+      window.headertag.getIdentityInfo = function () {
+        return validIdentityResponse;
+      };
+    });
+
+    afterEach(function () {
+      delete window.headertag;
+    });
+
+    it('IX adapter reads LiveRamp IDL envelope from Prebid and adds it to Video', function () {
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      expect(payload.user.eids).to.have.lengthOf(1);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+    });
+
+    it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {
+      validIdentityResponse = {
+        AdserverOrgIp: {
+          responsePending: false,
+          data: {
+            source: 'adserver.org',
+            uids: [
+              {
+                id: '1234-5678-9012-3456',
+                ext: {
+                  rtiPartner: 'TDID'
+                }
+              },
+              {
+                id: 'FALSE',
+                ext: {
+                  rtiPartner: 'TDID_LOOKUP'
+                }
+              },
+              {
+                id: '2020-06-24T14:43:48.860Z',
+                ext: {
+                  rtiPartner: 'TDID_CREATED_AT'
+                }
+              }
+            ]
+          }
+        },
+        MerkleIp: {
+          responsePending: false,
+          data: {
+            source: 'merkle.com',
+            uids: [{
+              id: '1234-5678-9012-3456',
+              ext: {
+                keyID: '1234-5678',
+                enc: 1
+              }
+            }]
+          }
+        },
+        LiveRampIp: {
+          source: 'liveramp.com',
+          uids: [
+            {
+              id: '0000-1234-4567-8901',
+              ext: {
+                rtiPartner: 'idl'
+              }
+            }
+          ]
+        }
+      };
+
+      const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA)
+
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = JSON.parse(request.data.r);
+
+      validUserIdPayload = utils.deepClone(DEFAULT_USERID_PAYLOAD);
+      validUserIdPayload.push({
+        source: 'merkle.com',
+        uids: [{
+          id: '1234-5678-9012-3456',
+          ext: {
+            keyID: '1234-5678',
+            enc: 1
+          }
+        }]
+      })
+      validUserIdPayload.push({
+        source: 'adserver.org',
+        uids: [
+          {
+            id: '1234-5678-9012-3456',
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          },
+          {
+            id: 'FALSE',
+            ext: {
+              rtiPartner: 'TDID_LOOKUP'
+            }
+          },
+          {
+            id: '2020-06-24T14:43:48.860Z',
+            ext: {
+              rtiPartner: 'TDID_CREATED_AT'
+            }
+          }
+        ]
+      })
+
+      expect(payload.user).to.exist;
+      expect(payload.user.eids).to.have.lengthOf(3);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
+    });
+
+    it('IXL and Prebid are mutually exclusive', function () {
+      validIdentityResponse = {
+        LiveIntentIp: {
+          responsePending: false,
+          data: {
+            source: 'liveintent.com',
+            uids: [{
+              id: '1234-5678-9012-3456',
+              ext: {
+                keyID: '1234-5678',
+                rtiPartner: 'LDID',
+                enc: 1
+              }
+            }]
+          }
+        }
+      };
+
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+
+      validUserIdPayload = utils.deepClone(DEFAULT_USERID_PAYLOAD);
+      validUserIdPayload.push({
+        source: 'liveintent.com',
+        uids: [{
+          id: '1234-5678-9012-3456',
+          ext: {
+            keyID: '1234-5678',
+            rtiPartner: 'LDID',
+            enc: 1
+          }
+        }]
+      });
+
+      const payload = JSON.parse(request.data.r);
+      expect(payload.user.eids).to.have.lengthOf(2);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
+    });
+  });
+
+  describe('buildRequests', function () {
+    const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
     const requestUrl = request.url;
     const requestMethod = request.method;
     const query = request.data;
 
+    const bidWithoutSchain = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+    delete bidWithoutSchain[0].schain;
+    const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
+    const queryWithoutSchain = requestWithoutSchain.data;
+
     const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
     delete bidWithoutMediaType[0].mediaTypes;
     bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
-    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType, DEFAULT_BANNER_OPTION);
+    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType, DEFAULT_OPTION)[0];
     const queryWithoutMediaType = requestWithoutMediaType.data;
 
     it('request should be made to IX endpoint with GET method', function () {
@@ -404,25 +763,31 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('query object (version, siteID and request) should be correct', function () {
-      expect(query.v).to.equal(BIDDER_VERSION);
+      expect(query.v).to.equal(BANNER_ENDPOINT_VERSION);
       expect(query.s).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId);
       expect(query.r).to.exist;
       expect(query.ac).to.equal('j');
       expect(query.sd).to.equal(1);
+      expect(query.nf).not.to.exist;
     });
 
     it('payload should have correct format and value', function () {
       const payload = JSON.parse(query.r);
-
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
       expect(payload.site).to.exist;
-      expect(payload.site.page).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
+      expect(payload.site.page).to.equal(DEFAULT_OPTION.refererInfo.referer);
       expect(payload.site.ref).to.equal(document.referrer);
       expect(payload.ext).to.exist;
       expect(payload.ext.source).to.equal('prebid');
+      expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.exist;
       expect(payload.imp).to.be.an('array');
-      expect(payload.imp).to.have.lengthOf(1);
+      expect(payload.imp).to.have.lengthOf(2);
+    });
+
+    it('payload should not include schain when not provided', function () {
+      const payload = JSON.parse(queryWithoutSchain.r);
+      expect(payload.source).to.not.exist; // source object currently only written for schain
     });
 
     it('impression should have correct format and value', function () {
@@ -444,7 +809,7 @@ describe('IndexexchangeAdapter', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
       bid.params.bidFloorCur = 'USD';
-      const requestBidFloor = spec.buildRequests([bid]);
+      const requestBidFloor = spec.buildRequests([bid])[0];
       const impression = JSON.parse(requestBidFloor.data.r).imp[0];
 
       expect(impression.bidfloor).to.equal(bid.params.bidFloor);
@@ -456,7 +821,7 @@ describe('IndexexchangeAdapter', function () {
 
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
       expect(payload.site).to.exist;
-      expect(payload.site.page).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
+      expect(payload.site.page).to.equal(DEFAULT_OPTION.refererInfo.referer);
       expect(payload.site.ref).to.equal(document.referrer);
       expect(payload.ext).to.exist;
       expect(payload.ext.source).to.equal('prebid');
@@ -483,7 +848,7 @@ describe('IndexexchangeAdapter', function () {
     it('impression should have sid if id is configured as number', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.id = 50;
-      const requestBidFloor = spec.buildRequests([bid]);
+      const requestBidFloor = spec.buildRequests([bid])[0];
       const impression = JSON.parse(requestBidFloor.data.r).imp[0];
 
       expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
@@ -500,7 +865,7 @@ describe('IndexexchangeAdapter', function () {
     it('impression should have sid if id is configured as string', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.id = 'abc';
-      const requestBidFloor = spec.buildRequests([bid]);
+      const requestBidFloor = spec.buildRequests([bid])[0];
       const impression = JSON.parse(requestBidFloor.data.r).imp[0];
       expect(impression.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
       expect(impression.banner).to.exist;
@@ -525,9 +890,9 @@ describe('IndexexchangeAdapter', function () {
         }
       });
 
-      const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+      const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       const pageUrl = JSON.parse(requestWithFirstPartyData.data.r).site.page;
-      const expectedPageUrl = DEFAULT_BANNER_OPTION.refererInfo.referer + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
+      const expectedPageUrl = DEFAULT_OPTION.refererInfo.referer + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
 
       expect(pageUrl).to.equal(expectedPageUrl);
     });
@@ -539,10 +904,10 @@ describe('IndexexchangeAdapter', function () {
         }
       });
 
-      const requestFirstPartyDataNumber = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+      const requestFirstPartyDataNumber = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       const pageUrl = JSON.parse(requestFirstPartyDataNumber.data.r).site.page;
 
-      expect(pageUrl).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
+      expect(pageUrl).to.equal(DEFAULT_OPTION.refererInfo.referer);
     });
 
     it('should not set first party or timeout if it is not present', function () {
@@ -550,18 +915,18 @@ describe('IndexexchangeAdapter', function () {
         ix: {}
       });
 
-      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       const pageUrl = JSON.parse(requestWithoutConfig.data.r).site.page;
 
-      expect(pageUrl).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
+      expect(pageUrl).to.equal(DEFAULT_OPTION.refererInfo.referer);
       expect(requestWithoutConfig.data.t).to.be.undefined;
     });
 
     it('should not set first party or timeout if it is setConfig is not called', function () {
-      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
       const pageUrl = JSON.parse(requestWithoutConfig.data.r).site.page;
 
-      expect(pageUrl).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
+      expect(pageUrl).to.equal(DEFAULT_OPTION.refererInfo.referer);
       expect(requestWithoutConfig.data.t).to.be.undefined;
     });
 
@@ -571,7 +936,7 @@ describe('IndexexchangeAdapter', function () {
           timeout: 500
         }
       });
-      const requestWithTimeout = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+      const requestWithTimeout = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
 
       expect(requestWithTimeout.data.t).to.equal(500);
     });
@@ -582,14 +947,174 @@ describe('IndexexchangeAdapter', function () {
           timeout: '500'
         }
       });
-      const requestStringTimeout = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+      const requestStringTimeout = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
 
       expect(requestStringTimeout.data.t).to.be.undefined;
     });
+
+    it('request should contain both banner and video requests', function () {
+      const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_VIDEO_VALID_BID[0]]);
+
+      const bannerImp = JSON.parse(request[0].data.r).imp[0];
+      expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(2);
+      expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
+      expect(bannerImp.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
+      expect(bannerImp.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidId);
+      expect(bannerImp.banner).to.exist;
+      expect(bannerImp.banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(bannerImp.banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+
+      const videoImp = JSON.parse(request[1].data.r).imp[0];
+      expect(JSON.parse(request[1].data.v)).to.equal(VIDEO_ENDPOINT_VERSION);
+      expect(videoImp.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(videoImp.video).to.exist;
+      expect(videoImp.video.w).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[0]);
+      expect(videoImp.video.h).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[1]);
+    });
+
+    it('request should contain the extra banner ad sizes that IX is not configured for using the first site id in the ad unit', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.sizes.push([336, 280], [970, 90]);
+      bid.mediaTypes.banner.sizes.push([336, 280], [970, 90]);
+      const bid2 = utils.deepClone(bid);
+      bid2.params.siteId = '124';
+      bid2.params.size = [300, 600];
+      bid2.params.bidId = '2b3c4d5e';
+
+      const request = spec.buildRequests([bid, bid2], DEFAULT_OPTION)[0];
+      const impressions = JSON.parse(request.data.r).imp;
+
+      expect(impressions).to.be.an('array');
+      expect(impressions).to.have.lengthOf(4);
+
+      expect(impressions[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
+      expect(impressions[1].ext.siteID).to.equal(bid2.params.siteId)
+      expect(impressions[2].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
+      expect(impressions[3].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
+
+      expect(impressions[0].banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(impressions[0].banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+      expect(impressions[1].banner.w).to.equal(bid2.params.size[0]);
+      expect(impressions[1].banner.h).to.equal(bid2.params.size[1]);
+      expect(impressions[2].banner.w).to.equal(bid.mediaTypes.banner.sizes[2][0]);
+      expect(impressions[2].banner.h).to.equal(bid.mediaTypes.banner.sizes[2][1]);
+      expect(impressions[3].banner.w).to.equal(bid.mediaTypes.banner.sizes[3][0]);
+      expect(impressions[3].banner.h).to.equal(bid.mediaTypes.banner.sizes[3][1]);
+    });
+
+    it('request should contain the extra banner ad sizes and their corresponding site ids when there is multiple ad units', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.params.siteId = '124';
+      bid.adUnitCode = 'div-gpt-ad-156456451554-1'
+      bid.transactionId = '152e36d1-1241-4242-t35e-y1dv34d12315';
+      bid.bidId = '2f6g5s5e';
+      bid.params.size = [336, 280]
+      bid.sizes = [[336, 280], [970, 90]]
+      bid.mediaTypes.banner.sizes = [[336, 280], [970, 90]]
+
+      const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], bid], DEFAULT_OPTION)[0];
+
+      const impressions = JSON.parse(request.data.r).imp;
+      expect(impressions).to.be.an('array');
+      expect(impressions).to.have.lengthOf(4);
+
+      expect(impressions[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
+      expect(impressions[1].ext.siteID).to.equal(bid.params.siteId)
+      expect(impressions[2].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
+      expect(impressions[3].ext.siteID).to.equal(bid.params.siteId)
+
+      expect(impressions[0].banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
+      expect(impressions[0].banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+      expect(impressions[1].banner.w).to.equal(bid.params.size[0]);
+      expect(impressions[1].banner.h).to.equal(bid.params.size[1]);
+      expect(impressions[2].banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][0]);
+      expect(impressions[2].banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][1]);
+      expect(impressions[3].banner.w).to.equal(bid.mediaTypes.banner.sizes[1][0]);
+      expect(impressions[3].banner.h).to.equal(bid.mediaTypes.banner.sizes[1][1]);
+
+      expect(impressions[0].ext.sid).to.equal(`${DEFAULT_BANNER_VALID_BID[0].params.size[0].toString()}x${DEFAULT_BANNER_VALID_BID[0].params.size[1].toString()}`);
+      expect(impressions[1].ext.sid).to.equal(`${bid.params.size[0].toString()}x${bid.params.size[1].toString()}`);
+      expect(impressions[2].ext.sid).to.equal(`${DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][0].toString()}x${DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][1].toString()}`);
+      expect(impressions[3].ext.sid).to.equal(`${bid.mediaTypes.banner.sizes[1][0].toString()}x${bid.mediaTypes.banner.sizes[1][1].toString()}`);
+    });
+
+    it('request should not contain the extra video ad sizes that IX is not configured for', function () {
+      const request = spec.buildRequests(DEFAULT_VIDEO_VALID_BID, DEFAULT_OPTION);
+      const impressions = JSON.parse(request[0].data.r).imp;
+
+      expect(impressions).to.be.an('array');
+      expect(impressions).to.have.lengthOf(1);
+    });
   });
 
-  describe('interpretResponseBanner', function () {
-    it('should get correct bid response', function () {
+  describe('buildRequestVideo', function () {
+    const request = spec.buildRequests(DEFAULT_VIDEO_VALID_BID, DEFAULT_OPTION);
+    const query = request[0].data;
+
+    it('query object (version, siteID and request) should be correct', function () {
+      expect(query.v).to.equal(VIDEO_ENDPOINT_VERSION);
+      expect(query.s).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.siteId);
+      expect(query.r).to.exist;
+      expect(query.ac).to.equal('j');
+      expect(query.sd).to.equal(1);
+      expect(query.nf).to.equal(1);
+    });
+
+    it('impression should have correct format and value', function () {
+      const impression = JSON.parse(query.r).imp[0];
+      const sidValue = `${DEFAULT_VIDEO_VALID_BID[0].params.size[0].toString()}x${DEFAULT_VIDEO_VALID_BID[0].params.size[1].toString()}`;
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video).to.exist;
+      expect(impression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[0]);
+      expect(impression.video.h).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[1]);
+      expect(impression.video.placement).to.exist;
+      expect(impression.video.placement).to.equal(1);
+      expect(impression.video.minduration).to.exist;
+      expect(impression.video.minduration).to.equal(0);
+      expect(impression.video.mimes).to.exist;
+      expect(impression.video.mimes[0]).to.equal('video/mp4');
+      expect(impression.video.mimes[1]).to.equal('video/webm');
+
+      expect(impression.video.skippable).to.equal(false);
+      expect(impression.ext).to.exist;
+      expect(impression.ext.siteID).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.siteId.toString());
+      expect(impression.ext.sid).to.equal(sidValue);
+    });
+
+    it('impression should have correct format when mediaType is specified.', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      delete bid.mediaTypes;
+      bid.mediaType = 'video';
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(requestBidFloor.data.r).imp[0];
+      const sidValue = `${DEFAULT_VIDEO_VALID_BID[0].params.size[0].toString()}x${DEFAULT_VIDEO_VALID_BID[0].params.size[1].toString()}`;
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video).to.exist;
+      expect(impression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[0]);
+      expect(impression.video.h).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[1]);
+      expect(impression.video.placement).to.not.exist;
+      expect(impression.ext).to.exist;
+      expect(impression.ext.siteID).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.siteId.toString());
+      expect(impression.ext.sid).to.equal(sidValue);
+    });
+
+    it('should set correct placement if context is outstream', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video).to.exist;
+      expect(impression.video.placement).to.exist;
+      expect(impression.video.placement).to.equal(4);
+    });
+  });
+
+  describe('interpretResponse', function () {
+    it('should get correct bid response for banner ad', function () {
       const expectedParse = [
         {
           requestId: '1a2b3c4d',
@@ -597,9 +1122,36 @@ describe('IndexexchangeAdapter', function () {
           creativeId: '12345',
           width: 300,
           height: 250,
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          mediaType: 'banner',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
+          netRevenue: true,
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
+          }
+        }
+      ];
+      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      expect(result[0]).to.deep.equal(expectedParse[0]);
+    });
+
+    it('should get correct bid response for banner ad with missing adomain', function () {
+      const expectedParse = [
+        {
+          requestId: '1a2b3c4d',
+          cpm: 1,
+          creativeId: '12345',
+          width: 300,
+          height: 250,
+          mediaType: 'banner',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
+          currency: 'USD',
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
@@ -609,7 +1161,7 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE });
+      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN }, { data: DEFAULT_BIDDER_REQUEST_DATA });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -623,20 +1175,21 @@ describe('IndexexchangeAdapter', function () {
           creativeId: '-',
           width: 300,
           height: 250,
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          mediaType: 'banner',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
             networkId: 50,
             brandId: 303325,
-            brandName: 'OECTA'
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse });
-      expect(result[0]).to.deep.equal(expectedParse[0]);
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
     });
 
     it('should set Japanese price correctly', function () {
@@ -649,19 +1202,21 @@ describe('IndexexchangeAdapter', function () {
           creativeId: '12345',
           width: 300,
           height: 250,
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          mediaType: 'banner',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'JPY',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: undefined,
           meta: {
             networkId: 50,
             brandId: 303325,
-            brandName: 'OECTA'
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
@@ -675,74 +1230,57 @@ describe('IndexexchangeAdapter', function () {
           creativeId: '12345',
           width: 300,
           height: 250,
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          mediaType: 'banner',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
-          ttl: 35,
+          ttl: 300,
           netRevenue: true,
           dealId: 'deal',
           meta: {
             networkId: 50,
             brandId: 303325,
-            brandName: 'OECTA'
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com']
           }
         }
       ];
-      const result = spec.interpretResponse({ body: bidResponse });
+      const result = spec.interpretResponse({ body: bidResponse }, { data: DEFAULT_BIDDER_REQUEST_DATA });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
-    it('bidrequest should have consent info if gdprApplies and consentString exist', function () {
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
-      const requestWithConsent = JSON.parse(validBidWithConsent.data.r);
-
-      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
-      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
-    });
-
-    it('bidrequest should not have consent field if consentString is undefined', function () {
-      const options = {
-        gdprConsent: {
-          gdprApplies: true,
-          vendorData: {}
+    it('should get correct bid response for video ad', function () {
+      const expectedParse = [
+        {
+          requestId: '1a2b3c4e',
+          cpm: 1.1,
+          creativeId: '12346',
+          mediaType: 'video',
+          width: 640,
+          height: 480,
+          currency: 'USD',
+          ttl: 3600,
+          netRevenue: true,
+          dealId: undefined,
+          vastUrl: 'www.abcd.com/vast',
+          meta: {
+            networkId: 51,
+            brandId: 303326,
+            brandName: 'OECTB',
+            advertiserDomains: ['www.abcd.com']
+          }
         }
-      };
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent.data.r);
-
-      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
-      expect(requestWithConsent.user).to.be.undefined;
-    });
-
-    it('bidrequest should not have gdpr field if gdprApplies is undefined', function () {
-      const options = {
-        gdprConsent: {
-          consentString: '3huaa11=qu3198ae',
-          vendorData: {}
-        }
-      };
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent.data.r);
-
-      expect(requestWithConsent.regs).to.be.undefined;
-      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
-    });
-
-    it('bidrequest should not have consent info if options.gdprConsent is undefined', function () {
-      const options = {};
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent.data.r);
-
-      expect(requestWithConsent.regs).to.be.undefined;
-      expect(requestWithConsent.user).to.be.undefined;
+      ];
+      const result = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, { data: DEFAULT_BIDDER_REQUEST_DATA });
+      expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
     it('bidrequest should not have page if options is undefined', function () {
       const options = {};
       const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo.data.r);
+      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo[0].data.r);
 
       expect(requestWithoutreferInfo.site.page).to.be.undefined;
-      expect(validBidWithoutreferInfo.url).to.equal(IX_SECURE_ENDPOINT);
+      expect(validBidWithoutreferInfo[0].url).to.equal(IX_SECURE_ENDPOINT);
     });
 
     it('bidrequest should not have page if options.refererInfo is an empty object', function () {
@@ -750,10 +1288,10 @@ describe('IndexexchangeAdapter', function () {
         refererInfo: {}
       };
       const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo.data.r);
+      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo[0].data.r);
 
       expect(requestWithoutreferInfo.site.page).to.be.undefined;
-      expect(validBidWithoutreferInfo.url).to.equal(IX_SECURE_ENDPOINT);
+      expect(validBidWithoutreferInfo[0].url).to.equal(IX_SECURE_ENDPOINT);
     });
 
     it('bidrequest should sent to secure endpoint if page url is secure', function () {
@@ -763,10 +1301,89 @@ describe('IndexexchangeAdapter', function () {
         }
       };
       const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo.data.r);
+      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo[0].data.r);
 
       expect(requestWithoutreferInfo.site.page).to.equal(options.refererInfo.referer);
-      expect(validBidWithoutreferInfo.url).to.equal(IX_SECURE_ENDPOINT);
+      expect(validBidWithoutreferInfo[0].url).to.equal(IX_SECURE_ENDPOINT);
+    });
+  });
+
+  describe('bidrequest consent', function () {
+    it('should have consent info if gdprApplies and consentString exist', function () {
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
+    });
+
+    it('should not have consent field if consentString is undefined', function () {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {}
+        }
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.user).to.be.undefined;
+    });
+
+    it('should not have gdpr field if gdprApplies is undefined', function () {
+      const options = {
+        gdprConsent: {
+          consentString: '3huaa11=qu3198ae',
+          vendorData: {}
+        }
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs).to.be.undefined;
+      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
+    });
+
+    it('should not have consent info if options.gdprConsent is undefined', function () {
+      const options = {};
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs).to.be.undefined;
+      expect(requestWithConsent.user).to.be.undefined;
+    });
+
+    it('should have us_privacy if uspConsent is defined', function () {
+      const options = {
+        uspConsent: '1YYN'
+      };
+      const validBidWithUspConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithUspConsent = JSON.parse(validBidWithUspConsent[0].data.r);
+
+      expect(requestWithUspConsent.regs.ext.us_privacy).to.equal('1YYN');
+    });
+
+    it('should not have us_privacy if uspConsent undefined', function () {
+      const options = {};
+      const validBidWithUspConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithUspConsent = JSON.parse(validBidWithUspConsent[0].data.r);
+
+      expect(requestWithUspConsent.regs).to.be.undefined;
+    });
+
+    it('should have both gdpr and us_privacy if both are defined', function () {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {}
+        },
+        uspConsent: '1YYN'
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.regs.ext.us_privacy).to.equal('1YYN');
     });
   });
 });

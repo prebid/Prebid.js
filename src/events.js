@@ -1,8 +1,8 @@
 /**
  * events.js
  */
-var utils = require('./utils');
-var CONSTANTS = require('./constants');
+var utils = require('./utils.js');
+var CONSTANTS = require('./constants.json');
 var slice = Array.prototype.slice;
 var push = Array.prototype.push;
 
@@ -113,14 +113,14 @@ module.exports = (function () {
       utils._each(event[id].que, function (_handler) {
         var que = event[id].que;
         if (_handler === handler) {
-          que.splice(utils.indexOf.call(que, _handler), 1);
+          que.splice(que.indexOf(_handler), 1);
         }
       });
     } else {
       utils._each(event.que, function (_handler) {
         var que = event.que;
         if (_handler === handler) {
-          que.splice(utils.indexOf.call(que, _handler), 1);
+          que.splice(que.indexOf(_handler), 1);
         }
       });
     }
