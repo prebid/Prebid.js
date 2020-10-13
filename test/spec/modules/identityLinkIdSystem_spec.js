@@ -141,7 +141,7 @@ describe('IdentityLinkId tests', function () {
     expect(request).to.be.eq(undefined);
   });
 
-  it('should call the LiveRamp envelope endpoint if cookie _lr_retry_request does exist', function () {
+  it('should call the LiveRamp envelope endpoint if cookie _lr_retry_request does not exist', function () {
     let callBackSpy = sinon.spy();
     let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
