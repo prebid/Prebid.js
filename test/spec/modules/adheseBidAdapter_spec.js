@@ -17,9 +17,10 @@ let minimalBid = function() {
   }
 };
 
-let bidWithParams = function(data) {
+let bidWithParams = function(data, userId) {
   let bid = minimalBid();
   bid.params.data = data;
+  bid.userId = userId;
   return bid;
 };
 
@@ -70,34 +71,54 @@ describe('AdheseAdapter', function () {
       }
     };
 
+    it('should include requested slots', function () {
+      let req = spec.buildRequests([ minimalBid() ], bidderRequest);
+
+      expect(JSON.parse(req.data).slots).to.deep.include({ 'slotname': '_main_page_-leaderboard' });
+    });
+
     it('should include all extra bid params', function () {
       let req = spec.buildRequests([ bidWithParams({ 'ag': '25' }) ], bidderRequest);
 
-      expect(req.url).to.contain('/sl_main_page_-leaderboard/ag25');
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'ag': [ '25' ] });
     });
 
     it('should include duplicate bid params once', function () {
       let req = spec.buildRequests([ bidWithParams({ 'ag': '25' }), bidWithParams({ 'ag': '25', 'ci': 'gent' }) ], bidderRequest);
 
-      expect(req.url).to.contain('/sl_main_page_-leaderboard/ag25/cigent');
+      expect(JSON.parse(req.data).parameters).to.deep.include({'ag': ['25']}).and.to.deep.include({ 'ci': [ 'gent' ] });
     });
 
     it('should split multiple target values', function () {
       let req = spec.buildRequests([ bidWithParams({ 'ci': 'london' }), bidWithParams({ 'ci': 'gent' }) ], bidderRequest);
 
-      expect(req.url).to.contain('/sl_main_page_-leaderboard/cilondon;gent');
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'ci': [ 'london', 'gent' ] });
+    });
+
+    it('should filter out empty params', function () {
+      let req = spec.buildRequests([ bidWithParams({ 'aa': [], 'bb': null, 'cc': '', 'dd': [ '', '' ], 'ee': [ 0, 1, null ], 'ff': 0, 'gg': [ 'x', 'y', '' ] }) ], bidderRequest);
+
+      let params = JSON.parse(req.data).parameters;
+      expect(params).to.not.have.any.keys('aa', 'bb', 'cc', 'dd');
+      expect(params).to.deep.include({ 'ee': [ 0, 1 ], 'ff': [ 0 ], 'gg': [ 'x', 'y' ] });
     });
 
     it('should include gdpr consent param', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
-      expect(req.url).to.contain('/xtCONSENT_STRING');
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': [ 'CONSENT_STRING' ] });
     });
 
     it('should include referer param in base64url format', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
-      expect(req.url).to.contain('/xfaHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ');
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xf': [ 'aHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ' ] });
+    });
+
+    it('should include id5 id as /x5 param', function () {
+      let req = spec.buildRequests([ bidWithParams({}, { 'id5id': { 'uid': 'ID5-1234567890' } }) ], bidderRequest);
+
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'x5': [ 'ID5-1234567890' ] });
     });
 
     it('should include bids', function () {
@@ -105,6 +126,18 @@ describe('AdheseAdapter', function () {
       let req = spec.buildRequests([ bid ], bidderRequest);
 
       expect(req.bids).to.deep.equal([ bid ]);
+    });
+
+    it('should make a POST request', function () {
+      let req = spec.buildRequests([ minimalBid() ], bidderRequest);
+
+      expect(req.method).to.equal('POST');
+    });
+
+    it('should request the json endpoint', function () {
+      let req = spec.buildRequests([ minimalBid() ], bidderRequest);
+
+      expect(req.url).to.equal('https://ads-demo.adhese.com/json');
     });
   });
 
@@ -120,6 +153,7 @@ describe('AdheseAdapter', function () {
             origin: 'APPNEXUS',
             originInstance: '',
             ext: 'js',
+            slotID: '10',
             slotName: '_main_page_-leaderboard',
             adType: 'leaderboard',
             originData: {
@@ -154,13 +188,18 @@ describe('AdheseAdapter', function () {
         netRevenue: NET_REVENUE,
         ttl: TTL,
         adhese: {
+          origin: 'APPNEXUS',
+          originInstance: '',
           originData: {
+            adType: 'leaderboard',
             seatbid: [
               {
                 bid: [ { crid: '60613369', dealid: null } ],
                 seat: '958'
               }
-            ]
+            ],
+            slotId: '10',
+            slotName: '_main_page_-leaderboard'
           }
         }
       }];
@@ -195,7 +234,11 @@ describe('AdheseAdapter', function () {
         mediaType: 'video',
         netRevenue: NET_REVENUE,
         ttl: TTL,
-        adhese: { originData: {} }
+        adhese: {
+          origin: 'RUBICON',
+          originInstance: '',
+          originData: {}
+        }
       }];
       expect(spec.interpretResponse(sspVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
@@ -247,14 +290,20 @@ describe('AdheseAdapter', function () {
         requestId: BID_ID,
         ad: '<script id="body" type="text/javascript"></script><img src=\'https://hosts-demo.adhese.com/track/742898\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
         adhese: {
+          origin: '',
+          originInstance: '',
           originData: {
             adFormat: 'largeleaderboard',
+            adId: '742898',
             adType: 'largeleaderboard',
             adspaceId: '162363',
             libId: '90511',
             orderProperty: undefined,
             priority: undefined,
-            viewableImpressionCounter: undefined
+            viewableImpressionCounter: undefined,
+            slotId: '29306',
+            slotName: '_main_page_-leaderboard',
+            advertiserId: '2081'
           }
         },
         cpm: 5.96,
@@ -302,14 +351,20 @@ describe('AdheseAdapter', function () {
         requestId: BID_ID,
         vastXml: '<?xml version=\'1.0\' encoding=\'UTF-8\' standalone=\'no\'?><VAST version=\'2.0\' xmlns:xsi=\'http://www.w3.org/2001/XMLSchema-instance\' xsi:noNamespaceSchemaLocation=\'vast.xsd\'></VAST>',
         adhese: {
+          origin: '',
+          originInstance: '',
           originData: {
             adFormat: '',
+            adId: '742470',
             adType: 'preroll',
             adspaceId: '164196',
             libId: '89860',
             orderProperty: undefined,
             priority: undefined,
-            viewableImpressionCounter: undefined
+            viewableImpressionCounter: undefined,
+            slotId: '41711',
+            slotName: '_main_page_-leaderboard',
+            advertiserId: '2263',
           }
         },
         cpm: 0,

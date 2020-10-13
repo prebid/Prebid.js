@@ -1,3 +1,4 @@
+import { getGlobal } from '../src/prebidGlobal.js';
 import { createBid } from '../src/bidfactory.js';
 import { STATUS } from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
@@ -122,6 +123,8 @@ function initCurrency(url) {
 
   utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
 
+  // Adding conversion function to prebid global for external module and on page use
+  getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
   getHook('addBidResponse').before(addBidResponseHook, 100);
 
   // call for the file if we haven't already
@@ -149,6 +152,7 @@ function resetCurrency() {
   utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
   getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
+  delete getGlobal().convertCurrency;
 
   adServerCurrency = 'USD';
   conversionCache = {};

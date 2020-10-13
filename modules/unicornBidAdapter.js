@@ -1,6 +1,9 @@
 import * as utils from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 const BIDDER_CODE = 'unicorn';
 const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
@@ -62,9 +65,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     imp,
     cur: UNICORN_DEFAULT_CURRENCY,
     site: {
-      id: window.location.hostname,
+      id: utils.deepAccess(validBidRequests[0], 'params.mediaId') || '',
       publisher: {
-        id: utils.deepAccess(validBidRequests[0], 'params.accountId')
+        id: utils.deepAccess(validBidRequests[0], 'params.publisherId') || 0
       },
       domain: window.location.hostname,
       page: window.location.href,
@@ -83,6 +86,9 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
         stype: 'prebid_uncn',
         bidder: BIDDER_CODE
       }
+    },
+    ext: {
+      accountId: utils.deepAccess(validBidRequests[0], 'params.accountId')
     }
   };
   utils.logInfo('[UNICORN] OpenRTB Formatted Request:', request);
@@ -119,7 +125,7 @@ const interpretResponse = (serverResponse, request) => {
  * Get or Create Uid for First Party Cookie
  */
 const getUid = () => {
-  const ck = utils.getCookie(UNICORN_PB_COOKIE_KEY);
+  const ck = storage.getCookie(UNICORN_PB_COOKIE_KEY);
   if (ck) {
     return JSON.parse(ck)['uid'];
   } else {
@@ -127,7 +133,7 @@ const getUid = () => {
       uid: utils.generateUUID()
     };
     const expireIn = new Date(Date.now() + 24 * 60 * 60 * 10000).toUTCString();
-    utils.setCookie(UNICORN_PB_COOKIE_KEY, JSON.stringify(newCk), expireIn);
+    storage.setCookie(UNICORN_PB_COOKIE_KEY, JSON.stringify(newCk), expireIn);
     return newCk.uid;
   }
 };

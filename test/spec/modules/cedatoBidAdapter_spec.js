@@ -50,12 +50,12 @@ describe('the cedato adapter', function () {
     });
 
     it('should build a very basic request', function() {
-      var request = spec.buildRequests([bid], bidRequestObj);
+      var [request] = spec.buildRequests([bid], bidRequestObj);
       expect(request.method).to.equal('POST');
     });
 
     it('should pass gdpr and usp strings to server', function() {
-      var request = spec.buildRequests([bid], bidRequestObj);
+      var [request] = spec.buildRequests([bid], bidRequestObj);
       var payload = JSON.parse(request.data);
       expect(payload.gdpr_consent).to.not.be.undefined;
       expect(payload.gdpr_consent.consent_string).to.equal(bidRequestObj.gdprConsent.consentString);

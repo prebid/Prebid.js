@@ -303,47 +303,6 @@ describe('SonobiBidAdapter', function () {
       },
       uspConsent: 'someCCPAString'
     };
-    it('should include the digitrust id and keyv', () => {
-      window.DigiTrust = {
-        getUser: function () {
-        }
-      };
-      let sandbox = sinon.sandbox.create();
-      sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-        ({
-          success: true,
-          identity: {
-            id: 'Vb0YJIxTMJV4W0GHRdJ3MwyiOVYJjYEgc2QYdBSG',
-            keyv: 4,
-            version: 2,
-            privacy: {}
-          }
-        })
-      );
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.data.digid).to.equal('Vb0YJIxTMJV4W0GHRdJ3MwyiOVYJjYEgc2QYdBSG');
-      expect(bidRequests.data.digkeyv).to.equal(4);
-      sandbox.restore();
-      delete window.DigiTrust;
-    });
-
-    it('should not include the digitrust id and keyv', () => {
-      window.DigiTrust = {
-        getUser: function () {
-        }
-      };
-      let sandbox = sinon.sandbox.create();
-      sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-        ({
-          success: false
-        })
-      );
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.data.digid).to.be.undefined;
-      expect(bidRequests.data.digkeyv).to.be.undefined;
-      sandbox.restore();
-      delete window.DigiTrust;
-    });
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
@@ -497,6 +456,20 @@ describe('SonobiBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
     });
+
+    it('should make a request to the url defined in the bidder param', function() {
+      const bRequest = [
+        {
+          ...bidRequest[0],
+          params: {
+            ...bidRequest[0].params,
+            bid_request_url: 'https://iad-2-apex.go.sonobi.com/trinity.json'
+          }
+        }
+      ];
+      const bidRequests = spec.buildRequests(bRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://iad-2-apex.go.sonobi.com/trinity.json');
+    })
   });
 
   describe('.interpretResponse', function () {

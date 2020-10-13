@@ -1,6 +1,7 @@
 import * as utils from './utils.js';
 import { config } from './config.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import { getCoreStorageManager } from './storageManager.js';
 
 export const USERSYNC_DEFAULT_CONFIG = {
   syncEnabled: true,
@@ -19,6 +20,8 @@ export const USERSYNC_DEFAULT_CONFIG = {
 config.setDefaults({
   'userSync': utils.deepClone(USERSYNC_DEFAULT_CONFIG)
 });
+
+const storage = getCoreStorageManager('usersync');
 
 /**
  * Factory function which creates a new UserSyncPool.
@@ -299,7 +302,7 @@ export function newUserSync(userSyncDependencies) {
   return publicApi;
 }
 
-const browserSupportsCookies = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
+const browserSupportsCookies = !utils.isSafariBrowser() && storage.cookiesAreEnabled();
 
 export const userSync = newUserSync({
   config: config.getConfig('userSync'),

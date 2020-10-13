@@ -20,8 +20,22 @@ export const spec = {
   buildRequests: function (validRequest, bidderRequest) {
     const payload = {
       imps: [],
-      referrer: encodeURIComponent(bidderRequest.refererInfo.referer),
     };
+    if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      }
+      if (bidderRequest.gdprConsent) {
+        payload.gdprConsent = {
+          consentString: bidderRequest.gdprConsent.consentString,
+          // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
+          gdprApplies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        }
+      }
+      if (bidderRequest.uspConsent) {
+        payload.uspConsent = bidderRequest.uspConsent;
+      }
+    }
     validRequest.forEach((bid) => {
       payload.imps.push(bid);
     });

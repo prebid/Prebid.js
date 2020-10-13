@@ -1,12 +1,10 @@
 const expect = require('chai').expect;
-const { host, protocol } = require('../../../helpers/testing-utils');
+const { host, protocol, waitForElement } = require('../../../helpers/testing-utils');
 
 const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/instream.html?pbjs_debug=true`;
-const CREATIVE_IFRAME_CSS_SELECTOR = 'div[class="VPAID-container"] > div > iframe';
+const ALERT_BOX_CSS_SELECTOR = 'div[id="event-window"] > p[id="statusText"]';
 
 const EXPECTED_TARGETING_KEYS = {
-  hb_cache_id: '',
-  hb_uuid: '',
   hb_format: 'video',
   hb_source: 'client',
   hb_size: '640x480',
@@ -20,13 +18,12 @@ const EXPECTED_TARGETING_KEYS = {
 };
 
 describe('Prebid.js Instream Video Ad Test', function () {
+  this.retries(3);
   before(function loadTestPage() {
-    browser
-      .url(TEST_PAGE_URL)
+    browser.url(TEST_PAGE_URL);
+    browser.pause(5000);
     try {
-      browser.waitForExist(CREATIVE_IFRAME_CSS_SELECTOR, 5000);
-      // const creativeIframe = $(CREATIVE_IFRAME_CSS_SELECTOR).value;
-      // browser.frame(creativeIframe);
+      waitForElement(ALERT_BOX_CSS_SELECTOR, 3000);
     } catch (e) {
       // If creative Iframe didn't load, repeat the steps again!
       // Due to some reason if the Ad server doesn't respond, the test case will time out after 60000 ms as defined in file wdio.conf.js
@@ -34,19 +31,18 @@ describe('Prebid.js Instream Video Ad Test', function () {
     }
   });
 
-  // it('should load the targeting keys with correct values', function () {
-  //   const result = browser.execute(function () {
-  //     console.log('pbjs::', window.top.pbjs);
-  //     return window.top.pbjs.getAdserverTargeting('video1');
-  //   });
-  //   console.log('result:::', result);
-  //   const targetingKeys = result.value['vid1'];
-  //   expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
-  //   expect(targetingKeys.hb_adid).to.be.a('string');
-  //   expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
-  // });
+  it('should load the targeting keys with correct values', function () {
+    const result = browser.execute(function () {
+      return window.top.pbjs.getAdserverTargeting('video1');
+    });
 
-  it('should render the instream ad on the page', function() {
-    expect(browser.isVisible(CREATIVE_IFRAME_CSS_SELECTOR));
+    const targetingKeys = result['video1'];
+    expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
+    expect(targetingKeys.hb_adid).to.be.a('string');
+    expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
+    expect(targetingKeys.hb_uuid).to.be.a('string');
+    expect(targetingKeys.hb_cache_id).to.be.a('string');
+    expect(targetingKeys.hb_uuid_appnexus).to.be.a('string');
+    expect(targetingKeys.hb_cache_id_appnexus).to.be.a('string');
   });
 });

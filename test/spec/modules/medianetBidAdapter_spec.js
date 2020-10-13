@@ -1,7 +1,9 @@
 import {expect} from 'chai';
 import {spec} from 'modules/medianetBidAdapter.js';
+import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from 'src/config.js';
 
+$$PREBID_GLOBAL$$.version = $$PREBID_GLOBAL$$.version || 'version';
 let VALID_BID_REQUEST = [{
     'bidder': 'medianet',
     'params': {
@@ -37,6 +39,11 @@ let VALID_BID_REQUEST = [{
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
     'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 251]],
+      }
+    },
     'sizes': [[300, 251]],
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
@@ -81,6 +88,11 @@ let VALID_BID_REQUEST = [{
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
     'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 251]],
+      }
+    },
     'sizes': [[300, 251]],
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
@@ -127,6 +139,11 @@ let VALID_BID_REQUEST = [{
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
     'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 251]],
+      }
+    },
     'sizes': [[300, 251]],
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
@@ -309,6 +326,7 @@ let VALID_BID_REQUEST = [{
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
       'usp_applies': false,
+      'coppa_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -393,6 +411,7 @@ let VALID_BID_REQUEST = [{
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
       'usp_applies': false,
+      'coppa_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -478,6 +497,7 @@ let VALID_BID_REQUEST = [{
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
       'usp_applies': false,
+      'coppa_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -564,6 +584,7 @@ let VALID_BID_REQUEST = [{
         britepoolid: '82efd5e1-816b-4f87-97f8-044f407e2911'
       },
       'usp_applies': false,
+      'coppa_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -651,6 +672,7 @@ let VALID_BID_REQUEST = [{
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
       'usp_applies': false,
+      'coppa_applies': true,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -726,6 +748,28 @@ let VALID_BID_REQUEST = [{
     }],
     'tmax': config.getConfig('bidderTimeout')
   },
+
+  VALID_VIDEO_BID_REQUEST = [{
+    'bidder': 'medianet',
+    'params': {
+      'cid': 'customer_id',
+      'video': {
+        'skipppable': true
+      }
+    },
+    'adUnitCode': 'div-gpt-ad-1460505748561-0',
+    'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+    'mediaTypes': {
+      'video': {
+        'context': 'instream',
+      }
+    },
+    'bidId': '28f8f8130a583e',
+    'bidderRequestId': '1e9b1f07797c1c',
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'bidRequestsCount': 1
+  }],
+
   VALID_PAYLOAD_PAGE_META = (() => {
     let PAGE_META;
     try {
@@ -992,6 +1036,7 @@ let VALID_BID_REQUEST = [{
       'gdpr_consent_string': 'consentString',
       'gdpr_applies': true,
       'usp_applies': true,
+      'coppa_applies': false,
       'usp_consent_string': '1NYN',
       'screen': {
         'w': 1000,
@@ -1103,6 +1148,8 @@ describe('Media.net bid adapter', function () {
 
   describe('buildRequests', function () {
     beforeEach(function () {
+      $$PREBID_GLOBAL$$.medianetGlobals = {};
+
       let documentStub = sandbox.stub(document, 'getElementById');
       let boundingRect = {
         top: 50,
@@ -1148,7 +1195,18 @@ describe('Media.net bid adapter', function () {
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_NATIVE);
     });
 
+    it('should parse params for video request', function () {
+      let bidReq = spec.buildRequests(VALID_VIDEO_BID_REQUEST, VALID_AUCTIONDATA);
+      expect(JSON.stringify(bidReq.data)).to.include('instream');
+    });
+
     it('should have valid crid present in bid request', function() {
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        const config = {
+          'coppa': true
+        };
+        return config[key];
+      });
       let bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_CRID, VALID_AUCTIONDATA);
       expect(JSON.parse(bidreq.data)).to.deep.equal(VALID_PAYLOAD_WITH_CRID);
     });
@@ -1249,6 +1307,30 @@ describe('Media.net bid adapter', function () {
       let data = JSON.parse(bidReq.data);
       expect(data.imp[1].ext).to.not.have.ownPropertyDescriptor('viewability');
       expect(data.imp[1].ext.visibility).to.equal(0);
+    });
+    it('slot visibility should be calculable even in case of adUnitPath', function () {
+      const code = '/19968336/header-bid-tag-0';
+      const divId = 'div-gpt-ad-1460505748561-0';
+      window.googletag.pubads().setSlots([makeSlot({ code, divId })]);
+
+      let boundingRect = {
+        top: 1010,
+        left: 1010,
+        bottom: 1050,
+        right: 1050
+      };
+      documentStub.withArgs(divId).returns({
+        getBoundingClientRect: () => boundingRect
+      });
+      documentStub.withArgs('div-gpt-ad-1460505748561-123').returns({
+        getBoundingClientRect: () => boundingRect
+      });
+
+      const bidRequest = [{...VALID_BID_REQUEST[0], adUnitCode: code}]
+      const bidReq = spec.buildRequests(bidRequest, VALID_AUCTIONDATA);
+      const data = JSON.parse(bidReq.data);
+      expect(data.imp[0].ext.visibility).to.equal(2);
+      expect(data.imp[0].ext.viewability).to.equal(0);
     });
   });
 

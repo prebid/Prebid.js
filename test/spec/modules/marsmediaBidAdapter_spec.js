@@ -38,7 +38,7 @@ describe('marsmedia adapter tests', function () {
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('https://bid306.rtbsrv.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
+      expect(bidRequest.url).to.have.string('https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);
@@ -61,7 +61,8 @@ describe('marsmedia adapter tests', function () {
             'h': 250,
             'adm': '<div>My Compelling Ad</div>',
             'price': 1,
-            'crid': 'cr-cfy24'
+            'crid': 'cr-cfy24',
+            'nurl': '<!-- NURL -->'
           }
         ]
       };
@@ -108,7 +109,7 @@ describe('marsmedia adapter tests', function () {
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('https://bid306.rtbsrv.com/bidder/?bid=3mhdom&zoneId=9999&hbv=');
+      expect(bidRequest.url).to.have.string('https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);
@@ -127,7 +128,7 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5]);
     });
 
-    it('interpretResponse works', function() {
+    it('interpretResponse with vast url works', function() {
       var bidList = {
         'body': [
           {
@@ -140,7 +141,8 @@ describe('marsmedia adapter tests', function () {
             'cid': '467415',
             'crid': 'cr-vid',
             'w': 800,
-            'h': 600
+            'h': 600,
+            'nurl': '<!-- NURL -->'
           }
         ]
       };
@@ -152,6 +154,40 @@ describe('marsmedia adapter tests', function () {
       expect(bid.width).to.equal(800);
       expect(bid.height).to.equal(600);
       expect(bid.vastUrl).to.equal('https://example.com/');
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.creativeId).to.equal('cr-vid');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.cpm).to.equal(1.0);
+      expect(bid.ttl).to.equal(600);
+    });
+
+    it('interpretResponse with xml works', function() {
+      var bidList = {
+        'body': [
+          {
+            'impid': 'div-gpt-ad-1438287399331-1',
+            'price': 1,
+            'adm': '<?xml><VAST></VAST>',
+            'adomain': [
+              'test.com'
+            ],
+            'cid': '467415',
+            'crid': 'cr-vid',
+            'w': 800,
+            'h': 600,
+            'nurl': '<!-- NURL -->'
+          }
+        ]
+      };
+
+      var videoBids = r1adapter.interpretResponse(bidList);
+
+      expect(videoBids.length).to.equal(1);
+      const bid = videoBids[0];
+      expect(bid.width).to.equal(800);
+      expect(bid.height).to.equal(600);
+      expect(bid.vastXml).to.equal('<?xml><VAST></VAST>');
       expect(bid.mediaType).to.equal('video');
       expect(bid.creativeId).to.equal('cr-vid');
       expect(bid.currency).to.equal('USD');
@@ -569,6 +605,57 @@ describe('marsmedia adapter tests', function () {
   describe('getUserSyncs', function () {
     it('returns an empty string', function () {
       expect(r1adapter.getUserSyncs()).to.deep.equal([]);
+    });
+  });
+
+  describe('on bidWon', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onBidWon({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
+    });
+  });
+
+  describe('on Timeout', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onTimeout({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
+    });
+  });
+
+  describe('on Set Targeting', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onSetTargeting).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onSetTargeting({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
     });
   });
 });

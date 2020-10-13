@@ -1,13 +1,12 @@
 import * as utils from '../src/utils.js';
-import { parse as parseUrl } from '../src/url.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
-const ADAPTER_VERSION = '1.9';
+const ADAPTER_VERSION = '1.11';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -247,7 +246,7 @@ function isBannerBidValid(bid) {
 
 function getTopWindowLocation(bidderRequest) {
   let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+  return utils.parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
 }
 
 function getTopWindowReferrer() {
@@ -273,6 +272,7 @@ function createVideoRequestData(bid, bidderRequest) {
   let video = getVideoTargetingParams(bid);
   let appId = getVideoBidParam(bid, 'appId');
   let bidfloor = getVideoBidParam(bid, 'bidfloor');
+  let tagid = getVideoBidParam(bid, 'tagid');
   let topLocation = getTopWindowLocation(bidderRequest);
   let payload = {
     isPrebid: true,
@@ -286,7 +286,8 @@ function createVideoRequestData(bid, bidderRequest) {
         mimes: DEFAULT_MIMES
       }, video),
       bidfloor: bidfloor,
-      secure: topLocation.protocol === 'https:' ? 1 : 0,
+      tagid: tagid,
+      secure: topLocation.protocol.indexOf('https') === 0 ? 1 : 0,
       displaymanager: ADAPTER_NAME,
       displaymanagerver: ADAPTER_VERSION
     }],

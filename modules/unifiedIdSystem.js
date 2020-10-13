@@ -30,10 +30,11 @@ export const unifiedIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams) {
+  getId(config) {
+    const configParams = (config && config.params) || {};
     if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
       utils.logError('User ID - unifiedId submodule requires either partner or url to be defined');
       return;
@@ -42,17 +43,24 @@ export const unifiedIdSubmodule = {
     const url = configParams.url || `https://match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`;
 
     const resp = function (callback) {
-      ajax(url, response => {
-        let responseObj;
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            utils.logError(error);
+      const callbacks = {
+        success: response => {
+          let responseObj;
+          if (response) {
+            try {
+              responseObj = JSON.parse(response);
+            } catch (error) {
+              utils.logError(error);
+            }
           }
+          callback(responseObj);
+        },
+        error: error => {
+          utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+          callback();
         }
-        callback(responseObj);
-      }, undefined, {method: 'GET', withCredentials: true});
+      };
+      ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};
   }
