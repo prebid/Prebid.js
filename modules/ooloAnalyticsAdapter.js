@@ -434,7 +434,7 @@ function sendHbConfigData() {
   const pbjsConfig = config.getConfig()
 
   Object.keys(pbjsConfig).forEach(key => {
-    if (!key.startsWith('_')) {
+    if (key[0] !== '_') {
       conf[key] = pbjsConfig[key]
     }
   })
