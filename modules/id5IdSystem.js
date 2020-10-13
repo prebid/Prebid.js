@@ -156,6 +156,7 @@ function hasRequiredConfig(config) {
   if (config.storage.type !== LOCAL_STORAGE) {
     utils.logWarn(`User ID - ID5 submodule recommends storage type to be '${LOCAL_STORAGE}'. In a future release this will become a strict requirement`);
   }
+  // TODO: in a future release, return false if storage type or name are not set as required
   if (config.storage.name !== ID5_STORAGE_NAME) {
     utils.logWarn(`User ID - ID5 submodule recommends storage name to be '${ID5_STORAGE_NAME}'. In a future release this will become a strict requirement`);
   }
