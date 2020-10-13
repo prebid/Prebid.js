@@ -296,10 +296,10 @@ export const sharedIdSubmodule = {
   /**
    * performs action to obtain id and return a value.
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {sharedId}
    */
-  getId(configParams) {
+  getId(config) {
     const resp = function (callback) {
       utils.logInfo('SharedId: Sharedid doesnt exists, new cookie creation');
       ajax(ID_SVC, idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
@@ -309,11 +309,12 @@ export const sharedIdSubmodule = {
 
   /**
    * performs actions even if the id exists and returns a value
-   * @param configParams
+   * @param config
    * @param storedId
    * @returns {{callback: *}}
    */
-  extendId(configParams, storedId) {
+  extendId(config, storedId) {
+    const configParams = (config && config.params) || {};
     utils.logInfo('SharedId: Existing shared id ' + storedId.id);
     const resp = function (callback) {
       const needSync = isIdSynced(configParams, storedId);
