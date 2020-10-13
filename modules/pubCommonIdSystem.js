@@ -23,7 +23,7 @@ const storage = getStorageManager(null, 'pubCommonId');
 
 /**
  * Store sharedid in either cookie or local storage
- * @param {Object} config Need config.storage object to derive key, expiry time, and storay type.
+ * @param {Object} config Need config.storage object to derive key, expiry time, and storage type.
  * @param {string} value Shareid value to store
  */
 
@@ -78,7 +78,7 @@ function handleResponse(pubcid, callback, config) {
             // Store sharedId locally
             storeData(config, responseObj.sharedId);
           }
-          // Pass pubcid even thought there is no change in order to trigger decode
+          // Pass pubcid even though there is no change in order to trigger decode
           callback(pubcid);
         } catch (error) {
           utils.logError(error);
@@ -177,7 +177,7 @@ export const pubCommonIdSubmodule = {
    * of stored id: using pixelUrl or return the id and let main user id module write it again with
    * the new expiration time.
    *
-   * PixelUrl, f defined, should point back to a first party domain endpoint.  On the server
+   * PixelUrl, if defined, should point back to a first party domain endpoint.  On the server
    * side, there is either a plugin, or customized logic to read and write back the pubcid cookie.
    * The extendId function itself should return only the callback, and not the id itself to avoid
    * having the script-side overwriting server-side.  This applies to both pubcid and sharedid.
@@ -197,7 +197,7 @@ export const pubCommonIdSubmodule = {
     if (extend) {
       try {
         if (typeof window[PUB_COMMON_ID] === 'object') {
-          // If the page includes its onw pubcid module, then there is nothing to do
+          // If the page includes its own pubcid module, then there is nothing to do
           // except to update sharedid
           storeData(config, readData(config));
           return;
