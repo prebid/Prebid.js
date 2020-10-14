@@ -8,7 +8,6 @@ targeting. Audigent maintains a large database of first-party Tradedesk Unified
 ID to third party segment mappings that can now be queried at bid-time.
 
 Usage:
-
 Compile the audigent RTD module into your Prebid build:
 
 `gulp build --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,rubiconBidAdapter`
@@ -48,7 +47,7 @@ function addAudigentSegments() {
 	for (i = 0; i < adUnits.length; i++) {
 		let adUnit = adUnits[i];
 		for (j = 0; j < adUnit.bids.length; j++) {
-			adUnit.bids[j].userId.lipb.segments = adUnit.bids[j].realTimeData.audigent_segments['rubicon'];
+			adUnit.bids[j].userId.lipb.segments = adUnit.bids[j].audigent_segments['rubicon'];
 		}
 	}
 }
