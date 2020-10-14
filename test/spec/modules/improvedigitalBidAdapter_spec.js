@@ -778,9 +778,14 @@ describe('Improve Digital Adapter Tests', function () {
       expect(bids[0].dealId).to.not.exist;
 
       response.body.bid[0].lid = 268515;
-      response.body.bid[0].buying_type = 'classic';
+      response.body.bid[0].buying_type = 'rtb';
       bids = spec.interpretResponse(response, {bidderRequest});
       expect(bids[0].dealId).to.not.exist;
+
+      response.body.bid[0].lid = 268515;
+      response.body.bid[0].buying_type = 'classic';
+      bids = spec.interpretResponse(response, {bidderRequest});
+      expect(bids[0].dealId).to.equal(268515);
 
       response.body.bid[0].lid = 268515;
       response.body.bid[0].buying_type = 'deal_id';
@@ -798,7 +803,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(bids[0].dealId).to.not.exist;
 
       response.body.bid[0].lid = [ 268515, 12456, 34567 ];
-      response.body.bid[0].buying_type = [ 'classic', 'deal_id', 'deal_id' ];
+      response.body.bid[0].buying_type = [ 'rtb', 'deal_id', 'deal_id' ];
       bids = spec.interpretResponse(response, {bidderRequest});
       expect(bids[0].dealId).to.equal(12456);
     });

@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/adkernelBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
+import {config} from 'src/config.js';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
@@ -170,12 +171,13 @@ describe('Adkernel adapter', function () {
           nurl: 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
           adm: '<!-- admarkup here -->',
           w: 300,
-          h: 250
+          h: 250,
+          dealid: 'deal'
         }]
       }],
       cur: 'USD',
       ext: {
-        adk_usersync: ['https://adk.sync.com/sync']
+        adk_usersync: [{type: 1, url: 'https://adk.sync.com/sync'}]
       }
     }, videoBidResponse = {
       id: '47ce4badcf7482',
@@ -194,7 +196,7 @@ describe('Adkernel adapter', function () {
     }, usersyncOnlyResponse = {
       id: 'nobid1',
       ext: {
-        adk_usersync: ['https://adk.sync.com/sync']
+        adk_usersync: [{type: 2, url: 'https://adk.sync.com/sync'}]
       }
     }, nativeResponse = {
       id: '56fbc713-b737-4651-9050-13376aed9818',
@@ -228,13 +230,22 @@ describe('Adkernel adapter', function () {
       cur: 'USD'
     };
 
+  var sandbox;
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
-    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}, timeout: 3000});
+    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
   function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
-    let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
+    let dntmock = sandbox.stub(utils, 'getDNT').callsFake(() => dnt);
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
     dntmock.restore();
     let rtbRequests = pbRequests.map(r => JSON.parse(r.data));
@@ -306,6 +317,7 @@ describe('Adkernel adapter', function () {
     it('should fill device with caller macro', function () {
       expect(bidRequest).to.have.property('device');
       expect(bidRequest.device).to.have.property('ip', 'caller');
+      expect(bidRequest.device).to.have.property('ipv6', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
       expect(bidRequest.device).to.have.property('dnt', 1);
     });
@@ -403,6 +415,84 @@ describe('Adkernel adapter', function () {
     });
   });
 
+  describe('User sync request signals', function() {
+    it('should respect syncEnabled option', function() {
+      config.setConfig({
+        userSync: {
+          syncEnabled: false,
+          filterSettings: {
+            all: {
+              bidders: '*',
+              filter: 'include'
+            }
+          }
+        }
+      });
+      let [pbRequests, bidRequests] = buildRequest([bid1_zone1]);
+      expect(bidRequests).to.have.length(1);
+      expect(bidRequests[0]).to.not.have.property('ext');
+    });
+
+    it('should respect all config node', function() {
+      config.setConfig({
+        userSync: {
+          syncEnabled: true,
+          filterSettings: {
+            all: {
+              bidders: '*',
+              filter: 'include'
+            }
+          }
+        }
+      });
+      let [pbRequests, bidRequests] = buildRequest([bid1_zone1]);
+      expect(bidRequests).to.have.length(1);
+      expect(bidRequests[0].ext).to.have.property('adk_usersync', 1);
+    });
+
+    it('should respect exclude filter', function() {
+      config.setConfig({
+        userSync: {
+          syncEnabled: true,
+          filterSettings: {
+            image: {
+              bidders: '*',
+              filter: 'include'
+            },
+            iframe: {
+              bidders: ['adkernel'],
+              filter: 'exclude'
+            }
+          }
+        }
+      });
+      let [pbRequests, bidRequests] = buildRequest([bid1_zone1]);
+      expect(bidRequests).to.have.length(1);
+      expect(bidRequests[0].ext).to.have.property('adk_usersync', 2);
+    });
+
+    it('should respect total exclusion', function() {
+      config.setConfig({
+        userSync: {
+          syncEnabled: true,
+          filterSettings: {
+            image: {
+              bidders: ['adkernel'],
+              filter: 'exclude'
+            },
+            iframe: {
+              bidders: ['adkernel'],
+              filter: 'exclude'
+            }
+          }
+        }
+      });
+      let [pbRequests, bidRequests] = buildRequest([bid1_zone1]);
+      expect(bidRequests).to.have.length(1);
+      expect(bidRequests[0]).to.not.have.property('ext');
+    });
+  });
+
   describe('responses processing', function () {
     it('should return fully-initialized banner bid-response', function () {
       let [pbRequests, _] = buildRequest([bid1_zone1]);
@@ -416,6 +506,7 @@ describe('Adkernel adapter', function () {
       expect(resp).to.have.property('ttl');
       expect(resp).to.have.property('mediaType', BANNER);
       expect(resp).to.have.property('ad');
+      expect(resp).to.have.property('dealId', 'deal');
       expect(resp.ad).to.have.string('<!-- admarkup here -->');
     });
 
@@ -444,11 +535,17 @@ describe('Adkernel adapter', function () {
     });
 
     it('should perform usersync', function () {
-      let syncs = spec.getUserSyncs({iframeEnabled: false}, [{body: bidResponse1}]);
+      let syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, []);
       expect(syncs).to.have.length(0);
-      syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: bidResponse1}]);
+      syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false}, [{body: bidResponse1}]);
+      expect(syncs).to.have.length(0);
+      syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [{body: bidResponse1}]);
       expect(syncs).to.have.length(1);
       expect(syncs[0]).to.have.property('type', 'iframe');
+      expect(syncs[0]).to.have.property('url', 'https://adk.sync.com/sync');
+      syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [{body: usersyncOnlyResponse}]);
+      expect(syncs).to.have.length(1);
+      expect(syncs[0]).to.have.property('type', 'image');
       expect(syncs[0]).to.have.property('url', 'https://adk.sync.com/sync');
     });
   });

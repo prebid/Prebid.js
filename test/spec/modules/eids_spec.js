@@ -43,12 +43,26 @@ describe('eids array generation for known sub-modules', function() {
 
   it('parrableId', function() {
     const userId = {
-      parrableid: 'some-random-id-value'
+      parrableId: {
+        eid: 'some-random-id-value'
+      }
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'parrable.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('merkleId', function() {
+    const userId = {
+      merkleId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'merkleinc.com',
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
@@ -107,19 +121,15 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('DigiTrust; getValue call', function() {
+  it('lotamePanoramaId', function () {
     const userId = {
-      digitrustid: {
-        data: {
-          id: 'some-random-id-value'
-        }
-      }
+      lotamePanoramaId: 'some-random-id-value',
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
-      source: 'digitru.st',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      source: 'crwdcntrl.net',
+      uids: [{ id: 'some-random-id-value', atype: 1 }],
     });
   });
 
@@ -144,6 +154,42 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids[0]).to.deep.equal({
       source: 'netid.de',
       uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+  it('Sharedid', function() {
+    const userId = {
+      sharedid: {
+        id: 'test_sharedId',
+        third: 'test_sharedId'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'sharedid.org',
+      uids: [{
+        id: 'test_sharedId',
+        atype: 1,
+        ext: {
+          third: 'test_sharedId'
+        }
+      }]
+    });
+  });
+  it('Sharedid: Not Synched', function() {
+    const userId = {
+      sharedid: {
+        id: 'test_sharedId'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'sharedid.org',
+      uids: [{
+        id: 'test_sharedId',
+        atype: 1
+      }]
     });
   });
 });

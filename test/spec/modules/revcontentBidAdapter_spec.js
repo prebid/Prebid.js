@@ -3,6 +3,7 @@ import {assert, expect} from 'chai';
 import {spec} from 'modules/revcontentBidAdapter.js';
 import { NATIVE } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
+import * as utils from 'src/utils.js';
 
 describe('revcontent adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -325,6 +326,26 @@ describe('revcontent adapter', function () {
       };
       const result = spec.onBidWon(bid);
       assert.ok(result);
+    });
+  });
+
+  describe('onBidWon', function() {
+    const bid = {
+      nurl: 'https://trends-s0.revcontent.com/push/track/?p=${AUCTION_PRICE}&d=nTCdHIfsgKOLFuV7DS1LF%2FnTk5HiFduGU65BgKgB%2BvKyG9YV7ceQWN76HMbBE0C6gwQeXUjravv3Hq5x9TT8CM6r2oUNgkGC9mhgv2yroTH9i3cSoH%2BilxyY19fMXFirtBz%2BF%2FEXKi4bsNh%2BDMPfj0L4elo%2FJEZmx4nslvOneJJjsFjJJtUJc%2F3UPivOisSCa%2B36mAgFQqt%2FSWBriYB%2BVAufz70LaGspF6T6jDzuIyVFJUpLhZVDtLRSJEzh7Lyzzw1FmYarp%2FPg0gZDY48aDdjw5A3Tlj%2Bap0cPHLDprNOyF0dmHDn%2FOVJEDRTWvrQ2JNK1t%2Fg1bGHIih0ec6XBVIBNurqRpLFBuUY6LgXCt0wRZWTByTEZ8AEv8IoYVILJAL%2BXL%2F9IyS4eTcdOUfn5X7gT8QBghCrAFrsCg8ZXKgWddTEXbpN1lU%2FzHdI5eSHkxkJ6WcYxSkY9PyripaIbmKiyb98LQMgTD%2B20RJO5dAmXTQTAcauw6IUPTjgSPEU%2Bd6L5Txd3CM00Hbd%2Bw1bREIQcpKEmlMwrRSwe4bu1BCjlh5A9gvU9Xc2sf7ekS3qPPmtp059r5IfzdNFQJB5aH9HqeDEU%2FxbMHx4ggMgojLBBL1fKrCKLAteEDQxd7PVmFJv7GHU2733vt5TnjKiEhqxHVFyi%2B0MIYMGIziM5HfUqfq3KUf%2F%2FeiCtJKXjg7FS6hOambdimSt7BdGDIZq9QECWdXsXcQqqVLwli27HYDMFVU3TWWRyjkjbhnQID9gQJlcpwIi87jVAODb6qP%2FKGQ%3D%3D',
+      cpm: '0.1'
+    };
+
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+    it('make sure only 1 ajax call is happening', function() {
+      spec.onBidWon(bid);
+      expect(utils.triggerPixel.calledOnce).to.equal(true);
     });
   });
 });

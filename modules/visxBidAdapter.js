@@ -203,7 +203,6 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
           const bid = slot.bids.shift();
           bidResponses.push({
             requestId: bid.bidId,
-            bidderCode: spec.code,
             cpm: serverBid.price,
             width: serverBid.w,
             height: serverBid.h,

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use strict';
 
 var _ = require('lodash');
@@ -32,8 +33,8 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var port = 9999;
-const mockServerPort = 4444;
-const host = argv.host ? argv.host : 'localhost';
+const FAKE_SERVER_HOST = argv.host ? argv.host : 'localhost';
+const FAKE_SERVER_PORT = 4444;
 const { spawn } = require('child_process');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
@@ -238,25 +239,25 @@ function test(done) {
       ];
     }
 
-    //run mock-server
-    const mockServer = spawn('node', ['./test/mock-server/index.js', '--port=' + mockServerPort]);
-    mockServer.stdout.on('data', (data) => {
+    // run fake-server
+    const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${FAKE_SERVER_PORT}`]);
+    fakeServer.stdout.on('data', (data) => {
       console.log(`stdout: ${data}`);
     });
-    mockServer.stderr.on('data', (data) => {
+    fakeServer.stderr.on('data', (data) => {
       console.log(`stderr: ${data}`);
     });
 
     execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
       .then(stdout => {
-        // kill mock server
-        mockServer.kill('SIGINT');
+        // kill fake server
+        fakeServer.kill('SIGINT');
         done();
         process.exit(0);
       })
       .catch(err => {
-        // kill mock server
-        mockServer.kill('SIGINT');
+        // kill fake server
+        fakeServer.kill('SIGINT');
         done(new Error(`Tests failed with error: ${err}`));
         process.exit(1);
       });
@@ -326,11 +327,27 @@ function setupE2e(done) {
   done();
 }
 
-gulp.task('updatepath', function () {
+function injectFakeServerEndpoint() {
   return gulp.src(['build/dist/*.js'])
-    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', 'http://' + host + ':' + mockServerPort + '/'))
+    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', `http://${FAKE_SERVER_HOST}:${FAKE_SERVER_PORT}`))
     .pipe(gulp.dest('build/dist'));
-});
+}
+
+function injectFakeServerEndpointDev() {
+  return gulp.src(['build/dev/*.js'])
+    .pipe(replace('https://ib.adnxs.com/ut/v3/prebid', `http://${FAKE_SERVER_HOST}:${FAKE_SERVER_PORT}`))
+    .pipe(gulp.dest('build/dev'));
+}
+
+function startFakeServer() {
+  const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${FAKE_SERVER_PORT}`]);
+  fakeServer.stdout.on('data', (data) => {
+    console.log(`stdout: ${data}`);
+  });
+  fakeServer.stderr.on('data', (data) => {
+    console.log(`stderr: ${data}`);
+  });
+}
 
 // support tasks
 gulp.task(lint);
@@ -355,9 +372,12 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
+gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watch)));
+gulp.task('serve-fake', gulp.series(clean, gulp.parallel('build-bundle-dev', watch), injectFakeServerEndpointDev, test, startFakeServer));
+
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
-gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), 'updatepath', test));
+gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), injectFakeServerEndpoint, test));
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step

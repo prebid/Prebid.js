@@ -1,6 +1,7 @@
 import {assert} from 'chai';
 import {spec} from 'modules/mediaforceBidAdapter.js';
 import * as utils from '../../../src/utils.js';
+import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
 
 describe('mediaforce bid adapter', function () {
   let sandbox;
@@ -19,7 +20,7 @@ describe('mediaforce bid adapter', function () {
   }
 
   const language = getLanguage();
-  const baseUrl = 'https://rtb.mfadsrvr.com'
+  const baseUrl = 'https://rtb.mfadsrvr.com';
 
   describe('isBidRequestValid()', function () {
     const defaultBid = {
@@ -56,17 +57,6 @@ describe('mediaforce bid adapter', function () {
       bid.params = {publisher_id: 2, placement_id: '123'};
       assert.equal(spec.isBidRequestValid(bid), true);
     });
-
-    it('should return false when mediaTypes == native passed (native is not supported yet)', function () {
-      let bid = utils.deepClone(defaultBid);
-      bid.mediaTypes = {
-        native: {
-          sizes: [[300, 250]]
-        }
-      };
-      bid.params = {publisher_id: 2, placement_id: '123'};
-      assert.equal(spec.isBidRequestValid(bid), true);
-    });
   });
 
   describe('buildRequests()', function () {
@@ -76,9 +66,35 @@ describe('mediaforce bid adapter', function () {
         publisher_id: 'pub123',
         placement_id: '202',
       },
+      nativeParams: {
+        title: {
+          required: true,
+          len: 800
+        },
+        image: {
+          required: true,
+          sizes: [300, 250],
+        },
+        sponsoredBy: {
+          required: true
+        }
+      },
       mediaTypes: {
         banner: {
           sizes: [[300, 250]]
+        },
+        native: {
+          title: {
+            required: true,
+            len: 800
+          },
+          image: {
+            required: true,
+            sizes: [300, 250],
+          },
+          sponsoredBy: {
+            required: true
+          }
         }
       },
       transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
@@ -95,7 +111,7 @@ describe('mediaforce bid adapter', function () {
 
     const requestUrl = `${baseUrl}/header_bid`;
     const dnt = utils.getDNT() ? 1 : 0;
-    const secure = 1
+    const secure = 1;
 
     it('should return undefined if no validBidRequests passed', function () {
       assert.equal(spec.buildRequests([]), undefined);
@@ -135,13 +151,26 @@ describe('mediaforce bid adapter', function () {
           secure: secure,
           bidfloor: bid.params.bidfloor,
           banner: {w: 300, h: 250},
+          native: {
+            ver: '1.2',
+            request: {
+              assets: [
+                {id: 1, title: {len: 800}, required: 1},
+                {id: 3, img: {w: 300, h: 250, type: 3}, required: 1},
+                {id: 5, data: {type: 1}, required: 1}
+              ],
+              context: 1,
+              plcmttype: 1,
+              ver: '1.2'
+            }
+          },
         }],
       });
 
       assert.deepEqual(request, {
         method: 'POST',
         url: requestUrl,
-        data: '{"id":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b","site":{"page":"https%3A%2F%2Fwww.prebid.org","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + language + '"},"imp":[{"tagid":"202","secure":1,"bidfloor":0.5,"banner":{"w":300,"h":250}}]}',
+        data: '{"id":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b","site":{"page":"https%3A%2F%2Fwww.prebid.org","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + language + '"},"imp":[{"tagid":"202","secure":1,"bidfloor":0.5,"banner":{"w":300,"h":250},"native":{"ver":"1.2","request":{"assets":[{"required":1,"id":1,"title":{"len":800}},{"required":1,"id":3,"img":{"type":3,"w":300,"h":250}},{"required":1,"id":5,"data":{"type":1}}],"context":1,"plcmttype":1,"ver":"1.2"}}}]}',
       });
     });
 
@@ -173,6 +202,7 @@ describe('mediaforce bid adapter', function () {
         cid: '2_ssl',
         h: 100,
         cat: ['IAB1-1'],
+        dealid: '3901521',
         crid: '2_ssl',
         impid: '2b3c9d103723a7',
         adid: '2_ssl',
@@ -193,14 +223,184 @@ describe('mediaforce bid adapter', function () {
       assert.deepEqual(bids, ([{
         ad: bid.adm,
         cpm: bid.price,
+        dealId: bid.dealid,
         creativeId: bid.adid,
         currency: response.body.cur,
         height: bid.h,
         netRevenue: true,
         burl: bid.burl,
+        mediaType: BANNER,
         requestId: bid.impid,
         ttl: 300,
         width: bid.w,
+      }]));
+    });
+  });
+
+  describe('interpretResponse() native as object', function () {
+    it('successfull response', function () {
+      let titleText = 'Colorado Drivers With No DUI\'s Getting A Pay Day on Friday';
+      let imgData = {
+        url: `${baseUrl}/image`,
+        w: 1200,
+        h: 627
+      };
+      let nativeLink = `${baseUrl}/click/`;
+      let nativeTracker = `${baseUrl}/imp-image`;
+      let sponsoredByValue = 'Comparisons.org';
+      let bodyValue = 'Drivers With No Tickets In 3 Years Should Do This On June';
+      let bid = {
+        price: 3,
+        id: '65599d0a-42d2-446a-9d39-6086c1433ffe',
+        burl: `${baseUrl}/burl/\${AUCTION_PRICE}`,
+        cid: '2_ssl',
+        cat: ['IAB1-1'],
+        crid: '2_ssl',
+        impid: '2b3c9d103723a7',
+        adid: '2_ssl',
+        ext: {
+          advertiser_name: 'MediaForce',
+          native: {
+            link: {url: nativeLink},
+            assets: [{
+              id: 1,
+              title: {text: titleText},
+              required: 1
+            }, {
+              id: 3,
+              img: imgData
+            }, {
+              id: 5,
+              data: {value: sponsoredByValue}
+            }, {
+              id: 4,
+              data: {value: bodyValue}
+            }],
+            imptrackers: [nativeTracker],
+            ver: '1'
+          },
+          language: 'en',
+          agency_name: 'MediaForce DSP'
+        }
+      };
+
+      let response = {
+        body: {
+          seatbid: [{
+            bid: [bid]
+          }],
+          cur: 'USD',
+          id: '620190c2-7eef-42fa-91e2-f5c7fbc2bdd3'
+        }
+      };
+
+      let bids = spec.interpretResponse(response);
+      assert.deepEqual(bids, ([{
+        native: {
+          clickUrl: nativeLink,
+          clickTrackers: [],
+          impressionTrackers: [nativeTracker],
+          javascriptTrackers: [],
+          title: titleText,
+          image: {
+            url: imgData.url,
+            width: imgData.w,
+            height: imgData.h
+          },
+          sponsoredBy: sponsoredByValue,
+          body: bodyValue
+        },
+        cpm: bid.price,
+        creativeId: bid.adid,
+        currency: response.body.cur,
+        netRevenue: true,
+        burl: bid.burl,
+        mediaType: NATIVE,
+        requestId: bid.impid,
+        ttl: 300,
+      }]));
+    });
+  });
+
+  describe('interpretResponse() native as string', function () {
+    it('successfull response', function () {
+      let titleText = 'Colorado Drivers With No DUI\'s Getting A Pay Day on Friday';
+      let imgData = {
+        url: `${baseUrl}/image`,
+        w: 1200,
+        h: 627
+      };
+      let nativeLink = `${baseUrl}/click/`;
+      let nativeTracker = `${baseUrl}/imp-image`;
+      let sponsoredByValue = 'Comparisons.org';
+      let bodyValue = 'Drivers With No Tickets In 3 Years Should Do This On June';
+      let adm = JSON.stringify({
+        native: {
+          link: {url: nativeLink},
+          assets: [{
+            id: 1,
+            title: {text: titleText},
+            required: 1
+          }, {
+            id: 3,
+            img: imgData
+          }, {
+            id: 5,
+            data: {value: sponsoredByValue}
+          }, {
+            id: 4,
+            data: {value: bodyValue}
+          }],
+          imptrackers: [nativeTracker],
+          ver: '1'
+        }
+      });
+      let bid = {
+        price: 3,
+        id: '65599d0a-42d2-446a-9d39-6086c1433ffe',
+        burl: `${baseUrl}/burl/\${AUCTION_PRICE}`,
+        cid: '2_ssl',
+        cat: ['IAB1-1'],
+        crid: '2_ssl',
+        impid: '2b3c9d103723a7',
+        adid: '2_ssl',
+        adm: adm
+      };
+
+      let response = {
+        body: {
+          seatbid: [{
+            bid: [bid]
+          }],
+          cur: 'USD',
+          id: '620190c2-7eef-42fa-91e2-f5c7fbc2bdd3'
+        }
+      };
+
+      let bids = spec.interpretResponse(response);
+      assert.deepEqual(bids, ([{
+        native: {
+          clickUrl: nativeLink,
+          clickTrackers: [],
+          impressionTrackers: [nativeTracker],
+          javascriptTrackers: [],
+          title: titleText,
+          image: {
+            url: imgData.url,
+            width: imgData.w,
+            height: imgData.h
+          },
+          sponsoredBy: sponsoredByValue,
+          body: bodyValue
+        },
+        cpm: bid.price,
+        creativeId: bid.adid,
+        currency: response.body.cur,
+        netRevenue: true,
+        burl: bid.burl,
+        mediaType: NATIVE,
+        requestId: bid.impid,
+        ttl: 300,
       }]));
     });
   });

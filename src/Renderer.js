@@ -37,12 +37,21 @@ export function Renderer(options) {
     this.process();
   });
 
-  if (!isRendererDefinedOnAdUnit(adUnitCode)) {
-    // we expect to load a renderer url once only so cache the request to load script
-    loadExternalScript(url, moduleCode, this.callback);
-  } else {
-    utils.logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
-  }
+  // use a function, not an arrow, in order to be able to pass "arguments" through
+  this.render = function () {
+    if (!isRendererDefinedOnAdUnit(adUnitCode)) {
+      // we expect to load a renderer url once only so cache the request to load script
+      loadExternalScript(url, moduleCode, this.callback);
+    } else {
+      utils.logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
+    }
+
+    if (this._render) {
+      this._render.apply(this, arguments) // _render is expected to use push as appropriate
+    } else {
+      utils.logWarn(`No render function was provided, please use .setRender on the renderer`);
+    }
+  }.bind(this) // bind the function to this object to avoid 'this' errors
 }
 
 Renderer.install = function({ url, config, id, callback, loaded, adUnitCode }) {
@@ -54,7 +63,7 @@ Renderer.prototype.getConfig = function() {
 };
 
 Renderer.prototype.setRender = function(fn) {
-  this.render = fn;
+  this._render = fn;
 };
 
 Renderer.prototype.setEventHandlers = function(handlers) {

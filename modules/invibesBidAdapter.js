@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-const storage = getStorageManager();
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -9,13 +8,16 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 2,
+  PREBID_VERSION: 4,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436
 };
 
+const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
+
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
+  gvlid: CONSTANTS.INVIBES_VENDOR_ID,
   /**
    * @param {object} bid
    * @return boolean
@@ -37,9 +39,7 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions) {
     if (syncOptions.iframeEnabled) {
-      handlePostMessage();
       const syncUrl = buildSyncUrl();
-
       return {
         type: 'iframe',
         url: syncUrl
@@ -53,6 +53,7 @@ registerBidder(spec);
 // some state info is required: cookie info, unique user visit id
 const topWin = getTopMostWindow();
 let invibes = topWin.invibes = topWin.invibes || {};
+invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false];
 let _customUserSync;
 
 function isBidRequestValid(bid) {
@@ -87,13 +88,11 @@ function buildRequest(bidRequests, bidderRequest) {
     _customUserSync = _customUserSync || bidRequest.params.customUserSync;
   });
 
+  invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent);
+
   invibes.visitId = invibes.visitId || generateRandomId();
-
-  cookieDomain = detectTopmostCookieDomain();
   invibes.noCookies = invibes.noCookies || invibes.getCookie('ivNoCookie');
-  invibes.optIn = invibes.optIn || invibes.getCookie('ivOptIn') || readGdprConsent(bidderRequest.gdprConsent);
-
-  initDomainId(invibes.domainOptions);
+  let lid = initDomainId(invibes.domainOptions);
 
   const currentQueryStringParams = parseQueryStringParams();
 
@@ -115,14 +114,16 @@ function buildRequest(bidRequests, bidderRequest) {
     width: topWin.innerWidth,
     height: topWin.innerHeight,
 
-    noc: !cookieDomain,
     oi: invibes.optIn,
 
-    kw: keywords
+    kw: keywords,
+    purposes: invibes.purposes.toString(),
+
+    tc: invibes.gdpr_consent
   };
 
-  if (invibes.dom.id) {
-    data.lId = invibes.dom.id;
+  if (lid) {
+    data.lId = lid;
   }
 
   const parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',');
@@ -276,6 +277,8 @@ function renderCreative(bidModel) {
 function getCappedCampaignsAsString() {
   const key = 'ivvcap';
 
+  if (!invibes.optIn || !invibes.purposes[0]) { return ''; }
+
   let loadData = function () {
     try {
       return JSON.parse(storage.getDataFromLocalStorage(key)) || {};
@@ -346,29 +349,92 @@ function buildSyncUrl() {
   return syncUrl;
 }
 
-function handlePostMessage() {
-  try {
-    if (window.addEventListener) {
-      window.addEventListener('message', acceptPostMessage);
-    }
-  } catch (e) { }
-}
-
-function acceptPostMessage(e) {
-  let msg = e.data || {};
-  if (msg.ivbscd === 1) {
-    invibes.setCookie(msg.name, msg.value, msg.exdays, msg.domain);
-  } else if (msg.ivbscd === 2) {
-    invibes.dom.graduate();
-  }
-}
-
 function readGdprConsent(gdprConsent) {
-  if (gdprConsent && gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents) {
-    return !!gdprConsent.vendorData.vendorConsents[CONSTANTS.INVIBES_VENDOR_ID.toString(10)] === true ? 2 : -2;
+  if (gdprConsent && gdprConsent.vendorData) {
+    invibes.gdpr_consent = getVendorConsentData(gdprConsent.vendorData);
+
+    if (!gdprConsent.vendorData.gdprApplies || gdprConsent.vendorData.hasGlobalConsent) {
+      var index;
+      for (index = 0; index < invibes.purposes; ++index) {
+        invibes.purposes[index] = true;
+      }
+      return 2;
+    }
+
+    let purposeConsents = getPurposeConsents(gdprConsent.vendorData);
+
+    if (purposeConsents == null) { return 0; }
+    let purposesLength = getPurposeConsentsCounter(gdprConsent.vendorData);
+
+    if (purposeConsents instanceof Array) {
+      for (let i = 0; i < purposesLength && i < purposeConsents.length; i++) {
+        invibes.purposes[i] = !((purposeConsents[i] === false || purposeConsents[i] === 'false' || purposeConsents[i] == null));
+      }
+    } else if (typeof purposeConsents === 'object' && purposeConsents !== null) {
+      let i = 0;
+      for (let prop in purposeConsents) {
+        if (i === purposesLength) {
+          break;
+        }
+
+        if (purposeConsents.hasOwnProperty(prop)) {
+          invibes.purposes[i] = !((purposeConsents[prop] === false || purposeConsents[prop] === 'false' || purposeConsents[prop] == null));
+          i++;
+        }
+      }
+    } else {
+      return 0;
+    }
+
+    let invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10);
+    let vendorConsents = getVendorConsents(gdprConsent.vendorData);
+    if (vendorConsents == null || vendorConsents[invibesVendorId] == null) { return 4; }
+
+    if (vendorConsents[invibesVendorId] === false) { return 0; }
+
+    return 2;
   }
 
   return 0;
+}
+
+function getPurposeConsentsCounter(vendorData) {
+  if (vendorData.purpose && vendorData.purpose.consents) {
+    return 10;
+  }
+
+  return 5;
+}
+
+function getPurposeConsents(vendorData) {
+  if (vendorData.purpose && vendorData.purpose.consents) {
+    return vendorData.purpose.consents;
+  }
+
+  if (vendorData.purposeConsents) {
+    return vendorData.purposeConsents;
+  }
+
+  return null;
+}
+
+function getVendorConsentData(vendorData) {
+  if (vendorData.purpose && vendorData.purpose.consents) {
+    if (vendorData.tcString != null) { return vendorData.tcString; }
+  }
+  return vendorData.consentData;
+};
+
+function getVendorConsents(vendorData) {
+  if (vendorData.vendor && vendorData.vendor.consents) {
+    return vendorData.vendor.consents;
+  }
+
+  if (vendorData.vendorConsents) {
+    return vendorData.vendorConsents;
+  }
+
+  return null;
 }
 
 const ivLogger = initLogger();
@@ -384,55 +450,15 @@ invibes.Uid = {
   }
 };
 
-let cookieDomain;
 invibes.getCookie = function (name) {
   if (!storage.cookiesAreEnabled()) { return; }
-  let i, x, y;
-  let cookies = document.cookie.split(';');
-  for (i = 0; i < cookies.length; i++) {
-    x = cookies[i].substr(0, cookies[i].indexOf('='));
-    y = cookies[i].substr(cookies[i].indexOf('=') + 1);
-    x = x.replace(/^\s+|\s+$/g, '');
-    if (x === name) {
-      return unescape(y);
-    }
-  }
-};
 
-invibes.setCookie = function (name, value, exdays, domain) {
-  if (!storage.cookiesAreEnabled()) { return; }
-  let whiteListed = name == 'ivNoCookie' || name == 'IvbsCampIdsLocal';
-  if (invibes.noCookies && !whiteListed && (exdays || 0) >= 0) { return; }
-  if (exdays > 365) { exdays = 365; }
-  domain = domain || cookieDomain;
-  let exdate = new Date();
-  let exms = exdays * 24 * 60 * 60 * 1000;
-  exdate.setTime(exdate.getTime() + exms);
-  storage.setCookie(name, value, exdate.toUTCString(), undefined, domain);
-};
+  if (!invibes.optIn || !invibes.purposes[0]) { return; }
 
-let detectTopmostCookieDomain = function () {
-  let testCookie = invibes.Uid.generate();
-  let hostParts = location.hostname.split('.');
-  if (hostParts.length === 1) {
-    return location.hostname;
-  }
-  for (let i = hostParts.length - 1; i >= 0; i--) {
-    let domain = '.' + hostParts.slice(i).join('.');
-    invibes.setCookie(testCookie, testCookie, 1, domain);
-    let val = invibes.getCookie(testCookie);
-    if (val === testCookie) {
-      invibes.setCookie(testCookie, testCookie, -1, domain);
-      return domain;
-    }
-  }
+  return storage.getCookie(name);
 };
 
 let initDomainId = function (options) {
-  if (invibes.dom) { return; }
-
-  options = options || {};
-
   let cookiePersistence = {
     cname: 'ivbsdid',
     load: function () {
@@ -440,75 +466,16 @@ let initDomainId = function (options) {
       try {
         return JSON.parse(str);
       } catch (e) { }
-    },
-    save: function (obj) {
-      invibes.setCookie(this.cname, JSON.stringify(obj), 365);
     }
   };
 
-  let persistence = options.persistence || cookiePersistence;
-  let state;
-  let minHC = 2;
+  options = options || {};
 
-  let validGradTime = function (state) {
-    if (!state.cr) { return false; }
-    let min = 151 * 10e9;
-    if (state.cr < min) {
-      return false;
-    }
-    let now = new Date().getTime();
-    let age = now - state.cr;
-    let minAge = 24 * 60 * 60 * 1000;
-    return age > minAge;
-  };
+  var persistence = options.persistence || cookiePersistence;
 
-  state = persistence.load() || {
-    id: invibes.Uid.generate(),
-    cr: new Date().getTime(),
-    hc: 1,
-  };
+  let state = persistence.load();
 
-  if (state.id.match(/\./)) {
-    state.id = invibes.Uid.generate();
-  }
-
-  let graduate = function () {
-    if (!state.cr) { return; }
-    delete state.cr;
-    delete state.hc;
-    persistence.save(state);
-    setId();
-  };
-
-  let regenerateId = function () {
-    state.id = invibes.Uid.generate();
-    persistence.save(state);
-  };
-
-  let setId = function () {
-    invibes.dom = {
-      get id() {
-        return (!state.cr && invibes.optIn > 0) ? state.id : undefined;
-      },
-      get tempId() {
-        return (invibes.optIn > 0) ? state.id : undefined;
-      },
-      graduate: graduate,
-      regen: regenerateId
-    };
-  };
-
-  if (state.cr && !options.noVisit) {
-    if (state.hc < minHC) {
-      state.hc++;
-    }
-    if ((state.hc >= minHC && validGradTime(state)) || options.skipGraduation) {
-      graduate();
-    }
-  }
-  persistence.save(state);
-  setId();
-  ivLogger.info('Did=' + invibes.dom.id);
+  return state ? (state.id || state.tempId) : undefined;
 };
 
 let keywords = (function () {

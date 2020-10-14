@@ -29,7 +29,11 @@ export const BB_HELPERS = {
     if (!request) return;
 
     if (typeof getConfig('app') === 'object') request.app = getConfig('app');
-    else if (pageUrl) request.site = { page: pageUrl };
+    else {
+      request.site = {};
+      if (typeof getConfig('site') === 'object') request.site = getConfig('site');
+      if (pageUrl) request.site.page = pageUrl;
+    }
 
     if (typeof getConfig('device') === 'object') request.device = getConfig('device');
     if (!request.device) request.device = {};

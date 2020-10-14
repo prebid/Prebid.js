@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import {config} from '../src/config.js';
+import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
@@ -18,8 +19,6 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    let digitrust;
-
     let ret = {
       method: 'POST',
       url: '',
@@ -41,7 +40,8 @@ export const spec = {
       screensize: getScreenSize(),
       dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
       language: navigator.language,
-      ua: navigator.userAgent
+      ua: navigator.userAgent,
+      pversion: '$prebid.version$'
     });
 
     // coppa compliance
@@ -69,80 +69,19 @@ export const spec = {
       utils.deepSetValue(data, 'user.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    // Digitrust Support
-    const bidRequestDigitrust = utils.deepAccess(validBidRequests[0], 'userId.digitrustid.data');
-    if (bidRequestDigitrust && (!bidRequestDigitrust.privacy || !bidRequestDigitrust.privacy.optout)) {
-      digitrust = {
-        id: bidRequestDigitrust.id,
-        keyv: bidRequestDigitrust.keyv
-      }
-    }
-
-    if (digitrust) {
-      utils.deepSetValue(data, 'user.ext.digitrust', {
-        id: digitrust.id,
-        keyv: digitrust.keyv
-      })
-    }
-
-    if (validBidRequests[0].userId && typeof validBidRequests[0].userId === 'object' && (validBidRequests[0].userId.tdid || validBidRequests[0].userId.pubcid || validBidRequests[0].userId.lipb || validBidRequests[0].userId.id5id || validBidRequests[0].userId.parrableid)) {
-      utils.deepSetValue(data, 'user.ext.eids', []);
-
-      if (validBidRequests[0].userId.tdid) {
-        data.user.ext.eids.push({
-          source: 'adserver.org',
-          uids: [{
-            id: validBidRequests[0].userId.tdid,
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }]
-        });
-      }
-
-      if (validBidRequests[0].userId.pubcid) {
-        data.user.ext.eids.push({
-          source: 'pubcommon',
-          uids: [{
-            id: validBidRequests[0].userId.pubcid,
-          }]
-        });
-      }
-
-      if (validBidRequests[0].userId.id5id) {
-        data.user.ext.eids.push({
-          source: 'id5-sync.com',
-          uids: [{
-            id: validBidRequests[0].userId.id5id,
-          }]
-        });
-      }
-
-      if (validBidRequests[0].userId.parrableid) {
-        data.user.ext.eids.push({
-          source: 'parrable.com',
-          uids: [{
-            id: validBidRequests[0].userId.parrableid,
-          }]
-        });
-      }
-
-      if (validBidRequests[0].userId.lipb && validBidRequests[0].userId.lipb.lipbid) {
-        data.user.ext.eids.push({
-          source: 'liveintent.com',
-          uids: [{
-            id: validBidRequests[0].userId.lipb.lipbid
-          }]
-        });
-      }
+    // EIDS Support
+    if (validBidRequests[0].userId) {
+      data.user.ext.eids = createEidsArray(validBidRequests[0].userId);
     }
 
     validBidRequests.map(bid => {
       const placement = Object.assign({
         id: bid.transactionId,
         divName: bid.bidId,
+        pisze: bid.mediaTypes.banner.sizes[0] || bid.sizes[0],
         sizes: bid.mediaTypes.banner.sizes,
-        adTypes: getSize(bid.mediaTypes.banner.sizes || bid.sizes)
+        adTypes: getSize(bid.mediaTypes.banner.sizes || bid.sizes),
+        floor: getBidFloor(bid)
       }, bid.params);
 
       if (placement.networkId && placement.siteId) {
@@ -276,6 +215,22 @@ sizeMap[1578] = '320x100';
 sizeMap[331] = '320x250';
 sizeMap[3301] = '320x267';
 sizeMap[2730] = '728x250';
+
+function getBidFloor(bidRequest) {
+  let floorInfo = {};
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: 'USD',
+      mediaType: 'banner',
+      size: '*'
+    });
+  }
+
+  let floor = floorInfo.floor || 0;
+
+  return floor;
+}
 
 function getSize(sizes) {
   const result = [];

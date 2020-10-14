@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
@@ -46,7 +47,7 @@ export const spec = {
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         user: raiSetEids(bid),
-        demand: raiGetDemandType(bid) ? 'video' : 'display',
+        demand: raiGetDemandType(bid),
         videoData: raiGetVideoInfo(bid)
       };
 
@@ -97,8 +98,18 @@ export const spec = {
 
       if (response.media_type === 'video') {
         bidResponse.vastXml = response.vastXML;
+        try {
+          if (JSON.parse(bidRequest.data).videoData.format == 'outstream') {
+            bidResponse.renderer = Renderer.install({
+              url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
+            });
+            bidResponse.renderer.setRender(renderer);
+          }
+        } catch (e) {
+          bidResponse.ad = response.adm;
+        }
       } else {
-        bidResponse.ad = response.adm
+        bidResponse.ad = response.adm;
       }
 
       bidResponses.push(bidResponse);
@@ -121,7 +132,7 @@ export const spec = {
     var consent = '';
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString != 'undefined') {
-      consent = `pubconsent='${gdprConsent.consentString}'&euconsent='${gdprConsent.consentString}'`
+      consent = `consentString=${gdprConsent.consentString}`
     }
 
     if (syncOptions.iframeEnabled) {
@@ -165,20 +176,23 @@ function raiGetSizes(bid) {
 }
 
 function raiGetDemandType(bid) {
+  let raiFormat = 'display';
   if (bid.mediaTypes != undefined) {
     if (bid.mediaTypes.video != undefined) {
-      return true;
+      raiFormat = 'video';
     }
   }
-  return false;
+  return raiFormat;
 }
 
 function raiGetVideoInfo(bid) {
-  let videoData = [];
-  if (raiGetDemandType(bid)) {
-    videoData.push({format: bid.mediaTypes.video.context});
-    videoData.push({playerSize: bid.mediaTypes.video.playerSize});
-    videoData.push({mimes: bid.mediaTypes.video.mimes});
+  let videoData;
+  if (raiGetDemandType(bid) == 'video') {
+    videoData = {
+      format: bid.mediaTypes.video.context,
+      playerSize: bid.mediaTypes.video.playerSize,
+      mimes: bid.mediaTypes.video.mimes
+    };
   }
   return videoData;
 }
@@ -205,4 +219,25 @@ function raiSetUserId(bid, eids, source, value) {
       source: source
     });
   }
+}
+
+function renderer(bid) {
+  bid.renderer.push(() => {
+    renderAd(bid)
+  });
+}
+
+function renderAd(bid) {
+  let raOutstreamHBPassback = `${bid.vastXml}`;
+  let raPlayerHB = {
+    config: bid.params[0].player != undefined ? {
+      end: bid.params[0].player.end != null ? bid.params[0].player.end : 'close',
+      init: bid.params[0].player.init != null ? bid.params[0].player.init : 'close',
+      skin: bid.params[0].player.skin != null ? bid.params[0].player.skin : 'light',
+    } : {end: 'close', init: 'close', skin: 'light'},
+    pid: bid.params[0].pid,
+    adUnit: bid.adUnitCode
+  };
+
+  window.raParams(raPlayerHB, raOutstreamHBPassback, true);
 }

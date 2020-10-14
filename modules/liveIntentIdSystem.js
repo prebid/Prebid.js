@@ -21,6 +21,9 @@ let liveConnect = null;
  * This function is used in tests
  */
 export function reset() {
+  if (window && window.liQ) {
+    window.liQ = [];
+  }
   eventFired = false;
   liveConnect = null;
 }
@@ -45,16 +48,12 @@ function parseLiveIntentCollectorConfig(collectConfig) {
 }
 
 function initializeLiveConnect(configParams) {
+  configParams = configParams || {};
   if (liveConnect) {
     return liveConnect;
   }
 
-  const publisherId = configParams && configParams.publisherId;
-  if (!publisherId && typeof publisherId !== 'string') {
-    utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
-    return;
-  }
-
+  const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
     source: 'prebid',
     publisherId: publisherId
@@ -65,20 +64,11 @@ function initializeLiveConnect(configParams) {
   if (configParams.partner) {
     identityResolutionConfig.source = configParams.partner
   }
-  if (configParams.storage && configParams.storage.expires) {
-    identityResolutionConfig.expirationDays = configParams.storage.expires;
-  }
-  if (configParams.ajaxTimeout) {
-    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
-  }
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
-  if (configParams.providedIdentifierName) {
-    liveConnectConfig.providedIdentifierName = configParams.providedIdentifierName;
-  }
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
@@ -120,10 +110,10 @@ export const liveIntentIdSubmodule = {
       return { 'lipb': { ...base, ...value } };
     }
 
-    if (configParams) {
+    if (!liveConnect) {
       initializeLiveConnect(configParams);
-      tryFireEvent();
     }
+    tryFireEvent();
 
     return (value && typeof value['unifiedId'] === 'string') ? composeIdObject(value) : undefined;
   },

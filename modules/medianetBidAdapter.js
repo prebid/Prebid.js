@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'medianet';
@@ -21,12 +21,12 @@ let refererInfo = getRefererInfo();
 
 let mnData = {};
 mnData.urlData = {
-  domain: utils.parseUrl(refererInfo.referer).host,
+  domain: utils.parseUrl(refererInfo.referer).hostname,
   page: refererInfo.referer,
   isTop: refererInfo.reachedTop
 }
 
-$$PREBID_GLOBAL$$.medianetGlobals = {};
+$$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
 
 function getTopWindowReferrer() {
   try {
@@ -145,7 +145,8 @@ function extParams(params, gdpr, uspConsent, userId) {
     uspApplies && { usp_consent_string: uspConsent || '' },
     {coppa_applies: coppaApplies},
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
-    userId && { user_id: userId }
+    userId && { user_id: userId },
+    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true }
   );
 }
 
@@ -159,7 +160,15 @@ function slotParams(bidRequest) {
     },
     all: bidRequest.params
   };
-  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes || [];
+  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
+
+  const videoInMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
+  const videoInParams = utils.deepAccess(bidRequest, 'params.video') || {};
+  const videoCombinedObj = Object.assign({}, videoInParams, videoInMediaType);
+
+  if (!utils.isEmpty(videoCombinedObj)) {
+    params.video = videoCombinedObj;
+  }
 
   if (bannerSizes.length > 0) {
     params.banner = transformSizes(bannerSizes);
@@ -238,6 +247,10 @@ function normalizeCoordinates(coordinates) {
   }
 }
 
+function getBidderURL(cid) {
+  return BID_URL + '?cid=' + encodeURIComponent(cid);
+}
+
 function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site),
@@ -300,7 +313,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 142,
 
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -335,7 +348,7 @@ export const spec = {
     let payload = generatePayload(bidRequests, bidderRequests);
     return {
       method: 'POST',
-      url: BID_URL,
+      url: getBidderURL(payload.ext.customer_id),
       data: JSON.stringify(payload)
     };
   },

@@ -631,7 +631,7 @@ describe('PulsePoint Adapter Tests', function () {
       criteoId: 'criteo_id234',
       idl_env: 'idl_id123',
       id5id: 'id5id_234',
-      parrableid: 'parrable_id234',
+      parrableId: { eid: 'parrable_id234' },
       lipb: {
         lipbid: 'liveintent_id123'
       }
