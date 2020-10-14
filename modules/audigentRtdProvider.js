@@ -24,9 +24,7 @@ const storage = getStorageManager();
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
-
-/** @type {ModuleParams} */
-let _moduleParams = {};
+const SUBMODULE_NAME = 'audigent';
 
 /**
  * XMLHttpRequest to get data form audigent server
@@ -113,15 +111,14 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent) {
 }
 
 export function init(config) {
-  _moduleParams = {};
   return true;
 }
 
 /** @type {RtdSubmodule} */
 export const audigentSubmodule = {
-  name: 'audigent',
+  name: SUBMODULE_NAME,
   getBidRequestData: getSegments,
   init: init
 };
 
-submodule('realTimeData', audigentSubmodule);
+submodule(MODULE_NAME, audigentSubmodule);
