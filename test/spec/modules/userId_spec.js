@@ -737,9 +737,43 @@ describe('User ID', function () {
               source: 'pubcid.org',
               uids: [{id: 'testpubcid', atype: 1}]
             });
+
+            // verify no sharedid was added
+            expect(bid.userId).to.not.have.property('sharedid');
+            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.be.undefined;
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
+    });
+
+    it('test hook from pubcommonid html5', function (done) {
+      // simulate existing browser local storage values
+      localStorage.setItem('pubcid', 'testpubcid');
+      localStorage.setItem('pubcid_exp', new Date(Date.now() + 100000).toUTCString());
+
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'html5']));
+
+      requestBidsHook(function () {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.pubcid');
+            expect(bid.userId.pubcid).to.equal('testpubcid');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'pubcid.org',
+              uids: [{id: 'testpubcid', atype: 1}]
+            });
+
+            // verify no sharedid was added
+            expect(bid.userId).to.not.have.property('sharedid');
+            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.be.undefined;
+          });
+        });
+        localStorage.removeItem('pubcid');
+        localStorage.removeItem('pubcid_exp');
         done();
       }, {adUnits});
     });
@@ -761,7 +795,7 @@ describe('User ID', function () {
       }, {adUnits});
     });
 
-    it('test hook from pubcommonid html5', function (done) {
+    it('test hook from UnifiedId html5', function (done) {
       // simulate existing browser local storage values
       localStorage.setItem('unifiedid_alt', JSON.stringify({'TDID': 'testunifiedid_alt'}));
       localStorage.setItem('unifiedid_alt_exp', '');
@@ -1517,13 +1551,16 @@ describe('User ID', function () {
       }, {adUnits});
     });
 
-    it('test sharedid via pubcid', function (done) {
+    it('test sharedid enabled via pubcid cookie', function (done) {
       coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('pubcid_sharedid', 'testsharedid', (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
-      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
+
+      const customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+      addConfig(customCfg, 'params', {enableSharedId: true});
+      config.setConfig(customCfg);
 
       requestBidsHook(function () {
         adUnits.forEach(unit => {
@@ -1545,6 +1582,116 @@ describe('User ID', function () {
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('pubcid_sharedid', '', EXPIRED_COOKIE_DATE);
 
+        done();
+      }, {adUnits});
+    });
+
+    it('test sharedid disabled via pubcid cookie', function (done) {
+      coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('pubcid_sharedid', 'testsharedid', (new Date(Date.now() + 5000).toUTCString()));
+
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+
+      // pubCommonId's support for sharedId is off by default
+      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
+
+      requestBidsHook(function () {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            // verify that the PubCommonId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.pubcid');
+            expect(bid.userId.pubcid).to.equal('testpubcid');
+            expect(findEid(bid.userIdAsEids, 'pubcid.org')).to.deep.equal(
+              {'source': 'pubcid.org', 'uids': [{'id': 'testpubcid', 'atype': 1}]}
+            );
+            // verify that the sharedid was not added to bid
+            expect(bid.userId).to.not.have.property('sharedid');
+            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.be.undefined;
+          });
+        });
+        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('pubcid_sharedid', '', EXPIRED_COOKIE_DATE);
+
+        done();
+      }, {adUnits});
+    });
+
+    it('test sharedid enabled via pubcid html5', function (done) {
+      coreStorage.setDataInLocalStorage('pubcid', 'testpubcid');
+      coreStorage.setDataInLocalStorage('pubcid_exp', new Date(Date.now() + 5000).toUTCString());
+      coreStorage.setDataInLocalStorage('pubcid_sharedid', 'testsharedid');
+      coreStorage.setDataInLocalStorage('pubcid_sharedid_exp', new Date(Date.now() + 5000).toUTCString());
+
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+
+      const customCfg = getConfigMock(['pubCommonId', 'pubcid', 'html5']);
+      addConfig(customCfg, 'params', {enableSharedId: true});
+      config.setConfig(customCfg);
+
+      requestBidsHook(function () {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            // verify that the PubCommonId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.pubcid');
+            expect(bid.userId.pubcid).to.equal('testpubcid');
+            expect(findEid(bid.userIdAsEids, 'pubcid.org')).to.deep.equal(
+              {'source': 'pubcid.org', 'uids': [{'id': 'testpubcid', 'atype': 1}]}
+            );
+            // verify that the sharedid was also copied to bid
+            expect(bid).to.have.deep.nested.property('userId.sharedid');
+            expect(bid.userId.sharedid).to.deep.equal({id: 'testsharedid'});
+            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.deep.equal(
+              {'source': 'sharedid.org', 'uids': [{'id': 'testsharedid', 'atype': 1}]}
+            );
+          });
+        });
+        coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('pubcid_sharedid', '', EXPIRED_COOKIE_DATE);
+
+        coreStorage.removeDataFromLocalStorage('pubcid');
+        coreStorage.removeDataFromLocalStorage('pubcid_exp');
+        coreStorage.removeDataFromLocalStorage('pubcid_sharedid');
+        coreStorage.removeDataFromLocalStorage('pubcid_sharedid_exp');
+        done();
+      }, {adUnits});
+    });
+
+    it('test expired sharedid via pubcid html5', function (done) {
+      coreStorage.setDataInLocalStorage('pubcid', 'testpubcid');
+      coreStorage.setDataInLocalStorage('pubcid_exp', new Date(Date.now() + 5000).toUTCString());
+
+      // set sharedid to expired already
+      coreStorage.setDataInLocalStorage('pubcid_sharedid', 'testsharedid');
+      coreStorage.setDataInLocalStorage('pubcid_sharedid_exp', new Date(Date.now() - 100).toUTCString());
+
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+
+      const customCfg = getConfigMock(['pubCommonId', 'pubcid', 'html5']);
+      addConfig(customCfg, 'params', {enableSharedId: true});
+      config.setConfig(customCfg);
+
+      requestBidsHook(function () {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            // verify that the PubCommonId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.pubcid');
+            expect(bid.userId.pubcid).to.equal('testpubcid');
+            expect(findEid(bid.userIdAsEids, 'pubcid.org')).to.deep.equal(
+              {'source': 'pubcid.org', 'uids': [{'id': 'testpubcid', 'atype': 1}]}
+            );
+            // verify that the sharedid was not added
+            expect(bid.userId).to.not.have.property('sharedid');
+            expect(findEid(bid.userIdAsEids, 'sharedid.org')).to.be.undefined;
+          });
+        });
+
+        coreStorage.removeDataFromLocalStorage('pubcid');
+        coreStorage.removeDataFromLocalStorage('pubcid_exp');
+        coreStorage.removeDataFromLocalStorage('pubcid_sharedid');
+        coreStorage.removeDataFromLocalStorage('pubcid_sharedid_exp');
         done();
       }, {adUnits});
     });
@@ -1783,11 +1930,11 @@ describe('User ID', function () {
       expect(server.requests[0].url).to.equal('https://match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
     });
 
-    it('handle sharedid callback via pubcid', function () {
+    it('verify sharedid callback via pubcid when enabled', function () {
       let adUnits = [getAdUnitMock()];
       let innerAdUnits;
       let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
-      customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url'});
+      customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url', enableSharedId: true});
 
       server.respondWith('https://id.sharedid.org/id', function(xhr) {
         xhr.respond(200, {}, '{"sharedId":"testsharedid"}');
@@ -1809,11 +1956,37 @@ describe('User ID', function () {
       expect(coreStorage.getCookie('pubcid_sharedid')).to.equal('testsharedid');
     });
 
-    it('handle sharedid optout via pubcid', function () {
+    it('verify no sharedid callback via pubcid when disabled', function () {
       let adUnits = [getAdUnitMock()];
       let innerAdUnits;
       let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
       customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url'});
+
+      server.respondWith('https://id.sharedid.org/id', function(xhr) {
+        xhr.respond(200, {}, '{"sharedId":"testsharedid"}');
+      });
+      server.respondImmediately = true;
+
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+      config.setConfig(customCfg);
+      requestBidsHook((config) => {
+        innerAdUnits = config.adUnits
+      }, {adUnits});
+
+      expect(utils.triggerPixel.called).to.be.false;
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+      expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/pubcid/url');
+
+      expect(server.requests).to.have.lengthOf(0);
+      expect(coreStorage.getCookie('pubcid_sharedid')).to.be.null;
+    });
+
+    it('verify sharedid optout via pubcid when enabled', function () {
+      let adUnits = [getAdUnitMock()];
+      let innerAdUnits;
+      let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+      customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url', enableSharedId: true});
       coreStorage.setCookie('pubcid_sharedid', 'testsharedid', (new Date(Date.now() + 5000).toUTCString()));
 
       server.respondWith('https://id.sharedid.org/id', function(xhr) {

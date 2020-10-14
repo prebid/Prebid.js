@@ -19,6 +19,7 @@ const SHAREDID_OPT_OUT_VALUE = '00000000000000000000000000';
 const SHAREDID_URL = 'https://id.sharedid.org/id';
 const SHAREDID_SUFFIX = '_sharedid';
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
+const SHAREDID_DEFAULT_STATE = false;
 
 const storage = getStorageManager(null, 'pubCommonId');
 
@@ -29,18 +30,24 @@ const storage = getStorageManager(null, 'pubCommonId');
  */
 
 function storeData(config, value) {
-  if (value) {
-    const key = config.storage.name + SHAREDID_SUFFIX;
-    if (config.storage.type === COOKIE) {
-      if (storage.cookiesAreEnabled()) {
-        const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
-        storage.setCookie(key, value, expiresStr, 'LAX', COOKIE_DOMAIN);
-      }
-    } else if (config.storage.type === LOCAL_STORAGE) {
-      if (storage.hasLocalStorage()) {
-        storage.setDataInLocalStorage(key, value);
+  try {
+    if (value) {
+      const key = config.storage.name + SHAREDID_SUFFIX;
+      const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
+
+      if (config.storage.type === COOKIE) {
+        if (storage.cookiesAreEnabled()) {
+          storage.setCookie(key, value, expiresStr, 'LAX', COOKIE_DOMAIN);
+        }
+      } else if (config.storage.type === LOCAL_STORAGE) {
+        if (storage.hasLocalStorage()) {
+          storage.setDataInLocalStorage(`${key}_exp`, expiresStr);
+          storage.setDataInLocalStorage(key, value);
+        }
       }
     }
+  } catch (error) {
+    utils.logError(error);
   }
 }
 
@@ -50,13 +57,24 @@ function storeData(config, value) {
  * @return {string}
  */
 function readData(config) {
-  const key = config.storage.name + SHAREDID_SUFFIX;
-  if (config.storage.type === COOKIE) {
-    if (storage.cookiesAreEnabled()) { return storage.getCookie(key); }
-  } else if (config.storage.type === LOCAL_STORAGE) {
-    if (storage.hasLocalStorage()) {
-      return storage.getDataFromLocalStorage(key);
+  try {
+    const key = config.storage.name + SHAREDID_SUFFIX;
+    if (config.storage.type === COOKIE) {
+      if (storage.cookiesAreEnabled()) {
+        return storage.getCookie(key);
+      }
+    } else if (config.storage.type === LOCAL_STORAGE) {
+      if (storage.hasLocalStorage()) {
+        const expValue = storage.getDataFromLocalStorage(`${key}_exp`);
+        if (!expValue) {
+          return storage.getDataFromLocalStorage(key);
+        } else if ((new Date(expValue)).getTime() - Date.now() > 0) {
+          return storage.getDataFromLocalStorage(key)
+        }
+      }
     }
+  } catch (error) {
+    utils.logError(error);
   }
 }
 
@@ -65,13 +83,18 @@ function readData(config) {
  * @param config Need config.storage to derive key and storage type
  */
 function delData(config) {
-  const key = config.storage.name + SHAREDID_SUFFIX;
-  if (config.storage.type === COOKIE) {
-    if (storage.cookiesAreEnabled()) {
-      storage.setCookie(key, '', EXPIRED_COOKIE_DATE);
+  try {
+    const key = config.storage.name + SHAREDID_SUFFIX;
+    if (config.storage.type === COOKIE) {
+      if (storage.cookiesAreEnabled()) {
+        storage.setCookie(key, '', EXPIRED_COOKIE_DATE);
+      }
+    } else if (config.storage.type === LOCAL_STORAGE) {
+      storage.removeDataFromLocalStorage(`${key}_exp`);
+      storage.removeDataFromLocalStorage(key);
     }
-  } else if (config.storage.type === LOCAL_STORAGE) {
-    storage.removeDataFromLocalStorage(key);
+  } catch (error) {
+    utils.logError(error);
   }
 }
 
@@ -89,7 +112,7 @@ function handleResponse(pubcid, callback, config) {
       if (responseBody) {
         try {
           let responseObj = JSON.parse(responseBody);
-          utils.logInfo('SharedId: Generated SharedId: ' + responseObj.sharedId);
+          utils.logInfo('PubCommonId: Generated SharedId: ' + responseObj.sharedId);
           if (responseObj.sharedId) {
             if (responseObj.sharedId !== SHAREDID_OPT_OUT_VALUE) {
               // Store sharedId locally
@@ -107,7 +130,7 @@ function handleResponse(pubcid, callback, config) {
       }
     },
     error: function (statusText, responseBody) {
-      utils.logInfo('SharedId: failed to get id');
+      utils.logInfo('PubCommonId: failed to get sharedid');
     }
   }
 }
@@ -165,9 +188,14 @@ export const pubCommonIdSubmodule = {
    * @returns {{pubcid:string}}
    */
   decode(value, config) {
-    const sharedId = readData(config);
     const idObj = {'pubcid': value};
-    if (sharedId) idObj['sharedid'] = {id: sharedId};
+    const {params: {enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
+
+    if (enableSharedId) {
+      const sharedId = readData(config);
+      if (sharedId) idObj['sharedid'] = {id: sharedId};
+    }
+
     return idObj;
   },
   /**
@@ -179,7 +207,7 @@ export const pubCommonIdSubmodule = {
    * @returns {IdResponse}
    */
   getId: function (config = {}, consentData, storedId) {
-    const {params: {create = true, pixelUrl} = {}} = config;
+    const {params: {create = true, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
     let newId = storedId;
     if (!newId) {
       try {
@@ -193,10 +221,10 @@ export const pubCommonIdSubmodule = {
       if (!newId) newId = (create && utils.hasDeviceAccess()) ? utils.generateUUID() : undefined;
     }
 
-    return {
-      id: newId,
-      callback: getIdCallback(newId, this.makeCallback(pixelUrl, newId), config)
-    }
+    const pixelCallback = this.makeCallback(pixelUrl, newId);
+    const combinedCallback = enableSharedId ? getIdCallback(newId, pixelCallback, config) : pixelCallback;
+
+    return {id: newId, callback: combinedCallback};
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time
@@ -218,14 +246,16 @@ export const pubCommonIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   extendId: function(config = {}, storedId) {
-    const {params: {extend = false, pixelUrl} = {}} = config;
+    const {params: {extend = false, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
 
     if (extend) {
       try {
         if (typeof window[PUB_COMMON_ID] === 'object') {
-          // If the page includes its own pubcid module, then there is nothing to do
-          // except to update sharedid's expiration time
-          storeData(config, readData(config));
+          if (enableSharedId) {
+            // If the page includes its own pubcid module, then there is nothing to do
+            // except to update sharedid's expiration time
+            storeData(config, readData(config));
+          }
           return;
         }
       } catch (e) {
@@ -235,8 +265,10 @@ export const pubCommonIdSubmodule = {
         const callback = this.makeCallback(pixelUrl, storedId);
         return {callback: callback};
       } else {
-        // Update with the same value to extend expiration time
-        storeData(config, readData(config));
+        if (enableSharedId) {
+          // Update with the same value to extend expiration time
+          storeData(config, readData(config));
+        }
         return {id: storedId};
       }
     }
