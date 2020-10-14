@@ -7,7 +7,7 @@ import { spec } from 'modules/33acrossBidAdapter.js';
 
 describe('33acrossBidAdapter:', function () {
   const BIDDER_CODE = '33across';
-  const SITE_ID = 'pub1234';
+  const SITE_ID = 'cxBE0qjUir6iopaKkGJozW';
   const PRODUCT_ID = 'siab';
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 
@@ -75,7 +75,7 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.withVideo = ({ w = 300, h = 250, placement = 1 } = {}) => {
+    this.withVideo = ({ w = 300, h = 250, placement = 2 } = {}) => {
       Object.assign(ttxRequest.imp[0], {
         video: {
           w,
@@ -241,10 +241,18 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.withVideo = (context = 'outstream') => {
+    this.withProduct = (prod) => {
+      bidRequests[0].params.productId = prod;
+
+      return this;
+    };
+
+    this.withVideo = ({context = 'outstream', placement, startdelay} = {}) => {
       bidRequests[0].mediaTypes.video = {
         playerSize: [[300, 250]],
-        context
+        context,
+        placement,
+        startdelay
       };
 
       return this;
@@ -397,6 +405,22 @@ describe('33acrossBidAdapter:', function () {
     });
 
     context('video validation', function() {
+      beforeEach(function() {
+        // Basic Valid BidRequest
+        this.bid = {
+          bidder: '33across',
+          mediaTypes: {
+            video: {
+              playerSize: [[300, 50]],
+              context: 'outstream'
+            }
+          },
+          params: {
+            siteId: 'cxBE0qjUir6iopaKkGJozW'
+          }
+        };
+      });
+
       it('returns true when video mediaType does not exist', function() {
         const bid = {
           bidder: '33across',
@@ -409,36 +433,13 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns true when valid video mediaType is defined', function() {
-        const bid = {
-          bidder: '33across',
-          mediaTypes: {
-            video: {
-              context: 'instream',
-              playerSize: [250, 300]
-            }
-          },
-          params: {
-            siteId: 'cxBE0qjUir6iopaKkGJozW'
-          }
-        };
-
-        expect(spec.isBidRequestValid(bid)).to.be.true;
+        expect(spec.isBidRequestValid(this.bid)).to.be.true;
       });
 
       it('returns false when video context is not defined', function() {
-        const bid = {
-          bidder: '33across',
-          mediaTypes: {
-            video: {
-              placement: 2
-            }
-          },
-          params: {
-            siteId: 'cxBE0qjUir6iopaKkGJozW'
-          }
-        };
+        delete this.bid.mediaTypes.video.context;
 
-        expect(spec.isBidRequestValid(bid)).to.be.false;
+        expect(spec.isBidRequestValid(this.bid)).to.be.false;
       });
 
       it('returns false when video playserSize is invalid', function() {
@@ -450,19 +451,22 @@ describe('33acrossBidAdapter:', function () {
         ];
 
         invalidSizes.forEach((playerSize) => {
-          const bid = {
-            bidder: '33across',
-            mediaTypes: {
-              video: {
-                playerSize
-              }
-            },
-            params: {
-              siteId: 'cxBE0qjUir6iopaKkGJozW'
-            }
-          };
+          this.bid.mediaTypes.video.playerSize = playerSize;
+          expect(spec.isBidRequestValid(this.bid)).to.be.false;
+        });
+      });
 
-          expect(spec.isBidRequestValid(bid)).to.be.false;
+      it('returns false when video placement is invalid', function() {
+        const invalidPlacement = [
+          [],
+          '1',
+          {},
+          'foo'
+        ];
+
+        invalidPlacement.forEach((placement) => {
+          this.bid.mediaTypes.video.placement = placement;
+          expect(spec.isBidRequestValid(this.bid)).to.be.false;
         });
       });
     })
@@ -919,6 +923,195 @@ describe('33acrossBidAdapter:', function () {
           .withProduct()
           .withFormatFloors([ 1.0, 0.10 ])
           .build();
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when mediaType has video only and context is instream', function() {
+      it('builds instream request with default params', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withVideo({context: 'instream'})
+            .build()
+        );
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withVideo()
+          .withProduct('instream')
+          .build();
+
+        ttxRequest.imp[0].video.placement = 1;
+        ttxRequest.imp[0].video.startdelay = 0;
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('builds instream request with params passed', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withVideo({context: 'instream', startdelay: -2})
+            .build()
+        );
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withVideo()
+          .withProduct('instream')
+          .build();
+
+        ttxRequest.imp[0].video.placement = 1;
+        ttxRequest.imp[0].video.startdelay = -2;
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when mediaType has video only and context is outstream', function() {
+      it('builds siab request with video only with default params', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withVideo({context: 'outstream'})
+            .build()
+        );
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withVideo()
+          .withProduct('siab')
+          .build();
+
+        ttxRequest.imp[0].video.placement = 2;
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('builds siab request with video params passed', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withVideo({context: 'outstream', placement: 3})
+            .build()
+        );
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withVideo()
+          .withProduct('siab')
+          .build();
+
+        ttxRequest.imp[0].video.placement = 3;
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when mediaType has banner only', function() {
+      it('builds default siab request', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withBanner()
+            .build()
+        );
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withSite({id: 'cxBE0qjUir6iopaKkGJozW'})
+          .withProduct('siab')
+          .build();
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('builds default inview request when product is set as such', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withBanner()
+            .withProduct('inview')
+            .build()
+        );
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withSite({id: 'cxBE0qjUir6iopaKkGJozW'})
+          .withProduct('inview')
+          .build();
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when mediaType has banner and video', function() {
+      it('builds siab request with banner and outstream video', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withBanner()
+            .withVideo({context: 'outstream'})
+            .build()
+        );
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withVideo()
+          .withSite({id: 'cxBE0qjUir6iopaKkGJozW'})
+          .withProduct('siab')
+          .build();
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+
+      it('builds siab request with banner and outstream video even when context is instream', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withBanner()
+            .withVideo({context: 'instream'})
+            .build()
+        );
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withVideo()
+          .withSite({id: 'cxBE0qjUir6iopaKkGJozW'})
+          .withProduct('siab')
+          .build();
+
+        ttxRequest.imp[0].video.placement = 2;
 
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)

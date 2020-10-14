@@ -71,6 +71,7 @@ function _validateBanner(bid) {
 
 function _validateVideo(bid) {
   const videoAdUnit = utils.deepAccess(bid, 'mediaTypes.video');
+  const videoBidderParams = utils.deepAccess(bid, 'params.video', {});
 
   // If there's no video no need to validate against video rules
   if (videoAdUnit === undefined) {
@@ -82,6 +83,26 @@ function _validateVideo(bid) {
   }
 
   if (!videoAdUnit.context) {
+    return false;
+  }
+
+  const placement = videoAdUnit.placement || videoBidderParams.placement
+
+  // If placement if defined, it must be a number
+  if (
+    typeof placement !== 'undefined' &&
+    typeof placement !== 'number'
+  ) {
+    return false;
+  }
+
+  const startdelay = videoAdUnit.startdelay || videoBidderParams.startdelay
+
+  // If startdelay is defined it must be a number
+  if (
+    typeof startdelay !== 'undefined' &&
+    typeof startdelay !== 'number'
+  ) {
     return false;
   }
 
