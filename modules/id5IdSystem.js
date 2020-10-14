@@ -10,6 +10,7 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { uspDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
@@ -77,7 +78,8 @@ export const id5IdSubmodule = {
     }
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
-    const url = `https://id5-sync.com/g/v2/${configParams.partner}.json?gdpr_consent=${gdprConsentString}&gdpr=${hasGdpr}`;
+    const usp = uspDataHandler.getConsentData() || '';
+    const url = `https://id5-sync.com/g/v2/${configParams.partner}.json?gdpr_consent=${gdprConsentString}&gdpr=${hasGdpr}&us_privacy=${usp}`;
     const referer = getRefererInfo();
     const signature = (cacheIdObj && cacheIdObj.signature) ? cacheIdObj.signature : '';
     const pubId = (cacheIdObj && cacheIdObj.ID5ID) ? cacheIdObj.ID5ID : ''; // TODO: remove when 1puid isn't needed
