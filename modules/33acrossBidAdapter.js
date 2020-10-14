@@ -124,10 +124,8 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
   ttxRequest.imp = [{}];
 
   if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
-    const { format, contributeViewability } = _buildBannerORTB(bidRequest);
     ttxRequest.imp[0].banner = {
-      format,
-      ext: contributeViewability()
+      ..._buildBannerORTB(bidRequest)
     }
   }
 
@@ -222,12 +220,10 @@ function _getSize(size) {
 // BUILD REQUESTS: PRODUCT INFERENCE
 function _getProduct(bidRequest) {
   const { params, mediaTypes } = bidRequest;
-  const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
-  const { context } = videoAdUnit;
 
   const { banner, video } = mediaTypes;
 
-  if ((video && !banner) && context === 'instream') {
+  if ((video && !banner) && video.context === 'instream') {
     return PRODUCT.INSTREAM;
   }
 
@@ -245,10 +241,8 @@ function _buildBannerORTB(bidRequest) {
 
   // We support size based bidfloors so obtain one if there's a rule associated
   if (typeof bidRequest.getFloor === 'function') {
-    let getFloor = bidRequest.getFloor.bind(bidRequest);
-
     format = sizes.map((size) => {
-      const bidfloors = _getBidFloors(getFloor, size, MEDIA_TYPE.BANNER);
+      const bidfloors = _getBidFloors(bidRequest, size, MEDIA_TYPE.BANNER);
 
       let formatExt;
       if (bidfloors) {
@@ -273,17 +267,15 @@ function _buildBannerORTB(bidRequest) {
     ? _getViewability(element, utils.getWindowTop(), minSize)
     : NON_MEASURABLE;
 
-  const contributeViewability = ViewabilityContributor(viewabilityAmount);
-
   return {
     format,
-    contributeViewability
+    ext: contributeViewability(viewabilityAmount)
   }
 }
 
 // BUILD REQUESTS: BIDFLOORS
-function _getBidFloors(getFloor, size, mediaType) {
-  const bidFloors = getFloor({
+function _getBidFloors(bidRequest, size, mediaType) {
+  const bidFloors = bidRequest.getFloor({
     currency: CURRENCY,
     mediaType,
     size: [ size.w, size.h ]
@@ -409,17 +401,16 @@ function _getPercentInView(element, topWin, { w, h } = {}) {
 /**
  * Viewability contribution to request..
  */
-function ViewabilityContributor(viewabilityAmount) {
-  function contributeViewability() {
-    const ext = {};
-    const ttx = ext.ttx = Object.assign({}, ext.ttx);
+function contributeViewability(viewabilityAmount) {
+  const amount = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
 
-    ttx.viewability = { amount: isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount) };
-
-    return ext;
-  }
-
-  return contributeViewability;
+  return {
+    ttx: {
+      viewability: {
+        amount
+      }
+    }
+  };
 }
 
 function _isIframe() {
