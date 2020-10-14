@@ -12,10 +12,8 @@
  * @property {string} pubKey
  * @property {string} url
  * @property {?string} keyName
- * @property {number} auctionDelay
  */
 
-import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
@@ -89,7 +87,7 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent) {
         try {
           const data = JSON.parse(response);
           if (data && data.audigent_segments) {
-            addSegmentData(adUnits, data);
+            addSegmentData(adUnits, data.audigent_segments);
             onDone();
             setData(data);
           } else {
@@ -114,23 +112,16 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent) {
   );
 }
 
+export function init(config) {
+  _moduleParams = {};
+  return true;
+}
+
 /** @type {RtdSubmodule} */
 export const audigentSubmodule = {
   name: 'audigent',
-  getBidRequestData: getSegments
+  getBidRequestData: getSegments,
+  init: init
 };
 
-export function init(config) {
-  const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
-    try {
-      _moduleParams = realTimeData.dataProviders && realTimeData.dataProviders.filter(pr => pr.name && pr.name.toLowerCase() === 'audigent')[0].params;
-      _moduleParams.auctionDelay = realTimeData.auctionDelay;
-    } catch (e) {
-      _moduleParams = {};
-    }
-    confListener();
-  });
-}
-
 submodule('realTimeData', audigentSubmodule);
-init(config);

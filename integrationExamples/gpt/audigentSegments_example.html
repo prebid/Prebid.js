@@ -233,7 +233,7 @@
                 },
                 realTimeData: {
                     auctionDelay: 1000,
-                    dataProviders: [{name: "audigent"}]
+                    dataProviders: [{name: "audigent", waitForIt: true}]
                 }
             });
             pbjs.addAdUnits(adUnits);
@@ -242,7 +242,7 @@
 
         function sendAdserverRequest() {
             document.getElementById('tdid').innerHTML = adUnits[0].bids[0].userId['tdid'];
-            document.getElementById('audigent_segments').innerHTML = JSON.stringify(adUnits[0].bids[0].realTimeData.audigent_segments);
+            document.getElementById('audigent_segments').innerHTML = JSON.stringify(adUnits[0].bids[0].audigent_segments);
 
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
