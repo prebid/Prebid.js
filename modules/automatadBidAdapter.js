@@ -71,20 +71,22 @@ export const spec = {
     const bidResponses = []
     const response = (serverResponse || {}).body
 
-    if (response && response.seatbid && response.seatbid.length === 1 && response.seatbid[0].bid && response.seatbid[0].bid.length) {
-      response.seatbid[0].bid.forEach(bid => {
-        bidResponses.push({
-          requestId: bid.impid,
-          cpm: bid.price,
-          ad: bid.adm,
-          adDomain: bid.adomain[0],
-          currency: DEFAULT_CURRENCY,
-          ttl: DEFAULT_BID_TTL,
-          creativeId: bid.crid,
-          width: bid.w,
-          height: bid.h,
-          netRevenue: DEFAULT_NET_REVENUE,
-          nurl: bid.nurl,
+    if (response && response.seatbid && response.seatbid[0].bid && response.seatbid[0].bid.length) {
+      response.seatbid.forEach(bidObj => {
+        bidObj.bid.forEach(bid => {
+          bidResponses.push({
+            requestId: bid.impid,
+            cpm: bid.price,
+            ad: bid.adm,
+            adDomain: bid.adomain[0],
+            currency: DEFAULT_CURRENCY,
+            ttl: DEFAULT_BID_TTL,
+            creativeId: bid.crid,
+            width: bid.w,
+            height: bid.h,
+            netRevenue: DEFAULT_NET_REVENUE,
+            nurl: bid.nurl,
+          })
         })
       })
     } else {

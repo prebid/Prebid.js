@@ -103,7 +103,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
   // if we already have gotten the matching rule from this matching input then use it! No need to look again
   let previousMatch = utils.deepAccess(floorData, `matchingInputs.${matchingInput}`);
   if (previousMatch) {
-    return previousMatch;
+    return {...previousMatch};
   }
   let allPossibleMatches = generatePossibleEnumerations(fieldValues, utils.deepAccess(floorData, 'schema.delimiter') || '|');
   let matchingRule = find(allPossibleMatches, hashValue => floorData.values.hasOwnProperty(hashValue));

@@ -383,7 +383,7 @@ function storeConsentData(cmpConsentObject) {
       vendorData: (cmpConsentObject) || undefined,
       gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
     };
-    if (cmpConsentObject.addtlConsent && utils.isStr(cmpConsentObject.addtlConsent)) {
+    if (cmpConsentObject && cmpConsentObject.addtlConsent && utils.isStr(cmpConsentObject.addtlConsent)) {
       consentData.addtlConsent = cmpConsentObject.addtlConsent;
     };
   }

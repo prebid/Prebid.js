@@ -182,6 +182,20 @@ describe('the price floors module', function () {
         matchingRule: '*'
       });
     });
+    it('does not alter cached matched input if conversion occurs', function () {
+      let inputData = {...basicFloorData};
+      [0.2, 0.4, 0.6, 0.8].forEach(modifier => {
+        let result = getFirstMatchingFloor(inputData, basicBidRequest, {mediaType: 'banner', size: '*'});
+        // result should always be the same
+        expect(result).to.deep.equal({
+          matchingFloor: 1.0,
+          matchingData: 'banner',
+          matchingRule: 'banner'
+        });
+        // make sure a post retrieval adjustment does not alter the cached floor
+        result.matchingFloor = result.matchingFloor * modifier;
+      });
+    });
     it('selects the right floor for different sizes', function () {
       let inputFloorData = {
         currency: 'USD',
