@@ -237,8 +237,19 @@ function setEventsListeners() {
 export function setBidRequestsData(fn, reqBidsConfigObj) {
   _userConsent = getConsentData();
 
-  const relevantSubModules = subModules.filter(sm => typeof sm.getBidRequestData === 'function');
-  const prioritySubModules = relevantSubModules.filter(sm => !!(sm.config && sm.config.waitForIt));
+  const relevantSubModules = [];
+  const prioritySubModules = [];
+  subModules.forEach(sm => {
+    if (typeof sm.getBidRequestData !== 'function') {
+      return;
+    }
+    relevantSubModules.push(sm);
+    const config = sm.config;
+    if (config && config.waitForIt) {
+      prioritySubModules.push(sm);
+    }
+  });
+
   const shouldDelayAuction = prioritySubModules.length && _moduleConfig.auctionDelay && _moduleConfig.auctionDelay > 0;
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
