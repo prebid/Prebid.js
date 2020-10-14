@@ -150,6 +150,10 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
     }
   }
 
+  if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+    ttxRequest.imp[0].video = _buildVideoORTB(bidRequest);
+  }
+
   ttxRequest.imp[0].ext = {
     ttx: {
       prod: _getProduct(bidRequest)
@@ -288,10 +292,55 @@ function _buildBannerORTB(bidRequest) {
     ? _getViewability(element, utils.getWindowTop(), minSize)
     : NON_MEASURABLE;
 
+  const ext = contributeViewability(viewabilityAmount);
+
   return {
     format,
-    ext: contributeViewability(viewabilityAmount)
+    ext
   }
+}
+
+// BUILD REQUESTS: VIDEO
+// eslint-disable-next-line no-unused-vars
+function _buildVideoORTB(bidRequest) {
+  const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
+  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
+
+  const video = {};
+
+  const product = _getProduct(bidRequest);
+
+  // playerSize, assumming an Array with only one Array element
+  // i.e. [[300, 250]] given the Prebid core will validate sizes
+  // set in Ad Unit
+  const sizes = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize', []);
+  const {w, h} = _getSize(sizes[0]);
+  video.w = w;
+  video.h = h;
+
+  // Placement Inference Rules:
+  // - It could be defined in AdUnit or Bidder Params for 33across
+  // - If no placement is defined then default to 2 (In Banner)
+  // - If product is instream (for instream context) then override placement to 1
+  let placement = videoAdUnit.placement || videoBidderParams.placement;
+  placement = placement || 2;
+
+  if (product === PRODUCT.INSTREAM) {
+    placement = 1;
+  };
+  video.placement = placement;
+
+  // bidfloors
+
+  // startdelay
+  if (product === PRODUCT.INSTREAM) {
+    let startdelay = videoAdUnit.startdelay || videoBidderParams.startdelay;
+    startdelay = parseInt(startdelay) || 0;
+
+    video.startdelay = startdelay;
+  }
+
+  return video;
 }
 
 // BUILD REQUESTS: BIDFLOORS
