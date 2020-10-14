@@ -55,7 +55,7 @@ describe('TheMediaGrid Adapter', function () {
         'bidder': 'grid',
         'params': {
           'uid': '1',
-          'useNewFormat': true
+          'bidFloor': 1.25
         },
         'adUnitCode': 'adunit-code-1',
         'sizes': [[300, 250], [300, 600]],
@@ -71,8 +71,7 @@ describe('TheMediaGrid Adapter', function () {
       {
         'bidder': 'grid',
         'params': {
-          'uid': '2',
-          'useNewFormat': true
+          'uid': '2'
         },
         'adUnitCode': 'adunit-code-1',
         'sizes': [[300, 250], [300, 600]],
@@ -83,8 +82,7 @@ describe('TheMediaGrid Adapter', function () {
       {
         'bidder': 'grid',
         'params': {
-          'uid': '11',
-          'useNewFormat': true
+          'uid': '11'
         },
         'adUnitCode': 'adunit-code-2',
         'sizes': [[728, 90]],
@@ -101,8 +99,7 @@ describe('TheMediaGrid Adapter', function () {
       {
         'bidder': 'grid',
         'params': {
-          'uid': '3',
-          'useNewFormat': true
+          'uid': '3'
         },
         'adUnitCode': 'adunit-code-2',
         'sizes': [[728, 90]],
@@ -138,6 +135,7 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[0].bidId,
           'tagid': bidRequests[0].params.uid,
           'ext': {'divid': bidRequests[0].adUnitCode},
+          'bidfloor': bidRequests[0].params.bidFloor,
           'banner': {
             'w': 300,
             'h': 250,
@@ -165,6 +163,7 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[0].bidId,
           'tagid': bidRequests[0].params.uid,
           'ext': {'divid': bidRequests[0].adUnitCode},
+          'bidfloor': bidRequests[0].params.bidFloor,
           'banner': {
             'w': 300,
             'h': 250,
@@ -201,6 +200,7 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[0].bidId,
           'tagid': bidRequests[0].params.uid,
           'ext': {'divid': bidRequests[0].adUnitCode},
+          'bidfloor': bidRequests[0].params.bidFloor,
           'banner': {
             'w': 300,
             'h': 250,
@@ -246,6 +246,7 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[0].bidId,
           'tagid': bidRequests[0].params.uid,
           'ext': {'divid': bidRequests[0].adUnitCode},
+          'bidfloor': bidRequests[0].params.bidFloor,
           'banner': {
             'w': 300,
             'h': 250,

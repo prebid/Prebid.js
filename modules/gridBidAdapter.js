@@ -72,7 +72,7 @@ export const spec = {
       if (!userId) {
         userId = bid.userId;
       }
-      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, realTimeData} = bid;
+      const {params: {uid, keywords, bidFloor}, mediaTypes, bidId, adUnitCode, realTimeData} = bid;
       bidsMap[bidId] = bid;
       if (!pageKeywords && !utils.isEmpty(keywords)) {
         pageKeywords = utils.transformBidderParamKeywords(keywords);
@@ -93,6 +93,9 @@ export const spec = {
         }
       };
 
+      if (bidFloor) {
+        impObj.bidfloor = bidFloor;
+      }
       if (!mediaTypes || mediaTypes[BANNER]) {
         const banner = createBannerRequest(bid, mediaTypes ? mediaTypes[BANNER] : {});
         if (banner) {
