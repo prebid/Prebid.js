@@ -1,14 +1,11 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
-const MEDIA_TYPE = {
-  BANNER: 'banner',
-  VIDEO: 'video'
-};
 
 const CURRENCY = 'USD';
 const GUID_PATTERN = /^[a-zA-Z0-9_-]{22}$/;
@@ -267,7 +264,7 @@ function _buildBannerORTB(bidRequest) {
   // We support size based bidfloors so obtain one if there's a rule associated
   if (typeof bidRequest.getFloor === 'function') {
     format = sizes.map((size) => {
-      const bidfloors = _getBidFloors(bidRequest, size, MEDIA_TYPE.BANNER);
+      const bidfloors = _getBidFloors(bidRequest, size, BANNER);
 
       let formatExt;
       if (bidfloors) {
@@ -516,12 +513,12 @@ function _createBidResponse(response) {
     ad: response.seatbid[0].bid[0].adm,
     ttl: response.seatbid[0].bid[0].ttl || 60,
     creativeId: response.seatbid[0].bid[0].crid,
-    mediaType: utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.mediaType', MEDIA_TYPE.BANNER),
+    mediaType: utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.mediaType', BANNER),
     currency: response.cur,
     netRevenue: true
   }
 
-  if (bid.mediaType === MEDIA_TYPE.VIDEO) {
+  if (bid.mediaType === VIDEO) {
     const vastType = utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.vastType', 'xml');
 
     if (vastType === 'xml') {
@@ -575,7 +572,7 @@ export const spec = {
   NON_MEASURABLE,
 
   code: BIDDER_CODE,
-
+  supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
