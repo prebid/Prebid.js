@@ -121,9 +121,6 @@ function setConsentParams(gdprConsent, uspConsent, payload) {
   if (typeof uspConsent !== 'undefined') {
     payload.us_privacy = uspConsent;
   }
-  if (typeof uspConsent !== 'undefined') {
-    payload.us_privacy = uspConsent;
-  }
 }
 
 function getSupplyChain(schain) {
