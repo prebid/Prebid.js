@@ -343,13 +343,13 @@ describe('E-Planning Adapter', function () {
 
     it('should return ur parameter with current window url', function () {
       const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
-      expect(ur).to.equal(encodeURIComponent(bidderRequest.refererInfo.referer));
+      expect(ur).to.equal(bidderRequest.refererInfo.referer);
     });
 
     it('should return fr parameter when there is a referrer', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const dataRequest = request.data;
-      expect(dataRequest.fr).to.equal(encodeURIComponent(refererUrl));
+      expect(dataRequest.fr).to.equal(refererUrl);
     });
 
     it('should return crs parameter with document charset', function () {

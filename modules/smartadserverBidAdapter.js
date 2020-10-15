@@ -9,6 +9,9 @@ import {
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
+import {
+  createEidsArray
+} from './userId/eids.js';
 const BIDDER_CODE = 'smartadserver';
 export const spec = {
   code: BIDDER_CODE,
@@ -80,15 +83,16 @@ export const spec = {
           w: size[0],
           h: size[1]
         }));
-      } else if (videoMediaType && videoMediaType.context === 'instream') {
+      } else if (videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream')) {
         // Specific attributes for instream.
         let playerSize = videoMediaType.playerSize[0];
-        payload.isVideo = true;
+        payload.isVideo = videoMediaType.context === 'instream';
+        payload.mediaType = VIDEO;
         payload.videoData = {
           videoProtocol: bid.params.video.protocol,
           playerWidth: playerSize[0],
           playerHeight: playerSize[1],
-          adBreak: bid.params.video.startDelay || 0
+          adBreak: bid.params.video.startDelay || 1
         };
       } else {
         return {};
@@ -97,6 +101,10 @@ export const spec = {
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
+      }
+
+      if (bid && bid.userId) {
+        payload.eids = createEidsArray(bid.userId);
       }
 
       if (bidderRequest && bidderRequest.uspConsent) {
@@ -139,10 +147,11 @@ export const spec = {
           ttl: response.ttl
         };
 
-        if (bidRequest.isVideo) {
+        if (bidRequest.mediaType === VIDEO) {
           bidResponse.mediaType = VIDEO;
           bidResponse.vastUrl = response.adUrl;
           bidResponse.vastXml = response.ad;
+          bidResponse.content = response.ad;
         } else {
           bidResponse.adUrl = response.adUrl;
           bidResponse.ad = response.ad;

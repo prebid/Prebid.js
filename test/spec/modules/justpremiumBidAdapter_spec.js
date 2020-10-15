@@ -21,7 +21,9 @@ describe('justpremium adapter', function () {
       },
       userId: {
         tdid: '1111111',
-        id5id: '2222222',
+        id5id: {
+          uid: '2222222'
+        },
         digitrustid: {
           data: {
             id: '3333333'
@@ -84,7 +86,7 @@ describe('justpremium adapter', function () {
       expect(jpxRequest.version.jp_adapter).to.equal('1.7')
       expect(jpxRequest.pubcid).to.equal('0000000')
       expect(jpxRequest.uids.tdid).to.equal('1111111')
-      expect(jpxRequest.uids.id5id).to.equal('2222222')
+      expect(jpxRequest.uids.id5id.uid).to.equal('2222222')
       expect(jpxRequest.uids.digitrustid.data.id).to.equal('3333333')
       expect(jpxRequest.us_privacy).to.equal('1YYN')
     })

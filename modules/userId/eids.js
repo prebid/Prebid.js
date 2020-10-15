@@ -5,6 +5,12 @@ const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // intentIqId
+  'intentIqId': {
+    source: 'intentiq.com',
+    atype: 1
+  },
+
   // pubCommonId
   'pubcid': {
     source: 'pubcid.org',
@@ -24,14 +30,42 @@ const USER_IDS_CONFIG = {
 
   // id5Id
   'id5id': {
+    getValue: function(data) {
+      return data.uid
+    },
     source: 'id5-sync.com',
-    atype: 1
+    atype: 1,
+    getEidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
   },
 
   // parrableId
-  'parrableid': {
+  'parrableId': {
     source: 'parrable.com',
-    atype: 1
+    atype: 1,
+    getValue: function(parrableId) {
+      if (parrableId.eid) {
+        return parrableId.eid;
+      }
+      if (parrableId.ccpaOptout) {
+        // If the EID was suppressed due to a non consenting ccpa optout then
+        // we still wish to provide this as a reason to the adapters
+        return '';
+      }
+      return null;
+    },
+    getUidExt: function(parrableId) {
+      const extendedData = utils.pick(parrableId, [
+        'ibaOptout',
+        'ccpaOptout'
+      ]);
+      if (Object.keys(extendedData).length) {
+        return extendedData;
+      }
+    }
   },
 
   // identityLink
@@ -62,13 +96,10 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // DigiTrust
-  'digitrustid': {
-    getValue: function(data) {
-      return data.data.id;
-    },
-    source: 'digitru.st',
-    atype: 1
+  // lotamePanoramaId
+  lotamePanoramaId: {
+    source: 'crwdcntrl.net',
+    atype: 1,
   },
 
   // criteo
@@ -77,11 +108,55 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // merkleId
+  'merkleId': {
+    source: 'merkleinc.com',
+    atype: 1
+  },
+
   // NetId
   'netId': {
     source: 'netid.de',
     atype: 1
-  }
+  },
+
+  // sharedid
+  'sharedid': {
+    source: 'sharedid.org',
+    atype: 1,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      return (data && data.third) ? {
+        third: data.third
+      } : undefined;
+    }
+  },
+
+  // zeotapIdPlus
+  'IDP': {
+    source: 'zeotap.com',
+    atype: 1
+  },
+
+  // haloId
+  'haloId': {
+    source: 'audigent.com',
+    atype: 1
+  },
+
+  // quantcastId
+  'quantcastId': {
+    source: 'quantcast.com',
+    atype: 1
+  },
+
+  // IDx
+  'idx': {
+    source: 'idx.lat',
+    atype: 1
+  },
 };
 
 // this function will create an eid object for the given UserId sub-module
@@ -121,9 +196,13 @@ export function createEidsArray(bidRequestUserId) {
   let eids = [];
   for (const subModuleKey in bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
-      const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
-      if (eid) {
-        eids.push(eid);
+      if (subModuleKey === 'pubProvidedId') {
+        eids = eids.concat(bidRequestUserId['pubProvidedId']);
+      } else {
+        const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
+        if (eid) {
+          eids.push(eid);
+        }
       }
     }
   }

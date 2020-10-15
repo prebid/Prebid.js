@@ -6,6 +6,8 @@ master branch.
 Pull requests must have 80% code coverage before beign considered for merge.
 Additional details about the process can be found [here](./PR_REVIEW.md).
 
+There are more details available if you'd like to contribute a [bid adapter](https://docs.prebid.org/dev-docs/bidder-adaptor.html) or [analytics adapter](https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
+
 ## Issues
 [prebid.org](http://prebid.org/) contains documentation that may help answer questions you have about using Prebid.js.
 If you can't find the answer there, try searching for a similar issue on the [issues page](https://github.com/prebid/Prebid.js/issues).
