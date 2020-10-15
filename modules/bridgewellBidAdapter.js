@@ -38,15 +38,29 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const adUnits = [];
     utils._each(validBidRequests, function (bid) {
-      adUnits.push({
-        ChannelID: bid.params.ChannelID,
-        adUnitCode: bid.adUnitCode,
-        mediaTypes: bid.mediaTypes || {
-          banner: {
-            sizes: bid.sizes
+      if (bid.params.cid) {
+        adUnits.push({
+          cid: bid.params.cid,
+          adUnitCode: bid.adUnitCode,
+          requestId: bid.bidId,
+          mediaTypes: bid.mediaTypes || {
+            banner: {
+              sizes: bid.sizes
+            }
           }
-        }
-      });
+        });
+      } else {
+        adUnits.push({
+          ChannelID: bid.params.ChannelID,
+          adUnitCode: bid.adUnitCode,
+          requestId: bid.bidId,
+          mediaTypes: bid.mediaTypes || {
+            banner: {
+              sizes: bid.sizes
+            }
+          }
+        });
+      }
     });
 
     let topUrl = '';
@@ -65,7 +79,8 @@ export const spec = {
         inIframe: utils.inIframe(),
         url: topUrl,
         referrer: getTopWindowReferrer(),
-        adUnits: adUnits
+        adUnits: adUnits,
+        refererInfo: bidderRequest.refererInfo,
       },
       validBidRequests: validBidRequests
     };

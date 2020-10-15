@@ -9,7 +9,7 @@ import {submodule} from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
-const storage = getStorageManager();
+export const storage = getStorageManager();
 
 function readCookie() {
   return storage.cookiesAreEnabled ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null;
@@ -41,7 +41,7 @@ export const zeotapIdPlusSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} configParams
+   * @param {SubmoduleConfig} config
    * @return {{id: string | undefined} | undefined}
    */
   getId() {

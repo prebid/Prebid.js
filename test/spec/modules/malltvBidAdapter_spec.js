@@ -80,7 +80,11 @@ describe('malltvAdapterTest', () => {
 
     it('bidRequest sizes', () => {
       const requests = spec.buildRequests(bidRequests);
-      expect(requests[0].data.sizes).to.equal('300x250');
+      requests.forEach(function (requestItem) {
+        expect(requestItem.data.placements).to.exist;
+        expect(requestItem.data.placements.length).to.equal(1);
+        expect(requestItem.data.placements[0].sizes).to.equal('300x250');
+      });
     });
   });
 
@@ -128,7 +132,9 @@ describe('malltvAdapterTest', () => {
         'netRevenue',
         'ttl',
         'referrer',
-        'ad'
+        'ad',
+        'vastUrl',
+        'mediaType'
       ];
 
       let resultKeys = Object.keys(result[0]);
