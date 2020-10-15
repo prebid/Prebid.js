@@ -607,7 +607,6 @@ describe('E-Planning Adapter', function () {
 
     context('when element is fully in view', function() {
       let respuesta;
-      const NO_VIEWABLE = 'F';
       beforeEach(function () {
         createElementVisible();
       });
@@ -615,7 +614,7 @@ describe('E-Planning Adapter', function () {
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
-        expect(respuesta.data.vs).to.equal(NO_VIEWABLE);
+        expect(respuesta.data.vs).to.equal('F');
 
         expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
         expect(storage.getDataFromLocalStorage(storageIdView)).to.equal('1');
@@ -645,7 +644,6 @@ describe('E-Planning Adapter', function () {
 
     context('when element is out of view', function() {
       let respuesta;
-      const NO_VIEWABLE = 'F';
       beforeEach(function () {
         createElementOutOfView();
       });
@@ -653,7 +651,7 @@ describe('E-Planning Adapter', function () {
       it('when you have a render', function() {
         respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
-        expect(respuesta.data.vs).to.equal(NO_VIEWABLE);
+        expect(respuesta.data.vs).to.equal('F');
 
         expect(storage.getDataFromLocalStorage(storageIdRender)).to.equal('1');
         expect(storage.getDataFromLocalStorage(storageIdView)).to.equal(null);
