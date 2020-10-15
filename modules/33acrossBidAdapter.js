@@ -507,7 +507,7 @@ function interpretResponse(serverResponse, bidRequest) {
 
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
-  return {
+  const bid = {
     requestId: response.id,
     bidderCode: BIDDER_CODE,
     cpm: response.seatbid[0].bid[0].price,
@@ -516,9 +516,22 @@ function _createBidResponse(response) {
     ad: response.seatbid[0].bid[0].adm,
     ttl: response.seatbid[0].bid[0].ttl || 60,
     creativeId: response.seatbid[0].bid[0].crid,
+    mediaType: utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.mediaType', MEDIA_TYPE.BANNER),
     currency: response.cur,
     netRevenue: true
   }
+
+  if (bid.mediaType === MEDIA_TYPE.VIDEO) {
+    const vastType = utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.vastType', 'xml');
+
+    if (vastType === 'xml') {
+      bid.vastXml = bid.ad;
+    } else {
+      bid.vastUrl = bid.ad;
+    }
+  }
+
+  return bid;
 }
 
 // **************************** USER SYNC *************************** //

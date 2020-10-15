@@ -1146,7 +1146,7 @@ describe('33acrossBidAdapter:', function () {
     });
 
     context('when exactly one bid is returned', function() {
-      it('interprets and returns the single bid response', function() {
+      it('interprets and returns the single banner bid response', function() {
         const serverResponse = {
           cur: 'USD',
           ext: {},
@@ -1173,8 +1173,52 @@ describe('33acrossBidAdapter:', function () {
           ad: '<html><h3>I am an ad</h3></html>',
           ttl: 60,
           creativeId: 1,
+          mediaType: 'banner',
           currency: 'USD',
           netRevenue: true
+        };
+
+        expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
+      });
+
+      it('interprets and returns the single video bid response', function() {
+        const videoBid = '<VAST version="3.0"><Ad></Ad></VAST>';
+        const serverResponse = {
+          cur: 'USD',
+          ext: {},
+          id: 'b1',
+          seatbid: [
+            {
+              bid: [{
+                id: '1',
+                adm: videoBid,
+                ext: {
+                  ttx: {
+                    mediaType: 'video',
+                    vastType: 'xml'
+                  }
+                },
+                crid: 1,
+                h: 250,
+                w: 300,
+                price: 0.0938
+              }]
+            }
+          ]
+        };
+        const bidResponse = {
+          requestId: 'b1',
+          bidderCode: BIDDER_CODE,
+          cpm: 0.0938,
+          width: 300,
+          height: 250,
+          ad: videoBid,
+          ttl: 60,
+          creativeId: 1,
+          mediaType: 'video',
+          currency: 'USD',
+          netRevenue: true,
+          vastXml: videoBid
         };
 
         expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
@@ -1241,6 +1285,7 @@ describe('33acrossBidAdapter:', function () {
           ad: '<html><h3>I am an ad</h3></html>',
           ttl: 60,
           creativeId: 1,
+          mediaType: 'banner',
           currency: 'USD',
           netRevenue: true
         };
