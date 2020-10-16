@@ -481,6 +481,46 @@ describe('33acrossBidAdapter:', function () {
           expect(spec.isBidRequestValid(this.bid)).to.be.false;
         });
       });
+
+      it('returns false when video startdelay is invalid for instream context', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withVideo({context: 'instream'})
+            .build()
+        );
+
+        const invalidStartdelay = [
+          [],
+          '1',
+          {},
+          'foo'
+        ];
+
+        invalidStartdelay.forEach((startdelay) => {
+          bidRequests[0].mediaTypes.video.startdelay = startdelay;
+          expect(spec.isBidRequestValid(bidRequests[0])).to.be.false;
+        });
+      });
+
+      it('returns true when video startdelay is invalid for outstream context', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withVideo({context: 'outstream'})
+            .build()
+        );
+
+        const invalidStartdelay = [
+          [],
+          '1',
+          {},
+          'foo'
+        ];
+
+        invalidStartdelay.forEach((startdelay) => {
+          bidRequests[0].mediaTypes.video.startdelay = startdelay;
+          expect(spec.isBidRequestValid(bidRequests[0])).to.be.true;
+        });
+      });
     })
   });
 

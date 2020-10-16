@@ -114,6 +114,7 @@ function _validateVideo(bid) {
 
   // If startdelay is defined it must be a number
   if (
+    videoAdUnit.context === 'instream' &&
     typeof startdelay !== 'undefined' &&
     typeof startdelay !== 'number'
   ) {
