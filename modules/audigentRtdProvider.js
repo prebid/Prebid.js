@@ -49,26 +49,14 @@ function addSegmentData(adUnits, data) {
 function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
-  try {
-    let jsonData = storage.getDataFromLocalStorage('__adgntseg');
-    if (jsonData) {
-      let data = JSON.parse(jsonData);
-      if (data.audigent_segments) {
-        addSegmentData(adUnits, data);
-        onDone();
-        return;
-      }
+  let jsonData = storage.getDataFromLocalStorage('__adgntseg');
+  if (jsonData) {
+    let data = JSON.parse(jsonData);
+    if (data.audigent_segments) {
+      addSegmentData(adUnits, data.audigent_segments);
+      onDone();
+      return;
     }
-    getSegmentsAsync(adUnits, onDone, config, userConsent);
-  } catch (e) {
-    getSegmentsAsync(adUnits, onDone, config, userConsent);
-  }
-}
-
-function getSegmentsAsync(adUnits, onDone, config, userConsent) {
-  let reqParams = {}
-  if (typeof config == 'object' && config == null && Object.keys(config).length > 0) {
-    reqParams = config.params
   }
 
   const userIds = (getGlobal()).getUserIds();
@@ -77,8 +65,31 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent) {
     return;
   }
 
-  const url = `https://seg.halo.ad.gt/api/v1/rtb_segments`;
+  if (storage.getDataFromLocalStorage('auHaloId')) {
+    let haloId = storage.getDataFromLocalStorage('auHaloId');
+    userIds.haloId = haloId;
+    getSegmentsAsync(adUnits, onDone, config, userConsent, userIds);
+  } else {
+    var script = document.createElement('script')
+    script.type = 'text/javascript';
 
+    script.onload = function() {
+      userIds.haloId = storage.getDataFromLocalStorage('auHaloId');
+      getSegmentsAsync(adUnits, onDone, config, userConsent, userIds);
+    }
+
+    script.src = 'https://id.halo.ad.gt/api/v1/haloid';
+    document.getElementsByTagName('head')[0].appendChild(script);
+  }
+}
+
+function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
+  let reqParams = {}
+  if (typeof config == 'object' && config != null && Object.keys(config).length > 0) {
+    reqParams = config.params
+  }
+
+  const url = `https://seg.halo.ad.gt/api/v1/rtb_segments`;
   ajax(url, {
     success: function (response, req) {
       if (req.status === 200) {
