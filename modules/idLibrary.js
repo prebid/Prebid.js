@@ -66,9 +66,8 @@ function bodyAction(conf, mutations, observer) {
 
 function targetAction(conf, mutations, observer) {
   logInfo('Target observer called');
-
-  mutations.forEach((mutation) => {
-    mutation.addedNodes.forEach((node) => {
+  for (const mutation of mutations) {
+    for (const node of mutation.addedNodes) {
       email = node.textContent;
 
       if (email) {
@@ -77,8 +76,8 @@ function targetAction(conf, mutations, observer) {
         logInfo(' Post data on email found in target');
         postData(conf.url);
       }
-    });
-  });
+    }
+  }
 }
 
 function addInputElementsElementListner(conf) {
