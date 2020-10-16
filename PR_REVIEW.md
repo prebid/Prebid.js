@@ -53,6 +53,8 @@ Documentation they're supposed to be following is https://docs.prebid.org/dev-do
 
 No additional steps above the general review process and making sure it conforms to the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html).
 
+Make sure there's a docs pull request
+
 ### Reviewing a New or Updated User ID Sub-Module
 Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/modules/userId.html#id-providers
 
@@ -79,6 +81,7 @@ Follow steps above for general review process. In addition:
 - in the eids.js file, the source should be the actual domain of the provider, not a made up domain.
 - in the eids.js file, the key in the array should be the same value as the key in the decode function
 - make sure all supported config params align in the submodule js file and the docs / examples
+- make sure there's a docs pull request
 
 ### Reviewing a New or Updated Real-Time-Data Sub-Module
 Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/add-rtd-submodule.html
@@ -86,9 +89,9 @@ Documentation they're supposed to be following is https://docs.prebid.org/dev-do
 Follow steps above for general review process. In addition:
 - The RTD Provider must include a `providerRtdProvider.md` file. This file must have example parameters and document a sense of what to expect: what should change in the bidrequest, or what targeting data should be added?
 - Try running the new sub-module and confirm the provided test parameters.
-- Make sure the sub-module is "phoning home" as early as possible, but not more often than needed.
+- Make sure the sub-module is making HTTP requests as early as possible, but not more often than needed.
 - Consider whether the kind of data the module is obtaining could have privacy implications. If so, make sure they're utilizing the `consent` data passed to them.
-
+- make sure there's a docs pull request
 
 ## Ticket Coordinator
 
