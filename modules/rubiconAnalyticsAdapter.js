@@ -13,6 +13,14 @@ const COOKIE_NAME = 'rpaSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
 
+const pbsErrorMap = {
+  1: 'timeout-error',
+  2: 'input-error',
+  3: 'connect-error',
+  4: 'request-error',
+  999: 'generic-error'
+}
+
 let prebidGlobal = getGlobal();
 const {
   EVENTS: {
@@ -628,10 +636,20 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         bid.bidResponse = parseBidResponse(args, bid.bidResponse);
         break;
       case BIDDER_DONE:
+        const serverError = utils.deepAccess(args, 'serverErrors.0');
+        const serverResponseTimeMs = utils.deepAccess(args, 'serverResponseTimeMs');
         args.bids.forEach(bid => {
           let cachedBid = cache.auctions[bid.auctionId].bids[bid.bidId || bid.requestId];
-          if (typeof bid.serverResponseTimeMs !== 'undefined') {
-            cachedBid.serverLatencyMillis = bid.serverResponseTimeMs;
+          if (serverResponseTimeMs) {
+            cachedBid.serverLatencyMillis = serverResponseTimeMs;
+          }
+          // if PBS said we had an error, and this bid has not been processed by BID_RESPONSE YET
+          if (serverError && (!cachedBid.status || ['no-bid', 'error'].indexOf(cachedBid.status) !== -1)) {
+            cachedBid.status = 'error';
+            cachedBid.error = {
+              code: pbsErrorMap[serverError.code] || pbsErrorMap[999],
+              description: serverError.message
+            }
           }
           if (!cachedBid.status) {
             cachedBid.status = 'no-bid';
@@ -672,10 +690,14 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         args.forEach(badBid => {
           let auctionCache = cache.auctions[badBid.auctionId];
           let bid = auctionCache.bids[badBid.bidId || badBid.requestId];
-          bid.status = 'error';
-          bid.error = {
-            code: 'timeout-error'
-          };
+          // might be set already by bidder-done, so do not overwrite
+          if (bid.status !== 'error') {
+            bid.status = 'error';
+            bid.error = {
+              code: 'timeout-error',
+              message: 'marked by prebid.js as timeout' // will help us diff if timeout was set by PBS or PBJS
+            };
+          }
         });
         break;
     }

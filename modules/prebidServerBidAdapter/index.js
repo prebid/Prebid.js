@@ -676,6 +676,27 @@ const OPEN_RTB_PROTOCOL = {
   interpretResponse(response, bidderRequests) {
     const bids = [];
 
+    // Should log all bidders server response times, not only if they had successful seatBid
+    const serverResponseTimeMs = utils.deepAccess(response, 'ext.responsetimemillis');
+    if (serverResponseTimeMs) {
+      Object.keys(serverResponseTimeMs).forEach(bidder => {
+        let biddersReq = find(bidderRequests, bidderReq => bidderReq.bidderCode === bidder);
+        if (biddersReq) {
+          biddersReq.serverResponseTimeMs = serverResponseTimeMs[bidder];
+        }
+      });
+    }
+
+    // Attach any errors to a biddersRequest object
+    const bidderErrors = utils.deepAccess(response, 'ext.errors');
+    if (bidderErrors) {
+      Object.keys(bidderErrors).forEach(bidder => {
+        let biddersReq = find(bidderRequests, bidderReq => bidderReq.bidderCode === bidder);
+        if (biddersReq) {
+          biddersReq.serverErrors = bidderErrors[bidder];
+        }
+      });
+    }
     if (response.seatbid) {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
@@ -698,6 +719,8 @@ const OPEN_RTB_PROTOCOL = {
 
           bidObject.cpm = cpm;
 
+          // temporarily leaving attaching it to each bidResponse so no breaking change
+          // BUT: this is a flat map, so it should be only attached to bidderRequest, a the change above does
           let serverResponseTimeMs = utils.deepAccess(response, ['ext', 'responsetimemillis', seatbid.seat].join('.'));
           if (bidRequest && serverResponseTimeMs) {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
