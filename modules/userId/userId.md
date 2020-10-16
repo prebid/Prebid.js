@@ -70,6 +70,13 @@ pbjs.setConfig({
                  name: 'sharedid',
                  expires: 28
               }
+        }, {
+             name: 'criteo',
+             storage: {             // It is best not to specify this parameter since the module needs to be called as many times as possible
+                 type: 'cookie',
+                 name: '_criteoId',
+                 expires: 1
+              }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -141,6 +148,13 @@ pbjs.setConfig({
                 expires: 90, // Expiration of cookies in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
+        }, {
+             name: 'criteo',
+             storage: {              // It is best not to specify this parameter since the module needs to be called as many times as possible
+                 type: 'html5',
+                 name: '_criteoId',
+                 expires: 1
+              }
         }],
         syncDelay: 5000
     }
@@ -164,6 +178,10 @@ pbjs.setConfig({
         {
             name: "netId",
             value: { "netId": "fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg" }
+        },
+        {
+            name: "criteo",
+            value: { "criteoId": "wK-fkF8zaEIlMkZMbHl3eFo4NEtoNmZaeXJtYkFjZlVuWjBhcjJMaTRYd3pZNSUyQnlKRHNGRXlpdzdjd3pjVzhjcSUyQmY4eTFzN3VSZjV1ZyUyRlA0U2ZiR0UwN2I4bDZRJTNEJTNE" }
         }],
         syncDelay: 5000
     }
