@@ -1,5 +1,5 @@
 The purpose of this Real Time Data Provider is to allow publishers to target against their JW Player media without 
-having to integrate with the VPB product. This prebid module makes JW Player's video ad targeting information accessible 
+having to integrate with the Player Bidding product. This prebid module makes JW Player's video ad targeting information accessible 
 to Bid Adapters.
 
 #Usage for Publishers:
@@ -112,3 +112,5 @@ To view an example:
 - in your browser, navigate to:
 
 `http://localhost:9999/integrationExamples/gpt/jwplayerRtdProvider_example.html`
+
+**Note:** the mediaIds in the example are placeholder values; replace them with your existing IDs.
