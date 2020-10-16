@@ -318,6 +318,7 @@ function _buildBannerORTB(bidRequest) {
 // eslint-disable-next-line no-unused-vars
 function _buildVideoORTB(bidRequest) {
   const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
+  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
 
   const video = {}
 
@@ -330,6 +331,11 @@ function _buildVideoORTB(bidRequest) {
   VIDEO_ORTB_PARAMS.forEach((param) => {
     if (videoAdUnit.hasOwnProperty(param)) {
       video[param] = videoAdUnit[param];
+    }
+
+    // Override with bidder specific video params
+    if (videoBidderParams.hasOwnProperty(param)) {
+      video[param] = videoBidderParams[param];
     }
   });
 
