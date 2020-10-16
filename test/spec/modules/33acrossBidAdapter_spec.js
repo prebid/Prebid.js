@@ -24,7 +24,6 @@ describe('33acrossBidAdapter:', function () {
       id: 'b1',
       user: {
         ext: {
-          consent: undefined
         }
       },
       regs: {
@@ -75,12 +74,13 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.withVideo = ({ w = 300, h = 250, placement = 2 } = {}) => {
+    this.withVideo = (params = {}) => {
       Object.assign(ttxRequest.imp[0], {
         video: {
-          w,
-          h,
-          placement
+          w: 300,
+          h: 250,
+          placement: 2,
+          ...params
         }
       });
 
@@ -165,18 +165,31 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.withFormatFloors = floors => {
-      const format = ttxRequest.imp[0].banner.format.map((fm, i) => {
-        return Object.assign(fm, {
-          ext: {
-            ttx: {
-              bidfloors: [ floors[i] ]
-            }
-          }
-        })
-      });
+    this.withFloors = this.withFormatFloors = (mediaType, floors) => {
+      switch (mediaType) {
+        case 'banner':
+          const format = ttxRequest.imp[0].banner.format.map((fm, i) => {
+            return Object.assign(fm, {
+              ext: {
+                ttx: {
+                  bidfloors: [ floors[i] ]
+                }
+              }
+            })
+          });
 
-      ttxRequest.imp[0].banner.format = format;
+          ttxRequest.imp[0].banner.format = format;
+          break;
+        case 'video':
+          Object.assign(ttxRequest.imp[0].video, {
+            ext: {
+              ttx: {
+                bidfloors: floors
+              }
+            }
+          });
+          break;
+      }
 
       return this;
     };
@@ -247,12 +260,11 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.withVideo = ({context = 'outstream', placement, startdelay} = {}) => {
+    this.withVideo = (params) => {
       bidRequests[0].mediaTypes.video = {
-        playerSize: [[300, 250]],
-        context,
-        placement,
-        startdelay
+        playerSize: [300, 250],
+        context: 'outstream',
+        ...params
       };
 
       return this;
@@ -876,7 +888,7 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('when price floor module is not enabled in bidRequest', function() {
+    context('when price floor module is not enabled for banner in bidRequest', function() {
       it('does not set any bidfloors in ttxRequest', function() {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
@@ -891,7 +903,7 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('when price floor module is enabled in bidRequest', function() {
+    context('when price floor module is enabled for banner in bidRequest', function() {
       it('does not set any bidfloors in ttxRequest if there is no floor', function() {
         bidRequests[0].getFloor = () => ({});
 
@@ -921,7 +933,7 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
-          .withFormatFloors([ 1.0, 0.10 ])
+          .withFormatFloors('banner', [ 1.0, 0.10 ])
           .build();
 
         const serverRequest = new ServerRequestBuilder()
@@ -965,19 +977,13 @@ describe('33acrossBidAdapter:', function () {
         );
 
         const ttxRequest = new TtxRequestBuilder()
-          .withVideo()
+          .withVideo({startdelay: -2, placement: 1})
           .withProduct('instream')
           .build();
 
-        ttxRequest.imp[0].video.placement = 1;
-        ttxRequest.imp[0].video.startdelay = -2;
-
-        const serverRequest = new ServerRequestBuilder()
-          .withData(ttxRequest)
-          .build();
         const builtServerRequests = spec.buildRequests(bidRequests, {});
 
-        expect(builtServerRequests).to.deep.equal([serverRequest]);
+        expect(JSON.parse(builtServerRequests[0].data)).to.deep.equal(ttxRequest);
       });
     });
 
@@ -1007,16 +1013,14 @@ describe('33acrossBidAdapter:', function () {
       it('builds siab request with video params passed', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'outstream', placement: 3})
+            .withVideo({context: 'outstream', placement: 3, playbackmethod: [2]})
             .build()
         );
 
         const ttxRequest = new TtxRequestBuilder()
-          .withVideo()
+          .withVideo({placement: 3, playbackmethod: [2]})
           .withProduct('siab')
           .build();
-
-        ttxRequest.imp[0].video.placement = 3;
 
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -1119,6 +1123,55 @@ describe('33acrossBidAdapter:', function () {
         const builtServerRequests = spec.buildRequests(bidRequests, {});
 
         expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when price floor module is enabled for video in bidRequest', function() {
+      it('does not set any bidfloors in video if there is no floor', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withVideo({context: 'outstream'})
+            .build()
+        );
+
+        bidRequests[0].getFloor = () => ({});
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withVideo()
+          .withProduct()
+          .build();
+
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(JSON.parse(builtServerRequests[0].data)).to.deep.equal(ttxRequest);
+      });
+
+      it('sets bidfloors in video if there is a floor', function() {
+        const bidRequests = (
+          new BidRequestsBuilder()
+            .withVideo({context: 'outstream'})
+            .build()
+        );
+
+        bidRequests[0].getFloor = ({size, currency, mediaType}) => {
+          const floor = (mediaType === 'video') ? 1.0 : 0.10
+          return (
+            {
+              floor,
+              currency: 'USD'
+            }
+          );
+        };
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withVideo()
+          .withProduct()
+          .withFloors('video', [ 1.0 ])
+          .build();
+
+        const builtServerRequests = spec.buildRequests(bidRequests, {});
+
+        expect(JSON.parse(builtServerRequests[0].data)).to.deep.equal(ttxRequest);
       });
     });
   });

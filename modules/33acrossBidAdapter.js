@@ -16,6 +16,23 @@ const PRODUCT = {
   INSTREAM: 'instream'
 };
 
+const VIDEO_ORTB_PARAMS = [
+  'mimes',
+  'minduration',
+  'maxduration',
+  'placement',
+  'protocols',
+  'startdelay',
+  'skip',
+  'skipafter',
+  'minbitrate',
+  'maxbitrate',
+  'delivery',
+  'playbackmethod',
+  'api',
+  'linearity'
+];
+
 const adapterState = {
   uniqueSiteIds: []
 };
@@ -301,42 +318,47 @@ function _buildBannerORTB(bidRequest) {
 // eslint-disable-next-line no-unused-vars
 function _buildVideoORTB(bidRequest) {
   const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
 
-  const video = {};
+  const video = {}
 
-  const product = _getProduct(bidRequest);
-
-  // playerSize, assumming an Array with only one Array element
-  // i.e. [[300, 250]] given the Prebid core will validate sizes
-  // set in Ad Unit
-  const sizes = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize', []);
-  const {w, h} = _getSize(sizes[0]);
+  const sizes = videoAdUnit.playerSize || [];
+  const {w, h} = _getSize(sizes);
   video.w = w;
   video.h = h;
 
+  // Obtain all ORTB params related video from Ad Unit
+  VIDEO_ORTB_PARAMS.forEach((param) => {
+    if (videoAdUnit.hasOwnProperty(param)) {
+      video[param] = videoAdUnit[param];
+    }
+  });
+
+  const product = _getProduct(bidRequest);
+
   // Placement Inference Rules:
-  // - It could be defined in AdUnit or Bidder Params for 33across
   // - If no placement is defined then default to 2 (In Banner)
   // - If product is instream (for instream context) then override placement to 1
-  let placement = videoAdUnit.placement || videoBidderParams.placement;
-  placement = placement || 2;
+  video.placement = video.placement || 2;
 
   if (product === PRODUCT.INSTREAM) {
-    placement = 1;
+    video.startdelay = video.startdelay || 0;
+    video.placement = 1;
   };
-  video.placement = placement;
 
   // bidfloors
+  if (typeof bidRequest.getFloor === 'function') {
+    const bidfloors = _getBidFloors(bidRequest, {w: video.w, h: video.h}, VIDEO);
 
-  // startdelay
-  if (product === PRODUCT.INSTREAM) {
-    let startdelay = videoAdUnit.startdelay || videoBidderParams.startdelay;
-    startdelay = parseInt(startdelay) || 0;
-
-    video.startdelay = startdelay;
+    if (bidfloors) {
+      Object.assign(video, {
+        ext: {
+          ttx: {
+            bidfloors: [ bidfloors ]
+          }
+        }
+      });
+    }
   }
-
   return video;
 }
 
