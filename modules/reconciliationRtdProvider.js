@@ -213,18 +213,9 @@ function initListeners() {
 
 /**
  * Send init event to log
- * @param {Object} adUnitsDict
+ * @param {Array} adUnits
  */
-function trackInit(adUnitsDict) {
-  const adUnits = Object.keys(adUnitsDict).map((k) => {
-    const adUnit = adUnitsDict[k];
-
-    return {
-      adUnitId: adUnit['RSDK_AUID'],
-      adDeliveryId: adUnit['RSDK_ADID'],
-    };
-  });
-
+function trackInit(adUnits) {
   track.trackPost(
     _moduleParams.initUrl,
     {
@@ -262,23 +253,31 @@ export const track = {
  * @return {Object} key-value object with custom targetings
  */
 function getReconciliationData(adUnitsCodes) {
-  let dataToReturn = adUnitsCodes.reduce((rp, adUnitCode) => {
+  const dataToReturn = {};
+  const adUnitsToTrack = [];
+
+  adUnitsCodes.forEach((adUnitCode) => {
     if (!adUnitCode) {
-      return rp;
+      return;
     }
 
     const adSlot = getSlotByCode(adUnitCode);
+    const adUnitId = adSlot ? adSlot.getAdUnitPath() : adUnitCode;
+    const adDeliveryId = utils.generateUUID();
 
-    rp[adUnitCode] = {
-      RSDK_ADID: utils.generateUUID(),
-      RSDK_AUID: adSlot ? adSlot.getAdUnitPath() : adUnitCode,
+    dataToReturn[adUnitCode] = {
+      RSDK_AUID: adUnitId,
+      RSDK_ADID: adDeliveryId,
     };
 
-    return rp;
+    adUnitsToTrack.push({
+      adUnitId,
+      adDeliveryId
+    });
   }, {});
 
   // Track init event
-  trackInit(dataToReturn);
+  trackInit(adUnitsToTrack);
 
   return dataToReturn;
 }
@@ -305,7 +304,7 @@ function init(moduleConfig) {
     _moduleParams = Object.assign({}, DEFAULT_PARAMS, params);
     initListeners();
   } else {
-    utils.logError('missing params for Browsi provider');
+    utils.logError('missing params for Reconciliation provider');
   }
   return true;
 }
