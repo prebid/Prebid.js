@@ -83,7 +83,7 @@ function targetAction(conf, mutations, observer) {
 function addInputElementsElementListner(conf) {
   logInfo('Adding input element listeners');
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
-  for (const input of inputs) {
+  for (const input of Array.from(inputs)) {
     logInfo(` Original Value in Input = ${input.value}`);
     input.addEventListener('change', event => processInputChange(event, conf));
     input.addEventListener('blur', event => processInputChange(event, conf));
@@ -93,7 +93,7 @@ function addInputElementsElementListner(conf) {
 function removeInputElementsElementListner(conf) {
   logInfo('Removing input element listeners');
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
-  for (const input of inputs) {
+  for (const input of Array.from(inputs)) {
     input.removeEventListener('change', event => processInputChange(event, conf));
     input.removeEventListener('blur', event => processInputChange(event, conf));
   }
