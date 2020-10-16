@@ -1,3 +1,5 @@
+## Audigent Real-time Data Submodule
+
 Audigent is a next-generation data management platform and a first-of-a-kind 
 "data agency" containing some of the most exclusive content-consuming audiences 
 across desktop, mobile and social platforms.
@@ -7,7 +9,8 @@ attached to bid request objects destined for different SSPs in order to optimize
 targeting. Audigent maintains a large database of first-party Tradedesk Unified 
 ID to third party segment mappings that can now be queried at bid-time.
 
-Usage:
+### Usage
+
 Compile the audigent RTD module into your Prebid build:
 
 `gulp build --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,rubiconBidAdapter`
@@ -57,7 +60,9 @@ function addAudigentSegments() {
 }
 ```
 
-To view an example of the segments returned by Audigent's backends:
+### Testing
+
+To view an example of available segments returned by Audigent's backends:
 
 `gulp serve --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,rubiconBidAdapter`
 
