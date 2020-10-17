@@ -78,7 +78,7 @@ function handleAdMessage(e) {
       adDeliveryId,
     });
 
-    utils.triggerPixel(`${_moduleParams.impressionUrl}?${stringify(args)}`);
+    track.trackGet(_moduleParams.impressionUrl, args);
 
     // Send response back to the Advertiser tag
     let response = {
@@ -112,14 +112,17 @@ function handleAdMessage(e) {
  * ---- iframe.window <-- win
  *
  * @param {Window} win nested iframe window object
+ * @param {Window} topWin top window
  */
-export function getTopIFrameWin(win) {
+export function getTopIFrameWin(win, topWin) {
+  topWin = topWin || window;
+
   if (!win) {
     return null;
   }
 
   try {
-    while (win.parent !== win.top) {
+    while (win.parent !== topWin) {
       win = win.parent;
     }
     return win;
@@ -159,7 +162,7 @@ function getSlotByCode(code) {
  * @param {Window} win
  * @return {?Object}
  */
-function getSlotByWin(win) {
+export function getSlotByWin(win) {
   const slots = getAllSlots();
 
   if (!slots || !slots.length) {
@@ -233,6 +236,9 @@ function trackInit(adUnits) {
  * @param {Object} data
  */
 export const track = {
+  trackGet(url, data) {
+    utils.triggerPixel(`${url}?${stringify(data)}`);
+  },
   trackPost(url, data) {
     const ajax = ajaxBuilder();
 
