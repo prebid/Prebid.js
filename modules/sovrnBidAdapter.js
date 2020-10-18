@@ -1,10 +1,12 @@
 import * as utils from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
+import { createEidsArray } from './userId/eids.js';
 
 export const spec = {
   code: 'sovrn',
   supportedMediaTypes: [BANNER],
+  gvlid: 13,
 
   /**
    * Check if the bid is a valid zone ID in either number or string form
@@ -25,11 +27,21 @@ export const spec = {
       let sovrnImps = [];
       let iv;
       let schain;
-      let unifiedID;
+      let eids;
+      let tpid = []
+      let criteoId;
 
       utils._each(bidReqs, function (bid) {
-        if (!unifiedID) {
-          unifiedID = utils.deepAccess(bid, 'userId.tdid');
+        if (!eids && bid.userId) {
+          eids = createEidsArray(bid.userId)
+          eids.forEach(function (id) {
+            if (id.uids && id.uids[0]) {
+              if (id.source === 'criteo.com') {
+                criteoId = id.uids[0].id
+              }
+              tpid.push({source: id.source, uid: id.uids[0].id})
+            }
+          })
         }
 
         if (bid.schain) {
@@ -84,19 +96,12 @@ export const spec = {
         utils.deepSetValue(sovrnBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      if (unifiedID) {
-        const idArray = [{
-          source: 'adserver.org',
-          uids: [
-            {
-              id: unifiedID,
-              ext: {
-                rtiPartner: 'TDID'
-              }
-            }
-          ]
-        }]
-        utils.deepSetValue(sovrnBidReq, 'user.ext.eids', idArray)
+      if (eids) {
+        utils.deepSetValue(sovrnBidReq, 'user.ext.eids', eids)
+        utils.deepSetValue(sovrnBidReq, 'user.ext.tpid', tpid)
+        if (criteoId) {
+          utils.deepSetValue(sovrnBidReq, 'user.ext.prebid_criteoid', criteoId)
+        }
       }
 
       let url = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;

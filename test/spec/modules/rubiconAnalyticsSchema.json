@@ -409,7 +409,6 @@
         "bidResponse": {
           "type": "object",
           "required": [
-            "dimensions",
             "mediaType",
             "bidPriceUSD"
           ],

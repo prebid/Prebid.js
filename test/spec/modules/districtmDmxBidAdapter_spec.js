@@ -103,7 +103,9 @@ const bidRequest = [{
         id: {}
       }
     },
-    id5id: {},
+    id5id: {
+      uid: ''
+    },
     pubcid: {},
     tdid: {},
     criteoId: {},

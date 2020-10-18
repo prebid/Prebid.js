@@ -306,6 +306,7 @@ describe('Adyoulike Adapter', function () {
       expect(request.method).to.equal('POST');
       expect(request.url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
       expect(request.url).to.contains('RefererUrl=' + encodeURIComponent(referrerUrl));
+      expect(request.url).to.contains('PublisherDomain=http%3A%2F%2Flocalhost%3A9876');
 
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');

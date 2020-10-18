@@ -11,7 +11,9 @@ import { getRefererInfo } from '../src/refererDetection.js'
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-export const storage = getStorageManager();
+const gvlid = 91;
+const bidderCode = 'criteo';
+export const storage = getStorageManager(gvlid, bidderCode);
 
 const bididStorageKey = 'cto_bidid';
 const bundleStorageKey = 'cto_bundle';
@@ -29,7 +31,7 @@ function areCookiesWriteable() {
 }
 
 function extractProtocolHost (url, returnOnlyHost = false) {
-  const parsedUrl = utils.parseUrl(url)
+  const parsedUrl = utils.parseUrl(url, {noDecodeWholeURL: true})
   return returnOnlyHost
     ? `${parsedUrl.hostname}`
     : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
@@ -101,7 +103,9 @@ function callCriteoUserSync(parsedCriteoData, gdprString) {
       } else if (jsonResponse.bundle) {
         saveOnAllStorages(bundleStorageKey, jsonResponse.bundle);
       }
-    }
+    },
+    undefined,
+    { method: 'GET', contentType: 'application/json', withCredentials: true }
   );
 }
 
@@ -111,7 +115,8 @@ export const criteoIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'criteo',
+  name: bidderCode,
+  gvlid: gvlid,
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -123,11 +128,11 @@ export const criteoIdSubmodule = {
   /**
    * get the Criteo Id from local storages and initiate a new user sync
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
    * @returns {{id: {criteoId: string} | undefined}}}
    */
-  getId(configParams, consentData) {
+  getId(config, consentData) {
     const hasGdprData = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
     const gdprConsentString = hasGdprData ? consentData.consentString : undefined;
 

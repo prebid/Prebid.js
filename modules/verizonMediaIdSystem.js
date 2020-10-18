@@ -35,27 +35,28 @@ export const verizonMediaIdSubmodule = {
   /**
    * get the VerizonMedia Id
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams, consentData) {
-    if (!configParams || typeof configParams.he !== 'string' ||
-        (typeof configParams.pixelId === 'undefined' && typeof configParams.endpoint === 'undefined')) {
+  getId(config, consentData) {
+    const params = config.params || {};
+    if (!params || typeof params.he !== 'string' ||
+        (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
       utils.logError('The verizonMediaId submodule requires the \'he\' and \'pixelId\' parameters to be defined.');
       return;
     }
 
     const data = {
-      '1p': [1, '1', true].includes(configParams['1p']) ? '1' : '0',
-      he: configParams.he,
+      '1p': [1, '1', true].includes(params['1p']) ? '1' : '0',
+      he: params.he,
       gdpr: isEUConsentRequired(consentData) ? '1' : '0',
       euconsent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
       us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
     };
 
-    if (configParams.pixelId) {
-      data.pixelId = configParams.pixelId
+    if (params.pixelId) {
+      data.pixelId = params.pixelId
     }
 
     const resp = function (callback) {
@@ -76,8 +77,8 @@ export const verizonMediaIdSubmodule = {
           callback();
         }
       };
-      const endpoint = VMUID_ENDPOINT.replace(PLACEHOLDER, configParams.pixelId);
-      let url = `${configParams.endpoint || endpoint}?${utils.formatQS(data)}`;
+      const endpoint = VMUID_ENDPOINT.replace(PLACEHOLDER, params.pixelId);
+      let url = `${params.endpoint || endpoint}?${utils.formatQS(data)}`;
       verizonMediaIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};

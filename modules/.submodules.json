@@ -16,6 +16,8 @@
     "zeotapIdPlusIdSystem",
     "haloIdSystem",
     "quantcastIdSystem",
+    "idxIdSystem",
+    "fabrickIdSystem",
     "verizonMediaIdSystem"
   ],
   "adpod": [
