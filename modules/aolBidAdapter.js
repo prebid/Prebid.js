@@ -30,7 +30,7 @@ const SYNC_TYPES = {
   }
 };
 
-const SUPPORTED_USER_ID_PROVIDER_KEYS = ['vmuid'];
+const SUPPORTED_USER_ID_PROVIDER_KEYS = ['vmuid', 'idl_env'];
 
 const pubapiTemplate = template`${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;
 const nexageBaseApiTemplate = template`${'host'}/bidRequest?`;
