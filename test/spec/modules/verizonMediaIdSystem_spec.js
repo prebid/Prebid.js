@@ -35,32 +35,36 @@ describe('Verizon Media ID Submodule', () => {
     });
 
     function invokeGetIdAPI(configParams, consentData) {
-      let result = verizonMediaIdSubmodule.getId(configParams, consentData);
-      result.callback(sinon.stub());
+      let result = verizonMediaIdSubmodule.getId({
+        params: configParams
+      }, consentData);
+      if (typeof result === 'object') {
+        result.callback(sinon.stub());
+      }
       return result;
     }
 
     it('returns undefined if he and pixelId params are not passed', () => {
-      expect(verizonMediaIdSubmodule.getId({}, consentData)).to.be.undefined;
+      expect(invokeGetIdAPI({}, consentData)).to.be.undefined;
       expect(ajaxStub.callCount).to.equal(0);
     });
 
     it('returns undefined if the pixelId param is not passed', () => {
-      expect(verizonMediaIdSubmodule.getId({
+      expect(invokeGetIdAPI({
         he: HASHED_EMAIL
       }, consentData)).to.be.undefined;
       expect(ajaxStub.callCount).to.equal(0);
     });
 
     it('returns undefined if the he param is not passed', () => {
-      expect(verizonMediaIdSubmodule.getId({
+      expect(invokeGetIdAPI({
         pixelId: PIXEL_ID
       }, consentData)).to.be.undefined;
       expect(ajaxStub.callCount).to.equal(0);
     });
 
     it('returns an object with the callback function if the correct params are passed', () => {
-      let result = verizonMediaIdSubmodule.getId({
+      let result = invokeGetIdAPI({
         he: HASHED_EMAIL,
         pixelId: PIXEL_ID
       }, consentData);
