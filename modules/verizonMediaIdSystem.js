@@ -10,7 +10,8 @@ import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'verizonMediaId';
-const VMUID_ENDPOINT = 'https://ups.analytics.yahoo.com/ups/58300/fed';
+const PLACEHOLDER = '__PIXEL_ID__';
+const VMUID_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 
 function isEUConsentRequired(consentData) {
   return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
@@ -39,8 +40,9 @@ export const verizonMediaIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(configParams, consentData) {
-    if (!configParams || typeof configParams.he !== 'string') {
-      utils.logError('The verizonMediaId submodule requires the \'he\' parameter to be defined.');
+    if (!configParams || typeof configParams.he !== 'string' ||
+        (typeof configParams.pixelId === 'undefined' && typeof configParams.endpoint === 'undefined')) {
+      utils.logError('The verizonMediaId submodule requires the \'he\' and \'pixelId\' parameters to be defined.');
       return;
     }
 
@@ -51,6 +53,10 @@ export const verizonMediaIdSubmodule = {
       euconsent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
       us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
     };
+
+    if (configParams.pixelId) {
+      data.pixelId = configParams.pixelId
+    }
 
     const resp = function (callback) {
       const callbacks = {
@@ -70,7 +76,8 @@ export const verizonMediaIdSubmodule = {
           callback();
         }
       };
-      let url = `${configParams.endpoint || VMUID_ENDPOINT}?${utils.formatQS(data)}`;
+      const endpoint = VMUID_ENDPOINT.replace(PLACEHOLDER, configParams.pixelId);
+      let url = `${configParams.endpoint || endpoint}?${utils.formatQS(data)}`;
       verizonMediaIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};

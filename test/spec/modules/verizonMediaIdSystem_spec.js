@@ -4,7 +4,8 @@ import {verizonMediaIdSubmodule} from 'modules/verizonMediaIdSystem.js';
 
 describe('Verizon Media ID Submodule', () => {
   const HASHED_EMAIL = '6bda6f2fa268bf0438b5423a9861a2cedaa5dec163c03f743cfe05c08a8397b2';
-  const PROD_ENDPOINT = 'https://ups.analytics.yahoo.com/ups/58300/fed';
+  const PIXEL_ID = '1234';
+  const PROD_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PIXEL_ID}/fed`;
   const OVERRIDE_ENDPOINT = 'https://foo/bar';
 
   it('should have the correct module name declared', () => {
@@ -39,14 +40,29 @@ describe('Verizon Media ID Submodule', () => {
       return result;
     }
 
-    it('returns undefined if the hashed email address is not passed', () => {
+    it('returns undefined if he and pixelId params are not passed', () => {
       expect(verizonMediaIdSubmodule.getId({}, consentData)).to.be.undefined;
+      expect(ajaxStub.callCount).to.equal(0);
+    });
+
+    it('returns undefined if the pixelId param is not passed', () => {
+      expect(verizonMediaIdSubmodule.getId({
+        he: HASHED_EMAIL
+      }, consentData)).to.be.undefined;
+      expect(ajaxStub.callCount).to.equal(0);
+    });
+
+    it('returns undefined if the he param is not passed', () => {
+      expect(verizonMediaIdSubmodule.getId({
+        pixelId: PIXEL_ID
+      }, consentData)).to.be.undefined;
       expect(ajaxStub.callCount).to.equal(0);
     });
 
     it('returns an object with the callback function if the correct params are passed', () => {
       let result = verizonMediaIdSubmodule.getId({
-        he: HASHED_EMAIL
+        he: HASHED_EMAIL,
+        pixelId: PIXEL_ID
       }, consentData);
       expect(result).to.be.an('object').that.has.all.keys('callback');
       expect(result.callback).to.be.a('function');
@@ -55,10 +71,12 @@ describe('Verizon Media ID Submodule', () => {
     it('Makes an ajax GET request to the production API endpoint with query params', () => {
       invokeGetIdAPI({
         he: HASHED_EMAIL,
+        pixelId: PIXEL_ID
       }, consentData);
 
       const expectedParams = {
         he: HASHED_EMAIL,
+        pixelId: PIXEL_ID,
         '1p': '0',
         gdpr: '1',
         euconsent: consentData.gdpr.consentString,
@@ -66,7 +84,7 @@ describe('Verizon Media ID Submodule', () => {
       };
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
-      expect(ajaxStub.firstCall.args[0].indexOf(PROD_ENDPOINT)).to.equal(0);
+      expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
       expect(requestQueryParams).to.deep.equal(expectedParams);
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
     });
@@ -86,14 +104,15 @@ describe('Verizon Media ID Submodule', () => {
       };
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
-      expect(ajaxStub.firstCall.args[0].indexOf(OVERRIDE_ENDPOINT)).to.equal(0);
+      expect(ajaxStub.firstCall.args[0].indexOf(`${OVERRIDE_ENDPOINT}?`)).to.equal(0);
       expect(requestQueryParams).to.deep.equal(expectedParams);
       expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
     });
 
     it('sets the callbacks param of the ajax function call correctly', () => {
       invokeGetIdAPI({
-        he: HASHED_EMAIL
+        he: HASHED_EMAIL,
+        pixelId: PIXEL_ID,
       }, consentData);
 
       expect(ajaxStub.firstCall.args[1]).to.be.an('object').that.has.all.keys(['success', 'error']);
@@ -101,7 +120,8 @@ describe('Verizon Media ID Submodule', () => {
 
     it('sets GDPR consent data flag correctly when call is under GDPR jurisdiction.', () => {
       invokeGetIdAPI({
-        he: HASHED_EMAIL
+        he: HASHED_EMAIL,
+        pixelId: PIXEL_ID,
       }, consentData);
 
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
@@ -113,7 +133,8 @@ describe('Verizon Media ID Submodule', () => {
       consentData.gdpr.gdprApplies = false;
 
       invokeGetIdAPI({
-        he: HASHED_EMAIL
+        he: HASHED_EMAIL,
+        pixelId: PIXEL_ID,
       }, consentData);
 
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
@@ -125,7 +146,8 @@ describe('Verizon Media ID Submodule', () => {
       it(`sets 1p payload property to '1' for a config value of ${firstPartyParamValue}`, () => {
         invokeGetIdAPI({
           '1p': firstPartyParamValue,
-          he: HASHED_EMAIL
+          he: HASHED_EMAIL,
+          pixelId: PIXEL_ID,
         }, consentData);
 
         const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
