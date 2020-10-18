@@ -6,12 +6,23 @@ import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const subdomainSuffixes = ['', 1, 2];
-const getUri = (function () {
-  let num = 0;
-  return function () {
-    return 'https://ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com/v2/auction/'
+const AUCTION_PATH = '/v2/auction/';
+const PROTOCOL = 'https://';
+const HOST_GETTERS = {
+  default: (function () {
+    let num = 0;
+    return function () {
+      return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com'
+    }
+  }()),
+  appaloosa: function () {
+    return 'hb.appaloosa.media'
   }
-}())
+}
+const getUri = function (bidderCode) {
+  let getter = HOST_GETTERS[bidderCode] || HOST_GETTERS['default'];
+  return PROTOCOL + getter() + AUCTION_PATH
+}
 const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
 const BIDDER_CODE = 'adtelligent';
 const OUTSTREAM = 'outstream';
@@ -21,7 +32,7 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia'],
+  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
     return !!utils.deepAccess(bid, 'params.aid');
@@ -82,7 +93,7 @@ export const spec = {
         data: Object.assign({}, tag, { BidRequests: bids }),
         adapterRequest,
         method: 'POST',
-        url: getUri()
+        url: getUri(adapterRequest.bidderCode)
       };
     })
   },
