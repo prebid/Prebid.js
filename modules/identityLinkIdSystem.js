@@ -8,6 +8,9 @@
 import * as utils from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
+import {getStorageManager} from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 /** @type {Submodule} */
 export const identityLinkSubmodule = {
@@ -34,10 +37,11 @@ export const identityLinkSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {ConsentData} [consentData]
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams, consentData) {
+  getId(config, consentData) {
+    const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.pid !== 'string') {
       utils.logError('identityLink submodule requires partner id to be defined');
       return;
@@ -75,7 +79,6 @@ export const identityLinkSubmodule = {
 };
 // return envelope from third party endpoint
 function getEnvelope(url, callback) {
-  utils.logInfo('A 3P retrieval is attempted!');
   const callbacks = {
     success: response => {
       let responseObj;
@@ -93,7 +96,18 @@ function getEnvelope(url, callback) {
       callback();
     }
   };
-  ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
+
+  if (!storage.getCookie('_lr_retry_request')) {
+    setRetryCookie();
+    utils.logInfo('A 3P retrieval is attempted!');
+    ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
+  }
+}
+
+function setRetryCookie() {
+  let now = new Date();
+  now.setTime(now.getTime() + 3600000);
+  storage.setCookie('_lr_retry_request', 'true', now.toUTCString());
 }
 
 submodule('userId', identityLinkSubmodule);

@@ -244,6 +244,7 @@ describe('VidazooBidAdapter', function () {
           case 'digitrustid': return { data: { id: id } };
           case 'lipb': return { lipbid: id };
           case 'parrableId': return { eid: id };
+          case 'id5id': return { uid: id };
           default: return id;
         }
       })();

@@ -8,6 +8,7 @@
 import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
+const PIXEL = 'https://px.britepool.com/new?partner_id=t';
 
 /** @type {Submodule} */
 export const britepoolIdSubmodule = {
@@ -28,10 +29,12 @@ export const britepoolIdSubmodule = {
   /**
    * Performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [submoduleConfig]
+   * @param {ConsentData|undefined} consentData
    * @returns {function(callback:function)}
    */
-  getId(submoduleConfigParams, consentData) {
+  getId(submoduleConfig, consentData) {
+    const submoduleConfigParams = (submoduleConfig && submoduleConfig.params) || {};
     const { params, headers, url, getter, errors } = britepoolIdSubmodule.createParams(submoduleConfigParams, consentData);
     let getterResponse = null;
     if (typeof getter === 'function') {
@@ -43,6 +46,9 @@ export const britepoolIdSubmodule = {
           id: britepoolIdSubmodule.normalizeValue(getterResponse)
         };
       }
+    }
+    if (utils.isEmpty(params)) {
+      utils.triggerPixel(PIXEL);
     }
     // Return for async operation
     return {
@@ -79,13 +85,17 @@ export const britepoolIdSubmodule = {
   },
   /**
    * Helper method to create params for our API call
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleParams} [submoduleConfigParams]
+   * @param {ConsentData|undefined} consentData
    * @returns {object} Object with parsed out params
    */
   createParams(submoduleConfigParams, consentData) {
+    const hasGdprData = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
+    const gdprConsentString = hasGdprData ? consentData.consentString : undefined;
     let errors = [];
     const headers = {};
-    let params = Object.assign({}, submoduleConfigParams);
+    const dynamicVars = typeof britepool_pubparams !== 'undefined' ? britepool_pubparams : {}; // eslint-disable-line camelcase, no-undef
+    let params = Object.assign({}, submoduleConfigParams, dynamicVars);
     if (params.getter) {
       // Custom getter will not require other params
       if (typeof params.getter !== 'function') {
@@ -98,7 +108,7 @@ export const britepoolIdSubmodule = {
         headers['x-api-key'] = params.api_key;
       }
     }
-    const url = params.url || 'https://api.britepool.com/v1/britepool/id';
+    const url = params.url || `https://api.britepool.com/v1/britepool/id${gdprConsentString ? '?gdprString=' + encodeURIComponent(gdprConsentString) : ''}`;
     const getter = params.getter;
     delete params.api_key;
     delete params.url;

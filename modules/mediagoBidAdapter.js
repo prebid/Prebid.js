@@ -9,7 +9,8 @@ import {
 } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'mediago';
-// const PROTOCOL = window.document.location.protocol;
+const PROTOCOL = window.document.location.protocol;
+const IS_SECURE = (PROTOCOL === 'https:') ? 1 : 0;
 const ENDPOINT_URL =
   // ((PROTOCOL === 'https:') ? 'https' : 'http') +
   'https://rtb-us.mediago.io/api/bid?tn=';
@@ -163,8 +164,9 @@ function transformSizes(requestSizes) {
  */
 function getItems(validBidRequests, bidderRequest) {
   let items = [];
-  items = validBidRequests.map((req, i) => {
-    let ret = {};
+  for (let i in validBidRequests) {
+    let req = validBidRequests[i];
+    let ret;
     let mediaTypes = getProperty(req, 'mediaTypes');
 
     let sizes = transformSizes(getProperty(req, 'sizes'));
@@ -178,27 +180,33 @@ function getItems(validBidRequests, bidderRequest) {
       }
     }
 
-    // if (mediaTypes.native) {}
-    // banner广告类型
-    if (mediaTypes.banner) {
-      let id = '' + (i + 1);
-      ret = {
-        id: id,
-        // bidFloor: 0, // todo
-        banner: {
-          h: matchSize.height,
-          w: matchSize.width,
-          pos: 1,
-        }
-      };
-      itemMaps[id] = {
-        req,
-        ret
-      };
+    // Continue only if there is a matching size
+    if (matchSize) {
+      // banner广告类型
+      if (mediaTypes.banner) {
+        let id = '' + (+i + 1);
+        ret = {
+          id: id,
+          // bidFloor: 0, // todo
+          banner: {
+            h: matchSize.height,
+            w: matchSize.width,
+            pos: 1,
+          },
+          secure: IS_SECURE // for server-side to check if it's secure page
+        };
+        itemMaps[id] = {
+          req,
+          ret
+        };
+      }
     }
 
-    return ret;
-  });
+    if (ret) {
+      items.push(ret);
+    }
+  }
+
   return items;
 }
 
@@ -288,12 +296,17 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     let payload = getParam(validBidRequests, bidderRequest);
 
-    const payloadString = JSON.stringify(payload);
-    return {
-      method: 'POST',
-      url: ENDPOINT_URL + globals['token'],
-      data: payloadString,
-    };
+    // request ad only if there is a matching size
+    if (payload) {
+      const payloadString = JSON.stringify(payload);
+      return {
+        method: 'POST',
+        url: ENDPOINT_URL + globals['token'],
+        data: payloadString,
+      };
+    } else {
+      return null;
+    }
   },
 
   /**

@@ -94,7 +94,8 @@ const bidReqUserIds = [{
   userId: {
     idl_env: '1111',
     tdid: '123456',
-    digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}}
+    digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
+    id5id: { uid: '1111' }
   }
 },
 {
@@ -316,6 +317,7 @@ describe('Undertone Adapter', () => {
       expect(bidCommons.uids.tdid).to.equal('123456');
       expect(bidCommons.uids.idl_env).to.equal('1111');
       expect(bidCommons.uids.digitrustid.data.id).to.equal('DTID');
+      expect(bidCommons.uids.id5id.uid).to.equal('1111');
     });
     it('should send page sizes sizes correctly', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);
