@@ -86,6 +86,60 @@ describe('RelaidoAdapter', function () {
       setUADefault();
     });
 
+    it('should return false when missing 300x250 over and 1x1 by banner', function () {
+      setUAMobile();
+      bidRequest.mediaTypes = {
+        banner: {
+          sizes: [
+            [100, 100],
+            [300, 100]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      setUADefault();
+    });
+
+    it('should return true when 300x250 by banner', function () {
+      setUAMobile();
+      bidRequest.mediaTypes = {
+        banner: {
+          sizes: [
+            [300, 250]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      setUADefault();
+    });
+
+    it('should return true when 1x1 by banner', function () {
+      setUAMobile();
+      bidRequest.mediaTypes = {
+        banner: {
+          sizes: [
+            [1, 1]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      setUADefault();
+    });
+
+    it('should return true when 300x250 over by banner', function () {
+      setUAMobile();
+      bidRequest.mediaTypes = {
+        banner: {
+          sizes: [
+            [100, 100],
+            [300, 250]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      setUADefault();
+    });
+
     it('should return false when the uuid are missing', function () {
       localStorage.removeItem(UUID_KEY);
       const result = !!(utils.isSafariBrowser());
@@ -136,7 +190,7 @@ describe('RelaidoAdapter', function () {
       expect(bidRequests).to.have.lengthOf(1);
       const request = bidRequests[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.equal('https://api.relaido.jp/vast/v1/out/bid/100000');
+      expect(request.url).to.equal('https://api.relaido.jp/bid/v1/prebid/100000');
       expect(request.bidId).to.equal(bidRequest.bidId);
       expect(request.width).to.equal(bidRequest.mediaTypes.video.playerSize[0][0]);
       expect(request.height).to.equal(bidRequest.mediaTypes.video.playerSize[0][1]);

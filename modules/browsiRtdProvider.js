@@ -37,6 +37,8 @@ let _moduleParams = {};
 let _data = null;
 /** @type {null | function} */
 let _dataReadyCallback = null;
+/** @type {string} */
+const DEF_KEYNAME = 'browsiViewability';
 
 /**
  * add browsi script to page
@@ -117,16 +119,14 @@ function waitForData(callback) {
 function sendDataToModule(adUnits, onDone) {
   try {
     waitForData(_predictionsData => {
-      const _predictions = _predictionsData.p;
-      if (!_predictions || !Object.keys(_predictions).length) {
-        return onDone({});
-      }
+      const _predictions = _predictionsData.p || {};
       let dataToReturn = adUnits.reduce((rp, cau) => {
         const adUnitCode = cau && cau.code;
         if (!adUnitCode) { return rp }
         const adSlot = getSlotByCode(adUnitCode);
         const identifier = adSlot ? getMacroId(_predictionsData.pmd, adSlot) : adUnitCode;
         const predictionData = _predictions[identifier];
+        rp[adUnitCode] = getKVObject(-1, _predictionsData.kn);
         if (!predictionData) { return rp }
 
         if (predictionData.p) {
@@ -160,7 +160,7 @@ function getAllSlots() {
 function getKVObject(p, keyName) {
   const prValue = p < 0 ? 'NA' : (Math.floor(p * 10) / 10).toFixed(2);
   let prObject = {};
-  prObject[((_moduleParams['keyName'] || keyName).toString())] = prValue.toString();
+  prObject[((_moduleParams['keyName'] || keyName || DEF_KEYNAME).toString())] = prValue.toString();
   return prObject;
 }
 /**
@@ -231,7 +231,7 @@ function evaluate(macro, divId, adUnit, replacer) {
  * @param {string} url server url with query params
  */
 function getPredictionsFromServer(url) {
-  let ajax = ajaxBuilder(_moduleParams.auctionDelay || _moduleParams.timeout || DEF_TIMEOUT);
+  let ajax = ajaxBuilder(_moduleParams.auctionDelay || _moduleParams.timeout);
 
   ajax(url,
     {
@@ -286,21 +286,26 @@ export const browsiSubmodule = {
    * @param {adUnit[]} adUnits
    * @param {function} onDone
    */
-  getData: sendDataToModule
+  getData: sendDataToModule,
+  init: init
 };
 
-export function init(config) {
+function init(config, gdpr, usp) {
+  return true;
+}
+
+export function beforeInit(config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
     try {
       _moduleParams = realTimeData.dataProviders && realTimeData.dataProviders.filter(
         pr => pr.name && pr.name.toLowerCase() === 'browsi')[0].params;
+      confListener();
       _moduleParams.auctionDelay = realTimeData.auctionDelay;
-      _moduleParams.timeout = realTimeData.timeout;
+      _moduleParams.timeout = realTimeData.timeout || DEF_TIMEOUT;
     } catch (e) {
       _moduleParams = {};
     }
     if (_moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
-      confListener();
       collectData();
     } else {
       utils.logError('missing params for Browsi provider');
@@ -308,5 +313,8 @@ export function init(config) {
   });
 }
 
-submodule('realTimeData', browsiSubmodule);
-init(config);
+function registerSubModule() {
+  submodule('realTimeData', browsiSubmodule);
+}
+registerSubModule();
+beforeInit(config);

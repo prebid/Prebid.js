@@ -2,32 +2,25 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
 
-// always use https, regardless of whether or not current page is secure
-export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
-export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
+let rubiConf = {};
+// we are saving these as global to this module so that if a pub accidentally overwrites the entire
+// rubicon object, then we do not lose other data
+config.getConfig('rubicon', config => {
+  utils.mergeDeep(rubiConf, config.rubicon);
+});
 
 const GVLID = 52;
-const DIGITRUST_PROP_NAMES = {
-  FASTLANE: {
-    id: 'dt.id',
-    keyv: 'dt.keyv',
-    pref: 'dt.pref'
-  },
-  PREBID_SERVER: {
-    id: 'id',
-    keyv: 'keyv'
-  }
-};
 
 var sizeMap = {
   1: '468x60',
   2: '728x90',
   5: '120x90',
+  7: '125x125',
   8: '120x600',
   9: '160x600',
   10: '300x600',
@@ -109,7 +102,8 @@ var sizeMap = {
   274: '1800x200',
   278: '320x500',
   282: '320x400',
-  288: '640x380'
+  288: '640x380',
+  548: '500x1000'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -161,9 +155,9 @@ export const spec = {
         source: {
           tid: bidRequest.transactionId
         },
-        tmax: config.getConfig('TTL') || 1000,
+        tmax: bidderRequest.timeout,
         imp: [{
-          exp: 300,
+          exp: config.getConfig('s2sConfig.defaultTtl'),
           id: bidRequest.adUnitCode,
           secure: 1,
           ext: {
@@ -175,7 +169,7 @@ export const spec = {
           prebid: {
             cache: {
               vastxml: {
-                returnCreative: false // don't return the VAST
+                returnCreative: rubiConf.returnVast === true
               }
             },
             targeting: {
@@ -186,7 +180,7 @@ export const spec = {
             },
             bidders: {
               rubicon: {
-                integration: config.getConfig('rubicon.int_type') || DEFAULT_PBS_INTEGRATION
+                integration: rubiConf.int_type || DEFAULT_PBS_INTEGRATION
               }
             }
           }
@@ -201,12 +195,17 @@ export const spec = {
       }
 
       let bidFloor;
-      if (typeof bidRequest.getFloor === 'function' && !config.getConfig('rubicon.disableFloors')) {
-        let floorInfo = bidRequest.getFloor({
-          currency: 'USD',
-          mediaType: 'video',
-          size: parseSizes(bidRequest, 'video')
-        });
+      if (typeof bidRequest.getFloor === 'function' && !rubiConf.disableFloors) {
+        let floorInfo;
+        try {
+          floorInfo = bidRequest.getFloor({
+            currency: 'USD',
+            mediaType: 'video',
+            size: parseSizes(bidRequest, 'video')
+          });
+        } catch (e) {
+          utils.logError('Rubicon: getFloor threw an error: ', e);
+        }
         bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
       } else {
         bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
@@ -220,11 +219,6 @@ export const spec = {
       appendSiteAppDevice(data, bidRequest, bidderRequest);
 
       addVideoParameters(data, bidRequest);
-
-      const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
-      if (digiTrust) {
-        utils.deepSetValue(data, 'user.ext.digitrust', digiTrust);
-      }
 
       if (bidderRequest.gdprConsent) {
         // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
@@ -241,59 +235,24 @@ export const spec = {
         utils.deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
-      if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
-        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env)) {
-        utils.deepSetValue(data, 'user.ext.eids', []);
+      const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
+      if (eids && eids.length) {
+        utils.deepSetValue(data, 'user.ext.eids', eids);
 
-        if (bidRequest.userId.tdid) {
-          data.user.ext.eids.push({
-            source: 'adserver.org',
-            uids: [{
-              id: bidRequest.userId.tdid,
-              ext: {
-                rtiPartner: 'TDID'
-              }
-            }]
-          });
-        }
-
-        if (bidRequest.userId.pubcid) {
-          data.user.ext.eids.push({
-            source: 'pubcommon',
-            uids: [{
-              id: bidRequest.userId.pubcid,
-            }]
-          });
-        }
-
-        // support liveintent ID
-        if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-          data.user.ext.eids.push({
-            source: 'liveintent.com',
-            uids: [{
-              id: bidRequest.userId.lipb.lipbid
-            }]
-          });
-
-          data.user.ext.tpid = {
-            source: 'liveintent.com',
-            uid: bidRequest.userId.lipb.lipbid
-          };
-
-          if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
-            utils.deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
+        // liveintent requires additional props to be set
+        const liveIntentEid = find(data.user.ext.eids, eid => eid.source === 'liveintent.com');
+        if (liveIntentEid) {
+          utils.deepSetValue(data, 'user.ext.tpid', { source: liveIntentEid.source, uid: liveIntentEid.uids[0].id });
+          if (liveIntentEid.ext && liveIntentEid.ext.segments) {
+            utils.deepSetValue(data, 'rp.target.LIseg', liveIntentEid.ext.segments);
           }
         }
+      }
 
-        // support identityLink (aka LiveRamp)
-        if (bidRequest.userId.idl_env) {
-          data.user.ext.eids.push({
-            source: 'liveramp.com',
-            uids: [{
-              id: bidRequest.userId.idl_env
-            }]
-          });
-        }
+      // set user.id value from config value
+      const configUserId = config.getConfig('user.id');
+      if (configUserId) {
+        utils.deepSetValue(data, 'user.id', configUserId);
       }
 
       if (config.getConfig('coppa') === true) {
@@ -331,8 +290,19 @@ export const spec = {
        */
       const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
+        utils.deepSetValue(data.imp[0].ext, 'context.data.pbadslot', pbAdSlot);
       }
+
+      /**
+       * Copy GAM AdUnit and Name to imp
+       */
+      ['name', 'adSlot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(bidRequest, `fpd.context.adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(data.imp[0].ext, `context.data.adserver.${name.toLowerCase()}`, value);
+        }
+      });
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
@@ -344,19 +314,19 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: VIDEO_ENDPOINT,
+        url: `https://${rubiConf.videoHost || 'prebid-server'}.rubiconproject.com/openrtb2/auction`,
         data,
         bidRequest
       }
     });
 
-    if (config.getConfig('rubicon.singleRequest') !== true) {
+    if (rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
           method: 'GET',
-          url: FASTLANE_ENDPOINT,
+          url: `https://${rubiConf.bannerHost || 'fastlane'}.rubiconproject.com/a/api/fastlane.json`,
           data: spec.getOrderedParams(bidParams).reduce((paramString, key) => {
             const propValue = bidParams[key];
             return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
@@ -387,7 +357,7 @@ export const spec = {
           // SRA request returns grouped bidRequest arrays not a plain bidRequest
           aggregate.push({
             method: 'GET',
-            url: FASTLANE_ENDPOINT,
+            url: `https://${rubiConf.bannerHost || 'fastlane'}.rubiconproject.com/a/api/fastlane.json`,
             data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
               const propValue = combinedSlotParams[key];
               return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
@@ -419,9 +389,10 @@ export const spec = {
       'tpid_tdid',
       'tpid_liveintent.com',
       'tg_v.LIseg',
-      'dt.id',
-      'dt.keyv',
-      'dt.pref',
+      'ppuid',
+      'eid_pubcid.org',
+      'eid_sharedid.org',
+      'eid_criteo.com',
       'rf',
       'p_geo.latitude',
       'p_geo.longitude',
@@ -494,8 +465,6 @@ export const spec = {
 
     const [latitude, longitude] = params.latLong || [];
 
-    const configIntType = config.getConfig('rubicon.int_type');
-
     const data = {
       'account_id': params.accountId,
       'site_id': params.siteId,
@@ -504,7 +473,7 @@ export const spec = {
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
       'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
       'rp_secure': '1',
-      'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
+      'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
       'x_source.pchain': params.pchain,
       'p_screen_res': _getScreenResolution(),
@@ -516,12 +485,17 @@ export const spec = {
     };
 
     // If floors module is enabled and we get USD floor back, send it in rp_hard_floor else undfined
-    if (typeof bidRequest.getFloor === 'function' && !config.getConfig('rubicon.disableFloors')) {
-      let floorInfo = bidRequest.getFloor({
-        currency: 'USD',
-        mediaType: 'banner',
-        size: '*'
-      });
+    if (typeof bidRequest.getFloor === 'function' && !rubiConf.disableFloors) {
+      let floorInfo;
+      try {
+        floorInfo = bidRequest.getFloor({
+          currency: 'USD',
+          mediaType: 'banner',
+          size: '*'
+        });
+      } catch (e) {
+        utils.logError('Rubicon: getFloor threw an error: ', e);
+      }
       data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
 
@@ -529,22 +503,50 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    if (bidRequest.userId) {
-      if (bidRequest.userId.tdid) {
-        data['tpid_tdid'] = bidRequest.userId.tdid;
+    if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
+      const unifiedId = find(bidRequest.userIdAsEids, eid => eid.source === 'adserver.org');
+      if (unifiedId) {
+        data['tpid_tdid'] = unifiedId.uids[0].id;
       }
-
-      // support liveintent ID
-      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-        data['tpid_liveintent.com'] = bidRequest.userId.lipb.lipbid;
-        if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
-          data['tg_v.LIseg'] = bidRequest.userId.lipb.segments.join(',');
+      const liveintentId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveintent.com');
+      if (liveintentId) {
+        data['tpid_liveintent.com'] = liveintentId.uids[0].id;
+        if (liveintentId.ext && Array.isArray(liveintentId.ext.segments) && liveintentId.ext.segments.length) {
+          data['tg_v.LIseg'] = liveintentId.ext.segments.join(',');
         }
       }
+      const liverampId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveramp.com');
+      if (liverampId) {
+        data['x_liverampidl'] = liverampId.uids[0].id;
+      }
+      const sharedId = find(bidRequest.userIdAsEids, eid => eid.source === 'sharedid.org');
+      if (sharedId) {
+        data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
+      }
+      const pubcid = find(bidRequest.userIdAsEids, eid => eid.source === 'pubcid.org');
+      if (pubcid) {
+        data['eid_pubcid.org'] = `${pubcid.uids[0].id}^${pubcid.uids[0].atype}`;
+      }
+      const criteoId = find(bidRequest.userIdAsEids, eid => eid.source === 'criteo.com');
+      if (criteoId) {
+        data['eid_criteo.com'] = `${criteoId.uids[0].id}^${criteoId.uids[0].atype}`;
+      }
+    }
 
-      // support identityLink (aka LiveRamp)
-      if (bidRequest.userId.idl_env) {
-        data['tpid_liveramp.com'] = bidRequest.userId.idl_env;
+    // set ppuid value from config value
+    const configUserId = config.getConfig('user.id');
+    if (configUserId) {
+      data['ppuid'] = configUserId;
+    } else {
+      // if config.getConfig('user.id') doesn't return anything, then look for the first eid.uids[*].ext.stype === 'ppuid'
+      for (let i = 0; bidRequest.userIdAsEids && i < bidRequest.userIdAsEids.length; i++) {
+        if (bidRequest.userIdAsEids[i].uids) {
+          const pubProvidedId = find(bidRequest.userIdAsEids[i].uids, uid => uid.ext && uid.ext.stype === 'ppuid');
+          if (pubProvidedId && pubProvidedId.id) {
+            data['ppuid'] = pubProvidedId.id;
+            break;
+          }
+        }
       }
     }
 
@@ -592,12 +594,17 @@ export const spec = {
      */
     const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
     if (typeof pbAdSlot === 'string' && pbAdSlot) {
-      data['tg_i.dfp_ad_unit_code'] = pbAdSlot.replace(/^\/+/, '');
+      data['tg_i.pbadslot'] = pbAdSlot.replace(/^\/+/, '');
     }
 
-    // digitrust properties
-    const digitrustParams = _getDigiTrustQueryParams(bidRequest, 'FASTLANE');
-    Object.assign(data, digitrustParams);
+    /**
+     * GAM Ad Unit
+     * @type {(string|undefined)}
+     */
+    const gamAdUnit = utils.deepAccess(bidRequest, 'fpd.context.adServer.adSlot');
+    if (typeof gamAdUnit === 'string' && gamAdUnit) {
+      data['tg_i.dfp_ad_unit_code'] = gamAdUnit.replace(/^\/+/, '');
+    }
 
     if (config.getConfig('coppa') === true) {
       data['coppa'] = 1;
@@ -665,7 +672,7 @@ export const spec = {
             cpm: bid.price || 0,
             bidderCode: seatbid.seat,
             ttl: 300,
-            netRevenue: config.getConfig('rubicon.netRevenue') !== false, // If anything other than false, netRev is true
+            netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
             width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
             height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
           };
@@ -745,7 +752,7 @@ export const spec = {
           cpm: ad.cpm || 0,
           dealId: ad.deal,
           ttl: 300, // 5 minutes
-          netRevenue: config.getConfig('rubicon.netRevenue') !== false, // If anything other than false, netRev is true
+          netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
           rubicon: {
             advertiserId: ad.advertiser, networkId: ad.network
           },
@@ -788,7 +795,7 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
-      // data is only assigned if params are available to pass to SYNC_ENDPOINT
+      // data is only assigned if params are available to pass to syncEndpoint
       let params = '';
 
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -807,7 +814,7 @@ export const spec = {
       hasSynced = true;
       return {
         type: 'iframe',
-        url: SYNC_ENDPOINT + params
+        url: `https://${rubiConf.syncHost || 'eus'}.rubiconproject.com/usync.html` + params
       };
     }
   },
@@ -828,38 +835,6 @@ export const spec = {
 
 function _getScreenResolution() {
   return [window.screen.width, window.screen.height].join('x');
-}
-
-function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
-  if (!endpointName || !DIGITRUST_PROP_NAMES[endpointName]) {
-    return null;
-  }
-  const propNames = DIGITRUST_PROP_NAMES[endpointName];
-
-  function getDigiTrustId() {
-    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
-    if (bidRequestDigitrust) {
-      return bidRequestDigitrust;
-    }
-
-    let digiTrustUser = (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-
-  const digiTrustQueryParams = {
-    [propNames.id]: digiTrustId.id,
-    [propNames.keyv]: digiTrustId.keyv
-  };
-  if (propNames.pref) {
-    digiTrustQueryParams[propNames.pref] = 0;
-  }
-  return digiTrustQueryParams;
 }
 
 /**
@@ -1053,6 +1028,7 @@ function bidType(bid, log = false) {
   }
 }
 
+export const resetRubiConf = () => rubiConf = {};
 export function masSizeOrdering(sizes) {
   const MAS_SIZE_PRIORITY = [15, 2, 9];
 
@@ -1147,7 +1123,7 @@ export function hasValidSupplyChainParams(schain) {
   if (!schain.nodes) return isValid;
   isValid = schain.nodes.reduce((status, node) => {
     if (!status) return status;
-    return requiredFields.every(field => node[field]);
+    return requiredFields.every(field => node.hasOwnProperty(field));
   }, true);
   if (!isValid) utils.logError('Rubicon: required schain params missing');
   return isValid;
