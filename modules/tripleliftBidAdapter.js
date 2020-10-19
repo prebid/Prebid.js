@@ -111,31 +111,19 @@ function _getSyncType(syncOptions) {
 function _buildPostBody(bidRequests) {
   let data = {};
   let { schain } = bidRequests[0];
-<<<<<<< HEAD
-=======
   const globalFpd = _getGlobalFpd();
 
->>>>>>> upstream/master
   data.imp = bidRequests.map(function(bidRequest, index) {
     let imp = {
       id: index,
       tagid: bidRequest.params.inventoryCode,
       floor: _getFloor(bidRequest)
-<<<<<<< HEAD
     };
     if (bidRequest.mediaTypes.video) {
       imp.video = _getORTBVideo(bidRequest);
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
     };
-=======
-    };
-    if (bidRequest.mediaTypes.video) {
-      imp.video = _getORTBVideo(bidRequest);
-    } else if (bidRequest.mediaTypes.banner) {
-      imp.banner = { format: _sizes(bidRequest.sizes) };
-    };
->>>>>>> upstream/master
     return imp;
   });
 
@@ -285,12 +273,8 @@ function _buildResponseObject(bidderRequest, bid) {
       dealId: dealId,
       currency: 'USD',
       ttl: 300,
-<<<<<<< HEAD
-      tl_source: bid.tl_source
-=======
       tl_source: bid.tl_source,
       meta: {}
->>>>>>> upstream/master
     };
 
     if (breq.mediaTypes.video) {
