@@ -637,10 +637,12 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         break;
       case BIDDER_DONE:
         const serverError = utils.deepAccess(args, 'serverErrors.0');
-        const serverResponseTimeMs = utils.deepAccess(args, 'serverResponseTimeMs');
+        const serverResponseTimeMs = args.serverResponseTimeMs;
         args.bids.forEach(bid => {
           let cachedBid = cache.auctions[bid.auctionId].bids[bid.bidId || bid.requestId];
-          if (serverResponseTimeMs) {
+          if (typeof bid.serverResponseTimeMs !== 'undefined') {
+            cachedBid.serverLatencyMillis = bid.serverResponseTimeMs;
+          } else if (serverResponseTimeMs && bid.source === 's2s') {
             cachedBid.serverLatencyMillis = serverResponseTimeMs;
           }
           // if PBS said we had an error, and this bid has not been processed by BID_RESPONSE YET
