@@ -17,9 +17,10 @@ let minimalBid = function() {
   }
 };
 
-let bidWithParams = function(data) {
+let bidWithParams = function(data, userId) {
   let bid = minimalBid();
   bid.params.data = data;
+  bid.userId = userId;
   return bid;
 };
 
@@ -100,6 +101,12 @@ describe('AdheseAdapter', function () {
       expect(req.url).to.contain('/xfaHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ');
     });
 
+    it('should include id5 id as /x5 param', function () {
+      let req = spec.buildRequests([ bidWithParams({}, {'id5id': 'ID5-1234567890'}) ], bidderRequest);
+
+      expect(req.url).to.contain('/x5ID5-1234567890');
+    });
+
     it('should include bids', function () {
       let bid = minimalBid();
       let req = spec.buildRequests([ bid ], bidderRequest);
@@ -155,6 +162,8 @@ describe('AdheseAdapter', function () {
         netRevenue: NET_REVENUE,
         ttl: TTL,
         adhese: {
+          origin: 'APPNEXUS',
+          originInstance: '',
           originData: {
             adType: 'leaderboard',
             seatbid: [
@@ -199,7 +208,10 @@ describe('AdheseAdapter', function () {
         mediaType: 'video',
         netRevenue: NET_REVENUE,
         ttl: TTL,
-        adhese: { originData: {} }
+        adhese: {
+          origin: 'RUBICON',
+          originInstance: '',
+          originData: {} }
       }];
       expect(spec.interpretResponse(sspVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
@@ -251,6 +263,8 @@ describe('AdheseAdapter', function () {
         requestId: BID_ID,
         ad: '<script id="body" type="text/javascript"></script><img src=\'https://hosts-demo.adhese.com/track/742898\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
         adhese: {
+          origin: '',
+          originInstance: '',
           originData: {
             adFormat: 'largeleaderboard',
             adId: '742898',
@@ -310,6 +324,8 @@ describe('AdheseAdapter', function () {
         requestId: BID_ID,
         vastXml: '<?xml version=\'1.0\' encoding=\'UTF-8\' standalone=\'no\'?><VAST version=\'2.0\' xmlns:xsi=\'http://www.w3.org/2001/XMLSchema-instance\' xsi:noNamespaceSchemaLocation=\'vast.xsd\'></VAST>',
         adhese: {
+          origin: '',
+          originInstance: '',
           originData: {
             adFormat: '',
             adId: '742470',

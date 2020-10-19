@@ -168,6 +168,14 @@ export const spec = {
         spotxReq.video.maxduration = utils.getBidIdParameter('max_duration', bid.params);
       }
 
+      if (utils.getBidIdParameter('placement_type', bid.params) != '') {
+        spotxReq.video.ext.placement = utils.getBidIdParameter('placement_type', bid.params);
+      }
+
+      if (utils.getBidIdParameter('position', bid.params) != '') {
+        spotxReq.video.ext.pos = utils.getBidIdParameter('position', bid.params);
+      }
+
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
       }

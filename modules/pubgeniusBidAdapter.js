@@ -16,7 +16,6 @@ import {
 
 const BIDDER_VERSION = '1.0.0';
 const BASE_URL = 'https://ortb.adpearl.io';
-const AUCTION_URL = BASE_URL + '/prebid/auction';
 
 export const spec = {
   code: 'pubgenius',
@@ -31,7 +30,7 @@ export const spec = {
     }
 
     const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-    return Boolean(sizes && sizes.length) && sizes.every(size => isArrayOfNums(size, 2));
+    return !!(sizes && sizes.length) && sizes.every(size => isArrayOfNums(size, 2));
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
@@ -66,7 +65,7 @@ export const spec = {
       deepSetValue(data, 'regs.ext.us_privacy', usp);
     }
 
-    const schain = bidderRequest.schain;
+    const schain = bidRequests[0].schain;
     if (schain) {
       deepSetValue(data, 'source.ext.schain', schain);
     }
@@ -85,7 +84,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: AUCTION_URL,
+      url: `${getBaseUrl()}/prebid/auction`,
       data,
     };
   },
@@ -128,7 +127,7 @@ export const spec = {
       const qs = parseQueryStringParameters(params);
       syncs.push({
         type: 'iframe',
-        url: `${BASE_URL}/usersync/pixels.html?${qs}`,
+        url: `${getBaseUrl()}/usersync/pixels.html?${qs}`,
       });
     }
 
@@ -136,7 +135,7 @@ export const spec = {
   },
 
   onTimeout(data) {
-    ajax(`${BASE_URL}/prebid/events?type=timeout`, null, JSON.stringify(data), {
+    ajax(`${getBaseUrl()}/prebid/events?type=timeout`, null, JSON.stringify(data), {
       method: 'POST',
     });
   },
@@ -170,14 +169,26 @@ function buildImp(bid) {
 }
 
 function buildSite(bidderRequest) {
-  const pageUrl = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
+  let site = null;
+  const { refererInfo } = bidderRequest;
+
+  const pageUrl = config.getConfig('pageUrl') || refererInfo.canonicalUrl || refererInfo.referer;
   if (pageUrl) {
-    return {
-      page: pageUrl,
-    };
+    site = site || {};
+    site.page = pageUrl;
   }
 
-  return null;
+  if (refererInfo.reachedTop) {
+    try {
+      const pageRef = window.top.document.referrer;
+      if (pageRef) {
+        site = site || {};
+        site.ref = pageRef;
+      }
+    } catch (e) {}
+  }
+
+  return site;
 }
 
 function interpretBid(bid) {
@@ -203,6 +214,11 @@ function interpretBid(bid) {
 
 function numericBoolean(value) {
   return value ? 1 : 0;
+}
+
+function getBaseUrl() {
+  const pubg = config.getConfig('pubgenius');
+  return (pubg && pubg.endpoint) || BASE_URL;
 }
 
 registerBidder(spec);

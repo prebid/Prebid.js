@@ -107,7 +107,7 @@ export const spec = {
      if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: 'https://acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+        url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
       });
     }
      if (syncOptions.pixelEnabled && serverResponses.length > 0) {
@@ -119,7 +119,7 @@ export const spec = {
 
     // syncs.push({
     //   type: 'iframe',
-    //   url: 'https://acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+    //   url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
     // });
     syncs.push({
       type: 'iframe',

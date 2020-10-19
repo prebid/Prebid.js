@@ -393,14 +393,11 @@ FAQs
 
 ### Why do I have to input size in `adUnits[].bids[].params` for IX when the size is already in the ad unit?
 
-There are two important reasons why we require it:
+There is one important reason why we recommend it:
 
-1. An IX site ID maps to a single size, whereas an ad unit can have multiple
-sizes. To ensure that the right site ID is mapped to the correct size in the ad
-unit we require the size to be explicitly stated.
-
-2. An ad unit may have sizes that IX does not support. By explicitly stating the
-size, you can choose not to have IX bid on certain sizes that are invalid.
+1. An IX site ID is recommended to map to a single size, whereas an ad unit can have multiple
+sizes. To ensure that the right site ID is mapped to the correct size in the ad unit, 
+we require the size to be explicitly stated or our bidder will auto assign the site ID to sizes that are not assigned.
 
 ### How do I view IX's bid request in the network?
 

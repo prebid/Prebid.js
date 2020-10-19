@@ -1109,6 +1109,8 @@ describe('Media.net bid adapter', function () {
 
   describe('buildRequests', function () {
     beforeEach(function () {
+      $$PREBID_GLOBAL$$.medianetGlobals = {};
+
       let documentStub = sandbox.stub(document, 'getElementById');
       let boundingRect = {
         top: 50,

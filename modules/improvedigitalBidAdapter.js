@@ -8,7 +8,7 @@ const BIDDER_CODE = 'improvedigital';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 export const spec = {
-  version: '7.0.0',
+  version: '7.1.0',
   code: BIDDER_CODE,
   gvlid: 253,
   aliases: ['id'],
@@ -123,7 +123,7 @@ export const spec = {
 
       // Deal ID. Composite ads can have multiple line items and the ID of the first
       // dealID line item will be used.
-      if (utils.isNumber(bidObject.lid) && bidObject.buying_type === 'deal_id') {
+      if (utils.isNumber(bidObject.lid) && bidObject.buying_type && bidObject.buying_type !== 'rtb') {
         bid.dealId = bidObject.lid;
       } else if (Array.isArray(bidObject.lid) &&
         Array.isArray(bidObject.buying_type) &&
@@ -131,7 +131,7 @@ export const spec = {
         let isDeal = false;
         bidObject.buying_type.forEach((bt, i) => {
           if (isDeal) return;
-          if (bt === 'deal_id') {
+          if (bt && bt !== 'rtb') {
             isDeal = true;
             bid.dealId = bidObject.lid[i];
           }
@@ -182,9 +182,10 @@ export const spec = {
 };
 
 function isInstreamVideo(bid) {
+  const mediaTypes = Object.keys(utils.deepAccess(bid, 'mediaTypes', {}));
   const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-  return bid.mediaType === 'video' || (videoMediaType && context !== 'outstream');
+  return bid.mediaType === 'video' || (mediaTypes.length === 1 && videoMediaType && context !== 'outstream');
 }
 
 function isOutstreamVideo(bid) {
@@ -197,19 +198,15 @@ function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       sizes: [bid.width, bid.height],
-      width: bid.width,
-      height: bid.height,
       targetId: bid.adUnitCode,
       adResponse: bid.adResponse,
-      rendererOptions: {
-        showBigPlayButton: false,
-        showProgressBar: 'bar',
-        showVolume: false,
-        allowFullscreen: true,
-        skippable: false,
-      }
-    });
+      rendererOptions: bid.renderer.getConfig()
+    }, handleOutstreamRendererEvents.bind(null, bid));
   });
+}
+
+function handleOutstreamRendererEvents(bid, id, eventName) {
+  bid.renderer.handleVideoEvent({ id, eventName });
 }
 
 function createRenderer(bidRequest) {
@@ -217,10 +214,7 @@ function createRenderer(bidRequest) {
     id: bidRequest.adUnitCode,
     url: RENDERER_URL,
     loaded: false,
-    config: {
-      player_width: bidRequest.mediaTypes.video.playerSize[0][0],
-      player_height: bidRequest.mediaTypes.video.playerSize[0][1]
-    },
+    config: utils.deepAccess(bidRequest, 'renderer.options'),
     adUnitCode: bidRequest.adUnitCode
   });
   try {

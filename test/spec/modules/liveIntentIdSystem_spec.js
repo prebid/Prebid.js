@@ -33,21 +33,6 @@ describe('LiveIntentId', function () {
     resetLiveIntentIdSubmodule();
   });
 
-  it('should log an error if no configParams were passed when getId', function () {
-    liveIntentIdSubmodule.getId();
-    expect(logErrorStub.calledOnce).to.be.true;
-  });
-
-  it('should log an error if publisherId configParam was not passed when getId', function () {
-    liveIntentIdSubmodule.getId({});
-    expect(logErrorStub.calledOnce).to.be.true;
-  });
-
-  it('should log an error if publisherId configParam was not passed when decode', function () {
-    liveIntentIdSubmodule.decode({}, {});
-    expect(logErrorStub.calledOnce).to.be.true;
-  });
-
   it('should initialize LiveConnect with a us privacy string when getId, and include it in all requests', function () {
     consentDataStub.returns('1YNY');
     let callBackSpy = sinon.spy();
