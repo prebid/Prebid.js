@@ -191,7 +191,7 @@ function getLegacyCookieSignature() {
   let legacyStoredValue;
   LEGACY_COOKIE_NAMES.forEach(function(cookie) {
     if (storage.getCookie(cookie)) {
-      legacyStoredValue = JSON.parse(storage.getCookie(cookie));
+      legacyStoredValue = JSON.parse(storage.getCookie(cookie)) || legacyStoredValue;
     }
   });
   return (legacyStoredValue && legacyStoredValue.signature) || '';

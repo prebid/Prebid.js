@@ -31,7 +31,7 @@ pbjs.setConfig({
             storage: {
                 type: "html5",        // ID5 requires html5
                 name: "id5id",
-                expires: 90,          // Expiration of cookies in days
+                expires: 90,          // Expiration in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
@@ -145,7 +145,7 @@ pbjs.setConfig({
             storage: {
                 type: 'html5',
                 name: 'id5id',
-                expires: 90, // Expiration of cookies in days
+                expires: 90,          // Expiration in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
