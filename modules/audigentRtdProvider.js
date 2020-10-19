@@ -5,15 +5,6 @@
  * @module modules/audigentRtdProvider
  * @requires module:modules/realTimeData
  */
-
-/**
- * @typedef {Object} ModuleParams
- * @property {string} siteKey
- * @property {string} pubKey
- * @property {string} url
- * @property {?string} keyName
- */
-
 import {getGlobal} from '../src/prebidGlobal.js';
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
@@ -25,15 +16,14 @@ const storage = getStorageManager();
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'audigent';
+const HALOID_LOCAL_NAME = 'auHaloId';
+const SEG_LOCAL_NAME = '__adgntseg';
 
 /**
- * XMLHttpRequest to get data form audigent server
- * @param {string} url server url with query params
+ * decorate adUnits with segment data
+ * @param {adUnit[]} adUnits
+ * @param {Object} data
  */
-export function setData(data) {
-  storage.setDataInLocalStorage('__adgntseg', JSON.stringify(data));
-}
-
 function addSegmentData(adUnits, data) {
   adUnits.forEach(adUnit => {
     if (adUnit.hasOwnProperty('bids')) {
@@ -46,10 +36,17 @@ function addSegmentData(adUnits, data) {
   return adUnits;
 }
 
+/**
+ * segment retrieval from audigent's backends
+ * @param {Object} reqBidsConfigObj
+ * @param {function} onDone
+ * @param {Object} config
+ * @param {Object} userConsent
+ */
 function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
-  let jsonData = storage.getDataFromLocalStorage('__adgntseg');
+  let jsonData = storage.getDataFromLocalStorage(SEG_LOCAL_NAME);
   if (jsonData) {
     let data = JSON.parse(jsonData);
     if (data.audigent_segments) {
@@ -65,8 +62,8 @@ function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
     return;
   }
 
-  if (storage.getDataFromLocalStorage('auHaloId')) {
-    let haloId = storage.getDataFromLocalStorage('auHaloId');
+  let haloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
+  if (haloId) {
     userIds.haloId = haloId;
     getSegmentsAsync(adUnits, onDone, config, userConsent, userIds);
   } else {
@@ -74,7 +71,7 @@ function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
     script.type = 'text/javascript';
 
     script.onload = function() {
-      userIds.haloId = storage.getDataFromLocalStorage('auHaloId');
+      userIds.haloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
       getSegmentsAsync(adUnits, onDone, config, userConsent, userIds);
     }
 
@@ -83,6 +80,14 @@ function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
   }
 }
 
+/**
+ * async segment retrieval from audigent's backends
+ * @param {adUnit[]} adUnits
+ * @param {function} onDone
+ * @param {Object} config
+ * @param {Object} userConsent
+ * @param {Object} userIds
+ */
 function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
   let reqParams = {}
   if (typeof config == 'object' && config != null && Object.keys(config).length > 0) {
@@ -98,7 +103,7 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
           if (data && data.audigent_segments) {
             addSegmentData(adUnits, data.audigent_segments);
             onDone();
-            setData(data);
+            storage.setDataInLocalStorage(SEG_LOCAL_NAME, JSON.stringify(data));
           } else {
             onDone();
           }
@@ -121,6 +126,11 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
   );
 }
 
+/**
+ * module init
+ * @param {Object} config
+ * @return {boolean}
+ */
 export function init(config) {
   return true;
 }
