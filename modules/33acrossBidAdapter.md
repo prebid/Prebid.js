@@ -139,7 +139,7 @@ var adUnits = [
     video: {  
       playerSize: [300, 250],
       context: 'intstream',
-      placement: '2'
+      placement: '1'
       ... // Aditional ORTB video params
     }   
   } 
@@ -147,7 +147,7 @@ var adUnits = [
     bidder: '33across',
     params: {
         siteId: 'cxBE0qjUir6iopaKkGJozW',     
-        productId: 'siab'     
+        productId: 'instream'     
     }
   }]
 }
