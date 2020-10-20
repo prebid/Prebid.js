@@ -1,14 +1,11 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
-const MEDIA_TYPE = {
-  BANNER: 'banner',
-  VIDEO: 'video'
-};
 
 const CURRENCY = 'USD';
 const GUID_PATTERN = /^[a-zA-Z0-9_-]{22}$/;
@@ -18,6 +15,23 @@ const PRODUCT = {
   INVIEW: 'inview',
   INSTREAM: 'instream'
 };
+
+const VIDEO_ORTB_PARAMS = [
+  'mimes',
+  'minduration',
+  'maxduration',
+  'placement',
+  'protocols',
+  'startdelay',
+  'skip',
+  'skipafter',
+  'minbitrate',
+  'maxbitrate',
+  'delivery',
+  'playbackmethod',
+  'api',
+  'linearity'
+];
 
 const adapterState = {
   uniqueSiteIds: []
@@ -71,6 +85,7 @@ function _validateBanner(bid) {
 
 function _validateVideo(bid) {
   const videoAdUnit = utils.deepAccess(bid, 'mediaTypes.video');
+  const videoBidderParams = utils.deepAccess(bid, 'params.video', {});
 
   // If there's no video no need to validate against video rules
   if (videoAdUnit === undefined) {
@@ -82,6 +97,36 @@ function _validateVideo(bid) {
   }
 
   if (!videoAdUnit.context) {
+    return false;
+  }
+
+  const videoParams = {
+    ...videoAdUnit,
+    ...videoBidderParams
+  };
+
+  if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
+    return false;
+  }
+
+  if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
+    return false;
+  }
+
+  // If placement if defined, it must be a number
+  if (
+    typeof videoParams.placement !== 'undefined' &&
+    typeof videoParams.placement !== 'number'
+  ) {
+    return false;
+  }
+
+  // If startdelay is defined it must be a number
+  if (
+    videoAdUnit.context === 'instream' &&
+    typeof videoParams.startdelay !== 'undefined' &&
+    typeof videoParams.startdelay !== 'number'
+  ) {
     return false;
   }
 
@@ -127,6 +172,10 @@ function _createServerRequest({bidRequest, gdprConsent = {}, uspConsent, pageUrl
     ttxRequest.imp[0].banner = {
       ..._buildBannerORTB(bidRequest)
     }
+  }
+
+  if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+    ttxRequest.imp[0].video = _buildVideoORTB(bidRequest);
   }
 
   ttxRequest.imp[0].ext = {
@@ -242,7 +291,7 @@ function _buildBannerORTB(bidRequest) {
   // We support size based bidfloors so obtain one if there's a rule associated
   if (typeof bidRequest.getFloor === 'function') {
     format = sizes.map((size) => {
-      const bidfloors = _getBidFloors(bidRequest, size, MEDIA_TYPE.BANNER);
+      const bidfloors = _getBidFloors(bidRequest, size, BANNER);
 
       let formatExt;
       if (bidfloors) {
@@ -267,10 +316,66 @@ function _buildBannerORTB(bidRequest) {
     ? _getViewability(element, utils.getWindowTop(), minSize)
     : NON_MEASURABLE;
 
+  const ext = contributeViewability(viewabilityAmount);
+
   return {
     format,
-    ext: contributeViewability(viewabilityAmount)
+    ext
   }
+}
+
+// BUILD REQUESTS: VIDEO
+// eslint-disable-next-line no-unused-vars
+function _buildVideoORTB(bidRequest) {
+  const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
+  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
+
+  const videoParams = {
+    ...videoAdUnit,
+    ...videoBidderParams // Bidder Specific overrides
+  };
+
+  const video = {}
+
+  const sizes = videoAdUnit.playerSize || [];
+  const {w, h} = _getSize(sizes);
+  video.w = w;
+  video.h = h;
+
+  // Obtain all ORTB params related video from Ad Unit
+  VIDEO_ORTB_PARAMS.forEach((param) => {
+    if (videoParams.hasOwnProperty(param)) {
+      video[param] = videoParams[param];
+    }
+  });
+
+  const product = _getProduct(bidRequest);
+
+  // Placement Inference Rules:
+  // - If no placement is defined then default to 2 (In Banner)
+  // - If product is instream (for instream context) then override placement to 1
+  video.placement = video.placement || 2;
+
+  if (product === PRODUCT.INSTREAM) {
+    video.startdelay = video.startdelay || 0;
+    video.placement = 1;
+  };
+
+  // bidfloors
+  if (typeof bidRequest.getFloor === 'function') {
+    const bidfloors = _getBidFloors(bidRequest, {w: video.w, h: video.h}, VIDEO);
+
+    if (bidfloors) {
+      Object.assign(video, {
+        ext: {
+          ttx: {
+            bidfloors: [ bidfloors ]
+          }
+        }
+      });
+    }
+  }
+  return video;
 }
 
 // BUILD REQUESTS: BIDFLOORS
@@ -437,7 +542,7 @@ function interpretResponse(serverResponse, bidRequest) {
 
 // All this assumes that only one bid is ever returned by ttx
 function _createBidResponse(response) {
-  return {
+  const bid = {
     requestId: response.id,
     bidderCode: BIDDER_CODE,
     cpm: response.seatbid[0].bid[0].price,
@@ -446,9 +551,22 @@ function _createBidResponse(response) {
     ad: response.seatbid[0].bid[0].adm,
     ttl: response.seatbid[0].bid[0].ttl || 60,
     creativeId: response.seatbid[0].bid[0].crid,
+    mediaType: utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.mediaType', BANNER),
     currency: response.cur,
     netRevenue: true
   }
+
+  if (bid.mediaType === VIDEO) {
+    const vastType = utils.deepAccess(response.seatbid[0].bid[0], 'ext.ttx.vastType', 'xml');
+
+    if (vastType === 'xml') {
+      bid.vastXml = bid.ad;
+    } else {
+      bid.vastUrl = bid.ad;
+    }
+  }
+
+  return bid;
 }
 
 // **************************** USER SYNC *************************** //
@@ -492,7 +610,7 @@ export const spec = {
   NON_MEASURABLE,
 
   code: BIDDER_CODE,
-
+  supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
