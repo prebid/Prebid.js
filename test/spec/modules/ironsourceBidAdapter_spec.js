@@ -5,6 +5,7 @@ import { config } from 'src/config.js';
 import { VIDEO } from '../../../src/mediaTypes.js';
 
 const ENDPOINT = 'https://hb.yellowblue.io/hb';
+const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-test';
 const TTL = 360;
 
 describe('ironsourceAdapter', function () {
@@ -55,14 +56,37 @@ describe('ironsourceAdapter', function () {
       }
     ];
 
+    const testModeBidRequests = [
+      {
+        'bidder': spec.code,
+        'adUnitCode': 'adunit-code',
+        'sizes': [[640, 480]],
+        'params': {
+          'isOrg': 'jdye8weeyirk00000001',
+          'testMode': true
+        },
+        'bidId': '299ffc8cca0b87',
+        'bidderRequestId': '1144f487e563f9',
+        'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
+      }
+    ];
+
     const bidderRequest = {
-      bidderCode: 'ironSource',
+      bidderCode: 'ironsource',
     }
 
     it('sends bid request to ENDPOINT via GET', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (const request of requests) {
         expect(request.url).to.equal(ENDPOINT);
+        expect(request.method).to.equal('GET');
+      }
+    });
+
+    it('sends bid request to test ENDPOINT via GET', function () {
+      const requests = spec.buildRequests(testModeBidRequests, bidderRequest);
+      for (const request of requests) {
+        expect(request.url).to.equal(TEST_ENDPOINT);
         expect(request.method).to.equal('GET');
       }
     });

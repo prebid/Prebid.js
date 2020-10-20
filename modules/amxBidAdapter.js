@@ -1,14 +1,18 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { parseUrl, deepAccess, _each, formatQS, getUniqueIdentifierStr, triggerPixel } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'amx';
+const storage = getStorageManager(737, BIDDER_CODE);
 const SIMPLE_TLD_TEST = /\.co\.\w{2,4}$/;
 const DEFAULT_ENDPOINT = 'https://prebid.a-mo.net/a/c';
-const VERSION = 'pba1.0';
+const VERSION = 'pba1.2';
 const xmlDTDRxp = /^\s*<\?xml[^\?]+\?>/;
 const VAST_RXP = /^\s*<\??(?:vast|xml)/i;
 const TRACKING_ENDPOINT = 'https://1x1.a-mo.net/hbx/';
+const AMUID_KEY = '__amuidpb';
 
 const getLocation = (request) =>
   parseUrl(deepAccess(request, 'refererInfo.canonicalUrl', location.href))
@@ -47,6 +51,22 @@ function getID(loc) {
 
 const enc = encodeURIComponent;
 
+function getUIDSafe() {
+  try {
+    return storage.getDataFromLocalStorage(AMUID_KEY)
+  } catch (e) {
+    return null
+  }
+}
+
+function setUIDSafe(uid) {
+  try {
+    storage.setDataInLocalStorage(AMUID_KEY, uid)
+  } catch (e) {
+    // do nothing
+  }
+}
+
 function nestedQs (qsData) {
   const out = [];
   Object.keys(qsData || {}).forEach((key) => {
@@ -77,9 +97,20 @@ function convertRequest(bid) {
   const av = isVideoBid || size[1] > 100;
   const tid = deepAccess(bid, 'params.tagId')
 
+  const au = bid.params != null && typeof bid.params.adUnitId === 'string'
+    ? bid.params.adUnitId : bid.adUnitCode;
+
+  const multiSizes = [
+    bid.sizes,
+    deepAccess(bid, `mediaTypes.${BANNER}.sizes`, []) || [],
+    deepAccess(bid, `mediaTypes.${VIDEO}.sizes`, []) || [],
+  ]
+
   const params = {
+    au,
     av,
     vr: isVideoBid,
+    ms: multiSizes,
     aw: size[0],
     ah: size[1],
     tf: 0,
@@ -159,6 +190,16 @@ function resolveSize(bid, request, bidId) {
   return [bidRequest.aw, bidRequest.ah];
 }
 
+function values(source) {
+  if (Object.values != null) {
+    return Object.values(source)
+  }
+
+  return Object.keys(source).map((key) => {
+    return source[key]
+  });
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -173,11 +214,19 @@ export const spec = {
     const loc = getLocation(bidderRequest);
     const tagId = deepAccess(bidRequests[0], 'params.tagId', null);
     const testMode = deepAccess(bidRequests[0], 'params.testMode', 0);
+    const fbid = bidRequests[0] != null ? bidRequests[0] : {
+      bidderRequestsCount: 0,
+      bidderWinsCount: 0,
+      bidRequestsCount: 0
+    }
 
     const payload = {
       a: bidderRequest.auctionId,
       B: 0,
       b: loc.host,
+      brc: fbid.bidderRequestsCount || 0,
+      bwc: fbid.bidderWinsCount || 0,
+      trc: fbid.bidRequestsCount || 0,
       tm: testMode,
       V: '$prebid.version$',
       i: (testMode && tagId != null) ? tagId : getID(loc),
@@ -187,15 +236,32 @@ export const spec = {
       st: 'prebid',
       h: screen.height,
       w: screen.width,
-      gs: deepAccess(bidderRequest, 'gdprConsent.gdprApplies', '0'),
+      gs: deepAccess(bidderRequest, 'gdprConsent.gdprApplies', ''),
       gc: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
       u: deepAccess(bidderRequest, 'refererInfo.canonicalUrl', loc.href),
       do: loc.host,
       re: deepAccess(bidderRequest, 'refererInfo.referer'),
+      am: getUIDSafe(),
       usp: bidderRequest.uspConsent || '1---',
       smt: 1,
       d: '',
       m: createBidMap(bidRequests),
+      cpp: config.getConfig('coppa') ? 1 : 0,
+      fpd: config.getConfig('fpd'),
+      eids: values(bidRequests.reduce((all, bid) => {
+        // we only want unique ones in here
+        if (bid == null || bid.userIdAsEids == null) {
+          return all
+        }
+
+        _each(bid.userIdAsEids, (value) => {
+          if (value == null) {
+            return;
+          }
+          all[value.source] = value
+        });
+        return all;
+      }, {})),
     };
 
     return {
@@ -232,6 +298,10 @@ export const spec = {
     const response = serverResponse.body;
     if (response == null || typeof response === 'string') {
       return [];
+    }
+
+    if (response.am && typeof response.am === 'string') {
+      setUIDSafe(response.am);
     }
 
     return flatMap(Object.keys(response.r), (bidID) => {

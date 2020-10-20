@@ -182,6 +182,20 @@ describe('the price floors module', function () {
         matchingRule: '*'
       });
     });
+    it('does not alter cached matched input if conversion occurs', function () {
+      let inputData = {...basicFloorData};
+      [0.2, 0.4, 0.6, 0.8].forEach(modifier => {
+        let result = getFirstMatchingFloor(inputData, basicBidRequest, {mediaType: 'banner', size: '*'});
+        // result should always be the same
+        expect(result).to.deep.equal({
+          matchingFloor: 1.0,
+          matchingData: 'banner',
+          matchingRule: 'banner'
+        });
+        // make sure a post retrieval adjustment does not alter the cached floor
+        result.matchingFloor = result.matchingFloor * modifier;
+      });
+    });
     it('selects the right floor for different sizes', function () {
       let inputFloorData = {
         currency: 'USD',
@@ -1078,6 +1092,39 @@ describe('the price floors module', function () {
           appnexus: {
             bidCpmAdjustment: function (bidCpm) {
               return bidCpm * 0.75;
+            },
+          }
+        };
+        _floorDataForAuction[bidRequest.auctionId] = utils.deepClone(basicFloorConfig);
+        _floorDataForAuction[bidRequest.auctionId].data.values = { '*': 1.0 };
+        let appnexusBid = {
+          ...bidRequest,
+          bidder: 'appnexus'
+        };
+
+        // the conversion should be what the bidder would need to return in order to match the actual floor
+        // rubicon
+        expect(bidRequest.getFloor()).to.deep.equal({
+          currency: 'USD',
+          floor: 2.0 // a 2.0 bid after rubicons cpm adjustment would be 1.0 and thus is the floor after adjust
+        });
+
+        // appnexus
+        expect(appnexusBid.getFloor()).to.deep.equal({
+          currency: 'USD',
+          floor: 1.3334 // 1.3334 * 0.75 = 1.000005 which is the floor (we cut off getFloor at 4 decimal points)
+        });
+      });
+      it('should work when cpmAdjust function uses bid object', function () {
+        getGlobal().bidderSettings = {
+          rubicon: {
+            bidCpmAdjustment: function (bidCpm, bidResponse) {
+              return bidResponse.cpm * 0.5;
+            },
+          },
+          appnexus: {
+            bidCpmAdjustment: function (bidCpm, bidResponse) {
+              return bidResponse.cpm * 0.75;
             },
           }
         };

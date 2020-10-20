@@ -13,6 +13,12 @@ const ENDPOINT_PRODUCTION = 'https://server.cpmstar.com/view.aspx';
 const DEFAULT_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 
+function fixedEncodeURIComponent(str) {
+  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+    return '%' + c.charCodeAt(0).toString(16);
+  });
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -47,12 +53,28 @@ export const spec = {
       var mediaType = spec.getMediaType(bidRequest);
       var playerSize = spec.getPlayerSize(bidRequest);
       var videoArgs = '&fv=0' + (playerSize ? ('&w=' + playerSize[0] + '&h=' + playerSize[1]) : '');
-
       var url = ENDPOINT + '?media=' + mediaType + (mediaType == VIDEO ? videoArgs : '') +
         '&json=c_b&mv=1&poolid=' + utils.getBidIdParameter('placementId', bidRequest.params) +
         '&reachedTop=' + encodeURIComponent(bidderRequest.refererInfo.reachedTop) +
         '&requestid=' + bidRequest.bidId +
         '&referer=' + encodeURIComponent(referer);
+
+      if (bidRequest.schain && bidRequest.schain.nodes) {
+        var schain = bidRequest.schain;
+        var schainString = '';
+        schainString += schain.ver + ',' + schain.complete;
+        for (var i2 = 0; i2 < schain.nodes.length; i2++) {
+          var node = schain.nodes[i2];
+          schainString += '!' +
+            fixedEncodeURIComponent(node.asi || '') + ',' +
+            fixedEncodeURIComponent(node.sid || '') + ',' +
+            fixedEncodeURIComponent(node.hp || '') + ',' +
+            fixedEncodeURIComponent(node.rid || '') + ',' +
+            fixedEncodeURIComponent(node.name || '') + ',' +
+            fixedEncodeURIComponent(node.domain || '');
+        }
+        url += '&schain=' + schainString
+      }
 
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString != null) {
@@ -138,6 +160,21 @@ export const spec = {
     }
 
     return bidResponses;
+  },
+
+  getUserSyncs: function (syncOptions, serverResponses) {
+    const syncs = [];
+    if (serverResponses.length == 0 || !serverResponses[0].body) return syncs;
+    var usersyncs = serverResponses[0].body[0].syncs;
+    if (!usersyncs || usersyncs.length < 0) return syncs;
+    for (var i = 0; i < usersyncs.length; i++) {
+      var us = usersyncs[i];
+      if ((us.type === 'image' && syncOptions.pixelEnabled) || (us.type == 'iframe' && syncOptions.iframeEnabled)) {
+        syncs.push(us);
+      }
+    }
+    return syncs;
   }
+
 };
 registerBidder(spec);

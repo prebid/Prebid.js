@@ -126,13 +126,16 @@ let atsAnalyticsAdapter = Object.assign(adapter(
       callHandler(eventType, args);
     }
     if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
-      // send data to ats analytic endpoint
-      try {
-        let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
-        let strJSON = JSON.stringify(dataToSend);
-        ajax(atsAnalyticsAdapter.context.host, function () {
-        }, strJSON, {method: 'POST', contentType: 'application/json'});
-      } catch (err) {
+      if (atsAnalyticsAdapter.shouldFireRequest()) {
+        // send data to ats analytic endpoint
+        try {
+          let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
+          let strJSON = JSON.stringify(dataToSend);
+          utils.logInfo('atsAnalytics tried to send analytics data!');
+          ajax(atsAnalyticsAdapter.context.host, function () {
+          }, strJSON, {method: 'POST', contentType: 'application/json'});
+        } catch (err) {
+        }
       }
     }
   }
@@ -140,6 +143,11 @@ let atsAnalyticsAdapter = Object.assign(adapter(
 
 // save the base class function
 atsAnalyticsAdapter.originEnableAnalytics = atsAnalyticsAdapter.enableAnalytics;
+
+// add check to not fire request every time, but instead to send 1/10 events
+atsAnalyticsAdapter.shouldFireRequest = function () {
+  return (Math.floor((Math.random() * 11)) === 10);
+}
 
 // override enableAnalytics so we can get access to the config passed in from the page
 atsAnalyticsAdapter.enableAnalytics = function (config) {
@@ -165,7 +173,8 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: atsAnalyticsAdapter,
-  code: 'atsAnalytics'
+  code: 'atsAnalytics',
+  gvlid: 97
 });
 
 export default atsAnalyticsAdapter;
