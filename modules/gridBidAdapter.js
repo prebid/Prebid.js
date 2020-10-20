@@ -171,7 +171,6 @@ export const spec = {
             }
           }]
         });
-        // userExt.unifiedid = userId.tdid;
       }
       if (userId.id5id && userId.id5id.uid) {
         userExt = userExt || {};
@@ -183,7 +182,6 @@ export const spec = {
           }],
           ext: userId.id5id.ext
         });
-        // userExt.id5id = userId.id5id.uid;
       }
       if (userId.lipb && userId.lipb.lipbid) {
         userExt = userExt || {};
@@ -194,7 +192,6 @@ export const spec = {
             id: userId.lipb.lipbid
           }]
         });
-        // userExt.liveintentid = userId.lipb.lipbid;
       }
       if (userId.idl_env) {
         userExt = userExt || {};
@@ -220,7 +217,6 @@ export const spec = {
       if (userId.digitrustid && userId.digitrustid.data && userId.digitrustid.data.id) {
         userExt = userExt || {};
         userExt.digitrust = Object.assign({}, userId.digitrustid.data);
-        // userExt.digitrustid = userId.digitrustid.data.id;
       }
     }
 
