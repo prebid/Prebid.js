@@ -67,7 +67,8 @@ describe('ablidaBidAdapter', function () {
         bidId: '2b8c4de0116e54',
         jaySupported: true,
         device: 'desktop',
-        referer: 'www.example.com'
+        referer: 'www.example.com',
+        adapterVersion: 2
       }
     };
     let serverResponse = {
@@ -80,7 +81,8 @@ describe('ablidaBidAdapter', function () {
         currency: 'EUR',
         netRevenue: true,
         ttl: 3000,
-        ad: '<script>console.log("ad");</script>'
+        ad: '<script>console.log("ad");</script>',
+        nurl: 'https://example.com/some-tracker'
       }]
     };
     it('should get the correct bid response', function () {
@@ -93,10 +95,25 @@ describe('ablidaBidAdapter', function () {
         currency: 'EUR',
         netRevenue: true,
         ttl: 3000,
-        ad: '<script>console.log("ad");</script>'
+        ad: '<script>console.log("ad");</script>',
+        nurl: 'https://example.com/some-tracker'
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
     });
   });
+
+  describe('onBidWon', function() {
+    it('Should not ajax call if bid does not contain nurl', function() {
+      const result = spec.onBidWon({});
+      expect(result).to.equal(false)
+    })
+
+    it('Should ajax call if bid nurl', function() {
+      const result = spec.onBidWon({
+        nurl: 'https://example.com/some-tracker'
+      });
+      expect(result).to.equal(true)
+    })
+  })
 });

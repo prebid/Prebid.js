@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, resetUserSync, getSyncUrl } from 'modules/gridBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 
 describe('TheMediaGrid Adapter', function () {
   const adapter = newBidder(spec);
@@ -164,6 +165,100 @@ describe('TheMediaGrid Adapter', function () {
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('us_privacy', '1YNN');
+    });
+
+    it('should convert keyword params to proper form and attaches to request', function () {
+      const bidRequestWithKeywords = [].concat(bidRequests);
+      bidRequestWithKeywords[1] = Object.assign({},
+        bidRequests[1],
+        {
+          params: {
+            uid: '1',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              singleArrNum: [3],
+              multiValMixed: ['value1', 2, 'value3'],
+              singleValNum: 123,
+              emptyStr: '',
+              emptyArr: [''],
+              badValue: {'foo': 'bar'} // should be dropped
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests(bidRequestWithKeywords, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.keywords).to.be.an('string');
+      payload.keywords = JSON.parse(payload.keywords);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'single',
+        'value': ['val']
+      }, {
+        'key': 'singleArr',
+        'value': ['val']
+      }, {
+        'key': 'singleArrNum',
+        'value': ['3']
+      }, {
+        'key': 'multiValMixed',
+        'value': ['value1', '2', 'value3']
+      }, {
+        'key': 'singleValNum',
+        'value': ['123']
+      }, {
+        'key': 'emptyStr'
+      }, {
+        'key': 'emptyArr'
+      }]);
+    });
+
+    it('should mix keyword param with keywords from config', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'fpd.user' ? {'keywords': ['a', 'b']} : arg === 'fpd.context' ? {'keywords': ['any words']} : null);
+
+      const bidRequestWithKeywords = [].concat(bidRequests);
+      bidRequestWithKeywords[1] = Object.assign({},
+        bidRequests[1],
+        {
+          params: {
+            uid: '1',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              multiValMixed: ['value1', 2, 'value3']
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests(bidRequestWithKeywords, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.keywords).to.be.an('string');
+      payload.keywords = JSON.parse(payload.keywords);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'single',
+        'value': ['val']
+      }, {
+        'key': 'singleArr',
+        'value': ['val']
+      }, {
+        'key': 'multiValMixed',
+        'value': ['value1', '2', 'value3']
+      }, {
+        'key': 'user',
+        'value': ['a', 'b']
+      }, {
+        'key': 'context',
+        'value': ['any words']
+      }]);
+
+      getConfigStub.restore();
     });
   });
 

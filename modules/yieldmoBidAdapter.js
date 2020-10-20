@@ -38,7 +38,7 @@ export const spec = {
       title: localWindow.document.title || '',
       w: localWindow.innerWidth,
       h: localWindow.innerHeight,
-      userConsent: encodeURIComponent(
+      userConsent:
         JSON.stringify({
           // case of undefined, stringify will remove param
           gdprApplies:
@@ -49,11 +49,10 @@ export const spec = {
             bidderRequest && bidderRequest.gdprConsent
               ? bidderRequest.gdprConsent.consentString
               : '',
-        })
-      ),
+        }),
       us_privacy:
         bidderRequest && bidderRequest.uspConsent
-          ? encodeURIComponent(bidderRequest.uspConsent)
+          ? bidderRequest.uspConsent
           : '',
     };
 
@@ -76,12 +75,11 @@ export const spec = {
         serverRequest.cri_prebid = criteoId;
       }
       if (request.schain) {
-        serverRequest.schain = encodeURIComponent(
-          JSON.stringify(request.schain)
-        );
+        serverRequest.schain =
+          JSON.stringify(request.schain);
       }
     });
-    serverRequest.p = encodeURIComponent('[' + serverRequest.p.toString() + ']');
+    serverRequest.p = '[' + serverRequest.p.toString() + ']';
     return {
       method: 'GET',
       url: SERVER_ENDPOINT,

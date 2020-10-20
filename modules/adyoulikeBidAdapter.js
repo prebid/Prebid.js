@@ -48,7 +48,7 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentString: bidderRequest.gdprConsent.consentString,
-        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : null
       };
     }
 
@@ -80,7 +80,7 @@ export const spec = {
 
     try {
       bidRequests = JSON.parse(request.data).Bids;
-    } catch (e) {
+    } catch (err) {
       // json error initial request can't be read
     }
 

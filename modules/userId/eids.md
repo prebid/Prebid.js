@@ -85,6 +85,16 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
+    },
+    {
+        source: 'sharedid.org',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1,
+            ext: { 
+                third: 'some-random-id-value'
+             }
+         }]
     }
 ]
 ```

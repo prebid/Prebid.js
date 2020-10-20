@@ -136,7 +136,7 @@ describe('RelaidoAdapter', function () {
       expect(bidRequests).to.have.lengthOf(1);
       const request = bidRequests[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.equal('https://api.relaido.jp/vast/v1/out/bid/100000');
+      expect(request.url).to.equal('https://api.relaido.jp/bid/v1/prebid/100000');
       expect(request.bidId).to.equal(bidRequest.bidId);
       expect(request.width).to.equal(bidRequest.mediaTypes.video.playerSize[0][0]);
       expect(request.height).to.equal(bidRequest.mediaTypes.video.playerSize[0][1]);

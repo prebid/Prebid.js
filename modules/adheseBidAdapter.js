@@ -24,9 +24,10 @@ export const spec = {
     const targets = validBidRequests.map(bid => bid.params.data).reduce(mergeTargets, {});
     const gdprParams = (gdprConsent && gdprConsent.consentString) ? [`xt${gdprConsent.consentString}`] : [];
     const refererParams = (refererInfo && refererInfo.referer) ? [`xf${base64urlEncode(refererInfo.referer)}`] : [];
+    const id5Params = (getId5Id(validBidRequests)) ? [`x5${getId5Id(validBidRequests)}`] : [];
     const targetsParams = Object.keys(targets).map(targetCode => targetCode + targets[targetCode].join(';'));
     const slotsParams = validBidRequests.map(bid => 'sl' + bidToSlotName(bid));
-    const params = [...slotsParams, ...targetsParams, ...gdprParams, ...refererParams].map(s => `/${s}`).join('');
+    const params = [...slotsParams, ...targetsParams, ...gdprParams, ...refererParams, ...id5Params].map(s => `/${s}`).join('');
     const cacheBuster = '?t=' + new Date().getTime();
     const uri = 'https://ads-' + account + '.adhese.com/json' + params + cacheBuster;
 
@@ -85,7 +86,9 @@ function adResponse(bid, ad) {
     creativeId: adDetails.creativeId,
     dealId: adDetails.dealId,
     adhese: {
-      originData: adDetails.originData
+      originData: adDetails.originData,
+      origin: adDetails.origin,
+      originInstance: adDetails.originInstance
     }
   });
 
@@ -134,12 +137,18 @@ function getAccount(validBidRequests) {
   return validBidRequests[0].params.account;
 }
 
+function getId5Id(validBidRequests) {
+  if (validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.id5id) {
+    return validBidRequests[0].userId.id5id;
+  }
+}
+
 function getbaseAdResponse(response) {
   return Object.assign({ netRevenue: true, ttl: 360 }, response);
 }
 
 function isAdheseAd(ad) {
-  return !ad.origin || ad.origin === 'JERLICIA';
+  return !ad.origin || ad.origin === 'JERLICIA' || ad.origin === 'DALE';
 }
 
 function getMediaType(markup) {
@@ -166,6 +175,8 @@ function getAdDetails(ad) {
   let creativeId = '';
   let dealId = '';
   let originData = {};
+  let origin = '';
+  let originInstance = '';
 
   if (isAdheseAd(ad)) {
     creativeId = ad.id;
@@ -188,8 +199,10 @@ function getAdDetails(ad) {
         }
       }
     }
+    if (ad.originInstance) originInstance = ad.originInstance;
+    if (ad.origin) origin = ad.origin;
   }
-  return { creativeId: creativeId, dealId: dealId, originData: originData };
+  return { creativeId: creativeId, dealId: dealId, originData: originData, origin: origin, originInstance: originInstance };
 }
 
 function base64urlEncode(s) {

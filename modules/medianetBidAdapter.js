@@ -26,7 +26,7 @@ mnData.urlData = {
   isTop: refererInfo.reachedTop
 }
 
-$$PREBID_GLOBAL$$.medianetGlobals = {};
+$$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
 
 function getTopWindowReferrer() {
   try {
@@ -145,7 +145,8 @@ function extParams(params, gdpr, uspConsent, userId) {
     uspApplies && { usp_consent_string: uspConsent || '' },
     {coppa_applies: coppaApplies},
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
-    userId && { user_id: userId }
+    userId && { user_id: userId },
+    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true }
   );
 }
 
@@ -236,6 +237,10 @@ function normalizeCoordinates(coordinates) {
       y: coordinates.bottom_right.y + window.pageYOffset,
     }
   }
+}
+
+function getBidderURL(cid) {
+  return BID_URL + '?cid=' + encodeURIComponent(cid);
 }
 
 function generatePayload(bidRequests, bidderRequests) {
@@ -335,7 +340,7 @@ export const spec = {
     let payload = generatePayload(bidRequests, bidderRequests);
     return {
       method: 'POST',
-      url: BID_URL,
+      url: getBidderURL(payload.ext.customer_id),
       data: JSON.stringify(payload)
     };
   },

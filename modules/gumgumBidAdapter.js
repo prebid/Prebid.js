@@ -12,10 +12,12 @@ const storage = getStorageManager();
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
-const DT_CREDENTIALS = { member: 'YcXr87z2lpbB' }
+const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const TIME_TO_LIVE = 60
+const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 
+let invalidRequestIds = {};
 let browserParams = {};
 let pageViewId = null
 
@@ -61,7 +63,7 @@ function _getBrowserParams(topWindowUrl) {
     pu: topUrl,
     ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: encodeURIComponent(JSON.stringify({ t: 0, rq: 8 })),
+    jcsi: JSON.stringify(JCSI),
     ogu: getOgURL()
   }
 
@@ -91,10 +93,6 @@ function _getTradeDeskIDParam(userId) {
 
 function _getDigiTrustQueryParams(userId) {
   let digiTrustId = userId.digitrustid && userId.digitrustid.data;
-  if (!digiTrustId) {
-    const digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
-    digiTrustId = (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
-  }
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return {};
@@ -137,14 +135,21 @@ function isBidRequestValid (bid) {
     params,
     adUnitCode
   } = bid;
+  const id = params.inScreen || params.inScreenPubID || params.inSlot || params.ICV || params.video || params.inVideo;
+
+  if (invalidRequestIds[id]) {
+    utils.logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
+    return false;
+  }
 
   switch (true) {
     case !!(params.inScreen): break;
+    case !!(params.inScreenPubID): break;
     case !!(params.inSlot): break;
     case !!(params.ICV): break;
     case !!(params.video): break;
     case !!(params.inVideo): break;
-
+    case !!(params.videoPubID): break;
     default:
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
@@ -239,6 +244,11 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
     }
+    if (params.videoPubID) {
+      data = Object.assign(data, _getVidParams(mediaTypes.video));
+      data.pubId = params.videoPubID;
+      data.pi = 7;
+    }
     if (params.video) {
       data = Object.assign(data, _getVidParams(mediaTypes.video));
       data.t = params.video;
@@ -268,7 +278,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bannerSizes || bidRequest.sizes,
+      sizes: bannerSizes,
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
@@ -286,6 +296,19 @@ function buildRequests (validBidRequests, bidderRequest) {
 function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = []
   const serverResponseBody = serverResponse.body
+
+  if (!serverResponseBody || serverResponseBody.err) {
+    const data = bidRequest.data || {}
+    const id = data.t || data.si || data.ni || data.pubId;
+    const delayTime = serverResponseBody ? serverResponseBody.err.drt : DELAY_REQUEST_TIME;
+    invalidRequestIds[id] = { productId: data.pi, timestamp: new Date().getTime() };
+
+    setTimeout(() => {
+      !!invalidRequestIds[id] && delete invalidRequestIds[id];
+    }, delayTime);
+    utils.logWarn(`[GumGum] Please check the implementation for ${id}`);
+  }
+
   const defaultResponse = {
     ad: {
       price: 0,
@@ -306,7 +329,8 @@ function interpretResponse (serverResponse, bidRequest) {
     cw: wrapper,
     pag: {
       pvid
-    }
+    },
+    jcsi
   } = Object.assign(defaultResponse, serverResponseBody)
   let data = bidRequest.data || {}
   let product = data.pi
@@ -318,6 +342,10 @@ function interpretResponse (serverResponse, bidRequest) {
   if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
     width = '1'
     height = '1'
+  }
+
+  if (jcsi) {
+    serverResponseBody.jcsi = JCSI
   }
 
   // update Page View ID from server response

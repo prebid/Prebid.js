@@ -24,8 +24,9 @@ function avRenderer(bid) {
 }
 
 function newRenderer(bidRequest) {
+  let playerDomain = bidRequest && bidRequest.bidRequest && bidRequest.bidRequest.params && bidRequest.bidRequest.params.playerDomain ? bidRequest.bidRequest.params.playerDomain : 'player.aniview.com';
   const renderer = Renderer.install({
-    url: 'https://player.aniview.com/script/6.1/prebidRenderer.js',
+    url: 'https://' + playerDomain + '/script/6.1/prebidRenderer.js',
     config: {},
     loaded: false,
   });
@@ -167,7 +168,6 @@ function interpretResponse(serverResponse, bidRequest) {
             let cpmData = getCpmData(xml);
             if (cpmData && cpmData.cpm > 0) {
               bidResponse.requestId = bidRequest.data.bidId;
-              bidResponse.bidderCode = BIDDER_CODE;
               bidResponse.ad = '';
               bidResponse.cpm = cpmData.cpm;
               bidResponse.width = bidRequest.data.AV_WIDTH;
@@ -252,6 +252,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['selectmediavideo'],
   supportedMediaTypes: [VIDEO],
   isBidRequestValid,
   buildRequests,

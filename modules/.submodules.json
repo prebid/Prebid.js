@@ -7,9 +7,11 @@
     "parrableIdSystem",
     "britepoolIdSystem",
     "liveIntentIdSystem",
+    "lotamePanoramaId",
     "criteoIdSystem",
     "netIdSystem",
-    "identityLinkIdSystem"
+    "identityLinkIdSystem",
+    "sharedIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",

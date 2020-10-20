@@ -1,6 +1,7 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'ablida';
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
@@ -42,7 +43,8 @@ export const spec = {
         categories: bidRequest.params.categories,
         referer: bidderRequest.refererInfo.referer,
         jaySupported: jaySupported,
-        device: device
+        device: device,
+        adapterVersion: 2
       };
       return {
         method: 'POST',
@@ -69,6 +71,11 @@ export const spec = {
     });
     return bidResponses;
   },
+  onBidWon: function (bid) {
+    if (!bid['nurl']) { return false; }
+    ajax(bid['nurl'], null);
+    return true;
+  }
 };
 
 function getDevice() {
