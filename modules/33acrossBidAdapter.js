@@ -100,23 +100,32 @@ function _validateVideo(bid) {
     return false;
   }
 
-  const placement = videoAdUnit.placement || videoBidderParams.placement
+  const videoParams = {
+    ...videoAdUnit,
+    ...videoBidderParams
+  };
+
+  if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
+    return false;
+  }
+
+  if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
+    return false;
+  }
 
   // If placement if defined, it must be a number
   if (
-    typeof placement !== 'undefined' &&
-    typeof placement !== 'number'
+    typeof videoParams.placement !== 'undefined' &&
+    typeof videoParams.placement !== 'number'
   ) {
     return false;
   }
 
-  const startdelay = videoAdUnit.startdelay || videoBidderParams.startdelay
-
   // If startdelay is defined it must be a number
   if (
     videoAdUnit.context === 'instream' &&
-    typeof startdelay !== 'undefined' &&
-    typeof startdelay !== 'number'
+    typeof videoParams.startdelay !== 'undefined' &&
+    typeof videoParams.startdelay !== 'number'
   ) {
     return false;
   }
@@ -321,6 +330,11 @@ function _buildVideoORTB(bidRequest) {
   const videoAdUnit = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
   const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
 
+  const videoParams = {
+    ...videoAdUnit,
+    ...videoBidderParams // Bidder Specific overrides
+  };
+
   const video = {}
 
   const sizes = videoAdUnit.playerSize || [];
@@ -330,13 +344,8 @@ function _buildVideoORTB(bidRequest) {
 
   // Obtain all ORTB params related video from Ad Unit
   VIDEO_ORTB_PARAMS.forEach((param) => {
-    if (videoAdUnit.hasOwnProperty(param)) {
-      video[param] = videoAdUnit[param];
-    }
-
-    // Override with bidder specific video params
-    if (videoBidderParams.hasOwnProperty(param)) {
-      video[param] = videoBidderParams[param];
+    if (videoParams.hasOwnProperty(param)) {
+      video[param] = videoParams[param];
     }
   });
 

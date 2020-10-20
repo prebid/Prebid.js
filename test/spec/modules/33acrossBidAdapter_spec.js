@@ -7,7 +7,7 @@ import { spec } from 'modules/33acrossBidAdapter.js';
 
 describe('33acrossBidAdapter:', function () {
   const BIDDER_CODE = '33across';
-  const SITE_ID = 'cxBE0qjUir6iopaKkGJozW';
+  const SITE_ID = 'sample33xGUID123456789';
   const PRODUCT_ID = 'siab';
   const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 
@@ -325,10 +325,10 @@ describe('33acrossBidAdapter:', function () {
         // NOTE: We ignore whitespace at the start and end since
         // in our experience these are common typos
         const validGUIDs = [
-          'cxBE0qjUir6iopaKkGJozW',
-          'cxBE0qjUir6iopaKkGJozW ',
-          ' cxBE0qjUir6iopaKkGJozW',
-          ' cxBE0qjUir6iopaKkGJozW '
+          `${SITE_ID}`,
+          `${SITE_ID} `,
+          ` ${SITE_ID}`,
+          ` ${SITE_ID} `
         ];
 
         validGUIDs.forEach((siteId) => {
@@ -424,11 +424,13 @@ describe('33acrossBidAdapter:', function () {
           mediaTypes: {
             video: {
               playerSize: [[300, 50]],
-              context: 'outstream'
+              context: 'outstream',
+              mimes: ['foo', 'bar'],
+              protocols: [1, 2]
             }
           },
           params: {
-            siteId: 'cxBE0qjUir6iopaKkGJozW'
+            siteId: `${SITE_ID}`
           }
         };
       });
@@ -437,7 +439,7 @@ describe('33acrossBidAdapter:', function () {
         const bid = {
           bidder: '33across',
           params: {
-            siteId: 'cxBE0qjUir6iopaKkGJozW'
+            siteId: `${SITE_ID}`
           }
         };
 
@@ -468,6 +470,34 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
+      it('returns false when video mimes is invalid', function() {
+        const invalidMimes = [
+          undefined,
+          'foo',
+          1,
+          []
+        ]
+
+        invalidMimes.forEach((mimes) => {
+          this.bid.mediaTypes.video.mimes = mimes;
+          expect(spec.isBidRequestValid(this.bid)).to.be.false;
+        })
+      });
+
+      it('returns false when video protocols is invalid', function() {
+        const invalidMimes = [
+          undefined,
+          'foo',
+          1,
+          []
+        ]
+
+        invalidMimes.forEach((protocols) => {
+          this.bid.mediaTypes.video.protocols = protocols;
+          expect(spec.isBidRequestValid(this.bid)).to.be.false;
+        })
+      });
+
       it('returns false when video placement is invalid', function() {
         const invalidPlacement = [
           [],
@@ -485,7 +515,7 @@ describe('33acrossBidAdapter:', function () {
       it('returns false when video startdelay is invalid for instream context', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'instream'})
+            .withVideo({context: 'instream', protocols: [1, 2], mimes: ['foo', 'bar']})
             .build()
         );
 
@@ -505,7 +535,7 @@ describe('33acrossBidAdapter:', function () {
       it('returns true when video startdelay is invalid for outstream context', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'outstream'})
+            .withVideo({context: 'outstream', protocols: [1, 2], mimes: ['foo', 'bar']})
             .build()
         );
 
@@ -1081,7 +1111,6 @@ describe('33acrossBidAdapter:', function () {
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
-          .withSite({id: 'cxBE0qjUir6iopaKkGJozW'})
           .withProduct('siab')
           .build();
 
@@ -1103,7 +1132,6 @@ describe('33acrossBidAdapter:', function () {
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
-          .withSite({id: 'cxBE0qjUir6iopaKkGJozW'})
           .withProduct('inview')
           .build();
 
@@ -1128,7 +1156,6 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withVideo()
-          .withSite({id: 'cxBE0qjUir6iopaKkGJozW'})
           .withProduct('siab')
           .build();
 
@@ -1151,7 +1178,6 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withVideo()
-          .withSite({id: 'cxBE0qjUir6iopaKkGJozW'})
           .withProduct('siab')
           .build();
 
