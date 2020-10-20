@@ -45,7 +45,7 @@ var adUnits = [
     video: {  
       playerSize: [300, 250],
       context: 'outstream',
-      placement: '2'
+      placement: 2
       ... // Aditional ORTB video params
     }   
   },
@@ -95,7 +95,7 @@ var adUnits = [
     video: {  
       playerSize: [300, 250],
       context: 'outstream',
-      placement: '2'
+      placement: 2
       ... // Aditional ORTB video params
     }   
   },
@@ -139,7 +139,7 @@ var adUnits = [
     video: {  
       playerSize: [300, 250],
       context: 'intstream',
-      placement: '1'
+      placement: 1
       ... // Aditional ORTB video params
     }   
   } 
