@@ -16,7 +16,7 @@ const BIDDER_CODE = 'smartadserver';
 const GVL_ID = 45;
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVL_ID,  
+  gvlid: GVL_ID,
   aliases: ['smart'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
   /**
