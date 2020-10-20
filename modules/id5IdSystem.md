@@ -25,11 +25,11 @@ pbjs.setConfig({
       name: "id5Id",
       params: {
         partner: 173,            // change to the Partner Number you received from ID5
-        pd: "MT1iNTBjY..."       // optional, see param table above for a link to how to generate this string
+        pd: "MT1iNTBjY..."       // optional, see table below for a link to how to generate this
       },
       storage: {
-        type: "html5",           // html5 is the required storage type
-        name: "id5id",           // the value "id5id" is required
+        type: "html5",           // "html5" is the required storage type
+        name: "id5id",           // "id5id" is the required storage name
         expires: 90,             // storage lasts for 90 days
         refreshInSeconds: 8*3600 // refresh ID every 8 hours to ensure it's fresh
       }
@@ -44,7 +44,7 @@ pbjs.setConfig({
 | name | Required | String | The name of this module: `"id5Id"` | `"id5Id"` |
 | params | Required | Object | Details for the ID5 Universal ID. | |
 | params.partner | Required | Number | This is the ID5 Partner Number obtained from registering with ID5. | `173` |
-| params.pd | Optional | String | Publisher-supplied data used for linking ID5 IDs across domains. See [our documentation](https://wiki.id5.io/display/PD/Prebid.js+UserId+Module) for details on generating the string. Omit the parameter or leave as an empty string if no data to supply | `"MT1iNTBjY..."` |
+| params.pd | Optional | String | Publisher-supplied data used for linking ID5 IDs across domains. See [our documentation](https://wiki.id5.io/x/BIAZ) for details on generating the string. Omit the parameter or leave as an empty string if no data to supply | `"MT1iNTBjY..."` |
 | storage | Required | Object | Storage settings for how the User ID module will cache the ID5 ID locally | |
 | storage.type | Required | String | This is where the results of the user ID will be stored. ID5 **requires** `"html5"`. | `"html5"` |
 | storage.name | Required | String | The name of the local storage where the user ID will be stored. ID5 **requires** `"id5id"`. | `"id5id"` |
