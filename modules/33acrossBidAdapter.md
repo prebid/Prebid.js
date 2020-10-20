@@ -29,7 +29,7 @@ var adUnits = [
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'cxBE0qjUir6iopaKkGJozW',     
+        siteId: 'sampleGUID123',     
         productId: 'siab|inview'     
     }
   }]
@@ -73,7 +73,7 @@ var adUnits = [
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'cxBE0qjUir6iopaKkGJozW',     
+        siteId: 'sampleGUID123',     
         productId: 'siab'     
     }
   }]
@@ -123,7 +123,7 @@ var adUnits = [
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'cxBE0qjUir6iopaKkGJozW',     
+        siteId: 'sampleGUID123',     
         productId: 'siab'     
     }
   }]
@@ -146,7 +146,7 @@ var adUnits = [
   bids: [{
     bidder: '33across',
     params: {
-        siteId: 'cxBE0qjUir6iopaKkGJozW',     
+        siteId: 'sampleGUID123',     
         productId: 'instream'     
     }
   }]
