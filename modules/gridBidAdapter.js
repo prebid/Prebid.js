@@ -90,12 +90,10 @@ export const spec = {
         tagid: uid.toString(),
         ext: {
           divid: adUnitCode
-        }
+        },
+        bidfloor: _getFloor(mediaTypes || {}, bidFloor, bid)
       };
 
-      if (bidFloor) {
-        impObj.bidfloor = bidFloor;
-      }
       if (!mediaTypes || mediaTypes[BANNER]) {
         const banner = createBannerRequest(bid, mediaTypes ? mediaTypes[BANNER] : {});
         if (banner) {
@@ -320,6 +318,34 @@ export const spec = {
     }
   }
 };
+
+/**
+ * Gets bidfloor
+ * @param {Object} mediaTypes
+ * @param {Number} bidfloor
+ * @param {Object} bid
+ * @returns {Number} floor
+ */
+function _getFloor (mediaTypes, bidfloor, bid) {
+  const curMediaType = mediaTypes.video ? 'video' : 'banner';
+  let floor = bidfloor || 0;
+
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: curMediaType,
+      size: bid.sizes.map(([w, h]) => ({w, h}))
+    });
+
+    if (typeof floorInfo === 'object' &&
+      floorInfo.currency === 'USD' &&
+      !isNaN(parseFloat(floorInfo.floor))) {
+      floor = Math.max(floor, parseFloat(floorInfo.floor));
+    }
+  }
+
+  return floor;
+}
 
 function isPopulatedArray(arr) {
   return !!(utils.isArray(arr) && arr.length > 0);

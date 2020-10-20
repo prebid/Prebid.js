@@ -173,6 +173,7 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[1].bidId,
           'tagid': bidRequests[1].params.uid,
           'ext': {'divid': bidRequests[1].adUnitCode},
+          'bidfloor': 0,
           'banner': {
             'w': 300,
             'h': 250,
@@ -210,6 +211,7 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[1].bidId,
           'tagid': bidRequests[1].params.uid,
           'ext': {'divid': bidRequests[1].adUnitCode},
+          'bidfloor': 0,
           'banner': {
             'w': 300,
             'h': 250,
@@ -219,6 +221,7 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[2].bidId,
           'tagid': bidRequests[2].params.uid,
           'ext': {'divid': bidRequests[2].adUnitCode},
+          'bidfloor': 0,
           'video': {
             'w': 400,
             'h': 600,
@@ -256,6 +259,7 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[1].bidId,
           'tagid': bidRequests[1].params.uid,
           'ext': {'divid': bidRequests[1].adUnitCode},
+          'bidfloor': 0,
           'banner': {
             'w': 300,
             'h': 250,
@@ -265,6 +269,7 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[2].bidId,
           'tagid': bidRequests[2].params.uid,
           'ext': {'divid': bidRequests[2].adUnitCode},
+          'bidfloor': 0,
           'video': {
             'w': 400,
             'h': 600,
@@ -274,6 +279,7 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[3].bidId,
           'tagid': bidRequests[3].params.uid,
           'ext': {'divid': bidRequests[3].adUnitCode},
+          'bidfloor': 0,
           'banner': {
             'w': 728,
             'h': 90,
@@ -445,6 +451,41 @@ describe('TheMediaGrid Adapter', function () {
       const payload = parseRequest(request.data);
       expect(payload.tmax).to.equal(3000);
       getConfigStub.restore();
+    });
+    describe('floorModule', function () {
+      const floorTestData = {
+        'currency': 'USD',
+        'floor': 1.50
+      };
+      const bidRequest = Object.assign({
+        getFloor: _ => {
+          return floorTestData;
+        }
+      }, bidRequests[1]);
+      it('should return the value from getFloor if present', function () {
+        const request = spec.buildRequests([bidRequest], bidderRequest);
+        expect(request.data).to.be.an('string');
+        const payload = parseRequest(request.data);
+        expect(payload.imp[0].bidfloor).to.equal(floorTestData.floor);
+      });
+      it('should return the getFloor.floor value if it is greater than bidfloor', function () {
+        const bidfloor = 0.80;
+        const bidRequestsWithFloor = { ...bidRequest };
+        bidRequestsWithFloor.params = Object.assign({bidFloor: bidfloor}, bidRequestsWithFloor.params);
+        const request = spec.buildRequests([bidRequestsWithFloor], bidderRequest);
+        expect(request.data).to.be.an('string');
+        const payload = parseRequest(request.data);
+        expect(payload.imp[0].bidfloor).to.equal(floorTestData.floor);
+      });
+      it('should return the bidfloor value if it is greater than getFloor.floor', function () {
+        const bidfloor = 1.80;
+        const bidRequestsWithFloor = { ...bidRequest };
+        bidRequestsWithFloor.params = Object.assign({bidFloor: bidfloor}, bidRequestsWithFloor.params);
+        const request = spec.buildRequests([bidRequestsWithFloor], bidderRequest);
+        expect(request.data).to.be.an('string');
+        const payload = parseRequest(request.data);
+        expect(payload.imp[0].bidfloor).to.equal(bidfloor);
+      });
     });
   });
 
