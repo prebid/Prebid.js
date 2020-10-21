@@ -95,3 +95,42 @@ Please reach out to your Technical account manager for more information.
         }]
     };
 ```
+
+## Outstream Video
+
+```
+    var outstreamVideoAdUnit = {
+			code: 'test-div',
+			mediaTypes: {
+				video: {
+					context: 'outstream',
+					playerSize: [640, 480]
+				}
+			},
+			renderer: {
+				url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+				render: function (bid) {
+					bid.renderer.push(() => { 
+						ANOutstreamVideo.renderAd({ 
+							targetId: bid.adUnitCode,
+							adResponse: bid 
+						}); 
+					});
+				}
+			},
+			bids: [{
+				bidder: "smart",
+				params: {
+					domain: 'https://prg.smartadserver.com',
+					siteId: 207435,
+					pageId: 896536,
+					formatId: 85089,
+					bidfloor: 5,
+                    video: {
+                        protocol: 6,
+                        startDelay: 1
+                    }
+				}
+			}]
+		};
+```

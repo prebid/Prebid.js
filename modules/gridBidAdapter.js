@@ -72,17 +72,17 @@ export const spec = {
       if (!userId) {
         userId = bid.userId;
       }
-      const {params: {uid, keywords, bidFloor}, mediaTypes, bidId, adUnitCode, realTimeData} = bid;
+      const {params: {uid, keywords, bidFloor}, mediaTypes, bidId, adUnitCode, jwTargeting} = bid;
       bidsMap[bidId] = bid;
       if (!pageKeywords && !utils.isEmpty(keywords)) {
         pageKeywords = utils.transformBidderParamKeywords(keywords);
       }
-      if (realTimeData && realTimeData.jwTargeting) {
-        if (!jwpseg && realTimeData.jwTargeting.segments) {
-          jwpseg = realTimeData.jwTargeting.segments;
+      if (jwTargeting) {
+        if (!jwpseg && jwTargeting.segments) {
+          jwpseg = jwTargeting.segments;
         }
-        if (!content && realTimeData.jwTargeting.content) {
-          content = realTimeData.jwTargeting.content;
+        if (!content && jwTargeting.content) {
+          content = jwTargeting.content;
         }
       }
       let impObj = {
