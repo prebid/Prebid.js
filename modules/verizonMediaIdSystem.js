@@ -10,6 +10,7 @@ import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
 
 const MODULE_NAME = 'verizonMediaId';
+const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
 const VMUID_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 
@@ -24,6 +25,11 @@ export const verizonMediaIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  /**
+   * Vendor id of Verizon Media EMEA Limited
+   * @type {Number}
+   */
+  gvlid: VENDOR_ID,
   /**
    * decode the stored id value for passing to bid requests
    * @function

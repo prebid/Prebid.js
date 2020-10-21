@@ -12,6 +12,10 @@ describe('Verizon Media ID Submodule', () => {
     expect(verizonMediaIdSubmodule.name).to.equal('verizonMediaId');
   });
 
+  it('should have the correct TCFv2 Vendor ID declared', () => {
+    expect(verizonMediaIdSubmodule.gvlid).to.equal(25);
+  });
+
   describe('getId()', () => {
     let ajaxStub;
     let getAjaxFnStub;
