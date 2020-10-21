@@ -952,6 +952,42 @@ let VALID_BID_REQUEST = [{
       }
     }
   },
+  SERVER_VIDEO_OUTSTREAM_RESPONSE_VALID_BID = {
+    body: {
+      'id': 'd90ca32f-3877-424a-b2f2-6a68988df57a',
+      'bidList': [{
+        'no_bid': false,
+        'requestId': '27210feac00e96',
+        'cpm': 12.00,
+        'width': 640,
+        'height': 480,
+        'ttl': 180,
+        'creativeId': '370637746',
+        'netRevenue': true,
+        'vastXml': '',
+        'currency': 'USD',
+        'dfp_id': 'video1',
+        'mediaType': 'video',
+        'vto': 5000,
+        'mavtr': 10,
+        'avp': true,
+        'ap': true,
+        'pl': true,
+        'mt': true,
+        'jslt': 3000,
+        'context': 'outstream'
+      }],
+      'ext': {
+        'csUrl': [{
+          'type': 'image',
+          'url': 'http://cs.media.net/cksync.php'
+        }, {
+          'type': 'iframe',
+          'url': 'http://contextual.media.net/checksync.php?&vsSync=1'
+        }]
+      }
+    }
+  },
   SERVER_VALID_BIDS = [{
     'no_bid': false,
     'requestId': '27210feac00e96',
@@ -1404,5 +1440,10 @@ describe('Media.net bid adapter', function () {
       let response = spec.onBidWon(undefined);
       expect(response).to.deep.equal(undefined);
     });
+  });
+
+  it('context should be outstream', function () {
+    let bids = spec.interpretResponse(SERVER_VIDEO_OUTSTREAM_RESPONSE_VALID_BID, []);
+    expect(bids[0].context).to.equal('outstream');
   });
 });

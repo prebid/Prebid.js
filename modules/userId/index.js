@@ -115,14 +115,14 @@
   */
 
 import find from 'core-js-pure/features/array/find.js';
-import {config} from '../../src/config.js';
+import { config } from '../../src/config.js';
 import events from '../../src/events.js';
 import * as utils from '../../src/utils.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
-import {gdprDataHandler} from '../../src/adapterManager.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
+import { gdprDataHandler } from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
-import {module, hook} from '../../src/hook.js';
-import {createEidsArray} from './eids.js';
+import { module, hook } from '../../src/hook.js';
+import { createEidsArray } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
 
 const MODULE_NAME = 'User ID';
@@ -319,8 +319,8 @@ function hasGDPRConsent(consentData) {
  * @param {function} cb - callback for after processing is done.
  */
 function processSubmoduleCallbacks(submodules, cb) {
-  const done = cb ? utils.delayExecution(cb, submodules.length) : function() { };
-  submodules.forEach(function(submodule) {
+  const done = cb ? utils.delayExecution(cb, submodules.length) : function () { };
+  submodules.forEach(function (submodule) {
     submodule.callback(function callbackCompleted(idObj) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
@@ -371,11 +371,13 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
   const combinedSubmoduleIdsAsEids = createEidsArray(combinedSubmoduleIds);
   if (Object.keys(combinedSubmoduleIds).length) {
     adUnits.forEach(adUnit => {
-      adUnit.bids.forEach(bid => {
-        // create a User ID object on the bid,
-        bid.userId = combinedSubmoduleIds;
-        bid.userIdAsEids = combinedSubmoduleIdsAsEids;
-      });
+      if (adUnit.bids && utils.isArray(adUnit.bids)) {
+        adUnit.bids.forEach(bid => {
+          // create a User ID object on the bid,
+          bid.userId = combinedSubmoduleIds;
+          bid.userIdAsEids = combinedSubmoduleIdsAsEids;
+        });
+      }
     });
   }
 }
@@ -398,7 +400,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
           // delay auction until ids are available
           delayed = true;
           let continued = false;
-          const continueCallback = function() {
+          const continueCallback = function () {
             if (!continued) {
               continued = true;
               continueAuction();
@@ -415,7 +417,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
 
             // when syncDelay is zero, process callbacks now, otherwise delay process with a setTimeout
             if (syncDelay > 0) {
-              setTimeout(function() {
+              setTimeout(function () {
                 processSubmoduleCallbacks(submodulesWithCallbacks);
               }, syncDelay);
             } else {
@@ -443,7 +445,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
  */
 export function requestBidsHook(fn, reqBidsConfigObj) {
   // initialize submodules only when undefined
-  initializeSubmodulesAndExecuteCallbacks(function() {
+  initializeSubmodulesAndExecuteCallbacks(function () {
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
     // calling fn allows prebid to continue processing
@@ -523,7 +525,7 @@ function refreshUserIds(options, callback) {
  * This hook returns updated list of submodules which are allowed to do get user id based on TCF 2 enforcement rules configured
  */
 export const validateGdprEnforcement = hook('sync', function (submodules, consentData) {
-  return {userIdModules: submodules, hasValidated: consentData && consentData.hasValidated};
+  return { userIdModules: submodules, hasValidated: consentData && consentData.hasValidated };
 }, 'validateGdprEnforcement');
 
 function populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh) {
@@ -588,7 +590,7 @@ function initSubmodules(submodules, consentData) {
   setStoredConsentData(consentData);
 
   // gdpr consent with purpose one is required, otherwise exit immediately
-  let {userIdModules, hasValidated} = validateGdprEnforcement(submodules, consentData);
+  let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
   if (!hasValidated && !hasGDPRConsent(consentData)) {
     utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
     return [];
