@@ -7,11 +7,12 @@ import find from 'core-js-pure/features/array/find.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-const storage = getStorageManager();
-
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
+const GVLID = 241;
+
+const storage = getStorageManager(GVLID);
 
 /**
  * Determines whether or not the given bid request is valid.
@@ -231,7 +232,7 @@ function getPageInfo() {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.0.0'
+      adapter: '1.1.0'
     }
   };
 }
@@ -379,6 +380,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
