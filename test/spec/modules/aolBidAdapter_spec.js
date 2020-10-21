@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec} from 'modules/aolBidAdapter.js';
-import {config} from 'src/config.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 const DEFAULT_AD_CONTENT = '<script>logInfo(\'ad\');</script>';
 
@@ -75,12 +75,36 @@ let getPixels = () => {
     '<iframe src="pixels1.org"></iframe>\');</script>';
 };
 
-describe('AolAdapter', function () {
+describe.only('AolAdapter', function () {
   const MARKETPLACE_URL = 'https://adserver-us.adtech.advertising.com/pubapi/3.0/';
   const NEXAGE_URL = 'https://c2shb.ssp.yahoo.com/bidRequest?';
   const ONE_DISPLAY_TTL = 60;
   const ONE_MOBILE_TTL = 3600;
-  const VMUID = 'Hello VMUID Value';
+  const USER_ID_DATA = {
+    criteoId: 'Criteo ID value',
+    vmuid: 'VMUID value',
+    idl_env: 'Liveramp ID value',
+    lipb: {
+      lipbid: 'LiveIntent ID value',
+      segments: ['100', '200']
+    },
+    tdid: 'Unified ID value',
+    id5id: {
+      uid: 'ID5 ID value',
+      ext: {foo: 'bar'}
+    },
+    intentIqId: 'IntentIQ ID value',
+    quantcastId: 'Quantcast ID value'
+  };
+  const USER_ID_SOURCE_MAP = {
+    'adserver.org': 'tdid',
+    'criteo.com': 'criteoId',
+    'liveramp.com': 'idl_env',
+    'id5-sync.com': 'id5id',
+    'intentiq.com': 'intentIqId',
+    'liveintent.com': 'lipb',
+    'quantcast.com': 'quantcastId'
+  };
 
   function createCustomBidRequest({bids, params} = {}) {
     var bidderRequest = getDefaultBidRequest();
@@ -468,11 +492,13 @@ describe('AolAdapter', function () {
         let bidRequest = createCustomBidRequest({
           params: getNexageGetBidParams()
         });
-        bidRequest.bids[0].userId = {
-          vmuid: VMUID
-        };
+        bidRequest.bids[0].userId = USER_ID_DATA;
+        bidRequest.bids[0].userIdAsEids = createEidsArray(bidRequest.bids[0].userId);
+        global['console'].log(JSON.stringify(bidRequest.bids[0].userIdAsEids));
         let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request.url).to.contain('eidvmuid=' + encodeURIComponent(VMUID));
+        for (const [source, userIdKey] of Object.entries(USER_ID_SOURCE_MAP)) {
+          expect(request.url).to.contain(`&eid${source}=${encodeURIComponent(USER_ID_DATA[userIdKey])}`);
+        };
       });
 
       it('should return request object for One Mobile POST endpoint when POST configuration is present', function () {
@@ -595,8 +621,13 @@ describe('AolAdapter', function () {
     });
 
     it('returns the bid object with eid defined when supported userId keys are passed', () => {
-      let userIdBid = Object.assign({userId: {vmuid: VMUID}}, bid);
-      global['console'].log(JSON.stringify(userIdBid));
+      let userIdBid = Object.assign({
+        userId: {
+          vmuid: USER_ID_DATA.vmuid,
+          idl_env: USER_ID_DATA.idl_env
+        }
+      }, bid);
+      userIdBid.userIdAsEids = createEidsArray(userIdBid.userId);
       expect(spec.buildOpenRtbRequestData(userIdBid)).to.deep.equal({
         id: 'bid-id',
         imp: [],
@@ -604,9 +635,15 @@ describe('AolAdapter', function () {
           ext: {
             eids: [
               {
-                source: 'vmuid',
+                source: 'verizonmedia.com',
                 uids: [{
-                  id: VMUID
+                  id: USER_ID_DATA.vmuid
+                }]
+              },
+              {
+                source: 'liveramp.com',
+                uids: [{
+                  id: USER_ID_DATA.idl_env
                 }]
               }
             ]

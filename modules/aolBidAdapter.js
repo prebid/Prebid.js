@@ -30,7 +30,16 @@ const SYNC_TYPES = {
   }
 };
 
-const SUPPORTED_USER_ID_PROVIDER_KEYS = ['vmuid', 'idl_env'];
+const SUPPORTED_USER_ID_SOURCES = [
+  'adserver.org',
+  'criteo.com',
+  'id5-sync.com',
+  'intentiq.com',
+  'liveintent.com',
+  'quantcast.com',
+  'verizonmedia.com',
+  'liveramp.com'
+];
 
 const pubapiTemplate = template`${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;
 const nexageBaseApiTemplate = template`${'host'}/bidRequest?`;
@@ -103,6 +112,12 @@ function resolveEndpointCode(bid) {
   } else if (isMarketplaceBid(bid)) {
     return AOL_ENDPOINTS.DISPLAY.GET;
   }
+}
+
+function getSupportedEids(bid) {
+  return bid.userIdAsEids.filter(eid => {
+    return SUPPORTED_USER_ID_SOURCES.includes(eid.source)
+  });
 }
 
 export const spec = {
@@ -230,10 +245,9 @@ export const spec = {
     let { dcn, pos, ext } = bid.params;
     if (typeof bid.userId === 'object') {
       ext = ext || {};
-      Object.keys(bid.userId).forEach(providerKey => {
-        if (SUPPORTED_USER_ID_PROVIDER_KEYS.includes(providerKey)) {
-          ext['eid' + providerKey] = bid.userId[providerKey];
-        }
+      let eids = getSupportedEids(bid);
+      eids.forEach(eid => {
+        ext['eid' + eid.source] = eid.uids[0].id;
       });
     }
     let nexageApi = this.buildOneMobileBaseUrl(bid);
@@ -306,19 +320,10 @@ export const spec = {
       openRtbObject.user = openRtbObject.user || {};
       openRtbObject.user.ext = openRtbObject.user.ext || {};
 
-      Object.keys(bid.userId).forEach(providerKey => {
-        if (SUPPORTED_USER_ID_PROVIDER_KEYS.includes(providerKey)) {
-          openRtbObject.user.ext.eids = openRtbObject.user.ext.eids || [];
-          openRtbObject.user.ext.eids.push(
-            {
-              source: providerKey,
-              uids: [
-                {id: bid.userId[providerKey]}
-              ]
-            }
-          );
-        }
-      });
+      let eids = getSupportedEids(bid);
+      if (eids.length > 0) {
+        openRtbObject.user.ext.eids = eids
+      }
     }
 
     return openRtbObject;
