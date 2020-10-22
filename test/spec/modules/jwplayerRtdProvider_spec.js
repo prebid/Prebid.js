@@ -1,8 +1,7 @@
-import { fetchTargetingForMediaId, getVatFromCache,
+import { fetchTargetingForMediaId, getVatFromCache, extractPublisherParams,
   formatTargetingResponse, getVatFromPlayer, enrichAdUnits,
   fetchTargetingInformation, jwplayerSubmodule } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
-import { config } from 'src/config.js';
 
 describe('jwplayerRtdProvider', function() {
   const testIdForSuccess = 'test_id_for_success';
@@ -411,6 +410,50 @@ describe('jwplayerRtdProvider', function() {
       expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
       expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
     });
+  });
+
+  describe(' Extract Publisher Params', function () {
+    it('should default to config', function () {
+      const config = { mediaID: 'test' };
+
+      const adUnit1 = { fpd: { context: {} } };
+      const targeting1 = extractPublisherParams(adUnit1, config);
+      expect(targeting1).to.deep.equal(config);
+
+      const adUnit2 = { fpd: { context: { data: { jwTargeting: {} } } } };
+      const targeting2 = extractPublisherParams(adUnit2, config);
+      expect(targeting2).to.deep.equal(config);
+
+      const targeting3 = extractPublisherParams(null, config);
+      expect(targeting3).to.deep.equal(config);
+    });
+
+    it('should prioritize adUnit properties ', function () {
+      const expectedMediaID = 'test_media_id';
+      const expectedPlayerID = 'test_player_id';
+      const config = { playerID: 'bad_id', mediaID: 'bad_id' };
+
+      const adUnit = { fpd: { context: { data: { jwTargeting: { mediaID: expectedMediaID, playerID: expectedPlayerID } } } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.have.property('mediaID', expectedMediaID);
+      expect(targeting).to.have.property('playerID', expectedPlayerID);
+    });
+
+    it('should use config properties as fallbacks', function () {
+      const expectedMediaID = 'test_media_id';
+      const expectedPlayerID = 'test_player_id';
+      const config = { playerID: expectedPlayerID, mediaID: 'bad_id' };
+
+      const adUnit = { fpd: { context: { data: { jwTargeting: { mediaID: expectedMediaID } } } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.have.property('mediaID', expectedMediaID);
+      expect(targeting).to.have.property('playerID', expectedPlayerID);
+    });
+
+    it('should return empty object when Publisher Params are absent', function () {
+      const targeting = extractPublisherParams(null, null);
+      expect(targeting).to.deep.equal({});
+    })
   });
 
   describe('jwplayerSubmodule', function () {
