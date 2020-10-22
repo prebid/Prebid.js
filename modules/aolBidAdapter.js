@@ -302,7 +302,7 @@ export const spec = {
   buildOpenRtbRequestData(bid, consentData = {}) {
     let openRtbObject = {
       id: bid.params.id,
-      imp: bid.params.imp,
+      imp: bid.params.imp
     };
 
     if (this.isEUConsentRequired(consentData)) {
