@@ -62,7 +62,6 @@ export const spec = {
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
     const tid = validBidRequests[0].transactionId;
     const cur = [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
-    let pubcid = null;
     let url = bidderRequest.refererInfo.referer;
 
     const imp = validBidRequests.map((bid, id) => {
@@ -112,10 +111,6 @@ export const spec = {
       };
     });
 
-    if (validBidRequests[0].crumbs && validBidRequests[0].crumbs.pubcid) {
-      pubcid = validBidRequests[0].crumbs.pubcid;
-    }
-
     const request = {
       id: bidderRequest.auctionId,
       site: {
@@ -126,15 +121,26 @@ export const spec = {
       },
       cur,
       imp,
-      user: {
-        buyeruid: pubcid
+      user: {},
+      regs: {
+        ext: {
+          gdpr: 0
+        }
       }
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(request, 'regs.ext.gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0);
+    }
 
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: JSON.stringify(request),
+      options: {
+        contentType: 'application/json'
+      },
       bids: validBidRequests
     };
   },

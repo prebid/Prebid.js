@@ -4,8 +4,8 @@ import {
   parseQueryStringParameters,
   parseSizesInput
 } from '../src/utils.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 export const storage = getStorageManager();

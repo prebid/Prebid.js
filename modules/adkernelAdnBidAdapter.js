@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {parse as parseUrl} from '../src/url.js';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
@@ -49,11 +48,12 @@ function canonicalizeSizesArray(sizes) {
   return sizes;
 }
 
-function buildRequestParams(tags, auctionId, transactionId, gdprConsent, uspConsent, refInfo) {
+function buildRequestParams(tags, bidderRequest) {
+  let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
   let req = {
     id: auctionId,
     tid: transactionId,
-    site: buildSite(refInfo),
+    site: buildSite(refererInfo),
     imp: tags
   };
   if (gdprConsent) {
@@ -71,7 +71,7 @@ function buildRequestParams(tags, auctionId, transactionId, gdprConsent, uspCons
 }
 
 function buildSite(refInfo) {
-  let loc = parseUrl(refInfo.referer);
+  let loc = utils.parseUrl(refInfo.referer);
   let result = {
     page: `${loc.protocol}://${loc.hostname}${loc.pathname}`,
     secure: ~~(loc.protocol === 'https')
@@ -133,14 +133,13 @@ export const spec = {
         return acc;
       }, {});
 
-    let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
     let requests = [];
     Object.keys(dispatch).forEach(host => {
       Object.keys(dispatch[host]).forEach(pubId => {
-        let request = buildRequestParams(dispatch[host][pubId], auctionId, transactionId, gdprConsent, uspConsent, refererInfo);
+        let request = buildRequestParams(dispatch[host][pubId], bidderRequest);
         requests.push({
           method: 'POST',
-          url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(refererInfo) ? '&debug=1' : ''}`,
+          url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(bidderRequest.refererInfo) ? '&debug=1' : ''}`,
           data: JSON.stringify(request)
         })
       });
@@ -160,14 +159,24 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses) {
-    if (!syncOptions.iframeEnabled || !serverResponses || serverResponses.length === 0) {
+    if (!serverResponses || serverResponses.length === 0) {
       return [];
     }
-    return serverResponses.filter(rps => rps.body && rps.body.syncpages)
-      .map(rsp => rsp.body.syncpages)
-      .reduce((a, b) => a.concat(b), [])
-      .map(syncUrl => ({type: 'iframe', url: syncUrl}));
+    if (syncOptions.iframeEnabled) {
+      return buildSyncs(serverResponses, 'syncpages', 'iframe');
+    } else if (syncOptions.pixelEnabled) {
+      return buildSyncs(serverResponses, 'syncpixels', 'image');
+    } else {
+      return [];
+    }
   }
 };
+
+function buildSyncs(serverResponses, propName, type) {
+  return serverResponses.filter(rps => rps.body && rps.body[propName])
+    .map(rsp => rsp.body[propName])
+    .reduce((a, b) => a.concat(b), [])
+    .map(syncUrl => ({type: type, url: syncUrl}));
+}
 
 registerBidder(spec);

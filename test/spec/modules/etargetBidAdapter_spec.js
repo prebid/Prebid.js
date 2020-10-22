@@ -1,5 +1,4 @@
 import {assert, expect} from 'chai';
-import * as url from 'src/url.js';
 import {spec} from 'modules/etargetBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 

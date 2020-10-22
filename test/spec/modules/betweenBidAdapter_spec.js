@@ -219,6 +219,6 @@ describe('betweenBidAdapterTests', function () {
     let request = spec.buildRequests(bidRequestData);
     let req_data = request[0].data;
 
-    expect(req_data.sizes).to.deep.equal(['970x250', '240x400', '728x90']);
+    expect(req_data.sizes).to.deep.equal('970x250%2C240x400%2C728x90');
   });
 });

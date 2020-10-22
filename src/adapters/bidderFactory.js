@@ -7,9 +7,9 @@ import { nativeBidIsValid } from '../native.js';
 import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
 import events from '../events.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { ajax } from '../ajax.js';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray } from '../utils.js';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
 import { ADPOD } from '../mediaTypes.js';
 import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
@@ -106,7 +106,7 @@ export const storage = getCoreStorageManager('bidderFactory');
  * @property {object} [native] Object for storing native creative assets
  * @property {object} [video] Object for storing video response data
  * @property {object} [meta] Object for storing bid meta data
- * @property {string} [meta.iabSubCatId] The IAB subcategory ID
+ * @property {string} [meta.primaryCatId] The IAB primary category ID
  * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
  *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
  */
@@ -153,8 +153,14 @@ export function registerBidder(spec) {
   putBidder(spec);
   if (Array.isArray(spec.aliases)) {
     spec.aliases.forEach(alias => {
-      adapterManager.aliasRegistry[alias] = spec.code;
-      putBidder(Object.assign({}, spec, { code: alias }));
+      let aliasCode = alias;
+      let gvlid;
+      if (isPlainObject(alias)) {
+        aliasCode = alias.code;
+        gvlid = alias.gvlid;
+      }
+      adapterManager.aliasRegistry[aliasCode] = spec.code;
+      putBidder(Object.assign({}, spec, { code: aliasCode, gvlid }));
     });
   }
 }
@@ -307,6 +313,7 @@ export function newBidder(spec) {
               // creating a copy of original values as cpm and currency are modified later
               bid.originalCpm = bid.cpm;
               bid.originalCurrency = bid.currency;
+              bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
               const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
@@ -382,26 +389,31 @@ export function preloadBidderMappingFile(fn, adUnits) {
       let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
       let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
       let mappingData = storage.getDataFromLocalStorage(key);
-      if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-        ajax(info.url,
-          {
-            success: (response) => {
-              try {
-                response = JSON.parse(response);
-                let mapping = {
-                  lastUpdated: timestamp(),
-                  mapping: response.mapping
+      try {
+        mappingData = mappingData ? JSON.parse(mappingData) : undefined;
+        if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+          ajax(info.url,
+            {
+              success: (response) => {
+                try {
+                  response = JSON.parse(response);
+                  let mapping = {
+                    lastUpdated: timestamp(),
+                    mapping: response.mapping
+                  }
+                  storage.setDataInLocalStorage(key, JSON.stringify(mapping));
+                } catch (error) {
+                  logError(`Failed to parse ${bidder} bidder translation mapping file`);
                 }
-                storage.setDataInLocalStorage(key, JSON.stringify(mapping));
-              } catch (error) {
-                logError(`Failed to parse ${bidder} bidder translation mapping file`);
+              },
+              error: () => {
+                logError(`Failed to load ${bidder} bidder translation file`)
               }
             },
-            error: () => {
-              logError(`Failed to load ${bidder} bidder translation file`)
-            }
-          },
-        );
+          );
+        }
+      } catch (error) {
+        logError(`Failed to parse ${bidder} bidder translation mapping file`);
       }
     }
   });

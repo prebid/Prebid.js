@@ -1,13 +1,18 @@
-import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction.js';
+import {
+  getKeyValueTargetingPairs,
+  auctionCallbacks,
+  AUCTION_COMPLETED,
+  adjustBids,
+  getMediaTypeGranularity,
+} from 'src/auction.js';
 import CONSTANTS from 'src/constants.json';
-import { adjustBids, getMediaTypeGranularity } from 'src/auction.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
 import * as store from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { server } from 'test/mocks/xhr.js';
 
 var assert = require('assert');
@@ -716,6 +721,29 @@ describe('auctionmanager.js', function () {
       it('installs publisher-defined renderers on bids', function () {
         let renderer = {
           url: 'renderer.js',
+          render: (bid) => bid
+        };
+        let bidRequests = [Object.assign({}, TEST_BID_REQS[0])];
+        bidRequests[0].bids[0] = Object.assign({ renderer }, bidRequests[0].bids[0]);
+        makeRequestsStub.returns(bidRequests);
+
+        let bids1 = Object.assign({},
+          bids[0],
+          {
+            bidderCode: BIDDER_CODE,
+            mediaType: 'video-outstream',
+          }
+        );
+        spec.interpretResponse.returns(bids1);
+        auction.callBids();
+        const addedBid = auction.getBidsReceived().pop();
+        assert.equal(addedBid.renderer.url, 'renderer.js');
+      });
+
+      it('installs publisher-defined backup renderers on bids', function () {
+        let renderer = {
+          url: 'renderer.js',
+          backupOnly: true,
           render: (bid) => bid
         };
         let bidRequests = [Object.assign({}, TEST_BID_REQS[0])];

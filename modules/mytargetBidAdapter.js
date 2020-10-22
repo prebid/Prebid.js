@@ -1,5 +1,4 @@
 import * as utils from '../src/utils.js';
-import * as url from '../src/url.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -29,7 +28,7 @@ function getSiteName(referrer) {
   let sitename = config.getConfig('mytarget.sitename');
 
   if (!sitename) {
-    sitename = url.parse(referrer).hostname;
+    sitename = utils.parseUrl(referrer).hostname;
   }
 
   return sitename;

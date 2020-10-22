@@ -41,6 +41,9 @@ export const spec = {
     const bids = validBidRequests.map(buildRequestObject);
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
+      pageReferrer: document.referrer,
+      networkBandwidth: getConnectionDownLink(window.navigator),
+      timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
       hb_version: '$prebid.version$'
@@ -54,7 +57,9 @@ export const spec = {
     if (bidderRequest && gdpr) {
       let isCmp = (typeof gdpr.gdprApplies === 'boolean')
       let isConsentString = (typeof gdpr.consentString === 'string')
-      let status = isCmp ? findGdprStatus(gdpr) : gdprStatus.CMP_NOT_FOUND_OR_ERROR
+      let status = isCmp
+        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData, gdpr.apiVersion)
+        : gdprStatus.CMP_NOT_FOUND_OR_ERROR
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
         status: status,
@@ -97,6 +102,9 @@ export const spec = {
           creativeId: bid.creativeId,
           placementId: bid.placementId
         };
+        if (bid.dealId) {
+          bidResponse.dealId = bid.dealId
+        }
         bidResponses.push(bidResponse);
       });
     }
@@ -112,19 +120,53 @@ function getReferrerInfo(bidderRequest) {
   return ref;
 }
 
-function findGdprStatus(gdprConsent) {
-  const gdprApplies = gdprConsent.gdprApplies
-  const gdprData = gdprConsent.vendorData
-  const apiVersion = gdprConsent.apiVersion
-  let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
-  const globalConsent = apiVersion === 1
-    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
-    : !gdprData.isServiceSpecific
+function getConnectionDownLink(nav) {
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
+}
 
+function getTimeToFirstByte(win) {
+  const performance = win.performance || win.webkitPerformance || win.msPerformance || win.mozPerformance;
+
+  const ttfbWithTimingV2 = performance &&
+    typeof performance.getEntriesByType === 'function' &&
+    Object.prototype.toString.call(performance.getEntriesByType) === '[object Function]' &&
+    performance.getEntriesByType('navigation')[0] &&
+    performance.getEntriesByType('navigation')[0].responseStart &&
+    performance.getEntriesByType('navigation')[0].requestStart &&
+    performance.getEntriesByType('navigation')[0].responseStart > 0 &&
+    performance.getEntriesByType('navigation')[0].requestStart > 0 &&
+    Math.round(
+      performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
+    );
+
+  if (ttfbWithTimingV2) {
+    return ttfbWithTimingV2.toString();
+  }
+
+  const ttfbWithTimingV1 = performance &&
+    performance.timing.responseStart &&
+    performance.timing.requestStart &&
+    performance.timing.responseStart > 0 &&
+    performance.timing.requestStart > 0 &&
+    performance.timing.responseStart - performance.timing.requestStart;
+
+  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
+}
+
+function findGdprStatus(gdprApplies, gdprData, apiVersion) {
+  let status = gdprStatus.GDPR_APPLIES_PUBLISHER
   if (gdprApplies) {
-    if (globalConsent) status = gdprStatus.GDPR_APPLIES_GLOBAL
+    if (isGlobalConsent(gdprData, apiVersion)) status = gdprStatus.GDPR_APPLIES_GLOBAL
   } else status = gdprStatus.GDPR_DOESNT_APPLY
   return status;
+}
+
+function isGlobalConsent(gdprData, apiVersion) {
+  return gdprData && apiVersion === 1
+    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
+    : gdprData && apiVersion === 2
+      ? !gdprData.isServiceSpecific
+      : false
 }
 
 function buildRequestObject(bid) {

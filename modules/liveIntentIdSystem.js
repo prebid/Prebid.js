@@ -21,6 +21,9 @@ let liveConnect = null;
  * This function is used in tests
  */
 export function reset() {
+  if (window && window.liQ) {
+    window.liQ = [];
+  }
   eventFired = false;
   liveConnect = null;
 }
@@ -45,16 +48,12 @@ function parseLiveIntentCollectorConfig(collectConfig) {
 }
 
 function initializeLiveConnect(configParams) {
+  configParams = configParams || {};
   if (liveConnect) {
     return liveConnect;
   }
 
-  const publisherId = configParams && configParams.publisherId;
-  if (!publisherId && typeof publisherId !== 'string') {
-    utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
-    return;
-  }
-
+  const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
     source: 'prebid',
     publisherId: publisherId
@@ -65,20 +64,11 @@ function initializeLiveConnect(configParams) {
   if (configParams.partner) {
     identityResolutionConfig.source = configParams.partner
   }
-  if (configParams.storage && configParams.storage.expires) {
-    identityResolutionConfig.expirationDays = configParams.storage.expires;
-  }
-  if (configParams.ajaxTimeout) {
-    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
-  }
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
-  if (configParams.providedIdentifierName) {
-    liveConnectConfig.providedIdentifierName = configParams.providedIdentifierName;
-  }
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
@@ -110,20 +100,21 @@ export const liveIntentIdSubmodule = {
    * `publisherId` params.
    * @function
    * @param {{unifiedId:string}} value
-   * @param {SubmoduleParams|undefined} [configParams]
+   * @param {SubmoduleConfig|undefined} config
    * @returns {{lipb:Object}}
    */
-  decode(value, configParams) {
+  decode(value, config) {
+    const configParams = (config && config.params) || {};
     function composeIdObject(value) {
       const base = { 'lipbid': value['unifiedId'] };
       delete value.unifiedId;
       return { 'lipb': { ...base, ...value } };
     }
 
-    if (configParams) {
+    if (!liveConnect) {
       initializeLiveConnect(configParams);
-      tryFireEvent();
     }
+    tryFireEvent();
 
     return (value && typeof value['unifiedId'] === 'string') ? composeIdObject(value) : undefined;
   },
@@ -131,10 +122,11 @@ export const liveIntentIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams) {
+  getId(config) {
+    const configParams = (config && config.params) || {};
     const liveConnect = initializeLiveConnect(configParams);
     if (!liveConnect) {
       return;
@@ -143,17 +135,24 @@ export const liveIntentIdSubmodule = {
     // Don't do the internal ajax call, but use the composed url and fire it via PBJS ajax module
     const url = liveConnect.resolutionCallUrl();
     const result = function (callback) {
-      ajax(url, response => {
-        let responseObj = {};
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            utils.logError(error);
+      const callbacks = {
+        success: response => {
+          let responseObj = {};
+          if (response) {
+            try {
+              responseObj = JSON.parse(response);
+            } catch (error) {
+              utils.logError(error);
+            }
           }
+          callback(responseObj);
+        },
+        error: error => {
+          utils.logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
+          callback();
         }
-        callback(responseObj);
-      }, undefined, { method: 'GET', withCredentials: true });
+      };
+      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
     };
     return {callback: result};
   }

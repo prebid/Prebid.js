@@ -7,8 +7,8 @@ aliases:
   - &environment
       docker:
         # specify the version you desire here
-        - image: circleci/node:8.9.0
-        
+        - image: circleci/node:12.16.1
+      resource_class: xlarge
         # Specify service dependencies here if necessary
         # CircleCI maintains a library of pre-built images
         # documented at https://circleci.com/docs/2.0/circleci-images/
@@ -92,3 +92,6 @@ workflows:
                 - master
     jobs:
       - e2etest
+
+experimental:
+  pipelines: true

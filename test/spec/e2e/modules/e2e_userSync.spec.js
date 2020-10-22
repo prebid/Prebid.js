@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const { host, protocol } = require('../../../helpers/testing-utils');
+const { host, protocol, switchFrame, waitForElement } = require('../../../helpers/testing-utils');
 
 const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/userSync.html?pbjs_debug=true`;
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/header-bid-tag-0_0"]';
@@ -24,12 +24,12 @@ const EXPECTED_TARGETING_KEYS = {
 }
 
 describe('Prebid.js User Sync Ad Unit Test', function () {
+  this.retries(3);
   before(function loadTestPage() {
-    browser.url(TEST_PAGE_URL).pause(3000);
+    browser.url(TEST_PAGE_URL);
+    browser.pause(3000);
     try {
-      browser.waitForExist(CREATIVE_IFRAME_CSS_SELECTOR, 2000);
-      const creativeIframe = $(CREATIVE_IFRAME_CSS_SELECTOR).value;
-      browser.frame(creativeIframe);
+      waitForElement(CREATIVE_IFRAME_CSS_SELECTOR, 2000);
     } catch (e) {
       // If creative Iframe didn't load, repeat the steps again!
       // Due to some reason if the Ad server doesn't respond, the test case will time out after 60000 ms as defined in file wdio.conf.js
@@ -39,10 +39,10 @@ describe('Prebid.js User Sync Ad Unit Test', function () {
 
   it('should load the targeting keys with correct values', function () {
     const result = browser.execute(function () {
-      return window.top.pbjs.getAdserverTargeting('/19968336/prebid_native_example_2');
+      return window.pbjs.getAdserverTargeting('/19968336/prebid_native_example_2');
     });
 
-    const targetingKeys = result.value['/19968336/prebid_native_example_2'];
+    const targetingKeys = result['/19968336/prebid_native_example_2'];
     expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
     expect(targetingKeys.hb_adid).to.be.a('string');
     expect(targetingKeys.hb_native_body).to.be.a('string');
@@ -54,6 +54,8 @@ describe('Prebid.js User Sync Ad Unit Test', function () {
   });
 
   it('should render the Banner Ad on the page', function () {
-    expect(browser.isVisible('body > div[class="GoogleActiveViewElement"] > a > img')).to.be.true;
+    switchFrame(CREATIVE_IFRAME_CSS_SELECTOR);
+    const ele = $('body > div[class="GoogleActiveViewElement"] > a > img');
+    expect(ele.isExisting()).to.be.true;
   });
 });
