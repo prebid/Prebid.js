@@ -1,3 +1,17 @@
+/**
+ * @typedef {{}} UserIdUid
+ * @property {string} id id value
+ * @property {number} atype defaults to 1
+ * @property {(undefined|{})} ext
+ */
+
+/**
+ * @typedef {{}} UserIdEid
+ * @property {string} source
+ * @property {Array.<UserIdUid>} uids
+ * @property {(undefined|{})} ext
+ */
+
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -503,34 +517,29 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
-      const unifiedId = find(bidRequest.userIdAsEids, eid => eid.source === 'adserver.org');
-      if (unifiedId) {
-        data['tpid_tdid'] = unifiedId.uids[0].id;
-      }
-      const liveintentId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveintent.com');
-      if (liveintentId) {
-        data['tpid_liveintent.com'] = liveintentId.uids[0].id;
-        if (liveintentId.ext && Array.isArray(liveintentId.ext.segments) && liveintentId.ext.segments.length) {
-          data['tg_v.LIseg'] = liveintentId.ext.segments.join(',');
-        }
-      }
-      const liverampId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveramp.com');
-      if (liverampId) {
-        data['x_liverampidl'] = liverampId.uids[0].id;
-      }
-      const sharedId = find(bidRequest.userIdAsEids, eid => eid.source === 'sharedid.org');
-      if (sharedId) {
-        data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
-      }
-      const pubcid = find(bidRequest.userIdAsEids, eid => eid.source === 'pubcid.org');
-      if (pubcid) {
-        data['eid_pubcid.org'] = `${pubcid.uids[0].id}^${pubcid.uids[0].atype}`;
-      }
-      const criteoId = find(bidRequest.userIdAsEids, eid => eid.source === 'criteo.com');
-      if (criteoId) {
-        data['eid_criteo.com'] = `${criteoId.uids[0].id}^${criteoId.uids[0].atype}`;
-      }
+    const eids = bidRequest.userIdAsEids;
+    if (eids && eids.length) {
+      const UID_PROPS = ['uids.0.id', 'uids.0.atype'];
+      [
+        ['liveintent.com',        [{'tpid_liveintent.com': UID_PROPS}, {'tg_v.LIseg': ['ext.segments']}]],// liveIntentId
+        ['tpid_tdid',             [{'adserver.org': [UID_PROPS[0]]}]],// unifiedId
+        ['x_liverampidl',         [{'liveramp.com': [UID_PROPS[0]]}]],// identityLink
+        ['eid_pubcid.org',        [{'pubcid.org': UID_PROPS}]],// pubCommonId
+        ['eid_criteo.com',        [{'criteo.com': UID_PROPS}]],// criteo
+        ['eid_verizonmedia.com',  [{'verizonmedia.com': UID_PROPS}]],// Verizon Media
+        ['eid_idx.lat',           [{'idx.lat': UID_PROPS}]],// IDx
+        ['eid_quantcast.com',     [{'quantcast.com': UID_PROPS}]],// quantcastId
+        ['eid_audigent.com',      [{'audigent.com': UID_PROPS}]],// haloId
+        ['eid_zeotap.com',        [{'zeotap.com': UID_PROPS}]],// zeotapIdPlus
+        ['eid_netid.de',          [{'netid.de': UID_PROPS}]],// NetId
+        ['eid_merkleinc.com',     [{'merkleinc.com': UID_PROPS}]],// merkleId
+        ['eid_crwdcntrl.net',     [{'crwdcntrl.net': UID_PROPS}]],// lotamePanoramaId
+        ['eid_britepool.com',     [{'britepool.com': UID_PROPS}]],// britepoolId
+        ['eid_parrable.com',      [{'parrable.com': UID_PROPS}]],// parrableId
+        ['eid_id5-sync.com',      [{'id5-sync.com': UID_PROPS}]],// id5Id
+        ['eid_intentiq.com',      [{'intentiq.com': UID_PROPS}]],// intentIqId
+        ['eid_sharedid.org',      [{'sharedid.org': UID_PROPS.concat(['uids.0.ext.third'])}]]// sharedid
+      ].forEach(i => supportUserId(i[0], eids, data, ops));
     }
 
     // set ppuid value from config value
@@ -1149,6 +1158,30 @@ export function encodeParam(key, param) {
  */
 function partitionArray(array, size) {
   return array.map((e, i) => (i % size === 0) ? array.slice(i, i + size) : null).filter((e) => e)
+}
+
+/**
+ * helper for passing userId values from eids
+ * @param {string} source eid source
+ * @param {Array.<UserIdEid>} userIdAsEids
+ * @param {{}} data object will be set with userId support values
+ * @param {Array.<{key, value}>} propValueMap
+ * @return {(undefined|UserIdEid)}
+ */
+function supportUserId(source, userIdAsEids, data, propValueMap) {
+  /** @type {UserIdEid} */
+  const userId = find(userIdAsEids, eid => eid.source === source);
+  if (userId) {
+    propValueMap.forEach(i => {
+      const propName = Object.keys(i)[0];
+      data[propName] = i[propName].map(j => {
+        const val = utils.deepAccess(userId, j);
+        return (Array.isArray(val)) ? val.join(',') : val;
+      }).join('^');
+    });
+
+  }
+  return userId;
 }
 
 var hasSynced = false;
