@@ -157,6 +157,7 @@ export const spec = {
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
     const schain = bidRequests[0].schain;
+    const omidSupport = find(bidRequests, hasOmidSupport);
 
     const payload = {
       tags: [...tags],
@@ -167,6 +168,13 @@ export const spec = {
       },
       schain: schain
     };
+
+    if (omidSupport) {
+      payload['iab_support'] = {
+        omidpn: 'Appnexus',
+        omidpv: '$prebid.version$'
+      }
+    }
 
     if (member > 0) {
       payload.member_id = member;
@@ -220,15 +228,17 @@ export const spec = {
       });
     }
 
-    let eids = [];
     const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
     if (criteoId) {
-      eids.push({
-        source: 'criteo.com',
-        id: criteoId
+      let tpuids = [];
+      tpuids.push({
+        'provider': 'criteo',
+        'user_id': criteoId
       });
+      payload.tpuids = tpuids;
     }
 
+    let eids = [];
     const tdid = utils.deepAccess(bidRequests[0], `userId.tdid`);
     if (tdid) {
       eids.push({
@@ -764,14 +774,25 @@ function bidToTag(bid) {
             type = (utils.isArray(type)) ? type[0] : type;
             tag.video[param] = VIDEO_MAPPING[param][type];
             break;
+          // Deprecating tags[].video.frameworks in favor of tags[].video_frameworks
+          case 'frameworks':
+            break;
           default:
             tag.video[param] = bid.params.video[param];
         }
       });
+
+    if (bid.params.video.frameworks && utils.isArray(bid.params.video.frameworks)) {
+      tag['video_frameworks'] = bid.params.video.frameworks;
+    }
   }
 
   if (bid.renderer) {
     tag.video = Object.assign({}, tag.video, { custom_renderer_present: true });
+  }
+
+  if (bid.params.frameworks && utils.isArray(bid.params.frameworks)) {
+    tag['banner_frameworks'] = bid.params.frameworks;
   }
 
   let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
@@ -840,6 +861,19 @@ function hasAdPod(bid) {
     bid.mediaTypes.video &&
     bid.mediaTypes.video.context === ADPOD
   );
+}
+
+function hasOmidSupport(bid) {
+  let hasOmid = false;
+  const bidderParams = bid.params;
+  const videoParams = bid.params.video;
+  if (bidderParams.frameworks && utils.isArray(bidderParams.frameworks)) {
+    hasOmid = includes(bid.params.frameworks, 6);
+  }
+  if (!hasOmid && videoParams && videoParams.frameworks && utils.isArray(videoParams.frameworks)) {
+    hasOmid = includes(bid.params.video.frameworks, 6);
+  }
+  return hasOmid;
 }
 
 /**

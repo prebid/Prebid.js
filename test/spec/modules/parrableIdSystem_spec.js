@@ -92,7 +92,7 @@ describe('Parrable ID System', function() {
       })
 
       it('creates xhr to Parrable that synchronizes the ID', function() {
-        let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK.params);
+        let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
 
         getIdResult.callback(callbackSpy);
 
@@ -128,7 +128,7 @@ describe('Parrable ID System', function() {
         let uspString = '1YNN';
         uspDataHandler.setConsentData(uspString);
         parrableIdSubmodule.getId(
-          P_CONFIG_MOCK.params,
+          P_CONFIG_MOCK,
           null,
           null
         ).callback(callbackSpy);
@@ -138,7 +138,7 @@ describe('Parrable ID System', function() {
 
       it('should log an error and continue to callback if ajax request errors', function () {
         let callBackSpy = sinon.spy();
-        let submoduleCallback = parrableIdSubmodule.getId({partner: 'prebid'}).callback;
+        let submoduleCallback = parrableIdSubmodule.getId({ params: {partner: 'prebid'} }).callback;
         submoduleCallback(callBackSpy);
         let request = server.requests[0];
         expect(request.url).to.contain('h.parrable.com');
@@ -155,7 +155,7 @@ describe('Parrable ID System', function() {
     describe('response id', function() {
       it('provides the stored Parrable values if a cookie exists', function() {
         writeParrableCookie({ eid: P_COOKIE_EID });
-        let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK.params);
+        let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
         removeParrableCookie();
 
         expect(getIdResult.id).to.deep.equal({
@@ -171,7 +171,7 @@ describe('Parrable ID System', function() {
         storage.setCookie(oldEidCookieName, oldEid);
         storage.setCookie(oldOptoutCookieName, 'true');
 
-        let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK.params);
+        let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
         expect(getIdResult.id).to.deep.equal({
           eid: oldEid,
           ibaOptout: true
@@ -212,9 +212,9 @@ describe('Parrable ID System', function() {
     });
 
     it('permits an impression when no timezoneFilter is configured', function() {
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
-      })).to.have.property('callback');
+      } })).to.have.property('callback');
     });
 
     it('permits an impression from a blocked timezone when a cookie exists', function() {
@@ -224,12 +224,12 @@ describe('Parrable ID System', function() {
 
       writeParrableCookie({ eid: P_COOKIE_EID });
 
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
         timezoneFilter: {
           blockedZones: [ blockedZone ]
         }
-      })).to.have.property('callback');
+      } })).to.have.property('callback');
       expect(resolvedOptions.called).to.equal(false);
 
       removeParrableCookie();
@@ -240,12 +240,12 @@ describe('Parrable ID System', function() {
       const resolvedOptions = sinon.stub().returns({ timeZone: allowedZone });
       Intl.DateTimeFormat.returns({ resolvedOptions });
 
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
         timezoneFilter: {
           allowedZones: [ allowedZone ]
         }
-      })).to.have.property('callback');
+      } })).to.have.property('callback');
       expect(resolvedOptions.called).to.equal(true);
     });
 
@@ -254,12 +254,12 @@ describe('Parrable ID System', function() {
       const resolvedOptions = sinon.stub().returns({ timeZone: 'Iceland' });
       Intl.DateTimeFormat.returns({ resolvedOptions });
 
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
         timezoneFilter: {
           blockedZones: [ blockedZone ]
         }
-      })).to.have.property('callback');
+      } })).to.have.property('callback');
       expect(resolvedOptions.called).to.equal(true);
     });
 
@@ -268,12 +268,12 @@ describe('Parrable ID System', function() {
       const resolvedOptions = sinon.stub().returns({ timeZone: blockedZone });
       Intl.DateTimeFormat.returns({ resolvedOptions });
 
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
         timezoneFilter: {
           blockedZones: [ blockedZone ]
         }
-      })).to.equal(null);
+      } })).to.equal(null);
       expect(resolvedOptions.called).to.equal(true);
     });
 
@@ -282,13 +282,13 @@ describe('Parrable ID System', function() {
       const resolvedOptions = sinon.stub().returns({ timeZone: timezone });
       Intl.DateTimeFormat.returns({ resolvedOptions });
 
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
         timezoneFilter: {
           allowedZones: [ timezone ],
           blockedZones: [ timezone ]
         }
-      })).to.equal(null);
+      } })).to.equal(null);
       expect(resolvedOptions.called).to.equal(true);
     });
   });
@@ -312,12 +312,12 @@ describe('Parrable ID System', function() {
 
       writeParrableCookie({ eid: P_COOKIE_EID });
 
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
         timezoneFilter: {
           blockedOffsets: [ blockedOffset ]
         }
-      })).to.have.property('callback');
+      } })).to.have.property('callback');
 
       removeParrableCookie();
     });
@@ -326,12 +326,12 @@ describe('Parrable ID System', function() {
       const allowedOffset = -5;
       Date.prototype.getTimezoneOffset.returns(allowedOffset * 60);
 
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
         timezoneFilter: {
           allowedOffsets: [ allowedOffset ]
         }
-      })).to.have.property('callback');
+      } })).to.have.property('callback');
       expect(Date.prototype.getTimezoneOffset.called).to.equal(true);
     });
 
@@ -340,12 +340,12 @@ describe('Parrable ID System', function() {
       const blockedOffset = 5;
       Date.prototype.getTimezoneOffset.returns(allowedOffset * 60);
 
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
         timezoneFilter: {
           blockedOffsets: [ blockedOffset ]
         }
-      })).to.have.property('callback');
+      }})).to.have.property('callback');
       expect(Date.prototype.getTimezoneOffset.called).to.equal(true);
     });
 
@@ -353,12 +353,12 @@ describe('Parrable ID System', function() {
       const blockedOffset = -5;
       Date.prototype.getTimezoneOffset.returns(blockedOffset * 60);
 
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
         timezoneFilter: {
           blockedOffsets: [ blockedOffset ]
         }
-      })).to.equal(null);
+      } })).to.equal(null);
       expect(Date.prototype.getTimezoneOffset.called).to.equal(true);
     });
 
@@ -366,13 +366,13 @@ describe('Parrable ID System', function() {
       const offset = -5;
       Date.prototype.getTimezoneOffset.returns(offset * 60);
 
-      expect(parrableIdSubmodule.getId({
+      expect(parrableIdSubmodule.getId({ params: {
         partner: 'prebid-test',
         timezoneFilter: {
           allowedOffset: [ offset ],
           blockedOffsets: [ offset ]
         }
-      })).to.equal(null);
+      } })).to.equal(null);
       expect(Date.prototype.getTimezoneOffset.called).to.equal(true);
     });
   });

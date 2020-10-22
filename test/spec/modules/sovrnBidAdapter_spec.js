@@ -239,8 +239,8 @@ describe('sovrnBidAdapter', function() {
       expect(data.source.ext.schain.nodes.length).to.equal(1)
     });
 
-    it('should add the unifiedID if present', function() {
-      const digitrustRequests = [{
+    it('should add ids to the bid request', function() {
+      const criteoIdRequest = [{
         'bidder': 'sovrn',
         'params': {
           'tagid': 403370
@@ -254,6 +254,7 @@ describe('sovrnBidAdapter', function() {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
         'userId': {
+          'criteoId': 'A_CRITEO_ID',
           'tdid': 'SOMESORTOFID',
         }
       }].concat(bidRequests);
@@ -263,12 +264,20 @@ describe('sovrnBidAdapter', function() {
         }
       };
 
-      const data = JSON.parse(spec.buildRequests(digitrustRequests, bidderRequest).data);
-      expect(data.user.ext.eids[0].source).to.equal('adserver.org')
-      expect(data.user.ext.eids[0].uids[0].id).to.equal('SOMESORTOFID')
-      expect(data.user.ext.eids[0].uids[0].ext.rtiPartner).to.equal('TDID')
-    })
+      const data = JSON.parse(spec.buildRequests(criteoIdRequest, bidderRequest).data);
+      expect(data.user.ext.eids[0].source).to.equal('criteo.com')
+      expect(data.user.ext.eids[0].uids[0].id).to.equal('A_CRITEO_ID')
+      expect(data.user.ext.eids[0].uids[0].atype).to.equal(1)
+      expect(data.user.ext.eids[1].source).to.equal('adserver.org')
+      expect(data.user.ext.eids[1].uids[0].id).to.equal('SOMESORTOFID')
+      expect(data.user.ext.eids[1].uids[0].ext.rtiPartner).to.equal('TDID')
+      expect(data.user.ext.eids[1].uids[0].atype).to.equal(1)
+      expect(data.user.ext.tpid[0].source).to.equal('criteo.com')
+      expect(data.user.ext.tpid[0].uid).to.equal('A_CRITEO_ID')
+      expect(data.user.ext.prebid_criteoid).to.equal('A_CRITEO_ID')
+    });
   });
+
   describe('interpretResponse', function () {
     let response;
     beforeEach(function () {
@@ -322,16 +331,16 @@ describe('sovrnBidAdapter', function() {
         'currency': 'USD',
         'netRevenue': true,
         'mediaType': 'banner',
-        'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
-        'ttl': 60000
+        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+        'ttl': 90
       }];
 
       let result = spec.interpretResponse(response);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('should get correct bid response when dealId is passed', function () {
-      response.body.dealid = 'baking';
+      response.body.seatbid[0].bid[0].dealid = 'baking';
 
       let expectedResponse = [{
         'requestId': '263c448586f5a1',
@@ -343,12 +352,33 @@ describe('sovrnBidAdapter', function() {
         'currency': 'USD',
         'netRevenue': true,
         'mediaType': 'banner',
-        'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
-        'ttl': 60000
+        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+        'ttl': 90
       }];
 
       let result = spec.interpretResponse(response);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
+    });
+
+    it('should get correct bid response when ttl is set', function () {
+      response.body.seatbid[0].bid[0].ttl = 480;
+
+      let expectedResponse = [{
+        'requestId': '263c448586f5a1',
+        'cpm': 0.45882675,
+        'width': 728,
+        'height': 90,
+        'creativeId': 'creativelycreatedcreativecreative',
+        'dealId': null,
+        'currency': 'USD',
+        'netRevenue': true,
+        'mediaType': 'banner',
+        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+        'ttl': 480
+      }];
+
+      let result = spec.interpretResponse(response);
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('handles empty bid response', function () {
