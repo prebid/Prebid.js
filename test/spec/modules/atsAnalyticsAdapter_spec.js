@@ -18,7 +18,7 @@ describe('ats analytics adapter', function () {
 
   describe('track', function () {
     it('builds and sends request and response data', function () {
-      sinon.spy(atsAnalyticsAdapter, 'track');
+      sinon.stub(atsAnalyticsAdapter, 'shouldFireRequest').returns(true);
 
       let initOptions = {
         pid: '10433394',
@@ -134,7 +134,6 @@ describe('ats analytics adapter', function () {
       let requests = server.requests.filter(req => {
         return req.url.indexOf(initOptions.host) > -1;
       });
-
       expect(requests.length).to.equal(1);
 
       let realAfterBid = JSON.parse(requests[0].requestBody);

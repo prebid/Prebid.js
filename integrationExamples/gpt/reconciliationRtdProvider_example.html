@@ -4,22 +4,20 @@
     <script async src="../../build/dev/prebid.js"></script>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <meta charset="UTF-8">
-    <title>JW Player RTD Provider Example</title>
+    <title>Reconciliation RTD Provider Example</title>
     <script>
       var FAILSAFE_TIMEOUT = 3300;
       var PREBID_TIMEOUT = 1000;
 
       var adUnits = [{
-        code: 'div-gpt-ad-1460505748561-0',
-        jwTargeting: {
-          // Note: the following Ids are placeholders and should be replaced with your Ids.
-          playerID: '123',
-          mediaID: 'abc'
-        },
+        code: "/21834411153/rsdk-2",
         mediaTypes: {
-          banner: {
-            sizes: [[300, 250], [300,600]],
-          }
+        banner: {
+            sizes: [
+            [300, 250],
+            [728, 90],
+            ],
+        },
         },
         // Replace this object to test a new Adapter!
         bids: [{
@@ -33,6 +31,7 @@
 
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
+
     </script>
 
     <script>
@@ -45,16 +44,17 @@
       pbjs.que.push(function() {
         pbjs.setConfig({
           realTimeData: {
-            auctionDelay: 5000,
-            dataProviders: [{
-              name: "jwplayer",
-              waitForIt: true,
-              params: {
-                // Note: the following media Ids are placeholders and should be replaced with your Ids.
-                mediaIDs: ['abc', 'def', 'ghi', 'jkl']
-              }
-            }]
-          }
+            auctionDelay: 0,
+            dataProviders: [
+              {
+                name: "reconciliation",
+                params: {
+                  publisherMemberId: "test_prebid_publisher",
+                  allowAccess: true
+                },
+              },
+            ],
+          },
         });
         pbjs.addAdUnits(adUnits);
         pbjs.requestBids({
@@ -82,7 +82,7 @@
 
     <script>
       googletag.cmd.push(function () {
-        googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+        googletag.defineSlot('/21834411153/rsdk-2', [[300, 250], [728, 90]], 'div-gpt-ad-rsdk-1').addService(googletag.pubads());
 
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
@@ -92,9 +92,9 @@
 
 <body>
 <h5>Div-1</h5>
-<div id='div-gpt-ad-1460505748561-0'>
+<div id='div-gpt-ad-rsdk-1'>
     <script type='text/javascript'>
-      googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+      googletag.cmd.push(function() { googletag.display('div-gpt-ad-rsdk-1'); });
     </script>
 </div>
 </body>
