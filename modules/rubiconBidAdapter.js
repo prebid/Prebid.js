@@ -766,7 +766,7 @@ export const spec = {
             advertiserId: ad.advertiser, networkId: ad.network
           },
           meta: {
-            advertiserId: ad.advertiser, networkId: ad.network, mediaType: 'banner'
+            advertiserId: ad.advertiser, networkId: ad.network, mediaType: BANNER
           }
         };
 
