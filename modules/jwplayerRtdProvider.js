@@ -144,6 +144,7 @@ function enrichBidRequest(bidReqConfig, onDone) {
  * @param {function} onDone
  */
 export function enrichAdUnits(adUnits) {
+  const jwTargetingFallback = config.getConfig('fpd.context.data.jwTargeting');
   adUnits.forEach(adUnit => {
     const onVatResponse = function (vat) {
       if (!vat) {
@@ -153,12 +154,14 @@ export function enrichAdUnits(adUnits) {
       addTargetingToBids(adUnit.bids, targeting);
     };
 
-    loadVat(adUnit.jwTargeting, onVatResponse);
+    const adUnitTargeting = adUnit.fpd && adUnit.fpd.context && adUnit.fpd.context.data && adUnit.fpd.context.data.jwTargeting;
+    const jwTargeting = Object.assign({}, jwTargetingFallback, adUnitTargeting);
+    loadVat(jwTargeting, onVatResponse);
   });
 }
 
 function loadVat(params, onCompletion) {
-  if (!params) {
+  if (!params || !Object.keys(params).length) {
     return;
   }
 
