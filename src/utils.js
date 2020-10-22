@@ -726,8 +726,8 @@ export function timestamp() {
  * The returned value represents the time elapsed since the time origin. @see https://developer.mozilla.org/en-US/docs/Web/API/Performance/now
  * @returns {number}
  */
-export function now() {
-  return (performance && performance.now && performance.now()) || 0;
+export function getPerformanceNow() {
+  return (window.performance && window.performance.now && window.performance.now()) || 0;
 }
 
 /**
