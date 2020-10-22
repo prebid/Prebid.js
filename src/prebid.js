@@ -149,7 +149,14 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
 
   adUnits.forEach(adUnit => {
     const mediaTypes = adUnit.mediaTypes;
+    const bids = adUnit.bids;
     let validatedBanner, validatedVideo, validatedNative;
+
+    if (!bids || !utils.isArray(bids)) {
+      utils.logError(`Detected adUnit.code '${adUnit.code}' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction.`);
+      return;
+    }
+
     if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
       utils.logError(`Detected adUnit.code '${adUnit.code}' did not have a 'mediaTypes' object defined.  This is a required field for the auction, so this adUnit has been removed.`);
       return;
