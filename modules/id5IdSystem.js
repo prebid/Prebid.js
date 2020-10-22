@@ -13,7 +13,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
-const NB_EXP_DAYS = (30 * 24 * 60 * 60 * 1000); // 30 days
+const NB_EXP_DAYS = 30;
 export const ID5_STORAGE_NAME = 'id5id';
 const LOCAL_STORAGE = 'html5';
 
@@ -147,7 +147,7 @@ function hasRequiredConfig(config) {
     return false;
   }
 
-  if (!config || !config.storage || !config.storage.type || !config.storage.name) {
+  if (!config.storage || !config.storage.type || !config.storage.name) {
     utils.logError(`User ID - ID5 submodule requires storage to be set`);
     return false;
   }
@@ -165,7 +165,7 @@ function hasRequiredConfig(config) {
 }
 
 export function expDaysStr(expDays) {
-  return (new Date(Date.now() + (60 * 60 * 24 * expDays))).toUTCString();
+  return (new Date(Date.now() + (1000 * 60 * 60 * 24 * expDays))).toUTCString();
 }
 
 export function nbCacheName(partnerId) {
