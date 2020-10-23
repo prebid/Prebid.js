@@ -517,29 +517,30 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    const eids = bidRequest.userIdAsEids;
-    if (eids && eids.length) {
+    if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
       const UID_PROPS = ['uids.0.id', 'uids.0.atype'];
       [
-        ['liveintent.com',        [{'tpid_liveintent.com': UID_PROPS}, {'tg_v.LIseg': ['ext.segments']}]],// liveIntentId
-        ['tpid_tdid',             [{'adserver.org': [UID_PROPS[0]]}]],// unifiedId
-        ['x_liverampidl',         [{'liveramp.com': [UID_PROPS[0]]}]],// identityLink
-        ['eid_pubcid.org',        [{'pubcid.org': UID_PROPS}]],// pubCommonId
-        ['eid_criteo.com',        [{'criteo.com': UID_PROPS}]],// criteo
-        ['eid_verizonmedia.com',  [{'verizonmedia.com': UID_PROPS}]],// Verizon Media
-        ['eid_idx.lat',           [{'idx.lat': UID_PROPS}]],// IDx
-        ['eid_quantcast.com',     [{'quantcast.com': UID_PROPS}]],// quantcastId
-        ['eid_audigent.com',      [{'audigent.com': UID_PROPS}]],// haloId
-        ['eid_zeotap.com',        [{'zeotap.com': UID_PROPS}]],// zeotapIdPlus
-        ['eid_netid.de',          [{'netid.de': UID_PROPS}]],// NetId
-        ['eid_merkleinc.com',     [{'merkleinc.com': UID_PROPS}]],// merkleId
-        ['eid_crwdcntrl.net',     [{'crwdcntrl.net': UID_PROPS}]],// lotamePanoramaId
-        ['eid_britepool.com',     [{'britepool.com': UID_PROPS}]],// britepoolId
-        ['eid_parrable.com',      [{'parrable.com': UID_PROPS}]],// parrableId
-        ['eid_id5-sync.com',      [{'id5-sync.com': UID_PROPS}]],// id5Id
-        ['eid_intentiq.com',      [{'intentiq.com': UID_PROPS}]],// intentIqId
-        ['eid_sharedid.org',      [{'sharedid.org': UID_PROPS.concat(['uids.0.ext.third'])}]]// sharedid
-      ].forEach(i => supportUserId(i[0], eids, data, ops));
+        ['liveintent.com', [{'tpid_liveintent.com': [UID_PROPS[0]]}, {'tg_v.LIseg': ['ext.segments']}]], // liveIntentId
+        ['adserver.org', [{'tpid_tdid': [UID_PROPS[0]]}]], // unifiedId
+        ['liveramp.com', [{'x_liverampidl': [UID_PROPS[0]]}]], // identityLink
+        ['pubcid.org', [{'eid_pubcid.org': UID_PROPS}]], // pubCommonId
+        ['criteo.com', [{'eid_criteo.com': UID_PROPS}]], // criteo
+        ['verizonmedia.com', [{'eid_verizonmedia.com': UID_PROPS}]], // Verizon Media
+        ['idx.lat', [{'eid_idx.lat': UID_PROPS}]], // IDx
+        ['quantcast.com', [{'eid_quantcast.com': UID_PROPS}]], // quantcastId
+        ['audigent.com', [{'eid_audigent.com': UID_PROPS}]], // haloId
+        ['zeotap.com', [{'eid_zeotap.com': UID_PROPS}]], // zeotapIdPlus
+        ['netid.de', [{'eid_netid.de': UID_PROPS}]], // NetId
+        ['merkleinc.com', [{'eid_merkleinc.com': UID_PROPS}]], // merkleId
+        ['crwdcntrl.net', [{'eid_crwdcntrl.net': UID_PROPS}]], // lotamePanoramaId
+        ['britepool.com', [{'eid_britepool.com': UID_PROPS}]], // britepoolId
+        ['parrable.com', [{'eid_parrable.com': UID_PROPS}]], // parrableId
+        ['id5-sync.com', [{'eid_id5-sync.com': UID_PROPS}]], // id5Id
+        ['intentiq.com', [{'eid_intentiq.com': UID_PROPS}]], // intentIqId
+        ['sharedid.org', [{'eid_sharedid.org': UID_PROPS.concat(['uids.0.ext.third'])}]]// sharedid
+      ].forEach(i => {
+        supportUserId(i[0], bidRequest.userIdAsEids, data, i[1])
+      });
     }
 
     // set ppuid value from config value
@@ -1173,13 +1174,11 @@ function supportUserId(source, userIdAsEids, data, propValueMap) {
   const userId = find(userIdAsEids, eid => eid.source === source);
   if (userId) {
     propValueMap.forEach(i => {
-      const propName = Object.keys(i)[0];
-      data[propName] = i[propName].map(j => {
+      data[Object.keys(i)[0]] = i[Object.keys(i)[0]].map(j => {
         const val = utils.deepAccess(userId, j);
-        return (Array.isArray(val)) ? val.join(',') : val;
+        return Array.isArray(val) ? val.join(',') : val;
       }).join('^');
     });
-
   }
   return userId;
 }
