@@ -1,0 +1,16 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+	ignorecase = true
+	precomposeunicode = true
+[remote "origin"]
+	url = https://github.com/ericrenebrown/mw_prebid.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[user]
+	name = ericrenebrown
+	email = ericrenebrown@gmail.com
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
