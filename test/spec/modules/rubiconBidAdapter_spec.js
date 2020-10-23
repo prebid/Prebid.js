@@ -1243,8 +1243,25 @@ describe('the rubicon adapter', function () {
               const data = {};
               const userIdAsEids = [{source: 'liveramp.com', uids: [{id: '0001', atype: 1}]}];
               setUserIdParam('liveramp.com', userIdAsEids, data, [{foobar: ['uids.0.id']}])
+
               expect(data).to.haveOwnProperty('foobar');
               expect(data.foobar).to.equal('0001')
+            });
+          });
+          describe('createUserIdParams', function () {
+            it('should set correctly', function () {
+              const data = {};
+              const eids = [{
+                source: 'liveramp.com',
+                uids: [{
+                  id: '0002',
+                  atype: 1
+                }]
+              }];
+              createUserIdParams({ userIdAsEids: eids }, data);
+
+              expect(data).to.haveOwnProperty('x_liverampidl');
+              expect(data['x_liverampidl']).to.equal('0002')
             });
           });
         });
