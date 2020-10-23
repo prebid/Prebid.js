@@ -517,7 +517,7 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    addUserIds(bidRequest, data);
+    createUserIdParams(bidRequest, data);
 
     // set ppuid value from config value
     const configUserId = config.getConfig('user.id');
@@ -1138,38 +1138,39 @@ function partitionArray(array, size) {
 }
 
 /**
- * creates props from userId eids list on data obj
+ * add userId to data
+ * @param {string} source is used to get the matching eid array item
+ * @param {UserIdEid[]} userIdEids eid array from the bid request object
+ * @param {Object} data sets the object that the user id properties will be added to
+ * @param {Array} paramMappings
+ */
+export function setUserIdParam(source, userIdEids, data, paramMappings) {
+  const userIdEid = find(userIdEids, eid => eid.source === source);
+  if (userIdEid) {
+    paramMappings.forEach(paramMapping => {
+      const paramName = Object.keys(paramMapping)[0];
+      data[paramName] = paramMapping[paramName].map(paramPath => {
+        const paramValue = utils.deepAccess(userIdEid, paramPath);
+        return Array.isArray(paramValue) ? paramValue.join(',') : paramValue;
+      }).join('^');
+    });
+  }
+}
+
+/**
  * @param {Object} bidRequest
  * @param {Object} data
  */
-function addUserIds(bidRequest, data) {
+export function createUserIdParams(bidRequest, data) {
   /**
-   * add userId to data
-   * @param {string} source is used to get the matching eid array item
-   * @param {UserIdEid[]} userIdEids eid array from the bid request object
-   * @param {Object} data sets the object that the user id properties will be added to
-   * @param {Array} paramMappings
+   * @param {Object} obj creates array item for each of the object keys
+   * @return {{userIdParam: string[]}[]}
    */
-  function setUserId(source, userIdEids, data, paramMappings) {
-    const userIdEid = find(userIdEids, eid => eid.source === source);
-    if (userIdEid) {
-      paramMappings.forEach(paramMapping => {
-        const paramName = Object.keys(paramMapping)[0];
-        data[paramName] = paramMapping[paramName].map(paramPath => {
-          const paramValue = utils.deepAccess(userIdEid, paramPath);
-          return Array.isArray(paramValue) ? paramValue.join(',') : paramValue;
-        }).join('^');
-      });
-    }
-  }
-
-  /**
-   * @param {Object} obj
-   * @return {Object[]}
-   */
-  function getParamMap(obj) {
+  function getArrayOfKeyValues(obj) {
     return Object.keys(obj).map(key => {
-      return { [key]: obj[key] };
+      return {
+        [key]: obj[key]
+      };
     });
   };
 
@@ -1180,63 +1181,63 @@ function addUserIds(bidRequest, data) {
 
     [
       // britepoolId
-      {'britepool.com': getParamMap({'eid_britepool.com': DEFAULT_PROPS})},
+      {'britepool.com': getArrayOfKeyValues({'eid_britepool.com': DEFAULT_PROPS})},
 
       // criteo
-      {'criteo.com': getParamMap({'eid_criteo.com': DEFAULT_PROPS})},
+      {'criteo.com': getArrayOfKeyValues({'eid_criteo.com': DEFAULT_PROPS})},
 
       // haloId
-      {'audigent.com': getParamMap({'eid_audigent.com': DEFAULT_PROPS})},
+      {'audigent.com': getArrayOfKeyValues({'eid_audigent.com': DEFAULT_PROPS})},
 
       // id5Id
-      {'id5-sync.com': getParamMap({'eid_id5-sync.com': DEFAULT_PROPS})},
+      {'id5-sync.com': getArrayOfKeyValues({'eid_id5-sync.com': DEFAULT_PROPS})},
 
       // IDx
-      {'idx.lat': getParamMap({'eid_idx.lat': DEFAULT_PROPS})},
+      {'idx.lat': getArrayOfKeyValues({'eid_idx.lat': DEFAULT_PROPS})},
 
       // identityLink
-      {'liveramp.com': getParamMap({'x_liverampidl': [PROP_ID]})},
+      {'liveramp.com': getArrayOfKeyValues({'x_liverampidl': [PROP_ID]})},
 
       // intentIqId
-      {'intentiq.com': getParamMap({'eid_intentiq.com': DEFAULT_PROPS})},
+      {'intentiq.com': getArrayOfKeyValues({'eid_intentiq.com': DEFAULT_PROPS})},
 
       // liveIntentId
-      {'liveintent.com': getParamMap({
+      {'liveintent.com': getArrayOfKeyValues({
         'tpid_liveintent.com': [PROP_ID],
         'tg_v.LIseg': ['ext.segments']
       })},
 
       // lotamePanoramaId
-      {'crwdcntrl.net': getParamMap({'eid_crwdcntrl.net': DEFAULT_PROPS})},
+      {'crwdcntrl.net': getArrayOfKeyValues({'eid_crwdcntrl.net': DEFAULT_PROPS})},
 
       // merkleId
-      {'merkleinc.com': getParamMap({'eid_merkleinc.com': DEFAULT_PROPS})},
+      {'merkleinc.com': getArrayOfKeyValues({'eid_merkleinc.com': DEFAULT_PROPS})},
 
       // NetId
-      {'netid.de': getParamMap({'eid_netid.de': DEFAULT_PROPS})},
+      {'netid.de': getArrayOfKeyValues({'eid_netid.de': DEFAULT_PROPS})},
 
       // parrableId
-      {'parrable.com': getParamMap({'eid_parrable.com': DEFAULT_PROPS})},
+      {'parrable.com': getArrayOfKeyValues({'eid_parrable.com': DEFAULT_PROPS})},
 
       // pubCommonId
-      {'pubcid.org': getParamMap({'eid_pubcid.org': DEFAULT_PROPS})},
+      {'pubcid.org': getArrayOfKeyValues({'eid_pubcid.org': DEFAULT_PROPS})},
 
       // quantcastId
-      {'quantcast.com': getParamMap({'eid_quantcast.com': DEFAULT_PROPS})},
+      {'quantcast.com': getArrayOfKeyValues({'eid_quantcast.com': DEFAULT_PROPS})},
 
       // sharedid
-      {'sharedid.org': getParamMap({'eid_sharedid.org': [PROP_ID, PROP_ATYPE, 'uids.0.ext.third']})},
+      {'sharedid.org': getArrayOfKeyValues({'eid_sharedid.org': [PROP_ID, PROP_ATYPE, 'uids.0.ext.third']})},
 
       // unifiedId
-      {'adserver.org': getParamMap({'tpid_tdid': [PROP_ID]})},
+      {'adserver.org': getArrayOfKeyValues({'tpid_tdid': [PROP_ID]})},
 
       // Verizon Media
-      {'verizonmedia.com': getParamMap({'eid_verizonmedia.com': DEFAULT_PROPS})},
+      {'verizonmedia.com': getArrayOfKeyValues({'eid_verizonmedia.com': DEFAULT_PROPS})},
 
       // zeotapIdPlus
-      {'zeotap.com': getParamMap('eid_zeotap.com')}
+      {'zeotap.com': getArrayOfKeyValues({'eid_zeotap.com': DEFAULT_PROPS})}
 
-    ].forEach(i => setUserId(Object.keys(i)[0], bidRequest.userIdAsEids, data, i[Object.keys(i)[0]]));
+    ].forEach(i => setUserIdParam(Object.keys(i)[0], bidRequest.userIdAsEids, data, i[Object.keys(i)[0]]));
   }
 }
 

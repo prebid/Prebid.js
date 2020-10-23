@@ -5,7 +5,9 @@ import {
   masSizeOrdering,
   resetUserSync,
   hasVideoMediaType,
-  resetRubiConf
+  resetRubiConf,
+  setUserIdParam,
+  createUserIdParams
 } from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
@@ -1231,6 +1233,18 @@ describe('the rubicon adapter', function () {
               let data = parseQuery(request.data);
 
               expect(data['ppuid']).to.equal('123');
+            });
+          });
+        });
+
+        describe('user id helpers', function () {
+          describe('setUserIdParam', function () {
+            it('should set id param correctly', function () {
+              const data = {};
+              const userIdAsEids = [{source: 'liveramp.com', uids: [{id: '0001', atype: 1}]}];
+              setUserIdParam('liveramp.com', userIdAsEids, data, [{foobar: ['uids.0.id']}])
+              expect(data).to.haveOwnProperty('foobar');
+              expect(data.foobar).to.equal('0001')
             });
           });
         });
