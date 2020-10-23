@@ -474,17 +474,11 @@ describe('stroeerCore bid adapter', function () {
             'bid': 'bid1',
             'siz': [[300, 600], [160, 60]],
             'viz': true,
-            'ctx': {
-              'position': 'div-1'
-            }
           }, {
             'sid': 'ODA=',
             'bid': 'bid2',
             'siz': [[728, 90]],
             'viz': true,
-            'ctx': {
-              'position': 'div-2'
-            }
           }],
           'user': {
             'euids': userIds
@@ -558,6 +552,18 @@ describe('stroeerCore bid adapter', function () {
         const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
         assert.deepEqual(serverRequestInfo.data.bids[0].siz, [[300, 600], [160, 60]]);
         assert.deepEqual(serverRequestInfo.data.bids[1].siz, [[728, 90]]);
+      });
+
+      describe('when Metatag is not present on webpage', () => {
+        it('should not build context into bid property ctx', () => {
+          win.SDG = undefined;
+
+          const bidReq = buildBidderRequest();
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          assert.equal(serverRequestInfo.data.bids[0].ctx, undefined);
+        });
       });
 
       describe('optional fields', () => {

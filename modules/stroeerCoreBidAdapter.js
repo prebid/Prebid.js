@@ -200,14 +200,20 @@ export const spec = {
         sid: bid.params.sid,
         siz: bidSizes(bid),
         viz: elementInView(bid.adUnitCode),
-        ctx: {
+        ctx: getContextFromSDG(bid)
+      });
+    });
+
+    function getContextFromSDG(bid) {
+      if (win.SDG) {
+        return {
           position: bid.adUnitCode,
           adUnits: getAdUnits(bid.adUnitCode),
           zone: getZone(bid.adUnitCode),
           pageType: getPageType(bid.adUnitCode),
         }
-      });
-    });
+      }
+    }
 
     return {
       method: 'POST', url: buildUrl(anyBid.params), data: payload
