@@ -128,6 +128,18 @@ describe('yieldlabBidAdapter', function () {
       expect(request.url).to.include('schain=1.0,1!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,')
     })
 
+    it('passes unencoded schain string to bid request when complete == 0', function () {
+      const schainWithComplete0 = {
+        ...REQUEST,
+        schain: {
+          ...REQUEST.schain,
+          complete: 0
+        }
+      }
+      const request = spec.buildRequests([schainWithComplete0])
+      expect(request.url).to.include('schain=1.0,0!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,')
+    })
+
     const refererRequest = spec.buildRequests(bidRequests, {
       refererInfo: {
         canonicalUrl: undefined,
