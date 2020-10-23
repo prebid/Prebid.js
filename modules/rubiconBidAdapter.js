@@ -517,48 +517,7 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
-      const DEFAULT_UID_PROPS = ['uids.0.id', 'uids.0.atype'];
-
-      [
-        // liveIntentId
-        ['liveintent.com', [{'tpid_liveintent.com': [DEFAULT_UID_PROPS[0]]}, {'tg_v.LIseg': ['ext.segments']}]],
-        // unifiedId
-        ['adserver.org', [{'tpid_tdid': [DEFAULT_UID_PROPS[0]]}]],
-        // identityLink
-        ['liveramp.com', [{'x_liverampidl': [DEFAULT_UID_PROPS[0]]}]],
-        // pubCommonId
-        ['pubcid.org', [{'eid_pubcid.org': DEFAULT_UID_PROPS}]],
-        // criteo
-        ['criteo.com', [{'eid_criteo.com': DEFAULT_UID_PROPS}]],
-        // Verizon Media
-        ['verizonmedia.com', [{'eid_verizonmedia.com': DEFAULT_UID_PROPS}]],
-        // IDx
-        ['idx.lat', [{'eid_idx.lat': DEFAULT_UID_PROPS}]],
-        // quantcastId
-        ['quantcast.com', [{'eid_quantcast.com': DEFAULT_UID_PROPS}]],
-        // haloId
-        ['audigent.com', [{'eid_audigent.com': DEFAULT_UID_PROPS}]],
-        // zeotapIdPlus
-        ['zeotap.com', [{'eid_zeotap.com': DEFAULT_UID_PROPS}]],
-        // NetId
-        ['netid.de', [{'eid_netid.de': DEFAULT_UID_PROPS}]],
-        // merkleId
-        ['merkleinc.com', [{'eid_merkleinc.com': DEFAULT_UID_PROPS}]],
-        // lotamePanoramaId
-        ['crwdcntrl.net', [{'eid_crwdcntrl.net': DEFAULT_UID_PROPS}]],
-        // britepoolId
-        ['britepool.com', [{'eid_britepool.com': DEFAULT_UID_PROPS}]],
-        // parrableId
-        ['parrable.com', [{'eid_parrable.com': DEFAULT_UID_PROPS}]],
-        // id5Id
-        ['id5-sync.com', [{'eid_id5-sync.com': DEFAULT_UID_PROPS}]],
-        // intentIqId
-        ['intentiq.com', [{'eid_intentiq.com': DEFAULT_UID_PROPS}]],
-        // sharedid
-        ['sharedid.org', [{'eid_sharedid.org': DEFAULT_UID_PROPS.concat(['uids.0.ext.third'])}]]
-      ].forEach(i => setUserId(i[0], bidRequest.userIdAsEids, data, i[1]));
-    }
+    addUserIds(bidRequest, data);
 
     // set ppuid value from config value
     const configUserId = config.getConfig('user.id');
@@ -1179,23 +1138,112 @@ function partitionArray(array, size) {
 }
 
 /**
- * add userId to data
- * @param {string} source eid source
- * @param {Array.<UserIdEid>} eids
- * @param {{}} data object will be set with userId support values
- * @param {Array.<{key, value}>} paramMap
+ * creates props from userId eids list on data obj
+ * @param {Object} bidRequest
+ * @param {Object} data
  */
-function setUserId(source, eids, data, paramMap) {
-  /** @type {UserIdEid} */
-  const userId = find(eids, eid => eid.source === source);
-  if (userId) {
-    paramMap.forEach(paramMapping => {
-      const paramName = Object.keys(paramMapping)[0];
-      data[paramName] = paramMapping[paramName].map(paramPath => {
-        const paramValue = utils.deepAccess(userId, paramPath);
-        return Array.isArray(paramValue) ? paramValue.join(',') : paramValue;
-      }).join('^');
+function addUserIds(bidRequest, data) {
+  /**
+   * add userId to data
+   * @param {string} source is used to get the matching eid array item
+   * @param {UserIdEid[]} userIdEids eid array from the bid request object
+   * @param {Object} data sets the object that the user id properties will be added to
+   * @param {Array} paramMappings
+   */
+  function setUserId(source, userIdEids, data, paramMappings) {
+    const userIdEid = find(userIdEids, eid => eid.source === source);
+    if (userIdEid) {
+      paramMappings.forEach(paramMapping => {
+        const paramName = Object.keys(paramMapping)[0];
+        data[paramName] = paramMapping[paramName].map(paramPath => {
+          const paramValue = utils.deepAccess(userIdEid, paramPath);
+          return Array.isArray(paramValue) ? paramValue.join(',') : paramValue;
+        }).join('^');
+      });
+    }
+  }
+
+  /**
+   * @param {string} key
+   * @return {Object[]}
+   */
+  function getDefaultParamMap(key) {
+    return [{ [key]: ['uids.0.id', 'uids.0.atype'] }];
+  };
+
+  /**
+   * @param {Object} obj
+   * @return {Object[]}
+   */
+  function getParamMap(obj) {
+    return Object.keys(obj).map(key => {
+      return { [key]: obj[key] };
     });
+  };
+
+  if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
+    const PROP_ID = 'uids.0.id';
+    const PROP_ATYPE = 'uids.0.atype';
+
+    [
+      // britepoolId
+      {'britepool.com': getDefaultParamMap('eid_britepool.com')},
+
+      // criteo
+      {'criteo.com': getDefaultParamMap('eid_criteo.com')},
+
+      // haloId
+      {'audigent.com': getDefaultParamMap('eid_audigent.com')},
+
+      // id5Id
+      {'id5-sync.com': getDefaultParamMap('eid_id5-sync.com')},
+
+      // IDx
+      {'idx.lat': getDefaultParamMap('eid_idx.lat')},
+
+      // identityLink
+      {'liveramp.com': getParamMap({'x_liverampidl': [PROP_ID]})},
+
+      // intentIqId
+      {'intentiq.com': getDefaultParamMap('eid_intentiq.com')},
+
+      // liveIntentId
+      {'liveintent.com': getParamMap({
+        'tpid_liveintent.com': [PROP_ID],
+        'tg_v.LIseg': ['ext.segments']
+      })},
+
+      // lotamePanoramaId
+      {'crwdcntrl.net': getDefaultParamMap('eid_crwdcntrl.net')},
+
+      // merkleId
+      {'merkleinc.com': getDefaultParamMap('eid_merkleinc.com')},
+
+      // NetId
+      {'netid.de': getDefaultParamMap('eid_netid.de')},
+
+      // parrableId
+      {'parrable.com': getDefaultParamMap('eid_parrable.com')},
+
+      // pubCommonId
+      {'pubcid.org': getDefaultParamMap('eid_pubcid.org')},
+
+      // quantcastId
+      {'quantcast.com': getDefaultParamMap('eid_quantcast.com')},
+
+      // sharedid
+      {'sharedid.org': getParamMap({'eid_sharedid.org': [PROP_ID, PROP_ATYPE, 'uids.0.ext.third']})},
+
+      // unifiedId
+      {'adserver.org': getParamMap({'tpid_tdid': [PROP_ID]})},
+
+      // Verizon Media
+      {'verizonmedia.com': getDefaultParamMap('eid_verizonmedia.com')},
+
+      // zeotapIdPlus
+      {'zeotap.com': getDefaultParamMap('eid_zeotap.com')}
+
+    ].forEach(i => setUserId(Object.keys(i)[0], bidRequest.userIdAsEids, data, i[Object.keys(i)[0]]));
   }
 }
 
