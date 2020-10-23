@@ -71,7 +71,7 @@ You must also set a value to `auctionDelay` in the config's `realTimeData` objec
 
 ```javascript
 realTimeData = {
-  auctionDelay: 500,
+  auctionDelay: 100,
   ...
 };
 ```
