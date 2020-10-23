@@ -1162,18 +1162,6 @@ export function setUserIdParam(source, userIdEids, data, paramMappings) {
  * @param {Object} data
  */
 export function createUserIdParams(bidRequest, data) {
-  /**
-   * @param {Object} obj creates array item for each of the object keys
-   * @return {{userIdParam: string[]}[]}
-   */
-  function getArrayOfKeyValues(obj) {
-    return Object.keys(obj).map(key => {
-      return {
-        [key]: obj[key]
-      };
-    });
-  };
-
   if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
     const PROP_ID = 'uids.0.id';
     const PROP_ATYPE = 'uids.0.atype';
@@ -1181,63 +1169,69 @@ export function createUserIdParams(bidRequest, data) {
 
     [
       // britepoolId
-      {'britepool.com': getArrayOfKeyValues({'eid_britepool.com': DEFAULT_PROPS})},
+      {'britepool.com': {'eid_britepool.com': DEFAULT_PROPS}},
 
       // criteo
-      {'criteo.com': getArrayOfKeyValues({'eid_criteo.com': DEFAULT_PROPS})},
+      {'criteo.com': {'eid_criteo.com': DEFAULT_PROPS}},
 
       // haloId
-      {'audigent.com': getArrayOfKeyValues({'eid_audigent.com': DEFAULT_PROPS})},
+      {'audigent.com': {'eid_audigent.com': DEFAULT_PROPS}},
 
       // id5Id
-      {'id5-sync.com': getArrayOfKeyValues({'eid_id5-sync.com': DEFAULT_PROPS})},
+      {'id5-sync.com': {'eid_id5-sync.com': DEFAULT_PROPS}},
 
       // IDx
-      {'idx.lat': getArrayOfKeyValues({'eid_idx.lat': DEFAULT_PROPS})},
+      {'idx.lat': {'eid_idx.lat': DEFAULT_PROPS}},
 
       // identityLink
-      {'liveramp.com': getArrayOfKeyValues({'x_liverampidl': [PROP_ID]})},
+      {'liveramp.com': {'x_liverampidl': [PROP_ID]}},
 
       // intentIqId
-      {'intentiq.com': getArrayOfKeyValues({'eid_intentiq.com': DEFAULT_PROPS})},
+      {'intentiq.com': {'eid_intentiq.com': DEFAULT_PROPS}},
 
       // liveIntentId
-      {'liveintent.com': getArrayOfKeyValues({
+      {'liveintent.com': {
         'tpid_liveintent.com': [PROP_ID],
         'tg_v.LIseg': ['ext.segments']
-      })},
+      }},
 
       // lotamePanoramaId
-      {'crwdcntrl.net': getArrayOfKeyValues({'eid_crwdcntrl.net': DEFAULT_PROPS})},
+      {'crwdcntrl.net': {'eid_crwdcntrl.net': DEFAULT_PROPS}},
 
       // merkleId
-      {'merkleinc.com': getArrayOfKeyValues({'eid_merkleinc.com': DEFAULT_PROPS})},
+      {'merkleinc.com': {'eid_merkleinc.com': DEFAULT_PROPS}},
 
       // NetId
-      {'netid.de': getArrayOfKeyValues({'eid_netid.de': DEFAULT_PROPS})},
+      {'netid.de': {'eid_netid.de': DEFAULT_PROPS}},
 
       // parrableId
-      {'parrable.com': getArrayOfKeyValues({'eid_parrable.com': DEFAULT_PROPS})},
+      {'parrable.com': {'eid_parrable.com': DEFAULT_PROPS}},
 
       // pubCommonId
-      {'pubcid.org': getArrayOfKeyValues({'eid_pubcid.org': DEFAULT_PROPS})},
+      {'pubcid.org': {'eid_pubcid.org': DEFAULT_PROPS}},
 
       // quantcastId
-      {'quantcast.com': getArrayOfKeyValues({'eid_quantcast.com': DEFAULT_PROPS})},
+      {'quantcast.com': {'eid_quantcast.com': DEFAULT_PROPS}},
 
       // sharedid
-      {'sharedid.org': getArrayOfKeyValues({'eid_sharedid.org': [PROP_ID, PROP_ATYPE, 'uids.0.ext.third']})},
+      {'sharedid.org': {'eid_sharedid.org': [PROP_ID, PROP_ATYPE, 'uids.0.ext.third']}},
 
       // unifiedId
-      {'adserver.org': getArrayOfKeyValues({'tpid_tdid': [PROP_ID]})},
+      {'adserver.org': {'tpid_tdid': [PROP_ID]}},
 
       // Verizon Media
-      {'verizonmedia.com': getArrayOfKeyValues({'eid_verizonmedia.com': DEFAULT_PROPS})},
+      {'verizonmedia.com': {'eid_verizonmedia.com': DEFAULT_PROPS}},
 
       // zeotapIdPlus
-      {'zeotap.com': getArrayOfKeyValues({'eid_zeotap.com': DEFAULT_PROPS})}
+      {'zeotap.com': {'eid_zeotap.com': DEFAULT_PROPS}}
 
-    ].forEach(i => setUserIdParam(Object.keys(i)[0], bidRequest.userIdAsEids, data, i[Object.keys(i)[0]]));
+    ].forEach(i => {
+      const obj = i[Object.keys(i)[0]];
+      const kvs = Object.keys(obj).map(key => {
+        return { [key]: obj[key] };
+      });
+      setUserIdParam(Object.keys(i)[0], bidRequest.userIdAsEids, data, kvs);
+    });
   }
 }
 
