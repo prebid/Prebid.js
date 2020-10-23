@@ -25,16 +25,22 @@ pbjs.setConfig({
     }
 });
 ```
-Lastly, include the content's media ID and/or the player's ID in the matching AdUnit:
+Lastly, include the content's media ID and/or the player's ID in the matching AdUnit's `fpd.context.data`:
 
 ```javascript
 const adUnit = {
   code: '/19968336/prebid_native_example_1',
   ...
-  jwTargeting: {
-    waitForIt: true,
-    playerID: 'abcd',
-    mediaID: '1234'
+  fpd: {
+    context: {
+      data: {
+        jwTargeting: {
+          // Note: the following Ids are placeholders and should be replaced with your Ids.
+          playerID: 'abcd',
+          mediaID: '1234'
+        }
+      }
+    }
   }
 };
 
@@ -46,33 +52,23 @@ pbjs.que.push(function() {
 });
 ``` 
 ##Prefetching
-In order to prefetch targeting information for certain media, include the media IDs in the `jwplayerDataProvider` var:
+In order to prefetch targeting information for certain media, include the media IDs in the `jwplayerDataProvider` var and set `waitForIt` to `true`:
 
 ```javascript
 const jwplayerDataProvider = {
   name: "jwplayer",
+  waitForIt: true,
   params: {
     mediaIDs: ['abc', 'def', 'ghi', 'jkl']
   }
 };
 ```
 
-To ensure that the prefetched targeting information is added to your bid, we strongly suggest setting 
-`jwTargeting.waitForIt` to `true`. If the prefetch is still in progress at the time of the bid request, the auction will
-be delayed until the targeting information specific to the requested adUnits has been obtained.
-
-```javascript
-jwTargeting: {
-    waitForIt: true,
-    ...
-}
-```
-
 You must also set a value to `auctionDelay` in the config's `realTimeData` object 
 
 ```javascript
 realTimeData = {
-  auctionDelay: 1000,
+  auctionDelay: 500,
   ...
 };
 ```
