@@ -538,9 +538,7 @@ export const spec = {
         ['id5-sync.com', [{'eid_id5-sync.com': UID_PROPS}]], // id5Id
         ['intentiq.com', [{'eid_intentiq.com': UID_PROPS}]], // intentIqId
         ['sharedid.org', [{'eid_sharedid.org': UID_PROPS.concat(['uids.0.ext.third'])}]]// sharedid
-      ].forEach(i => {
-        supportUserId(i[0], bidRequest.userIdAsEids, data, i[1])
-      });
+      ].forEach(i => setUserId(i[0], bidRequest.userIdAsEids, data, i[1]));
     }
 
     // set ppuid value from config value
@@ -1162,14 +1160,13 @@ function partitionArray(array, size) {
 }
 
 /**
- * helper for passing userId values from eids
+ * add userId to data
  * @param {string} source eid source
  * @param {Array.<UserIdEid>} userIdAsEids
  * @param {{}} data object will be set with userId support values
  * @param {Array.<{key, value}>} propValueMap
- * @return {(undefined|UserIdEid)}
  */
-function supportUserId(source, userIdAsEids, data, propValueMap) {
+function setUserId(source, userIdAsEids, data, propValueMap) {
   /** @type {UserIdEid} */
   const userId = find(userIdAsEids, eid => eid.source === source);
   if (userId) {
@@ -1180,7 +1177,6 @@ function supportUserId(source, userIdAsEids, data, propValueMap) {
       }).join('^');
     });
   }
-  return userId;
 }
 
 var hasSynced = false;
