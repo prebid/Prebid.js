@@ -1164,14 +1164,6 @@ function addUserIds(bidRequest, data) {
   }
 
   /**
-   * @param {string} key
-   * @return {Object[]}
-   */
-  function getDefaultParamMap(key) {
-    return [{ [key]: ['uids.0.id', 'uids.0.atype'] }];
-  };
-
-  /**
    * @param {Object} obj
    * @return {Object[]}
    */
@@ -1184,28 +1176,29 @@ function addUserIds(bidRequest, data) {
   if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
     const PROP_ID = 'uids.0.id';
     const PROP_ATYPE = 'uids.0.atype';
+    const DEFAULT_PROPS = [PROP_ID, PROP_ATYPE];
 
     [
       // britepoolId
-      {'britepool.com': getDefaultParamMap('eid_britepool.com')},
+      {'britepool.com': getParamMap({'eid_britepool.com': DEFAULT_PROPS})},
 
       // criteo
-      {'criteo.com': getDefaultParamMap('eid_criteo.com')},
+      {'criteo.com': getParamMap({'eid_criteo.com': DEFAULT_PROPS})},
 
       // haloId
-      {'audigent.com': getDefaultParamMap('eid_audigent.com')},
+      {'audigent.com': getParamMap({'eid_audigent.com': DEFAULT_PROPS})},
 
       // id5Id
-      {'id5-sync.com': getDefaultParamMap('eid_id5-sync.com')},
+      {'id5-sync.com': getParamMap({'eid_id5-sync.com': DEFAULT_PROPS})},
 
       // IDx
-      {'idx.lat': getDefaultParamMap('eid_idx.lat')},
+      {'idx.lat': getParamMap({'eid_idx.lat': DEFAULT_PROPS})},
 
       // identityLink
       {'liveramp.com': getParamMap({'x_liverampidl': [PROP_ID]})},
 
       // intentIqId
-      {'intentiq.com': getDefaultParamMap('eid_intentiq.com')},
+      {'intentiq.com': getParamMap({'eid_intentiq.com': DEFAULT_PROPS})},
 
       // liveIntentId
       {'liveintent.com': getParamMap({
@@ -1214,22 +1207,22 @@ function addUserIds(bidRequest, data) {
       })},
 
       // lotamePanoramaId
-      {'crwdcntrl.net': getDefaultParamMap('eid_crwdcntrl.net')},
+      {'crwdcntrl.net': getParamMap({'eid_crwdcntrl.net': DEFAULT_PROPS})},
 
       // merkleId
-      {'merkleinc.com': getDefaultParamMap('eid_merkleinc.com')},
+      {'merkleinc.com': getParamMap({'eid_merkleinc.com': DEFAULT_PROPS})},
 
       // NetId
-      {'netid.de': getDefaultParamMap('eid_netid.de')},
+      {'netid.de': getParamMap({'eid_netid.de': DEFAULT_PROPS})},
 
       // parrableId
-      {'parrable.com': getDefaultParamMap('eid_parrable.com')},
+      {'parrable.com': getParamMap({'eid_parrable.com': DEFAULT_PROPS})},
 
       // pubCommonId
-      {'pubcid.org': getDefaultParamMap('eid_pubcid.org')},
+      {'pubcid.org': getParamMap({'eid_pubcid.org': DEFAULT_PROPS})},
 
       // quantcastId
-      {'quantcast.com': getDefaultParamMap('eid_quantcast.com')},
+      {'quantcast.com': getParamMap({'eid_quantcast.com': DEFAULT_PROPS})},
 
       // sharedid
       {'sharedid.org': getParamMap({'eid_sharedid.org': [PROP_ID, PROP_ATYPE, 'uids.0.ext.third']})},
@@ -1238,10 +1231,10 @@ function addUserIds(bidRequest, data) {
       {'adserver.org': getParamMap({'tpid_tdid': [PROP_ID]})},
 
       // Verizon Media
-      {'verizonmedia.com': getDefaultParamMap('eid_verizonmedia.com')},
+      {'verizonmedia.com': getParamMap({'eid_verizonmedia.com': DEFAULT_PROPS})},
 
       // zeotapIdPlus
-      {'zeotap.com': getDefaultParamMap('eid_zeotap.com')}
+      {'zeotap.com': getParamMap('eid_zeotap.com')}
 
     ].forEach(i => setUserId(Object.keys(i)[0], bidRequest.userIdAsEids, data, i[Object.keys(i)[0]]));
   }
