@@ -518,26 +518,45 @@ export const spec = {
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
     if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
-      const UID_PROPS = ['uids.0.id', 'uids.0.atype'];
+      const DEFAULT_UID_PROPS = ['uids.0.id', 'uids.0.atype'];
+
       [
-        ['liveintent.com', [{'tpid_liveintent.com': [UID_PROPS[0]]}, {'tg_v.LIseg': ['ext.segments']}]], // liveIntentId
-        ['adserver.org', [{'tpid_tdid': [UID_PROPS[0]]}]], // unifiedId
-        ['liveramp.com', [{'x_liverampidl': [UID_PROPS[0]]}]], // identityLink
-        ['pubcid.org', [{'eid_pubcid.org': UID_PROPS}]], // pubCommonId
-        ['criteo.com', [{'eid_criteo.com': UID_PROPS}]], // criteo
-        ['verizonmedia.com', [{'eid_verizonmedia.com': UID_PROPS}]], // Verizon Media
-        ['idx.lat', [{'eid_idx.lat': UID_PROPS}]], // IDx
-        ['quantcast.com', [{'eid_quantcast.com': UID_PROPS}]], // quantcastId
-        ['audigent.com', [{'eid_audigent.com': UID_PROPS}]], // haloId
-        ['zeotap.com', [{'eid_zeotap.com': UID_PROPS}]], // zeotapIdPlus
-        ['netid.de', [{'eid_netid.de': UID_PROPS}]], // NetId
-        ['merkleinc.com', [{'eid_merkleinc.com': UID_PROPS}]], // merkleId
-        ['crwdcntrl.net', [{'eid_crwdcntrl.net': UID_PROPS}]], // lotamePanoramaId
-        ['britepool.com', [{'eid_britepool.com': UID_PROPS}]], // britepoolId
-        ['parrable.com', [{'eid_parrable.com': UID_PROPS}]], // parrableId
-        ['id5-sync.com', [{'eid_id5-sync.com': UID_PROPS}]], // id5Id
-        ['intentiq.com', [{'eid_intentiq.com': UID_PROPS}]], // intentIqId
-        ['sharedid.org', [{'eid_sharedid.org': UID_PROPS.concat(['uids.0.ext.third'])}]]// sharedid
+        // liveIntentId
+        ['liveintent.com', [{'tpid_liveintent.com': [DEFAULT_UID_PROPS[0]]}, {'tg_v.LIseg': ['ext.segments']}]],
+        // unifiedId
+        ['adserver.org', [{'tpid_tdid': [DEFAULT_UID_PROPS[0]]}]],
+        // identityLink
+        ['liveramp.com', [{'x_liverampidl': [DEFAULT_UID_PROPS[0]]}]],
+        // pubCommonId
+        ['pubcid.org', [{'eid_pubcid.org': DEFAULT_UID_PROPS}]],
+        // criteo
+        ['criteo.com', [{'eid_criteo.com': DEFAULT_UID_PROPS}]],
+        // Verizon Media
+        ['verizonmedia.com', [{'eid_verizonmedia.com': DEFAULT_UID_PROPS}]],
+        // IDx
+        ['idx.lat', [{'eid_idx.lat': DEFAULT_UID_PROPS}]],
+        // quantcastId
+        ['quantcast.com', [{'eid_quantcast.com': DEFAULT_UID_PROPS}]],
+        // haloId
+        ['audigent.com', [{'eid_audigent.com': DEFAULT_UID_PROPS}]],
+        // zeotapIdPlus
+        ['zeotap.com', [{'eid_zeotap.com': DEFAULT_UID_PROPS}]],
+        // NetId
+        ['netid.de', [{'eid_netid.de': DEFAULT_UID_PROPS}]],
+        // merkleId
+        ['merkleinc.com', [{'eid_merkleinc.com': DEFAULT_UID_PROPS}]],
+        // lotamePanoramaId
+        ['crwdcntrl.net', [{'eid_crwdcntrl.net': DEFAULT_UID_PROPS}]],
+        // britepoolId
+        ['britepool.com', [{'eid_britepool.com': DEFAULT_UID_PROPS}]],
+        // parrableId
+        ['parrable.com', [{'eid_parrable.com': DEFAULT_UID_PROPS}]],
+        // id5Id
+        ['id5-sync.com', [{'eid_id5-sync.com': DEFAULT_UID_PROPS}]],
+        // intentIqId
+        ['intentiq.com', [{'eid_intentiq.com': DEFAULT_UID_PROPS}]],
+        // sharedid
+        ['sharedid.org', [{'eid_sharedid.org': DEFAULT_UID_PROPS.concat(['uids.0.ext.third'])}]]
       ].forEach(i => setUserId(i[0], bidRequest.userIdAsEids, data, i[1]));
     }
 
@@ -1162,18 +1181,19 @@ function partitionArray(array, size) {
 /**
  * add userId to data
  * @param {string} source eid source
- * @param {Array.<UserIdEid>} userIdAsEids
+ * @param {Array.<UserIdEid>} eids
  * @param {{}} data object will be set with userId support values
- * @param {Array.<{key, value}>} propValueMap
+ * @param {Array.<{key, value}>} paramMap
  */
-function setUserId(source, userIdAsEids, data, propValueMap) {
+function setUserId(source, eids, data, paramMap) {
   /** @type {UserIdEid} */
-  const userId = find(userIdAsEids, eid => eid.source === source);
+  const userId = find(eids, eid => eid.source === source);
   if (userId) {
-    propValueMap.forEach(i => {
-      data[Object.keys(i)[0]] = i[Object.keys(i)[0]].map(j => {
-        const val = utils.deepAccess(userId, j);
-        return Array.isArray(val) ? val.join(',') : val;
+    paramMap.forEach(paramMapping => {
+      const paramName = Object.keys(paramMapping)[0];
+      data[paramName] = paramMapping[paramName].map(paramPath => {
+        const paramValue = utils.deepAccess(userId, paramPath);
+        return Array.isArray(paramValue) ? paramValue.join(',') : paramValue;
       }).join('^');
     });
   }
