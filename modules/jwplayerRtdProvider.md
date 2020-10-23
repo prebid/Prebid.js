@@ -51,6 +51,9 @@ pbjs.que.push(function() {
     });
 });
 ``` 
+
+**Note**: You may also include `jwTargeting` information in the prebid config's `fpd.context.data`. Information provided in the adUnit will always supersede, and information in the config will be used as a fallback.
+ 
 ##Prefetching
 In order to prefetch targeting information for certain media, include the media IDs in the `jwplayerDataProvider` var and set `waitForIt` to `true`:
 
