@@ -164,6 +164,39 @@ describe('triplelift adapter', function () {
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
+        },
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480]
+            },
+            banner: {
+              sizes: [
+                [970, 250],
+                [1, 1]
+              ]
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
         }
       ];
 
@@ -228,6 +261,10 @@ describe('triplelift adapter', function () {
       expect(payload.imp[1].tagid).to.equal('insteam_test');
       expect(payload.imp[1].floor).to.equal(1.0);
       expect(payload.imp[1].video).to.exist.and.to.be.a('object');
+
+      expect(payload.imp[2]).to.not.have.property('video');
+      expect(payload.imp[2]).to.have.property('banner');
+      expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
     it('should add tdid to the payload if included', function () {
