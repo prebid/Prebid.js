@@ -1,7 +1,7 @@
 'use strict';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, ADPOD } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adhese';
 const GVLID = 553;
@@ -97,25 +97,16 @@ function adResponse(bid, ad) {
     adhese: {
       originData: adDetails.originData,
       origin: adDetails.origin,
-      originInstance: adDetails.originInstance,
+      originInstance: adDetails.originInstance
     }
   });
 
   if (bidResponse.mediaType === VIDEO) {
-    bidResponse.meta = {
-      primaryCatId: 'IAB2-10',
-      adServerCatId: 399
-    }
     bidResponse.vastXml = markup;
-    bidResponse.video = {
-      context: ADPOD,
-      durationSeconds: 30
-    }
   } else {
     const counter = ad.impressionCounter ? "<img src='" + ad.impressionCounter + "' style='height:1px; width:1px; margin: -1px -1px; display:none;'/>" : '';
     bidResponse.ad = markup + counter;
-  }  
-
+  }
   return bidResponse;
 }
 
@@ -202,8 +193,7 @@ function getAdDetails(ad) {
   if (isAdheseAd(ad)) {
     creativeId = ad.id;
     dealId = ad.orderId;
-    originData = { priority: ad.priority, orderProperty: ad.orderProperty, adFormat: ad.adFormat, adType: ad.adType, libId: ad.libId, adspaceId: ad.adspaceId, viewableImpressionCounter: ad.viewableImpressionCounter, slotId: ad.slotID, slotName: ad.slotName, advertiserId: ad.advertiserId, adId: ad.id
-  };
+    originData = { priority: ad.priority, orderProperty: ad.orderProperty, adFormat: ad.adFormat, adType: ad.adType, libId: ad.libId, adspaceId: ad.adspaceId, viewableImpressionCounter: ad.viewableImpressionCounter, slotId: ad.slotID, slotName: ad.slotName, advertiserId: ad.advertiserId, adId: ad.id };
   } else {
     creativeId = ad.origin + (ad.originInstance ? '-' + ad.originInstance : '');
     if (ad.originData) {
