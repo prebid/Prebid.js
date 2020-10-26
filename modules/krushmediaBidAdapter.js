@@ -16,7 +16,7 @@ function isBidResponseValid(bid) {
     case VIDEO:
       return Boolean(bid.vastUrl);
     case NATIVE:
-      return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
+      return Boolean(bid.native && bid.native.impressionTrackers);
     default:
       return false;
   }
@@ -40,8 +40,9 @@ export const spec = {
       location = winTop.location;
       utils.logMessage(e);
     };
-    let placements = [];
-    let request = {
+
+    const placements = [];
+    const request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
@@ -50,6 +51,7 @@ export const spec = {
       'page': location.pathname,
       'placements': placements
     };
+
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
@@ -58,29 +60,28 @@ export const spec = {
         request.gdpr = bidderRequest.gdprConsent
       }
     }
+
     const len = validBidRequests.length;
-
     for (let i = 0; i < len; i++) {
-      let bid = validBidRequests[i];
-      let sizes
-      if (bid.mediaTypes) {
-        if (bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
-          sizes = bid.mediaTypes[BANNER].sizes
-        } else if (bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
-          sizes = bid.mediaTypes[VIDEO].playerSize
-        }
-      }
-
-      placements.push({
+      const bid = validBidRequests[i];
+      const placement = {
         key: bid.params.key,
         bidId: bid.bidId,
-        sizes: sizes || [],
-        wPlayer: sizes ? sizes[0] : 0,
-        hPlayer: sizes ? sizes[1] : 0,
         traffic: bid.params.traffic || BANNER,
         schain: bid.schain || {},
-      });
+      };
+
+      if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
+        placement.sizes = bid.mediaTypes[BANNER].sizes;
+      } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
+        placement.wPlayer = bid.mediaTypes[VIDEO].playerSize[0];
+        placement.hPlayer = bid.mediaTypes[VIDEO].playerSize[1];
+      } else if (bid.mediaTypes && bid.mediaTypes[NATIVE]) {
+        placement.native = bid.mediaTypes[NATIVE];
+      }
+      placements.push(placement);
     }
+
     return {
       method: 'POST',
       url: AD_URL,

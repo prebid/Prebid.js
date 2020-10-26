@@ -49,6 +49,32 @@ Module that connects to krushmedia demand sources
                             }
                         }
                     ]
+                },
+                {
+                    code: 'addunit3',
+                    mediaTypes: {
+                        native: {
+                            title: {
+                                required: true
+                            },
+                            body: {
+                                required: true
+                            },
+                            icon: {
+                                required: true,
+                                size: [64, 64]
+                            }
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: 'krushmedia',
+                            params: {
+                                key: 0,
+                                traffic: 'native'
+                            }
+                        }
+                    ]
                 }
             ];
 ```

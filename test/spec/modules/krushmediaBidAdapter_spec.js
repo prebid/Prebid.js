@@ -1,11 +1,16 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/krushmediaBidAdapter.js';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 
 describe('KrushmediabBidAdapter', function () {
   const bid = {
     bidId: '23fhj33i987f',
     bidder: 'krushmedia',
+    mediaTypes: {
+      [BANNER]: {
+        sizes: [[300, 250]]
+      }
+    },
     params: {
       key: 783,
       traffic: BANNER
@@ -55,11 +60,12 @@ describe('KrushmediabBidAdapter', function () {
       expect(data.gdpr).to.not.exist;
       expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('key', 'bidId', 'traffic', 'sizes', 'hPlayer', 'wPlayer', 'schain');
+      expect(placement).to.have.keys('key', 'bidId', 'traffic', 'sizes', 'schain');
       expect(placement.key).to.equal(783);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal(BANNER);
       expect(placement.schain).to.be.an('object');
+      expect(placement.sizes).to.be.an('array');
     });
 
     it('Returns valid data for mediatype video', function () {
@@ -74,9 +80,37 @@ describe('KrushmediabBidAdapter', function () {
       expect(data).to.be.an('object');
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
+      expect(placement).to.have.keys('key', 'bidId', 'traffic', 'wPlayer', 'hPlayer', 'schain');
       expect(placement.traffic).to.equal(VIDEO);
       expect(placement.wPlayer).to.equal(playerSize[0]);
       expect(placement.hPlayer).to.equal(playerSize[1]);
+    });
+
+    it('Returns valid data for mediatype native', function () {
+      const native = {
+        title: {
+          required: true
+        },
+        body: {
+          required: true
+        },
+        icon: {
+          required: true,
+          size: [64, 64]
+        }
+      };
+
+      bid.mediaTypes = {};
+      bid.params.traffic = NATIVE;
+      bid.mediaTypes[NATIVE] = native;
+      serverRequest = spec.buildRequests([bid], bidderRequest);
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      let placement = data['placements'][0];
+      expect(placement).to.be.an('object');
+      expect(placement).to.have.keys('key', 'bidId', 'traffic', 'native', 'schain');
+      expect(placement.traffic).to.equal(NATIVE);
+      expect(placement.native).to.equal(native);
     });
 
     it('Returns data with gdprConsent and without uspConsent', function () {
