@@ -174,7 +174,7 @@ export const mwOpenLinkSubModule = {
       utils.logInfo('Consent string is required to generate or retrieve ID.');
       return;
       }
-      return await setID(configParams);
+      return setID(configParams);
     }
   };
   
