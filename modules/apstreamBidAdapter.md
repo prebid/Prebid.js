@@ -95,3 +95,17 @@ To disable DSU use config option:
         }
     });
 ```
+
+To set `test` and `publisherId` parameters globally use config options (it can be overrided if set in specific bid):
+
+```
+pbjs.setBidderConfig({
+    bidders: ["apstream"],
+    config: {
+        appstream: {
+            publisherId: '1234
+            test: true
+        }
+    }
+});
+```

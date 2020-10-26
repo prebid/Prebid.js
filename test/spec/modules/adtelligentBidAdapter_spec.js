@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/adtelligentBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
+import { deepClone } from 'src/utils.js';
 
 const EXPECTED_ENDPOINTS = [
   'https://ghb.adtelligent.com/v2/auction/',
@@ -9,7 +10,9 @@ const EXPECTED_ENDPOINTS = [
   'https://ghb2.adtelligent.com/v2/auction/',
   'https://ghb.adtelligent.com/v2/auction/'
 ];
-
+const aliasEP = {
+  appaloosa: 'https://hb.appaloosa.media/v2/auction/'
+};
 const DISPLAY_REQUEST = {
   'bidder': 'adtelligent',
   'params': {
@@ -248,6 +251,15 @@ describe('adtelligentBidAdapter', () => {
     it('rotates endpoints', () => {
       const bidReqUrls = [displayRequest[0], videoRequest[0], videoAndDisplayRequests[0], rotatingRequest[0]].map(br => br.url);
       expect(bidReqUrls).to.deep.equal(EXPECTED_ENDPOINTS);
+    })
+
+    it('makes correct host for aliases', () => {
+      for (const alias in aliasEP) {
+        const bidReq = deepClone(DISPLAY_REQUEST)
+        bidReq.bidder = alias;
+        const [bidderRequest] = spec.buildRequests([bidReq], { bidderCode: alias });
+        expect(bidderRequest.url).to.equal(aliasEP[alias]);
+      }
     })
 
     it('building requests as arrays', () => {

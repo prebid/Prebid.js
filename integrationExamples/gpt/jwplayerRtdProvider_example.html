@@ -12,6 +12,7 @@
       var adUnits = [{
         code: 'div-gpt-ad-1460505748561-0',
         jwTargeting: {
+          // Note: the following Ids are placeholders and should be replaced with your Ids.
           playerID: '123',
           mediaID: 'abc'
         },
@@ -32,7 +33,6 @@
 
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
-
     </script>
 
     <script>
@@ -45,9 +45,12 @@
       pbjs.que.push(function() {
         pbjs.setConfig({
           realTimeData: {
+            auctionDelay: 5000,
             dataProviders: [{
               name: "jwplayer",
+              waitForIt: true,
               params: {
+                // Note: the following media Ids are placeholders and should be replaced with your Ids.
                 mediaIDs: ['abc', 'def', 'ghi', 'jkl']
               }
             }]

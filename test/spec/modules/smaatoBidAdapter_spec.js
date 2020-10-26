@@ -291,6 +291,36 @@ const combinedBannerAndVideoBidRequest = {
   bidderWinsCount: 0
 };
 
+const inAppBidRequest = {
+  bidder: 'smaato',
+  params: {
+    publisherId: 'publisherId',
+    adspaceId: 'adspaceId',
+    app: {
+      ifa: 'aDeviceId',
+      geo: {
+        lat: 33.3,
+        lon: -88.8
+      }
+    }
+  },
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 50]]
+    }
+  },
+  adUnitCode: '/19968336/header-bid-tag-0',
+  transactionId: 'transactionId',
+  sizes: [[300, 50]],
+  bidId: 'bidId',
+  bidderRequestId: 'bidderRequestId',
+  auctionId: 'auctionId',
+  src: 'client',
+  bidRequestsCount: 1,
+  bidderRequestsCount: 1,
+  bidderWinsCount: 0
+};
+
 describe('smaatoBidAdapterTest', () => {
   describe('isBidRequestValid', () => {
     it('has valid params', () => {
@@ -462,6 +492,27 @@ describe('smaatoBidAdapterTest', () => {
     });
   });
 
+  describe('in-app requests', () => {
+    it('add geo and ifa info to device object', () => {
+      let req = JSON.parse(spec.buildRequests([inAppBidRequest], defaultBidderRequest).data);
+      expect(req.device.geo).to.deep.equal({'lat': 33.3, 'lon': -88.8});
+      expect(req.device.ifa).to.equal('aDeviceId');
+    });
+    it('add only ifa to device object', () => {
+      let inAppBidRequestWithoutGeo = utils.deepClone(inAppBidRequest);
+      delete inAppBidRequestWithoutGeo.params.app.geo
+      let req = JSON.parse(spec.buildRequests([inAppBidRequestWithoutGeo], defaultBidderRequest).data);
+
+      expect(req.device.geo).to.not.exist;
+      expect(req.device.ifa).to.equal('aDeviceId');
+    });
+    it('add no specific device info if param does not exist', () => {
+      let req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+      expect(req.device.geo).to.not.exist;
+      expect(req.device.ifa).to.not.exist;
+    });
+  });
+
   describe('interpretResponse', () => {
     it('single image reponse', () => {
       const bids = spec.interpretResponse(openRtbBidResponse(ADTYPE_IMG), request);
@@ -501,5 +552,11 @@ describe('smaatoBidAdapterTest', () => {
       expect(bids[0].ttl).to.equal(400);
       clock.restore();
     });
+    it('uses net revenue flag send from server', () => {
+      let resp = openRtbBidResponse(ADTYPE_IMG);
+      resp.body.seatbid[0].bid[0].ext = {net: false};
+      const bids = spec.interpretResponse(resp, request);
+      expect(bids[0].netRevenue).to.equal(false);
+    })
   });
 });
