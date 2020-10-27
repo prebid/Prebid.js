@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec} from 'modules/aolBidAdapter.js';
-import {config} from 'src/config.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 const DEFAULT_AD_CONTENT = '<script>logInfo(\'ad\');</script>';
 
@@ -80,6 +80,33 @@ describe('AolAdapter', function () {
   const NEXAGE_URL = 'https://c2shb.ssp.yahoo.com/bidRequest?';
   const ONE_DISPLAY_TTL = 60;
   const ONE_MOBILE_TTL = 3600;
+  const SUPPORTED_USER_ID_SOURCES = {
+    'adserver.org': '100',
+    'criteo.com': '200',
+    'id5-sync.com': '300',
+    'intentiq.com': '400',
+    'liveintent.com': '500',
+    'quantcast.com': '600',
+    'verizonmedia.com': '700',
+    'liveramp.com': '800'
+  };
+
+  const USER_ID_DATA = {
+    criteoId: SUPPORTED_USER_ID_SOURCES['criteo.com'],
+    vmuid: SUPPORTED_USER_ID_SOURCES['verizonmedia.com'],
+    idl_env: SUPPORTED_USER_ID_SOURCES['liveramp.com'],
+    lipb: {
+      lipbid: SUPPORTED_USER_ID_SOURCES['liveintent.com'],
+      segments: ['100', '200']
+    },
+    tdid: SUPPORTED_USER_ID_SOURCES['adserver.org'],
+    id5id: {
+      uid: SUPPORTED_USER_ID_SOURCES['id5-sync.com'],
+      ext: {foo: 'bar'}
+    },
+    intentIqId: SUPPORTED_USER_ID_SOURCES['intentiq.com'],
+    quantcastId: SUPPORTED_USER_ID_SOURCES['quantcast.com']
+  };
 
   function createCustomBidRequest({bids, params} = {}) {
     var bidderRequest = getDefaultBidRequest();
@@ -463,6 +490,18 @@ describe('AolAdapter', function () {
           '&param1=val1&param2=val2&param3=val3&param4=val4');
       });
 
+      for (const [source, idValue] of Object.entries(SUPPORTED_USER_ID_SOURCES)) {
+        it(`should set the user ID query param for ${source}`, function () {
+          let bidRequest = createCustomBidRequest({
+            params: getNexageGetBidParams()
+          });
+          bidRequest.bids[0].userId = {};
+          bidRequest.bids[0].userIdAsEids = createEidsArray(USER_ID_DATA);
+          let [request] = spec.buildRequests(bidRequest.bids);
+          expect(request.url).to.contain(`&eid${source}=${encodeURIComponent(idValue)}`);
+        });
+      }
+
       it('should return request object for One Mobile POST endpoint when POST configuration is present', function () {
         let bidConfig = getNexagePostBidParams();
         let bidRequest = createCustomBidRequest({
@@ -577,6 +616,22 @@ describe('AolAdapter', function () {
         user: {
           ext: {
             consent: 'someEUConsent'
+          }
+        }
+      });
+    });
+
+    it('returns the bid object with eid array populated with PB set eids', () => {
+      let userIdBid = Object.assign({
+        userId: {}
+      }, bid);
+      userIdBid.userIdAsEids = createEidsArray(USER_ID_DATA);
+      expect(spec.buildOpenRtbRequestData(userIdBid)).to.deep.equal({
+        id: 'bid-id',
+        imp: [],
+        user: {
+          ext: {
+            eids: userIdBid.userIdAsEids
           }
         }
       });

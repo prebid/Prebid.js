@@ -119,7 +119,8 @@ function _buildPostBody(bidRequests) {
       tagid: bidRequest.params.inventoryCode,
       floor: _getFloor(bidRequest)
     };
-    if (bidRequest.mediaTypes.video) {
+    // remove the else to support multi-imp
+    if (_isInstreamBidRequest(bidRequest)) {
       imp.video = _getORTBVideo(bidRequest);
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
@@ -145,6 +146,16 @@ function _buildPostBody(bidRequests) {
     data.ext = ext;
   }
   return data;
+}
+
+function _isInstreamBidRequest(bidRequest) {
+  if (!bidRequest.mediaTypes.video) return false;
+  if (!bidRequest.mediaTypes.video.context) return false;
+  if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 function _getORTBVideo(bidRequest) {

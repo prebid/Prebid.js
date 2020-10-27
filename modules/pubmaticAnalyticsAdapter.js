@@ -167,6 +167,23 @@ function getDomainFromUrl(url) {
   return a.hostname;
 }
 
+function getDevicePlatform() {
+  var deviceType = 3;
+  try {
+    var ua = navigator.userAgent;
+    if (ua && utils.isStr(ua) && ua.trim() != '') {
+      ua = ua.toLowerCase().trim();
+      var isMobileRegExp = new RegExp('(mobi|tablet|ios).*');
+      if (ua.match(isMobileRegExp)) {
+        deviceType = 2;
+      } else {
+        deviceType = 1;
+      }
+    }
+  } catch (ex) {}
+  return deviceType;
+}
+
 function getValueForKgpv(bid, adUnitId) {
   if (bid.params.regexPattern) {
     return bid.params.regexPattern;
@@ -233,6 +250,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
+  outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = (function() {
     var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
     if (testGroupId <= 15 && testGroupId >= 0) {
