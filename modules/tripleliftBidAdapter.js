@@ -292,7 +292,6 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.advertiser_name) {
       bidResponse.meta.advertiserName = bid.advertiser_name;
-      bidResponse.meta.advertiserDomains = [bid.advertiser_name];
     }
   };
   return bidResponse;

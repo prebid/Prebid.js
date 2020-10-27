@@ -748,14 +748,6 @@ describe('triplelift adapter', function () {
       expect(result[1].meta).to.not.have.key('advertiserName');
     });
 
-    it('should include the advertiser domain in the meta field if available', function () {
-      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
-      expect(result[0].meta.advertiserDomains[0]).to.equal('fake advertiser name');
-      expect(result[0].meta.advertiserDomains.length).to.equal(1);
-      expect(result[1].meta).to.not.have.key('advertiserDomains');
-    });
-  });
-
   describe('getUserSyncs', function() {
     let expectedIframeSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
     let expectedImageSyncUrl = 'https://eb2.3lift.com/sync?px=1&src=prebid&gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
