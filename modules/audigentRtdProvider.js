@@ -19,6 +19,8 @@ const SUBMODULE_NAME = 'audigent';
 const HALOID_LOCAL_NAME = 'auHaloId';
 const SEG_LOCAL_NAME = '__adgntseg';
 
+let segmentMap = {};
+
 /**
  * decorate adUnits with segment data
  * @param {adUnit[]} adUnits
@@ -29,6 +31,9 @@ function addSegmentData(adUnits, data) {
     if (adUnit.hasOwnProperty('bids')) {
       adUnit.bids.forEach(bid => {
         bid.audigent_segments = data;
+        if (segmentMap[bid.bidder] && data[bid.bidder]) {
+          segmentMap[bid.bidder](bid, data[bid.bidder]);
+        }
       })
     }
   })
@@ -46,13 +51,15 @@ function addSegmentData(adUnits, data) {
 function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
-  let jsonData = storage.getDataFromLocalStorage(SEG_LOCAL_NAME);
-  if (jsonData) {
-    let data = JSON.parse(jsonData);
-    if (data.audigent_segments) {
-      addSegmentData(adUnits, data.audigent_segments);
-      onDone();
-      return;
+  if (config.segmentCache) {
+    let jsonData = storage.getDataFromLocalStorage(SEG_LOCAL_NAME);
+    if (jsonData) {
+      let data = JSON.parse(jsonData);
+      if (data.audigent_segments) {
+        addSegmentData(adUnits, data.audigent_segments);
+        onDone();
+        return;
+      }
     }
   }
 
@@ -89,9 +96,9 @@ function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
  * @param {Object} userIds
  */
 function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
-  let reqParams = {}
+  let reqParams = {};
   if (typeof config == 'object' && config != null && Object.keys(config).length > 0) {
-    reqParams = config.params
+    reqParams = config.params;
   }
 
   const url = `https://seg.halo.ad.gt/api/v1/rtb_segments`;
@@ -132,6 +139,9 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
  * @return {boolean}
  */
 export function init(config) {
+  if (config.segmentMap) {
+    segmentMap = config.segmentMap;
+  }
   return true;
 }
 

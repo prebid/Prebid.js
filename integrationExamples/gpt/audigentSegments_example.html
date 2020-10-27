@@ -1,6 +1,7 @@
 <html>
 <head>
     <script>
+
         (function(window, document) {
             if (!window.__cmp) {
                 window.__cmp = (function() {
@@ -90,11 +91,9 @@
                 },
                 bids: [
                     {
-                        bidder: 'rubicon',
+                        bidder: 'appnexus',
                         params: {
-                            accountId: '1001',
-                            siteId: '113932',
-                            zoneId: '535510'
+                            placementId: 13144370
                         }
                     }
                 ]
@@ -108,10 +107,24 @@
 
     <script>
         var googletag = googletag || {};
+        var testAuctionDelay = 1000;
         googletag.cmd = googletag.cmd || [];
         googletag.cmd.push(function() {
             googletag.pubads().disableInitialLoad();
         });
+
+        var bidSegmentMappers = {
+            appnexus: function(bid, segments) {
+                if (!bid.params) {
+                    bid.params = {}
+                }
+                if (!bid.params.user) {
+                    bid.params.user = {}
+                }
+
+                bid.params.user.segments = segments;
+            }
+        }
 
         pbjs.que.push(function() {
             pbjs.setConfig({
@@ -232,11 +245,19 @@
                     auctionDelay: 1000
                 },
                 realTimeData: {
-                    auctionDelay: 1000,
-                    dataProviders: [{name: "audigent", waitForIt: true}]
+                    auctionDelay: testAuctionDelay, // lower in real scenario to meet publisher spec
+                    dataProviders: [
+                        {
+                            name: "audigent",
+                            waitForIt: true,
+                            segmentMap: bidSegmentMappers,
+                            segmentCache: false
+                        }
+                    ]
                 }
             });
             pbjs.addAdUnits(adUnits);
+
             pbjs.requestBids({bidsBackHandler: sendAdserverRequest});
         });
 

@@ -18,48 +18,46 @@ Compile the audigent RTD module into your Prebid build:
 
 `gulp build --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,rubiconBidAdapter`
 
-Configure Prebid to add the Audigent RTD Segment Handler:
-```
-pbjs.setConfig(
-	...
-    realTimeData: {
-        auctionDelay: 1000,
-        dataProviders: [
-        	{
-        		name: "audigent",
-        		waitForIt: true
-        	}
-        ]
-    }
-    ...
-}
-```
 
-Audigent segments will then be attached to each bid request objects in
-`bid.realTimeData.audigent_segments`
-
-The format of the segments is a per-SSP mapping:
+The format of returned segments is a segment type mapping.
 
 ```
 {
-	'appnexus': ['anseg1', 'anseg2'],
-	'google': ['gseg1', 'gseg2']
+    'appnexus': ['anseg1', 'anseg2'],
+    'pubmatic': ['pseg1', 'pseg2'],
+    'spotx': ['sseg1', 'sseg2']
 }
 ```
 
-If a given SSP's API backend supports segment fields, they can then be
-attached prior to the bid request being sent:
+Define a function that will map segment types to a specific bidder's request
+format by name. Supply this function to the Audigent data provider as
+segmentMapper. In this example, we add segments to an appnexus bid request
+in the format accepted by their adapter.
 
 ```
-pbjs.requestBids({bidsBackHandler: addAudigentSegments});
+var bidSegmentMappers = {
+    appnexus: function(bid, segments) {
+        if (bid.params.user.segments) {
+            existing_segments = bid.params.user.segments;
+        }
+        bid.params.user.segments = existing_segments.concat(segments);
+    }
+}
 
-function addAudigentSegments() {
-	for (i = 0; i < adUnits.length; i++) {
-		let adUnit = adUnits[i];
-		for (j = 0; j < adUnit.bids.length; j++) {
-			adUnit.bids[j].userId.lipb.segments = adUnit.bids[j].audigent_segments['rubicon'];
-		}
-	}
+pbjs.setConfig(
+	...
+    realTimeData: {
+        auctionDelay: auctionDelay,
+        dataProviders: [
+            {
+                name: "audigent",
+                waitForIt: true,
+                segmentMap: bidSegmentMappers,
+                segmentCache: false
+            }
+        ]
+    }
+    ...
 }
 ```
 
