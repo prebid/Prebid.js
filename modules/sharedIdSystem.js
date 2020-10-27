@@ -8,11 +8,15 @@
 import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const MODULE_NAME = 'sharedId';
 const ID_SVC = 'https://id.sharedid.org/id';
 const DEFAULT_24_HOURS = 86400;
 const OPT_OUT_VALUE = '00000000000000000000000000';
+const COOKIE = 'cookie';
+const LOCAL_STORAGE = 'html5';
+const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 // These values should NEVER change. If
 // they do, we're no longer making ulids!
 const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford's Base32
@@ -20,7 +24,10 @@ const ENCODING_LEN = ENCODING.length;
 const TIME_MAX = Math.pow(2, 48) - 1;
 const TIME_LEN = 10;
 const RANDOM_LEN = 16;
+
 const id = factory();
+const storage = getStorageManager(null, MODULE_NAME);
+
 /**
  * Constructs cookie value
  * @param value
@@ -36,6 +43,25 @@ function constructCookieValue(value, needsSync) {
   }
   utils.logInfo('SharedId: cookie Value: ' + JSON.stringify(cookieValue));
   return cookieValue;
+}
+
+/**
+ * Deletes sharedId data from storage
+ * @param config Storage config
+ */
+function deleteData(config) {
+  try {
+    const key = config.storage.name;
+    if (config.storage.type === COOKIE) {
+      if (storage.cookiesAreEnabled()) {
+        storage.setCookie(key, '', EXPIRED_COOKIE_DATE);
+      }
+    } else if (config.storage.type === LOCAL_STORAGE) {
+      storage.removeDataFromLocalStorage(key);
+    }
+  } catch (error) {
+    utils.logError(error);
+  }
 }
 
 /**
@@ -79,17 +105,22 @@ function timeDifferenceInSeconds(date1, date2) {
  * id generation call back
  * @param result
  * @param callback
+ * @param config storage config
  * @returns {{success: success, error: error}}
  */
-function idGenerationCallback(callback) {
+function idGenerationCallback(callback, config) {
   return {
     success: function (responseBody) {
       let value = {};
       if (responseBody) {
         try {
-          let responseObj = JSON.parse(responseBody);
-          utils.logInfo('SharedId: Generated SharedId: ' + responseObj.sharedId);
-          value = constructCookieValue(responseObj.sharedId, false);
+          const responseObj = JSON.parse(responseBody);
+          if (responseObj.sharedId !== OPT_OUT_VALUE) {
+            utils.logInfo('SharedId: Generated SharedId: ' + responseObj.sharedId);
+            value = constructCookieValue(responseObj.sharedId, false);
+          } else {
+            deleteData(config);
+          }
         } catch (error) {
           utils.logError(error);
         }
@@ -140,15 +171,15 @@ function existingIdCallback(storedId, callback) {
 function encodeId(value) {
   const result = {};
   const sharedId = (value && typeof value['id'] === 'string') ? value['id'] : undefined;
-  if (sharedId == OPT_OUT_VALUE) {
+  if (sharedId === OPT_OUT_VALUE) {
     return undefined;
   }
   if (sharedId) {
     const bidIds = {
       id: sharedId,
-    }
+    };
     const ns = (value && typeof value['ns'] === 'boolean') ? value['ns'] : undefined;
-    if (ns == undefined) {
+    if (ns === undefined) {
       bidIds.third = sharedId;
     }
     result.sharedid = bidIds;
@@ -160,7 +191,7 @@ function encodeId(value) {
 
 /**
  * the factory to generate unique identifier based on time and current pseudorandom number
- * @param {string} the current pseudorandom number generator
+ * @param {string} currPrng current pseudorandom number generator
  * @returns {function(*=): *}
  */
 function factory(currPrng) {
@@ -178,7 +209,7 @@ function factory(currPrng) {
 /**
  * creates and logs the error message
  * @function
- * @param {string} error message
+ * @param {string} message error message
  * @returns {Error}
  */
 function createError(message) {
@@ -190,7 +221,7 @@ function createError(message) {
 
 /**
  * gets a a random charcter from generated pseudorandom number
- * @param {string} the generated pseudorandom number
+ * @param {string} prng generated pseudorandom number
  * @returns {string}
  */
 function randomChar(prng) {
@@ -207,7 +238,7 @@ function randomChar(prng) {
  * @param len
  * @returns {string} encoded time.
  */
-function encodeTime (now, len) {
+function encodeTime(now, len) {
   if (isNaN(now)) {
     throw new Error(now + ' must be a number');
   }
@@ -246,7 +277,7 @@ function encodeTime (now, len) {
  * @param prng
  * @returns {string}
  */
-function encodeRandom (len, prng) {
+function encodeRandom(len, prng) {
   let str = '';
   for (; len > 0; len--) {
     str = randomChar(prng) + str;
@@ -257,13 +288,10 @@ function encodeRandom (len, prng) {
 /**
  * detects the pseudorandom number generator and generates the random number
  * @function
- * @param {string} error message
  * @returns {string} a random number
  */
-function detectPrng(root) {
-  if (!root) {
-    root = typeof window !== 'undefined' ? window : null;
-  }
+function detectPrng() {
+  const root = typeof window !== 'undefined' ? window : null;
   const browserCrypto = root && (root.crypto || root.msCrypto);
   if (browserCrypto) {
     return () => {
@@ -302,7 +330,7 @@ export const sharedIdSubmodule = {
   getId(config) {
     const resp = function (callback) {
       utils.logInfo('SharedId: Sharedid doesnt exists, new cookie creation');
-      ajax(ID_SVC, idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
+      ajax(ID_SVC, idGenerationCallback(callback, config), undefined, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};
   },
