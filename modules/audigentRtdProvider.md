@@ -16,7 +16,7 @@ the bid request cycle.
 
 Compile the audigent RTD module into your Prebid build:
 
-`gulp build --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,rubiconBidAdapter`
+`gulp build --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,appnexusBidAdapter`
 
 
 The format of returned segments is a segment type mapping.
@@ -65,7 +65,7 @@ pbjs.setConfig(
 
 To view an example of available segments returned by Audigent's backends:
 
-`gulp serve --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,rubiconBidAdapter`
+`gulp serve --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,appnexusBidAdapter`
 
 and then point your browser at:
 
