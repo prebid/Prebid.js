@@ -99,15 +99,17 @@ export const spec = {
   },
   onBidWon: function(bid) {
     if (!bid.nurl) { return }
+    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm
+    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
-      bid.cpm
+      winCpm
     ).replace(
       /\$\{AUCTION_IMP_ID\}/,
       bid.requestId
     ).replace(
       /\$\{AUCTION_CURRENCY\}/,
-      bid.currency
+      winCurr
     ).replace(
       /\$\{AUCTION_ID\}/,
       bid.auctionId

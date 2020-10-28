@@ -299,6 +299,15 @@ describe('triplelift adapter', function () {
       const { data: payload } = request;
       expect(payload.ext).to.deep.equal(undefined);
     });
+    it('should get floor from floors module if available', function() {
+      const floorInfo = {
+        currency: 'USD',
+        floor: 1.99
+      };
+      bidRequests[0].getFloor = () => floorInfo;
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[0].floor).to.equal(1.99);
+    });
   });
 
   describe('interpretResponse', function () {

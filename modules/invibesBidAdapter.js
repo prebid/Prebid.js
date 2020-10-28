@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-const storage = getStorageManager();
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -14,8 +13,11 @@ const CONSTANTS = {
   INVIBES_VENDOR_ID: 436
 };
 
+const storage = getStorageManager(CONSTANTS.INVIBES_VENDOR_ID);
+
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
+  gvlid: CONSTANTS.INVIBES_VENDOR_ID,
   /**
    * @param {object} bid
    * @return boolean
@@ -364,11 +366,68 @@ function acceptPostMessage(e) {
 }
 
 function readGdprConsent(gdprConsent) {
-  if (gdprConsent && gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents) {
-    return !!gdprConsent.vendorData.vendorConsents[CONSTANTS.INVIBES_VENDOR_ID.toString(10)] === true ? 2 : -2;
+  if (gdprConsent && gdprConsent.vendorData) {
+    if (!gdprConsent.vendorData.gdprApplies || gdprConsent.vendorData.hasGlobalConsent) {
+      return 2;
+    }
+
+    let purposeConsents = getPurposeConsents(gdprConsent.vendorData);
+
+    if (purposeConsents == null) { return 0; }
+    let properties = Object.keys(purposeConsents);
+    let purposeConsentsCounter = getPurposeConsentsCounter(gdprConsent.vendorData);
+
+    if (properties.length < purposeConsentsCounter) {
+      return 0;
+    }
+
+    for (let i = 0; i < purposeConsentsCounter; i++) {
+      if (!purposeConsents[properties[i]] || purposeConsents[properties[i]] === 'false') { return 0; }
+    }
+
+    let vendorConsents = getVendorConsents(gdprConsent.vendorData);
+    if (vendorConsents == null || vendorConsents[CONSTANTS.INVIBES_VENDOR_ID.toString(10)] == null) {
+      return 4;
+    }
+
+    if (vendorConsents[CONSTANTS.INVIBES_VENDOR_ID.toString(10)] === false) { return 0; }
+
+    return 2;
   }
 
   return 0;
+}
+
+function getPurposeConsentsCounter(vendorData) {
+  if (vendorData.purpose && vendorData.purpose.consents) {
+    return 10;
+  }
+
+  return 5;
+}
+
+function getPurposeConsents(vendorData) {
+  if (vendorData.purpose && vendorData.purpose.consents) {
+    return vendorData.purpose.consents;
+  }
+
+  if (vendorData.purposeConsents) {
+    return vendorData.purposeConsents;
+  }
+
+  return null;
+}
+
+function getVendorConsents(vendorData) {
+  if (vendorData.vendor && vendorData.vendor.consents) {
+    return vendorData.vendor.consents;
+  }
+
+  if (vendorData.vendorConsents) {
+    return vendorData.vendorConsents;
+  }
+
+  return null;
 }
 
 const ivLogger = initLogger();

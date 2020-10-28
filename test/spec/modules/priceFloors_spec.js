@@ -14,11 +14,13 @@ import {
   fieldMatchingFunctions,
   allowedFields
 } from 'modules/priceFloors.js';
+import events from 'src/events.js';
 
 describe('the price floors module', function () {
   let logErrorSpy;
   let logWarnSpy;
   let sandbox;
+  let clock;
   const basicFloorData = {
     modelVersion: 'basic model',
     currency: 'USD',
@@ -58,12 +60,14 @@ describe('the price floors module', function () {
     };
   }
   beforeEach(function() {
+    clock = sinon.useFakeTimers();
     sandbox = sinon.sandbox.create();
     logErrorSpy = sinon.spy(utils, 'logError');
     logWarnSpy = sinon.spy(utils, 'logWarn');
   });
 
   afterEach(function() {
+    clock.restore();
     handleSetFloorsConfig({enabled: false});
     sandbox.restore();
     utils.logError.restore();
@@ -288,17 +292,10 @@ describe('the price floors module', function () {
       });
     };
     let fakeFloorProvider;
-    let clock;
     let actualAllowedFields = allowedFields;
     let actualFieldMatchingFunctions = fieldMatchingFunctions;
     const defaultAllowedFields = [...allowedFields];
     const defaultMatchingFunctions = {...fieldMatchingFunctions};
-    before(function () {
-      clock = sinon.useFakeTimers();
-    });
-    after(function () {
-      clock.restore();
-    });
     beforeEach(function() {
       fakeFloorProvider = sinon.fakeServer.create();
     });
@@ -314,7 +311,13 @@ describe('the price floors module', function () {
         data: undefined
       });
       runStandardAuction();
-      validateBidRequests(false, undefined);
+      validateBidRequests(false, {
+        skipped: true,
+        modelVersion: undefined,
+        location: undefined,
+        skipRate: 0,
+        fetchStatus: undefined
+      });
     });
     it('should use adUnit level data if not setConfig or fetch has occured', function () {
       handleSetFloorsConfig({
@@ -344,6 +347,8 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'adUnit Model Version',
         location: 'adUnit',
+        skipRate: 0,
+        fetchStatus: undefined
       });
     });
     it('bidRequests should have getFloor function and flooring meta data when setConfig occurs', function () {
@@ -353,6 +358,136 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
+      });
+    });
+    it('should take the right skipRate depending on input', function () {
+      // first priority is data object
+      sandbox.stub(Math, 'random').callsFake(() => 0.99);
+      let inputFloors = {
+        ...basicFloorConfig,
+        skipRate: 10,
+        data: {
+          ...basicFloorData,
+          skipRate: 50
+        }
+      };
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 50,
+        fetchStatus: undefined
+      });
+
+      // if that does not exist uses topLevel skipRate setting
+      delete inputFloors.data.skipRate;
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 10,
+        fetchStatus: undefined
+      });
+
+      // if that is not there defaults to zero
+      delete inputFloors.skipRate;
+      handleSetFloorsConfig(inputFloors);
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
+      });
+    });
+    it('should randomly pick a model if floorsSchemaVersion is 2', function () {
+      let inputFloors = {
+        ...basicFloorConfig,
+        data: {
+          floorsSchemaVersion: 2,
+          currency: 'USD',
+          modelGroups: [
+            {
+              modelVersion: 'model-1',
+              modelWeight: 10,
+              schema: {
+                delimiter: '|',
+                fields: ['mediaType']
+              },
+              values: {
+                'banner': 1.0,
+                '*': 2.5
+              }
+            }, {
+              modelVersion: 'model-2',
+              modelWeight: 40,
+              schema: {
+                delimiter: '|',
+                fields: ['size']
+              },
+              values: {
+                '300x250': 1.0,
+                '*': 2.5
+              }
+            }, {
+              modelVersion: 'model-3',
+              modelWeight: 50,
+              schema: {
+                delimiter: '|',
+                fields: ['domain']
+              },
+              values: {
+                'www.prebid.org': 1.0,
+                '*': 2.5
+              }
+            }
+          ]
+        }
+      };
+      handleSetFloorsConfig(inputFloors);
+
+      // stub random to give us wanted vals
+      let randValue;
+      sandbox.stub(Math, 'random').callsFake(() => randValue);
+
+      // 0 - 10 should use first model
+      randValue = 0.05;
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'model-1',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
+      });
+
+      // 11 - 50 should use second model
+      randValue = 0.40;
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'model-2',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
+      });
+
+      // 51 - 100 should use third model
+      randValue = 0.75;
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'model-3',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
       });
     });
     it('should not overwrite previous data object if the new one is bad', function () {
@@ -378,6 +513,8 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined
       });
     });
     it('should dynamically add new schema fileds and functions if added via setConfig', function () {
@@ -453,6 +590,8 @@ describe('the price floors module', function () {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: 'timeout'
       });
       fakeFloorProvider.respond();
     });
@@ -482,10 +621,71 @@ describe('the price floors module', function () {
       expect(exposedAdUnits).to.not.be.undefined;
 
       // the exposedAdUnits should be from the fetch not setConfig level data
+      // and fetchStatus is success since fetch worked
       validateBidRequests(true, {
         skipped: false,
         modelVersion: 'fetch model name',
         location: 'fetch',
+        skipRate: 0,
+        fetchStatus: 'success'
+      });
+    });
+    it('it should correctly overwrite skipRate with fetch skipRate', function () {
+      // so floors does not skip
+      sandbox.stub(Math, 'random').callsFake(() => 0.99);
+      // init the fake server with response stuff
+      let fetchFloorData = {
+        ...basicFloorData,
+        modelVersion: 'fetch model name', // change the model name
+      };
+      fetchFloorData.skipRate = 95;
+      fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
+
+      // run setConfig indicating fetch
+      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+
+      // floor provider should be called
+      expect(fakeFloorProvider.requests.length).to.equal(1);
+      expect(fakeFloorProvider.requests[0].url).to.equal('http://www.fakeFloorProvider.json');
+
+      // start the auction it should delay and not immediately call `continueAuction`
+      runStandardAuction();
+
+      // exposedAdUnits should be undefined if the auction has not continued
+      expect(exposedAdUnits).to.be.undefined;
+
+      // make the fetch respond
+      fakeFloorProvider.respond();
+      expect(exposedAdUnits).to.not.be.undefined;
+
+      // the exposedAdUnits should be from the fetch not setConfig level data
+      // and fetchStatus is success since fetch worked
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'fetch model name',
+        location: 'fetch',
+        skipRate: 95,
+        fetchStatus: 'success'
+      });
+    });
+    it('Should not break if floor provider returns 404', function () {
+      // run setConfig indicating fetch
+      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+
+      // run the auction and make server respond with 404
+      fakeFloorProvider.respond();
+      runStandardAuction();
+
+      // error should have been called for fetch error
+      expect(logErrorSpy.calledOnce).to.equal(true);
+      // should have caught the response error and still used setConfig data
+      // and fetch failed is true
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'basic model',
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: 'error'
       });
     });
     it('Should not break if floor provider returns non json', function () {
@@ -498,11 +698,16 @@ describe('the price floors module', function () {
       fakeFloorProvider.respond();
       runStandardAuction();
 
+      // error should have been called for response floor data not being valid
+      expect(logErrorSpy.calledOnce).to.equal(true);
       // should have caught the response error and still used setConfig data
+      // and fetchStatus is 'success' but location is setConfig since it had bad data
       validateBidRequests(true, {
         skipped: false,
         modelVersion: 'basic model',
         location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: 'success'
       });
     });
     it('should handle not using fetch correctly', function () {
@@ -531,6 +736,11 @@ describe('the price floors module', function () {
       expect(logErrorSpy.calledOnce).to.equal(true);
     });
     describe('isFloorsDataValid', function () {
+      it('should return false if unknown floorsSchemaVersion', function () {
+        let inputFloorData = utils.deepClone(basicFloorData);
+        inputFloorData.floorsSchemaVersion = 3;
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
+      });
       it('should work correctly for fields array', function () {
         let inputFloorData = utils.deepClone(basicFloorData);
         expect(isFloorsDataValid(inputFloorData)).to.to.equal(true);
@@ -585,6 +795,66 @@ describe('the price floors module', function () {
         };
         expect(isFloorsDataValid(inputFloorData)).to.to.equal(true);
         expect(inputFloorData.values).to.deep.equal({ 'test-div-1|native': 1.0 });
+      });
+      it('should work correctly for floorsSchemaVersion 2', function () {
+        let inputFloorData = {
+          floorsSchemaVersion: 2,
+          currency: 'USD',
+          modelGroups: [
+            {
+              modelVersion: 'model-1',
+              modelWeight: 10,
+              schema: {
+                delimiter: '|',
+                fields: ['mediaType']
+              },
+              values: {
+                'banner': 1.0,
+                '*': 2.5
+              }
+            }, {
+              modelVersion: 'model-2',
+              modelWeight: 40,
+              schema: {
+                delimiter: '|',
+                fields: ['size']
+              },
+              values: {
+                '300x250': 1.0,
+                '*': 2.5
+              }
+            }, {
+              modelVersion: 'model-3',
+              modelWeight: 50,
+              schema: {
+                delimiter: '|',
+                fields: ['domain']
+              },
+              values: {
+                'www.prebid.org': 1.0,
+                '*': 2.5
+              }
+            }
+          ]
+        };
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(true);
+
+        // remove one of the modelWeight's and it should be false
+        delete inputFloorData.modelGroups[1].modelWeight;
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
+        inputFloorData.modelGroups[1].modelWeight = 40;
+
+        // remove values from a model and it should not validate
+        const tempValues = {...inputFloorData.modelGroups[0].values};
+        delete inputFloorData.modelGroups[0].values;
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
+        inputFloorData.modelGroups[0].values = tempValues;
+
+        // modelGroups should be an array and have at least one entry
+        delete inputFloorData.modelGroups;
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
+        inputFloorData.modelGroups = [];
+        expect(isFloorsDataValid(inputFloorData)).to.to.equal(false);
       });
     });
     describe('getFloor', function () {
@@ -967,6 +1237,26 @@ describe('the price floors module', function () {
         }
       });
       expect(returnedBidResponse.cpm).to.equal(7.5);
+    });
+  });
+
+  describe('Post Auction Tests', function () {
+    let AUCTION_END_EVENT;
+    beforeEach(function () {
+      AUCTION_END_EVENT = {
+        auctionId: '123-45-6789'
+      };
+    });
+    it('should wait 3 seconds before deleting auction floor data', function () {
+      handleSetFloorsConfig({enabled: true});
+      _floorDataForAuction[AUCTION_END_EVENT.auctionId] = utils.deepClone(basicFloorConfig);
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, AUCTION_END_EVENT);
+      // should still be here
+      expect(_floorDataForAuction[AUCTION_END_EVENT.auctionId]).to.not.be.undefined;
+      // tick for 4 seconds
+      clock.tick(4000);
+      // should be undefined now
+      expect(_floorDataForAuction[AUCTION_END_EVENT.auctionId]).to.be.undefined;
     });
   });
 });

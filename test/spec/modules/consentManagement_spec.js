@@ -655,6 +655,35 @@ describe('consentManagement', function () {
           expect(consent).to.be.null;
         });
 
+        it('It still considers it a valid cmp response if gdprApplies is not a boolean', function () {
+          // gdprApplies is undefined, should just still store consent response but use whatever defaultGdprScope was
+          let testConsentData = {
+            tcString: 'abc12345234',
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded'
+          };
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          setConsentConfig({
+            cmpApi: 'iab',
+            timeout: 7500,
+            defaultGdprScope: true
+          });
+
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+          let consent = gdprDataHandler.getConsentData();
+          sinon.assert.notCalled(utils.logWarn);
+          sinon.assert.notCalled(utils.logError);
+          expect(didHookReturn).to.be.true;
+          expect(consent.consentString).to.equal(testConsentData.tcString);
+          expect(consent.gdprApplies).to.be.true;
+          expect(consent.apiVersion).to.equal(2);
+        });
+
         it('throws a warning + stores consentData + calls callback when processCmpData check failed while config had allowAuction set to true', function () {
           let testConsentData = {};
 

@@ -422,7 +422,7 @@ function generateVideoParameters(bid, bidderRequest) {
 function createVideoBidResponses(response, {bid, startTime}) {
   let bidResponses = [];
 
-  if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
+  if (response !== undefined && response.vastUrl !== '' && response.pub_rev > 0) {
     let vastQueryParams = utils.parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
@@ -431,9 +431,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     // true is net, false is gross
     bidResponse.netRevenue = true;
     bidResponse.currency = response.currency;
-    bidResponse.cpm = Number(response.pub_rev) / 1000;
-    bidResponse.width = response.width;
-    bidResponse.height = response.height;
+    bidResponse.cpm = parseInt(response.pub_rev, 10) / 1000;
+    bidResponse.width = parseInt(response.width, 10);
+    bidResponse.height = parseInt(response.height, 10);
     bidResponse.creativeId = response.adid;
     bidResponse.vastUrl = response.vastUrl;
     bidResponse.mediaType = VIDEO;

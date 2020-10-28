@@ -11,8 +11,8 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { setSizeConfig } from 'src/sizeMapping.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import s2sTesting from 'modules/s2sTesting.js';
 var events = require('../../../../src/events');
 

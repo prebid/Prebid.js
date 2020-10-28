@@ -61,7 +61,8 @@ describe('marsmedia adapter tests', function () {
             'h': 250,
             'adm': '<div>My Compelling Ad</div>',
             'price': 1,
-            'crid': 'cr-cfy24'
+            'crid': 'cr-cfy24',
+            'nurl': '<!-- NURL -->'
           }
         ]
       };
@@ -140,7 +141,8 @@ describe('marsmedia adapter tests', function () {
             'cid': '467415',
             'crid': 'cr-vid',
             'w': 800,
-            'h': 600
+            'h': 600,
+            'nurl': '<!-- NURL -->'
           }
         ]
       };
@@ -173,7 +175,8 @@ describe('marsmedia adapter tests', function () {
             'cid': '467415',
             'crid': 'cr-vid',
             'w': 800,
-            'h': 600
+            'h': 600,
+            'nurl': '<!-- NURL -->'
           }
         ]
       };
@@ -602,6 +605,57 @@ describe('marsmedia adapter tests', function () {
   describe('getUserSyncs', function () {
     it('returns an empty string', function () {
       expect(r1adapter.getUserSyncs()).to.deep.equal([]);
+    });
+  });
+
+  describe('on bidWon', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onBidWon({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
+    });
+  });
+
+  describe('on Timeout', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onTimeout({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
+    });
+  });
+
+  describe('on Set Targeting', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onSetTargeting).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onSetTargeting({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
     });
   });
 });

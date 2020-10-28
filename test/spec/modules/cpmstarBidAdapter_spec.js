@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/cpmstarBidAdapter.js';
 import { deepClone } from 'src/utils.js';
+import { config } from 'src/config.js';
 
 describe('Cpmstar Bid Adapter', function () {
   describe('isBidRequestValid', function () {
@@ -15,22 +16,26 @@ describe('Cpmstar Bid Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     })
 
-    it('should return a valid player size', function() {
-      var bid = { mediaTypes: {
-        video: {
-          playerSize: [[960, 540]]
+    it('should return a valid player size', function () {
+      var bid = {
+        mediaTypes: {
+          video: {
+            playerSize: [[960, 540]]
+          }
         }
-      }}
+      }
       expect(spec.getPlayerSize(bid)[0]).to.equal(960);
       expect(spec.getPlayerSize(bid)[1]).to.equal(540);
     })
 
-    it('should return a default player size', function() {
-      var bid = { mediaTypes: {
-        video: {
-          playerSize: null
+    it('should return a default player size', function () {
+      var bid = {
+        mediaTypes: {
+          video: {
+            playerSize: null
+          }
         }
-      }}
+      }
       expect(spec.getPlayerSize(bid)[0]).to.equal(640);
       expect(spec.getPlayerSize(bid)[1]).to.equal(440);
     })
@@ -78,6 +83,31 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0]).to.have.property('url');
       expect(requests[0]).to.have.property('bidRequest');
       expect(requests[0].url).to.include('https://dev.server.cpmstar.com/view.aspx');
+    });
+    it('should produce a request with support for GDPR', function () {
+      var gdpr_bidderRequest = deepClone(bidderRequest);
+      gdpr_bidderRequest.gdprConsent = {
+        consentString: 'consentString',
+        gdprApplies: true
+      };
+      var requests = spec.buildRequests(valid_bid_requests, gdpr_bidderRequest);
+      expect(requests[0]).to.have.property('url');
+      expect(requests[0].url).to.include('gdpr_consent=consentString');
+      expect(requests[0].url).to.include('gdpr=1');
+    });
+    it('should produce a request with support for USP', function () {
+      var usp_bidderRequest = deepClone(bidderRequest);
+      usp_bidderRequest.uspConsent = '1YYY';
+      var requests = spec.buildRequests(valid_bid_requests, usp_bidderRequest);
+      expect(requests[0]).to.have.property('url');
+      expect(requests[0].url).to.include('us_privacy=1YYY');
+    });
+    it('should produce a request with support for COPPA', function () {
+      sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
+      var requests = spec.buildRequests(valid_bid_requests, bidderRequest);
+      config.getConfig.restore();
+      expect(requests[0]).to.have.property('url');
+      expect(requests[0].url).to.include('tfcd=1');
     });
   })
 

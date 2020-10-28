@@ -41,7 +41,6 @@ describe('ANIVIEW Bid Adapter Test', function () {
   });
 
   describe('buildRequests', function () {
-    const ENDPOINT = 'https://v.lkqd.net/ad';
     let bid2Requests = [
       {
         'bidder': 'aniview',
@@ -156,7 +155,6 @@ describe('ANIVIEW Bid Adapter Test', function () {
       expect(bidResponses.length).to.equal(1);
       let bidResponse = bidResponses[0];
       expect(bidResponse.requestId).to.equal(bidRequest.data.bidId);
-      expect(bidResponse.bidderCode).to.equal(BIDDER_CODE);
       expect(bidResponse.cpm).to.equal('2');
       expect(bidResponse.ttl).to.equal(600);
       expect(bidResponse.currency).to.equal('USD');

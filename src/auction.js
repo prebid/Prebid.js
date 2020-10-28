@@ -65,7 +65,7 @@ import { Renderer } from './Renderer.js';
 import { config } from './config.js';
 import { userSync } from './userSync.js';
 import { hook } from './hook.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import { OUTSTREAM } from './video.js';
 import { VIDEO } from './mediaTypes.js';
 
@@ -483,7 +483,7 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
         afterBidAdded();
       }
     }
-  });
+  }, bidderRequest);
 }, 'callPrebidCache');
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.

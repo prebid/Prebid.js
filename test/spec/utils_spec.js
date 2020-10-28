@@ -63,12 +63,12 @@ describe('Utils', function () {
   describe('parseQueryStringParameters', function () {
     it('should append query string to existing using the input obj', function () {
       var obj = {
-        a: '1',
-        b: '2'
+        a: 'http://example.com/?foo=bar&bar=foo',
+        b: 'abc["def"]'
       };
 
       var output = utils.parseQueryStringParameters(obj);
-      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2');
+      var expectedResult = 'a=' + encodeURIComponent('http://example.com/?foo=bar&bar=foo') + '&b=' + encodeURIComponent('abc["def"]');
       assert.equal(output, expectedResult);
     });
 

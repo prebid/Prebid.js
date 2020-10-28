@@ -33,21 +33,6 @@ describe('LiveIntentId', function () {
     resetLiveIntentIdSubmodule();
   });
 
-  it('should log an error if no configParams were passed when getId', function () {
-    liveIntentIdSubmodule.getId();
-    expect(logErrorStub.calledOnce).to.be.true;
-  });
-
-  it('should log an error if publisherId configParam was not passed when getId', function () {
-    liveIntentIdSubmodule.getId({});
-    expect(logErrorStub.calledOnce).to.be.true;
-  });
-
-  it('should log an error if publisherId configParam was not passed when decode', function () {
-    liveIntentIdSubmodule.decode({}, {});
-    expect(logErrorStub.calledOnce).to.be.true;
-  });
-
   it('should initialize LiveConnect with a us privacy string when getId, and include it in all requests', function () {
     consentDataStub.returns('1YNY');
     let callBackSpy = sinon.spy();
@@ -155,6 +140,22 @@ describe('LiveIntentId', function () {
       responseHeader,
       JSON.stringify({})
     );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should log an error and continue to callback if ajax request errors', function () {
+    getCookieStub.returns(null);
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899');
+    request.respond(
+      503,
+      responseHeader,
+      'Unavailable'
+    );
+    expect(logErrorStub.calledOnce).to.be.true;
     expect(callBackSpy.calledOnce).to.be.true;
   });
 

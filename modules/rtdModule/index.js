@@ -129,6 +129,32 @@ function getProviderData(adUnits, callback) {
 }
 
 /**
+ * delete invalid data received from provider
+ * this is to ensure working flow for GPT
+ * @param {Object} data received from provider
+ * @return {Object} valid data for GPT targeting
+ */
+export function validateProviderDataForGPT(data) {
+  // data must be an object, contains object with string as value
+  if (typeof data !== 'object') {
+    return {};
+  }
+  for (let key in data) {
+    if (data.hasOwnProperty(key)) {
+      for (let innerKey in data[key]) {
+        if (data[key].hasOwnProperty(innerKey)) {
+          if (typeof data[key][innerKey] !== 'string') {
+            utils.logWarn(`removing ${key}: {${innerKey}:${data[key][innerKey]} } from GPT targeting because of invalid type (must be string)`);
+            delete data[key][innerKey];
+          }
+        }
+      }
+    }
+  }
+  return data;
+}
+
+/**
  * run hook after bids request and before callback
  * get data from provider and set key values to primary ad server
  * @param {function} next - next hook function
@@ -196,11 +222,16 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  * @param {Object} data - key values to set
  */
 function setDataForPrimaryAdServer(data) {
-  if (!utils.isGptPubadsDefined()) {
-    utils.logError('window.googletag is not defined on the page');
-    return;
+  data = validateProviderDataForGPT(data);
+  if (utils.isGptPubadsDefined()) {
+    targeting.setTargetingForGPT(data, null)
+  } else {
+    window.googletag = window.googletag || {};
+    window.googletag.cmd = window.googletag.cmd || [];
+    window.googletag.cmd.push(() => {
+      targeting.setTargetingForGPT(data, null);
+    });
   }
-  targeting.setTargetingForGPT(data, null);
 }
 
 /**

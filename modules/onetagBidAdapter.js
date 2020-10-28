@@ -1,6 +1,9 @@
 'use strict';
 
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { Renderer } from '../src/Renderer.js';
+import find from 'core-js-pure/features/array/find.js';
 const { registerBidder } = require('../src/adapters/bidderFactory.js');
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
@@ -29,9 +32,7 @@ export function isValid(type, bid) {
     return parseSizes(bid).length > 0;
   } else if (type === VIDEO && hasTypeVideo(bid)) {
     const context = bid.mediaTypes.video.context;
-    if (context === 'outstream') {
-      return parseVideoSize(bid).length > 0 && typeof bid.renderer !== 'undefined' && typeof bid.renderer.render !== 'undefined' && typeof bid.renderer.url !== 'undefined';
-    } else if (context === 'instream') {
+    if (context === 'outstream' || context === 'instream') {
       return parseVideoSize(bid).length > 0;
     }
   }
@@ -44,31 +45,27 @@ export function isValid(type, bid) {
  * @param {validBidRequests[]} - an array of bids
  * @return ServerRequest Info describing the request to the server.
  */
-
 function buildRequests(validBidRequests, bidderRequest) {
-  const bids = requestsToBids(validBidRequests);
-  const bidObject = {'bids': bids};
-  const pageInfo = getPageInfo();
-
-  const payload = Object.assign(bidObject, pageInfo);
-
+  const payload = {
+    bids: requestsToBids(validBidRequests),
+    ...getPageInfo()
+  };
   if (bidderRequest && bidderRequest.gdprConsent) {
     payload.gdprConsent = {
       consentString: bidderRequest.gdprConsent.consentString,
       consentRequired: bidderRequest.gdprConsent.gdprApplies
     };
   }
-
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
   }
-
   if (bidderRequest && bidderRequest.userId) {
     payload.userId = bidderRequest.userId;
   }
-
+  if (window.localStorage) {
+    payload.onetagSid = window.localStorage.getItem('onetag_sid');
+  }
   const payloadString = JSON.stringify(payload);
-
   return {
     method: 'POST',
     url: ENDPOINT,
@@ -76,49 +73,122 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
 }
 
-function interpretResponse(serverResponse, request) {
-  let body = serverResponse.body;
+function interpretResponse(serverResponse, bidderRequest) {
+  const body = serverResponse.body;
   const bids = [];
-
-  if (typeof serverResponse === 'string') {
-    try {
-      body = JSON.parse(serverResponse);
-    } catch (e) {
-      return bids;
-    }
-  }
-
+  const requestData = JSON.parse(bidderRequest.data);
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
   }
   if (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0) {
     return bids;
   }
-
-  body.bids.forEach(function(bid) {
-    let responseBid = {
-      requestId: bid.requestId,
-      cpm: bid.cpm,
-      width: bid.width,
-      height: bid.height,
-      creativeId: bid.creativeId,
-      dealId: bid.dealId ? bid.dealId : '',
-      currency: bid.currency,
+  body.bids.forEach(({
+    requestId,
+    cpm,
+    width,
+    height,
+    creativeId,
+    dealId,
+    currency,
+    mediaType,
+    ttl,
+    rendererUrl,
+    ad,
+    vastUrl,
+    videoCacheKey
+  }) => {
+    const responseBid = {
+      requestId,
+      cpm,
+      width,
+      height,
+      creativeId,
+      dealId: dealId == null ? dealId : '',
+      currency,
       netRevenue: false,
-      mediaType: bid.mediaType,
-      ttl: bid.ttl || 300
+      meta: {
+        mediaType
+      },
+      ttl: ttl || 300
     };
-
-    if (bid.mediaType === BANNER) {
-      responseBid.ad = bid.ad;
-    } else if (bid.mediaType === VIDEO) {
-      responseBid.vastXml = bid.ad;
+    if (mediaType === BANNER) {
+      responseBid.ad = ad;
+    } else if (mediaType === VIDEO) {
+      const {context, adUnitCode} = find(requestData.bids, (item) => item.bidId === requestId);
+      if (context === INSTREAM) {
+        responseBid.vastUrl = vastUrl;
+        responseBid.videoCacheKey = videoCacheKey;
+      } else if (context === OUTSTREAM) {
+        responseBid.vastXml = ad;
+        responseBid.vastUrl = vastUrl;
+        if (rendererUrl) {
+          responseBid.renderer = createRenderer({requestId, rendererUrl, adUnitCode});
+        }
+      }
     }
-
     bids.push(responseBid);
   });
-
   return bids;
+}
+
+function createRenderer(bid, rendererOptions = {}) {
+  const renderer = Renderer.install({
+    id: bid.requestId,
+    url: bid.rendererUrl,
+    config: rendererOptions,
+    adUnitCode: bid.adUnitCode,
+    loaded: false
+  });
+  try {
+    renderer.setRender(onetagRenderer);
+  } catch (e) {
+
+  }
+  return renderer;
+}
+
+function onetagRenderer({renderer, width, height, vastXml, adUnitCode}) {
+  renderer.push(() => {
+    window.onetag.Player.init({
+      width,
+      height,
+      vastXml,
+      nodeId: adUnitCode,
+      config: renderer.getConfig()
+    });
+  });
+}
+
+function getFrameNesting() {
+  let frame = window;
+  try {
+    while (frame !== frame.top) {
+      // eslint-disable-next-line no-unused-expressions
+      frame.location.href;
+      frame = frame.parent;
+    }
+  } catch (e) {}
+  return {
+    topmostFrame: frame,
+    currentFrameNesting: frame.top === frame ? 1 : 2
+  }
+}
+
+function getDocumentVisibility(window) {
+  try {
+    if (typeof window.document.hidden !== 'undefined') {
+      return window.document.hidden;
+    } else if (typeof window.document['msHidden'] !== 'undefined') {
+      return window.document['msHidden'];
+    } else if (typeof window.document['webkitHidden'] !== 'undefined') {
+      return window.document['webkitHidden'];
+    } else {
+      return null;
+    }
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -126,58 +196,27 @@ function interpretResponse(serverResponse, request) {
  * @returns {{location: *, referrer: (*|string), masked: *, wWidth: (*|Number), wHeight: (*|Number), sWidth, sHeight, date: string, timeOffset: number}}
  */
 function getPageInfo() {
-  let w, d, l, r, m, p, e, t, s;
-  for (w = window, d = w.document, l = d.location.href, r = d.referrer, m = 0, e = encodeURIComponent, t = new Date(), s = screen; w !== w.parent;) {
-    try {
-      p = w.parent; l = p.location.href; r = p.document.referrer; w = p;
-    } catch (e) {
-      m = top !== w.parent ? 2 : 1;
-      break
-    }
-  }
-  let isDocHidden;
-  let xOffset;
-  let yOffset;
-  try {
-    if (typeof w.document.hidden !== 'undefined') {
-      isDocHidden = w.document.hidden;
-    } else if (typeof w.document['msHidden'] !== 'undefined') {
-      isDocHidden = w.document['msHidden'];
-    } else if (typeof w.document['webkitHidden'] !== 'undefined') {
-      isDocHidden = w.document['webkitHidden'];
-    } else {
-      isDocHidden = null;
-    }
-  } catch (e) {
-    isDocHidden = null;
-  }
-  try {
-    xOffset = w.pageXOffset;
-    yOffset = w.pageYOffset;
-  } catch (e) {
-    xOffset = null;
-    yOffset = null;
-  }
+  const { topmostFrame, currentFrameNesting } = getFrameNesting();
   return {
-    location: e(l),
-    referrer: e(r) || '0',
-    masked: m,
-    wWidth: w.innerWidth,
-    wHeight: w.innerHeight,
-    oWidth: w.outerWidth,
-    oHeight: w.outerHeight,
-    sWidth: s.width,
-    sHeight: s.height,
-    aWidth: s.availWidth,
-    aHeight: s.availHeight,
-    sLeft: 'screenLeft' in w ? w.screenLeft : w.screenX,
-    sTop: 'screenTop' in w ? w.screenTop : w.screenY,
-    xOffset: xOffset,
-    yOffset: yOffset,
-    docHidden: isDocHidden,
+    location: encodeURIComponent(topmostFrame.location.href),
+    referrer: encodeURIComponent(topmostFrame.document.referrer) || '0',
+    masked: currentFrameNesting,
+    wWidth: topmostFrame.innerWidth,
+    wHeight: topmostFrame.innerHeight,
+    oWidth: topmostFrame.outerWidth,
+    oHeight: topmostFrame.outerHeight,
+    sWidth: topmostFrame.screen.width,
+    sHeight: topmostFrame.screen.height,
+    aWidth: topmostFrame.screen.availWidth,
+    aHeight: topmostFrame.screen.availHeight,
+    sLeft: 'screenLeft' in topmostFrame ? topmostFrame.screenLeft : topmostFrame.screenX,
+    sTop: 'screenTop' in topmostFrame ? topmostFrame.screenTop : topmostFrame.screenY,
+    xOffset: topmostFrame.pageXOffset,
+    yOffset: topmostFrame.pageYOffset,
+    docHidden: getDocumentVisibility(topmostFrame),
+    docHeight: topmostFrame.document.body ? topmostFrame.document.body.scrollHeight : null,
     hLength: history.length,
-    date: t.toUTCString(),
-    timeOffset: t.getTimezoneOffset()
+    timing: getTiming()
   };
 }
 
@@ -223,6 +262,46 @@ function setGeneralInfo(bidRequest) {
   if (params.dealId) {
     this['dealId'] = params.dealId;
   }
+  const coords = getSpaceCoords(bidRequest.adUnitCode);
+  if (coords) {
+    this['coords'] = coords;
+  }
+}
+
+function getSpaceCoords(id) {
+  const space = document.getElementById(id);
+  try {
+    const { top, left, width, height } = space.getBoundingClientRect();
+    let window = space.ownerDocument.defaultView;
+    const coords = { top: top + window.pageYOffset, left: left + window.pageXOffset, width, height };
+    let frame = window.frameElement;
+    while (frame != null) {
+      const { top, left } = frame.getBoundingClientRect();
+      coords.top += top + window.pageYOffset;
+      coords.left += left + window.pageXOffset;
+      window = window.parent;
+      frame = window.frameElement;
+    }
+    return coords;
+  } catch (e) {
+    return null;
+  }
+}
+
+function getTiming() {
+  try {
+    if (window.performance != null && window.performance.timing != null) {
+      const timing = {};
+      const perf = window.performance.timing;
+      timing.pageLoadTime = perf.loadEventEnd - perf.navigationStart;
+      timing.connectTime = perf.responseEnd - perf.requestStart;
+      timing.renderTime = perf.domComplete - perf.domLoading;
+      return timing;
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
 }
 
 function parseVideoSize(bid) {
@@ -255,35 +334,35 @@ function getSizes(sizes) {
 }
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-  const syncs = [];
+  let syncs = [];
+  let params = '';
+  if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+    params += '&gdpr_consent=' + gdprConsent.consentString;
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+    }
+  }
+  if (uspConsent && typeof uspConsent === 'string') {
+    params += '&us_privacy=' + uspConsent;
+  }
   if (syncOptions.iframeEnabled) {
-    const rnd = new Date().getTime();
-    let params = '?cb=' + rnd;
-
-    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      params += '&gdpr_consent=' + gdprConsent.consentString;
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      }
-    }
-
-    if (uspConsent && typeof uspConsent === 'string') {
-      params += '&us_privacy=' + uspConsent;
-    }
-
     syncs.push({
       type: 'iframe',
-      url: USER_SYNC_ENDPOINT + params
+      url: USER_SYNC_ENDPOINT + '?cb=' + new Date().getTime() + params
+    });
+  }
+  if (syncOptions.pixelEnabled) {
+    syncs.push({
+      type: 'image',
+      url: USER_SYNC_ENDPOINT + '?tag=img' + params
     });
   }
   return syncs;
 }
 
 export const spec = {
-
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
@@ -291,5 +370,4 @@ export const spec = {
 
 };
 
-// Starting point
 registerBidder(spec);

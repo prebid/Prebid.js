@@ -2,8 +2,8 @@
 import { config } from './config.js';
 import clone from 'just-clone';
 import deepequal from 'deep-equal';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -111,7 +111,14 @@ export function tryAppendQueryString(existingUrl, key, value) {
 // parse a query string object passed in bid params
 // bid params should be an object such as {key: "value", key1 : "value1"}
 // aliases to formatQS
-export let parseQueryStringParameters = internal.formatQS;
+export function parseQueryStringParameters(queryObj) {
+  let result = '';
+  for (var k in queryObj) {
+    if (queryObj.hasOwnProperty(k)) { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
+  }
+  result = result.replace(/&$/, '');
+  return result;
+}
 
 // transform an AdServer targeting bids into a query string to send to the adserver
 export function transformAdServerTargetingObj(targeting) {
