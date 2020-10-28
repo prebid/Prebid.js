@@ -23,7 +23,7 @@ Module that connects to lunamedia demand sources
                     },
                     bids: [
                         {
-                            bidder: 'luna',
+                            bidder: 'lunamediahb',
                             params: {
                                 placementId: 0,
                                 traffic: 'banner'
@@ -42,7 +42,7 @@ Module that connects to lunamedia demand sources
                     },
                     bids: [
                         {
-                            bidder: 'luna',
+                            bidder: 'lunamediahb',
                             params: {
                                 placementId: 0,
                                 traffic: 'video'
@@ -68,7 +68,7 @@ Module that connects to lunamedia demand sources
                     },
                     bids: [
                         {
-                            bidder: 'luna',
+                            bidder: 'lunamediahb',
                             params: {
                                 placementId: 0,
                                 traffic: 'native'
