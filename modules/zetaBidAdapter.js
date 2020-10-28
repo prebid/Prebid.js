@@ -26,7 +26,8 @@ export const spec = {
       bid.params &&
       bid.params.ip &&
       bid.params.user &&
-      bid.params.user.buyeruid
+      bid.params.user.buyeruid &&
+      bid.params.definerId
     );
     if (!isValid) {
       utils.logWarn('Invalid bid request');
@@ -67,6 +68,9 @@ export const spec = {
         buyeruid: params.user.buyeruid,
         uid: params.user.uid
       },
+      ext: {
+        definerId: params.definerId
+      }
     };
     if (params.test) {
       payload.test = params.test;

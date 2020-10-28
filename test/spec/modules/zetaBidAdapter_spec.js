@@ -19,6 +19,7 @@ describe('Zeta Bid Adapter', function() {
         buyeruid: 12345
       },
       ip: '111.222.33.44',
+      definerId: 1,
       test: 1
     }
   }];

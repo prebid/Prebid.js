@@ -21,7 +21,7 @@ Module that connects to Zeta's demand sources
                 },
                 bids: [
                     {
-                        bidder: 'Zeta Global',
+                        bidder: 'zeta_global',
                         bidId: 12345,
                         params: {
                             placement: 12345,
@@ -30,6 +30,7 @@ Module that connects to Zeta's demand sources
                                 buyeruid: 12345
                             },
                             ip: '111.222.33.44',
+                            definerId: 1,
                             test: 1
                         }
                     }
