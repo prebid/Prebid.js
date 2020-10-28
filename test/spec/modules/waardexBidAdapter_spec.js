@@ -10,12 +10,12 @@ describe('waardexBidAdapter', () => {
     params: {
       placementId: 1,
       traffic: 'banner',
-      pubId: 1,
+      zoneId: 1,
     }
   };
 
   describe('isBidRequestValid', () => {
-    it('Should return true. bidId and params such as placementId and pubId are present', () => {
+    it('Should return true. bidId and params such as placementId and zoneId are present', () => {
       expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
     it('Should return false. bidId is not present in bid object', () => {
@@ -23,14 +23,9 @@ describe('waardexBidAdapter', () => {
       delete invalidBid.bidId;
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
-    it('Should return false. placementId is not present in bid.params object', () => {
+    it('Should return false. zoneId is not present in bid.params object', () => {
       const invalidBid = deepClone(validBid);
-      delete invalidBid.params.placementId;
-      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
-    });
-    it('Should return false. pubId is not present in bid.params object', () => {
-      const invalidBid = deepClone(validBid);
-      delete invalidBid.params.pubId;
+      delete invalidBid.params.zoneId;
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
   });
@@ -45,11 +40,10 @@ describe('waardexBidAdapter', () => {
         }
       },
       params: {
-        placementId: 1,
         bidfloor: 1.5,
         position: 1,
         instl: 1,
-        pubId: 100
+        zoneId: 100
       },
     }];
 
@@ -72,7 +66,6 @@ describe('waardexBidAdapter', () => {
 
       expect(payload.bidRequests[0]).deep.equal({
         bidId: validBidRequests[0].bidId,
-        placementId: validBidRequests[0].params.placementId,
         bidfloor: validBidRequests[0].params.bidfloor,
         position: validBidRequests[0].params.position,
         instl: validBidRequests[0].params.instl,
@@ -89,7 +82,7 @@ describe('waardexBidAdapter', () => {
           ],
         }
       });
-      const ENDPOINT = `https://hb.justbidit.xyz:8843/prebid?pubId=${validBidRequests[0].params.pubId}`;
+      const ENDPOINT = `https://hb.justbidit.xyz:8843/prebid?pubId=${validBidRequests[0].params.zoneId}`;
       expect(url).to.equal(ENDPOINT);
       expect(method).to.equal('POST');
     });

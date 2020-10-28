@@ -5,34 +5,40 @@ Changes unique to this fork:
 * This file (README\_Maven.md)
 * Module configuration for the Salish platform (modules.json)
 * Module configuration for the HubPages platform (hpmodules.json)
-* The Sublime bid adapter module (modules/sublimeBidAdapter.js)
-  and tests (test/spec/modules/sublimeBidAdapter\_spec.js)
-* modules/mavenAnalyticsAdapter.* (Hummingbird)
-* modules/mavenDistributionAnalyticsAdapter.* (for LiftIgniter)
+* modules/mavenAnalyticsAdapter.\* (Hummingbird)
+* modules/mavenDistributionAnalyticsAdapter.\* (for LiftIgniter)
+* Some changes to modules/revcontentBidAdapter.js for Native ads.
+* A change to src/util.js to supplement logging with timestamps.
 
 ## You can accomplish build prebid bundle and copy it to a repo with updatePrebid.js.
 
-The script is located in this directory.
+The script is located in this directory. Supported arguments:
 
-// =ARGS=
-// --modules=<path to modules>
-// --out=<path to copy file to>
-// OR
-// --tempest=<path to tempest repo> (automatically does the standard tempest process)
-// --tempest (with default path=../tempest-phoenix)
-// --hubpages=<path to hubpages repo> (automatically does the standard hubpages process)
-// --hubpages (with default path=../hubpages)
-// --salish=<path to salish repo> (automatically does the standard salish process)
-// --salish (with default path=..salish-sea/web-skagit)
+    --modules=<path to modules>
+    --out=<path to copy file to>
+
+Or, you can invoke with a platform-specific argument (one of the following):
+
+    --tempest=<path to tempest repo> (automatically does the standard tempest process)
+    --tempest (with default path=../tempest-phoenix)
+    --hubpages=<path to hubpages repo> (automatically does the standard hubpages process)
+    --hubpages (with default path=../hubpages)
+    --salish=<path to salish repo> (automatically does the standard salish process)
+    --salish (with default path=..salish-sea/web-skagit)
 
 Here are some examples of running it:
 
-* Update tempest prebid.js (both next and reg) with repo at ../tempest-phoenix
-$ node updatePrebid.js --tempest (uses default repo name)
-* Update hubpages prebid.js (both next and reg) with repo at ../hubpages-repo
-$ node updatePrebid.js --hubpages=../hubpages-repo (non-default name)
-* Update prebid.js with some modules and output it somewhere
-$ node updatePrebid.js --modules=modules.json --out=../my/lovely/path/prebid.js
+Update tempest prebid.js (both next and reg) with repo at ../tempest-phoenix
+
+    $ node updatePrebid.js --tempest (uses default repo name)
+
+Update hubpages prebid.js (both next and reg) with repo at ../hubpages-repo
+
+    $ node updatePrebid.js --hubpages=../hubpages-repo (non-default name)
+
+Update prebid.js with some modules and output it somewhere
+
+    $ node updatePrebid.js --modules=modules.json --out=../my/lovely/path/prebid.js
 
 ## Building the Salish Prebid Bundle
 

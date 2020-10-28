@@ -12,7 +12,7 @@ function setCookie(name, value, expires) {
   document.cookie = name + '=' + value +
     '; path=/' +
     (expires ? ('; expires=' + expires.toUTCString()) : '') +
-    '; SameSite=None';
+    '; SameSite=Lax';
 }
 
 describe('finteza analytics adapter', function () {
