@@ -2,10 +2,10 @@ import {expect} from 'chai';
 import {spec} from '../../../modules/lunamediahbBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 
-describe('KrushmediabBidAdapter', function () {
+describe('LunamediaHBBidAdapter', function () {
   const bid = {
     bidId: '23fhj33i987f',
-    bidder: 'luna',
+    bidder: 'lunamediahb',
     mediaTypes: {
       [BANNER]: {
         sizes: [[300, 250]]
