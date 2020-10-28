@@ -6,16 +6,28 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager(737, BIDDER_CODE);
-const SIMPLE_TLD_TEST = /\.co\.\w{2,4}$/;
+const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;
 const DEFAULT_ENDPOINT = 'https://prebid.a-mo.net/a/c';
-const VERSION = 'pba1.2';
+const VERSION = 'pba1.2.1';
 const xmlDTDRxp = /^\s*<\?xml[^\?]+\?>/;
 const VAST_RXP = /^\s*<\??(?:vast|xml)/i;
 const TRACKING_ENDPOINT = 'https://1x1.a-mo.net/hbx/';
 const AMUID_KEY = '__amuidpb';
 
-const getLocation = (request) =>
-  parseUrl(deepAccess(request, 'refererInfo.canonicalUrl', location.href))
+function getLocation (request) {
+  const refInfo = request.refererInfo;
+  if (refInfo == null) {
+    return parseUrl(location.href);
+  }
+
+  if (refInfo.isAmp && refInfo.referer != null) {
+    return parseUrl(refInfo.referer)
+  }
+
+  const topUrl = refInfo.numIframes > 0 && refInfo.stack[0] != null
+    ? refInfo.stack[0] : location.href;
+  return parseUrl(topUrl);
+};
 
 const largestSize = (sizes, mediaTypes) => {
   const allSizes = sizes
@@ -44,7 +56,7 @@ const nullOrType = (value, type) =>
 function getID(loc) {
   const host = loc.hostname.split('.');
   const short = host.slice(
-    host.length - (SIMPLE_TLD_TEST.test(loc.host) ? 3 : 2)
+    host.length - (SIMPLE_TLD_TEST.test(loc.hostname) ? 3 : 2)
   ).join('.');
   return btoa(short).replace(/=+$/, '');
 }
@@ -239,7 +251,7 @@ export const spec = {
       gs: deepAccess(bidderRequest, 'gdprConsent.gdprApplies', ''),
       gc: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
       u: deepAccess(bidderRequest, 'refererInfo.canonicalUrl', loc.href),
-      do: loc.host,
+      do: loc.hostname,
       re: deepAccess(bidderRequest, 'refererInfo.referer'),
       am: getUIDSafe(),
       usp: bidderRequest.uspConsent || '1---',
