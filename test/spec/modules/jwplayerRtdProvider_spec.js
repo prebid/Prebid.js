@@ -1,5 +1,5 @@
-import { fetchTargetingForMediaId, getVatFromCache, extractPublisherParams,
-  formatTargetingResponse, getVatFromPlayer, enrichAdUnits,
+import { fetchTargetingForMediaId, enrichBidRequest,
+  getVatFromCache, formatTargetingResponse, getVatFromPlayer, enrichAdUnits,
   fetchTargetingInformation, jwplayerSubmodule } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -229,15 +229,9 @@ describe('jwplayerRtdProvider', function() {
 
           const bid = {};
           const adUnit = {
-            fpd: {
-              context: {
-                data: {
-                  jwTargeting: {
-                    mediaID: mediaIdWithSegment,
-                    playerID: validPlayerID
-                  }
-                }
-              }
+            jwTargeting: {
+              mediaID: mediaIdWithSegment,
+              playerID: validPlayerID
             },
             bids: [
               bid
@@ -298,14 +292,8 @@ describe('jwplayerRtdProvider', function() {
         }
       ];
       const adUnit = {
-        fpd: {
-          context: {
-            data: {
-              jwTargeting: {
-                mediaID: testIdForSuccess
-              }
-            }
-          }
+        jwTargeting: {
+          mediaID: testIdForSuccess
         },
         bids
       };
@@ -345,14 +333,8 @@ describe('jwplayerRtdProvider', function() {
         }
       ];
       const adUnit = {
-        fpd: {
-          context: {
-            data: {
-              jwTargeting: {
-                mediaID: testIdForSuccess
-              }
-            }
-          }
+        jwTargeting: {
+          mediaID: testIdForSuccess
         },
         bids
       };
@@ -392,14 +374,8 @@ describe('jwplayerRtdProvider', function() {
         }
       ];
       const adUnit = {
-        fpd: {
-          context: {
-            data: {
-              jwTargeting: {
-                mediaID: testIdForFailure
-              }
-            }
-          }
+        jwTargeting: {
+          mediaID: testIdForFailure
         },
         bids
       };
@@ -410,50 +386,6 @@ describe('jwplayerRtdProvider', function() {
       expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
       expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
     });
-  });
-
-  describe(' Extract Publisher Params', function () {
-    it('should default to config', function () {
-      const config = { mediaID: 'test' };
-
-      const adUnit1 = { fpd: { context: {} } };
-      const targeting1 = extractPublisherParams(adUnit1, config);
-      expect(targeting1).to.deep.equal(config);
-
-      const adUnit2 = { fpd: { context: { data: { jwTargeting: {} } } } };
-      const targeting2 = extractPublisherParams(adUnit2, config);
-      expect(targeting2).to.deep.equal(config);
-
-      const targeting3 = extractPublisherParams(null, config);
-      expect(targeting3).to.deep.equal(config);
-    });
-
-    it('should prioritize adUnit properties ', function () {
-      const expectedMediaID = 'test_media_id';
-      const expectedPlayerID = 'test_player_id';
-      const config = { playerID: 'bad_id', mediaID: 'bad_id' };
-
-      const adUnit = { fpd: { context: { data: { jwTargeting: { mediaID: expectedMediaID, playerID: expectedPlayerID } } } } };
-      const targeting = extractPublisherParams(adUnit, config);
-      expect(targeting).to.have.property('mediaID', expectedMediaID);
-      expect(targeting).to.have.property('playerID', expectedPlayerID);
-    });
-
-    it('should use config properties as fallbacks', function () {
-      const expectedMediaID = 'test_media_id';
-      const expectedPlayerID = 'test_player_id';
-      const config = { playerID: expectedPlayerID, mediaID: 'bad_id' };
-
-      const adUnit = { fpd: { context: { data: { jwTargeting: { mediaID: expectedMediaID } } } } };
-      const targeting = extractPublisherParams(adUnit, config);
-      expect(targeting).to.have.property('mediaID', expectedMediaID);
-      expect(targeting).to.have.property('playerID', expectedPlayerID);
-    });
-
-    it('should return empty object when Publisher Params are absent', function () {
-      const targeting = extractPublisherParams(null, null);
-      expect(targeting).to.deep.equal({});
-    })
   });
 
   describe('jwplayerSubmodule', function () {
@@ -472,28 +404,16 @@ describe('jwplayerRtdProvider', function() {
         bidReqConfig = {
           adUnits: [
             {
-              fpd: {
-                context: {
-                  data: {
-                    jwTargeting: {
-                      mediaID: validMediaIDs[0]
-                    }
-                  }
-                }
+              jwTargeting: {
+                mediaID: validMediaIDs[0]
               },
               bids: [
                 {}, {}
               ]
             },
             {
-              fpd: {
-                context: {
-                  data: {
-                    jwTargeting: {
-                      mediaID: validMediaIDs[1]
-                    }
-                  }
-                }
+              jwTargeting: {
+                mediaID: validMediaIDs[1]
               },
               bids: [
                 {}, {}
@@ -553,14 +473,8 @@ describe('jwplayerRtdProvider', function() {
       it('sets targeting data in proper structure', function () {
         const bid = {};
         const adUnitWithMediaId = {
-          fpd: {
-            context: {
-              data: {
-                jwTargeting: {
-                  mediaID: testIdForSuccess
-                }
-              }
-            }
+          jwTargeting: {
+            mediaID: testIdForSuccess
           },
           bids: [
             bid
@@ -585,18 +499,12 @@ describe('jwplayerRtdProvider', function() {
         const adUnitCode = 'test_ad_unit';
         const bid = {};
         const adUnit = {
-          fpd: {
-            context: {
-              data: {
-                jwTargeting: {
-                  mediaID: testIdForFailure
-                }
-              }
-            }
+          jwTargeting: {
+            mediaID: testIdForFailure
           },
           bids: [ bid ]
         };
-        const expectedContentId = 'jw_' + adUnit.fpd.context.data.jwTargeting.mediaID;
+        const expectedContentId = 'jw_' + adUnit.jwTargeting.mediaID;
         const expectedTargeting = {
           content: {
             id: expectedContentId
@@ -614,7 +522,6 @@ describe('jwplayerRtdProvider', function() {
         const adUnitCode = 'test_ad_unit';
         const bid1 = {};
         const bid2 = {};
-        const bid3 = {};
         const adUnitWithMediaId = {
           code: adUnitCode,
           mediaID: testIdForSuccess,
@@ -625,21 +532,10 @@ describe('jwplayerRtdProvider', function() {
           bids: [ bid2 ]
         };
 
-        const adUnitEmptyfpd = {
-          code: 'test_ad_unit_empty_fpd',
-          fpd: {
-            context: {
-              id: 'sthg'
-            }
-          },
-          bids: [ bid3 ]
-        };
-
-        jwplayerSubmodule.getBidRequestData({ adUnits: [adUnitWithMediaId, adUnitEmpty, adUnitEmptyfpd] }, bidRequestSpy);
+        jwplayerSubmodule.getBidRequestData({ adUnits: [adUnitWithMediaId, adUnitEmpty] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
         expect(bid1).to.not.have.property('jwTargeting');
         expect(bid2).to.not.have.property('jwTargeting');
-        expect(bid3).to.not.have.property('jwTargeting');
       });
     });
   });
