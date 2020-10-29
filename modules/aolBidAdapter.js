@@ -116,7 +116,7 @@ function resolveEndpointCode(bid) {
 
 function getSupportedEids(bid) {
   return bid.userIdAsEids.filter(eid => {
-    return SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1
+    return SUPPORTED_USER_ID_SOURCES.includes(eid.source)
   });
 }
 
