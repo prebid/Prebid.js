@@ -145,7 +145,7 @@ const bidRequestVideo = [{
     }
   },
   'mediaTypes': { video: {context: 'instream', // or 'outstream'
-    playerSize: [[640, 480]]} },
+      playerSize: [[640, 480]]} },
   'adUnitCode': 'div-gpt-ad-12345678-1',
   'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
   'sizes': [
@@ -616,7 +616,7 @@ describe('DistrictM Adaptor', function () {
   })
   describe('Test getApi function', function() {
     const data = {
-      protocols: ['VPAID_1_0']
+      api: [1]
     }
     it('Will return 1 for vpaid version 1', function() {
       expect(getApi(data)[0]).to.be.equal(1)
@@ -646,7 +646,7 @@ describe('DistrictM Adaptor', function () {
 
   describe('Test getProtocols function', function() {
     it('getProtocols will return 3', function() {
-      expect(getProtocols({protocols: ['VAST_3_0']})[0]).to.be.equal(3)
+      expect(getProtocols({protocols: [3]})[0]).to.be.equal(3)
     })
     it('getProtocols will return 6', function() {
       expect(_.isEqual(getProtocols({}), [2, 3, 5, 6, 7, 8])).to.be.equal(true)
@@ -811,3 +811,4 @@ describe('DistrictM Adaptor', function () {
     });
   });
 });
+
