@@ -102,7 +102,8 @@ var sizeMap = {
   274: '1800x200',
   278: '320x500',
   282: '320x400',
-  288: '640x380'
+  288: '640x380',
+  548: '500x1000'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -684,6 +685,14 @@ export const spec = {
             bidObject.dealId = bid.dealid;
           }
 
+          if (bid.adomain) {
+            utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
+          }
+
+          if (utils.deepAccess(bid, 'ext.bidder.rp.advid')) {
+            utils.deepSetValue(bidObject, 'meta.advertiserId', bid.ext.bidder.rp.advid);
+          }
+
           let serverResponseTimeMs = utils.deepAccess(responseObj, 'ext.responsetimemillis.rubicon');
           if (bidRequest && serverResponseTimeMs) {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
@@ -691,6 +700,7 @@ export const spec = {
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
+            utils.deepSetValue(bidObject, 'meta.mediaType', VIDEO);
             const extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
 
             // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
@@ -756,12 +766,16 @@ export const spec = {
             advertiserId: ad.advertiser, networkId: ad.network
           },
           meta: {
-            advertiserId: ad.advertiser, networkId: ad.network
+            advertiserId: ad.advertiser, networkId: ad.network, mediaType: BANNER
           }
         };
 
         if (ad.creative_type) {
           bid.mediaType = ad.creative_type;
+        }
+
+        if (ad.adomain) {
+          bid.meta.advertiserDomains = Array.isArray(ad.adomain) ? ad.adomain : [ad.adomain];
         }
 
         if (ad.creative_type === VIDEO) {

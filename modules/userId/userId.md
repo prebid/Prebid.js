@@ -29,9 +29,9 @@ pbjs.setConfig({
                 pd: "some-pd-string"  // See https://wiki.id5.io/x/BIAZ for details
             },
             storage: {
-                type: "cookie",
-                name: "id5id.1st",
-                expires: 90, // Expiration of cookies in days
+                type: "html5",        // ID5 requires html5
+                name: "id5id",
+                expires: 90,          // Expiration in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
         }, {
@@ -69,6 +69,13 @@ pbjs.setConfig({
                  type: 'cookie',
                  name: 'sharedid',
                  expires: 28
+              }
+        }, {
+             name: 'criteo',
+             storage: {             // It is best not to specify this parameter since the module needs to be called as many times as possible
+                 type: 'cookie',
+                 name: '_criteoId',
+                 expires: 1
               }
         }],
         syncDelay: 5000,
@@ -137,10 +144,17 @@ pbjs.setConfig({
             },
             storage: {
                 type: 'html5',
-                name: 'id5id.1st',
-                expires: 90, // Expiration of cookies in days
+                name: 'id5id',
+                expires: 90,          // Expiration in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
+        }, {
+             name: 'criteo',
+             storage: {              // It is best not to specify this parameter since the module needs to be called as many times as possible
+                 type: 'html5',
+                 name: '_criteoId',
+                 expires: 1
+              }
         }],
         syncDelay: 5000
     }
@@ -164,6 +178,10 @@ pbjs.setConfig({
         {
             name: "netId",
             value: { "netId": "fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg" }
+        },
+        {
+            name: "criteo",
+            value: { "criteoId": "wK-fkF8zaEIlMkZMbHl3eFo4NEtoNmZaeXJtYkFjZlVuWjBhcjJMaTRYd3pZNSUyQnlKRHNGRXlpdzdjd3pjVzhjcSUyQmY4eTFzN3VSZjV1ZyUyRlA0U2ZiR0UwN2I4bDZRJTNEJTNE" }
         }],
         syncDelay: 5000
     }

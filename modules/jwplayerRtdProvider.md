@@ -1,8 +1,8 @@
 The purpose of this Real Time Data Provider is to allow publishers to target against their JW Player media without 
-having to integrate with the VPB product. This prebid module makes JW Player's video ad targeting information accessible 
+having to integrate with the Player Bidding product. This prebid module makes JW Player's video ad targeting information accessible 
 to Bid Adapters.
 
-**Usage for Publishers:**
+#Usage for Publishers:
 
 Compile the JW Player RTD Provider into your Prebid build:
 
@@ -25,26 +25,22 @@ pbjs.setConfig({
     }
 });
 ```
-
-In order to prefetch targeting information for certain media, include the media IDs in the `jwplayerDataProvider` var:
-
-```javascript
-const jwplayerDataProvider = {
-  name: "jwplayer",
-  params: {
-    mediaIDs: ['abc', 'def', 'ghi', 'jkl']
-  }
-};
-```
-Lastly, include the content's media ID and/or the player's ID in the matching AdUnit:
+Lastly, include the content's media ID and/or the player's ID in the matching AdUnit's `fpd.context.data`:
 
 ```javascript
 const adUnit = {
   code: '/19968336/prebid_native_example_1',
   ...
-  jwTargeting: {
-    playerID: 'abcd',
-    mediaID: '1234'
+  fpd: {
+    context: {
+      data: {
+        jwTargeting: {
+          // Note: the following Ids are placeholders and should be replaced with your Ids.
+          playerID: 'abcd',
+          mediaID: '1234'
+        }
+      }
+    }
   }
 };
 
@@ -56,25 +52,46 @@ pbjs.que.push(function() {
 });
 ``` 
 
-**Usage for Bid Adapters:**
+**Note**: You may also include `jwTargeting` information in the prebid config's `fpd.context.data`. Information provided in the adUnit will always supersede, and information in the config will be used as a fallback.
+ 
+##Prefetching
+In order to prefetch targeting information for certain media, include the media IDs in the `jwplayerDataProvider` var and set `waitForIt` to `true`:
+
+```javascript
+const jwplayerDataProvider = {
+  name: "jwplayer",
+  waitForIt: true,
+  params: {
+    mediaIDs: ['abc', 'def', 'ghi', 'jkl']
+  }
+};
+```
+
+You must also set a value to `auctionDelay` in the config's `realTimeData` object 
+
+```javascript
+realTimeData = {
+  auctionDelay: 100,
+  ...
+};
+```
+
+#Usage for Bid Adapters:
 
 Implement the `buildRequests` function. When it is called, the `bidRequests` param will be an array of bids.
 Each bid for which targeting information was found will conform to the following object structure:
 
 ```javascript
 {
-     adUnitCode: 'xyz',
-     bidId: 'abc',
-     ...
-     realTimeData: {
-          ...,
-          jwTargeting: {
-               segments: ['123', '456'],
-               content: {
-                  id: 'jw_abc123'
-               }
-          }
-     }
+    adUnitCode: 'xyz',
+    bidId: 'abc',
+    ...,
+    jwTargeting: {
+      segments: ['123', '456'],
+      content: {
+        id: 'jw_abc123'
+      }
+    }
 }
 ```
 
@@ -94,3 +111,5 @@ To view an example:
 - in your browser, navigate to:
 
 `http://localhost:9999/integrationExamples/gpt/jwplayerRtdProvider_example.html`
+
+**Note:** the mediaIds in the example are placeholder values; replace them with your existing IDs.
