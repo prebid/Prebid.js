@@ -1145,6 +1145,20 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          describe('pubcid support', function () {
+            it('should send eid_pubcid.org when userIdAsEids contains pubcid', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                pubcid: '1111'
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_pubcid.org']).to.equal('1111^1');
+            });
+          });
+
           describe('Criteo support', function () {
             it('should send eid_criteo.com when userIdAsEids contains criteo', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
@@ -1442,10 +1456,16 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
           expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
           expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
+          // example should exist
+          expect(post.user.ext.eids[5].source).to.equal('example.com');
+          expect(post.user.ext.eids[5].uids[0].id).to.equal('333333');
+          // id-partner.com
+          expect(post.user.ext.eids[6].source).to.equal('id-partner.com');
+          expect(post.user.ext.eids[6].uids[0].id).to.equal('4444444');
           // CriteoId should exist
-          expect(post.user.ext.eids[5].source).to.equal('criteo.com');
-          expect(post.user.ext.eids[5].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[5].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[7].source).to.equal('criteo.com');
+          expect(post.user.ext.eids[7].uids[0].id).to.equal('1111');
+          expect(post.user.ext.eids[7].uids[0].atype).to.equal(1);
 
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
@@ -2107,6 +2127,7 @@ describe('the rubicon adapter', function () {
                 'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
                 'size_id': '15',
                 'ad_id': '6',
+                'adomain': ['test.com'],
                 'advertiser': 7,
                 'network': 8,
                 'creative_id': 'crid-9',
@@ -2128,6 +2149,7 @@ describe('the rubicon adapter', function () {
                 'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
                 'size_id': '43',
                 'ad_id': '7',
+                'adomain': ['test.com'],
                 'advertiser': 7,
                 'network': 8,
                 'creative_id': 'crid-9',
@@ -2162,6 +2184,8 @@ describe('the rubicon adapter', function () {
           expect(bids[0].rubicon.networkId).to.equal(8);
           expect(bids[0].creativeId).to.equal('crid-9');
           expect(bids[0].currency).to.equal('USD');
+          expect(bids[0].meta.mediaType).to.equal('banner');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
           expect(bids[0].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`);
@@ -2695,13 +2719,15 @@ describe('the rubicon adapter', function () {
               bid: [{
                 id: '0',
                 impid: 'instream_video1',
+                adomain: ['test.com'],
                 price: 2,
                 crid: '4259970',
                 ext: {
                   bidder: {
                     rp: {
                       mime: 'application/javascript',
-                      size_id: 201
+                      size_id: 201,
+                      advid: 12345
                     }
                   },
                   prebid: {
@@ -2730,6 +2756,9 @@ describe('the rubicon adapter', function () {
           expect(bids[0].netRevenue).to.equal(true);
           expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
           expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].meta.mediaType).to.equal('video');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
+          expect(bids[0].meta.advertiserId).to.equal(12345);
           expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].currency).to.equal('USD');
           expect(bids[0].width).to.equal(640);

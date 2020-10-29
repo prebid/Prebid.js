@@ -150,6 +150,18 @@ const USER_IDS_CONFIG = {
   'quantcastId': {
     source: 'quantcast.com',
     atype: 1
+  },
+
+  // IDx
+  'idx': {
+    source: 'idx.lat',
+    atype: 1
+  },
+
+  // Verizon Media
+  'vmuid': {
+    source: 'verizonmedia.com',
+    atype: 1
   }
 };
 
