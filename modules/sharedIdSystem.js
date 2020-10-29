@@ -26,7 +26,7 @@ const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 
 const id = factory();
-const storage = getStorageManager(null, MODULE_NAME);
+export const storage = getStorageManager(null, MODULE_NAME);
 
 /**
  * Constructs cookie value
