@@ -61,6 +61,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    if (validBidRequests.length === 0) return []
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
 
@@ -93,7 +94,7 @@ export const spec = {
         source: {
           tid: bidRequest.transactionId
         },
-        tmax: bidderRequest.timeout,
+        tmax: bidRequest.timeout,
         imp: [impObject],
       };
       bids.push(data)
