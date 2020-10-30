@@ -6,17 +6,13 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.2';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
 const storage = getStorageManager();
 
 function isBidRequestValid(bid) {
-  if (!utils.isSafariBrowser() && !hasUuid()) {
-    utils.logWarn('uuid is not found.');
-    return false;
-  }
   if (!utils.deepAccess(bid, 'params.placementId')) {
     utils.logWarn('placementId param is reqeuired.');
     return false;
@@ -225,7 +221,7 @@ function receiveMessage() {
 
 function setUuid(e) {
   if (utils.isPlainObject(e.data) && e.data.relaido_uuid) {
-    storage.setDataInLocalStorage(UUID_KEY, e.data.relaido_uuid);
+    storage.setCookie(UUID_KEY, e.data.relaido_uuid);
     window.removeEventListener('message', setUuid);
   }
 }
@@ -252,12 +248,12 @@ function isVideoValid(bid) {
   return false;
 }
 
-function hasUuid() {
-  return !!storage.getDataFromLocalStorage(UUID_KEY);
-}
-
 function getUuid() {
-  return storage.getDataFromLocalStorage(UUID_KEY) || '';
+  const id = storage.getCookie(UUID_KEY)
+  if (id) return id;
+  const newId = utils.generateUUID();
+  storage.setCookie(UUID_KEY, newId);
+  return newId;
 }
 
 export function isMobile() {

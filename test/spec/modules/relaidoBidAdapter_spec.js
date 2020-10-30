@@ -11,6 +11,7 @@ const setUAMobile = () => { window.navigator.__defineGetter__('userAgent', funct
 
 describe('RelaidoAdapter', function () {
   const relaido_uuid = 'hogehoge';
+  window.document.cookie = `${UUID_KEY}=${relaido_uuid}`
   let bidRequest;
   let bidderRequest;
   let serverResponse;
@@ -65,7 +66,6 @@ describe('RelaidoAdapter', function () {
       height: bidRequest.mediaTypes.video.playerSize[0][1],
       mediaType: 'video',
     };
-    localStorage.setItem(UUID_KEY, relaido_uuid);
   });
 
   describe('spec.isBidRequestValid', function () {
@@ -138,12 +138,6 @@ describe('RelaidoAdapter', function () {
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
       setUADefault();
-    });
-
-    it('should return false when the uuid are missing', function () {
-      localStorage.removeItem(UUID_KEY);
-      const result = !!(utils.isSafariBrowser());
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(result);
     });
 
     it('should return false when the placementId params are missing', function () {
