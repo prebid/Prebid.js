@@ -37,7 +37,7 @@ describe('audigentRtdProvider', function() {
 
     	addSegmentData(adUnits, data, config);
 
-      expect(adUnits[0].fpd.user.data.segments).to.have.deep.property('audigent_segments', data);
+      expect(adUnits[0].bids[0].fpd.user.data.segments).to.have.deep.property('audigent_segments', data);
     	expect(adUnits[0].bids[0].params.user).to.have.deep.property('segments', ['apnseg1', 'apnseg2', 'apnseg2']);
     	expect(adUnits[1].bids[0].params.user).to.have.deep.property('segments', ['apnseg1', 'apnseg2', 'apnseg2']);
     	expect(adUnits[1].bids[1]).to.have.deep.property('segments', ['seg1', 'seg2', 'seg3']);
