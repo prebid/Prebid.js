@@ -14,7 +14,10 @@ describe('audigentRtdProvider', function() {
     it('adds segment data', function() {
       const config = {
         params: {
-          mapSegments: ['appnexus', 'generic']
+          mapSegments: {
+            'appnexus': true,
+            'generic': true
+          }
         }
       };
 
@@ -46,7 +49,9 @@ describe('audigentRtdProvider', function() {
       const config = {
         params: {
           segmentCache: true,
-          mapSegments: ['generic']
+          mapSegments: {
+            'generic': true
+          }
         }
       };
 
@@ -75,7 +80,9 @@ describe('audigentRtdProvider', function() {
       const config = {
         params: {
           segmentCache: false,
-          mapSegments: ['generic'],
+          mapSegments: {
+            'generic': true
+          },
           requestParams: {
             'publisherId': 1234
           }

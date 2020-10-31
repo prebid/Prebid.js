@@ -49,8 +49,12 @@ export function addSegmentData(adUnits, data, config) {
     if (adUnit.hasOwnProperty('bids')) {
       adUnit.bids.forEach(bid => {
         try {
-          if (config.params.mapSegments && config.params.mapSegments.includes(bid.bidder) && data[bid.bidder]) {
-            segmentMappers[bid.bidder](bid, data[bid.bidder]);
+          if (config.params.mapSegments && config.params.mapSegments[bid.bidder] && data[bid.bidder]) {
+            if (typeof config.params.mapSegments[bid.bidder] == 'function') {
+              config.params.mapSegments[bid.bidder](bid, data[bid.bidder]);
+            } else if (segmentMappers[bid.bidder]) {
+              segmentMappers[bid.bidder](bid, data[bid.bidder]);
+            }
           }
         } catch (err) {
           utils.logError('audigent segment map error.');

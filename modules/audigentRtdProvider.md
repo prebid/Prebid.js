@@ -43,7 +43,9 @@ pbjs.setConfig(
                 name: "audigent",
                 waitForIt: true,
                 params: {
-                    mapSegments: ['appnexus'],
+                    mapSegments: {
+                        'appnexus': true,
+                    },
                     segmentCache: false,
                     publisherId: 1234
                 }
