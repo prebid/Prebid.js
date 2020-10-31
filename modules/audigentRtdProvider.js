@@ -11,28 +11,49 @@ import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
+export const storage = getStorageManager();
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'audigent';
-const HALOID_LOCAL_NAME = 'auHaloId';
-const SEG_LOCAL_NAME = '__adgntseg';
+export const HALOID_LOCAL_NAME = 'auHaloId';
+export const SEG_LOCAL_NAME = '__adgntseg';
 
-let segmentMap = {};
+const set = (obj, path, val) => {
+  const keys = path.split('.');
+  const lastKey = keys.pop();
+  const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, obj);
+  lastObj[lastKey] = lastObj[lastKey] || val;
+};
+
+/** bid adapter format segment augmentation functions */
+const segmentMappers = {
+  appnexus: function(bid, segments) {
+    set(bid, 'params.user.segments', []);
+    bid.params.user.segments = bid.params.user.segments.concat(segments);
+  },
+  generic: function(bid, segments) {
+    bid.segments = segments;
+  }
+}
 
 /**
  * decorate adUnits with segment data
  * @param {adUnit[]} adUnits
  * @param {Object} data
  */
-function addSegmentData(adUnits, data) {
+export function addSegmentData(adUnits, data, config) {
   adUnits.forEach(adUnit => {
+    set(adUnit, 'fpd.user.data.segments.audigent_segments', data);
+
     if (adUnit.hasOwnProperty('bids')) {
       adUnit.bids.forEach(bid => {
-        bid.audigent_segments = data;
-        if (segmentMap[bid.bidder] && data[bid.bidder]) {
-          segmentMap[bid.bidder](bid, data[bid.bidder]);
+        try {
+          if (config.params.mapSegments && config.params.mapSegments.includes(bid.bidder) && data[bid.bidder]) {
+            segmentMappers[bid.bidder](bid, data[bid.bidder]);
+          }
+        } catch (err) {
+          utils.logError('audigent segment map error.');
         }
       })
     }
@@ -48,15 +69,17 @@ function addSegmentData(adUnits, data) {
  * @param {Object} config
  * @param {Object} userConsent
  */
-function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
+export function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
-  if (config.segmentCache) {
+  if (config.params.segmentCache) {
     let jsonData = storage.getDataFromLocalStorage(SEG_LOCAL_NAME);
+
     if (jsonData) {
       let data = JSON.parse(jsonData);
+
       if (data.audigent_segments) {
-        addSegmentData(adUnits, data.audigent_segments);
+        addSegmentData(adUnits, data.audigent_segments, config);
         onDone();
         return;
       }
@@ -95,10 +118,10 @@ function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
  * @param {Object} userConsent
  * @param {Object} userIds
  */
-function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
+export function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
   let reqParams = {};
   if (typeof config == 'object' && config != null && Object.keys(config).length > 0) {
-    reqParams = config.params;
+    reqParams = config.params.requestParams;
   }
 
   const url = `https://seg.halo.ad.gt/api/v1/rtb_segments`;
@@ -108,7 +131,7 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
         try {
           const data = JSON.parse(response);
           if (data && data.audigent_segments) {
-            addSegmentData(adUnits, data.audigent_segments);
+            addSegmentData(adUnits, data.audigent_segments, config);
             onDone();
             storage.setDataInLocalStorage(SEG_LOCAL_NAME, JSON.stringify(data));
           } else {
@@ -135,13 +158,11 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
 
 /**
  * module init
- * @param {Object} config
+ * @param {Object} provider
+ * @param {Objkect} userConsent
  * @return {boolean}
  */
-export function init(config) {
-  if (config.segmentMap) {
-    segmentMap = config.segmentMap;
-  }
+function init(provider, userConsent) {
   return true;
 }
 

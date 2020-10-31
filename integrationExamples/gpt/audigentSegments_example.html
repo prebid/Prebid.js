@@ -250,8 +250,12 @@
                         {
                             name: "audigent",
                             waitForIt: true,
-                            segmentMap: bidSegmentMappers,
-                            segmentCache: false
+                            params: {
+                                mapSegments: ['appnexus'],
+                                segmentCache: false,
+                                publisherId: 0
+                            }
+
                         }
                     ]
                 }
@@ -263,7 +267,7 @@
 
         function sendAdserverRequest() {
             document.getElementById('tdid').innerHTML = adUnits[0].bids[0].userId['tdid'];
-            document.getElementById('audigent_segments').innerHTML = JSON.stringify(adUnits[0].bids[0].audigent_segments);
+            document.getElementById('audigent_segments').innerHTML = JSON.stringify(adUnits[0].bids[0].params.user.segments);
 
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
@@ -315,7 +319,7 @@ TDID:
 <div id='tdid'>
 </div>
 
-Audigent Segments:
+Audigent Segments (Appnexus):
 <div id='audigent_segments'>
 </div>
 </body>

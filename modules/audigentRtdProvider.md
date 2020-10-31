@@ -1,13 +1,13 @@
 ## Audigent Real-time Data Submodule
 
-Audigent is a next-generation data management platform and a first-of-a-kind 
-"data agency" containing some of the most exclusive content-consuming audiences 
+Audigent is a next-generation data management platform and a first-of-a-kind
+"data agency" containing some of the most exclusive content-consuming audiences
 across desktop, mobile and social platforms.
 
-This real-time data module provides quality user segmentation that can be 
-attached to bid request objects destined for different SSPs in order to optimize 
-targeting. Audigent maintains a large database of first-party Tradedesk Unified 
-ID, Audigent Halo ID and other id provider mappings to various third-party 
+This real-time data module provides quality user segmentation that can be
+attached to bid request objects destined for different SSPs in order to optimize
+targeting. Audigent maintains a large database of first-party Tradedesk Unified
+ID, Audigent Halo ID and other id provider mappings to various third-party
 segment types that are utilizable across different SSPs.  With this module,
 these segments can be retrieved and supplied to the SSP in real-time during
 the bid request cycle.
@@ -29,21 +29,11 @@ The format of returned segments is a segment type mapping.
 }
 ```
 
-Define a function that will map segment types to a specific bidder's request
-format by name. Supply this function to the Audigent data provider as
-segmentMapper. In this example, we add segments to an appnexus bid request
-in the format accepted by their adapter.
+Add the Audigent RTD provider to your Prebid config, and add any adapters
+you would like to specifically provide segments for.  Segments will be mapped
+into the bid request objects for these adapters.
 
 ```
-var bidSegmentMappers = {
-    appnexus: function(bid, segments) {
-        if (bid.params.user.segments) {
-            existing_segments = bid.params.user.segments;
-        }
-        bid.params.user.segments = existing_segments.concat(segments);
-    }
-}
-
 pbjs.setConfig(
 	...
     realTimeData: {
@@ -52,8 +42,11 @@ pbjs.setConfig(
             {
                 name: "audigent",
                 waitForIt: true,
-                segmentMap: bidSegmentMappers,
-                segmentCache: false
+                params: {
+                    mapSegments: ['appnexus'],
+                    segmentCache: false,
+                    publisherId: 1234
+                }
             }
         ]
     }
