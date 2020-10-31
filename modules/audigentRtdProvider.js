@@ -44,10 +44,9 @@ const segmentMappers = {
  */
 export function addSegmentData(adUnits, data, config) {
   adUnits.forEach(adUnit => {
-    set(adUnit, 'fpd.user.data.segments.audigent_segments', data);
-
     if (adUnit.hasOwnProperty('bids')) {
       adUnit.bids.forEach(bid => {
+        set(bid, 'fpd.user.data.segments.audigent_segments', data);
         try {
           if (config.params.mapSegments && config.params.mapSegments[bid.bidder] && data[bid.bidder]) {
             if (typeof config.params.mapSegments[bid.bidder] == 'function') {
