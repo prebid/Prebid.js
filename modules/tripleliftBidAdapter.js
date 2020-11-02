@@ -285,7 +285,7 @@ function _buildResponseObject(bidderRequest, bid) {
       meta: {}
     };
 
-    if (breq.mediaTypes.video) {
+    if (_isInstreamBidRequest(breq)) {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
     };
