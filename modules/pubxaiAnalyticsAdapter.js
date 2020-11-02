@@ -112,7 +112,7 @@ function mapBidResponse(bidResponse, status) {
       requestTimestamp: bidResponse.requestTimestamp,
       responseTimestamp: bidResponse.responseTimestamp,
       platform: navigator.platform,
-      device_type: getDeviceType(),
+      deviceType: getDeviceType(),
       browser: checkUserBrowser()
     }
   }

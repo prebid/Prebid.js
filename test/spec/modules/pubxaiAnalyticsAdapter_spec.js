@@ -1,4 +1,5 @@
 import pubxaiAnalyticsAdapter from 'modules/pubxaiAnalyticsAdapter.js';
+import {checkUserBrowser} from 'modules/pubxaiAnalyticsAdapter.js';
 import {
   expect
 } from 'chai';
@@ -23,8 +24,7 @@ describe('pubxai analytics adapter', function() {
   describe('track', function() {
     let initOptions = {
       samplingRate: '1',
-      pubxId: '6c415fc0-8b0e-4cf5-be73-01526a4db625',
-      hostName: 'api.pbxai.com',
+      pubxId: '6c415fc0-8b0e-4cf5-be73-01526a4db625'
     };
 
     let prebidEvent = {
@@ -528,9 +528,12 @@ describe('pubxai analytics adapter', function() {
         'responseTimestamp': 1603865707449,
         'platform': 'MacIntel',
         'deviceType': 'desktop',
-        'browser': 'Chrome'
+        'browser': checkUserBrowser()
       }],
       'auctionInit': {
+        'host': location.host,
+        'path': location.pathname,
+        'search': location.search,
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         'timestamp': 1603865707180,
         'auctionStatus': 'inProgress',
@@ -646,16 +649,16 @@ describe('pubxai analytics adapter', function() {
         'bidderCode': 'appnexus',
         'bidId': '248f9a4489835e',
         'adUnitCode': '/19968336/header-bid-tag-1',
-        'requestId': '184cbc05bb90ba',
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
-        'sizes': '300x250',
-        'renderStatus': 2,
+        'renderedSize': '300x250',
+        'renderStatus': 4,
         'requestTimestamp': 1603865707182,
         'creativeId': 96846035,
         'currency': 'USD',
         'cpm': 0.5,
         'netRevenue': true,
         'mediaType': 'banner',
+        'status': 'rendered',
         'statusMessage': 'Bid available',
         'floorData': {
           'floorValue': 0.4,
@@ -677,7 +680,7 @@ describe('pubxai analytics adapter', function() {
         'responseTimestamp': 1603865707449,
         'platform': 'MacIntel',
         'deviceType': 'desktop',
-        'browser': 'Chrome'
+        'browser': checkUserBrowser()
       },
       'initOptions': initOptions
     }
