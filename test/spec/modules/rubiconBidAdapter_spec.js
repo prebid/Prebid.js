@@ -246,7 +246,7 @@ describe('the rubicon adapter', function () {
           id: '4444444'
         }]
       }],
-      criteoId: '1111'
+      criteoId: '1111',
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
@@ -1097,6 +1097,7 @@ describe('the rubicon adapter', function () {
             let data = parseQuery(request.data);
 
             expect(data['tpid_tdid']).to.equal('abcd-efgh-ijkl-mnop-1234');
+            expect(data['eid_adserver.org']).to.equal('abcd-efgh-ijkl-mnop-1234');
           });
 
           describe('LiveIntent support', function () {
@@ -1104,7 +1105,8 @@ describe('the rubicon adapter', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 lipb: {
-                  lipbid: '0000-1111-2222-3333'
+                  lipbid: '0000-1111-2222-3333',
+                  segments: ['segA', 'segB']
                 }
               };
               clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
@@ -1112,6 +1114,8 @@ describe('the rubicon adapter', function () {
               let data = parseQuery(request.data);
 
               expect(data['tpid_liveintent.com']).to.equal('0000-1111-2222-3333');
+              expect(data['eid_liveintent.com']).to.equal('0000-1111-2222-3333');
+              expect(data['tg_v.LIseg']).to.equal('segA,segB');
             });
 
             it('should send tg_v.LIseg when userIdAsEids contains liveintentId with ext.segments as array', function () {
@@ -1429,20 +1433,10 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
           expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
           expect(post.user.ext.eids[0].ext.segments[1]).to.equal('segB');
-          // Non-EID properties set using liveintent EID values
-          expect(post.user.ext).to.have.property('tpid').that.is.an('object');
-          expect(post.user.ext.tpid.source).to.equal('liveintent.com');
-          expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
-          expect(post).to.have.property('rp').that.is.an('object');
-          expect(post.rp).to.have.property('target').that.is.an('object');
-          expect(post.rp.target).to.have.property('LIseg').that.is.an('array');
-          expect(post.rp.target.LIseg[0]).to.equal('segA');
-          expect(post.rp.target.LIseg[1]).to.equal('segB');
           // LiveRamp should exist
           expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.user.ext.eids[1].uids[0].atype).to.equal(1);
-
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
