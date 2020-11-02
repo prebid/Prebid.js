@@ -12,30 +12,21 @@ segment types that are utilizable across different SSPs.  With this module,
 these segments can be retrieved and supplied to the SSP in real-time during
 the bid request cycle.
 
-### Usage
+### Publisher Usage
 
 Compile the audigent RTD module into your Prebid build:
 
 `gulp build --modules=userId,unifiedIdSystem,rtdModule,audigentRtdProvider,appnexusBidAdapter`
 
-
-The format of returned segments is a segment type mapping.
-
-```
-{
-    'appnexus': ['anseg1', 'anseg2'],
-    'pubmatic': ['pseg1', 'pseg2'],
-    'spotx': ['sseg1', 'sseg2']
-}
-```
-
-Add the Audigent RTD provider to your Prebid config, and add any adapters
-you would like to specifically provide segments for.  Segments will be mapped
-into the bid request objects for these adapters.
+Add the Audigent RTD provider to your Prebid config.  For any adapters
+that you would like to retrieve segments for, add a mapping in the 'mapSegments'
+parameter.  In this example we will configure publisher 1234 to retrieve
+appnexus segments from Audigent. See the "Parameter Descriptions" below for
+more detailed information of the configuration parameters.
 
 ```
 pbjs.setConfig(
-	...
+    ...
     realTimeData: {
         auctionDelay: auctionDelay,
         dataProviders: [
@@ -47,7 +38,9 @@ pbjs.setConfig(
                         'appnexus': true,
                     },
                     segmentCache: false,
-                    publisherId: 1234
+                    requestParams: {
+                        publisherId: 1234
+                    }
                 }
             }
         ]
@@ -55,6 +48,24 @@ pbjs.setConfig(
     ...
 }
 ```
+
+### Parameter Descriptions for the Audigent `dataProviders` Configuration Section
+
+params.mapSegments | Required | Object
+Dictionary of bidders you would like to supply Audigent segments for.
+Maps to boolean values, but also allows functions for custom mapping logic.
+The function signature is (bid, segments) => {}.
+
+params.segmentCache | Optional | Boolean
+This parameter tells the Audigent RTD module to attempt reading segments
+from a local storage cache instead of always requesting them from the
+Audigent server.
+
+params.requestParams | Optional | Object
+Publisher partner specific configuration options, such as optional publisher id
+and other segment query related metadata to be submitted to Audigent's
+backend with each request.  Contact prebid@audigent.com for more information.
+
 
 ### Testing
 
@@ -65,5 +76,7 @@ To view an example of available segments returned by Audigent's backends:
 and then point your browser at:
 
 `http://localhost:9999/integrationExamples/gpt/audigentSegments_example.html`
+
+
 
 

@@ -23,29 +23,132 @@ describe('audigentRtdProvider', function() {
 
       let adUnits = [
         {
-          bids: [{bidder: 'appnexus'}]
+          bids: [
+            // bid with existing segment data in bid obj and fpd
+            {
+              bidder: 'appnexus',
+              fpd: {
+                user: {
+                  data: [
+                    {
+                      id: 'appnexus',
+                      segment: [
+                        {
+                          id: 'apnseg0'
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              params: {
+                user: {
+                  segments: ['apnseg0']
+                }
+              }
+            }
+          ]
         },
+
+        // bids with fpd data definitions but without existing segment data
         {
-          bids: [{bidder: 'appnexus'}, {bidder: 'generic'}]
+          bids: [
+            {
+              bidder: 'appnexus',
+              fpd: {
+                user: {
+                  data: [
+                    {
+                      id: 'appnexus'
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              bidder: 'generic',
+              fpd: {
+                user: {
+                  data: [
+                    {
+                      id: 'generic'
+                    }
+                  ]
+                }
+              }
+            }
+          ]
         }
       ];
 
       const data = {
-        appnexus: ['apnseg1', 'apnseg2', 'apnseg2'],
-        generic: ['seg1', 'seg2', 'seg3']
+        appnexus: [{id: 'apnseg1'}, {id: 'apnseg2'}, {id: 'apnseg3'}],
+        generic: [{id: 'seg1'}, {id: 'seg2'}, {id: 'seg3'}]
       };
 
     	addSegmentData(adUnits, data, config);
 
-      expect(adUnits[0].bids[0].fpd.user.data.segments).to.have.deep.property('audigent_segments', data);
-    	expect(adUnits[0].bids[0].params.user).to.have.deep.property('segments', ['apnseg1', 'apnseg2', 'apnseg2']);
-    	expect(adUnits[1].bids[0].params.user).to.have.deep.property('segments', ['apnseg1', 'apnseg2', 'apnseg2']);
-    	expect(adUnits[1].bids[1]).to.have.deep.property('segments', ['seg1', 'seg2', 'seg3']);
+      expect(adUnits[0].bids[0].fpd.user.data[0].segment[0]).to.have.deep.property('id', 'apnseg0');
+      expect(adUnits[0].bids[0].fpd.user.data[0].segment[1]).to.have.deep.property('id', 'apnseg1');
+      expect(adUnits[0].bids[0].fpd.user.data[0].segment[2]).to.have.deep.property('id', 'apnseg2');
+      expect(adUnits[0].bids[0].fpd.user.data[0].segment[3]).to.have.deep.property('id', 'apnseg3');
+      expect(adUnits[0].bids[0].params.user).to.have.deep.property('segments', ['apnseg0', 'apnseg1', 'apnseg2', 'apnseg3']);
+
+      expect(adUnits[1].bids[0].fpd.user.data[0].segment[0]).to.have.deep.property('id', 'apnseg1');
+      expect(adUnits[1].bids[0].fpd.user.data[0].segment[1]).to.have.deep.property('id', 'apnseg2');
+      expect(adUnits[1].bids[0].fpd.user.data[0].segment[2]).to.have.deep.property('id', 'apnseg3');
+      expect(adUnits[1].bids[0].params.user).to.have.deep.property('segments', ['apnseg1', 'apnseg2', 'apnseg3']);
+
+      expect(adUnits[1].bids[1].fpd.user.data[0].segment[0]).to.have.deep.property('id', 'seg1');
+      expect(adUnits[1].bids[1].fpd.user.data[0].segment[1]).to.have.deep.property('id', 'seg2');
+      expect(adUnits[1].bids[1].fpd.user.data[0].segment[2]).to.have.deep.property('id', 'seg3');
+      expect(adUnits[1].bids[1].segments[0]).to.have.deep.property('id', 'seg1');
+      expect(adUnits[1].bids[1].segments[1]).to.have.deep.property('id', 'seg2');
+      expect(adUnits[1].bids[1].segments[2]).to.have.deep.property('id', 'seg3');
+    });
+
+    it('allows mapper extensions and overrides', function() {
+      const config = {
+        params: {
+          mapSegments: {
+            generic: (bid, segments) => {
+              bid.overrideSegments = segments;
+            },
+            newBidder: (bid, segments) => {
+              bid.newBidderSegments = segments;
+            }
+          }
+        }
+      };
+
+      let adUnits = [
+        {
+          bids: [ {bidder: 'newBidder'}, {bidder: 'generic'} ]
+        }
+      ];
+
+      const data = {
+        newBidder: [{id: 'nbseg1', name: 'New Bidder Segment 1'}, {id: 'nbseg2', name: 'New Bidder Segment 2'}, {id: 'nbseg3', name: 'New Bidder Segment 3'}],
+        generic: [{id: 'seg1'}, {id: 'seg2'}, {id: 'seg3'}]
+      };
+
+      addSegmentData(adUnits, data, config);
+
+      expect(adUnits[0].bids[0].newBidderSegments[0]).to.have.deep.property('id', 'nbseg1');
+      expect(adUnits[0].bids[0].newBidderSegments[0]).to.have.deep.property('name', 'New Bidder Segment 1');
+      expect(adUnits[0].bids[0].newBidderSegments[1]).to.have.deep.property('id', 'nbseg2');
+      expect(adUnits[0].bids[0].newBidderSegments[1]).to.have.deep.property('name', 'New Bidder Segment 2');
+      expect(adUnits[0].bids[0].newBidderSegments[2]).to.have.deep.property('id', 'nbseg3');
+      expect(adUnits[0].bids[0].newBidderSegments[2]).to.have.deep.property('name', 'New Bidder Segment 3');
+
+      expect(adUnits[0].bids[1].overrideSegments[0]).to.have.deep.property('id', 'seg1');
+      expect(adUnits[0].bids[1].overrideSegments[1]).to.have.deep.property('id', 'seg2');
+      expect(adUnits[0].bids[1].overrideSegments[2]).to.have.deep.property('id', 'seg3');
     });
   });
 
   describe('Get Segments', function() {
-    it('gets segment data from cache', function() {
+    it('gets segment data from local storage cache', function() {
       const config = {
         params: {
           segmentCache: true,
@@ -65,7 +168,7 @@ describe('audigentRtdProvider', function() {
 
       const data = {
         audigent_segments: {
-          generic: ['seg1']
+          generic: [{id: 'seg1'}]
         }
       };
 
@@ -73,7 +176,7 @@ describe('audigentRtdProvider', function() {
 
       getSegments(reqBidsConfigObj, () => {}, config, {});
 
-      expect(reqBidsConfigObj.adUnits[0].bids[0]).to.have.deep.property('segments', ['seg1']);
+      expect(reqBidsConfigObj.adUnits[0].bids[0].segments[0]).to.have.deep.property('id', 'seg1');
     });
 
     it('gets segment data via async request', function() {
@@ -98,7 +201,7 @@ describe('audigentRtdProvider', function() {
       };
       const data = {
         audigent_segments: {
-          generic: ['seg1']
+          generic: [{id: 'seg1'}]
         }
       };
 
@@ -111,7 +214,7 @@ describe('audigentRtdProvider', function() {
 
       request.respond(200, responseHeader, JSON.stringify(data));
 
-      expect(reqBidsConfigObj.adUnits[0].bids[0]).to.have.deep.property('segments', ['seg1']);
+      expect(reqBidsConfigObj.adUnits[0].bids[0].segments[0]).to.have.deep.property('id', 'seg1');
     });
   });
 });

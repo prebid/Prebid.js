@@ -16,6 +16,8 @@ export const storage = getStorageManager();
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'audigent';
+const ERR_MSG = 'AUDIGENT_ERR';
+
 export const HALOID_LOCAL_NAME = 'auHaloId';
 export const SEG_LOCAL_NAME = '__adgntseg';
 
@@ -30,7 +32,11 @@ const set = (obj, path, val) => {
 const segmentMappers = {
   appnexus: function(bid, segments) {
     set(bid, 'params.user.segments', []);
-    bid.params.user.segments = bid.params.user.segments.concat(segments);
+    let appnexusSegments = [];
+    segments.forEach(segment => {
+      appnexusSegments.push(segment.id);
+    })
+    bid.params.user.segments = bid.params.user.segments.concat(appnexusSegments);
   },
   generic: function(bid, segments) {
     bid.segments = segments;
@@ -42,25 +48,37 @@ const segmentMappers = {
  * @param {adUnit[]} adUnits
  * @param {Object} data
  */
-export function addSegmentData(adUnits, data, config) {
+export function addSegmentData(adUnits, segmentData, config) {
   adUnits.forEach(adUnit => {
     if (adUnit.hasOwnProperty('bids')) {
       adUnit.bids.forEach(bid => {
-        set(bid, 'fpd.user.data.segments.audigent_segments', data);
         try {
-          if (config.params.mapSegments && config.params.mapSegments[bid.bidder] && data[bid.bidder]) {
+          set(bid, 'fpd.user.data', []);
+          if (Array.isArray(bid.fpd.user.data)) {
+            bid.fpd.user.data.forEach(fpdData => {
+              if (fpdData.name) { config.params.mapSegments[fpdData.name] = true; }
+              let segments = segmentData[fpdData.id] || segmentData[fpdData.name] || [];
+              fpdData.segment = (fpdData.segment || []).concat(segments);
+            });
+          }
+        } catch (err) {
+          utils.logError(ERR_MSG);
+        }
+
+        try {
+          if (config.params.mapSegments && config.params.mapSegments[bid.bidder] && segmentData[bid.bidder]) {
             if (typeof config.params.mapSegments[bid.bidder] == 'function') {
-              config.params.mapSegments[bid.bidder](bid, data[bid.bidder]);
+              config.params.mapSegments[bid.bidder](bid, segmentData[bid.bidder]);
             } else if (segmentMappers[bid.bidder]) {
-              segmentMappers[bid.bidder](bid, data[bid.bidder]);
+              segmentMappers[bid.bidder](bid, segmentData[bid.bidder]);
             }
           }
         } catch (err) {
-          utils.logError('audigent segment map error.');
+          utils.logError(ERR_MSG);
         }
-      })
+      });
     }
-  })
+  });
 
   return adUnits;
 }
