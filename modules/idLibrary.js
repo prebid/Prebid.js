@@ -36,12 +36,8 @@ function getEmail(value) {
   if (!matched) {
     return null;
   }
+  logInfo('Email found' + matched[0]);
   return matched[0];
-}
-
-function hasEmail(value) {
-  const email = getEmail(value);
-  return !!email;
 }
 
 function bodyAction(conf, mutations, observer) {
@@ -53,10 +49,8 @@ function bodyAction(conf, mutations, observer) {
   }
 
   const body = document.body.innerHTML;
-
-  if (hasEmail(body)) {
-    email = getEmail(body);
-
+  email = getEmail(body);
+  if (email != null) {
     logInfo(`Email obtained from the body ${email}`);
     observer.disconnect();
     logInfo('Post data on email found in body');
@@ -104,9 +98,8 @@ function removeInputElementsElementListner(conf) {
 function processInputChange(event, conf) {
   const value = event.target.value;
   logInfo(`Modified Value of input ${event.target.value}`);
-  if (hasEmail(value)) {
-    email = getEmail(value);
-
+  email = getEmail(value);
+  if (email != null) {
     logInfo('Email found in input ' + email);
     postData(conf.url);
     removeInputElementsElementListner(conf);
@@ -161,9 +154,8 @@ function handleBodyElements(conf) {
     postData(conf.url);
     return;
   }
-  if (hasEmail(document.body.innerHTML)) {
-    email = getEmail(document.body.innerHTML);
-
+  email = getEmail(document.body.innerHTML);
+  if (email != null) {
     logInfo('Email found in body ' + email);
     logInfo(' Post data on email found in the body without observer');
     postData(conf.url);
@@ -182,9 +174,8 @@ function doesInputElementsHaveEmail() {
 
   for (let index = 0; index < inputs.length; ++index) {
     const curInput = inputs[index];
-
-    if (hasEmail(curInput.value)) {
-      email = getEmail(curInput.value);
+    email = getEmail(curInput.value);
+    if (email != null) {
       return true;
     }
   }
