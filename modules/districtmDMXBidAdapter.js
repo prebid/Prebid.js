@@ -39,9 +39,9 @@ export const spec = {
               nBid.requestId = nBid.impid;
               nBid.width = nBid.w || width;
               nBid.height = nBid.h || height;
-              nBid.mediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video' : null;
+              nBid.mediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner';
               if (nBid.mediaType) {
-                nBid.vastXml = cleanVast(nBid.adm);
+                nBid.vastXml = cleanVast(nBid.adm, nBid.nurl);
               }
               if (nBid.dealid) {
                 nBid.dealId = nBid.dealid;
@@ -154,19 +154,16 @@ export const spec = {
       if (dmx.mediaTypes && dmx.mediaTypes.video) {
         obj.video = {
           topframe: 1,
-          skip: dmx.mediaTypes.video.skippable || 0,
+          skip: dmx.mediaTypes.video.skip || 0,
           linearity: dmx.mediaTypes.video.linearity || 1,
           minduration: dmx.mediaTypes.video.minduration || 5,
           maxduration: dmx.mediaTypes.video.maxduration || 60,
-          playbackmethod: getPlaybackmethod(dmx.mediaTypes.video.playback_method),
+          playbackmethod: dmx.mediaTypes.video.playbackmethod || [2],
           api: getApi(dmx.mediaTypes.video),
           mimes: dmx.mediaTypes.video.mimes || ['video/mp4'],
           protocols: getProtocols(dmx.mediaTypes.video),
-          w: dmx.mediaTypes.video.playerSize[0][0],
           h: dmx.mediaTypes.video.playerSize[0][1],
-          format: dmx.mediaTypes.video.playerSize.map(s => {
-            return {w: s[0], h: s[1]};
-          }).filter(obj => typeof obj.w === 'number' && typeof obj.h === 'number')
+          w: dmx.mediaTypes.video.playerSize[0][0]
         };
       } else {
         obj.banner = {
@@ -380,20 +377,10 @@ export function bindUserId(eids, value, source, atype) {
   }
 }
 
-export function getApi({protocols}) {
+export function getApi({api}) {
   let defaultValue = [2];
-  let listProtocols = [
-    {key: 'VPAID_1_0', value: 1},
-    {key: 'VPAID_2_0', value: 2},
-    {key: 'MRAID_1', value: 3},
-    {key: 'ORMMA', value: 4},
-    {key: 'MRAID_2', value: 5},
-    {key: 'MRAID_3', value: 6},
-  ];
-  if (protocols) {
-    return listProtocols.filter(p => {
-      return protocols.indexOf(p.key) !== -1;
-    }).map(p => p.value)
+  if (api && Array.isArray(api) && api.length > 0) {
+    return api
   } else {
     return defaultValue;
   }
@@ -409,35 +396,32 @@ export function getPlaybackmethod(playback) {
 
 export function getProtocols({protocols}) {
   let defaultValue = [2, 3, 5, 6, 7, 8];
-  let listProtocols = [
-    {key: 'VAST_1_0', value: 1},
-    {key: 'VAST_2_0', value: 2},
-    {key: 'VAST_3_0', value: 3},
-    {key: 'VAST_1_0_WRAPPER', value: 4},
-    {key: 'VAST_2_0_WRAPPER', value: 5},
-    {key: 'VAST_3_0_WRAPPER', value: 6},
-    {key: 'VAST_4_0', value: 7},
-    {key: 'VAST_4_0_WRAPPER', value: 8}
-  ];
-  if (protocols) {
-    return listProtocols.filter(p => {
-      return protocols.indexOf(p.key) !== -1
-    }).map(p => p.value);
+  if (protocols && Array.isArray(protocols) && protocols.length > 0) {
+    return protocols;
   } else {
     return defaultValue;
   }
 }
 
-export function cleanVast(str) {
-  const toberemove = /<img\s[^>]*?src\s*=\s*['\"]([^'\"]*?)['\"][^>]*?>/
-  const [img, url] = str.match(toberemove)
-  str = str.replace(toberemove, '')
-  if (img) {
-    if (url) {
-      const insrt = `<Impression><![CDATA[${url}]]></Impression>`
-      str = str.replace('</Impression>', `</Impression>${insrt}`)
+export function cleanVast(str, nurl) {
+  try {
+    const toberemove = /<img\s[^>]*?src\s*=\s*['\"]([^'\"]*?)['\"][^>]*?>/
+    const [img, url] = str.match(toberemove)
+    str = str.replace(toberemove, '')
+    if (img) {
+      if (url) {
+        const insrt = `<Impression><![CDATA[${url}]]></Impression>`
+        str = str.replace('</Impression>', `</Impression>${insrt}`)
+      }
     }
+    return str;
+  } catch (e) {
+    if(!nurl) {
+      return str
+    }
+    const insrt = `<Impression><![CDATA[${nurl}]]></Impression>`
+    str = str.replace('</Impression>', `</Impression>${insrt}`)
+    return str
   }
-  return str;
 }
 registerBidder(spec);
