@@ -747,13 +747,6 @@ describe('triplelift adapter', function () {
       expect(result[0].meta.advertiserName).to.equal('fake advertiser name');
       expect(result[1].meta).to.not.have.key('advertiserName');
     });
-
-    it('should include the advertiser domain in the meta field if available', function () {
-      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
-      expect(result[0].meta.advertiserDomains[0]).to.equal('fake advertiser name');
-      expect(result[0].meta.advertiserDomains.length).to.equal(1);
-      expect(result[1].meta).to.not.have.key('advertiserDomains');
-    });
   });
 
   describe('getUserSyncs', function() {

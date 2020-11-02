@@ -235,9 +235,9 @@ function addUserEids(userEids, seenIdPartners, id, source, ixlPartnerName, rtiPa
  *
  * @param  {array}  validBidRequests A list of valid bid request config objects.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
- * @param  {array}  impressions      List of impression objects describing the bids.
+ * @param  {object} impressions      An object containing a list of impression objects describing the bids for each transactionId
  * @param  {array}  version          Endpoint version denoting banner or video.
- * @return {object}                  Info describing the request to the server.
+ * @return {array}                   List of objects describing the request to the server.
  *
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
@@ -280,11 +280,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Since bidderRequestId are the same for different bid request, just use the first one.
   r.id = validBidRequests[0].bidderRequestId;
 
-  r.imp = impressions;
-
   r.site = {};
   r.ext = {};
   r.ext.source = 'prebid';
+  r.ext.ixdiag = {};
 
   // if an schain is provided, send it along
   if (validBidRequests[0].schain) {
@@ -358,30 +357,140 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (typeof otherIxConfig.timeout === 'number') {
       payload.t = otherIxConfig.timeout;
     }
+
+    if (typeof otherIxConfig.detectMissingSizes === 'boolean') {
+      r.ext.ixdiag.dms = otherIxConfig.detectMissingSizes;
+    } else {
+      r.ext.ixdiag.dms = true;
+    }
   }
 
   // Use the siteId in the first bid request as the main siteId.
   payload.s = validBidRequests[0].params.siteId;
   payload.v = version;
-  payload.r = JSON.stringify(r);
   payload.ac = 'j';
   payload.sd = 1;
   if (version === VIDEO_ENDPOINT_VERSION) {
     payload.nf = 1;
   }
 
-  return {
+  const requests = [];
+
+  const request = {
     method: 'GET',
     url: baseUrl,
     data: payload
   };
-}
 
+  const BASE_REQ_SIZE = new Blob([`${request.url}${utils.parseQueryStringParameters({...request.data, r: JSON.stringify(r)})}`]).size;
+  let currReqSize = BASE_REQ_SIZE;
+
+  const MAX_REQ_SIZE = 8000;
+  const MAX_REQ_LIMIT = 4;
+  let sn = 0;
+  let msi = 0;
+  let msd = 0;
+  r.ext.ixdiag.msd = 0;
+  r.ext.ixdiag.msi = 0;
+  r.imp = [];
+  let i = 0;
+  const transactionIds = Object.keys(impressions);
+  let currMissingImps = [];
+
+  while (i < transactionIds.length && requests.length < MAX_REQ_LIMIT) {
+    if (impressions[transactionIds[i]].hasOwnProperty('missingCount')) {
+      msd = impressions[transactionIds[i]].missingCount;
+    }
+
+    trimImpressions(impressions[transactionIds[i]], MAX_REQ_SIZE - BASE_REQ_SIZE);
+
+    if (impressions[transactionIds[i]].hasOwnProperty('missingImps')) {
+      msi = impressions[transactionIds[i]].missingImps.length;
+    }
+
+    let currImpsSize = new Blob([encodeURIComponent(JSON.stringify(impressions[transactionIds[i]]))]).size;
+    currReqSize += currImpsSize;
+    if (currReqSize < MAX_REQ_SIZE) {
+      // pushing ix configured sizes first
+      r.imp.push(...impressions[transactionIds[i]].ixImps);
+      // update msd msi
+      r.ext.ixdiag.msd += msd;
+      r.ext.ixdiag.msi += msi;
+
+      if (impressions[transactionIds[i]].hasOwnProperty('missingImps')) {
+        currMissingImps.push(...impressions[transactionIds[i]].missingImps);
+      }
+
+      i++;
+    } else {
+      // pushing missing sizes after configured ones
+      const clonedPayload = utils.deepClone(payload);
+
+      r.imp.push(...currMissingImps);
+      r.ext.ixdiag.sn = sn;
+      clonedPayload.sn = sn;
+      sn++;
+      clonedPayload.r = JSON.stringify(r);
+
+      requests.push({
+        method: 'GET',
+        url: baseUrl,
+        data: clonedPayload
+      });
+      currMissingImps = [];
+      currReqSize = BASE_REQ_SIZE;
+      r.imp = [];
+      msd = 0;
+      msi = 0;
+      r.ext.ixdiag.msd = 0;
+      r.ext.ixdiag.msi = 0;
+    }
+  }
+
+  if (currReqSize > BASE_REQ_SIZE && currReqSize < MAX_REQ_SIZE && requests.length < MAX_REQ_LIMIT) {
+    const clonedPayload = utils.deepClone(payload);
+    r.imp.push(...currMissingImps);
+
+    if (requests.length > 0) {
+      r.ext.ixdiag.sn = sn;
+      clonedPayload.sn = sn;
+    }
+    clonedPayload.r = JSON.stringify(r);
+
+    requests.push({
+      method: 'GET',
+      url: baseUrl,
+      data: clonedPayload
+    });
+  }
+
+  return requests;
+}
+/**
+ *
+ * @param {Object} impressions containing ixImps and possibly missingImps
+ *
+ */
+function trimImpressions(impressions, maxSize) {
+  let currSize = new Blob([encodeURIComponent(JSON.stringify(impressions))]).size;
+  if (currSize < maxSize) {
+    return;
+  }
+
+  while (currSize > maxSize) {
+    if (impressions.hasOwnProperty('missingImps') && impressions.missingImps.length > 0) {
+      impressions.missingImps.pop();
+    } else if (impressions.hasOwnProperty('ixImps') && impressions.ixImps.length > 0) {
+      impressions.ixImps.pop();
+    }
+    currSize = new Blob([encodeURIComponent(JSON.stringify(impressions))]).size;
+  }
+}
 /**
  *
  * @param  {array}   bannerSizeList list of banner sizes
  * @param  {array}   bannerSize the size to be removed
- * @return {boolean} true if succesfully removed, false if not found
+ * @return {boolean} true if successfully removed, false if not found
  */
 
 function removeFromSizes(bannerSizeList, bannerSize) {
@@ -496,19 +605,32 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     let reqs = [];
-    let bannerImps = [];
-    let videoImps = [];
+    let bannerImps = {};
+    let videoImps = {};
     let validBidRequest = null;
 
     // To capture the missing sizes i.e not configured for ix
     let missingBannerSizes = {};
+
+    const DEFAULT_IX_CONFIG = {
+      detectMissingSizes: true,
+    };
+
+    const ixConfig = {...DEFAULT_IX_CONFIG, ...config.getConfig('ix')};
 
     for (let i = 0; i < validBidRequests.length; i++) {
       validBidRequest = validBidRequests[i];
 
       if (validBidRequest.mediaType === VIDEO || utils.deepAccess(validBidRequest, 'mediaTypes.video')) {
         if (validBidRequest.mediaType === VIDEO || includesSize(validBidRequest.mediaTypes.video.playerSize, validBidRequest.params.size)) {
-          videoImps.push(bidToVideoImp(validBidRequest));
+          if (!videoImps.hasOwnProperty(validBidRequest.transactionId)) {
+            videoImps[validBidRequest.transactionId] = {};
+          }
+          if (!videoImps[validBidRequest.transactionId].hasOwnProperty('ixImps')) {
+            videoImps[validBidRequest.transactionId].ixImps = [];
+          }
+
+          videoImps[validBidRequest.transactionId].ixImps.push(bidToVideoImp(validBidRequest));
         } else {
           utils.logError('Bid size is not included in video playerSize')
         }
@@ -516,27 +638,47 @@ export const spec = {
       if (validBidRequest.mediaType === BANNER || utils.deepAccess(validBidRequest, 'mediaTypes.banner') ||
           (!validBidRequest.mediaType && !validBidRequest.mediaTypes)) {
         let imp = bidToBannerImp(validBidRequest);
-        bannerImps.push(imp);
-        updateMissingSizes(validBidRequest, missingBannerSizes, imp);
-      }
-    }
-    // Finding the missing banner sizes ,and making impressions for them
-    for (var transactionID in missingBannerSizes) {
-      if (missingBannerSizes.hasOwnProperty(transactionID)) {
-        let missingSizes = missingBannerSizes[transactionID].missingSizes;
-        for (let i = 0; i < missingSizes.length; i++) {
-          let origImp = missingBannerSizes[transactionID].impression;
-          let newImp = createMissingBannerImp(origImp, missingSizes[i]);
-          bannerImps.push(newImp);
+
+        if (!bannerImps.hasOwnProperty(validBidRequest.transactionId)) {
+          bannerImps[validBidRequest.transactionId] = {};
+        }
+        if (!bannerImps[validBidRequest.transactionId].hasOwnProperty('ixImps')) {
+          bannerImps[validBidRequest.transactionId].ixImps = []
+        }
+        bannerImps[validBidRequest.transactionId].ixImps.push(imp);
+        if (ixConfig.hasOwnProperty('detectMissingSizes') && ixConfig.detectMissingSizes) {
+          updateMissingSizes(validBidRequest, missingBannerSizes, imp);
         }
       }
     }
 
-    if (bannerImps.length > 0) {
-      reqs.push(buildRequest(validBidRequests, bidderRequest, bannerImps, BANNER_ENDPOINT_VERSION));
+    // Finding the missing banner sizes, and making impressions for them
+    for (var transactionId in missingBannerSizes) {
+      if (missingBannerSizes.hasOwnProperty(transactionId)) {
+        let missingSizes = missingBannerSizes[transactionId].missingSizes;
+
+        if (!bannerImps.hasOwnProperty(transactionId)) {
+          bannerImps[transactionId] = {};
+        }
+        if (!bannerImps[transactionId].hasOwnProperty('missingImps')) {
+          bannerImps[transactionId].missingImps = [];
+          bannerImps[transactionId].missingCount = 0;
+        }
+
+        let origImp = missingBannerSizes[transactionId].impression;
+        for (let i = 0; i < missingSizes.length; i++) {
+          let newImp = createMissingBannerImp(origImp, missingSizes[i]);
+          bannerImps[transactionId].missingImps.push(newImp);
+          bannerImps[transactionId].missingCount++;
+        }
+      }
     }
-    if (videoImps.length > 0) {
-      reqs.push(buildRequest(validBidRequests, bidderRequest, videoImps, VIDEO_ENDPOINT_VERSION));
+
+    if (Object.keys(bannerImps).length > 0) {
+      reqs.push(...buildRequest(validBidRequests, bidderRequest, bannerImps, BANNER_ENDPOINT_VERSION));
+    }
+    if (Object.keys(videoImps).length > 0) {
+      reqs.push(...buildRequest(validBidRequests, bidderRequest, videoImps, VIDEO_ENDPOINT_VERSION));
     }
 
     return reqs;
