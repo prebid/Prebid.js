@@ -21,13 +21,13 @@ pbjs.setConfig({
         userIds: [{
             name: 'mwolid',
             storage: {
-                name: 'mwolid',
+                name: 'mwol',
                 type: 'cookie',
                 expires: 3
             },
             params: {
-                account_id: 0000,
-                partner-id: 0000,
+                accountId: 0000,
+                partnerId: 0000,
                 uid: '12345xyz'
 
             }
