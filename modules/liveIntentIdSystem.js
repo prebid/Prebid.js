@@ -11,6 +11,7 @@ import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { MinimalLiveConnect } from "live-connect-js/esm/live-connect";
 
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager(null, MODULE_NAME);
@@ -42,6 +43,7 @@ export function reset() {
   if (window && window.liQ) {
     window.liQ = [];
   }
+  liveIntentIdSubmodule.setModuleMode(null)
   eventFired = false;
   liveConnect = null;
 }
@@ -105,7 +107,7 @@ function initializeLiveConnect(configParams) {
 
   // The second param is the storage object, LS & Cookie manipulation uses PBJS utils.
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS utils.
-  liveConnect = LiveConnect(liveConnectConfig, storage, calls);
+  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
   return liveConnect;
 }
 
@@ -118,11 +120,19 @@ function tryFireEvent() {
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
+  moduleMode: process.env.LiveConnectMode,
   /**
    * used to link submodule with config
    * @type {string}
    */
   name: MODULE_NAME,
+
+  setModuleMode(mode) {
+    this.moduleMode = mode
+  },
+  getInitializer() {
+    return this.moduleMode === 'minimal' ? MinimalLiveConnect : LiveConnect
+  },
 
   /**
    * decode the stored id value for passing to bid requests. Note that lipb object is a wrapper for everything, and
