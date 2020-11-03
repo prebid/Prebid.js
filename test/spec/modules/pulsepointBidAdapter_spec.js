@@ -19,6 +19,11 @@ describe('PulsePoint Adapter Tests', function () {
     }
   }, {
     placementCode: '/DfpAccount2/slot2',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
+      }
+    },
     bidId: 'bid23456',
     params: {
       cp: 'p10000',
@@ -72,6 +77,11 @@ describe('PulsePoint Adapter Tests', function () {
   }];
   const additionalParamsConfig = [{
     placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      banner: {
+        sizes: [[1, 1]]
+      }
+    },
     bidId: 'bid12345',
     params: {
       cp: 'p10000',
@@ -89,6 +99,11 @@ describe('PulsePoint Adapter Tests', function () {
 
   const ortbParamsSlotConfig = [{
     placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      banner: {
+        sizes: [[1, 1]]
+      }
+    },
     bidId: 'bid12345',
     params: {
       cp: 'p10000',
@@ -146,6 +161,11 @@ describe('PulsePoint Adapter Tests', function () {
 
   const schainParamsSlotConfig = [{
     placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      banner: {
+        sizes: [[1, 1]]
+      }
+    },
     bidId: 'bid12345',
     params: {
       cp: 'p10000',
@@ -681,7 +701,10 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[1].banner).to.not.be.null;
     expect(ortbRequest.imp[1].banner.w).to.equal(728);
     expect(ortbRequest.imp[1].banner.h).to.equal(90);
-    expect(ortbRequest.imp[1].banner.format).to.be.null;
+    expect(ortbRequest.imp[1].banner.format).to.not.be.null;
+    expect(ortbRequest.imp[1].banner.format).to.have.lengthOf(1);
+    expect(ortbRequest.imp[1].banner.format[0].w).to.equal(728);
+    expect(ortbRequest.imp[1].banner.format[0].h).to.equal(90);
     // adsize on response
     const ortbResponse = {
       seatbid: [{
