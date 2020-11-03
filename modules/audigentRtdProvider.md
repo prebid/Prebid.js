@@ -22,7 +22,10 @@ Add the Audigent RTD provider to your Prebid config.  For any adapters
 that you would like to retrieve segments for, add a mapping in the 'mapSegments'
 parameter.  In this example we will configure publisher 1234 to retrieve
 appnexus segments from Audigent. See the "Parameter Descriptions" below for
-more detailed information of the configuration parameters.
+more detailed information of the configuration parameters. Currently,
+OpenRTB compatible fpd data will be added for any bid adapter in the
+"mapSegments" objects, and automated bid augmentation exists for the Appnexus
+bid adapter.
 
 ```
 pbjs.setConfig(

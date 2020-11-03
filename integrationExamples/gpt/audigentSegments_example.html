@@ -251,9 +251,13 @@
                             name: "audigent",
                             waitForIt: true,
                             params: {
-                                mapSegments: ['appnexus'],
+                                mapSegments: {
+                                    "appnexus": true
+                                },
                                 segmentCache: false,
-                                publisherId: 0
+                                requestParams: {
+                                    publisherId: 0
+                                }
                             }
 
                         }
