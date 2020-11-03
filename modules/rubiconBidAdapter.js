@@ -514,7 +514,9 @@ export const spec = {
           } else if (eid.source === 'liveramp.com') {
             data['x_liverampidl'] = eid.uids[0].id;
           } else if (eid.source === 'sharedid.org') {
-            data['eid_sharedid.org'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${eid.uids[0].ext.third}`;
+            data['eid_sharedid.org'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.third) || ''}`;
+          } else if (eid.source === 'id5-sync.com') {
+            data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.ext && eid.ext.linkType) || ''}`;
           } else {
             // add anything else with this generic format
             data[`eid_${eid.source}`] = `${eid.uids[0].id}^${eid.uids[0].atype || ''}`;
