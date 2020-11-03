@@ -24,10 +24,10 @@ export function userIdTargeting(userIds, config) {
     GAM_API = window.googletag.pubads().setTargeting;
   } else {
     window.googletag = window.googletag || {};
-    googletag.cmd = googletag.cmd || [];
+    window.googletag.cmd = window.googletag.cmd || [];
     GAM_API = function (key, value) {
-      googletag.cmd.push(function () {
-        googletag.pubads().setTargeting(key, value);
+      window.googletag.cmd.push(function () {
+        window.googletag.pubads().setTargeting(key, value);
       });
     };
   }
