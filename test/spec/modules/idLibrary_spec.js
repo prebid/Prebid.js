@@ -47,5 +47,15 @@ describe('currency', function () {
       idlibrary.setConfig(config);
       expect(config.debounce).to.be.equal(250);
     });
+    it('results with config default fullscan ', function () {
+      let config = { 'url': 'URL' }
+      idlibrary.setConfig(config);
+      expect(config.fullscan).to.be.equal(true);
+    });
+    it('results with config fullscan ', function () {
+      let config = { 'url': 'URL', 'fullscan': false }
+      idlibrary.setConfig(config);
+      expect(config.fullscan).to.be.equal(false);
+    });
   });
 });

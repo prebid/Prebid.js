@@ -5,8 +5,10 @@ import * as utils from '../src/utils.js';
 import MD5 from 'crypto-js/md5.js';
 
 let email;
+let conf;
 const LOG_PRE_FIX = 'ID-Library: ';
 const CONF_DEFAULT_OBSERVER_DEBOUNCE_MS = 250;
+const CONF_DEFAULT_FULL_BODY_SCAN = true;
 const OBSERVER_CONFIG = {
   subtree: true,
   attributes: true,
@@ -40,12 +42,13 @@ function getEmail(value) {
   return matched[0];
 }
 
-function bodyAction(conf, mutations, observer) {
+function bodyAction(mutations, observer) {
   logInfo('BODY observer on debounce called');
-
+  // If the email is found in the input element, disconnect the observer
   if (email) {
     observer.disconnect();
     logInfo('Email is found, body observer disconnected');
+    return;
   }
 
   const body = document.body.innerHTML;
@@ -54,11 +57,11 @@ function bodyAction(conf, mutations, observer) {
     logInfo(`Email obtained from the body ${email}`);
     observer.disconnect();
     logInfo('Post data on email found in body');
-    postData(conf.url);
+    postData();
   }
 }
 
-function targetAction(conf, mutations, observer) {
+function targetAction(mutations, observer) {
   logInfo('Target observer called');
   for (const mutation of mutations) {
     for (const node of mutation.addedNodes) {
@@ -68,7 +71,7 @@ function targetAction(conf, mutations, observer) {
         logInfo('Email obtained from the target ' + email);
         observer.disconnect();
         logInfo(' Post data on email found in target');
-        postData(conf.url);
+        postData();
       }
     }
   }
@@ -80,57 +83,51 @@ function addInputElementsElementListner(conf) {
 
   for (var i = 0; i < inputs.length; i++) {
     logInfo(` Original Value in Input = ${inputs[i].value}`);
-    inputs[i].addEventListener('change', event => processInputChange(event, conf));
-    inputs[i].addEventListener('blur', event => processInputChange(event, conf));
+    inputs[i].addEventListener('change', event => processInputChange(event));
+    inputs[i].addEventListener('blur', event => processInputChange(event));
   }
 }
 
-function removeInputElementsElementListner(conf) {
+function removeInputElementsElementListner() {
   logInfo('Removing input element listeners');
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
 
   for (var i = 0; i < inputs.length; i++) {
-    inputs[i].removeEventListener('change', event => processInputChange(event, conf));
-    inputs[i].removeEventListener('blur', event => processInputChange(event, conf));
+    inputs[i].removeEventListener('change', event => processInputChange(event));
+    inputs[i].removeEventListener('blur', event => processInputChange(event));
   }
 }
 
-function processInputChange(event, conf) {
+function processInputChange(event) {
   const value = event.target.value;
   logInfo(`Modified Value of input ${event.target.value}`);
   email = getEmail(value);
   if (email != null) {
     logInfo('Email found in input ' + email);
-    postData(conf.url);
-    removeInputElementsElementListner(conf);
+    postData();
+    removeInputElementsElementListner();
   }
 }
 
 function debounce(func, wait, immediate) {
-  let timeout;
-
-  return function (...args) {
-    const context = this;
-    const later = function () {
+  var timeout;
+  return function () {
+    var context = this;
+    var args = arguments;
+    var later = function () {
       timeout = null;
-      if (!immediate) {
-        func.apply(context, args);
-      }
+      if (!immediate) func.apply(context, args);
     };
-    const callNow = immediate && !timeout;
+    var callNow = immediate && !timeout;
     clearTimeout(timeout);
+    logInfo('Debounce wait time ' + wait);
     timeout = setTimeout(later, wait);
-    if (callNow) {
-      func.apply(context, args);
-    }
+    if (callNow) func.apply(context, args);
   };
-}
+};
 
-function handleTargetElement(conf) {
-  const targetObserver = new MutationObserver(function (mutations, observer) {
-    logInfo('target observer called');
-    debounce(targetAction(conf, mutations, observer), conf.debounce, false);
-  });
+function handleTargetElement() {
+  const targetObserver = new MutationObserver(debounce(targetAction, conf.debounce, false));
 
   const targetElement = document.getElementById(conf.target);
   if (targetElement) {
@@ -142,31 +139,30 @@ function handleTargetElement(conf) {
     } else {
       logInfo(' Target found with target ' + email);
       logInfo(' Post data on email found in target with target');
-      postData(conf.url);
+      postData();
     }
   }
 }
 
-function handleBodyElements(conf) {
+function handleBodyElements() {
   if (doesInputElementsHaveEmail()) {
     logInfo('Email found in input elements ' + email);
     logInfo('Post data on email found in target without');
-    postData(conf.url);
+    postData();
     return;
   }
   email = getEmail(document.body.innerHTML);
   if (email != null) {
     logInfo('Email found in body ' + email);
     logInfo(' Post data on email found in the body without observer');
-    postData(conf.url);
+    postData();
     return;
   }
-  addInputElementsElementListner(conf);
-  const bodyObserver = new MutationObserver(function (mutations, observer) {
-    logInfo('Body observer called');
-    debounce(bodyAction(conf, mutations, observer), conf.debounce, false);
-  });
-  bodyObserver.observe(document.body, OBSERVER_CONFIG);
+  addInputElementsElementListner();
+  if (conf.fullscan === true) {
+    const bodyObserver = new MutationObserver(debounce(bodyAction, conf.debounce, false));
+    bodyObserver.observe(document.body, OBSERVER_CONFIG);
+  }
 }
 
 function doesInputElementsHaveEmail() {
@@ -193,7 +189,7 @@ function syncCallback() {
   }
 }
 
-function postData(url) {
+function postData() {
   (getGlobal()).refreshUserIds();
   const userIds = (getGlobal()).getUserIds();
   if (!userIds || userIds.length === 0) {
@@ -205,15 +201,15 @@ function postData(url) {
   syncPayload.uids = JSON.stringify(userIds);
   const payloadString = JSON.stringify(syncPayload);
   logInfo(payloadString);
-  ajax(url, syncCallback(), payloadString, {method: 'POST', withCredentials: true});
+  ajax(conf.url, syncCallback(), payloadString, {method: 'POST', withCredentials: true});
 }
 
-function associateIds(conf) {
+function associateIds() {
   if (window.MutationObserver || window.WebKitMutationObserver) {
     if (conf.target) {
-      handleTargetElement(conf);
+      handleTargetElement();
     } else {
-      handleBodyElements(conf);
+      handleBodyElements();
     }
   }
 }
@@ -231,8 +227,12 @@ export function setConfig(config) {
     config.debounce = CONF_DEFAULT_OBSERVER_DEBOUNCE_MS;
     logInfo('Set default observer debounce to ' + CONF_DEFAULT_OBSERVER_DEBOUNCE_MS);
   }
-
-  associateIds(config);
+  if (config.fullscan == undefined) {
+    config.fullscan = CONF_DEFAULT_FULL_BODY_SCAN;
+    logInfo('Set default fullscan ' + CONF_DEFAULT_FULL_BODY_SCAN);
+  }
+  conf = config;
+  associateIds();
 }
 
 config.getConfig('idLibrary', config => setConfig(config.idLibrary));
