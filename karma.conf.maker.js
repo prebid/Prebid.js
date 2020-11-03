@@ -154,11 +154,6 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     reporters: ['mocha'],
 
-    mochaReporter: {
-      showDiff: true,
-      output: 'minimal'
-    },
-
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
