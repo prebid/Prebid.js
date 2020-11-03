@@ -26,9 +26,9 @@ export function userIdTargeting(userIds, config) {
     window.googletag = window.googletag || {};
     googletag.cmd = googletag.cmd || [];
     GAM_API = function (key, value) {
-        googletag.cmd.push(function () {
-            googletag.pubads().setTargeting(key, value);
-        });
+      googletag.cmd.push(function () {
+        googletag.pubads().setTargeting(key, value);
+      });
     };
   }
 
