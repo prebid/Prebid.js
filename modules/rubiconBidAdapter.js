@@ -516,15 +516,15 @@ export const spec = {
           } else if (eid.source === 'sharedid.org') {
             data['eid_sharedid.org'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${eid.uids[0].ext.third}`;
           } else {
-            // look for the first eid.uids[*].ext.stype === 'ppuid'
+            // add anything else with this generic format
+            data[`eid_${eid.source}`] = `${eid.uids[0].id}^${eid.uids[0].atype || ''}`;
+          }
+          // send AE "ppuid" signal if exists, and hasn't already been sent
+          if (!data['ppuid']) {
+            // get the first eid.uids[*].ext.stype === 'ppuid', if one exists
             const ppId = find(eid.uids, uid => uid.ext && uid.ext.stype === 'ppuid');
-            // if found ppId and no configUserId already found, then add it
-            if (ppId && ppId.id && !configUserId) {
+            if (ppId && ppId.id) {
               data['ppuid'] = ppId.id;
-            } else {
-              // add anything else with this generic format
-              const atype = eid.uids[0].atype;
-              data[`eid_${eid.source}`] = `${eid.uids[0].id}^${atype || ''}`;
             }
           }
         } catch (e) {
