@@ -161,7 +161,8 @@ const ANALYTICS_MESSAGE = {
       cpm: 1.1,
       ttr: 200,
       IsBid: true,
-      mediaType: 1
+      mediaType: 1,
+      gdpr: 0
     },
     {
       timeStamp: 1519149562216,
@@ -172,14 +173,16 @@ const ANALYTICS_MESSAGE = {
       cpm: 2.2,
       ttr: 300,
       IsBid: true,
-      mediaType: 1
+      mediaType: 1,
+      gdpr: 0
     },
     {
       timeStamp: 1519149562216,
       adUnit: 'box_d_2',
       bidder: 'livewrapped',
       ttr: 200,
-      IsBid: false
+      IsBid: false,
+      gdpr: 0
     }
   ],
   timeouts: [],
@@ -191,7 +194,8 @@ const ANALYTICS_MESSAGE = {
       width: 980,
       height: 240,
       cpm: 1.1,
-      mediaType: 1
+      mediaType: 1,
+      gdpr: 0
     },
     {
       timeStamp: 1519149562216,
@@ -200,7 +204,8 @@ const ANALYTICS_MESSAGE = {
       width: 300,
       height: 250,
       cpm: 2.2,
-      mediaType: 1
+      mediaType: 1,
+      gdpr: 0
     }
   ]
 };
@@ -351,7 +356,9 @@ describe('Livewrapped analytics adapter', function () {
         }
       },
       );
-      events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);
+
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
       events.emit(AUCTION_END, MOCK.AUCTION_END);
 
       clock.tick(BID_WON_TIMEOUT + 1000);
@@ -366,6 +373,104 @@ describe('Livewrapped analytics adapter', function () {
       expect(message.requests.length).to.equal(2);
       expect(message.requests[0].gdpr).to.equal(0);
       expect(message.requests[1].gdpr).to.equal(0);
+
+      expect(message.responses.length).to.equal(1);
+      expect(message.responses[0].gdpr).to.equal(0);
+
+      expect(message.wins.length).to.equal(1);
+      expect(message.wins[0].gdpr).to.equal(0);
+    });
+
+    it('should forward floor data', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, {
+        'bidder': 'livewrapped',
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'bidderRequestId': '1be65d7958826a',
+        'bids': [
+          {
+            'bidder': 'livewrapped',
+            'adUnitCode': 'panorama_d_1',
+            'bidId': '2ecff0db240757',
+            'floorData': {
+              'floorValue': 1.1,
+              'floorCurrency': 'SEK'
+            }
+          }
+        ],
+        'start': 1519149562216
+      });
+
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      expect(message.gdpr.length).to.equal(1);
+
+      expect(message.responses.length).to.equal(1);
+      expect(message.responses[0].floor).to.equal(1.1);
+      expect(message.responses[0].floorCur).to.equal('SEK');
+
+      expect(message.wins.length).to.equal(1);
+      expect(message.wins[0].floor).to.equal(1.1);
+      expect(message.wins[0].floorCur).to.equal('SEK');
+    });
+
+    it('should forward Livewrapped floor data', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, {
+        'bidder': 'livewrapped',
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'bidderRequestId': '1be65d7958826a',
+        'bids': [
+          {
+            'bidder': 'livewrapped',
+            'adUnitCode': 'panorama_d_1',
+            'bidId': '2ecff0db240757',
+            'lwflr': {
+              'flr': 1.1
+            }
+          },
+          {
+            'bidder': 'livewrapped',
+            'adUnitCode': 'box_d_1',
+            'bidId': '3ecff0db240757',
+            'lwflr': {
+              'flr': 1.1,
+              'bflrs': {'livewrapped': 2.2}
+            }
+          }
+        ],
+        'start': 1519149562216
+      });
+
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      expect(message.gdpr.length).to.equal(1);
+
+      expect(message.responses.length).to.equal(2);
+      expect(message.responses[0].floor).to.equal(1.1);
+      expect(message.responses[1].floor).to.equal(2.2);
+
+      expect(message.wins.length).to.equal(2);
+      expect(message.wins[0].floor).to.equal(1.1);
+      expect(message.wins[1].floor).to.equal(2.2);
     });
   });
 

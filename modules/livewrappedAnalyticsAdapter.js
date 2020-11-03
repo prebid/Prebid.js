@@ -36,6 +36,15 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         args.bids.forEach(function(bidRequest) {
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
+          let lwFloor;
+
+          if (bidRequest.lwflr) {
+            lwFloor = bidRequest.lwflr.flr;
+
+            let buyerFloor = bidRequest.lwflr.bflrs ? bidRequest.lwflr.bflrs[bidRequest.bidder] : undefined;
+
+            lwFloor = buyerFloor || lwFloor;
+          }
 
           cache.auctions[args.auctionId].bids[bidRequest.bidId] = {
             bidder: bidRequest.bidder,
@@ -45,7 +54,9 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
             timeout: false,
             sendStatus: 0,
             readyToSend: 0,
-            start: args.start
+            start: args.start,
+            lwFloor: lwFloor,
+            floorData: bidRequest.floorData
           }
 
           utils.logInfo(bidRequest);
@@ -124,8 +135,8 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     publisherId: initOptions.publisherId,
     gdpr: sentRequests.gdpr,
     requests: sentRequests.sentRequests,
-    responses: getResponses(),
-    wins: getWins(),
+    responses: getResponses(sentRequests.gdpr),
+    wins: getWins(sentRequests.gdpr),
     timeouts: getTimeouts(),
     bidAdUnits: getbidAdUnits(),
     rcv: getAdblockerRecovered()
@@ -153,17 +164,7 @@ function getSentRequests() {
 
   Object.keys(cache.auctions).forEach(auctionId => {
     let auction = cache.auctions[auctionId];
-    var gdprPos = 0;
-    for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
-      if (gdpr[gdprPos].gdprApplies == auction.gdprApplies &&
-          gdpr[gdprPos].gdprConsent == auction.gdprConsent) {
-        break;
-      }
-    }
-
-    if (gdprPos == gdpr.length) {
-      gdpr[gdprPos] = {gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent};
-    }
+    let gdprPos = getGdprPos(gdpr, auction);
 
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
       let bid = auction.bids[bidId];
@@ -174,7 +175,8 @@ function getSentRequests() {
           timeStamp: auction.timeStamp,
           adUnit: bid.adUnit,
           bidder: bid.bidder,
-          gdpr: gdprPos
+          gdpr: gdprPos,
+          floor: bid.lwFloor
         });
       }
     });
@@ -183,12 +185,13 @@ function getSentRequests() {
   return {gdpr: gdpr, sentRequests: sentRequests};
 }
 
-function getResponses() {
+function getResponses(gdpr) {
   var responses = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
       let auction = cache.auctions[auctionId];
+      let gdprPos = getGdprPos(gdpr, auction);
       let bid = auction.bids[bidId];
       if (bid.readyToSend && !(bid.sendStatus & RESPONSESENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSESENT;
@@ -202,7 +205,10 @@ function getResponses() {
           cpm: bid.cpm,
           ttr: bid.ttr,
           IsBid: bid.isBid,
-          mediaType: bid.mediaType
+          mediaType: bid.mediaType,
+          gdpr: gdprPos,
+          floor: bid.floorData ? bid.floorData.floorValue : bid.lwFloor,
+          floorCur: bid.floorData ? bid.floorData.floorCurrency : undefined,
         });
       }
     });
@@ -211,13 +217,15 @@ function getResponses() {
   return responses;
 }
 
-function getWins() {
+function getWins(gdpr) {
   var wins = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
       let auction = cache.auctions[auctionId];
+      let gdprPos = getGdprPos(gdpr, auction);
       let bid = auction.bids[bidId];
+
       if (!(bid.sendStatus & WINSENT) && bid.won) {
         bid.sendStatus |= WINSENT;
 
@@ -228,13 +236,32 @@ function getWins() {
           width: bid.width,
           height: bid.height,
           cpm: bid.cpm,
-          mediaType: bid.mediaType
+          mediaType: bid.mediaType,
+          gdpr: gdprPos,
+          floor: bid.floorData ? bid.floorData.floorValue : bid.lwFloor,
+          floorCur: bid.floorData ? bid.floorData.floorCurrency : undefined,
         });
       }
     });
   });
 
   return wins;
+}
+
+function getGdprPos(gdpr, auction) {
+  var gdprPos = 0;
+  for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
+    if (gdpr[gdprPos].gdprApplies == auction.gdprApplies &&
+        gdpr[gdprPos].gdprConsent == auction.gdprConsent) {
+      break;
+    }
+  }
+
+  if (gdprPos == gdpr.length) {
+    gdpr[gdprPos] = {gdprApplies: auction.gdprApplies, gdprConsent: auction.gdprConsent};
+  }
+
+  return gdprPos;
 }
 
 function getTimeouts() {
