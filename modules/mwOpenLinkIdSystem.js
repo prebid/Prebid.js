@@ -52,9 +52,9 @@ async function readCookie(name) {
 
 async function writeCookie(name, value) {
   var date = new Date();
-  var expires = date.getTime();
   date.setTime(date.getTime() + getExpirationDate()); // 3 year expiration
-  expires = '; expires=' + date.toUTCString();
+  var expires = '; expires=' + date.toUTCString();
+
   document.cookie = name + '=' + value + expires + '; path=/';
 }
 
@@ -126,7 +126,7 @@ async function register(olid) {
 async function setID() {
   var olid = await confirmID();
 
-  if (localStorageSupported) {
+  if (localStorageSupported() == true) {
     localStorage.setItem(openLinkID.name, olid);
   }
   writeCookie(openLinkID.name, olid);
@@ -171,7 +171,8 @@ export const mwOpenLinkSubModule = {
       utils.logInfo('Consent string is required to generate or retrieve ID.');
       return;
     }
-    return setID(configParams);
+    var Id = setID(configParams);
+    return Id;
   }
 };
 
