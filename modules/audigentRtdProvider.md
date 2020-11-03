@@ -54,21 +54,14 @@ pbjs.setConfig(
 
 ### Parameter Descriptions for the Audigent `dataProviders` Configuration Section
 
-params.mapSegments | Required | Object
-Dictionary of bidders you would like to supply Audigent segments for.
-Maps to boolean values, but also allows functions for custom mapping logic.
-The function signature is (bid, segments) => {}.
-
-params.segmentCache | Optional | Boolean
-This parameter tells the Audigent RTD module to attempt reading segments
-from a local storage cache instead of always requesting them from the
-Audigent server.
-
-params.requestParams | Optional | Object
-Publisher partner specific configuration options, such as optional publisher id
-and other segment query related metadata to be submitted to Audigent's
-backend with each request.  Contact prebid@audigent.com for more information.
-
+| Name  |Type | Description   | Notes  |
+| :------------ | :------------ | :------------ |:------------ |
+| name | String | Real time data module name | Always 'audigent' |
+| waitForIt | Boolean | Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false |
+| params | Object | | |
+| params.mapSegments | Boolean | Dictionary of bidders you would like to supply Audigent segments for. Maps to boolean values, but also allows functions for custom mapping logic. The function signature is (bid, segments) => {}. | Required |
+| params.segmentCache | Boolean | This parameter tells the Audigent RTD module to attempt reading segments from a local storage cache instead of always requesting them from the Audigent server. | Optional. Defaults to false. |
+| params.requestParams | Boolean | Publisher partner specific configuration options, such as optional publisher id and other segment query related metadata to be submitted to Audigent's backend with each request.  Contact prebid@audigent.com for more information. | Optional |
 
 ### Testing
 
