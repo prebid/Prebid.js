@@ -38,7 +38,7 @@ pbjs.setConfig(
                 waitForIt: true,
                 params: {
                     mapSegments: {
-                        'appnexus': true,
+                        appnexus: true,
                     },
                     segmentCache: false,
                     requestParams: {
@@ -62,6 +62,59 @@ pbjs.setConfig(
 | params.mapSegments | Boolean | Dictionary of bidders you would like to supply Audigent segments for. Maps to boolean values, but also allows functions for custom mapping logic. The function signature is (bid, segments) => {}. | Required |
 | params.segmentCache | Boolean | This parameter tells the Audigent RTD module to attempt reading segments from a local storage cache instead of always requesting them from the Audigent server. | Optional. Defaults to false. |
 | params.requestParams | Boolean | Publisher partner specific configuration options, such as optional publisher id and other segment query related metadata to be submitted to Audigent's backend with each request.  Contact prebid@audigent.com for more information. | Optional |
+
+### Overriding & Adding Segment Mappers
+As indicated above, it is possible to provide your own bid augmentation
+functions.  This is useful if you know a bid adapter's API supports segment
+fields which aren't specifically being added to request objects in the Prebid
+bid adapter.  You can also override segment mappers by passing a function
+instead of a boolean to the Audigent RTD segment module.  This might be useful
+if you'd like to use custom logic to determine which segments are sent
+to a specific backend.
+
+Please see the following example, which provides a function to modify bids for
+a bid adapter called adBuzz and overrides the
+
+```
+pbjs.setConfig(
+    ...
+    realTimeData: {
+        auctionDelay: auctionDelay,
+        dataProviders: [
+            {
+                name: "audigent",
+                waitForIt: true,
+                params: {
+                    mapSegments: {
+                        // adding an adBuzz segment mapper
+                        adBuzz: function(bid, segments) {
+                            bid.params.adBuzzCustomSegments = [];
+                            for (var i = 0; i < segments.length; i++) {
+                                bid.params.adBuzzCustomSegments.push(segments[i].id);
+                            }
+                        },
+                        // overriding the appnexus segment mapper to exclude certain segments
+                        appnexus: function(bid, segments) {
+                            for (var i = 0; i < segments.length; i++) {
+                                if (segments[i].id != 'exclude_segment') {
+                                    bid.params.user.segments.push(segments[i].id);
+                                }
+                            }
+                        }
+                    },
+                    segmentCache: false,
+                    requestParams: {
+                        publisherId: 1234
+                    }
+                }
+            }
+        ]
+    }
+    ...
+}
+```
+
+More examples can be viewed in the audigentRtdAdapter_spec.js tests.
 
 ### Testing
 
