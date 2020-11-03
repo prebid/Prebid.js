@@ -73,7 +73,7 @@ if you'd like to use custom logic to determine which segments are sent
 to a specific backend.
 
 Please see the following example, which provides a function to modify bids for
-a bid adapter called adBuzz and overrides the
+a bid adapter called adBuzz and overrides the appnexus segment mapper.
 
 ```
 pbjs.setConfig(
