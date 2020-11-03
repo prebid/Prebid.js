@@ -53,7 +53,7 @@ function bodyAction(mutations, observer) {
 
   const body = document.body.innerHTML;
   email = getEmail(body);
-  if (email != null) {
+  if (email !== null) {
     logInfo(`Email obtained from the body ${email}`);
     observer.disconnect();
     logInfo('Post data on email found in body');
@@ -72,6 +72,7 @@ function targetAction(mutations, observer) {
         observer.disconnect();
         logInfo(' Post data on email found in target');
         postData();
+        return;
       }
     }
   }
@@ -102,7 +103,7 @@ function processInputChange(event) {
   const value = event.target.value;
   logInfo(`Modified Value of input ${event.target.value}`);
   email = getEmail(value);
-  if (email != null) {
+  if (email !== null) {
     logInfo('Email found in input ' + email);
     postData();
     removeInputElementsElementListner();
@@ -112,17 +113,20 @@ function processInputChange(event) {
 function debounce(func, wait, immediate) {
   var timeout;
   return function () {
-    var context = this;
-    var args = arguments;
-    var later = function () {
+    const context = this;
+    const args = arguments;
+    const later = function () {
       timeout = null;
       if (!immediate) func.apply(context, args);
     };
     var callNow = immediate && !timeout;
     clearTimeout(timeout);
-    logInfo('Debounce wait time ' + wait);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
+    if (callNow) {
+      func.apply(context, args);
+    } else {
+      logInfo('Debounce wait time ' + wait);
+      timeout = setTimeout(later, wait);
+    }
   };
 };
 
@@ -152,7 +156,7 @@ function handleBodyElements() {
     return;
   }
   email = getEmail(document.body.innerHTML);
-  if (email != null) {
+  if (email !== null) {
     logInfo('Email found in body ' + email);
     logInfo(' Post data on email found in the body without observer');
     postData();
@@ -171,7 +175,7 @@ function doesInputElementsHaveEmail() {
   for (let index = 0; index < inputs.length; ++index) {
     const curInput = inputs[index];
     email = getEmail(curInput.value);
-    if (email != null) {
+    if (email !== null) {
       return true;
     }
   }
@@ -180,7 +184,7 @@ function doesInputElementsHaveEmail() {
 
 function syncCallback() {
   return {
-    success: function (responseBody) {
+    success: function () {
       logInfo(' Data synced successfully.');
     },
     error: function () {
@@ -192,7 +196,8 @@ function syncCallback() {
 function postData() {
   (getGlobal()).refreshUserIds();
   const userIds = (getGlobal()).getUserIds();
-  if (!userIds || userIds.length === 0) {
+  if (Object.keys(userIds).length === 0) {
+    logInfo('No user ids');
     return;
   }
   logInfo(' Users' + JSON.stringify(userIds));
@@ -223,11 +228,11 @@ export function setConfig(config) {
     logError('The required url is not configured');
     return;
   }
-  if (!config.debounce) {
+  if (typeof config.debounce !== 'number') {
     config.debounce = CONF_DEFAULT_OBSERVER_DEBOUNCE_MS;
     logInfo('Set default observer debounce to ' + CONF_DEFAULT_OBSERVER_DEBOUNCE_MS);
   }
-  if (config.fullscan == undefined) {
+  if (typeof config.fullscan !== 'boolean') {
     config.fullscan = CONF_DEFAULT_FULL_BODY_SCAN;
     logInfo('Set default fullscan ' + CONF_DEFAULT_FULL_BODY_SCAN);
   }
