@@ -24,8 +24,9 @@ parameter.  In this example we will configure publisher 1234 to retrieve
 appnexus segments from Audigent. See the "Parameter Descriptions" below for
 more detailed information of the configuration parameters. Currently,
 OpenRTB compatible fpd data will be added for any bid adapter in the
-"mapSegments" objects, and automated bid augmentation exists for the Appnexus
-bid adapter.
+"mapSegments" objects. Automated bid augmentation exists for some bidders.
+Please work with your Audigent Prebid support team (prebid@audigent.com) on
+which version of Prebid.js supports which bidders automatically.
 
 ```
 pbjs.setConfig(
