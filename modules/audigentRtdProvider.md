@@ -62,7 +62,7 @@ pbjs.setConfig(
 | params | Object | | |
 | params.mapSegments | Boolean | Dictionary of bidders you would like to supply Audigent segments for. Maps to boolean values, but also allows functions for custom mapping logic. The function signature is (bid, segments) => {}. | Required |
 | params.segmentCache | Boolean | This parameter tells the Audigent RTD module to attempt reading segments from a local storage cache instead of always requesting them from the Audigent server. | Optional. Defaults to false. |
-| params.requestParams | Boolean | Publisher partner specific configuration options, such as optional publisher id and other segment query related metadata to be submitted to Audigent's backend with each request.  Contact prebid@audigent.com for more information. | Optional |
+| params.requestParams | Object | Publisher partner specific configuration options, such as optional publisher id and other segment query related metadata to be submitted to Audigent's backend with each request.  Contact prebid@audigent.com for more information. | Optional |
 
 ### Overriding & Adding Segment Mappers
 As indicated above, it is possible to provide your own bid augmentation
