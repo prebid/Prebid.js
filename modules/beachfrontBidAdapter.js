@@ -6,7 +6,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const ADAPTER_VERSION = '1.11';
+const ADAPTER_VERSION = '1.12';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -14,7 +14,7 @@ export const VIDEO_ENDPOINT = 'https://reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = 'https://display.bfmio.com/prebid_display';
 export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 
-export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement'];
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement', 'skip', 'skipmin', 'skipafter'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 let appId = '';
@@ -258,12 +258,19 @@ function getTopWindowReferrer() {
 }
 
 function getVideoTargetingParams(bid) {
-  return Object.keys(Object(bid.params.video))
-    .filter(param => includes(VIDEO_TARGETING, param))
-    .reduce((obj, param) => {
-      obj[ param ] = bid.params.video[ param ];
-      return obj;
-    }, {});
+  const result = {};
+  const excludeProps = ['playerSize', 'context', 'w', 'h'];
+  Object.keys(Object(bid.mediaTypes.video))
+    .filter(key => !includes(excludeProps, key))
+    .forEach(key => {
+      result[ key ] = bid.mediaTypes.video[ key ];
+    });
+  Object.keys(Object(bid.params.video))
+    .filter(key => includes(VIDEO_TARGETING, key))
+    .forEach(key => {
+      result[ key ] = bid.params.video[ key ];
+    });
+  return result;
 }
 
 function createVideoRequestData(bid, bidderRequest) {
