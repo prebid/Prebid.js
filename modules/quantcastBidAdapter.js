@@ -1,6 +1,7 @@
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -18,6 +19,9 @@ export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
 export const QUANTCAST_TTL = 4;
 export const QUANTCAST_PROTOCOL = 'https';
 export const QUANTCAST_PORT = '8443';
+export const QUANTCAST_FPA = '__qca';
+
+export const storage = getStorageManager();
 
 function makeVideoImp(bid) {
   const video = {};
@@ -99,6 +103,11 @@ function checkTCFv2(tcData) {
   let purposeConsent = tcData.purpose && tcData.purpose.consents && tcData.purpose.consents[PURPOSE_DATA_COLLECT];
 
   return !!(vendorConsent && purposeConsent);
+}
+
+function getQuantcastFPA() {
+  let fpa = storage.getCookie(QUANTCAST_FPA)
+  return fpa || ''
 }
 
 /**
@@ -188,7 +197,8 @@ export const spec = {
         uspSignal: uspConsent ? 1 : 0,
         uspConsent,
         coppa: config.getConfig('coppa') === true ? 1 : 0,
-        prebidJsVersion: '$prebid.version$'
+        prebidJsVersion: '$prebid.version$',
+        fpa: getQuantcastFPA()
       };
 
       const data = JSON.stringify(requestData);
