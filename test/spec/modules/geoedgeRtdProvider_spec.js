@@ -77,28 +77,20 @@ describe('Geoedge RTD module', function () {
         expect(geoedge.geoedgeSubmodule.name).to.equal('geoedge');
       });
     });
-    describe('getData', function () {
-      it('should call onDone with an empty object', function (done) {
-        geoedge.geoedgeSubmodule.getData([], data => {
-          expect(utils.isPlainObject(data) && utils.isEmpty(data)).to.equal(true);
-          done();
-        });
-      });
-    });
     describe('init', function () {
       it('should return true', function () {
         expect(geoedge.geoedgeSubmodule.init()).to.equal(true);
       });
     });
-    describe('updateBidResponse', function () {
+    describe('onBidResponseEvent', function () {
       let bidFromA = mockBid('bidderA');
       it('should wrap bid html when bidder is configured', function () {
-        geoedge.geoedgeSubmodule.updateBidResponse(bidFromA);
+        geoedge.geoedgeSubmodule.onBidResponseEvent(bidFromA);
         expect(bidFromA.ad.indexOf('<wrapper>')).to.equal(0);
       });
       it('should not wrap bid html when bidder is not configured', function () {
         let bidFromB = mockBid('bidderB');
-        geoedge.geoedgeSubmodule.updateBidResponse(bidFromB);
+        geoedge.geoedgeSubmodule.onBidResponseEvent(bidFromB);
         expect(bidFromB.ad.indexOf('<wrapper>')).to.equal(-1);
       });
       it('should only muatate the bid ad porperty', function () {
