@@ -337,8 +337,7 @@ function _buildVideoORTB(bidRequest) {
 
   const video = {}
 
-  const sizes = videoAdUnit.playerSize || [];
-  const {w, h} = _getSize(sizes);
+  const {w, h} = _getSize(videoParams.playerSize[0]);
   video.w = w;
   video.h = h;
 

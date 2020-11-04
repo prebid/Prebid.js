@@ -262,7 +262,7 @@ describe('33acrossBidAdapter:', function () {
 
     this.withVideo = (params) => {
       bidRequests[0].mediaTypes.video = {
-        playerSize: [300, 250],
+        playerSize: [[300, 250]],
         context: 'outstream',
         ...params
       };
