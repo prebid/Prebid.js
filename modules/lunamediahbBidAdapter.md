@@ -13,44 +13,16 @@ Module that connects to lunamedia demand sources
 # Test Parameters
 ```
     var adUnits = [
-                // Will return static test banner
                 {
-                    code: 'adunit1',
-                    mediaTypes: {
+                    code:'1',
+                    mediaTypes:{
                         banner: {
                             sizes: [[300, 250]],
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'lunamediahb',
-                            params: {
-                                placementId: 0
-                            }
-                        }
-                    ]
-                },
-                // Will return test vast xml. All video params are stored under placement in publishers UI
-                {
-                    code: 'addunit2',
-                    mediaTypes: {
+                        },
                         video: {
                             playerSize: [640, 480],
                             context: 'instream'
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'lunamediahb',
-                            params: {
-                                placementId: 0
-                            }
-                        }
-                    ]
-                },
-                {
-                    code: 'addunit3',
-                    mediaTypes: {
+                        },
                         native: {
                             title: {
                                 required: true
@@ -64,7 +36,19 @@ Module that connects to lunamedia demand sources
                             }
                         }
                     },
-                    bids: [
+                    bids:[
+                        {
+                            bidder: 'lunamediahb',
+                            params: {
+                                placementId: 0
+                            }
+                        },
+                        {
+                            bidder: 'lunamediahb',
+                            params: {
+                                placementId: 0
+                            }
+                        },
                         {
                             bidder: 'lunamediahb',
                             params: {
