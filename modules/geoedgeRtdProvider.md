@@ -1,6 +1,6 @@
 The purpose of this Real Time Data Provider is to allow publishers to use Geoedge real user monitoring solution, which supports real time blocking of bad ads (redirects, malware, offensive content, etc)
 
-**Usage for publishers:**
+**Usage:**
 
 Compile the  RTD Provider into your Prebid build:
 
@@ -23,26 +23,6 @@ pbjs.setConfig({
         }]
     }
 });
-```
-
-**Usage for bidder adapters:**
-
-Bid adapter must import the geoedge module and pass thier bid to the wrapBidResponse method inside their interpretResponse logic. This method will mutate the bid.ad property.
-
-```javascript
-import { fetchWrapper, wrapBidResponse, preloadClient } from './geoedgeRtdProvider.js';
-fetchWrapper(wrapper => wrapBidResponse(bidResponse, key));
-
-```
-
-Bid adapter could call perloadClient method when thier onBidWon is called.
-
-```javascript
-onBidWon: function () {
-  //...
-  preloadClient(key);
-};
-
 ```
 
 **Example:**
