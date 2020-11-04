@@ -12,8 +12,7 @@ describe('LunamediaHBBidAdapter', function () {
       }
     },
     params: {
-      placementId: 783,
-      traffic: BANNER
+      placementId: 783
     }
   };
 
@@ -71,7 +70,6 @@ describe('LunamediaHBBidAdapter', function () {
     it('Returns valid data for mediatype video', function () {
       const playerSize = [300, 300];
       bid.mediaTypes = {};
-      bid.params.traffic = VIDEO;
       bid.mediaTypes[VIDEO] = {
         playerSize
       };
@@ -101,7 +99,6 @@ describe('LunamediaHBBidAdapter', function () {
       };
 
       bid.mediaTypes = {};
-      bid.params.traffic = NATIVE;
       bid.mediaTypes[NATIVE] = native;
       serverRequest = spec.buildRequests([bid], bidderRequest);
       let data = serverRequest.data;
