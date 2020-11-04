@@ -27,7 +27,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(parseInt(bid.params.placementId)));
+    return Boolean(bid.bidId && bid.params && bid.mediaTypes && !isNaN(parseInt(bid.params.placementId)));
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
@@ -67,17 +67,20 @@ export const spec = {
       const placement = {
         placementId: bid.params.placementId,
         bidId: bid.bidId,
-        traffic: bid.params.traffic || BANNER,
         schain: bid.schain || {},
       };
+      const mediaType = bid.mediaTypes
 
-      if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
+      if (mediaType && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
         placement.sizes = bid.mediaTypes[BANNER].sizes;
-      } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
+        placement.traffic = BANNER;
+      } else if (mediaType && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
         placement.wPlayer = bid.mediaTypes[VIDEO].playerSize[0];
         placement.hPlayer = bid.mediaTypes[VIDEO].playerSize[1];
-      } else if (bid.mediaTypes && bid.mediaTypes[NATIVE]) {
+        placement.traffic = VIDEO;
+      } else if (mediaType && bid.mediaTypes[NATIVE]) {
         placement.native = bid.mediaTypes[NATIVE];
+        placement.traffic = NATIVE;
       }
       placements.push(placement);
     }
