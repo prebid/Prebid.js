@@ -193,10 +193,6 @@ function init(config, gdpr, usp) {
   return true;
 }
 
-export function getData(adUnits, onDone) {
-  onDone({});
-}
-
 /** @type {RtdSubmodule} */
 export const geoedgeSubmodule = {
   /**
@@ -210,9 +206,8 @@ export const geoedgeSubmodule = {
      * @param {adUnit[]} adUnits
      * @param {function} onDone
      */
-  getData,
   init,
-  updateBidResponse: conditionallyWrap
+  onBidResponseEvent: conditionallyWrap
 };
 
 /**
