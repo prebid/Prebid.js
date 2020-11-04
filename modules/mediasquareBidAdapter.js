@@ -1,7 +1,7 @@
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'mediasquare';
 const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
@@ -13,7 +13,7 @@ const BIDDER_ENDPOINT_WINNING = 'winning';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['msq'], // short code
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   /**
          * Determines whether or not the given bid request is valid.
          *
@@ -99,6 +99,14 @@ export const spec = {
             'code': value['code']
           }
         };
+        if ('native' in value) {
+          bidResponse['native'] = value['native'];
+          bidResponse['mediaType'] = 'native';
+        } else if ('video' in value) {
+          if ('url' in value['video']) { bidResponse['vastUrl'] = value['video']['url'] }
+          if ('xml' in value['video']) { bidResponse['vastXml'] = value['video']['xml'] }
+          bidResponse['mediaType'] = 'video';
+        }
         if (value.hasOwnProperty('deal_id')) { bidResponse['dealId'] = value['deal_id']; }
         bidResponses.push(bidResponse);
       });
@@ -136,7 +144,7 @@ export const spec = {
     // fires a pixel to confirm a winning bid
     let params = [];
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'auctionId', 'requestId']
+    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond']
     if (bid.hasOwnProperty('mediasquare')) {
       if (bid['mediasquare'].hasOwnProperty('bidder')) { params.push('bidder=' + bid['mediasquare']['bidder']); }
       if (bid['mediasquare'].hasOwnProperty('code')) { params.push('code=' + bid['mediasquare']['code']); }
