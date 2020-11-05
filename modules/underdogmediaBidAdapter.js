@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '3.5V';
 const UDM_VENDOR_ID = '159';
@@ -119,7 +119,7 @@ export const spec = {
           creativeId: mid.mid,
           currency: 'USD',
           netRevenue: false,
-          ttl: config.getConfig('_bidderTimeout'),
+          ttl: mid.ttl || 60,
         };
 
         if (bidResponse.cpm <= 0) {

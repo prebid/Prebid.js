@@ -1,8 +1,8 @@
 // import or require modules necessary for the test, e.g.:
 
 import {expect} from 'chai';
-import {spec as adapter} from 'modules/vubleBidAdapter';
-import * as utils from 'src/utils';
+import {spec as adapter} from 'modules/vubleBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('VubleAdapter', function () {
   describe('Check methods existance', function () {

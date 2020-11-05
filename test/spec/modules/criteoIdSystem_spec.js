@@ -1,7 +1,6 @@
-import { criteoIdSubmodule } from 'modules/criteoIdSystem';
-import * as utils from 'src/utils';
-import * as ajaxLib from 'src/ajax';
-import * as urlLib from 'src/url';
+import { criteoIdSubmodule, storage } from 'modules/criteoIdSystem.js';
+import * as utils from 'src/utils.js';
+import * as ajaxLib from 'src/ajax.js';
 
 const pastDateString = new Date(0).toString()
 
@@ -27,14 +26,14 @@ describe('CriteoId module', function () {
   let triggerPixelStub;
 
   beforeEach(function (done) {
-    getCookieStub = sinon.stub(utils, 'getCookie');
-    setCookieStub = sinon.stub(utils, 'setCookie');
-    getLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
-    setLocalStorageStub = sinon.stub(utils, 'setDataInLocalStorage');
-    removeFromLocalStorageStub = sinon.stub(utils, 'removeDataFromLocalStorage');
+    getCookieStub = sinon.stub(storage, 'getCookie');
+    setCookieStub = sinon.stub(storage, 'setCookie');
+    getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
+    removeFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
     ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse('{}'));
-    parseUrlStub = sinon.stub(urlLib, 'parse').returns({protocol: 'https', hostname: 'testdev.com'})
+    parseUrlStub = sinon.stub(utils, 'parseUrl').returns({protocol: 'https', hostname: 'testdev.com'})
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     done();
   });
@@ -131,5 +130,27 @@ describe('CriteoId module', function () {
         expect(removeFromLocalStorageStub.calledWith('cto_bidid')).to.be.true;
       }
     });
+  }));
+
+  const gdprConsentTestCases = [
+    { consentData: { gdprApplies: true, consentString: 'expectedConsentString' }, expected: 'expectedConsentString' },
+    { consentData: { gdprApplies: false, consentString: 'expectedConsentString' }, expected: undefined },
+    { consentData: { gdprApplies: true, consentString: undefined }, expected: undefined },
+    { consentData: { gdprApplies: 'oui', consentString: 'expectedConsentString' }, expected: undefined },
+    { consentData: undefined, expected: undefined }
+  ];
+
+  gdprConsentTestCases.forEach(testCase => it('should call user sync url with the gdprConsent', function () {
+    const emptyObj = '{}';
+    let ajaxStub = sinon.stub().callsFake((url, callback) => callback(emptyObj));
+    ajaxBuilderStub.callsFake(mockResponse(undefined, ajaxStub))
+
+    criteoIdSubmodule.getId(undefined, testCase.consentData);
+
+    if (testCase.expected) {
+      expect(ajaxStub.calledWithMatch(`gdprString=${testCase.expected}`)).to.be.true;
+    } else {
+      expect(ajaxStub.calledWithMatch('gdprString')).not.to.be.true;
+    }
   }));
 });

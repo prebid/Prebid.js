@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/lemmaBidAdapter';
-import * as utils from 'src/utils';
+import { spec } from 'modules/lemmaBidAdapter.js';
+import * as utils from 'src/utils.js';
 const constants = require('src/constants.json');
 
 describe('lemmaBidAdapter', function() {

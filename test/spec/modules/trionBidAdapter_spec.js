@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import * as utils from 'src/utils';
-import {spec, acceptPostMessage, getStorageData, setStorageData} from 'modules/trionBidAdapter';
+import * as utils from 'src/utils.js';
+import {spec, acceptPostMessage, getStorageData, setStorageData} from 'modules/trionBidAdapter.js';
 
 const CONSTANTS = require('src/constants.json');
 const adloader = require('src/adloader');

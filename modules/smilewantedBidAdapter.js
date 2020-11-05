@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import { Renderer } from '../src/Renderer';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { Renderer } from '../src/Renderer.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 export const spec = {
   code: 'smilewanted',

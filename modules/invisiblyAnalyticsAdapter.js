@@ -1,15 +1,15 @@
 /**
  * invisiblyAdapterAdapter.js - analytics adapter for Invisibly
  */
-import { ajaxBuilder } from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import { ajaxBuilder } from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 
 const DEFAULT_EVENT_URL = 'https://api.pymx5.com/v1/' + 'sites/events';
 const analyticsType = 'endpoint';
 const analyticsName = 'Invisibly Analytics Adapter:';
 
-const utils = require('../src/utils');
+const utils = require('../src/utils.js');
 const CONSTANTS = require('../src/constants.json');
 const ajax = ajaxBuilder(0);
 
@@ -28,8 +28,8 @@ const {
     SET_TARGETING,
     REQUEST_BIDS,
     ADD_AD_UNITS,
-    AD_RENDER_FAILED
-  }
+    AD_RENDER_FAILED,
+  },
 } = CONSTANTS;
 
 const _VERSION = 1;
@@ -55,8 +55,11 @@ let _pageView = {
   language: window.navigator.language,
   vendor: window.navigator.vendor,
   screenWidth: x,
-  screenHeight: y
+  screenHeight: y,
 };
+
+// pass only 1% of events & fail the rest 99%
+let weightedFilter = { filter: Math.random() > 0.99 };
 
 let _eventQueue = [_pageView];
 
@@ -66,15 +69,16 @@ let invisiblyAdapter = Object.assign(
     track({ eventType, args }) {
       handleEvent(eventType, args);
     },
-    sendEvent
+    sendEvent,
+    weightedFilter,
   }
 );
 
 invisiblyAdapter.originEnableAnalytics = invisiblyAdapter.enableAnalytics;
-invisiblyAdapter.enableAnalytics = function(config) {
+invisiblyAdapter.enableAnalytics = function (config) {
   initOptions = config.options || {};
   initOptions.url = initOptions.url || DEFAULT_EVENT_URL;
-  if (initOptions.url && initOptions.account) {
+  if (initOptions.url && initOptions.account && weightedFilter.filter) {
     invisiblyAnalyticsEnabled = true;
     invisiblyAdapter.originEnableAnalytics(config);
   } else {
@@ -85,7 +89,7 @@ invisiblyAdapter.enableAnalytics = function(config) {
 };
 
 invisiblyAdapter.originDisableAnalytics = invisiblyAdapter.disableAnalytics;
-invisiblyAdapter.disableAnalytics = function() {
+invisiblyAdapter.disableAnalytics = function () {
   if (!invisiblyAnalyticsEnabled) {
     return;
   }
@@ -109,12 +113,12 @@ function flush() {
         pageViewId: _pageViewId,
         ver: _VERSION,
         bundleId: initOptions.bundleId,
-        ...eventFromQue
+        ...eventFromQue,
       };
 
       let payload = {
         event_type: eventtype,
-        event_data: { ...data }
+        event_data: { ...data },
       };
       ajax(
         initOptions.url,
@@ -123,7 +127,7 @@ function flush() {
         {
           contentType: 'application/json',
           method: 'POST',
-          withCredentials: true
+          withCredentials: true,
         }
       );
     }
@@ -212,10 +216,10 @@ function sendEvent(event) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: invisiblyAdapter,
-  code: 'invisiblyAnalytics'
+  code: 'invisiblyAnalytics',
 });
 
-invisiblyAdapter.getOptions = function() {
+invisiblyAdapter.getOptions = function () {
   return initOptions;
 };
 

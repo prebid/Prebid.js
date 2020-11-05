@@ -1,6 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 
-const VERSION = '3.2.0';
+const VERSION = '3.2.1';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
@@ -47,6 +48,12 @@ export const sharethroughAdapterSpec = {
 
       if (bidRequest.userId && bidRequest.userId.tdid) {
         query.ttduid = bidRequest.userId.tdid;
+      }
+
+      if (bidRequest.userId && bidRequest.userId.pubcid) {
+        query.pubcid = bidRequest.userId.pubcid;
+      } else if (bidRequest.crumbs && bidRequest.crumbs.pubcid) {
+        query.pubcid = bidRequest.crumbs.pubcid;
       }
 
       if (bidRequest.schain) {
@@ -153,7 +160,7 @@ function generateAd(body, req) {
 
   if (req.strData.skipIframeBusting) {
     // Don't break out of iframe
-    adMarkup = adMarkup + `<script src="//native.sharethrough.com/assets/sfp.js"></script>`;
+    adMarkup = adMarkup + `<script src="https://native.sharethrough.com/assets/sfp.js"></script>`;
   } else {
     // Add logic to the markup that detects whether or not in top level document is accessible
     // this logic will deploy sfp.js and/or iframe buster script(s) as appropriate
@@ -181,7 +188,7 @@ function handleIframe () {
       window.document.getElementsByTagName('body')[0].appendChild(sfpIframeBusterJs);
       iframeBusterLoaded = true;
     } catch (e) {
-      console.error(e);
+      utils.logError('Trouble writing frame buster script, error details:', e);
     }
   }
 
@@ -199,7 +206,7 @@ function handleIframe () {
         window.document.getElementsByTagName('body')[0].appendChild(sfpJs);
       }
     } catch (e) {
-      console.error(e);
+      utils.logError('Trouble writing sfp script, error details:', e);
     }
   }
 }

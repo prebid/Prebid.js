@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adgenerationBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {NATIVE} from 'src/mediaTypes';
-import {config} from 'src/config';
+import {spec} from 'modules/adgenerationBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {NATIVE} from 'src/mediaTypes.js';
+import {config} from 'src/config.js';
 import prebid from '../../../package.json';
 
 describe('AdgenerationAdapter', function () {

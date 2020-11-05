@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
-import {spec} from 'modules/madvertiseBidAdapter';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import {spec} from 'modules/madvertiseBidAdapter.js';
 
 describe('madvertise adapater', function () {
   describe('Test validate req', function () {

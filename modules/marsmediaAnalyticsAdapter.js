@@ -1,6 +1,6 @@
-import {ajax} from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import {ajax} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 
 /****
  * Mars Media Analytics

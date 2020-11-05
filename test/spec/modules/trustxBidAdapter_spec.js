@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/trustxBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/trustxBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('TrustXAdapter', function () {
   const adapter = newBidder(spec);

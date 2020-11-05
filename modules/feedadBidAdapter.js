@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import {ajax} from '../src/ajax';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {ajax} from '../src/ajax.js';
 
 /**
  * Version of the FeedAd bid adapter

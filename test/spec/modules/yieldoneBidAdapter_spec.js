@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/yieldoneBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/yieldoneBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';

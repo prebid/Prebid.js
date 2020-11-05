@@ -1,10 +1,10 @@
 /* globals describe, it, beforeEach, afterEach, sinon */
 import { expect } from 'chai'
-import * as utils from 'src/utils'
-import { STATUS } from 'src/constants'
-import { VIDEO } from 'src/mediaTypes'
-import { Renderer } from 'src/Renderer'
-import { adapter } from 'modules/unrulyBidAdapter'
+import * as utils from 'src/utils.js'
+import { STATUS } from 'src/constants.json'
+import { VIDEO } from 'src/mediaTypes.js'
+import { Renderer } from 'src/Renderer.js'
+import { adapter } from 'modules/unrulyBidAdapter.js'
 
 describe('UnrulyAdapter', function () {
   function createOutStreamExchangeBid({

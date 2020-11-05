@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/komoonaBidAdapter';
+import { spec } from 'modules/komoonaBidAdapter.js';
 
 describe('Komoona.com Adapter Tests', function () {
   const bidsRequest = [

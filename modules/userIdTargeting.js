@@ -1,8 +1,8 @@
-import {config} from '../src/config';
-import {getGlobal} from '../src/prebidGlobal';
+import {config} from '../src/config.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 import CONSTANTS from '../src/constants.json';
-import events from '../src/events';
-import { isStr, isPlainObject, isBoolean, isFn, hasOwn, logInfo } from '../src/utils';
+import events from '../src/events.js';
+import { isStr, isPlainObject, isBoolean, isFn, hasOwn, logInfo } from '../src/utils.js';
 
 const MODULE_NAME = 'userIdTargeting';
 const GAM = 'GAM';

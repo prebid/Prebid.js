@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://hb.gammaplatform.com';
 const ENDPOINT_USERSYNC = 'https://cm-supply-web.gammaplatform.com';

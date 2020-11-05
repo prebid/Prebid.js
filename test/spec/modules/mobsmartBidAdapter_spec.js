@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/mobsmartBidAdapter';
+import { spec } from 'modules/mobsmartBidAdapter.js';
 
 describe('mobsmartBidAdapter', function () {
   describe('isBidRequestValid', function () {

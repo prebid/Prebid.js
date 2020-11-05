@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/videoreachBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/videoreachBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
 

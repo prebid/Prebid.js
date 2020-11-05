@@ -1,5 +1,5 @@
 import CONSTANTS from 'src/constants.json';
-import liveyield from 'modules/liveyieldAnalyticsAdapter';
+import liveyield from 'modules/liveyieldAnalyticsAdapter.js';
 import { expect } from 'chai';
 const events = require('src/events');
 

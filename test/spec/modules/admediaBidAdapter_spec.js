@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/admediaBidAdapter';
+import { spec } from 'modules/admediaBidAdapter.js';
 
 describe('admediaAdapterTests', function () {
   describe('bidRequestValidity', function () {

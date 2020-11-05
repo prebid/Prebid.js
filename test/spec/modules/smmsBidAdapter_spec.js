@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec, _getUrlVars} from 'modules/smmsBidAdapter';
-import * as utils from 'src/utils';
+import {spec, _getUrlVars} from 'modules/smmsBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 const BASE_URI = 'https://bidder.mediams.mb.softbank.jp/api/v1/prebid/banner'
 const NATIVE_BASE_URI = 'https://bidder.mediams.mb.softbank.jp/api/v1/prebid/native'

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/ccxBidAdapter';
-import * as utils from 'src/utils';
+import { spec } from 'modules/ccxBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('ccxAdapter', function () {
   let bids = [
