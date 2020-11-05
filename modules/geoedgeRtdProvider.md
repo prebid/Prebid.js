@@ -1,38 +1,67 @@
-The purpose of this Real Time Data Provider is to allow publishers to use Geoedge real user monitoring solution, which supports real time blocking of bad ads (redirects, malware, offensive content, etc)
+## Overview
 
-**Usage:**
+Module Name: Geoedge Rtd provider
+Module Type: Rtd Provider
+Maintainer: guy.books@geoedge.com
 
-Compile the  RTD Provider into your Prebid build:
+The Geoedge Realtime module let pusblishers to block bad ads such as automatic redirects, malware, offensive creatives and landing pages.
+To use this module, you'll need to work with [Geoedge](https://www.geoedge.com/publishers-real-time-protection/) to get an account and cutomer key.
 
-`gulp build --modules=geoedgeRtdProvider`
+## Integration
 
-Publishers must register Geoedge as a real time data provider by setting it up as a data provider in their realTimeData config:
+1) Build the geoedge RTD module into the Prebid.js package with:
+
+```
+gulp build --modules=geoedgeRtdProvider,...
+```
+
+2) Use `setConfig` to instruct Prebid.js to initilize the geoedge module, as specified below.
+
+## Configuration
+
+This module is configured as part of the `realTimeData.dataProviders` object:
 
 ```javascript
 pbjs.setConfig({
-    ...,
     realTimeData: {
         dataProviders: [{
-            geoedge: {
-                key: '123123', // Required, contact Geoedge to get your key 
-                bidders: { // Optional, list of bidder to include / exclude from monitoring. Omitting this will monitor bids from all bidders
+            name: 'geoedge',
+            params: {
+                key: '123123', 
+                bidders: {
                     'bidderA': true, // monitor bids form this bidder
-                    'bidderB': false // do not monitor bids form this bidder. Optional, omitting this entirely will have the same effect
-                }
+                    'bidderB': false // do not monitor bids form this bidder.
+                },
+                wap: true
             }
         }]
     }
 });
 ```
 
-**Example:**
+Parameters details:
 
-To view an example:
+{: .table .table-bordered .table-striped }
+|Name |Type |Description |Notes |
+| :------------ | :------------ | :------------ |:------------ |
+|name | String | Real time data module name |Required, always 'geoedge' |
+|params | Object | | |
+|params.key | String | Customer key |Required, contact Geoedge to get your key |
+|params.bidders | Object | Bidders to monitor |Optional, list of bidder to include / exclude from monitoring. Omitting this will monitor bids from all bidders. |
+|params.wap |Boolean |Wrap after preload |Optional, defaults to `false`. Set to `true` if you want to monitor only after the module has preloaded the monitoring client. |
+
+## Example
+
+To view an integration example:
  
-- in your cli run:
+1) in your cli run:
 
-`gulp serve --modules=appnexusBidAdapter,geoedgeRtdProvider`
+```
+gulp serve --modules=appnexusBidAdapter,geoedgeRtdProvider
+```
 
-- in your browser, navigate to:
+2) in your browser, navigate to:
 
-`http://localhost:9999/integrationExamples/gpt/geoedgeRtdProvider_example.html`
+```
+http://localhost:9999/integrationExamples/gpt/geoedgeRtdProvider_example.html
+```
