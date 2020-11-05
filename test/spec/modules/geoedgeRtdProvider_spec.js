@@ -1,4 +1,3 @@
-import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
 import * as hook from '../../../src/hook.js'
 import { beforeInit, geoedgeSubmodule, setWrapper, wrapper, htmlPlaceholder, WRAPPER_URL, getClientUrl } from '../../../modules/geoedgeRtdProvider.js';
