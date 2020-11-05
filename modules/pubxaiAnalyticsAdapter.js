@@ -88,8 +88,7 @@ function mapBidResponse(bidResponse, status) {
       requestTimestamp: bidResponse.requestTimestamp,
       responseTimestamp: bidResponse.responseTimestamp,
       platform: navigator.platform,
-      deviceType: getDeviceType(),
-      browser: checkUserBrowser()
+      deviceType: getDeviceType()
     });
   } else {
     return {
@@ -112,63 +111,8 @@ function mapBidResponse(bidResponse, status) {
       requestTimestamp: bidResponse.requestTimestamp,
       responseTimestamp: bidResponse.responseTimestamp,
       platform: navigator.platform,
-      deviceType: getDeviceType(),
-      browser: checkUserBrowser()
+      deviceType: getDeviceType()
     }
-  }
-}
-
-export function checkUserBrowser() {
-  let firefox = browserIsFirefox();
-  let chrome = browserIsChrome();
-  let edge = browserIsEdge();
-  let safari = browserIsSafari();
-  if (firefox) {
-    return firefox;
-  } if (chrome) {
-    return chrome;
-  } if (edge) {
-    return edge;
-  } if (safari) {
-    return safari;
-  } else {
-    return 'Unknown'
-  }
-}
-
-export function browserIsFirefox() {
-  if (typeof InstallTrigger !== 'undefined') {
-    return 'Firefox';
-  } else {
-    return false;
-  }
-}
-
-export function browserIsIE() {
-  return !!document.documentMode;
-}
-
-export function browserIsEdge() {
-  if (!browserIsIE() && !!window.StyleMedia) {
-    return 'Edge';
-  } else {
-    return false;
-  }
-}
-
-export function browserIsChrome() {
-  if ((!!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime)) || (/Android/i.test(navigator.userAgent) && !!window.chrome)) {
-    return 'Chrome';
-  } else {
-    return false;
-  }
-}
-
-export function browserIsSafari() {
-  if (window.safari !== undefined) {
-    return 'Safari'
-  } else {
-    return false;
   }
 }
 

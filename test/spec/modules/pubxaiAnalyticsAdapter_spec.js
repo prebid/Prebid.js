@@ -1,5 +1,4 @@
 import pubxaiAnalyticsAdapter from 'modules/pubxaiAnalyticsAdapter.js';
-import {checkUserBrowser} from 'modules/pubxaiAnalyticsAdapter.js';
 import {
   expect
 } from 'chai';
@@ -527,8 +526,7 @@ describe('pubxai analytics adapter', function() {
         'timeToRespond': 267,
         'responseTimestamp': 1603865707449,
         'platform': 'MacIntel',
-        'deviceType': 'desktop',
-        'browser': checkUserBrowser()
+        'deviceType': 'desktop'
       }],
       'auctionInit': {
         'host': location.host,
@@ -679,8 +677,7 @@ describe('pubxai analytics adapter', function() {
         'timeToRespond': 267,
         'responseTimestamp': 1603865707449,
         'platform': 'MacIntel',
-        'deviceType': 'desktop',
-        'browser': checkUserBrowser()
+        'deviceType': 'desktop'
       },
       'initOptions': initOptions
     }
