@@ -1,22 +1,21 @@
 import { config } from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
-import * as geoedge from '../../../modules/geoedgeRtdProvider.js';
+import * as hook from '../../../src/hook.js'
+import { beforeInit, geoedgeSubmodule, setWrapper, wrapper, htmlPlaceholder, WRAPPER_URL, getClientUrl } from '../../../modules/geoedgeRtdProvider.js';
 import { server } from '../../../test/mocks/xhr.js';
 
 let key = '123123123';
-function makeConfig () {
+function makeConfig() {
   return {
-    dataProviders: [{
-      name: 'geoedge',
-      params: {
-        wap: false,
-        key: key,
-        bidders: {
-          bidderA: true,
-          bidderB: false
-        }
+    name: 'geoedge',
+    params: {
+      wap: false,
+      key: key,
+      bidders: {
+        bidderA: true,
+        bidderB: false
       }
-    }]
+    }
   };
 }
 
@@ -35,62 +34,71 @@ function mockBid(bidderCode) {
   };
 }
 
-let mockWrapper = `<wrapper>${geoedge.htmlPlaceholder}</wrapper>`;
+let mockWrapper = `<wrapper>${htmlPlaceholder}</wrapper>`;
 
 describe('Geoedge RTD module', function () {
-  describe('before init', function () {
-    let insertElementStub;
+  describe('beforeInit', function () {
+    let submoduleStub;
 
     before(function () {
-      insertElementStub = sinon.stub(utils, 'insertElement');
+      submoduleStub = sinon.stub(hook, 'submodule');
     });
     after(function () {
-      utils.insertElement.restore();
+      submoduleStub.restore();
     });
-    it('should not fetch the wrapper if missing params', function () {
-      var missingConf = makeConfig();
-      delete missingConf.dataProviders[0].params;
-      geoedge.setParams(missingConf);
+    it('should fetch the wrapper', function () {
+      beforeInit();
       let request = server.requests[0];
-      expect(request).to.equal(undefined);
-    });
-    it('should fetch the wrapper if params present', function () {
-      geoedge.setParams(makeConfig());
-      let request = server.requests[0];
-      let isWrapperRequest = request && request.url && request.url && request.url === geoedge.WRAPPER_URL;
+      let isWrapperRequest = request && request.url && request.url && request.url === WRAPPER_URL;
       expect(isWrapperRequest).to.equal(true);
     });
-    it('should preload the client', function () {
-      let isLinkPreloadAsScript = arg => arg.tagName === 'LINK' && arg.rel === 'preload' && arg.as === 'script' && arg.href.indexOf(geoedge.getClientUrl(key)) > 4;
-      expect(insertElementStub.calledWith(sinon.match(isLinkPreloadAsScript))).to.equal(true);
+    it('should register RTD submodule provider', function () {
+      expect(submoduleStub.calledWith('realTimeData', geoedgeSubmodule)).to.equal(true);
     });
   });
   describe('setWrapper', function () {
     it('should set the wrapper', function () {
-      geoedge.setWrapper(mockWrapper);
-      expect(geoedge.wrapper).to.equal(mockWrapper);
+      setWrapper(mockWrapper);
+      expect(wrapper).to.equal(mockWrapper);
     });
   });
   describe('submodule', function () {
     describe('name', function () {
       it('should be geoedge', function () {
-        expect(geoedge.geoedgeSubmodule.name).to.equal('geoedge');
+        expect(geoedgeSubmodule.name).to.equal('geoedge');
       });
     });
     describe('init', function () {
-      it('should return true', function () {
-        expect(geoedge.geoedgeSubmodule.init()).to.equal(true);
+      let insertElementStub;
+
+      before(function () {
+        insertElementStub = sinon.stub(utils, 'insertElement');
+      });
+      after(function () {
+        utils.insertElement.restore();
+      });
+      it('should return false when missing params or key', function () {
+        let missingParams = geoedgeSubmodule.init({});
+        let missingKey = geoedgeSubmodule.init({ params: {} });
+        expect(missingParams || missingKey).to.equal(false);
+      });
+      it('should return true when params are ok', function () {
+        expect(geoedgeSubmodule.init(makeConfig())).to.equal(true);
+      });
+      it('should preload the client', function () {
+        let isLinkPreloadAsScript = arg => arg.tagName === 'LINK' && arg.rel === 'preload' && arg.as === 'script' && arg.href.indexOf(getClientUrl(key)) > 4;
+        expect(insertElementStub.calledWith(sinon.match(isLinkPreloadAsScript))).to.equal(true);
       });
     });
     describe('onBidResponseEvent', function () {
       let bidFromA = mockBid('bidderA');
       it('should wrap bid html when bidder is configured', function () {
-        geoedge.geoedgeSubmodule.onBidResponseEvent(bidFromA);
+        geoedgeSubmodule.onBidResponseEvent(bidFromA, makeConfig());
         expect(bidFromA.ad.indexOf('<wrapper>')).to.equal(0);
       });
       it('should not wrap bid html when bidder is not configured', function () {
         let bidFromB = mockBid('bidderB');
-        geoedge.geoedgeSubmodule.onBidResponseEvent(bidFromB);
+        geoedgeSubmodule.onBidResponseEvent(bidFromB, makeConfig());
         expect(bidFromB.ad.indexOf('<wrapper>')).to.equal(-1);
       });
       it('should only muatate the bid ad porperty', function () {
