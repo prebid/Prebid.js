@@ -348,12 +348,12 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should add eids', function () {
-      const userId = { id5id:	{ uid: "1111" } };
+      const userId = { id5id:	{ uid: '1111' } };
       const expectedUserObject = { ext: { eids: [{
-        source: "id5-sync.com",
+        source: 'id5-sync.com',
         uids: [{
           atype: 1,
-          id: "1111"
+          id: '1111'
         }]
       }]}};
       const bidRequest = Object.assign({}, simpleBidRequest);
