@@ -10,11 +10,17 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { uspDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
-const BASE_NB_COOKIE_NAME = 'id5id.1st';
-const NB_COOKIE_EXP_DAYS = (30 * 24 * 60 * 60 * 1000); // 30 days
+const NB_EXP_DAYS = 30;
+export const ID5_STORAGE_NAME = 'id5id';
+const LOCAL_STORAGE = 'html5';
+
+// order the legacy cookie names in reverse priority order so the last
+// cookie in the array is the most preferred to use
+const LEGACY_COOKIE_NAMES = [ 'pbjs-id5id', 'id5id.1st' ];
 
 const storage = getStorageManager(GVLID, MODULE_NAME);
 
@@ -42,10 +48,7 @@ export const id5IdSubmodule = {
     let uid;
     let linkType = 0;
 
-    if (value && typeof value.ID5ID === 'string') {
-      // don't lose our legacy value from cache
-      uid = value.ID5ID;
-    } else if (value && typeof value.universal_uid === 'string') {
+    if (value && typeof value.universal_uid === 'string') {
       uid = value.universal_uid;
       linkType = value.link_type || linkType;
     } else {
@@ -71,22 +74,21 @@ export const id5IdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
-    const configParams = (config && config.params) || {};
-    if (!hasRequiredParams(configParams)) {
+    if (!hasRequiredConfig(config)) {
       return undefined;
     }
+
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
-    const url = `https://id5-sync.com/g/v2/${configParams.partner}.json?gdpr_consent=${gdprConsentString}&gdpr=${hasGdpr}`;
+    const usp = uspDataHandler.getConsentData() || '';
+    const url = `https://id5-sync.com/g/v2/${config.params.partner}.json?gdpr_consent=${gdprConsentString}&gdpr=${hasGdpr}&us_privacy=${usp}`;
     const referer = getRefererInfo();
-    const signature = (cacheIdObj && cacheIdObj.signature) ? cacheIdObj.signature : '';
-    const pubId = (cacheIdObj && cacheIdObj.ID5ID) ? cacheIdObj.ID5ID : ''; // TODO: remove when 1puid isn't needed
+    const signature = (cacheIdObj && cacheIdObj.signature) ? cacheIdObj.signature : getLegacyCookieSignature();
     const data = {
-      'partner': configParams.partner,
-      '1puid': pubId, // TODO: remove when 1puid isn't needed
-      'nbPage': incrementNb(configParams),
+      'partner': config.params.partner,
+      'nbPage': incrementNb(config.params.partner),
       'o': 'pbjs',
-      'pd': configParams.pd || '',
+      'pd': config.params.pd || '',
       'rf': referer.referer,
       's': signature,
       'top': referer.reachedTop ? 1 : 0,
@@ -101,7 +103,13 @@ export const id5IdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
-              resetNb(configParams);
+              resetNb(config.params.partner);
+
+              // TODO: remove after requiring publishers to use localstorage and
+              // all publishers have upgraded
+              if (config.storage.type === LOCAL_STORAGE) {
+                removeLegacyCookies(config.params.partner);
+              }
             } catch (error) {
               utils.logError(error);
             }
@@ -109,7 +117,7 @@ export const id5IdSubmodule = {
           callback(responseObj);
         },
         error: error => {
-          utils.logError(`id5Id: ID fetch encountered an error`, error);
+          utils.logError(`User ID - ID5 submodule getId fetch encountered an error`, error);
           callback();
         }
       };
@@ -129,39 +137,112 @@ export const id5IdSubmodule = {
    * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */
   extendId(config, cacheIdObj) {
-    const configParams = (config && config.params) || {};
-    incrementNb(configParams);
+    const partnerId = (config && config.params && config.params.partner) || 0;
+    incrementNb(partnerId);
     return cacheIdObj;
   }
 };
 
-function hasRequiredParams(configParams) {
-  if (!configParams || typeof configParams.partner !== 'number') {
+function hasRequiredConfig(config) {
+  if (!config || !config.params || !config.params.partner || typeof config.params.partner !== 'number') {
     utils.logError(`User ID - ID5 submodule requires partner to be defined as a number`);
     return false;
   }
+
+  if (!config.storage || !config.storage.type || !config.storage.name) {
+    utils.logError(`User ID - ID5 submodule requires storage to be set`);
+    return false;
+  }
+
+  // TODO: in a future release, return false if storage type or name are not set as required
+  if (config.storage.type !== LOCAL_STORAGE) {
+    utils.logWarn(`User ID - ID5 submodule recommends storage type to be '${LOCAL_STORAGE}'. In a future release this will become a strict requirement`);
+  }
+  // TODO: in a future release, return false if storage type or name are not set as required
+  if (config.storage.name !== ID5_STORAGE_NAME) {
+    utils.logWarn(`User ID - ID5 submodule recommends storage name to be '${ID5_STORAGE_NAME}'. In a future release this will become a strict requirement`);
+  }
+
   return true;
 }
-function nbCookieName(configParams) {
-  return hasRequiredParams(configParams) ? `${BASE_NB_COOKIE_NAME}_${configParams.partner}_nb` : undefined;
+
+export function expDaysStr(expDays) {
+  return (new Date(Date.now() + (1000 * 60 * 60 * 24 * expDays))).toUTCString();
 }
-function nbCookieExpStr(expDays) {
-  return (new Date(Date.now() + expDays)).toUTCString();
+
+export function nbCacheName(partnerId) {
+  return `${ID5_STORAGE_NAME}_${partnerId}_nb`;
 }
-function storeNbInCookie(configParams, nb) {
-  storage.setCookie(nbCookieName(configParams), nb, nbCookieExpStr(NB_COOKIE_EXP_DAYS), 'Lax');
+export function storeNbInCache(partnerId, nb) {
+  storeInLocalStorage(nbCacheName(partnerId), nb, NB_EXP_DAYS);
 }
-function getNbFromCookie(configParams) {
-  const cacheNb = storage.getCookie(nbCookieName(configParams));
+export function getNbFromCache(partnerId) {
+  let cacheNb = getFromLocalStorage(nbCacheName(partnerId));
   return (cacheNb) ? parseInt(cacheNb) : 0;
 }
-function incrementNb(configParams) {
-  const nb = (getNbFromCookie(configParams) + 1);
-  storeNbInCookie(configParams, nb);
+function incrementNb(partnerId) {
+  const nb = (getNbFromCache(partnerId) + 1);
+  storeNbInCache(partnerId, nb);
   return nb;
 }
-function resetNb(configParams) {
-  storeNbInCookie(configParams, 0);
+function resetNb(partnerId) {
+  storeNbInCache(partnerId, 0);
+}
+
+function getLegacyCookieSignature() {
+  let legacyStoredValue;
+  LEGACY_COOKIE_NAMES.forEach(function(cookie) {
+    if (storage.getCookie(cookie)) {
+      legacyStoredValue = JSON.parse(storage.getCookie(cookie)) || legacyStoredValue;
+    }
+  });
+  return (legacyStoredValue && legacyStoredValue.signature) || '';
+}
+
+/**
+ * Remove our legacy cookie values. Needed until we move all publishers
+ * to html5 storage in a future release
+ * @param {integer} partnerId
+ */
+function removeLegacyCookies(partnerId) {
+  LEGACY_COOKIE_NAMES.forEach(function(cookie) {
+    storage.setCookie(`${cookie}`, '', expDaysStr(-1));
+    storage.setCookie(`${cookie}_nb`, '', expDaysStr(-1));
+    storage.setCookie(`${cookie}_${partnerId}_nb`, '', expDaysStr(-1));
+    storage.setCookie(`${cookie}_last`, '', expDaysStr(-1));
+  });
+}
+
+/**
+ * This will make sure we check for expiration before accessing local storage
+ * @param {string} key
+ */
+export function getFromLocalStorage(key) {
+  const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
+  // empty string means no expiration set
+  if (storedValueExp === '') {
+    return storage.getDataFromLocalStorage(key);
+  } else if (storedValueExp) {
+    if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
+      return storage.getDataFromLocalStorage(key);
+    }
+  }
+  // if we got here, then we have an expired item or we didn't set an
+  // expiration initially somehow, so we need to remove the item from the
+  // local storage
+  storage.removeDataFromLocalStorage(key);
+  return null;
+}
+/**
+ * Ensure that we always set an expiration in local storage since
+ * by default it's not required
+ * @param {string} key
+ * @param {any} value
+ * @param {integer} expDays
+ */
+export function storeInLocalStorage(key, value, expDays) {
+  storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
+  storage.setDataInLocalStorage(`${key}`, value);
 }
 
 submodule('userId', id5IdSubmodule);

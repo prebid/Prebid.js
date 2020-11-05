@@ -288,6 +288,26 @@ pbjs.setConfig({
     }
 });
 ```
+#### The **detectMissingSizes** feature
+With a recent update, the IX bid adapter bids on all banner sizes available in an ad unit, if IX is configured for at least one banner size in that ad unit. This default behavior if not required, can be turned off by using the `detectMissingSizes` flag.
+```
+pbjs.setConfig({
+                ix: {
+                    detectMissingSizes: false
+                }
+            });
+```
+OR
+```
+pbjs.setBidderConfig({
+                bidders: ["ix"],
+                config: {
+                    ix: {
+                        detectMissingSizes: false
+                    }
+                }
+            });
+```
 
 ### 2. Include `ixBidAdapter` in your build process
 
