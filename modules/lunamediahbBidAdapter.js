@@ -16,7 +16,7 @@ function isBidResponseValid(bid) {
     case VIDEO:
       return Boolean(bid.vastUrl);
     case NATIVE:
-      return Boolean(bid.native && bid.native.impressionTrackers);
+      return Boolean(bid.impressionTrackers);
     default:
       return false;
   }
