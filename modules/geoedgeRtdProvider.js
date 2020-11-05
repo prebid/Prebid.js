@@ -16,13 +16,9 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
 import { generateUUID, insertElement, isEmpty, logError } from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
 
-/** @type {string} */
-const MODULE_NAME = 'realTimeData';
 /** @type {string} */
 const SUBMODULE_NAME = 'geoedge';
 /** @type {string} */
@@ -36,8 +32,6 @@ const PV_ID = generateUUID();
 const HOST_NAME = '//rumcdn.geoedge.be';
 /** @type {string} */
 const FILE_NAME = 'grumi.js';
-/** @type {ModuleParams} */
-let providerParams = {};
 /** @type {function} */
 export let getClientUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME}`;
 /** @type {string} */
@@ -101,7 +95,7 @@ export function wrapHtml(wrapper, html) {
  * @param {string} key
  * @return {Object}
  */
-function getMacros(bid, key = providerParams.key) {
+function getMacros(bid, key) {
   return {
     '${key}': key,
     '%%ADUNIT%%': bid.adUnitCode,
@@ -158,7 +152,7 @@ function mutateBid(bid, ad) {
  * @param {Object} bid
  * @param {string} key
  */
-export function wrapBidResponse(bid, key = providerParams.key) {
+export function wrapBidResponse(bid, key) {
   let wrapped = buildHtml(bid, wrapper, bid.ad, key);
   mutateBid(bid, wrapped);
 }
@@ -168,8 +162,8 @@ export function wrapBidResponse(bid, key = providerParams.key) {
  * @param {string} bidder
  * @return {boolean}
  */
-function isSupportedBidder(bidder) {
-  return isEmpty(providerParams.bidders) || providerParams.bidders[bidder] === true;
+function isSupportedBidder(bidder, paramsBidders) {
+  return isEmpty(paramsBidders) || paramsBidders[bidder] === true;
 }
 
 /**
@@ -177,19 +171,26 @@ function isSupportedBidder(bidder) {
  * @param {Object} bid
  * @return {boolean}
  */
-function shouldWrap(bid) {
-  let supportedBidder = isSupportedBidder(bid.bidderCode);
-  let wap = providerParams.wap ? preloaded : true;
+function shouldWrap(bid, params) {
+  let supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
+  let wap = params.wap ? preloaded : true;
   return wrapperReady && supportedBidder && wap;
 }
 
-function conditionallyWrap(bid) {
-  if (shouldWrap(bid)) {
-    wrapBidResponse(bid);
+function conditionallyWrap(bidResponse, config, userConsent) {
+  let params = config.params;
+  if (shouldWrap(bidResponse, params)) {
+    wrapBidResponse(bidResponse, params.key);
   }
 }
 
-function init(config, gdpr, usp) {
+function init(config, userConsent) {
+  let params = config.params;
+  if (!params || !params.key) {
+    logError('missing key for geoedge RTD module provider');
+    return false;
+  }
+  preloadClient(params.key);
   return true;
 }
 
@@ -200,39 +201,13 @@ export const geoedgeSubmodule = {
      * @type {string}
      */
   name: SUBMODULE_NAME,
-  /**
-     * get data and send back to realTimeData module
-     * @function
-     * @param {adUnit[]} adUnits
-     * @param {function} onDone
-     */
   init,
   onBidResponseEvent: conditionallyWrap
 };
 
-/**
- * sets the module params from config
- * @param {Object} realTimeData
- */
-export function setParams(realTimeData) {
-  let dataProviders = realTimeData && realTimeData.dataProviders;
-  let geoedge;
-  try {
-    geoedge = dataProviders && find(dataProviders, provider => provider.name && provider.name.toLowerCase() === SUBMODULE_NAME);
-  } catch (e) { }
-  let params = geoedge && geoedge.params;
-  if (!params || !params.key) {
-    logError('missing key for geoedge RTD module provider');
-  } else {
-    providerParams = params;
-    fetchWrapper(setWrapper);
-    preloadClient(params.key);
-  }
+export function beforeInit() {
+  fetchWrapper(setWrapper);
+  submodule('realTimeData', geoedgeSubmodule);
 }
 
-let unsubscribe = config.getConfig(MODULE_NAME, ({ realTimeData }) => {
-  setParams(realTimeData);
-  unsubscribe();
-});
-
-submodule('realTimeData', geoedgeSubmodule);
+beforeInit();
