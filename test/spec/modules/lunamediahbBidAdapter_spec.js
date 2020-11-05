@@ -201,12 +201,10 @@ describe('LunamediaHBBidAdapter', function () {
       const native = {
         body: [{
           mediaType: 'native',
-          native: {
-            clickUrl: 'test.com',
-            title: 'Test',
-            image: 'test.com',
-            impressionTrackers: ['test.com'],
-          },
+          clickUrl: 'test.com',
+          title: 'Test',
+          image: 'test.com',
+          impressionTrackers: ['test.com'],
           ttl: 120,
           cpm: 0.4,
           requestId: '23fhj33i987f',
@@ -219,15 +217,14 @@ describe('LunamediaHBBidAdapter', function () {
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
       let dataItem = nativeResponses[0];
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native');
-      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'clickUrl', 'impressionTrackers', 'title', 'image');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
-      expect(dataItem.native.clickUrl).to.equal('test.com');
-      expect(dataItem.native.title).to.equal('Test');
-      expect(dataItem.native.image).to.equal('test.com');
-      expect(dataItem.native.impressionTrackers).to.be.an('array').that.is.not.empty;
-      expect(dataItem.native.impressionTrackers[0]).to.equal('test.com');
+      expect(dataItem.clickUrl).to.equal('test.com');
+      expect(dataItem.title).to.equal('Test');
+      expect(dataItem.image).to.equal('test.com');
+      expect(dataItem.impressionTrackers).to.be.an('array').that.is.not.empty;
+      expect(dataItem.impressionTrackers[0]).to.equal('test.com');
       expect(dataItem.ttl).to.equal(120);
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
