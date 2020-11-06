@@ -18,16 +18,39 @@ Module that connects to lunamedia demand sources
                     mediaTypes:{
                         banner: {
                             sizes: [[300, 250]],
-                        },
+                        }
+                    },
+                    bids:[
+                        {
+                            bidder: 'lunamediahb',
+                            params: {
+                                placementId: 0
+                            }
+                        }
+                    ]
+                },
+                {
+                    code:'1',
+                    mediaTypes:{
                         video: {
                             playerSize: [640, 480],
                             context: 'instream'
-                        },
+                        }
+                    },
+                    bids:[
+                        {
+                            bidder: 'lunamediahb',
+                            params: {
+                                placementId: 0
+                            }
+                        }
+                    ]
+                },
+                {
+                    code:'1',
+                    mediaTypes:{
                         native: {
                             title: {
-                                required: true
-                            },
-                            body: {
                                 required: true
                             },
                             icon: {
@@ -37,18 +60,6 @@ Module that connects to lunamedia demand sources
                         }
                     },
                     bids:[
-                        {
-                            bidder: 'lunamediahb',
-                            params: {
-                                placementId: 0
-                            }
-                        },
-                        {
-                            bidder: 'lunamediahb',
-                            params: {
-                                placementId: 0
-                            }
-                        },
                         {
                             bidder: 'lunamediahb',
                             params: {
