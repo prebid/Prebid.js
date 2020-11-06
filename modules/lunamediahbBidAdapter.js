@@ -71,15 +71,15 @@ export const spec = {
       };
       const mediaType = bid.mediaTypes
       
-      if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
-        placement.sizes = bid.mediaTypes[BANNER].sizes;
+      if (mediaType && mediaType[BANNER] && mediaType[BANNER].sizes) {
+        placement.sizes = mediaType[BANNER].sizes;
         placement.traffic = BANNER;
-      } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
-        placement.wPlayer = bid.mediaTypes[VIDEO].playerSize[0];
-        placement.hPlayer = bid.mediaTypes[VIDEO].playerSize[1];
+      } else if (mediaType && mediaType[VIDEO] && mediaType[VIDEO].playerSize) {
+        placement.wPlayer = mediaType[VIDEO].playerSize[0];
+        placement.hPlayer = mediaType[VIDEO].playerSize[1];
         placement.traffic = VIDEO;
-      } else if (bid.mediaTypes && bid.mediaTypes[NATIVE]) {
-        placement.native = bid.mediaTypes[NATIVE];
+      } else if (mediaType && mediaType[NATIVE]) {
+        placement.native = mediaType[NATIVE];
         placement.traffic = NATIVE;
       }
       placements.push(placement);
