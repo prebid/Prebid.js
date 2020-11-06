@@ -15,7 +15,7 @@ export const storage = getStorageManager();
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
-const SUBMODULE_NAME = 'audigent';
+const SUBMODULE_NAME = 'halo';
 const ERR_MSG = 'AUDIGENT_ERR';
 
 export const HALOID_LOCAL_NAME = 'auHaloId';
@@ -188,10 +188,10 @@ function init(provider, userConsent) {
 }
 
 /** @type {RtdSubmodule} */
-export const audigentSubmodule = {
+export const haloSubmodule = {
   name: SUBMODULE_NAME,
   getBidRequestData: getSegments,
   init: init
 };
 
-submodule(MODULE_NAME, audigentSubmodule);
+submodule(MODULE_NAME, haloSubmodule);

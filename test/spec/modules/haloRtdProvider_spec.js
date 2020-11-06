@@ -1,12 +1,12 @@
-import { HALOID_LOCAL_NAME, SEG_LOCAL_NAME, addSegmentData, getSegments, getSegmentsAsync, audigentSubmodule, storage } from 'modules/audigentRtdProvider.js';
+import { HALOID_LOCAL_NAME, SEG_LOCAL_NAME, addSegmentData, getSegments, getSegmentsAsync, haloSubmodule, storage } from 'modules/haloRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
 const responseHeader = {'Content-Type': 'application/json'};
 
-describe('audigentRtdProvider', function() {
-  describe('audigentSubmodule', function() {
+describe('haloRtdProvider', function() {
+  describe('haloSubmodule', function() {
     it('successfully instantiates', function () {
-		      expect(audigentSubmodule.init()).to.equal(true);
+		      expect(haloSubmodule.init()).to.equal(true);
     });
   });
 
