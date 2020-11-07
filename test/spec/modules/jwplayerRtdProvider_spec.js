@@ -1,5 +1,5 @@
 import { fetchTargetingForMediaId, getVatFromCache, extractPublisherParams,
-  formatTargetingResponse, getVatFromPlayer, enrichAdUnits,
+  formatTargetingResponse, getVatFromPlayer, enrichAdUnits, addTargetingToBid,
   fetchTargetingInformation, jwplayerSubmodule } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -454,6 +454,87 @@ describe('jwplayerRtdProvider', function() {
       const targeting = extractPublisherParams(null, null);
       expect(targeting).to.deep.equal({});
     })
+  });
+
+  describe('Add Targeting to Bid', function () {
+    const targeting = {foo: 'bar'};
+
+    it('creates realTimeData when absent from Bid', function () {
+      const targeting = {foo: 'bar'};
+      const bid = {};
+      addTargetingToBid(bid, targeting);
+      expect(bid).to.have.property('realTimeData');
+      expect(bid).to.have.nested.property('realTimeData.jwplayer.targeting', targeting);
+    });
+
+    it('adds to existing realTimeData', function () {
+      const otherRtd = {
+        targeting: {
+          seg: 'rtd seg'
+        }
+      };
+
+      const bid = {
+        realTimeData: {
+          otherRtd
+        }
+      };
+
+      addTargetingToBid(bid, targeting);
+      expect(bid).to.have.property('realTimeData');
+      const rtd = bid.realTimeData;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+
+      expect(rtd).to.have.deep.property('otherRtd', otherRtd);
+    });
+
+    it('adds to existing realTimeData.jwplayer', function () {
+      const otherInfo = { seg: 'rtd seg' };
+      const bid = {
+        realTimeData: {
+          jwplayer: {
+            otherInfo
+          }
+        }
+      };
+      addTargetingToBid(bid, targeting);
+
+      expect(bid).to.have.property('realTimeData');
+      const rtd = bid.realTimeData;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.otherInfo', otherInfo);
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
+
+    it('overrides existing jwplayer.targeting', function () {
+      const otherInfo = { seg: 'rtd seg' };
+      const bid = {
+        realTimeData: {
+          jwplayer: {
+            targeting: {
+              otherInfo
+            }
+          }
+        }
+      };
+      addTargetingToBid(bid, targeting);
+
+      expect(bid).to.have.property('realTimeData');
+      const rtd = bid.realTimeData;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
+
+    it('creates jwplayer when absent from realTimeData', function () {
+      const bid = { realTimeData: {} };
+      addTargetingToBid(bid, targeting);
+
+      expect(bid).to.have.property('realTimeData');
+      const rtd = bid.realTimeData;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
   });
 
   describe('jwplayerSubmodule', function () {
