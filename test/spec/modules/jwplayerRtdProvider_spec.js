@@ -252,7 +252,7 @@ describe('jwplayerRtdProvider', function() {
           };
           jwplayerSubmodule.getBidRequestData({ adUnits: [adUnit] }, bidRequestSpy);
           expect(bidRequestSpy.calledOnce).to.be.true;
-          expect(bid).to.have.deep.property('jwTargeting', expectedTargeting);
+          expect(bid.realTimeData.jwplayer).to.have.deep.property('targeting', expectedTargeting);
           fakeServer.respond();
           expect(bidRequestSpy.calledOnce).to.be.true;
         });
@@ -313,8 +313,8 @@ describe('jwplayerRtdProvider', function() {
       enrichAdUnits([adUnit]);
       const bid1 = bids[0];
       const bid2 = bids[1];
-      expect(bid1).to.not.have.property('jwTargeting');
-      expect(bid2).to.not.have.property('jwTargeting');
+      expect(bid1).to.not.have.property('realTimeData');
+      expect(bid2).to.not.have.property('realTimeData');
 
       const request = fakeServer.requests[0];
       request.respond(
@@ -330,8 +330,8 @@ describe('jwplayerRtdProvider', function() {
         })
       );
 
-      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
-      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
+      expect(bid1.realTimeData.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
+      expect(bid2.realTimeData.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
     });
 
     it('immediately adds cached targeting', function () {
@@ -373,8 +373,8 @@ describe('jwplayerRtdProvider', function() {
       enrichAdUnits([adUnit]);
       const bid1 = bids[0];
       const bid2 = bids[1];
-      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
-      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
+      expect(bid1.realTimeData.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
+      expect(bid2.realTimeData.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
     });
 
     it('adds content block when segments are absent and no request is pending', function () {
@@ -407,8 +407,8 @@ describe('jwplayerRtdProvider', function() {
       enrichAdUnits([adUnit]);
       const bid1 = bids[0];
       const bid2 = bids[1];
-      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
-      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
+      expect(bid1.realTimeData.jwplayer).to.have.deep.property('targeting', expectedTargetingForFailure);
+      expect(bid2.realTimeData.jwplayer).to.have.deep.property('targeting', expectedTargetingForFailure);
     });
   });
 
@@ -659,7 +659,7 @@ describe('jwplayerRtdProvider', function() {
         };
         jwplayerSubmodule.getBidRequestData({ adUnits: [adUnitWithMediaId, adUnitEmpty] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
-        expect(bid).to.have.deep.property('jwTargeting', expectedTargeting);
+        expect(bid.realTimeData.jwplayer).to.have.deep.property('targeting', expectedTargeting);
       });
 
       it('excludes segments when absent', function () {
@@ -686,9 +686,9 @@ describe('jwplayerRtdProvider', function() {
 
         jwplayerSubmodule.getBidRequestData({ adUnits: [ adUnit ] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
-        expect(bid.jwTargeting).to.not.have.property('segments');
-        expect(bid.jwTargeting).to.not.have.property('segments');
-        expect(bid).to.have.deep.property('jwTargeting', expectedTargeting);
+        expect(bid.realTimeData.jwplayer.targeting).to.not.have.property('segments');
+        expect(bid.realTimeData.jwplayer.targeting).to.not.have.property('segments');
+        expect(bid.realTimeData.jwplayer).to.have.deep.property('targeting', expectedTargeting);
       });
 
       it('does not modify bid when jwTargeting block is absent', function () {
@@ -718,9 +718,9 @@ describe('jwplayerRtdProvider', function() {
 
         jwplayerSubmodule.getBidRequestData({ adUnits: [adUnitWithMediaId, adUnitEmpty, adUnitEmptyfpd] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
-        expect(bid1).to.not.have.property('jwTargeting');
-        expect(bid2).to.not.have.property('jwTargeting');
-        expect(bid3).to.not.have.property('jwTargeting');
+        expect(bid1).to.not.have.property('realTimeData');
+        expect(bid2).to.not.have.property('realTimeData');
+        expect(bid3).to.not.have.property('realTimeData');
       });
     });
   });
