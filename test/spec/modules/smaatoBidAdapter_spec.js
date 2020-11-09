@@ -1,6 +1,7 @@
 import { spec } from 'modules/smaatoBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
+import {createEidsArray} from 'modules/userId/eids.js';
 
 const imageAd = {
   image: {
@@ -291,6 +292,67 @@ const combinedBannerAndVideoBidRequest = {
   bidderWinsCount: 0
 };
 
+const inAppBidRequest = {
+  bidder: 'smaato',
+  params: {
+    publisherId: 'publisherId',
+    adspaceId: 'adspaceId',
+    app: {
+      ifa: 'aDeviceId',
+      geo: {
+        lat: 33.3,
+        lon: -88.8
+      }
+    }
+  },
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 50]]
+    }
+  },
+  adUnitCode: '/19968336/header-bid-tag-0',
+  transactionId: 'transactionId',
+  sizes: [[300, 50]],
+  bidId: 'bidId',
+  bidderRequestId: 'bidderRequestId',
+  auctionId: 'auctionId',
+  src: 'client',
+  bidRequestsCount: 1,
+  bidderRequestsCount: 1,
+  bidderWinsCount: 0
+};
+
+const userIdBidRequest = {
+  bidder: 'smaato',
+  params: {
+    publisherId: 'publisherId',
+    adspaceId: 'adspaceId'
+  },
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 50]]
+    }
+  },
+  adUnitCode: '/19968336/header-bid-tag-0',
+  transactionId: 'transactionId',
+  sizes: [[300, 50]],
+  bidId: 'bidId',
+  bidderRequestId: 'bidderRequestId',
+  auctionId: 'auctionId',
+  src: 'client',
+  bidRequestsCount: 1,
+  bidderRequestsCount: 1,
+  bidderWinsCount: 0,
+  userId: {
+    criteoId: '123456',
+    tdid: '89145'
+  },
+  userIdAsEids: createEidsArray({
+    criteoId: '123456',
+    tdid: '89145'
+  })
+};
+
 describe('smaatoBidAdapterTest', () => {
   describe('isBidRequestValid', () => {
     it('has valid params', () => {
@@ -392,7 +454,11 @@ describe('smaatoBidAdapterTest', () => {
       expect(req_fpd.user.ext.consent).to.equal('HFIDUYFIUYIUYWIPOI87392DSU');
       expect(req_fpd.site.keywords).to.eql('power tools,drills');
       expect(req_fpd.site.publisher.id).to.equal('publisherId');
-    })
+    });
+
+    it('has no user ids', () => {
+      expect(this.req.user.ext.eids).to.not.exist;
+    });
   });
 
   describe('buildRequests for video imps', () => {
@@ -462,6 +528,35 @@ describe('smaatoBidAdapterTest', () => {
     });
   });
 
+  describe('in-app requests', () => {
+    it('add geo and ifa info to device object', () => {
+      let req = JSON.parse(spec.buildRequests([inAppBidRequest], defaultBidderRequest).data);
+      expect(req.device.geo).to.deep.equal({'lat': 33.3, 'lon': -88.8});
+      expect(req.device.ifa).to.equal('aDeviceId');
+    });
+    it('add only ifa to device object', () => {
+      let inAppBidRequestWithoutGeo = utils.deepClone(inAppBidRequest);
+      delete inAppBidRequestWithoutGeo.params.app.geo
+      let req = JSON.parse(spec.buildRequests([inAppBidRequestWithoutGeo], defaultBidderRequest).data);
+
+      expect(req.device.geo).to.not.exist;
+      expect(req.device.ifa).to.equal('aDeviceId');
+    });
+    it('add no specific device info if param does not exist', () => {
+      let req = JSON.parse(spec.buildRequests([singleBannerBidRequest], defaultBidderRequest).data);
+      expect(req.device.geo).to.not.exist;
+      expect(req.device.ifa).to.not.exist;
+    });
+  });
+
+  describe('user ids in requests', () => {
+    it('user ids are added to user.ext.eids', () => {
+      let req = JSON.parse(spec.buildRequests([userIdBidRequest], defaultBidderRequest).data);
+      expect(req.user.ext.eids).to.exist;
+      expect(req.user.ext.eids).to.have.length(2);
+    });
+  });
+
   describe('interpretResponse', () => {
     it('single image reponse', () => {
       const bids = spec.interpretResponse(openRtbBidResponse(ADTYPE_IMG), request);
@@ -501,5 +596,11 @@ describe('smaatoBidAdapterTest', () => {
       expect(bids[0].ttl).to.equal(400);
       clock.restore();
     });
+    it('uses net revenue flag send from server', () => {
+      let resp = openRtbBidResponse(ADTYPE_IMG);
+      resp.body.seatbid[0].bid[0].ext = {net: false};
+      const bids = spec.interpretResponse(resp, request);
+      expect(bids[0].netRevenue).to.equal(false);
+    })
   });
 });

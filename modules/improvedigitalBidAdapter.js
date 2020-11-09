@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
+import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'improvedigital';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
@@ -55,6 +56,13 @@ export const spec = {
     }
 
     requestParameters.schain = bidRequests[0].schain;
+
+    if (bidRequests[0].userId) {
+      const eids = createEidsArray(bidRequests[0].userId);
+      if (eids.length) {
+        utils.deepSetValue(requestParameters, 'user.ext.eids', eids);
+      }
+    }
 
     let requestObj = idClient.createRequest(
       normalizedBids, // requestObject
@@ -551,6 +559,9 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
     if (requestParameters.schain) {
       impressionBidRequestObject.schain = requestParameters.schain;
+    }
+    if (requestParameters.user) {
+      impressionBidRequestObject.user = requestParameters.user;
     }
     if (extraRequestParameters) {
       for (let prop in extraRequestParameters) {

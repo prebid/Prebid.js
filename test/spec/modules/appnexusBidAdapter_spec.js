@@ -808,7 +808,7 @@ describe('AppNexusAdapter', function () {
       expect(request.options).to.deep.equal({withCredentials: false});
     });
 
-    it('should populate eids array when ttd id and criteo is available', function () {
+    it('should populate eids and tpuids when ttd id and criteo is available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
           tdid: 'sample-userid',
@@ -824,10 +824,56 @@ describe('AppNexusAdapter', function () {
         rti_partner: 'TDID'
       });
 
-      expect(payload.eids).to.deep.include({
-        source: 'criteo.com',
-        id: 'sample-criteo-userid',
+      expect(payload.tpuids).to.deep.include({
+        provider: 'criteo',
+        user_id: 'sample-criteo-userid',
       });
+    });
+
+    it('should populate iab_support object at the root level if omid support is detected', function () {
+      // with bid.params.frameworks
+      let bidRequest_A = Object.assign({}, bidRequests[0], {
+        params: {
+          frameworks: [1, 2, 5, 6],
+          video: {
+            frameworks: [1, 2, 5, 6]
+          }
+        }
+      });
+      let request = spec.buildRequests([bidRequest_A]);
+      let payload = JSON.parse(request.data);
+      expect(payload.iab_support).to.be.an('object');
+      expect(payload.iab_support).to.deep.equal({
+        omidpn: 'Appnexus',
+        omidpv: '$prebid.version$'
+      });
+      expect(payload.tags[0].banner_frameworks).to.be.an('array');
+      expect(payload.tags[0].banner_frameworks).to.deep.equal([1, 2, 5, 6]);
+      expect(payload.tags[0].video_frameworks).to.be.an('array');
+      expect(payload.tags[0].video_frameworks).to.deep.equal([1, 2, 5, 6]);
+      expect(payload.tags[0].video.frameworks).to.not.exist;
+
+      // without bid.params.frameworks
+      const bidRequest_B = Object.assign({}, bidRequests[0]);
+      request = spec.buildRequests([bidRequest_B]);
+      payload = JSON.parse(request.data);
+      expect(payload.iab_support).to.not.exist;
+      expect(payload.tags[0].banner_frameworks).to.not.exist;
+      expect(payload.tags[0].video_frameworks).to.not.exist;
+
+      // with video.frameworks but it is not an array
+      const bidRequest_C = Object.assign({}, bidRequests[0], {
+        params: {
+          video: {
+            frameworks: "'1', '2', '3', '6'"
+          }
+        }
+      });
+      request = spec.buildRequests([bidRequest_C]);
+      payload = JSON.parse(request.data);
+      expect(payload.iab_support).to.not.exist;
+      expect(payload.tags[0].banner_frameworks).to.not.exist;
+      expect(payload.tags[0].video_frameworks).to.not.exist;
     });
   })
 

@@ -39,6 +39,12 @@ describe('consentManagement', function () {
         expect(userCMP).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       });
+
+      it('should exit consentManagement module if config is "undefined"', function() {
+        setConsentConfig(undefined);
+        expect(userCMP).to.be.undefined;
+        sinon.assert.calledOnce(utils.logWarn);
+      });
     });
 
     describe('valid setConsentConfig value', function () {
@@ -639,6 +645,32 @@ describe('consentManagement', function () {
           sinon.assert.notCalled(utils.logError);
           expect(didHookReturn).to.be.true;
           expect(consent.consentString).to.equal(testConsentData.tcString);
+          expect(consent.gdprApplies).to.be.true;
+          expect(consent.apiVersion).to.equal(2);
+        });
+
+        it('performs lookup check and stores consentData for a valid existing user with additional consent', function () {
+          let testConsentData = {
+            tcString: 'abc12345234',
+            addtlConsent: 'superduperstring',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded'
+          };
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
+
+          setConsentConfig(goodConfigWithAllowAuction);
+
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+          let consent = gdprDataHandler.getConsentData();
+          sinon.assert.notCalled(utils.logError);
+          expect(didHookReturn).to.be.true;
+          expect(consent.consentString).to.equal(testConsentData.tcString);
+          expect(consent.addtlConsent).to.equal(testConsentData.addtlConsent);
           expect(consent.gdprApplies).to.be.true;
           expect(consent.apiVersion).to.equal(2);
         });

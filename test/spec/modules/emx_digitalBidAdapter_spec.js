@@ -612,12 +612,23 @@ describe('emx_digital Adapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    let syncOptionsIframe = { iframeEnabled: true };
-    let syncOptionsPixel = { pixelEnabled: true };
-    it('Should push the correct sync type depending on the config', function () {
-      let iframeSync = spec.getUserSyncs(syncOptionsIframe);
-      expect(iframeSync.length).to.equal(1);
-      expect(iframeSync[0].type).to.equal('iframe');
+    it('should register the iframe sync url', function () {
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
+      expect(syncs).to.not.be.an('undefined');
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+    });
+
+    it('should pass gdpr params', function () {
+      let syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        gdprApplies: false, consentString: 'test'
+      });
+      expect(syncs).to.not.be.an('undefined');
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.contains('gdpr=0');
     });
   });
 });

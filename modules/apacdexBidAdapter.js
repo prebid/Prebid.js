@@ -1,7 +1,11 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-const BIDDER_CODE = 'quantumdex';
+const BIDDER_CODE = 'apacdex';
 const CONFIG = {
+  'apacdex': {
+    'ENDPOINT': 'https://useast.quantumdex.io/auction/apacdex',
+    'USERSYNC': 'https://sync.quantumdex.io/usersync/apacdex'
+  },
   'quantumdex': {
     'ENDPOINT': 'https://useast.quantumdex.io/auction/quantumdex',
     'USERSYNC': 'https://sync.quantumdex.io/usersync/quantumdex'
@@ -12,14 +16,14 @@ const CONFIG = {
   }
 };
 
-var bidderConfig = CONFIG['quantumdex'];
+var bidderConfig = CONFIG[BIDDER_CODE];
 var bySlotTargetKey = {};
 var bySlotSizesCount = {}
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner', 'video'],
-  aliases: ['valueimpression'],
+  aliases: ['quantumdex', 'valueimpression'],
   isBidRequestValid: function (bid) {
     if (!bid.params) {
       return false;
@@ -30,7 +34,7 @@ export const spec = {
     if (!utils.deepAccess(bid, 'mediaTypes.banner') && !utils.deepAccess(bid, 'mediaTypes.video')) {
       return false;
     }
-    if (utils.deepAccess(bid, 'mediaTypes.banner')) { // Quantumdex does not support multi type bids, favor banner over video
+    if (utils.deepAccess(bid, 'mediaTypes.banner')) { // Not support multi type bids, favor banner over video
       if (!utils.deepAccess(bid, 'mediaTypes.banner.sizes')) {
         // sizes at the banner is required.
         return false;
@@ -85,14 +89,14 @@ export const spec = {
     // Apply GDPR parameters to request.
     payload.gdpr = {};
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr.gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 'true' : 'false';
+      payload.gdpr.gdprApplies = !!bidderRequest.gdprConsent.gdprApplies;
       if (bidderRequest.gdprConsent.consentString) {
         payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
       }
     }
     // Apply schain.
     if (bids[0].schain) {
-      payload.schain = JSON.stringify(bids[0].schain)
+      payload.schain = bids[0].schain
     }
     // Apply us_privacy.
     if (bidderRequest && bidderRequest.uspConsent) {
