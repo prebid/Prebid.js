@@ -70,7 +70,6 @@ export const spec = {
         schain: bid.schain || {},
       };
       const mediaType = bid.mediaTypes
-      
       if (mediaType && mediaType[BANNER] && mediaType[BANNER].sizes) {
         placement.sizes = mediaType[BANNER].sizes;
         placement.traffic = BANNER;
