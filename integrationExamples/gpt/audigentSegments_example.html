@@ -84,11 +84,10 @@
             {
                 code: 'test-div',
                 mediaTypes: {
-                   banner: {
-                       sizes: [[300,250],[300,600],[728,90]]
-                   }
+                    banner: {
+                        sizes: [[300,250],[300,600],[728,90]]
+                    }
                 },
-
                 bids: [
                     {
                         bidder: 'rubicon',
@@ -120,20 +119,9 @@
                 consentManagement: {
                     cmpApi: 'iab',
                     timeout: 1000,
-                    allowAuctionWithoutConsent: true
+                    defaultGdprScope: true
                 },
-                // consentManagement: {
-                //     cmpApi: 'static',
-                //     consentData: {
-                //         consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA'
-                //         vendorData: {
-                //             purposeConsents: {
-                //                 '1': true
-                //             }
-                //         }
-                //     }
-                // },
-                usersync: {
+                userSync: {
                     userIds: [{
                         name: "unifiedId",
                         params: {
@@ -146,6 +134,16 @@
                             expires: 30
                         },
                     }, {
+                        name: "intentIqId",
+                        params: {
+                            partner: 0, //Set your real IntentIQ partner ID here for production.
+                        },
+                        storage: {
+                            type: "cookie",
+                            name: "intentIqId",
+                            expires: 30
+                        },
+                    }, {
                         name: "id5Id",
                         params: {
                             partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
@@ -155,6 +153,18 @@
                             name: "id5id",
                             expires: 90,
                             refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
+                        },
+
+                    }, {
+                        name: "merkleId",
+                        params: {
+                            ptk: '12345678-aaaa-bbbb-cccc-123456789abc', //Set your real merkle partner key here
+                            pubid: 'EXAMPLE' //Set your real merkle publisher id here
+                        },
+                        storage: {
+                            type: "html5",
+                            name: "merkleId",
+                            expires: 30
                         },
 
                     }, {
@@ -174,7 +184,7 @@
                         //     foo: '9879878907987',
                         //     bar:'93939'
                         // }
-                    },  {
+                    }, {
                       name: 'identityLink',
                       params: {
                         pid: '14' // Set your real identityLink placement ID here
@@ -184,13 +194,46 @@
                         name: 'idl_env',
                         expires: 30
                       }
+                    }, {
+                      name: "sharedId",
+                      params: {
+                        syncTime: 60 // in seconds, default is 24 hours
+                      },
+                      storage: {
+                        type: "cookie",
+                        name: "sharedid",
+                        expires: 28
+                      }
+                    }, {
+                      name: 'lotamePanoramaId'
+                    }, {
+                      name: "liveIntentId",
+                      params: {
+                        publisherId: "9896876"
+                      },
+                      storage: {
+                        type: "cookie",
+                        name: "_li_pbid",
+                        expires: 28
+                      }
+                    }, {
+                        name: "zeotapIdPlus"
+                    }, {
+                        name: 'haloId',
+                        storage: {
+                            type: "cookie",
+                            name: "haloId",
+                            expires: 28
+                        }
+                    }, {
+                        name: "quantcastId"
                     }],
                     syncDelay: 5000,
-                    auctionDelay: 1000 
+                    auctionDelay: 1000
                 },
                 realTimeData: {
                     auctionDelay: 1000,
-                    dataProviders: [{name: "audigent"}]
+                    dataProviders: [{name: "audigent", waitForIt: true}]
                 }
             });
             pbjs.addAdUnits(adUnits);
@@ -199,7 +242,7 @@
 
         function sendAdserverRequest() {
             document.getElementById('tdid').innerHTML = adUnits[0].bids[0].userId['tdid'];
-            document.getElementById('audigent_segments').innerHTML = JSON.stringify(adUnits[0].bids[0].realTimeData.audigent_segments);
+            document.getElementById('audigent_segments').innerHTML = JSON.stringify(adUnits[0].bids[0].audigent_segments);
 
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
@@ -246,6 +289,7 @@
         googletag.cmd.push(function() { googletag.display('test-div'); });
     </script>
 </div>
+
 TDID:
 <div id='tdid'>
 </div>

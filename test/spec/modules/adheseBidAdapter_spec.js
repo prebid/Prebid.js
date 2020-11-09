@@ -95,6 +95,14 @@ describe('AdheseAdapter', function () {
       expect(JSON.parse(req.data).parameters).to.deep.include({ 'ci': [ 'london', 'gent' ] });
     });
 
+    it('should filter out empty params', function () {
+      let req = spec.buildRequests([ bidWithParams({ 'aa': [], 'bb': null, 'cc': '', 'dd': [ '', '' ], 'ee': [ 0, 1, null ], 'ff': 0, 'gg': [ 'x', 'y', '' ] }) ], bidderRequest);
+
+      let params = JSON.parse(req.data).parameters;
+      expect(params).to.not.have.any.keys('aa', 'bb', 'cc', 'dd');
+      expect(params).to.deep.include({ 'ee': [ 0, 1 ], 'ff': [ 0 ], 'gg': [ 'x', 'y' ] });
+    });
+
     it('should include gdpr consent param', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
@@ -108,7 +116,7 @@ describe('AdheseAdapter', function () {
     });
 
     it('should include id5 id as /x5 param', function () {
-      let req = spec.buildRequests([ bidWithParams({}, { 'id5id': 'ID5-1234567890' }) ], bidderRequest);
+      let req = spec.buildRequests([ bidWithParams({}, { 'id5id': { 'uid': 'ID5-1234567890' } }) ], bidderRequest);
 
       expect(JSON.parse(req.data).parameters).to.deep.include({ 'x5': [ 'ID5-1234567890' ] });
     });

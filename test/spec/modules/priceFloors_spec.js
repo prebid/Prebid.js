@@ -34,6 +34,34 @@ describe('the price floors module', function () {
       '*': 2.5
     }
   };
+  const basicFloorDataHigh = {
+    floorMin: 7.0,
+    modelVersion: 'basic model',
+    currency: 'USD',
+    schema: {
+      delimiter: '|',
+      fields: ['mediaType']
+    },
+    values: {
+      'banner': 1.0,
+      'video': 5.0,
+      '*': 2.5
+    }
+  };
+  const basicFloorDataLow = {
+    floorMin: 2.3,
+    modelVersion: 'basic model',
+    currency: 'USD',
+    schema: {
+      delimiter: '|',
+      fields: ['mediaType']
+    },
+    values: {
+      'banner': 1.0,
+      'video': 5.0,
+      '*': 2.5
+    }
+  };
   const basicFloorConfig = {
     enabled: true,
     auctionDelay: 0,
@@ -45,6 +73,32 @@ describe('the price floors module', function () {
       bidAdjustment: true
     },
     data: basicFloorData
+  }
+  const minFloorConfigHigh = {
+    enabled: true,
+    auctionDelay: 0,
+    floorMin: 7,
+    endpoint: {},
+    enforcement: {
+      enforceJS: true,
+      enforcePBS: false,
+      floorDeals: false,
+      bidAdjustment: true
+    },
+    data: basicFloorDataHigh
+  }
+  const minFloorConfigLow = {
+    enabled: true,
+    auctionDelay: 0,
+    floorMin: 2.3,
+    endpoint: {},
+    enforcement: {
+      enforceJS: true,
+      enforcePBS: false,
+      floorDeals: false,
+      bidAdjustment: true
+    },
+    data: basicFloorDataLow
   }
   const basicBidRequest = {
     bidder: 'rubicon',
@@ -165,21 +219,65 @@ describe('the price floors module', function () {
     it('selects the right floor for different mediaTypes', function () {
       // banner with * size (not in rule file so does not do anything)
       expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 1.0,
         matchingFloor: 1.0,
         matchingData: 'banner',
         matchingRule: 'banner'
       });
       // video with * size (not in rule file so does not do anything)
       expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'video', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 5.0,
         matchingFloor: 5.0,
         matchingData: 'video',
         matchingRule: 'video'
       });
       // native (not in the rule list) with * size (not in rule file so does not do anything)
       expect(getFirstMatchingFloor({...basicFloorData}, basicBidRequest, {mediaType: 'native', size: '*'})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 2.5,
         matchingFloor: 2.5,
         matchingData: 'native',
         matchingRule: '*'
+      });
+      // banner with floorMin higher than matching rule
+      handleSetFloorsConfig({
+        ...minFloorConfigHigh
+      });
+      expect(getFirstMatchingFloor({...basicFloorDataHigh}, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
+        floorMin: 7,
+        floorRuleValue: 1.0,
+        matchingFloor: 7,
+        matchingData: 'banner',
+        matchingRule: 'banner'
+      });
+      // banner with floorMin higher than matching rule
+      handleSetFloorsConfig({
+        ...minFloorConfigLow
+      });
+      expect(getFirstMatchingFloor({...basicFloorDataLow}, basicBidRequest, {mediaType: 'video', size: '*'})).to.deep.equal({
+        floorMin: 2.3,
+        floorRuleValue: 5,
+        matchingFloor: 5,
+        matchingData: 'video',
+        matchingRule: 'video'
+      });
+    });
+    it('does not alter cached matched input if conversion occurs', function () {
+      let inputData = {...basicFloorData};
+      [0.2, 0.4, 0.6, 0.8].forEach(modifier => {
+        let result = getFirstMatchingFloor(inputData, basicBidRequest, {mediaType: 'banner', size: '*'});
+        // result should always be the same
+        expect(result).to.deep.equal({
+          floorMin: 0,
+          floorRuleValue: 1.0,
+          matchingFloor: 1.0,
+          matchingData: 'banner',
+          matchingRule: 'banner'
+        });
+        // make sure a post retrieval adjustment does not alter the cached floor
+        result.matchingFloor = result.matchingFloor * modifier;
       });
     });
     it('selects the right floor for different sizes', function () {
@@ -199,24 +297,32 @@ describe('the price floors module', function () {
       }
       // banner with 300x250 size
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: [300, 250]})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 1.1,
         matchingFloor: 1.1,
         matchingData: '300x250',
         matchingRule: '300x250'
       });
       // video with 300x250 size
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'video', size: [300, 250]})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 1.1,
         matchingFloor: 1.1,
         matchingData: '300x250',
         matchingRule: '300x250'
       });
       // native (not in the rule list) with 300x600 size
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'native', size: [600, 300]})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 4.4,
         matchingFloor: 4.4,
         matchingData: '600x300',
         matchingRule: '600x300'
       });
       // n/a mediaType with a size not in file should go to catch all
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: undefined, size: [1, 1]})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 5.5,
         matchingFloor: 5.5,
         matchingData: '1x1',
         matchingRule: '*'
@@ -240,12 +346,16 @@ describe('the price floors module', function () {
       };
       // banner with 300x250 size
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: [300, 250]})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 1.1,
         matchingFloor: 1.1,
         matchingData: 'test_div_1^banner^300x250',
         matchingRule: 'test_div_1^banner^300x250'
       });
       // video with 300x250 size -> No matching rule so should use default
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'video', size: [300, 250]})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 0.5,
         matchingFloor: 0.5,
         matchingData: 'test_div_1^video^300x250',
         matchingRule: undefined
@@ -253,6 +363,8 @@ describe('the price floors module', function () {
       // remove default and should still return the same floor as above since matches are cached
       delete inputFloorData.default;
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'video', size: [300, 250]})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 0.5,
         matchingFloor: 0.5,
         matchingData: 'test_div_1^video^300x250',
         matchingRule: undefined
@@ -260,6 +372,8 @@ describe('the price floors module', function () {
       // update adUnitCode to test_div_2 with weird other params
       let newBidRequest = { ...basicBidRequest, adUnitCode: 'test_div_2' }
       expect(getFirstMatchingFloor(inputFloorData, newBidRequest, {mediaType: 'badmediatype', size: [900, 900]})).to.deep.equal({
+        floorMin: 0,
+        floorRuleValue: 3.3,
         matchingFloor: 3.3,
         matchingData: 'test_div_2^badmediatype^900x900',
         matchingRule: 'test_div_2^*^*'
@@ -313,6 +427,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(false, {
         skipped: true,
+        floorMin: undefined,
         modelVersion: undefined,
         location: 'noData',
         skipRate: 0,
@@ -346,9 +461,44 @@ describe('the price floors module', function () {
       runStandardAuction([adUnitWithFloors1, adUnitWithFloors2]);
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'adUnit Model Version',
         location: 'adUnit',
         skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined
+      });
+    });
+    it('should use adUnit level data and minFloor should be set', function () {
+      handleSetFloorsConfig({
+        ...minFloorConfigHigh,
+        data: undefined
+      });
+      // attach floor data onto an adUnit and run an auction
+      let adUnitWithFloors1 = {
+        ...getAdUnitMock('adUnit-Div-1'),
+        floors: {
+          ...basicFloorData,
+          modelVersion: 'adUnit Model Version', // change the model name
+        }
+      };
+      let adUnitWithFloors2 = {
+        ...getAdUnitMock('adUnit-Div-2'),
+        floors: {
+          ...basicFloorData,
+          values: {
+            'banner': 5.0,
+            '*': 10.4
+          }
+        }
+      };
+      runStandardAuction([adUnitWithFloors1, adUnitWithFloors2]);
+      validateBidRequests(true, {
+        skipped: false,
+        modelVersion: 'adUnit Model Version',
+        location: 'adUnit',
+        skipRate: 0,
+        floorMin: 7,
         fetchStatus: undefined,
         floorProvider: undefined
       });
@@ -358,6 +508,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
@@ -378,6 +529,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
@@ -391,6 +543,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
@@ -404,6 +557,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
@@ -426,6 +580,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 50,
@@ -439,6 +594,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 10,
@@ -452,6 +608,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
@@ -515,6 +672,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'model-1',
         location: 'setConfig',
         skipRate: 0,
@@ -527,6 +685,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'model-2',
         location: 'setConfig',
         skipRate: 0,
@@ -539,6 +698,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'model-3',
         location: 'setConfig',
         skipRate: 0,
@@ -567,6 +727,7 @@ describe('the price floors module', function () {
       runStandardAuction();
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
@@ -645,6 +806,7 @@ describe('the price floors module', function () {
       // the exposedAdUnits should be from the fetch not setConfig level data
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
@@ -682,6 +844,7 @@ describe('the price floors module', function () {
       // and fetchStatus is success since fetch worked
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'fetch model name',
         location: 'fetch',
         skipRate: 0,
@@ -718,6 +881,7 @@ describe('the price floors module', function () {
       // and fetchStatus is success since fetch worked
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'fetch model name',
         location: 'fetch',
         skipRate: 0,
@@ -757,6 +921,7 @@ describe('the price floors module', function () {
       // and fetchStatus is success since fetch worked
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'fetch model name',
         location: 'fetch',
         skipRate: 95,
@@ -778,6 +943,7 @@ describe('the price floors module', function () {
       // and fetch failed is true
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
@@ -801,6 +967,7 @@ describe('the price floors module', function () {
       // and fetchStatus is 'success' but location is setConfig since it had bad data
       validateBidRequests(true, {
         skipped: false,
+        floorMin: undefined,
         modelVersion: 'basic model',
         location: 'setConfig',
         skipRate: 0,
@@ -1101,6 +1268,39 @@ describe('the price floors module', function () {
           floor: 1.3334 // 1.3334 * 0.75 = 1.000005 which is the floor (we cut off getFloor at 4 decimal points)
         });
       });
+      it('should work when cpmAdjust function uses bid object', function () {
+        getGlobal().bidderSettings = {
+          rubicon: {
+            bidCpmAdjustment: function (bidCpm, bidResponse) {
+              return bidResponse.cpm * 0.5;
+            },
+          },
+          appnexus: {
+            bidCpmAdjustment: function (bidCpm, bidResponse) {
+              return bidResponse.cpm * 0.75;
+            },
+          }
+        };
+        _floorDataForAuction[bidRequest.auctionId] = utils.deepClone(basicFloorConfig);
+        _floorDataForAuction[bidRequest.auctionId].data.values = { '*': 1.0 };
+        let appnexusBid = {
+          ...bidRequest,
+          bidder: 'appnexus'
+        };
+
+        // the conversion should be what the bidder would need to return in order to match the actual floor
+        // rubicon
+        expect(bidRequest.getFloor()).to.deep.equal({
+          currency: 'USD',
+          floor: 2.0 // a 2.0 bid after rubicons cpm adjustment would be 1.0 and thus is the floor after adjust
+        });
+
+        // appnexus
+        expect(appnexusBid.getFloor()).to.deep.equal({
+          currency: 'USD',
+          floor: 1.3334 // 1.3334 * 0.75 = 1.000005 which is the floor (we cut off getFloor at 4 decimal points)
+        });
+      });
       it('should correctly pick the right attributes if * is passed in and context can be assumed', function () {
         let inputBidReq = {
           bidder: 'rubicon',
@@ -1256,6 +1456,7 @@ describe('the price floors module', function () {
       runBidResponse();
       expect(returnedBidResponse).to.haveOwnProperty('floorData');
       expect(returnedBidResponse.floorData).to.deep.equal({
+        floorRuleValue: 0.3,
         floorValue: 0.3,
         floorCurrency: 'USD',
         floorRule: 'banner',
@@ -1293,6 +1494,7 @@ describe('the price floors module', function () {
       expect(returnedBidResponse).to.haveOwnProperty('floorData');
       expect(returnedBidResponse.floorData).to.deep.equal({
         floorValue: 0.5,
+        floorRuleValue: 0.5,
         floorCurrency: 'USD',
         floorRule: 'banner|300x250',
         cpmAfterAdjustments: 0.5,
@@ -1319,6 +1521,7 @@ describe('the price floors module', function () {
       });
       expect(returnedBidResponse).to.haveOwnProperty('floorData');
       expect(returnedBidResponse.floorData).to.deep.equal({
+        floorRuleValue: 5.5,
         floorValue: 5.5,
         floorCurrency: 'USD',
         floorRule: 'video|*',
