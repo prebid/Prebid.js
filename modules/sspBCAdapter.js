@@ -334,7 +334,6 @@ const spec = {
         slotId: adSlots,
         timeout: bid.timeout,
       }
-      utils.logWarn('sspBC adapter - timeout event', payload);
       sendNotification(payload);
     }
   },
@@ -350,7 +349,6 @@ const spec = {
       adomain: (bid.meta && bid.meta.advertiserDomains) ? bid.meta.advertiserDomains[0] : '',
       networkName: (bid.meta && bid.meta.networkName) ? bid.meta.networkName : '',
     }
-    utils.logWarn('sspBC adapter - bidWon event', payload);
     sendNotification(payload);
   },
 };
