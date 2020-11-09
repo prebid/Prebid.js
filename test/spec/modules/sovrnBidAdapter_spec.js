@@ -331,16 +331,16 @@ describe('sovrnBidAdapter', function() {
         'currency': 'USD',
         'netRevenue': true,
         'mediaType': 'banner',
-        'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
-        'ttl': 60000
+        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+        'ttl': 90
       }];
 
       let result = spec.interpretResponse(response);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('should get correct bid response when dealId is passed', function () {
-      response.body.dealid = 'baking';
+      response.body.seatbid[0].bid[0].dealid = 'baking';
 
       let expectedResponse = [{
         'requestId': '263c448586f5a1',
@@ -352,12 +352,33 @@ describe('sovrnBidAdapter', function() {
         'currency': 'USD',
         'netRevenue': true,
         'mediaType': 'banner',
-        'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
-        'ttl': 60000
+        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+        'ttl': 90
       }];
 
       let result = spec.interpretResponse(response);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
+    });
+
+    it('should get correct bid response when ttl is set', function () {
+      response.body.seatbid[0].bid[0].ttl = 480;
+
+      let expectedResponse = [{
+        'requestId': '263c448586f5a1',
+        'cpm': 0.45882675,
+        'width': 728,
+        'height': 90,
+        'creativeId': 'creativelycreatedcreativecreative',
+        'dealId': null,
+        'currency': 'USD',
+        'netRevenue': true,
+        'mediaType': 'banner',
+        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+        'ttl': 480
+      }];
+
+      let result = spec.interpretResponse(response);
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('handles empty bid response', function () {

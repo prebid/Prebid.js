@@ -31,7 +31,7 @@ Follow steps above for general review process. In addition, please verify the fo
 - All bidder parameter conventions must be followed:
     - Video params must be read from AdUnit.mediaTypes.video when available; however bidder config can override the ad unit. 
     - First party data must be read from [`fpd.context` and `fpd.user`](https://docs.prebid.org/dev-docs/publisher-api-reference.html#setConfig-fpd).
-    - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloors()` function.
+    - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloor()` function.
     - Adapters cannot accept an schain parameter. Rather, they must look for the schain parameter at bidRequest.schain.
     - The bidRequest page referrer must checked in addition to any bidder-specific parameter.
     - If they're getting the COPPA flag, it must come from config.getConfig('coppa');
