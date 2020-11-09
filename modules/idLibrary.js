@@ -70,7 +70,7 @@ function targetAction(mutations, observer) {
       if (email) {
         logInfo('Email obtained from the target ' + email);
         observer.disconnect();
-        logInfo(' Post data on email found in target');
+        logInfo('Post data on email found in target');
         postData();
         return;
       }
@@ -83,7 +83,7 @@ function addInputElementsElementListner(conf) {
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
 
   for (var i = 0; i < inputs.length; i++) {
-    logInfo(` Original Value in Input = ${inputs[i].value}`);
+    logInfo(`Original Value in Input = ${inputs[i].value}`);
     inputs[i].addEventListener('change', event => processInputChange(event));
     inputs[i].addEventListener('blur', event => processInputChange(event));
   }
@@ -141,8 +141,8 @@ function handleTargetElement() {
       logInfo('Finding the email with observer');
       targetObserver.observe(targetElement, OBSERVER_CONFIG);
     } else {
-      logInfo(' Target found with target ' + email);
-      logInfo(' Post data on email found in target with target');
+      logInfo('Target found with target ' + email);
+      logInfo('Post data on email found in target with target');
       postData();
     }
   }
@@ -158,7 +158,7 @@ function handleBodyElements() {
   email = getEmail(document.body.innerHTML);
   if (email !== null) {
     logInfo('Email found in body ' + email);
-    logInfo(' Post data on email found in the body without observer');
+    logInfo('Post data on email found in the body without observer');
     postData();
     return;
   }
@@ -185,10 +185,10 @@ function doesInputElementsHaveEmail() {
 function syncCallback() {
   return {
     success: function () {
-      logInfo(' Data synced successfully.');
+      logInfo('Data synced successfully.');
     },
     error: function () {
-      logInfo(' Data sync failed.');
+      logInfo('Data sync failed.');
     }
   }
 }
@@ -200,7 +200,7 @@ function postData() {
     logInfo('No user ids');
     return;
   }
-  logInfo(' Users' + JSON.stringify(userIds));
+  logInfo('Users' + JSON.stringify(userIds));
   const syncPayload = {};
   syncPayload.hid = MD5(email).toString();
   syncPayload.uids = JSON.stringify(userIds);
