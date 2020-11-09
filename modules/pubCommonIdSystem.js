@@ -37,7 +37,7 @@ function storeData(config, value) {
 
       if (config.storage.type === COOKIE) {
         if (storage.cookiesAreEnabled()) {
-          storage.setCookie(key, value, expiresStr, 'LAX', COOKIE_DOMAIN);
+          storage.setCookie(key, value, expiresStr, 'LAX', pubCommonIdSubmodule.domainOverride());
         }
       } else if (config.storage.type === LOCAL_STORAGE) {
         if (storage.hasLocalStorage()) {
@@ -304,7 +304,5 @@ export const pubCommonIdSubmodule = {
     }
   }
 };
-
-const COOKIE_DOMAIN = pubCommonIdSubmodule.domainOverride();
 
 submodule('userId', pubCommonIdSubmodule);
