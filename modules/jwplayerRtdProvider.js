@@ -251,10 +251,10 @@ function addTargetingToBids(bids, targeting) {
 }
 
 export function addTargetingToBid(bid, targeting) {
-  const rtd = bid.realTimeData || {};
+  const rtd = bid.rtd || {};
   const jwRtd = {};
   jwRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], { targeting });
-  bid.realTimeData = Object.assign({}, rtd, jwRtd);
+  bid.rtd = Object.assign({}, rtd, jwRtd);
 }
 
 function getPlayer(playerID) {
