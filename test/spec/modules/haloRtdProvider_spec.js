@@ -43,7 +43,7 @@ describe('haloRtdProvider', function() {
               },
               params: {
                 user: {
-                  segments: ['apnseg0']
+                  segments: [{'id': 'apnseg0', 'value': '0'}]
                 }
               }
             }
@@ -82,7 +82,7 @@ describe('haloRtdProvider', function() {
       ];
 
       const data = {
-        appnexus: [{id: 'apnseg1'}, {id: 'apnseg2'}, {id: 'apnseg3'}],
+        appnexus: [{id: 'apnseg1'}, {id: 'apnseg2', value: '2'}, {id: 'apnseg3'}],
         generic: [{id: 'seg1'}, {id: 'seg2'}, {id: 'seg3'}]
       };
 
@@ -92,12 +92,12 @@ describe('haloRtdProvider', function() {
       expect(adUnits[0].bids[0].fpd.user.data[0].segment[1]).to.have.deep.property('id', 'apnseg1');
       expect(adUnits[0].bids[0].fpd.user.data[0].segment[2]).to.have.deep.property('id', 'apnseg2');
       expect(adUnits[0].bids[0].fpd.user.data[0].segment[3]).to.have.deep.property('id', 'apnseg3');
-      expect(adUnits[0].bids[0].params.user).to.have.deep.property('segments', ['apnseg0', 'apnseg1', 'apnseg2', 'apnseg3']);
+      expect(adUnits[0].bids[0].params.user).to.have.deep.property('segments', [{'id': 'apnseg0', 'value': '0'}, {'id': 'apnseg1', 'value': '0'}, {'id': 'apnseg2', 'value': '2'}, {'id': 'apnseg3', 'value': '0'}]);
 
       expect(adUnits[1].bids[0].fpd.user.data[0].segment[0]).to.have.deep.property('id', 'apnseg1');
       expect(adUnits[1].bids[0].fpd.user.data[0].segment[1]).to.have.deep.property('id', 'apnseg2');
       expect(adUnits[1].bids[0].fpd.user.data[0].segment[2]).to.have.deep.property('id', 'apnseg3');
-      expect(adUnits[1].bids[0].params.user).to.have.deep.property('segments', ['apnseg1', 'apnseg2', 'apnseg3']);
+      expect(adUnits[1].bids[0].params.user).to.have.deep.property('segments', [{'id': 'apnseg1', 'value': '0'}, {'id': 'apnseg2', 'value': '2'}, {'id': 'apnseg3', 'value': '0'}]);
 
       expect(adUnits[1].bids[1].fpd.user.data[0].segment[0]).to.have.deep.property('id', 'seg1');
       expect(adUnits[1].bids[1].fpd.user.data[0].segment[1]).to.have.deep.property('id', 'seg2');
