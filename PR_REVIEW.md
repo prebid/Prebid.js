@@ -92,7 +92,7 @@ Follow steps above for general review process. In addition:
 - Confirm that the module
   - is not loading external code. If it is, escalate to the #prebid-js Slack channel. 
   - is reading `config` from the function signature rather than calling `getConfig`.
-  - is sending data to the bid request only as either First Party Data or in bidRequest.realTimeData.RTDPROVIDERCODE.
+  - is sending data to the bid request only as either First Party Data or in bidRequest.rtd.RTDPROVIDERCODE.
   - is making HTTPS requests as early as possible, but not more often than needed.
   - doesn't force bid adapters to load additional code.
 - Consider whether the kind of data the module is obtaining could have privacy implications. If so, make sure they're utilizing the `consent` data passed to them.
