@@ -17,18 +17,10 @@ export const storage = getStorageManager(gvlid, bidderCode);
 
 const bididStorageKey = 'cto_bidid';
 const bundleStorageKey = 'cto_bundle';
-const cookieWriteableKey = 'cto_test_cookie';
 const cookiesMaxAge = 13 * 30 * 24 * 60 * 60 * 1000;
 
 const pastDateString = new Date(0).toString();
 const expirationString = new Date(utils.timestamp() + cookiesMaxAge).toString();
-
-function areCookiesWriteable() {
-  storage.setCookie(cookieWriteableKey, '1');
-  const canWrite = storage.getCookie(cookieWriteableKey) === '1';
-  storage.setCookie(cookieWriteableKey, '', pastDateString);
-  return canWrite;
-}
 
 function extractProtocolHost (url, returnOnlyHost = false) {
   const parsedUrl = utils.parseUrl(url, {noDecodeWholeURL: true})
@@ -74,7 +66,7 @@ function buildCriteoUsersyncUrl(topUrl, domain, bundle, areCookiesWriteable, isL
 }
 
 function callCriteoUserSync(parsedCriteoData, gdprString) {
-  const cw = areCookiesWriteable();
+  const cw = storage.cookiesAreEnabled();
   const lsw = storage.localStorageIsEnabled();
   const topUrl = extractProtocolHost(getRefererInfo().referer);
   const domain = extractProtocolHost(document.location.href, true);

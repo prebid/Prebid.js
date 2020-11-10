@@ -71,7 +71,6 @@ describe('CriteoId module', function () {
   });
 
   it('should call user sync url with the right params', function () {
-    getCookieStub.withArgs('cto_test_cookie').returns('1');
     getCookieStub.withArgs('cto_bundle').returns('bundle');
     window.criteo_pubtag = {}
 
