@@ -140,4 +140,49 @@ describe('LiveIntentMinimalId', function() {
     );
     expect(callBackSpy.calledOnce).to.be.true;
   });
+
+  it('should include the LiveConnect identifier and additional Identifiers to resolve', function() {
+    const oldCookie = 'a-xxxx--123e4567-e89b-12d3-a456-426655440000'
+    getDataFromLocalStorageStub.withArgs('_li_duid').returns(oldCookie);
+    getDataFromLocalStorageStub.withArgs('_thirdPC').returns('third-pc');
+    const configParams = { params: {
+        ...defaultConfigParams.params,
+        ...{
+          'identifiersToResolve': ['_thirdPC']
+        }
+      }};
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?duid=${oldCookie}&_thirdPC=third-pc`);
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should include an additional identifier value to resolve even if it is an object', function() {
+    getCookieStub.returns(null);
+    getDataFromLocalStorageStub.withArgs('_thirdPC').returns({'key': 'value'});
+    const configParams = { params: {
+        ...defaultConfigParams.params,
+        ...{
+          'identifiersToResolve': ['_thirdPC']
+        }
+      }};
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899?_thirdPC=%7B%22key%22%3A%22value%22%7D');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
 });

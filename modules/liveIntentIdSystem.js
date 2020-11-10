@@ -8,10 +8,10 @@ import * as utils from '../src/utils.js';
 import { triggerPixel } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
+import { LiveConnect } from 'live-connect-js/esm/initializer.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { MinimalLiveConnect } from "live-connect-js/esm/live-connect";
+import { MinimalLiveConnect } from "live-connect-js/esm/minimal-live-connect.js";
 
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager(null, MODULE_NAME);
@@ -50,20 +50,11 @@ export function reset() {
 
 function parseLiveIntentCollectorConfig(collectConfig) {
   const config = {};
-  if (collectConfig) {
-    if (collectConfig.appId) {
-      config.appId = collectConfig.appId;
-    }
-    if (collectConfig.fpiStorageStrategy) {
-      config.storageStrategy = collectConfig.fpiStorageStrategy;
-    }
-    if (collectConfig.fpiExpirationDays) {
-      config.expirationDays = collectConfig.fpiExpirationDays;
-    }
-    if (collectConfig.collectorUrl) {
-      config.collectorUrl = collectConfig.collectorUrl;
-    }
-  }
+  collectConfig = collectConfig || {}
+  collectConfig.appId && (config.appId = collectConfig.appId);
+  collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
+  collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
+  collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
   return config;
 }
 
@@ -74,7 +65,7 @@ function initializeLiveConnect(configParams) {
   }
 
   const publisherId = configParams.publisherId || 'any';
-  const identityResolutionConfig = {
+    const identityResolutionConfig = {
     source: 'prebid',
     publisherId: publisherId
   };
@@ -146,7 +137,7 @@ export const liveIntentIdSubmodule = {
   decode(value, config) {
     const configParams = (config && config.params) || {};
     function composeIdObject(value) {
-      const base = { 'lipbid': value['unifiedId'] };
+      const base = { 'lipbid': value.unifiedId };
       delete value.unifiedId;
       return { 'lipb': { ...base, ...value } };
     }
