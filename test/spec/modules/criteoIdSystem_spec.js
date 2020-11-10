@@ -80,7 +80,7 @@ describe('CriteoId module', function () {
     ajaxBuilderStub.callsFake(mockResponse(undefined, ajaxStub))
 
     criteoIdSubmodule.getId();
-    const expectedUrl = `https://gum.criteo.com/sid/json?origin=prebid&topUrl=https%3A%2F%2Ftestdev.com%2F&domain=testdev.com&bundle=bundle&cw=1&pbt=1`;
+    const expectedUrl = `https://gum.criteo.com/sid/json?origin=prebid&topUrl=https%3A%2F%2Ftestdev.com%2F&domain=testdev.com&bundle=bundle&cw=1&pbt=1&lsw=1`;
 
     expect(ajaxStub.calledWith(expectedUrl)).to.be.true;
 
