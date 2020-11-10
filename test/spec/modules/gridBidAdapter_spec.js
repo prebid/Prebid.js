@@ -411,7 +411,7 @@ describe('TheMediaGrid Adapter', function () {
       const jsSegments = ['test_seg_1', 'test_seg_2'];
       const bidRequestsWithUserIds = bidRequests.map((bid) => {
         return Object.assign({
-          realTimeData: {
+          rtd: {
             jwplayer: {
               targeting: {
                 segments: jsSegments,
