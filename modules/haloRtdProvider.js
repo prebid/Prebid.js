@@ -34,8 +34,8 @@ const segmentMappers = {
     set(bid, 'params.user.segments', []);
     let appnexusSegments = [];
     segments.forEach(segment => {
-      let appnexusSegment = {'id': segment.id, 'value': '0'};
-      if (segment.value) {
+      let appnexusSegment = {'id': segment.id, 'value': 0};
+      if (typeof segment.value != 'undefined' && segment.value != null) {
         appnexusSegment.value = segment.value;
       }
       appnexusSegments.push(appnexusSegment);
