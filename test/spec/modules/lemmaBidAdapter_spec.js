@@ -357,7 +357,7 @@ describe('lemmaBidAdapter', function() {
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo`
         }]);
-        expect(spec.getUserSyncs({ iframeEnabled: truev}, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&gdpr=0&gdpr_consent=foo`
         }]);
         expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
