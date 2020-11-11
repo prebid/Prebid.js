@@ -168,9 +168,10 @@ describe('Verizon Media ID Submodule', () => {
     const VALID_API_RESPONSE = {
       vmuid: '1234'
     };
-    it('should return a newly constructed object with the vmuid property', () => {
-      expect(verizonMediaIdSubmodule.decode(VALID_API_RESPONSE)).to.deep.equal(VALID_API_RESPONSE);
-      expect(verizonMediaIdSubmodule.decode(VALID_API_RESPONSE)).to.not.equal(VALID_API_RESPONSE);
+    it('should return a newly constructed object with the vcuid property', () => {
+      expect(verizonMediaIdSubmodule.decode(VALID_API_RESPONSE)).to.deep.equal(
+        {vmcid: VALID_API_RESPONSE.vmuid}
+      );
     });
 
     [{}, '', {foo: 'bar'}].forEach((response) => {
