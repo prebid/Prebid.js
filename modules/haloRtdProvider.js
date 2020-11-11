@@ -42,7 +42,10 @@ const segmentMappers = {
     bid.params.user.segments = bid.params.user.segments.concat(appnexusSegments);
   },
   generic: function(bid, segments) {
-    bid.segments = segments;
+    bid.segments = bid.segments || [];
+    if (Array.isArray(bid.segments)) {
+      bid.segments = bid.segments.concat(segments);
+    }
   }
 }
 
@@ -144,7 +147,8 @@ export function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
  */
 export function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
   let reqParams = {};
-  if (typeof config == 'object' && config != null && Object.keys(config).length > 0) {
+  if (typeof config == 'object' && config != null) {
+    set(config, 'params.requestParams', {});
     reqParams = config.params.requestParams;
   }
 
