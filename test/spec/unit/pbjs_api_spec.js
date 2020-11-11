@@ -1773,6 +1773,32 @@ describe('Unit: Prebid Module', function () {
             expect(auctionArgs.adUnits[0].mediaTypes.native.icon).to.exist;
             assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.'));
           });
+
+          it('should throw error message and remove adUnit if adUnit.bids is not defined correctly', function () {
+            const adUnits = [{
+              code: 'ad-unit-1',
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 400]
+                }
+              },
+              bids: [{code: 'appnexus', params: 1234}]
+            }, {
+              code: 'bad-ad-unit-2',
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 400]
+                }
+              }
+            }];
+
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: adUnits
+            });
+            expect(auctionArgs.adUnits.length).to.equal(1);
+            expect(auctionArgs.adUnits[1]).to.not.exist;
+            assert.ok(logErrorSpy.calledWith("Detected adUnit.code 'bad-ad-unit-2' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction."));
+          });
         });
       });
     });

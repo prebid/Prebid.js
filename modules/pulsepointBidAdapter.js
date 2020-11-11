@@ -165,12 +165,12 @@ function impression(slot) {
 function banner(slot) {
   const sizes = parseSizes(slot);
   const size = adSize(slot, sizes);
-  return (slot.nativeParams || slot.params.video) ? null : {
+  return (slot.mediaTypes && slot.mediaTypes.banner) ? {
     w: size[0],
     h: size[1],
     battr: slot.params.battr,
     format: sizes
-  };
+  } : null;
 }
 
 /**
