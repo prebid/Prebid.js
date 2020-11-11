@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 var BIDDER_CODE = 'lemma';
 var LOG_WARN_PREFIX = 'LEMMA: ';
 var ENDPOINT = 'https://ads.lemmatechnologies.com/lemma/servad';
-var USER_SYNC = "https://sync.lemmatechnologies.com/js/usersync.html?"
+var USER_SYNC = 'https://sync.lemmatechnologies.com/js/usersync.html?';
 var DEFAULT_CURRENCY = 'USD';
 var AUCTION_TYPE = 2;
 var DEFAULT_TMAX = 300;
@@ -61,7 +61,7 @@ export var spec = {
     return parseRTBResponse(request, response.body);
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
-    let syncurl = USER_SYNC + "pid=" + pubId;
+    let syncurl = USER_SYNC + 'pid=' + pubId;
 
     // Attaching GDPR Consent Params in UserSync url
     if (gdprConsent) {
