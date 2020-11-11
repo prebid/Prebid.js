@@ -148,7 +148,7 @@ export function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) 
     reqParams = config.params.requestParams;
   }
 
-  const url = `http://127.0.0.1:5000/api/v1/rtb_segments`;
+  const url = `https://seg.halo.ad.gt/api/v1/rtb_segments`;
   ajax(url, {
     success: function (response, req) {
       if (req.status === 200) {
