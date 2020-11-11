@@ -5,7 +5,7 @@ categories:
   - title: '🚀 New Features'
     label: 'feature'
   - title: '🛠 Maintenance'
-    label: 'chore'    
+    label: 'maintenance'    
   - title: '🐛 Bug Fixes'
     labels:
       - 'fix'
