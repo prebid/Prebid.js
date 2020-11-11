@@ -4,7 +4,7 @@ tag-template: '$RESOLVED_VERSION'
 categories:
   - title: '🚀 New Features'
     label: 'feature'
-  - title: '🧰 Maintenance'
+  - title: '🛠 Maintenance'
     label: 'chore'    
   - title: '🐛 Bug Fixes'
     labels:
