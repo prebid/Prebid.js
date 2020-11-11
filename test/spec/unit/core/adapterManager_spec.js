@@ -25,6 +25,17 @@ const CONFIG = {
   bidders: ['appnexus'],
   accountId: 'abc'
 };
+
+const CONFIG2 = {
+  enabled: true,
+  endpoint: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
+  timeout: 1000,
+  maxBids: 1,
+  adapter: 'prebidServer',
+  bidders: ['pubmatic'],
+  accountId: 'def'
+}
+
 var prebidServerAdapterMock = {
   bidder: 'prebidServer',
   callBids: sinon.stub()
@@ -394,144 +405,144 @@ describe('adapterManager tests', function () {
       prebidServerAdapterMock.callBids.reset();
     });
 
-    it('invokes callBids on the S2S adapter', function () {
-      let bidRequests = [{
-        'bidderCode': 'appnexus',
-        'auctionId': '1863e370099523',
-        'bidderRequestId': '2946b569352ef2',
-        'tid': '34566b569352ef2',
-        'timeout': 1000,
-        'src': 's2s',
-        'adUnitsS2SCopy': [
-          {
-            'code': '/19968336/header-bid-tag1',
-            'sizes': [
-              {
-                'w': 728,
-                'h': 90
-              },
-              {
-                'w': 970,
-                'h': 90
-              }
-            ],
-            'bids': [
-              {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': '543221',
-                  'test': 'me'
-                },
-                'adUnitCode': '/19968336/header-bid-tag1',
-                'sizes': [
-                  [
-                    728,
-                    90
-                  ],
-                  [
-                    970,
-                    90
-                  ]
-                ],
-                'bidId': '68136e1c47023d',
-                'bidderRequestId': '55e24a66bed717',
-                'auctionId': '1ff753bd4ae5cb',
-                'startTime': 1463510220995,
-                'status': 1,
-                'bid_id': '68136e1c47023d'
-              }
-            ]
-          },
-          {
-            'code': '/19968336/header-bid-tag-0',
-            'sizes': [
-              {
-                'w': 300,
-                'h': 250
-              },
-              {
-                'w': 300,
-                'h': 600
-              }
-            ],
-            'bids': [
-              {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': '5324321'
-                },
-                'adUnitCode': '/19968336/header-bid-tag-0',
-                'sizes': [
-                  [
-                    300,
-                    250
-                  ],
-                  [
-                    300,
-                    600
-                  ]
-                ],
-                'bidId': '7e5d6af25ed188',
-                'bidderRequestId': '55e24a66bed717',
-                'auctionId': '1ff753bd4ae5cb',
-                'startTime': 1463510220996,
-                'bid_id': '7e5d6af25ed188'
-              }
-            ]
-          }
-        ],
-        'bids': [
-          {
-            'bidder': 'appnexus',
-            'params': {
-              'placementId': '4799418',
-              'test': 'me'
+    const bidRequests = [{
+      'bidderCode': 'appnexus',
+      'auctionId': '1863e370099523',
+      'bidderRequestId': '2946b569352ef2',
+      'tid': '34566b569352ef2',
+      'timeout': 1000,
+      'src': 's2s',
+      'adUnitsS2SCopy': [
+        {
+          'code': '/19968336/header-bid-tag1',
+          'sizes': [
+            {
+              'w': 728,
+              'h': 90
             },
-            'adUnitCode': '/19968336/header-bid-tag1',
-            'sizes': [
-              [
-                728,
-                90
+            {
+              'w': 970,
+              'h': 90
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'appnexus',
+              'params': {
+                'placementId': '543221',
+                'test': 'me'
+              },
+              'adUnitCode': '/19968336/header-bid-tag1',
+              'sizes': [
+                [
+                  728,
+                  90
+                ],
+                [
+                  970,
+                  90
+                ]
               ],
-              [
-                970,
-                90
-              ]
-            ],
-            'bidId': '392b5a6b05d648',
-            'bidderRequestId': '2946b569352ef2',
-            'auctionId': '1863e370099523',
-            'startTime': 1462918897462,
-            'status': 1,
-            'transactionId': 'fsafsa'
-          },
-          {
-            'bidder': 'appnexus',
-            'params': {
-              'placementId': '4799418'
+              'bidId': '68136e1c47023d',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220995,
+              'status': 1,
+              'bid_id': '68136e1c47023d'
+            }
+          ]
+        },
+        {
+          'code': '/19968336/header-bid-tag-0',
+          'sizes': [
+            {
+              'w': 300,
+              'h': 250
             },
-            'adUnitCode': '/19968336/header-bid-tag-0',
-            'sizes': [
-              [
-                300,
-                250
+            {
+              'w': 300,
+              'h': 600
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'appnexus',
+              'params': {
+                'placementId': '5324321'
+              },
+              'adUnitCode': '/19968336/header-bid-tag-0',
+              'sizes': [
+                [
+                  300,
+                  250
+                ],
+                [
+                  300,
+                  600
+                ]
               ],
-              [
-                300,
-                600
-              ]
+              'bidId': '7e5d6af25ed188',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220996,
+              'bid_id': '7e5d6af25ed188'
+            }
+          ]
+        }
+      ],
+      'bids': [
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': '4799418',
+            'test': 'me'
+          },
+          'adUnitCode': '/19968336/header-bid-tag1',
+          'sizes': [
+            [
+              728,
+              90
             ],
-            'bidId': '4dccdc37746135',
-            'bidderRequestId': '2946b569352ef2',
-            'auctionId': '1863e370099523',
-            'startTime': 1462918897463,
-            'status': 1,
-            'transactionId': 'fsafsa'
-          }
-        ],
-        'start': 1462918897460
-      }];
+            [
+              970,
+              90
+            ]
+          ],
+          'bidId': '392b5a6b05d648',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897462,
+          'status': 1,
+          'transactionId': 'fsafsa'
+        },
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': '4799418'
+          },
+          'adUnitCode': '/19968336/header-bid-tag-0',
+          'sizes': [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          'bidId': '4dccdc37746135',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897463,
+          'status': 1,
+          'transactionId': 'fsafsa'
+        }
+      ],
+      'start': 1462918897460
+    }];
 
+    it('invokes callBids on the S2S adapter', function () {
       adapterManager.callBids(
         getAdUnits(),
         bidRequests,
@@ -558,143 +569,6 @@ describe('adapterManager tests', function () {
           }
         ]
       });
-
-      let bidRequests = [{
-        'bidderCode': 'appnexus',
-        'auctionId': '1863e370099523',
-        'bidderRequestId': '2946b569352ef2',
-        'tid': '34566b569352ef2',
-        'src': 's2s',
-        'timeout': 1000,
-        'adUnitsS2SCopy': [
-          {
-            'code': '/19968336/header-bid-tag1',
-            'sizes': [
-              {
-                'w': 728,
-                'h': 90
-              },
-              {
-                'w': 970,
-                'h': 90
-              }
-            ],
-            'bids': [
-              {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': '543221',
-                  'test': 'me'
-                },
-                'adUnitCode': '/19968336/header-bid-tag1',
-                'sizes': [
-                  [
-                    728,
-                    90
-                  ],
-                  [
-                    970,
-                    90
-                  ]
-                ],
-                'bidId': '68136e1c47023d',
-                'bidderRequestId': '55e24a66bed717',
-                'auctionId': '1ff753bd4ae5cb',
-                'startTime': 1463510220995,
-                'status': 1,
-                'bid_id': '378a8914450b334'
-              }
-            ]
-          },
-          {
-            'code': '/19968336/header-bid-tag-0',
-            'sizes': [
-              {
-                'w': 300,
-                'h': 250
-              },
-              {
-                'w': 300,
-                'h': 600
-              }
-            ],
-            'bids': [
-              {
-                'bidder': 'appnexus',
-                'params': {
-                  'placementId': '5324321'
-                },
-                'adUnitCode': '/19968336/header-bid-tag-0',
-                'sizes': [
-                  [
-                    300,
-                    250
-                  ],
-                  [
-                    300,
-                    600
-                  ]
-                ],
-                'bidId': '7e5d6af25ed188',
-                'bidderRequestId': '55e24a66bed717',
-                'auctionId': '1ff753bd4ae5cb',
-                'startTime': 1463510220996,
-                'bid_id': '387d9d9c32ca47c'
-              }
-            ]
-          }
-        ],
-        'bids': [
-          {
-            'bidder': 'appnexus',
-            'params': {
-              'placementId': '4799418',
-              'test': 'me'
-            },
-            'adUnitCode': '/19968336/header-bid-tag1',
-            'sizes': [
-              [
-                728,
-                90
-              ],
-              [
-                970,
-                90
-              ]
-            ],
-            'bidId': '392b5a6b05d648',
-            'bidderRequestId': '2946b569352ef2',
-            'auctionId': '1863e370099523',
-            'startTime': 1462918897462,
-            'status': 1,
-            'transactionId': 'fsafsa'
-          },
-          {
-            'bidder': 'appnexus',
-            'params': {
-              'placementId': '4799418'
-            },
-            'adUnitCode': '/19968336/header-bid-tag-0',
-            'sizes': [
-              [
-                300,
-                250
-              ],
-              [
-                300,
-                600
-              ]
-            ],
-            'bidId': '4dccdc37746135',
-            'bidderRequestId': '2946b569352ef2',
-            'auctionId': '1863e370099523',
-            'startTime': 1462918897463,
-            'status': 1,
-            'transactionId': 'fsafsa'
-          }
-        ],
-        'start': 1462918897460
-      }];
 
       adapterManager.callBids(
         adUnits,
@@ -748,6 +622,367 @@ describe('adapterManager tests', function () {
       });
     });
   }); // end s2s tests
+
+  describe('Multiple S2S tests', function () {
+    beforeEach(function () {
+      config.setConfig({s2sConfig: [CONFIG, CONFIG2]});
+      adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
+      prebidServerAdapterMock.callBids.reset();
+    });
+
+    const bidRequests = [{
+      'bidderCode': 'appnexus',
+      'auctionId': '1863e370099523',
+      'bidderRequestId': '2946b569352ef2',
+      'tid': '34566b569352ef2',
+      'timeout': 1000,
+      'src': 's2s',
+      'adUnitsS2SCopy': [
+        {
+          'code': '/19968336/header-bid-tag1',
+          'sizes': [
+            {
+              'w': 728,
+              'h': 90
+            },
+            {
+              'w': 970,
+              'h': 90
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'appnexus',
+              'params': {
+                'placementId': '543221',
+                'test': 'me'
+              },
+              'adUnitCode': '/19968336/header-bid-tag1',
+              'sizes': [
+                [
+                  728,
+                  90
+                ],
+                [
+                  970,
+                  90
+                ]
+              ],
+              'bidId': '68136e1c47023d',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220995,
+              'status': 1,
+              'bid_id': '68136e1c47023d'
+            }
+          ]
+        },
+        {
+          'code': '/19968336/header-bid-tag-0',
+          'sizes': [
+            {
+              'w': 300,
+              'h': 250
+            },
+            {
+              'w': 300,
+              'h': 600
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'appnexus',
+              'params': {
+                'placementId': '5324321'
+              },
+              'adUnitCode': '/19968336/header-bid-tag-0',
+              'sizes': [
+                [
+                  300,
+                  250
+                ],
+                [
+                  300,
+                  600
+                ]
+              ],
+              'bidId': '7e5d6af25ed188',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220996,
+              'bid_id': '7e5d6af25ed188'
+            }
+          ]
+        }
+      ],
+      'bids': [
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': '4799418',
+            'test': 'me'
+          },
+          'adUnitCode': '/19968336/header-bid-tag1',
+          'sizes': [
+            [
+              728,
+              90
+            ],
+            [
+              970,
+              90
+            ]
+          ],
+          'bidId': '392b5a6b05d648',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897462,
+          'status': 1,
+          'transactionId': 'fsafsa'
+        },
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': '4799418'
+          },
+          'adUnitCode': '/19968336/header-bid-tag-0',
+          'sizes': [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          'bidId': '4dccdc37746135',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897463,
+          'status': 1,
+          'transactionId': 'fsafsa'
+        }
+      ],
+      'start': 1462918897460
+    },
+    {
+      'bidderCode': 'rubicon',
+      'auctionId': '1863e370099523',
+      'bidderRequestId': '2946b569352ef2',
+      'tid': '2342342342lfi23',
+      'timeout': 1000,
+      'src': 's2s',
+      'adUnitsS2SCopy': [
+        {
+          'code': '/19968336/header-bid-tag1',
+          'sizes': [
+            {
+              'w': 728,
+              'h': 90
+            },
+            {
+              'w': 970,
+              'h': 90
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'rubicon',
+              'params': {
+                'placementId': '543221',
+                'test': 'me'
+              },
+              'adUnitCode': '/19968336/header-bid-tag1',
+              'sizes': [
+                [
+                  728,
+                  90
+                ],
+                [
+                  970,
+                  90
+                ]
+              ],
+              'bidId': '68136e1c47023d',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220995,
+              'status': 1,
+              'bid_id': '68136e1c47023d'
+            }
+          ]
+        },
+        {
+          'code': '/19968336/header-bid-tag-0',
+          'sizes': [
+            {
+              'w': 300,
+              'h': 250
+            },
+            {
+              'w': 300,
+              'h': 600
+            }
+          ],
+          'bids': [
+            {
+              'bidder': 'rubicon',
+              'params': {
+                'placementId': '5324321'
+              },
+              'adUnitCode': '/19968336/header-bid-tag-0',
+              'sizes': [
+                [
+                  300,
+                  250
+                ],
+                [
+                  300,
+                  600
+                ]
+              ],
+              'bidId': '7e5d6af25ed188',
+              'bidderRequestId': '55e24a66bed717',
+              'auctionId': '1ff753bd4ae5cb',
+              'startTime': 1463510220996,
+              'bid_id': '7e5d6af25ed188'
+            }
+          ]
+        }
+      ],
+      'bids': [
+        {
+          'bidder': 'rubicon',
+          'params': {
+            'placementId': '4799418',
+            'test': 'me'
+          },
+          'adUnitCode': '/19968336/header-bid-tag1',
+          'sizes': [
+            [
+              728,
+              90
+            ],
+            [
+              970,
+              90
+            ]
+          ],
+          'bidId': '392b5a6b05d648',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897462,
+          'status': 1,
+          'transactionId': '4r42r23r23'
+        },
+        {
+          'bidder': 'rubicon',
+          'params': {
+            'placementId': '4799418'
+          },
+          'adUnitCode': '/19968336/header-bid-tag-0',
+          'sizes': [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ],
+          'bidId': '4dccdc37746135',
+          'bidderRequestId': '2946b569352ef2',
+          'auctionId': '1863e370099523',
+          'startTime': 1462918897463,
+          'status': 1,
+          'transactionId': '4r42r23r23'
+        }
+      ],
+      'start': 1462918897460
+    }];
+
+    it('invokes callBids on the S2S adapter', function () {
+      adapterManager.callBids(
+        getAdUnits(),
+        bidRequests,
+        () => {},
+        () => () => {}
+      );
+      sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+    });
+
+    // Enable this test when prebidServer adapter is made 1.0 compliant
+    it('invokes callBids with only s2s bids', function () {
+      const adUnits = getAdUnits();
+      // adUnit without appnexus bidder
+      adUnits.push({
+        'code': '123',
+        'sizes': [300, 250],
+        'bids': [
+          {
+            'bidder': 'adequant',
+            'params': {
+              'publisher_id': '1234567',
+              'bidfloor': 0.01
+            }
+          }
+        ]
+      });
+
+      adapterManager.callBids(
+        adUnits,
+        bidRequests,
+        () => {},
+        () => () => {}
+      );
+      const requestObj = prebidServerAdapterMock.callBids.firstCall.args[0];
+      expect(requestObj.ad_units.length).to.equal(2);
+      sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+    });
+
+    describe('BID_REQUESTED event', function () {
+      // function to count BID_REQUESTED events
+      let cnt, count = () => cnt++;
+
+      beforeEach(function () {
+        prebidServerAdapterMock.callBids.reset();
+        cnt = 0;
+        events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
+      });
+
+      afterEach(function () {
+        events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
+      });
+
+      it('should fire for s2s requests', function () {
+        let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+          adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'pubmatic'], bid.bidder));
+          return adUnit;
+        })
+        let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+        adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        expect(cnt).to.equal(2);
+        sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+      });
+
+      it('should fire for simultaneous s2s and client requests', function () {
+        adapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
+        let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
+          adUnit.bids = adUnit.bids.filter(bid => includes(['adequant', 'appnexus', 'pubmatic'], bid.bidder));
+          return adUnit;
+        })
+        let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+        adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        expect(cnt).to.equal(3);
+        sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+        sinon.assert.calledOnce(adequantAdapterMock.callBids);
+        adequantAdapterMock.callBids.reset();
+        delete adapterManager.bidderRegistry['adequant'];
+      });
+    });
+  }); // end multiple s2s tests
 
   describe('s2sTesting', function () {
     let doneStub = sinon.stub();
@@ -986,6 +1221,27 @@ describe('adapterManager tests', function () {
 
         adapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
         expect(adapterManager.aliasRegistry).to.have.property('s2sAlias');
+      });
+
+      it('should allow an alias if alias is part of s2sConfig.bidders for multiple s2sConfigs', function () {
+        let testS2sConfig = utils.deepClone(CONFIG);
+        testS2sConfig.bidders = ['s2sAlias'];
+        config.setConfig({s2sConfig: [
+          testS2sConfig, {
+            enabled: true,
+            endpoint: 'rp-pbs-endpoint-test.com',
+            timeout: 500,
+            maxBids: 1,
+            adapter: 'prebidServer',
+            bidders: ['s2sRpAlias'],
+            accountId: 'def'
+          }
+        ]});
+
+        adapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
+        expect(adapterManager.aliasRegistry).to.have.property('s2sAlias');
+        adapterManager.aliasBidAdapter('s2sBidder', 's2sRpAlias');
+        expect(adapterManager.aliasRegistry).to.have.property('s2sRpAlias');
       });
 
       it('should throw an error if alias + bidder are unknown and not part of s2sConfig.bidders', function () {
@@ -1333,6 +1589,139 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].bids).lengthOf(1);
         expect(bidRequests[1].bids[0].bidder).equals('rubicon');
         expect(bidRequests[1].bids[0].finalSource).equals('server');
+      });
+
+      // todo: update description
+      it('suppresses all, and only, client bids if there are bids resulting from bidSource at the adUnit Level', () => {
+        const ads = getServerTestingsAds();
+
+        // change this adUnit to be server based
+        ads[1].bids[1].bidSource.client = 0;
+        ads[1].bids[1].bidSource.server = 100;
+
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(3);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[1].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('openx');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
+      });
+
+      // we have a server call now
+      it('does not suppress client bids if no "test case" bids result in a server bid', () => {
+        const ads = getServerTestingsAds();
+
+        // change this adUnit to be client based
+        ads[0].bids[0].bidSource.client = 100;
+        ads[0].bids[0].bidSource.server = 0;
+
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(4);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('adequant');
+        expect(bidRequests[0].bids[0].finalSource).equals('client');
+
+        expect(bidRequests[1].bids).lengthOf(2);
+        expect(bidRequests[1].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[1].bids[0].finalSource).equals('client');
+        expect(bidRequests[1].bids[1].bidder).equals('appnexus');
+        expect(bidRequests[1].bids[1].finalSource).equals('client');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('openx');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[3].bids).lengthOf(2);
+        expect(bidRequests[3].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[3].bids[0].finalSource).equals('client');
+        expect(bidRequests[3].bids[1].bidder).equals('rubicon');
+        expect(bidRequests[3].bids[1].finalSource).equals('client');
+      });
+
+      it(
+        'should surpress client side bids if no ad unit bidSources are set, ' +
+        'but bidderControl resolves to server',
+        () => {
+          const ads = removeAdUnitsBidSource(getServerTestingsAds());
+
+          const bidRequests = makeBidRequests(ads);
+
+          expect(bidRequests).lengthOf(2);
+
+          expect(bidRequests[0].bids).lengthOf(1);
+          expect(bidRequests[0].bids[0].bidder).equals('openx');
+          expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+          expect(bidRequests[1].bids).lengthOf(2);
+          expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+          expect(bidRequests[1].bids[0].finalSource).equals('server');
+        }
+      );
+    });
+
+    describe('Multiple s2sTesting - testServerOnly', () => {
+      beforeEach(() => {
+        config.setConfig({s2sConfig: [getServerTestingConfig(CONFIG), CONFIG2]});
+      });
+
+      afterEach(() => config.resetConfig());
+
+      const makeBidRequests = ads => {
+        let bidRequests = adapterManager.makeBidRequests(
+          ads, 1111, 2222, 1000
+        );
+
+        bidRequests.sort((a, b) => {
+          if (a.bidderCode < b.bidderCode) return -1;
+          if (a.bidderCode > b.bidderCode) return 1;
+          return 0;
+        });
+
+        return bidRequests;
+      };
+
+      const removeAdUnitsBidSource = adUnits => adUnits.map(adUnit => {
+        const newAdUnit = { ...adUnit };
+        newAdUnit.bids = newAdUnit.bids.map(bid => {
+          if (bid.bidSource) delete bid.bidSource;
+          return bid;
+        });
+        return newAdUnit;
+      });
+
+      it('suppresses all client bids if there are server bids resulting from bidSource at the adUnit Level', () => {
+        let ads = getServerTestingsAds();
+        ads.push({
+          code: 'test_div_5',
+          sizes: [[300, 250]],
+          bids: [{ bidder: 'pubmatic' }]
+        })
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(3);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('openx');
+        expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('pubmatic');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
       });
 
       // todo: update description
