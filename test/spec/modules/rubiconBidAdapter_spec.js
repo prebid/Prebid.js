@@ -1226,15 +1226,17 @@ describe('the rubicon adapter', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 id5id: {
-                  uid: '11111'
+                  uid: '11111',
+                  ext: {
+                    linkType: '22222'
+                  }
                 }
               };
               clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
-              console.log(clonedBid.userIdAsEids)
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
-              expect(data['eid_id5-sync.com']).to.equal('11111^1^');
+              expect(data['eid_id5-sync.com']).to.equal('11111^1^22222');
             });
           });
 
