@@ -37,7 +37,7 @@ function storeData(config, value) {
 
       if (config.storage.type === COOKIE) {
         if (storage.cookiesAreEnabled()) {
-          storage.setCookie(key, value, expiresStr, 'LAX', COOKIE_DOMAIN);
+          storage.setCookie(key, value, expiresStr, 'LAX', pubCommonIdSubmodule.domainOverride());
         }
       } else if (config.storage.type === LOCAL_STORAGE) {
         if (storage.hasLocalStorage()) {
@@ -282,16 +282,19 @@ export const pubCommonIdSubmodule = {
   domainOverride: function () {
     const domainElements = document.domain.split('.');
     const cookieName = `_gd${Date.now()}`;
-    for (let i = 0, topDomain; i < domainElements.length; i++) {
+    for (let i = 0, topDomain, testCookie; i < domainElements.length; i++) {
       const nextDomain = domainElements.slice(i).join('.');
 
       // write test cookie
       storage.setCookie(cookieName, '1', undefined, undefined, nextDomain);
 
       // read test cookie to verify domain was valid
-      if (storage.getCookie(cookieName) === '1') {
-        // delete test cookie
-        storage.setCookie(cookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, nextDomain);
+      testCookie = storage.getCookie(cookieName);
+
+      // delete test cookie
+      storage.setCookie(cookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, nextDomain);
+
+      if (testCookie === '1') {
         // cookie was written successfully using test domain so the topDomain is updated
         topDomain = nextDomain;
       } else {
@@ -301,7 +304,5 @@ export const pubCommonIdSubmodule = {
     }
   }
 };
-
-const COOKIE_DOMAIN = pubCommonIdSubmodule.domainOverride();
 
 submodule('userId', pubCommonIdSubmodule);
