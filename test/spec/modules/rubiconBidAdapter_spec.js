@@ -1221,6 +1221,23 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          describe('ID5 support', function () {
+            it('should send ID5 id when userIdAsEids contains ID5', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                id5id: {
+                  uid: '11111'
+                }
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              console.log(clonedBid.userIdAsEids)
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_id5-sync.com']).to.equal('11111^1^');
+            });
+          });
+
           describe('Config user.id support', function () {
             it('should send ppuid when config defines user.id', function () {
               config.setConfig({user: {id: '123'}});
