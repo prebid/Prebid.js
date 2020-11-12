@@ -69,7 +69,7 @@ function bidToVideoImp(bid) {
   }
 
   for (let adUnitProperty in videoAdUnitRef) {
-    if (videoAdUnitWhitelist.includes(adUnitProperty) && !imp.video.hasOwnProperty(adUnitProperty)) {
+    if (videoAdUnitWhitelist.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
       imp.video[adUnitProperty] = videoAdUnitRef[adUnitProperty];
     }
   }
