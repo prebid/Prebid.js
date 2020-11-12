@@ -1,4 +1,4 @@
-import { HALOID_LOCAL_NAME, SEG_LOCAL_NAME, addSegmentData, getSegments, getSegmentsAsync, haloSubmodule, storage } from 'modules/haloRtdProvider.js';
+import { HALOID_LOCAL_NAME, SEG_LOCAL_NAME, addSegmentData, getSegments, haloSubmodule, storage } from 'modules/haloRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
 const responseHeader = {'Content-Type': 'application/json'};

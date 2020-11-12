@@ -113,18 +113,9 @@
             googletag.pubads().disableInitialLoad();
         });
 
-        var bidSegmentMappers = {
-            appnexus: function(bid, segments) {
-                if (!bid.params) {
-                    bid.params = {}
-                }
-                if (!bid.params.user) {
-                    bid.params.user = {}
-                }
+        var testHaloId = "030tstezbb07jv2yg08xizqr0bwpa0c0evvmq00eivtcg0nc9v970ntek210qskvk40trr7270wqxik90zq3u2d12pa5j3137rx2918nmsj905vat8b1elzfjf1hl5r1i1kkc2jl";
 
-                bid.params.user.segments = segments;
-            }
-        }
+        window.localStorage.setItem('auHaloId', testHaloId);
 
         pbjs.que.push(function() {
             pbjs.setConfig({
@@ -133,116 +124,6 @@
                     cmpApi: 'iab',
                     timeout: 1000,
                     defaultGdprScope: true
-                },
-                userSync: {
-                    userIds: [{
-                        name: "unifiedId",
-                        params: {
-                            partner: "prebid",
-                            url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
-                        },
-                        storage: {
-                            type: "html5",
-                            name: "unifiedid",
-                            expires: 30
-                        },
-                    }, {
-                        name: "intentIqId",
-                        params: {
-                            partner: 0, //Set your real IntentIQ partner ID here for production.
-                        },
-                        storage: {
-                            type: "cookie",
-                            name: "intentIqId",
-                            expires: 30
-                        },
-                    }, {
-                        name: "id5Id",
-                        params: {
-                            partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
-                        },
-                        storage: {
-                            type: "cookie",
-                            name: "id5id",
-                            expires: 90,
-                            refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
-                        },
-
-                    }, {
-                        name: "merkleId",
-                        params: {
-                            ptk: '12345678-aaaa-bbbb-cccc-123456789abc', //Set your real merkle partner key here
-                            pubid: 'EXAMPLE' //Set your real merkle publisher id here
-                        },
-                        storage: {
-                            type: "html5",
-                            name: "merkleId",
-                            expires: 30
-                        },
-
-                    }, {
-                        name: "parrableId",
-                        params: {
-                            // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
-                            partner: '30182847-e426-4ff9-b2b5-9ca1324ea09b'
-                        }
-                    }, {
-                        name: "pubCommonId",
-                        storage: {
-                            type: "cookie",
-                            name: "pubcid",
-                            expires: 365
-                        },
-                        // value: {
-                        //     foo: '9879878907987',
-                        //     bar:'93939'
-                        // }
-                    }, {
-                      name: 'identityLink',
-                      params: {
-                        pid: '14' // Set your real identityLink placement ID here
-                      },
-                      storage: {
-                        type: 'cookie',
-                        name: 'idl_env',
-                        expires: 30
-                      }
-                    }, {
-                      name: "sharedId",
-                      params: {
-                        syncTime: 60 // in seconds, default is 24 hours
-                      },
-                      storage: {
-                        type: "cookie",
-                        name: "sharedid",
-                        expires: 28
-                      }
-                    }, {
-                      name: 'lotamePanoramaId'
-                    }, {
-                      name: "liveIntentId",
-                      params: {
-                        publisherId: "9896876"
-                      },
-                      storage: {
-                        type: "cookie",
-                        name: "_li_pbid",
-                        expires: 28
-                      }
-                    }, {
-                        name: "zeotapIdPlus"
-                    }, {
-                        name: 'haloId',
-                        storage: {
-                            type: "cookie",
-                            name: "haloId",
-                            expires: 28
-                        }
-                    }, {
-                        name: "quantcastId"
-                    }],
-                    syncDelay: 5000,
-                    auctionDelay: 1000
                 },
                 realTimeData: {
                     auctionDelay: testAuctionDelay, // lower in real scenario to meet publisher spec
@@ -270,8 +151,8 @@
         });
 
         function sendAdserverRequest() {
-            document.getElementById('tdid').innerHTML = adUnits[0].bids[0].userId['tdid'];
             document.getElementById('audigent_segments').innerHTML = JSON.stringify(adUnits[0].bids[0].params.user.segments);
+            document.getElementById('halo_id').innerHTML = testHaloId;
 
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
@@ -319,8 +200,8 @@
     </script>
 </div>
 
-TDID:
-<div id='tdid'>
+Halo Id:
+<div id='halo_id'>
 </div>
 
 Audigent Segments (Appnexus):

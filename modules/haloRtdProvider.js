@@ -16,7 +16,6 @@ export const storage = getStorageManager();
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'halo';
-const ERR_MSG = 'AUDIGENT_ERR';
 
 export const HALOID_LOCAL_NAME = 'auHaloId';
 export const SEG_LOCAL_NAME = '__adgntseg';
@@ -62,13 +61,12 @@ export function addSegmentData(adUnits, segmentData, config) {
           set(bid, 'fpd.user.data', []);
           if (Array.isArray(bid.fpd.user.data)) {
             bid.fpd.user.data.forEach(fpdData => {
-              if (fpdData.name) { config.params.mapSegments[fpdData.name] = true; }
               let segments = segmentData[fpdData.id] || segmentData[fpdData.name] || [];
               fpdData.segment = (fpdData.segment || []).concat(segments);
             });
           }
         } catch (err) {
-          utils.logError(ERR_MSG);
+          utils.logError(err.message);
         }
 
         try {
@@ -80,7 +78,7 @@ export function addSegmentData(adUnits, segmentData, config) {
             }
           }
         } catch (err) {
-          utils.logError(ERR_MSG);
+          utils.logError(err.message);
         }
       });
     }
@@ -114,10 +112,6 @@ export function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
   }
 
   const userIds = (getGlobal()).getUserIds();
-  if (typeof userIds == 'undefined' || userIds == null) {
-    onDone();
-    return;
-  }
 
   let haloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
   if (haloId) {
