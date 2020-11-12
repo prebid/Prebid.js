@@ -122,6 +122,7 @@ describe('pubGENIUS adapter', () => {
         bidderCode: 'pubgenius',
         bidderRequestId: 'fakebidderrequestid',
         refererInfo: {},
+        timeout: 1200,
       };
 
       expectedRequest = {
@@ -149,7 +150,7 @@ describe('pubGENIUS adapter', () => {
       };
 
       config.setConfig({
-        bidderTimeout: 1200,
+        bidderTimeout: 1000,
         pageUrl: undefined,
         coppa: undefined,
       });
@@ -194,6 +195,14 @@ describe('pubGENIUS adapter', () => {
 
     it('should take pageUrl in config over referer in refererInfo', () => {
       config.setConfig({ pageUrl: 'http://pageurl.org' });
+      bidderRequest.refererInfo.referer = 'http://referer.org';
+      expectedRequest.data.site = { page: 'http://pageurl.org' };
+
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
+    });
+
+    it('should use canonical URL over referer in refererInfo', () => {
+      bidderRequest.refererInfo.canonicalUrl = 'http://pageurl.org';
       bidderRequest.refererInfo.referer = 'http://referer.org';
       expectedRequest.data.site = { page: 'http://pageurl.org' };
 
@@ -248,7 +257,7 @@ describe('pubGENIUS adapter', () => {
           }
         ]
       };
-      bidderRequest.schain = deepClone(schain);
+      bidRequest.schain = deepClone(schain);
       expectedRequest.data.source = {
         ext: { schain: deepClone(schain) },
       };

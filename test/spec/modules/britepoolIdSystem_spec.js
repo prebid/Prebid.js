@@ -1,5 +1,5 @@
-import { expect } from 'chai';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
+import * as utils from '../../../src/utils.js';
 
 describe('BritePool Submodule', () => {
   const api_key = '1111';
@@ -15,6 +15,32 @@ describe('BritePool Submodule', () => {
       callback(JSON.stringify({ 'primaryBPID': bpid }));
     };
   };
+
+  let triggerPixelStub;
+
+  beforeEach(function (done) {
+    triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    done();
+  });
+
+  afterEach(function () {
+    triggerPixelStub.restore();
+  });
+
+  it('trigger id resolution pixel when no identifiers set', () => {
+    britepoolIdSubmodule.getId({ params: {} });
+    expect(triggerPixelStub.called).to.be.true;
+  });
+
+  it('trigger id resolution pixel when no identifiers set with api_key param', () => {
+    britepoolIdSubmodule.getId({ params: { api_key } });
+    expect(triggerPixelStub.called).to.be.true;
+  });
+
+  it('does not trigger id resolution pixel when identifiers set', () => {
+    britepoolIdSubmodule.getId({ params: { api_key, aaid } });
+    expect(triggerPixelStub.called).to.be.false;
+  });
 
   it('sends x-api-key in header and one identifier', () => {
     const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid });
@@ -43,12 +69,48 @@ describe('BritePool Submodule', () => {
     expect(params.url).to.be.undefined;
   });
 
+  it('test gdpr consent string in url', () => {
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid }, { gdprApplies: true, consentString: 'expectedConsentString' });
+    expect(url).to.equal('https://api.britepool.com/v1/britepool/id?gdprString=expectedConsentString');
+  });
+
+  it('test gdpr consent string not in url if gdprApplies false', () => {
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid }, { gdprApplies: false, consentString: 'expectedConsentString' });
+    expect(url).to.equal('https://api.britepool.com/v1/britepool/id');
+  });
+
+  it('test gdpr consent string not in url if consent string undefined', () => {
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid }, { gdprApplies: true, consentString: undefined });
+    expect(url).to.equal('https://api.britepool.com/v1/britepool/id');
+  });
+
+  it('dynamic pub params should be added to params', () => {
+    window.britepool_pubparams = { ppid: '12345' };
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid });
+    expect(params).to.eql({ aaid, ppid: '12345' });
+    window.britepool_pubparams = undefined;
+  });
+
+  it('dynamic pub params should override submodule params', () => {
+    window.britepool_pubparams = { ppid: '67890' };
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, ppid: '12345' });
+    expect(params).to.eql({ ppid: '67890' });
+    window.britepool_pubparams = undefined;
+  });
+
+  it('if dynamic pub params undefined do nothing', () => {
+    window.britepool_pubparams = undefined;
+    const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ api_key, aaid });
+    expect(params).to.eql({ aaid });
+    window.britepool_pubparams = undefined;
+  });
+
   it('test getter override with value', () => {
     const { params, headers, url, getter, errors } = britepoolIdSubmodule.createParams({ api_key, aaid, url: url_override, getter: getter_override });
     expect(getter).to.equal(getter_override);
     // Making sure it did not become part of params
     expect(params.getter).to.be.undefined;
-    const response = britepoolIdSubmodule.getId({ api_key, aaid, url: url_override, getter: getter_override });
+    const response = britepoolIdSubmodule.getId({ params: { api_key, aaid, url: url_override, getter: getter_override } });
     assert.deepEqual(response, { id: { 'primaryBPID': bpid } });
   });
 
@@ -57,7 +119,7 @@ describe('BritePool Submodule', () => {
     expect(getter).to.equal(getter_callback_override);
     // Making sure it did not become part of params
     expect(params.getter).to.be.undefined;
-    const response = britepoolIdSubmodule.getId({ api_key, aaid, url: url_override, getter: getter_callback_override });
+    const response = britepoolIdSubmodule.getId({ params: { api_key, aaid, url: url_override, getter: getter_callback_override } });
     expect(response.callback).to.not.be.undefined;
     response.callback(result => {
       assert.deepEqual(result, { 'primaryBPID': bpid });

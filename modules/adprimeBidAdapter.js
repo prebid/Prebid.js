@@ -63,12 +63,16 @@ export const spec = {
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
       let sizes
+      let identeties = {}
       if (bid.mediaTypes) {
         if (bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
           sizes = bid.mediaTypes[BANNER].sizes
         } else if (bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
           sizes = bid.mediaTypes[VIDEO].playerSize
         }
+      }
+      if (bid.userId && bid.userId.idl_env) {
+        identeties.identityLink = bid.userId.idl_env
       }
 
       placements.push({
@@ -79,7 +83,8 @@ export const spec = {
         hPlayer: sizes ? sizes[1] : 0,
         traffic: bid.params.traffic || BANNER,
         schain: bid.schain || {},
-        keywords: bid.params.keywords || []
+        keywords: bid.params.keywords || [],
+        identeties
       });
     }
     return {

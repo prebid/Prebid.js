@@ -215,6 +215,91 @@ describe('InSkin BidAdapter', function () {
       expect(payload.consent.gdprConsentString).to.exist.and.to.equal(consentString);
       expect(payload.consent.gdprConsentRequired).to.exist.and.to.be.true;
     });
+
+    it('should not add keywords if TCF v2 purposes are granted', function () {
+      const bidderRequest2 = Object.assign({}, bidderRequest, {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'consentString',
+          vendorData: {
+            vendor: {
+              consents: {
+                150: true
+              }
+            },
+            purpose: {
+              consents: {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true,
+                8: true,
+                9: true,
+                10: true
+              }
+            }
+          },
+          apiVersion: 2
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest2);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.keywords).to.be.an('array').that.is.empty;
+      expect(payload.placements[0].properties).to.be.undefined;
+    });
+
+    it('should add keywords if TCF v2 purposes are not granted', function () {
+      const bidderRequest2 = Object.assign({}, bidderRequest, {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'consentString',
+          vendorData: {
+            vendor: {
+              consents: {
+                150: false
+              }
+            },
+            purpose: {
+              consents: {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true,
+                8: true,
+                9: true,
+                10: true
+              }
+            }
+          },
+          apiVersion: 2
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest2);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nocookies');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nocontext');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nodmp');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nodata');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-noclicks');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-noresearch');
+
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nocookies');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nocontext');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nodmp');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nodata');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('noclicks');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('noresearch');
+    });
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {

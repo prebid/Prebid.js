@@ -1,13 +1,14 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  VERSION: '3.0.3',
+  VERSION: '3.0.4',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
-  SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
-  SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
-  SYNC_ENDPOINT3: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
+  E2ETESTENDPOINT: 'https://ads-wc.v.ssp.yahoo.com/rtb/openrtb?ext_id=',
+  SYNC_ENDPOINT1: 'https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true',
+  SYNC_ENDPOINT2: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
   supportedMediaTypes: ['video', 'banner'],
   /**
    * Determines whether or not the given bid request is valid.
@@ -52,11 +53,17 @@ export const spec = {
     let consentData = bidRequest ? bidRequest.gdprConsent : null;
 
     return bids.map(bid => {
+      let url = spec.ENDPOINT
+      let pubId = bid.params.pubId;
+      if (bid.params.video.e2etest) {
+        url = spec.E2ETESTENDPOINT;
+        pubId = 'HBExchange';
+      }
       return {
         method: 'POST',
         /** removing adding local protocal since we
          * can get cookie data only if we call with https. */
-        url: spec.ENDPOINT + bid.params.pubId,
+        url: url + pubId,
         data: getRequestData(bid, consentData, bidRequest),
         bidRequest: bid
       }
@@ -130,15 +137,11 @@ export const spec = {
       },
       {
         type: 'image',
-        url: spec.SYNC_ENDPOINT2
-      },
-      {
-        type: 'image',
         url: `https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0` + encodeURI(`&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`)
       },
       {
         type: 'image',
-        url: spec.SYNC_ENDPOINT3
+        url: spec.SYNC_ENDPOINT2
       }];
     }
   }
@@ -258,6 +261,13 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.hp == 1) {
       bidData.source.ext.schain.nodes[0].hp = bid.params.video.hp;
     }
+  } else if (bid.schain) {
+    bidData.source = {
+      ext: {
+        schain: bid.schain
+      }
+    }
+    bidData.source.ext.schain.nodes[0].rid = bidData.id;
   }
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
@@ -282,7 +292,16 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.regs.ext.us_privacy = bidRequest.uspConsent
     }
   }
-
+  if (bid.params.video.e2etest) {
+    bidData.imp[0].bidfloor = null;
+    bidData.imp[0].video.w = 300;
+    bidData.imp[0].video.h = 250;
+    bidData.imp[0].video.mimes = ['video/mp4', 'application/javascript'];
+    bidData.imp[0].video.api = [2];
+    bidData.site.page = 'https://verizonmedia.com';
+    bidData.site.ref = 'https://verizonmedia.com';
+    bidData.tmax = 1000;
+  }
   return bidData;
 }
 

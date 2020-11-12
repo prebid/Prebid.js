@@ -110,6 +110,7 @@ function watch(done) {
   connect.server({
     https: argv.https,
     port: port,
+    host: FAKE_SERVER_HOST,
     root: './',
     livereload: true
   });
@@ -372,6 +373,7 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
+gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watch)));
 gulp.task('serve-fake', gulp.series(clean, gulp.parallel('build-bundle-dev', watch), injectFakeServerEndpointDev, test, startFakeServer));
 
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
