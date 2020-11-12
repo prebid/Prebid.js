@@ -246,7 +246,7 @@ describe('the rubicon adapter', function () {
           id: '4444444'
         }]
       }],
-      criteoId: '1111'
+      criteoId: '1111',
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
@@ -1097,6 +1097,7 @@ describe('the rubicon adapter', function () {
             let data = parseQuery(request.data);
 
             expect(data['tpid_tdid']).to.equal('abcd-efgh-ijkl-mnop-1234');
+            expect(data['eid_adserver.org']).to.equal('abcd-efgh-ijkl-mnop-1234');
           });
 
           describe('LiveIntent support', function () {
@@ -1104,7 +1105,8 @@ describe('the rubicon adapter', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 lipb: {
-                  lipbid: '0000-1111-2222-3333'
+                  lipbid: '0000-1111-2222-3333',
+                  segments: ['segA', 'segB']
                 }
               };
               clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
@@ -1112,6 +1114,8 @@ describe('the rubicon adapter', function () {
               let data = parseQuery(request.data);
 
               expect(data['tpid_liveintent.com']).to.equal('0000-1111-2222-3333');
+              expect(data['eid_liveintent.com']).to.equal('0000-1111-2222-3333');
+              expect(data['tg_v.LIseg']).to.equal('segA,segB');
             });
 
             it('should send tg_v.LIseg when userIdAsEids contains liveintentId with ext.segments as array', function () {
@@ -1429,20 +1433,10 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
           expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
           expect(post.user.ext.eids[0].ext.segments[1]).to.equal('segB');
-          // Non-EID properties set using liveintent EID values
-          expect(post.user.ext).to.have.property('tpid').that.is.an('object');
-          expect(post.user.ext.tpid.source).to.equal('liveintent.com');
-          expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
-          expect(post).to.have.property('rp').that.is.an('object');
-          expect(post.rp).to.have.property('target').that.is.an('object');
-          expect(post.rp.target).to.have.property('LIseg').that.is.an('array');
-          expect(post.rp.target.LIseg[0]).to.equal('segA');
-          expect(post.rp.target.LIseg[1]).to.equal('segB');
           // LiveRamp should exist
           expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.user.ext.eids[1].uids[0].atype).to.equal(1);
-
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
@@ -2127,6 +2121,7 @@ describe('the rubicon adapter', function () {
                 'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
                 'size_id': '15',
                 'ad_id': '6',
+                'adomain': ['test.com'],
                 'advertiser': 7,
                 'network': 8,
                 'creative_id': 'crid-9',
@@ -2148,6 +2143,7 @@ describe('the rubicon adapter', function () {
                 'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
                 'size_id': '43',
                 'ad_id': '7',
+                'adomain': ['test.com'],
                 'advertiser': 7,
                 'network': 8,
                 'creative_id': 'crid-9',
@@ -2182,6 +2178,8 @@ describe('the rubicon adapter', function () {
           expect(bids[0].rubicon.networkId).to.equal(8);
           expect(bids[0].creativeId).to.equal('crid-9');
           expect(bids[0].currency).to.equal('USD');
+          expect(bids[0].meta.mediaType).to.equal('banner');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
           expect(bids[0].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`);
@@ -2715,13 +2713,15 @@ describe('the rubicon adapter', function () {
               bid: [{
                 id: '0',
                 impid: 'instream_video1',
+                adomain: ['test.com'],
                 price: 2,
                 crid: '4259970',
                 ext: {
                   bidder: {
                     rp: {
                       mime: 'application/javascript',
-                      size_id: 201
+                      size_id: 201,
+                      advid: 12345
                     }
                   },
                   prebid: {
@@ -2750,6 +2750,9 @@ describe('the rubicon adapter', function () {
           expect(bids[0].netRevenue).to.equal(true);
           expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
           expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].meta.mediaType).to.equal('video');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
+          expect(bids[0].meta.advertiserId).to.equal(12345);
           expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].currency).to.equal('USD');
           expect(bids[0].width).to.equal(640);

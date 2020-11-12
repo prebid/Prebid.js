@@ -31,7 +31,7 @@ Follow steps above for general review process. In addition, please verify the fo
 - All bidder parameter conventions must be followed:
     - Video params must be read from AdUnit.mediaTypes.video when available; however bidder config can override the ad unit. 
     - First party data must be read from [`fpd.context` and `fpd.user`](https://docs.prebid.org/dev-docs/publisher-api-reference.html#setConfig-fpd).
-    - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloors()` function.
+    - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloor()` function.
     - Adapters cannot accept an schain parameter. Rather, they must look for the schain parameter at bidRequest.schain.
     - The bidRequest page referrer must checked in addition to any bidder-specific parameter.
     - If they're getting the COPPA flag, it must come from config.getConfig('coppa');
@@ -52,6 +52,8 @@ Follow steps above for general review process. In addition, please verify the fo
 Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
 
 No additional steps above the general review process and making sure it conforms to the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html).
+
+Make sure there's a docs pull request
 
 ### Reviewing a New or Updated User ID Sub-Module
 Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/modules/userId.html#id-providers
@@ -79,6 +81,7 @@ Follow steps above for general review process. In addition:
 - in the eids.js file, the source should be the actual domain of the provider, not a made up domain.
 - in the eids.js file, the key in the array should be the same value as the key in the decode function
 - make sure all supported config params align in the submodule js file and the docs / examples
+- make sure there's a docs pull request
 
 ### Reviewing a New or Updated Real-Time-Data Sub-Module
 Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/add-rtd-submodule.html
@@ -86,9 +89,14 @@ Documentation they're supposed to be following is https://docs.prebid.org/dev-do
 Follow steps above for general review process. In addition:
 - The RTD Provider must include a `providerRtdProvider.md` file. This file must have example parameters and document a sense of what to expect: what should change in the bidrequest, or what targeting data should be added?
 - Try running the new sub-module and confirm the provided test parameters.
-- Make sure the sub-module is "phoning home" as early as possible, but not more often than needed.
+- Confirm that the module
+  - is not loading external code. If it is, escalate to the #prebid-js Slack channel. 
+  - is reading `config` from the function signature rather than calling `getConfig`.
+  - is sending data to the bid request only as either First Party Data or in bidRequest.rtd.RTDPROVIDERCODE.
+  - is making HTTPS requests as early as possible, but not more often than needed.
+  - doesn't force bid adapters to load additional code.
 - Consider whether the kind of data the module is obtaining could have privacy implications. If so, make sure they're utilizing the `consent` data passed to them.
-
+- Make sure there's a docs pull request
 
 ## Ticket Coordinator
 

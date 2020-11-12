@@ -111,10 +111,60 @@ const BID2 = Object.assign({}, BID, {
   }
 });
 
+const BID3 = Object.assign({}, BID, {
+  adUnitCode: '/19968336/siderail-tag1',
+  bidId: '5fg6hyy4r879f0',
+  adId: 'fake_ad_id',
+  requestId: '5fg6hyy4r879f0',
+  width: 300,
+  height: 250,
+  mediaType: 'banner',
+  cpm: 2.01,
+  source: 'server',
+  seatBidId: 'aaaa-bbbb-cccc-dddd',
+  rubiconTargeting: {
+    'rpfl_elemid': '/19968336/siderail-tag1',
+    'rpfl_14062': '15_tier0200'
+  },
+  adserverTargeting: {
+    'hb_bidder': 'rubicon',
+    'hb_adid': '5fg6hyy4r879f0',
+    'hb_pb': '2.00',
+    'hb_size': '300x250',
+    'hb_source': 'server'
+  }
+});
+
+const floorMinRequest = {
+  'bidder': 'rubicon',
+  'params': {
+    'accountId': '14062',
+    'siteId': '70608',
+    'zoneId': '335918',
+    'userId': '12346',
+    'keywords': ['a', 'b', 'c'],
+    'inventory': {'rating': '4-star', 'prodtype': 'tech'},
+    'visitor': {'ucat': 'new', 'lastsearch': 'iphone'},
+    'position': 'atf'
+  },
+  'mediaTypes': {
+    'banner': {
+      'sizes': [[300, 250]]
+    }
+  },
+  'adUnitCode': '/19968336/siderail-tag1',
+  'transactionId': 'c435626g-9e3f-401a-bee1-d56aec29a1d4',
+  'sizes': [[300, 250]],
+  'bidId': '5fg6hyy4r879f0',
+  'bidderRequestId': '1be65d7958826a',
+  'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+};
+
 const MOCK = {
   SET_TARGETING: {
     [BID.adUnitCode]: BID.adserverTargeting,
-    [BID2.adUnitCode]: BID2.adserverTargeting
+    [BID2.adUnitCode]: BID2.adserverTargeting,
+    [BID3.adUnitCode]: BID3.adserverTargeting
   },
   AUCTION_INIT: {
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
@@ -241,7 +291,8 @@ const MOCK = {
   },
   BID_RESPONSE: [
     BID,
-    BID2
+    BID2,
+    BID3
   ],
   AUCTION_END: {
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
@@ -252,6 +303,9 @@ const MOCK = {
     }),
     Object.assign({}, BID2, {
       'status': 'rendered'
+    }),
+    Object.assign({}, BID3, {
+      'status': 'rendered'
     })
   ],
   BIDDER_DONE: {
@@ -260,6 +314,9 @@ const MOCK = {
       BID,
       Object.assign({}, BID2, {
         'serverResponseTimeMs': 42,
+      }),
+      Object.assign({}, BID3, {
+        'serverResponseTimeMs': 55,
       })
     ]
   },
@@ -842,14 +899,40 @@ describe('rubicon analytics adapter', function () {
         }
       };
 
+      let floorMinResponse = {
+        ...BID3,
+        floorData: {
+          floorValue: 1.5,
+          floorRuleValue: 1,
+          floorRule: '12345/entertainment|banner',
+          floorCurrency: 'USD',
+          cpmAfterAdjustments: 2.00,
+          enforcements: {
+            enforceJS: true,
+            enforcePBS: false,
+            floorDeals: false,
+            bidAdjustment: true
+          },
+          matchedFields: {
+            gptSlot: '12345/entertainment',
+            mediaType: 'banner'
+          }
+        }
+      };
+
+      let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequest.bids.push(floorMinRequest)
+
       // spoof the auction with just our duplicates
       events.emit(AUCTION_INIT, auctionInit);
-      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_REQUESTED, bidRequest);
       events.emit(BID_RESPONSE, flooredResponse);
       events.emit(BID_RESPONSE, notFlooredResponse);
+      events.emit(BID_RESPONSE, floorMinResponse);
       events.emit(AUCTION_END, MOCK.AUCTION_END);
       events.emit(SET_TARGETING, MOCK.SET_TARGETING);
       events.emit(BID_WON, MOCK.BID_WON[1]);
+      events.emit(BID_WON, MOCK.BID_WON[2]);
       clock.tick(SEND_TIMEOUT + 1000);
 
       expect(server.requests.length).to.equal(1);
@@ -860,7 +943,7 @@ describe('rubicon analytics adapter', function () {
     }
 
     it('should capture price floor information correctly', function () {
-      let message = performFloorAuction('rubicon')
+      let message = performFloorAuction('rubicon');
 
       // verify our floor stuff is passed
       // top level floor info
@@ -892,6 +975,16 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].adUnits[1].bids[0].status).to.equal('success');
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.floorValue).to.equal(1);
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.bidPriceUSD).to.equal(1.52);
+
+      // second adUnit's adSlot
+      expect(message.auctions[0].adUnits[2].gam.adSlot).to.equal('12345/entertainment');
+      // top level adUnit status is success
+      expect(message.auctions[0].adUnits[2].status).to.equal('success');
+      // second adUnits bid is success
+      expect(message.auctions[0].adUnits[2].bids[0].status).to.equal('success');
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.floorValue).to.equal(1.5);
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.floorRuleValue).to.equal(1);
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.bidPriceUSD).to.equal(2.01);
     });
 
     it('should still send floor info if provider is not rubicon', function () {
@@ -927,6 +1020,16 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].adUnits[1].bids[0].status).to.equal('success');
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.floorValue).to.equal(1);
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.bidPriceUSD).to.equal(1.52);
+
+      // second adUnit's adSlot
+      expect(message.auctions[0].adUnits[2].gam.adSlot).to.equal('12345/entertainment');
+      // top level adUnit status is success
+      expect(message.auctions[0].adUnits[2].status).to.equal('success');
+      // second adUnits bid is success
+      expect(message.auctions[0].adUnits[2].bids[0].status).to.equal('success');
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.floorValue).to.equal(1.5);
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.floorRuleValue).to.equal(1);
+      expect(message.auctions[0].adUnits[2].bids[0].bidResponse.bidPriceUSD).to.equal(2.01);
     });
 
     describe('with session handling', function () {
