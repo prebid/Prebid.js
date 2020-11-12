@@ -19,7 +19,8 @@ export const spec = {
     validBidRequests.forEach(bidRequest => {
       bids.push({
         bidId: bidRequest.bidId,
-        zoneToken: bidRequest.params.zoneToken
+        zoneToken: bidRequest.params.zoneToken,
+        pos: bidRequest.params.pos
       })
     })
 

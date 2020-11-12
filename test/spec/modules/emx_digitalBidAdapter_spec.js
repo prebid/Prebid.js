@@ -367,6 +367,27 @@ describe('emx_digital Adapter', function () {
       expect(request.us_privacy).to.exist;
       expect(request.us_privacy).to.exist.and.to.equal(consentString);
     });
+
+    it('should add schain object to request', function() {
+      const schainBidderRequest = utils.deepClone(bidderRequest);
+      schainBidderRequest.schain = {
+        'complete': 1,
+        'ver': '1.0',
+        'nodes': [
+          {
+            'asi': 'testing.com',
+            'sid': 'abc',
+            'hp': 1
+          }
+        ]
+      };
+      let request = spec.buildRequests(schainBidderRequest.bids, schainBidderRequest);
+      request = JSON.parse(request.data);
+      expect(request.source.ext.schain).to.exist;
+      expect(request.source.ext.schain).to.have.property('complete', 1);
+      expect(request.source.ext.schain).to.have.property('ver', '1.0');
+      expect(request.source.ext.schain.nodes[0].asi).to.equal(schainBidderRequest.schain.nodes[0].asi);
+    });
   });
 
   describe('interpretResponse', function () {
