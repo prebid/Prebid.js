@@ -489,18 +489,16 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   return requests;
 }
 /**
- * Calculates IX diagnostics values and packages them into 
+ * Calculates IX diagnostics values and packages them into
  * an object
- * 
+ *
  * @param {array} validBidRequests  The bid requests from prebid
  * @return {Object} IX diag values for ad units
  */
 function buildMultiFormatDiag(validBidRequests) {
-  
   var adUnitMap = {};
   // create ad unit map and collect the required diag properties
   for (let i = 0; i < validBidRequests.length; ++i) {
-
     var bid = validBidRequests[i];
     var trId = bid.transactionId;
     if (!adUnitMap.hasOwnProperty(trId)) {
@@ -516,7 +514,6 @@ function buildMultiFormatDiag(validBidRequests) {
     }
 
     if (utils.deepAccess(bid, 'mediaTypes')) {
-
       if (Object.keys(bid.mediaTypes).length > 1) {
         adUnitMap[trId].isMultiFormat = true;
       }
@@ -528,8 +525,8 @@ function buildMultiFormatDiag(validBidRequests) {
       }
       if (utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
         adUnitMap[trId].isOutstream = true;
-        if (utils.deepAccess(bid, 'renderer')
-          || utils.deepAccess(bid, 'mediaTypes.video.renderer')) {
+        if (utils.deepAccess(bid, 'renderer') ||
+          utils.deepAccess(bid, 'mediaTypes.video.renderer')) {
           adUnitMap[trId].hasRenderer = true;
         }
       }
