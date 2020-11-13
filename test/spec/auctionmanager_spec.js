@@ -740,6 +740,59 @@ describe('auctionmanager.js', function () {
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
 
+      it('installs publisher-defined backup renderers on bids', function () {
+        let renderer = {
+          url: 'renderer.js',
+          backupOnly: true,
+          render: (bid) => bid
+        };
+        let bidRequests = [Object.assign({}, TEST_BID_REQS[0])];
+        bidRequests[0].bids[0] = Object.assign({ renderer }, bidRequests[0].bids[0]);
+        makeRequestsStub.returns(bidRequests);
+
+        let bids1 = Object.assign({},
+          bids[0],
+          {
+            bidderCode: BIDDER_CODE,
+            mediaType: 'video-outstream',
+          }
+        );
+        spec.interpretResponse.returns(bids1);
+        auction.callBids();
+        const addedBid = auction.getBidsReceived().pop();
+        assert.equal(addedBid.renderer.url, 'renderer.js');
+      });
+
+      it('installs publisher-defined renderers for a media type', function () {
+        const renderer = {
+          url: 'videoRenderer.js',
+          render: (bid) => bid
+        };
+        let myBid = mockBid();
+        let bidRequest = mockBidRequest(myBid);
+
+        bidRequest.bids[0] = {
+          ...bidRequest.bids[0],
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            },
+            video: {
+              context: 'outstream',
+              renderer
+            }
+          }
+        };
+        makeRequestsStub.returns([bidRequest]);
+
+        myBid.mediaType = 'video';
+        spec.interpretResponse.returns(myBid);
+        auction.callBids();
+
+        const addedBid = auction.getBidsReceived().pop();
+        assert.equal(addedBid.renderer.url, renderer.url);
+      });
+
       it('bid for a regular unit and a video unit', function() {
         let renderer = {
           url: 'renderer.js',
@@ -1228,5 +1281,120 @@ describe('auctionmanager.js', function () {
       server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
       assert.equal(doneSpy.callCount, 1);
     })
+  });
+
+  describe('auctionOptions', function() {
+    let bidRequests;
+    let doneSpy;
+    let clock;
+    let auction = {
+      getBidRequests: () => bidRequests,
+      getAuctionId: () => '1',
+      addBidReceived: () => true,
+      getTimeout: () => 1000
+    }
+    let requiredBidder = BIDDER_CODE;
+    let requiredBidder1 = BIDDER_CODE1;
+    let secondaryBidder = 'doNotWaitForMe';
+
+    beforeEach(() => {
+      clock = sinon.useFakeTimers();
+      doneSpy = sinon.spy();
+      config.setConfig({
+        'auctionOptions': {
+          secondaryBidders: [ secondaryBidder ]
+        }
+      })
+    });
+
+    afterEach(() => {
+      doneSpy.resetHistory();
+      config.resetConfig();
+      clock.restore();
+    });
+
+    it('should not wait to call auction done for secondary bidders', function () {
+      let bids1 = [mockBid({ bidderCode: requiredBidder })];
+      let bids2 = [mockBid({ bidderCode: requiredBidder1 })];
+      let bids3 = [mockBid({ bidderCode: secondaryBidder })];
+      bidRequests = [
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids3[0], { adUnitCode: ADUNIT_CODE1 }),
+      ];
+      let cbs = auctionCallbacks(doneSpy, auction);
+      // required bidder responds immeaditely to auction
+      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
+      cbs.adapterDone.call(bidRequests[0]);
+      assert.equal(doneSpy.callCount, 0);
+
+      // auction waits for second required bidder to respond
+      clock.tick(100);
+      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
+      cbs.adapterDone.call(bidRequests[1]);
+
+      // auction done is reported and does not wait for secondaryBidder request
+      assert.equal(doneSpy.callCount, 1);
+
+      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
+      cbs.adapterDone.call(bidRequests[2]);
+    });
+
+    it('should wait for all bidders if they are all secondary', function () {
+      config.setConfig({
+        'auctionOptions': {
+          secondaryBidders: [requiredBidder, requiredBidder1, secondaryBidder]
+        }
+      })
+      let bids1 = [mockBid({ bidderCode: requiredBidder })];
+      let bids2 = [mockBid({ bidderCode: requiredBidder1 })];
+      let bids3 = [mockBid({ bidderCode: secondaryBidder })];
+      bidRequests = [
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids3[0], { adUnitCode: ADUNIT_CODE1 }),
+      ];
+      let cbs = auctionCallbacks(doneSpy, auction);
+      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
+      cbs.adapterDone.call(bidRequests[0]);
+      clock.tick(100);
+      assert.equal(doneSpy.callCount, 0)
+
+      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
+      cbs.adapterDone.call(bidRequests[1]);
+      clock.tick(100);
+      assert.equal(doneSpy.callCount, 0);
+
+      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
+      cbs.adapterDone.call(bidRequests[2]);
+      assert.equal(doneSpy.callCount, 1);
+    });
+
+    it('should allow secondaryBidders to respond in auction before is is done', function () {
+      let bids1 = [mockBid({ bidderCode: requiredBidder })];
+      let bids2 = [mockBid({ bidderCode: requiredBidder1 })];
+      let bids3 = [mockBid({ bidderCode: secondaryBidder })];
+      bidRequests = [
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE1 }),
+        mockBidRequest(bids3[0], { adUnitCode: ADUNIT_CODE1 }),
+      ];
+      let cbs = auctionCallbacks(doneSpy, auction);
+      // secondaryBidder is first to respond
+      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE1, bids3[0]);
+      cbs.adapterDone.call(bidRequests[2]);
+      clock.tick(100);
+      assert.equal(doneSpy.callCount, 0);
+
+      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids2[0]);
+      cbs.adapterDone.call(bidRequests[1]);
+      clock.tick(100);
+      assert.equal(doneSpy.callCount, 0);
+
+      // first required bidder takes longest to respond, auction isn't marked as done until this occurs
+      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE1, bids1[0]);
+      cbs.adapterDone.call(bidRequests[0]);
+      assert.equal(doneSpy.callCount, 1);
+    });
   });
 });

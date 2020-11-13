@@ -8,6 +8,8 @@ import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, bui
 import { config } from '../src/config.js';
 import { getHook, submodule } from '../src/hook.js';
 import { auctionManager } from '../src/auctionManager.js';
+import events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
 
 /**
  * @typedef {Object} DfpVideoParams
@@ -42,7 +44,7 @@ import { auctionManager } from '../src/auctionManager.js';
 const defaultParamConstants = {
   env: 'vp',
   gdfp_req: 1,
-  output: 'xml_vast3',
+  output: 'vast',
   unviewed_position_start: 1,
 };
 
@@ -82,7 +84,7 @@ export function buildDfpVideoUrl(options) {
 
   const derivedParams = {
     correlator: Date.now(),
-    sz: parseSizesInput(adUnit.sizes).join('|'),
+    sz: parseSizesInput(deepAccess(adUnit, 'mediaTypes.video.playerSize')).join('|'),
     url: encodeURIComponent(location.href),
   };
   const encodedCustomParams = getCustParams(bid, options);
@@ -245,17 +247,20 @@ function getCustParams(bid, options) {
     allTargetingData = (allTargeting) ? allTargeting[adUnit.code] : {};
   }
 
-  const optCustParams = deepAccess(options, 'params.cust_params');
-  let customParams = Object.assign({},
+  const prebidTargetingSet = Object.assign({},
     // Why are we adding standard keys here ? Refer https://github.com/prebid/Prebid.js/issues/3664
     { hb_uuid: bid && bid.videoCacheKey },
     // hb_uuid will be deprecated and replaced by hb_cache_id
     { hb_cache_id: bid && bid.videoCacheKey },
     allTargetingData,
     adserverTargeting,
-    optCustParams,
   );
-  return encodeURIComponent(formatQS(customParams));
+  events.emit(CONSTANTS.EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
+
+  // merge the prebid + publisher targeting sets
+  const publisherTargetingSet = deepAccess(options, 'params.cust_params');
+  const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
+  return encodeURIComponent(formatQS(targetingSet));
 }
 
 registerVideoSupport('dfp', {

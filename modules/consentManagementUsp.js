@@ -158,11 +158,6 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     timer: null
   };
 
-  // in case we already have consent (eg during bid refresh)
-  if (consentData) {
-    return exitModule(null, hookConfig);
-  }
-
   if (!uspCallMap[consentAPI]) {
     utils.logWarn(`USP framework (${consentAPI}) is not a supported framework. Aborting consentManagement module and resuming auction.`);
     return hookConfig.nextFn.apply(hookConfig.context, hookConfig.args);
@@ -274,7 +269,7 @@ export function resetConsentData() {
  * @param {object} config required; consentManagementUSP module config settings; usp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
-  config = config.usp;
+  config = config && config.usp;
   if (!config || typeof config !== 'object') {
     utils.logWarn('consentManagement.usp config not defined, exiting usp consent manager');
     return;

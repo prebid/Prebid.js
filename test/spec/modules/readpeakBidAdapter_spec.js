@@ -177,15 +177,10 @@ describe('ReadPeakAdapter', function() {
       expect(data.id).to.equal(bidRequest.bidderRequestId);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
-      expect(data.site).to.deep.equal({
-        publisher: {
-          id: bidRequest.params.publisherId,
-          domain: 'http://localhost:9876'
-        },
-        id: bidRequest.params.siteId,
-        page: bidderRequest.refererInfo.referer,
-        domain: parseUrl(bidderRequest.refererInfo.referer).hostname
-      });
+      expect(data.site.publisher.id).to.equal(bidRequest.params.publisherId);
+      expect(data.site.id).to.equal(bidRequest.params.siteId);
+      expect(data.site.page).to.equal(bidderRequest.refererInfo.referer);
+      expect(data.site.domain).to.equal(parseUrl(bidderRequest.refererInfo.referer).hostname);
       expect(data.device).to.deep.contain({
         ua: navigator.userAgent,
         language: navigator.language

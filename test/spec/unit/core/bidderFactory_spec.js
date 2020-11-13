@@ -401,8 +401,12 @@ describe('bidders created by newBidder', function () {
         adUnitCode: 'mock/placement',
         currency: 'USD',
         netRevenue: true,
-        ttl: 300
+        ttl: 300,
+        bidderCode: 'sampleBidder',
+        sampleBidder: {advertiserId: '12345', networkId: '111222'}
       };
+      const bidderRequest = Object.assign({}, MOCK_BIDS_REQUEST);
+      bidderRequest.bids[0].bidder = 'sampleBidder';
       spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
@@ -413,7 +417,7 @@ describe('bidders created by newBidder', function () {
 
       spec.interpretResponse.returns(bid);
 
-      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(addBidResponseStub.calledOnce).to.equal(true);
       expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
@@ -423,6 +427,8 @@ describe('bidders created by newBidder', function () {
       expect(bidObject.originalCurrency).to.equal(bid.currency);
       expect(doneStub.calledOnce).to.equal(true);
       expect(logErrorSpy.callCount).to.equal(0);
+      expect(bidObject.meta).to.exist;
+      expect(bidObject.meta).to.deep.equal({advertiserId: '12345', networkId: '111222'});
     });
 
     it('should call spec.getUserSyncs() with the response', function () {
@@ -645,6 +651,28 @@ describe('registerBidder', function () {
     expect(registerBidAdapterStub.secondCall.args[1]).to.equal('foo')
     expect(registerBidAdapterStub.thirdCall.args[1]).to.equal('bar')
   });
+
+  it('should register alias with their gvlid', function() {
+    const aliases = [
+      {
+        code: 'foo',
+        gvlid: 1
+      },
+      {
+        code: 'bar',
+        gvlid: 2
+      },
+      {
+        code: 'baz'
+      }
+    ]
+    const thisSpec = Object.assign(newEmptySpec(), { aliases: aliases });
+    registerBidder(thisSpec);
+
+    expect(registerBidAdapterStub.getCall(1).args[0].getSpec().gvlid).to.equal(1);
+    expect(registerBidAdapterStub.getCall(2).args[0].getSpec().gvlid).to.equal(2);
+    expect(registerBidAdapterStub.getCall(3).args[0].getSpec().gvlid).to.equal(undefined);
+  })
 })
 
 describe('validate bid response: ', function () {

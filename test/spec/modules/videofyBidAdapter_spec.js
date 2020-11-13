@@ -1,5 +1,7 @@
 import { spec } from 'modules/videofyBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from '../../../src/utils.js';
+
 const { expect } = require('chai');
 
 describe('Videofy Bid Adapter Test', function () {
@@ -195,6 +197,57 @@ describe('Videofy Bid Adapter Test', function () {
       let pixel = syncPixels[0];
       expect(pixel.url).to.equal(pixelUrl);
       expect(pixel.type).to.equal('iframe');
+    });
+  });
+
+  describe('on bidWon', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onBidWon({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
+    });
+  });
+
+  describe('on Timeout', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onTimeout({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
+    });
+  });
+
+  describe('on Set Targeting', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('exists and is a function', () => {
+      expect(spec.onSetTargeting).to.exist.and.to.be.a('function');
+    });
+    it('should return nothing', function () {
+      var response = spec.onSetTargeting({});
+      expect(response).to.be.an('undefined')
+      expect(utils.triggerPixel.called).to.equal(true);
     });
   });
 });
