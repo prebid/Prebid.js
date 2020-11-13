@@ -22,7 +22,7 @@ const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const SHAREDID_DEFAULT_STATE = false;
 const GVLID = 887;
 
-const storage = getStorageManager(GLVID, 'pubCommonId');
+const storage = getStorageManager(GVLID, 'pubCommonId');
 
 /**
  * Store sharedid in either cookie or local storage
