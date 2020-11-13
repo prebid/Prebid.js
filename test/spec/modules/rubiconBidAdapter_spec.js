@@ -1240,6 +1240,24 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          describe('UserID catchall support', function () {
+            it('should send user id with generic format', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
+              clonedBid.userIdAsEids = [{
+                source: "catchall",
+                uids: [{
+                  id: "11111",
+                  atype: 2
+                }]
+              }]
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_catchall']).to.equal('11111^2');
+            });
+          });
+
           describe('Config user.id support', function () {
             it('should send ppuid when config defines user.id', function () {
               config.setConfig({user: {id: '123'}});
