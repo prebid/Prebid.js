@@ -162,6 +162,12 @@ export const pubCommonIdSubmodule = {
   name: MODULE_NAME,
 
   /**
+   * Vendor id of prebid
+   * @type {Number}
+   */
+  gvlid: GVLID,
+  
+  /**
    * Return a callback function that calls the pixelUrl with id as a query parameter
    * @param pixelUrl
    * @param id
