@@ -20,7 +20,7 @@ const SHAREDID_URL = 'https://id.sharedid.org/id';
 const SHAREDID_SUFFIX = '_sharedid';
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const SHAREDID_DEFAULT_STATE = false;
-const GLVID = 887;
+const GVLID = 887;
 
 const storage = getStorageManager(GLVID, 'pubCommonId');
 
