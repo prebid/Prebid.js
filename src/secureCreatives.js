@@ -54,6 +54,10 @@ function receiveMessage(ev) {
       } else if (data.action === 'allAssetRequest') {
         const message = getAllAssetsMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
+      } else if (data.action === 'resizeNativeHeight') {
+        adObject.height = data.height;
+        adObject.width = data.width;
+        resizeRemoteCreative(adObject);
       }
 
       const trackerType = fireNativeTrackers(data, adObject);
