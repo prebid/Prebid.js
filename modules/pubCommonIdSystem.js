@@ -159,8 +159,7 @@ export const pubCommonIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: MODULE_NAME,
-  
+  name: MODULE_NAME, 
   /**
    * Vendor id of prebid
    * @type {Number}
