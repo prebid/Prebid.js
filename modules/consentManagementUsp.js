@@ -269,7 +269,7 @@ export function resetConsentData() {
  * @param {object} config required; consentManagementUSP module config settings; usp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
-  config = config.usp;
+  config = config && config.usp;
   if (!config || typeof config !== 'object') {
     utils.logWarn('consentManagement.usp config not defined, exiting usp consent manager');
     return;

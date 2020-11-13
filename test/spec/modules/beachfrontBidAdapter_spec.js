@@ -223,17 +223,33 @@ describe('BeachfrontAdapter', function () {
         expect(data.imp[0].video).to.deep.contain({ w: width, h: height });
       });
 
-      it('must override video targeting params', function () {
+      it('must set video params from the standard object', function () {
         const bidRequest = bidRequests[0];
         const mimes = ['video/webm'];
         const playbackmethod = 2;
         const maxduration = 30;
         const placement = 4;
-        bidRequest.mediaTypes = { video: {} };
-        bidRequest.params.video = { mimes, playbackmethod, maxduration, placement };
+        const skip = 1;
+        bidRequest.mediaTypes = {
+          video: { mimes, playbackmethod, maxduration, placement, skip }
+        };
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement });
+        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement, skip });
+      });
+
+      it('must override video params from the bidder object', function () {
+        const bidRequest = bidRequests[0];
+        const mimes = ['video/webm'];
+        const playbackmethod = 2;
+        const maxduration = 30;
+        const placement = 4;
+        const skip = 1;
+        bidRequest.mediaTypes = { video: { placement: 3, skip: 0 } };
+        bidRequest.params.video = { mimes, playbackmethod, maxduration, placement, skip };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement, skip });
       });
 
       it('must add US privacy data to the request', function () {
