@@ -162,6 +162,12 @@ export const pubCommonIdSubmodule = {
   name: MODULE_NAME,
 
   /**
+   * Vendor id of Prebid
+   * @type {Number}
+   */
+  gvlid: GVLID,
+  
+  /**
    * Vendor id of prebid
    * @type {Number}
    */
