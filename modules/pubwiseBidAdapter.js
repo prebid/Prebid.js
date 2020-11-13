@@ -1,9 +1,10 @@
-// import * as utils from '../src/utils.js';
+import * as utils from '../src/utils.js';
 // import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 // import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+const VERSION = '0.0.1';
 const BIDDER_CODE = 'pubwise';
-const ENDPOINT_URL = '//127.0.0.1:8080/';
+const ENDPOINT_URL = '//127.0.0.1:8080/prebid';
 // const USERSYNC_URL = '//127.0.0.1:8080/usersync'
 
 export const spec = {
@@ -24,7 +25,18 @@ export const spec = {
      * @return ServerRequest Info describing the request to the server.
      */
   buildRequests: function (validBidRequests) {
-    const payloadString = JSON.stringify({'pbdata': validBidRequests});
+    var i;
+    for (i = 0; i < validBidRequests.length; i++) {
+      if (validBidRequests[i].sizes) {
+        validBidRequests[i].sizes = transformSizes(validBidRequests[i].sizes);
+        /* var j;
+        for (j = 0; j < validBidRequests[i].sizes.length; j++) {
+          validBidRequests[i].sizes[j] = transformSizes(validBidRequests[i].sizes[j]);
+        } */
+      }
+    }
+
+    const payloadString = JSON.stringify({'pbdata': validBidRequests, 'version': VERSION});
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -95,6 +107,29 @@ export const spec = {
     } */
     return syncs;
   }
+}
+
+/* Turn bid request sizes into ut-compatible format */
+function transformSizes(requestSizes) {
+  let sizes = [];
+  let sizeObj = {};
+
+  if (utils.isArray(requestSizes) && requestSizes.length === 2 &&
+    !utils.isArray(requestSizes[0])) {
+    sizeObj.width = parseInt(requestSizes[0], 10);
+    sizeObj.height = parseInt(requestSizes[1], 10);
+    sizes.push(sizeObj);
+  } else if (typeof requestSizes === 'object') {
+    for (let i = 0; i < requestSizes.length; i++) {
+      let size = requestSizes[i];
+      sizeObj = {};
+      sizeObj.width = parseInt(size[0], 10);
+      sizeObj.height = parseInt(size[1], 10);
+      sizes.push(sizeObj);
+    }
+  }
+
+  return sizes;
 }
 
 registerBidder(spec);
