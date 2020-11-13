@@ -688,7 +688,7 @@ const OPEN_RTB_PROTOCOL = {
   interpretResponse(response, bidderRequests) {
     const bids = [];
 
-    [('errors', 'serverErrors'), ('responsetimemillis', 'serverResponseTimeMs')]
+    [['errors', 'serverErrors'], ['responsetimemillis', 'serverResponseTimeMs']]
       .forEach(info => getPbsResponseData(bidderRequests, response, info[0], info[1]))
 
     if (response.seatbid) {
