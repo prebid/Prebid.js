@@ -533,7 +533,7 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   var renderer = null;
 
   // the renderer for the mediaType takes precendence
-  if (mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render) {
+  if (mediaTypeRenderer && mediaTypeRenderer.url && !(mediaTypeRenderer.backupOnly && isBoolean(mediaTypeRenderer.backupOnly) && mediaTypeRenderer.render)) {
     renderer = mediaTypeRenderer;
   } else if (adUnitRenderer && adUnitRenderer.url && !(adUnitRenderer.backupOnly && isBoolean(adUnitRenderer.backupOnly) && bid.renderer)) {
     renderer = adUnitRenderer;

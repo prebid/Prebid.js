@@ -115,5 +115,11 @@ function isRendererPreferredFromAdUnit(adUnitCode) {
   const adUnit = find(adUnits, adUnit => {
     return adUnit.code === adUnitCode;
   });
-  return !!(adUnit && adUnit.renderer && adUnit.renderer.url && adUnit.renderer.render && !(utils.isBoolean(adUnit.renderer.backupOnly) && adUnit.renderer.backupOnly));
+  return !!(adUnit &&
+    (
+      (adUnit.renderer && adUnit.renderer.url && adUnit.renderer.render && !(utils.isBoolean(adUnit.renderer.backupOnly) && adUnit.renderer.backupOnly)) ||
+      (adUnit.mediaTypes && adUnit.mediaTypes.video && adUnit.mediaTypes.video.renderer.url && adUnit.mediaTypes.video.renderer.render &&
+        !(utils.isBoolean(adUnit.mediaTypes.video.renderer.backupOnly) && adUnit.mediaTypes.video.renderer.backupOnly))
+    )
+  );
 }
