@@ -37,6 +37,7 @@ describe('vdoaiBidAdapter', function () {
         'bidId': '23beaa6af6cdde',
         'bidderRequestId': '19c0c1efdf37e7',
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
+        'mediaTypes': 'banner'
       }
     ];
 
