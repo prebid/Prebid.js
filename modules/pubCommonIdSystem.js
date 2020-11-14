@@ -159,13 +159,12 @@ export const pubCommonIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: MODULE_NAME, 
+  name: MODULE_NAME,
   /**
    * Vendor id of prebid
    * @type {Number}
    */
   gvlid: GVLID,
-  
   /**
    * Return a callback function that calls the pixelUrl with id as a query parameter
    * @param pixelUrl
