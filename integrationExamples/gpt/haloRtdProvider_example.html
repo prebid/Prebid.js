@@ -40,6 +40,27 @@
             googletag.pubads().disableInitialLoad();
         });
 
+        var appnexusSegmentHandler = function(bid, segments) {
+            if (!bid.params) {
+                bid.params = {};
+            }
+            if (!bid.params.user) {
+                bid.params.user = {};
+            }
+
+            if (!Array.isArray(bid.params.user.segments)) {
+                 bid.params.user.segments = [];
+            }
+
+            var appnexusSegments = [];
+            for (var i = 0; i < segments.length; i++) {
+                var segment = segments[i];
+                let appnexusSegment = {'id': segment.id, 'value': segment.value};
+                appnexusSegments.push(appnexusSegment);
+            }
+            bid.params.user.segments = bid.params.user.segments.concat(appnexusSegments);
+        };
+
         pbjs.que.push(function() {
             pbjs.setConfig({
                 debug: true,
@@ -51,7 +72,7 @@
                             waitForIt: true,
                             params: {
                                 mapSegments: {
-                                    appnexus: true
+                                    appnexus: appnexusSegmentHandler // pass true to use the builtin handler.  here, we will demo overriding the handler with a function
                                 },
                                 segmentCache: false,
                                 requestParams: {
