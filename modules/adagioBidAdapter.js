@@ -1,15 +1,17 @@
 import find from 'core-js-pure/features/array/find.js';
 import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { loadExternalScript } from '../src/adloader.js'
 import JSEncrypt from 'jsencrypt/bin/jsencrypt.js';
 import sha256 from 'crypto-js/sha256.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import { createEidsArray } from './userId/eids.js';
 
 export const BIDDER_CODE = 'adagio';
 export const LOG_PREFIX = 'Adagio:';
-export const VERSION = '2.3.0';
+export const VERSION = '2.5.0';
 export const FEATURES_VERSION = '1';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
 export const SUPPORTED_MEDIA_TYPES = ['banner'];
@@ -555,9 +557,25 @@ function _getGdprConsent(bidderRequest) {
   return consent;
 }
 
+function _getCoppa() {
+  return {
+    required: config.getConfig('coppa') === true ? 1 : 0
+  };
+}
+
+function _getUspConsent(bidderRequest) {
+  return (utils.deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
+}
+
 function _getSchain(bidRequest) {
   if (utils.deepAccess(bidRequest, 'schain')) {
     return bidRequest.schain;
+  }
+}
+
+function _getEids(bidRequest) {
+  if (utils.deepAccess(bidRequest, 'userId')) {
+    return createEidsArray(bidRequest.userId)
   }
 }
 
@@ -643,7 +661,10 @@ export const spec = {
     const site = internal.getSite(bidderRequest);
     const pageviewId = internal.getPageviewId();
     const gdprConsent = _getGdprConsent(bidderRequest) || {};
+    const uspConsent = _getUspConsent(bidderRequest) || {};
+    const coppa = _getCoppa();
     const schain = _getSchain(validBidRequests[0]);
+    const eids = _getEids(validBidRequests[0]) || [];
     const adUnits = utils._map(validBidRequests, (bidRequest) => {
       bidRequest.features = internal.getFeatures(bidRequest, bidderRequest);
       return bidRequest;
@@ -672,8 +693,15 @@ export const spec = {
           site: site,
           pageviewId: pageviewId,
           adUnits: groupedAdUnits[organizationId],
-          gdpr: gdprConsent,
+          regs: {
+            gdpr: gdprConsent,
+            coppa: coppa,
+            ccpa: uspConsent
+          },
           schain: schain,
+          user: {
+            eids: eids
+          },
           prebidVersion: '$prebid.version$',
           adapterVersion: VERSION,
           featuresVersion: FEATURES_VERSION

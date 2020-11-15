@@ -100,8 +100,8 @@ export const spec = {
       if (payloadUserId.tdid) {
         payload.tdid = payloadUserId.tdid;
       }
-      if (payloadUserId.id5id) {
-        payload.id5 = payloadUserId.id5id;
+      if (payloadUserId.id5id && payloadUserId.id5id.uid) {
+        payload.id5 = payloadUserId.id5id.uid;
       }
       if (payloadUserId.digitrustid && payloadUserId.digitrustid.data && payloadUserId.digitrustid.data.id) {
         payload.dtid = payloadUserId.digitrustid.data.id;

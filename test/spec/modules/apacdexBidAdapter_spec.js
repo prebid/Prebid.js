@@ -1,14 +1,14 @@
 import { expect } from 'chai'
-import { spec } from 'modules/quantumdexBidAdapter.js'
+import { spec } from 'modules/apacdexBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { userSync } from '../../../src/userSync.js';
 
-describe('QuantumdexBidAdapter', function () {
+describe('ApacdexBidAdapter', function () {
   const adapter = newBidder(spec)
 
   describe('.code', function () {
-    it('should return a bidder code of quantumdex', function () {
-      expect(spec.code).to.equal('quantumdex')
+    it('should return a bidder code of apacdex', function () {
+      expect(spec.code).to.equal('apacdex')
     })
   })
 
@@ -21,7 +21,7 @@ describe('QuantumdexBidAdapter', function () {
   describe('.isBidRequestValid', function () {
     it('should return false if there are no params', () => {
       const bid = {
-        'bidder': 'quantumdex',
+        'bidder': 'apacdex',
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
           banner: {
@@ -37,7 +37,7 @@ describe('QuantumdexBidAdapter', function () {
 
     it('should return false if there is no siteId param', () => {
       const bid = {
-        'bidder': 'quantumdex',
+        'bidder': 'apacdex',
         'adUnitCode': 'adunit-code',
         params: {
           site_id: '1a2b3c4d5e6f1a2b3c4d',
@@ -56,7 +56,7 @@ describe('QuantumdexBidAdapter', function () {
 
     it('should return false if there is no mediaTypes', () => {
       const bid = {
-        'bidder': 'quantumdex',
+        'bidder': 'apacdex',
         'adUnitCode': 'adunit-code',
         params: {
           siteId: '1a2b3c4d5e6f1a2b3c4d'
@@ -72,7 +72,7 @@ describe('QuantumdexBidAdapter', function () {
 
     it('should return true if the bid is valid', () => {
       const bid = {
-        'bidder': 'quantumdex',
+        'bidder': 'apacdex',
         'adUnitCode': 'adunit-code',
         params: {
           siteId: '1a2b3c4d5e6f1a2b3c4d'
@@ -92,7 +92,7 @@ describe('QuantumdexBidAdapter', function () {
     describe('banner', () => {
       it('should return false if there are no banner sizes', () => {
         const bid = {
-          'bidder': 'quantumdex',
+          'bidder': 'apacdex',
           'adUnitCode': 'adunit-code',
           params: {
             siteId: '1a2b3c4d5e6f1a2b3c4d'
@@ -111,7 +111,7 @@ describe('QuantumdexBidAdapter', function () {
 
       it('should return true if there is banner sizes', () => {
         const bid = {
-          'bidder': 'quantumdex',
+          'bidder': 'apacdex',
           'adUnitCode': 'adunit-code',
           params: {
             siteId: '1a2b3c4d5e6f1a2b3c4d'
@@ -132,7 +132,7 @@ describe('QuantumdexBidAdapter', function () {
     describe('video', () => {
       it('should return false if there is no playerSize defined in the video mediaType', () => {
         const bid = {
-          'bidder': 'quantumdex',
+          'bidder': 'apacdex',
           'adUnitCode': 'adunit-code',
           params: {
             siteId: '1a2b3c4d5e6f1a2b3c4d',
@@ -152,7 +152,7 @@ describe('QuantumdexBidAdapter', function () {
 
       it('should return true if there is playerSize defined on the video mediaType', () => {
         const bid = {
-          'bidder': 'quantumdex',
+          'bidder': 'apacdex',
           'adUnitCode': 'adunit-code',
           params: {
             siteId: '1a2b3c4d5e6f1a2b3c4d',
@@ -196,7 +196,7 @@ describe('QuantumdexBidAdapter', function () {
           },
         ]
       },
-      'bidder': 'quantumdex',
+      'bidder': 'apacdex',
       'params': {
         'siteId': '1a2b3c4d5e6f1a2b3c4d',
       },
@@ -206,7 +206,7 @@ describe('QuantumdexBidAdapter', function () {
       'bidId': '30b31c1838de1f',
     },
     {
-      'bidder': 'quantumdex',
+      'bidder': 'apacdex',
       'params': {
         'ad_unit': '/7780971/sparks_prebid_LB',
         'sizes': [[300, 250], [300, 600]],
@@ -235,25 +235,25 @@ describe('QuantumdexBidAdapter', function () {
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/quantumdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
     })
 
     it('should return a properly formatted request with GDPR applies set to true', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/quantumdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
       expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal('true')
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(true)
       expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
     })
 
     it('should return a properly formatted request with GDPR applies set to false', function () {
       bidderRequests.gdprConsent.gdprApplies = false;
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/quantumdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
       expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal('false')
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(false)
       expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
     })
     it('should return a properly formatted request with GDPR applies set to false with no consent_string param', function () {
@@ -271,9 +271,9 @@ describe('QuantumdexBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/quantumdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
       expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal('false')
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(false)
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
     })
     it('should return a properly formatted request with GDPR applies set to true with no consentString param', function () {
@@ -291,14 +291,14 @@ describe('QuantumdexBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/quantumdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
       expect(bidRequests.method).to.equal('POST')
-      expect(bidRequests.data.gdpr.gdprApplies).to.equal('true')
+      expect(bidRequests.data.gdpr.gdprApplies).to.equal(true)
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
     })
     it('should return a properly formatted request with schain defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(JSON.parse(bidRequests.data.schain)).to.deep.equal(bidRequest[0].schain)
+      expect(bidRequests.data.schain).to.deep.equal(bidRequest[0].schain)
     });
     it('should return a properly formatted request with us_privacy included', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
@@ -309,7 +309,7 @@ describe('QuantumdexBidAdapter', function () {
   describe('.interpretResponse', function () {
     const bidRequests = {
       'method': 'POST',
-      'url': 'https://useast.quantumdex.io/auction/quantumdex',
+      'url': 'https://useast.quantumdex.io/auction/apacdex',
       'withCredentials': true,
       'data': {
         'device': {
@@ -328,7 +328,7 @@ describe('QuantumdexBidAdapter', function () {
       },
       'bidderRequests': [
         {
-          'bidder': 'quantumdex',
+          'bidder': 'apacdex',
           'params': {
             'siteId': '343'
           },
@@ -363,7 +363,7 @@ describe('QuantumdexBidAdapter', function () {
           }
         },
         {
-          'bidder': 'quantumdex',
+          'bidder': 'apacdex',
           'params': {
             'siteId': '343'
           },
@@ -398,7 +398,7 @@ describe('QuantumdexBidAdapter', function () {
           }
         },
         {
-          'bidder': 'quantumdex',
+          'bidder': 'apacdex',
           'params': {
             'siteId': '343'
           },
@@ -464,12 +464,12 @@ describe('QuantumdexBidAdapter', function () {
             'cpm': 1.07,
             'width': 160,
             'height': 600,
-            'ad': `<div>Quantumdex AD</div>`,
+            'ad': `<div>Apacdex AD</div>`,
             'ttl': 500,
             'creativeId': '1234abcd',
             'netRevenue': true,
             'currency': 'USD',
-            'dealId': 'quantumdex',
+            'dealId': 'apacdex',
             'mediaType': 'banner'
           },
           {
@@ -477,12 +477,12 @@ describe('QuantumdexBidAdapter', function () {
             'cpm': 1,
             'width': 300,
             'height': 250,
-            'ad': `<div>Quantumdex AD</div>`,
+            'ad': `<div>Apacdex AD</div>`,
             'ttl': 500,
             'creativeId': '1234abcd',
             'netRevenue': true,
             'currency': 'USD',
-            'dealId': 'quantumdex',
+            'dealId': 'apacdex',
             'mediaType': 'banner'
           },
           {
@@ -490,12 +490,12 @@ describe('QuantumdexBidAdapter', function () {
             'cpm': 1.25,
             'width': 300,
             'height': 250,
-            'vastXml': '<VAST><Ad id="20001"><InLine><AdSystem version="4.0">quantumdex</AdSystem></InLine></Ad></VAST>',
+            'vastXml': '<VAST><Ad id="20001"><InLine><AdSystem version="4.0">apacdex</AdSystem></InLine></Ad></VAST>',
             'ttl': 500,
             'creativeId': '30292e432662bd5f86d90774b944b038',
             'netRevenue': true,
             'currency': 'USD',
-            'dealId': 'quantumdex',
+            'dealId': 'apacdex',
             'mediaType': 'video'
           }
         ],
@@ -512,12 +512,12 @@ describe('QuantumdexBidAdapter', function () {
         'cpm': 1.07,
         'width': 160,
         'height': 600,
-        'ad': `<div>Quantumdex AD</div>`,
+        'ad': `<div>Apacdex AD</div>`,
         'ttl': 500,
         'creativeId': '1234abcd',
         'netRevenue': true,
         'currency': 'USD',
-        'dealId': 'quantumdex',
+        'dealId': 'apacdex',
         'mediaType': 'banner'
       },
       {
@@ -525,12 +525,12 @@ describe('QuantumdexBidAdapter', function () {
         'cpm': 1,
         'width': 300,
         'height': 250,
-        'ad': `<div>Quantumdex AD</div>`,
+        'ad': `<div>Apacdex AD</div>`,
         'ttl': 500,
         'creativeId': '1234abcd',
         'netRevenue': true,
         'currency': 'USD',
-        'dealId': 'quantumdex',
+        'dealId': 'apacdex',
         'mediaType': 'banner'
       },
       {
@@ -538,12 +538,12 @@ describe('QuantumdexBidAdapter', function () {
         'cpm': 1.25,
         'width': 300,
         'height': 250,
-        'vastXml': '<VAST><Ad id="20001"><InLine><AdSystem version="4.0">quantumdex</AdSystem></InLine></Ad></VAST>',
+        'vastXml': '<VAST><Ad id="20001"><InLine><AdSystem version="4.0">apacdex</AdSystem></InLine></Ad></VAST>',
         'ttl': 500,
         'creativeId': '30292e432662bd5f86d90774b944b038',
         'netRevenue': true,
         'currency': 'USD',
-        'dealId': 'quantumdex',
+        'dealId': 'apacdex',
         'mediaType': 'video'
       }
     ];
@@ -561,10 +561,10 @@ describe('QuantumdexBidAdapter', function () {
         expect(resp.currency).to.equal(prebidResponse[i].currency);
         expect(resp.dealId).to.equal(prebidResponse[i].dealId);
         if (resp.mediaType === 'video') {
-          expect(resp.vastXml.indexOf('quantumdex')).to.be.greaterThan(0);
+          expect(resp.vastXml.indexOf('apacdex')).to.be.greaterThan(0);
         }
         if (resp.mediaType === 'banner') {
-          expect(resp.ad.indexOf('Quantumdex AD')).to.be.greaterThan(0);
+          expect(resp.ad.indexOf('Apacdex AD')).to.be.greaterThan(0);
         }
       });
     });
