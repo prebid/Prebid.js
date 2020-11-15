@@ -4,7 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 // import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 const VERSION = '0.0.1';
 const BIDDER_CODE = 'pubwise';
-const ENDPOINT_URL = '//127.0.0.1:8080/prebid';
+const ENDPOINT_URL = 'https://bid.pubwise.io/prebid';
 // const USERSYNC_URL = '//127.0.0.1:8080/usersync'
 
 export const spec = {
@@ -16,7 +16,7 @@ export const spec = {
      * @return boolean True if this is a valid bid, and false otherwise.
      */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
+    return !!(bid.params.siteId || bid.params.spotId);
   },
   /**
      * Make a server request from the list of BidRequests.
@@ -29,14 +29,10 @@ export const spec = {
     for (i = 0; i < validBidRequests.length; i++) {
       if (validBidRequests[i].sizes) {
         validBidRequests[i].sizes = transformSizes(validBidRequests[i].sizes);
-        /* var j;
-        for (j = 0; j < validBidRequests[i].sizes.length; j++) {
-          validBidRequests[i].sizes[j] = transformSizes(validBidRequests[i].sizes[j]);
-        } */
       }
     }
 
-    const payloadString = JSON.stringify({'pbdata': validBidRequests, 'version': VERSION});
+    const payloadString = {'pbdata': validBidRequests, 'version': VERSION};
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -53,23 +49,30 @@ export const spec = {
      * @return {Bid[]} An array of bids which were nested inside the server.
      */
   interpretResponse: function (serverResponse, bidRequest) {
-    // const serverBody  = serverResponse.body;
-    // const headerValue = serverResponse.headers.get('some-response-header');
+    const serverResponseBody = serverResponse.body;
     const bidResponses = [];
-    const bidResponse = {
-      requestId: bidRequest.bidId,
-      cpm: '',
-      width: '',
-      height: '',
-      creativeId: '',
-      dealId: '',
-      currency: '',
-      netRevenue: true,
-      ttl: '',
-      referrer: '',
-      ad: ''
-    };
-    bidResponses.push(bidResponse);
+
+    utils.logInfo(serverResponseBody);
+
+    if (serverResponseBody.Responses) {
+      serverResponseBody.Responses.forEach(serverBid => {
+        utils.logInfo(serverBid);
+        const bidResponse = {
+          requestId: serverBid.RequestID,
+          cpm: serverBid.CPM,
+          width: serverBid.Width,
+          height: serverBid.Height,
+          creativeId: serverBid.CreativeID,
+          dealId: serverBid.DealID,
+          currency: serverBid.Currency,
+          netRevenue: serverBid.NetRevenue,
+          ttl: serverBid.TTL,
+          referrer: '',
+          ad: serverBid.Ad
+        };
+        bidResponses.push(bidResponse);
+      });
+    }
 
     return bidResponses;
   },
@@ -84,32 +87,11 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = []
 
-    /* var gdprParams;
-    if (typeof gdprConsent != 'undefined') {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
-      }
-    } */
-
-    /* if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: USERSYNC_URL + gdprParams
-      });
-    } */
-    /* if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      syncs.push({
-        type: 'image',
-        url: serverResponses[0].body.userSync.url + gdprParams
-      });
-    } */
     return syncs;
   }
 }
 
-/* Turn bid request sizes into ut-compatible format */
+/* Modify sizes into more compatible format for downstream processing */
 function transformSizes(requestSizes) {
   let sizes = [];
   let sizeObj = {};
