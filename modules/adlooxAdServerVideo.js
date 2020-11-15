@@ -15,7 +15,8 @@ import * as utils from '../src/utils.js';
 
 const MODULE = 'adlooxAdserverVideo';
 
-const URL_VAST = 'https://j.adlooxtracking.com/ads/vast/tag.php';
+// const URL_VAST = 'https://j.adlooxtracking.com/ads/vast/tag.php';
+const URL_VAST = 'https://j.adlooxtracking.com/ads/vast/tag-dev.php';
 
 export function buildVideoUrl(options, callback) {
   utils.logInfo(MODULE, 'buildVideoUrl', options);
