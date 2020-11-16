@@ -89,9 +89,14 @@ Documentation they're supposed to be following is https://docs.prebid.org/dev-do
 Follow steps above for general review process. In addition:
 - The RTD Provider must include a `providerRtdProvider.md` file. This file must have example parameters and document a sense of what to expect: what should change in the bidrequest, or what targeting data should be added?
 - Try running the new sub-module and confirm the provided test parameters.
-- Make sure the sub-module is making HTTP requests as early as possible, but not more often than needed.
+- Confirm that the module
+  - is not loading external code. If it is, escalate to the #prebid-js Slack channel. 
+  - is reading `config` from the function signature rather than calling `getConfig`.
+  - is sending data to the bid request only as either First Party Data or in bidRequest.rtd.RTDPROVIDERCODE.
+  - is making HTTPS requests as early as possible, but not more often than needed.
+  - doesn't force bid adapters to load additional code.
 - Consider whether the kind of data the module is obtaining could have privacy implications. If so, make sure they're utilizing the `consent` data passed to them.
-- make sure there's a docs pull request
+- Make sure there's a docs pull request
 
 ## Ticket Coordinator
 

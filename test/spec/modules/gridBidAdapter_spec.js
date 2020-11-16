@@ -411,9 +411,13 @@ describe('TheMediaGrid Adapter', function () {
       const jsSegments = ['test_seg_1', 'test_seg_2'];
       const bidRequestsWithUserIds = bidRequests.map((bid) => {
         return Object.assign({
-          jwTargeting: {
-            segments: jsSegments,
-            content: jsContent
+          rtd: {
+            jwplayer: {
+              targeting: {
+                segments: jsSegments,
+                content: jsContent
+              }
+            }
           }
         }, bid);
       });

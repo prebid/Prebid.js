@@ -122,6 +122,7 @@ describe('pubGENIUS adapter', () => {
         bidderCode: 'pubgenius',
         bidderRequestId: 'fakebidderrequestid',
         refererInfo: {},
+        timeout: 1200,
       };
 
       expectedRequest = {
@@ -149,7 +150,7 @@ describe('pubGENIUS adapter', () => {
       };
 
       config.setConfig({
-        bidderTimeout: 1200,
+        bidderTimeout: 1000,
         pageUrl: undefined,
         coppa: undefined,
       });

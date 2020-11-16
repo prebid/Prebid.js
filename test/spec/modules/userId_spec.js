@@ -611,6 +611,7 @@ describe('User ID', function () {
     beforeEach(function () {
       sandbox = sinon.createSandbox();
       sandbox.stub(global, 'setTimeout').returns(2);
+      sandbox.stub(global, 'clearTimeout');
       sandbox.stub(events, 'on');
       sandbox.stub(coreStorage, 'getCookie');
 
@@ -662,6 +663,7 @@ describe('User ID', function () {
       requestBidsHook(auctionSpy, {adUnits});
 
       // check auction was delayed
+      global.clearTimeout.calledOnce.should.equal(false);
       global.setTimeout.calledOnce.should.equal(true);
       global.setTimeout.calledWith(sinon.match.func, 33);
       auctionSpy.calledOnce.should.equal(false);
@@ -696,6 +698,7 @@ describe('User ID', function () {
 
       // check auction was delayed
       // global.setTimeout.calledOnce.should.equal(true);
+      global.clearTimeout.calledOnce.should.equal(false);
       global.setTimeout.calledWith(sinon.match.func, 33);
       auctionSpy.calledOnce.should.equal(false);
 

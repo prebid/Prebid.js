@@ -319,7 +319,13 @@ function hasGDPRConsent(consentData) {
  * @param {function} cb - callback for after processing is done.
  */
 function processSubmoduleCallbacks(submodules, cb) {
-  const done = cb ? utils.delayExecution(cb, submodules.length) : function () { };
+  let done = () => {};
+  if (cb) {
+    done = utils.delayExecution(() => {
+      clearTimeout(timeoutID);
+      cb();
+    }, submodules.length);
+  }
   submodules.forEach(function (submodule) {
     submodule.callback(function callbackCompleted(idObj) {
       // if valid, id data should be saved to cookie/html storage
@@ -338,7 +344,6 @@ function processSubmoduleCallbacks(submodules, cb) {
     // clear callback, this prop is used to test if all submodule callbacks are complete below
     submodule.callback = undefined;
   });
-  clearTimeout(timeoutID);
 }
 
 /**
