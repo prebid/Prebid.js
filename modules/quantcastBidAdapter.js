@@ -110,6 +110,8 @@ function getQuantcastFPA() {
   return fpa || ''
 }
 
+let hasUserSynced = false;
+
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
  * http://prebid.org/dev-docs/bidder-adapter-1.html
@@ -118,7 +120,6 @@ export const spec = {
   code: BIDDER_CODE,
   GVLID: 11,
   supportedMediaTypes: ['banner', 'video'],
-  hasUserSynced: false,
 
   /**
    * Verify the `AdUnits.bids` response with `true` for valid request and `false`
@@ -281,7 +282,7 @@ export const spec = {
   },
   getUserSyncs(syncOptions, serverResponses) {
     const syncs = []
-    if (!this.hasUserSynced && syncOptions.pixelEnabled) {
+    if (!hasUserSynced && syncOptions.pixelEnabled) {
       const responseWithUrl = find(serverResponses, serverResponse =>
         utils.deepAccess(serverResponse.body, 'userSync.url')
       );
@@ -293,12 +294,12 @@ export const spec = {
           url: url
         });
       }
-      this.hasUserSynced = true;
+      hasUserSynced = true;
     }
     return syncs;
   },
   resetUserSync() {
-    this.hasUserSynced = false;
+    hasUserSynced = false;
   }
 };
 
