@@ -143,7 +143,7 @@ export const spec = {
             netRevenue: true,
             mediaType: BANNER,
             ad: decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`),
-            ttl: 60
+            ttl: sovrnBid.ttl || 90
           });
         });
       }
