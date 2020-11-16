@@ -221,6 +221,10 @@ function bidToAdRequest(bid) {
     options: bid.params.options
   };
 
+  if (bid.auc !== undefined) {
+    adRequest.auc = bid.auc;
+  }
+
   adRequest.native = utils.deepAccess(bid, 'mediaTypes.native');
 
   adRequest.video = utils.deepAccess(bid, 'mediaTypes.video');

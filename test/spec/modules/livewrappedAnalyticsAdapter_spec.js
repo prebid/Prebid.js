@@ -121,6 +121,7 @@ const MOCK = {
 const ANALYTICS_MESSAGE = {
   publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7',
   gdpr: [{}],
+  auctionIds: ['25c6d7f5-699a-4bfc-87c9-996f915341fa'],
   bidAdUnits: [
     {
       adUnit: 'panorama_d_1',
@@ -136,19 +137,22 @@ const ANALYTICS_MESSAGE = {
       adUnit: 'panorama_d_1',
       bidder: 'livewrapped',
       timeStamp: 1519149562216,
-      gdpr: 0
+      gdpr: 0,
+      auctionId: 0
     },
     {
       adUnit: 'box_d_1',
       bidder: 'livewrapped',
       timeStamp: 1519149562216,
-      gdpr: 0
+      gdpr: 0,
+      auctionId: 0
     },
     {
       adUnit: 'box_d_2',
       bidder: 'livewrapped',
       timeStamp: 1519149562216,
-      gdpr: 0
+      gdpr: 0,
+      auctionId: 0
     }
   ],
   responses: [
@@ -162,7 +166,8 @@ const ANALYTICS_MESSAGE = {
       ttr: 200,
       IsBid: true,
       mediaType: 1,
-      gdpr: 0
+      gdpr: 0,
+      auctionId: 0
     },
     {
       timeStamp: 1519149562216,
@@ -174,7 +179,8 @@ const ANALYTICS_MESSAGE = {
       ttr: 300,
       IsBid: true,
       mediaType: 1,
-      gdpr: 0
+      gdpr: 0,
+      auctionId: 0
     },
     {
       timeStamp: 1519149562216,
@@ -182,7 +188,8 @@ const ANALYTICS_MESSAGE = {
       bidder: 'livewrapped',
       ttr: 200,
       IsBid: false,
-      gdpr: 0
+      gdpr: 0,
+      auctionId: 0
     }
   ],
   timeouts: [],
@@ -195,7 +202,8 @@ const ANALYTICS_MESSAGE = {
       height: 240,
       cpm: 1.1,
       mediaType: 1,
-      gdpr: 0
+      gdpr: 0,
+      auctionId: 0
     },
     {
       timeStamp: 1519149562216,
@@ -205,7 +213,8 @@ const ANALYTICS_MESSAGE = {
       height: 250,
       cpm: 2.2,
       mediaType: 1,
-      gdpr: 0
+      gdpr: 0,
+      auctionId: 0
     }
   ]
 };
