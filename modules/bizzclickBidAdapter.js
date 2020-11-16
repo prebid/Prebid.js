@@ -61,7 +61,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    if (validBidRequests.length === 0) return []
+    if (validBidRequests && validBidRequests.length === 0) return []
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
 
@@ -113,13 +113,11 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse) => {
-    try {
-      serverResponse = serverResponse.body;
-    } catch (e) {
-      return []
-    };
+    if (!serverResponse || !serverResponse.body) return []
+    let bizzclickResponse = serverResponse.body;
+
     let bids = [];
-    for (let response of serverResponse) {
+    for (let response of bizzclickResponse) {
       let mediaType = response.seatbid[0].bid[0].ext && response.seatbid[0].bid[0].ext.mediaType ? response.seatbid[0].bid[0].ext.mediaType : BANNER;
 
       let bid = {
@@ -213,7 +211,7 @@ const addNativeParameters = bidRequest => {
     ver: NATIVE_VERSION,
   };
 
-  const assets = utils._map(bidRequest.nativeParams, (bidParams, key) => {
+  const assets = utils._map(bidRequest.mediaTypes.native, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
     const asset = {
       required: bidParams.required & 1,
@@ -296,13 +294,6 @@ const addVideoParameters = (bidRequest) => {
     }
   }
 
-  if (bidRequest.mediaTypes.position !== undefined) {
-    if (bidRequest.mediaTypes.position === 'atf') {
-      videoObj.pos = 1;
-    } else if (bidRequest.mediaTypes.position === 'btf') {
-      videoObj.pos = 3;
-    }
-  }
 
   const size = parseSizes(bidRequest, 'video');
   videoObj.w = size[0];

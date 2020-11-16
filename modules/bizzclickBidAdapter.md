@@ -14,7 +14,11 @@ Module that connects to BizzClick SSP demand sources
 ```
     var adUnits = [{
                 code: 'placementId',
-                sizes: [[300, 250]],
+                      mediaTypes: {
+                          banner: {
+                              sizes: [[300, 250], [300,600]]
+                              }
+                              },
                 bids: [{
                         bidder: 'bizzclick',
                         params: {
@@ -72,8 +76,8 @@ Module that connects to BizzClick SSP demand sources
                 boxingallowed:1,
                 skip:0,
                 mimes:[
-                    application/javascript,
-                    video/mp4
+                    'application/javascript',
+                    'video/mp4'
                 ],
                 w:1920,
                 h:1080,

@@ -40,6 +40,65 @@ const NATIVE_BID_REQUEST = {
 
 };
 
+const BANNER_BID_REQUEST = {
+  code: 'banner_example',
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 250], [300,600]]
+    }
+  },
+  bidder: 'bizzclick',
+  params: {
+    placementId: 'hash',
+    accountId: 'accountId'
+  },
+  timeout: 1000,
+
+}
+
+const bidRequest = {
+  refererInfo: {
+    referer: 'test.com'
+  }
+}
+
+const VIDEO_BID_REQUEST ={
+    code: 'video1',
+    sizes: [640,480],
+    mediaTypes: { video: {
+      minduration:0,
+                maxduration:999,
+                boxingallowed:1,
+                skip:0,
+                mimes:[
+                    'application/javascript',
+                    'video/mp4'
+                ],
+                w:1920,
+                h:1080,
+                protocols:[
+                    2
+                ],
+                linearity:1,
+                api:[
+                    1,
+                    2
+                ]
+    }
+  },
+
+                bidder: 'bizzclick',
+                params: {
+                      placementId: 'hash',
+                            accountId: 'accountId'
+                }
+                ,
+                timeout: 1000
+
+  }
+
+
+
 const BANNER_BID_RESPONSE = {
   id: 'request_id',
   bidid: 'request_imp_id',
@@ -77,6 +136,12 @@ const VIDEO_BID_RESPONSE = {
   }],
 };
 
+let imgData = {
+  url: `https://example.com/image`,
+  w: 1200,
+  h: 627
+};
+
 const NATIVE_BID_RESPONSE = {
   id: 'request_id',
   bidid: 'request_imp_id',
@@ -88,7 +153,14 @@ const NATIVE_BID_RESPONSE = {
       adomain: ['example.com'],
       adm: { native:
           {
-            assets: [{title: {text: 'dummyText'}}],
+            assets: [
+              {id: 0, title: 'dummyText'},
+              {id: 3, image: imgData}, 
+              {
+                id: 5,
+                data: {value: 'organization.name'}
+              }
+            ],
             link: {url: 'example.com'},
             imptrackers: ['tracker1.com', 'tracker2.com', 'tracker3.com'],
             jstracker: 'tracker1.com'
@@ -118,8 +190,8 @@ describe('BizzclickAdapter', function() {
     });
   });
 
-  describe('buildRequests', function () {
-    const request = spec.buildRequests([NATIVE_BID_REQUEST]);
+  describe('build Native Request', function () {
+    const request = spec.buildRequests([NATIVE_BID_REQUEST], bidRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(request).to.exist;
@@ -142,7 +214,53 @@ describe('BizzclickAdapter', function() {
     });
   });
 
+  describe('build Banner Request', function () {
+    const request = spec.buildRequests([BANNER_BID_REQUEST]);
+
+    it('Creates a ServerRequest object with method, URL and data', function () {
+      expect(request).to.exist;
+      expect(request.method).to.exist;
+      expect(request.url).to.exist;
+      expect(request.data).to.exist;
+    });
+
+    it('sends bid request to our endpoint via POST', function () {
+      expect(request.method).to.equal('POST');
+    });
+
+    it('Returns valid URL', function () {
+      expect(request.url).to.equal('https://us-e-node1.bizzclick.com/bid?rtb_seat_id=prebidjs&secret_key=accountId');
+    });
+  });
+
+  describe('build Video Request', function () {
+    const request = spec.buildRequests([VIDEO_BID_REQUEST]);
+
+    it('Creates a ServerRequest object with method, URL and data', function () {
+      expect(request).to.exist;
+      expect(request.method).to.exist;
+      expect(request.url).to.exist;
+      expect(request.data).to.exist;
+    });
+
+
+    it('sends bid request to our endpoint via POST', function () {
+      expect(request.method).to.equal('POST');
+    });
+
+    it('Returns valid URL', function () {
+      expect(request.url).to.equal('https://us-e-node1.bizzclick.com/bid?rtb_seat_id=prebidjs&secret_key=accountId');
+    });
+  });
+
   describe('interpretResponse', function () {
+    it('Empty response must return empty array', function() {
+      const emptyResponse = null;
+      let response = spec.interpretResponse(emptyResponse);
+
+      expect(response).to.be.an('array').that.is.empty;
+    })
+
     it('Should interpret banner response', function () {
       const bannerResponse = {
         body: [BANNER_BID_RESPONSE]
