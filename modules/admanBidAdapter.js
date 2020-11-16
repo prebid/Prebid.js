@@ -97,14 +97,14 @@ export const spec = {
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     let syncUrl = URL_SYNC
-    if (gdprConsent.consentString) {
+    if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
       } else {
         syncUrl += `&gdpr==0&gdpr_consent=${gdprConsent.consentString}`;
       }
     }
-    if (uspConsent.consentString) {
+    if (uspConsent && uspConsent.consentString) {
       syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
     }
     return [{
