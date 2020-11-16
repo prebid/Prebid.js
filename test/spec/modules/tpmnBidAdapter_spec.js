@@ -1,6 +1,6 @@
 /* eslint-disable no-tabs */
 import { expect } from 'chai';
-import { spec } from 'modules/tpmnBidAdapter';
+import { spec } from 'modules/tpmnBidAdapter.js';
 
 describe('tpmnAdapterTests', function() {
   describe('isBidRequestValid', function() {

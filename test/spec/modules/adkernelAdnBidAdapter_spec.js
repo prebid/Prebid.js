@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adkernelAdnBidAdapter';
+import {spec} from 'modules/adkernelAdnBidAdapter.js';
 
 describe('AdkernelAdn adapter', function () {
   const bid1_pub1 = {

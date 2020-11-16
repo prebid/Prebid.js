@@ -1,6 +1,6 @@
-import {BANNER} from '../src/mediaTypes';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {triggerPixel} from '../src/utils';
+import {BANNER} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {triggerPixel} from '../src/utils.js';
 
 const ADPONE_CODE = 'adpone';
 const ADPONE_ENDPOINT = 'https://rtb.adpone.com/bid-request';

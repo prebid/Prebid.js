@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/my6senseBidAdapter';
+import { spec } from 'modules/my6senseBidAdapter.js';
 
 describe('My6sense Bid adapter test', function () {
   let bidRequests, serverResponses;

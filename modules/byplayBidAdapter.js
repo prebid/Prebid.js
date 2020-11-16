@@ -1,7 +1,7 @@
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { VIDEO } from '../src/mediaTypes';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'byplay';
 const ENDPOINT_URL = 'https://prebid.byplay.net/bidder';
@@ -57,7 +57,7 @@ function createRenderer() {
 
   renderer.setRender(bid => {
     bid.renderer.push(() => {
-      window.adtagRender(bid.vastXml);
+      window.adtagRender(bid);
     });
   });
 

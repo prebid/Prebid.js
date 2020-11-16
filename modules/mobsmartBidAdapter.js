@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'mobsmart';
 const ENDPOINT = 'https://prebid.mobsmart.net/prebid/endpoint';

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/rtbsolutionsBidAdapter';
+import { spec } from 'modules/rtbsolutionsBidAdapter.js';
 
 describe('rtbsolutionsBidAdapterTests', function () {
   it('validate_pub_params_1', function () {

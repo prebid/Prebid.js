@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {config} from '../src/config';
-import {Renderer} from '../src/Renderer';
-import {BANNER, VIDEO} from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {Renderer} from '../src/Renderer.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 export const helper = {
   getTopWindowDomain: function (url) {

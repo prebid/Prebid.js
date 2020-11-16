@@ -4,10 +4,10 @@ import {
 import {
   spec,
   internals
-} from 'modules/theAdxBidAdapter';
+} from 'modules/theAdxBidAdapter.js';
 import {
   newBidder
-} from 'src/adapters/bidderFactory';
+} from 'src/adapters/bidderFactory.js';
 
 describe('TheAdxAdapter', function () {
   const adapter = newBidder(spec);

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/envivoBidAdapter';
+import { spec } from 'modules/envivoBidAdapter.js';
 
 const ENDPOINT = 'https://ad.nvivo.tv/ads/www/admin/plugins/Prebid/getAd.php';
 

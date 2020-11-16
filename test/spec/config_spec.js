@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { assert } from 'chai';
-import { newConfig } from 'src/config';
+import { newConfig } from 'src/config.js';
 
 const utils = require('src/utils');
 
@@ -33,7 +33,7 @@ describe('config API', function () {
     expect(getConfig()).to.be.a('object');
   });
 
-  it('sets and gets arbitrary configuarion properties', function () {
+  it('sets and gets arbitrary configuration properties', function () {
     setConfig({ baz: 'qux' });
     expect(getConfig('baz')).to.equal('qux');
   });
@@ -178,6 +178,23 @@ describe('config API', function () {
     expect(getConfig('customPriceBucket')).to.equal(goodConfig);
   });
 
+  it('sets deviceAccess', function () {
+    // When the deviceAccess flag config option is not set, cookies may be read and set
+    expect(getConfig('deviceAccess')).to.be.equal(true);
+
+    // When the deviceAccess flag config option is set to false, no cookies are read or set
+    setConfig({
+      'deviceAccess': false
+    });
+    expect(getConfig('deviceAccess')).to.be.equal(false);
+
+    // When the deviceAccess flag config option is set to true, cookies may be read and set
+    setConfig({
+      'deviceAccess': true
+    });
+    expect(getConfig('deviceAccess')).to.be.equal(true);
+  });
+
   it('should log error for invalid priceGranularity', function () {
     setConfig({ priceGranularity: '' });
     const error = 'Prebid Error: no value passed to `setPriceGranularity()`';
@@ -193,5 +210,38 @@ describe('config API', function () {
     setConfig({ bidderSequence: 'fixed' });
     setConfig({ bidderSequence: 'random' });
     expect(logWarnSpy.called).to.equal(false);
+  });
+
+  it('sets auctionOptions', function () {
+    const auctionOptionsConfig = {
+      'secondaryBidders': ['rubicon', 'appnexus']
+    }
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+  });
+
+  it('should log warning for the wrong value passed to auctionOptions', function () {
+    setConfig({ auctionOptions: '' });
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options must be an object';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid auctionOptions bidder values', function () {
+    setConfig({ auctionOptions: {
+      'secondaryBidders': 'appnexus, rubicon',
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options secondaryBidders must be of type Array';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid properties to auctionOptions', function () {
+    setConfig({ auctionOptions: {
+      'testing': true
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options given an incorrect param: testing';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
   });
 });

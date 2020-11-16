@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import * as utils from 'src/utils';
-import { spec } from 'modules/nafdigitalBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import * as utils from 'src/utils.js';
+import { spec } from 'modules/nafdigitalBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const URL = 'https://nafdigitalbidder.com/hb';
 

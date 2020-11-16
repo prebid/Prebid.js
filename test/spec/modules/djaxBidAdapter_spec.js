@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/djaxBidAdapter';
+import { spec } from 'modules/djaxBidAdapter.js';
 
 const ENDPOINT = 'https://demo.reviveadservermod.com/headerbidding_adminshare/www/admin/plugins/Prebid/getAd.php';
 

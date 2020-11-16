@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/topRTBBidAdapter';
+import { spec } from 'modules/topRTBBidAdapter.js';
 
 describe('topRTBBidAdapterTests', function () {
   it('validate_pub_params', function () {

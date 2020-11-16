@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/reklamstoreBidAdapter';
+import { spec } from 'modules/reklamstoreBidAdapter.js';
 
 describe('reklamstoreBidAdapterTests', function() {
   let bidRequestData = {

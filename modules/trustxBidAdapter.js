@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { VIDEO, BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'trustx';
 const ENDPOINT_URL = 'https://sofia.trustx.org/hb';

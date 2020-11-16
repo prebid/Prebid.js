@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {spec} from 'modules/newborntownWebBidAdapter';
+import {spec} from 'modules/newborntownWebBidAdapter.js';
 describe('NewborntownWebAdapter', function() {
   describe('isBidRequestValid', function () {
     let bid = {
@@ -54,8 +54,8 @@ describe('NewborntownWebAdapter', function() {
       'timeout': 9000,
       'start': 1573123289383
     }
-    const request = spec.buildRequests(bidderRequest['bids'], bidderRequest);
     it('Returns POST method', function () {
+      const request = spec.buildRequests(bidderRequest['bids'], bidderRequest);
       expect(request[0].method).to.equal('POST');
       expect(request[0].url.indexOf('//us-west.solortb.com/adx/api/rtb?from=4') !== -1).to.equal(true);
       expect(request[0].data).to.exist;

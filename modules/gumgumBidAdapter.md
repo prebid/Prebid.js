@@ -37,6 +37,18 @@ var adUnits = [
         }
       }
     ]
+  },{
+    code: 'test-div',
+    sizes: [[300, 50]],
+    bids: [
+      {
+        bidder: 'gumgum',
+        params: {
+          inVideo: 'ggumtest', // GumGum Zone ID given to the client
+          bidfloor: 0.03 // CPM bid floor
+        }
+      }
+    ]
   }
 ];
 ```

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adponeBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { spec } from 'modules/adponeBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 const EMPTY_ARRAY = [];
 describe('adponeBidAdapter', function () {

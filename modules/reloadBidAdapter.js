@@ -1,8 +1,12 @@
 import {
   registerBidder
 }
-  from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
+  from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
+
 const BIDDER_CODE = 'reload';
 const VERSION_ADAPTER = '1.10';
 export const spec = {
@@ -390,14 +394,14 @@ function ReloadClientTool(args) {
 
     var stgFileStr = JSON.stringify(stgFileObj);
 
-    localStorage.setItem(name, stgFileStr);
+    storage.setDataInLocalStorage(name, stgFileStr);
 
     return true;
   }
 
   function _getItem (name) {
     try {
-      var obStgFileStr = localStorage.getItem(name);
+      var obStgFileStr = storage.getDataFromLocalStorage(name);
       if (obStgFileStr === null) return null;
 
       var stgFileObj = JSON.parse(obStgFileStr);

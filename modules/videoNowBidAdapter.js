@@ -1,7 +1,7 @@
-import * as utils from '../src/utils'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { BANNER } from '../src/mediaTypes'
-import { loadExternalScript } from '../src/adloader'
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER } from '../src/mediaTypes.js'
+import { loadExternalScript } from '../src/adloader.js'
 
 const RTB_URL = 'https://bidder.videonow.ru/prebid'
 

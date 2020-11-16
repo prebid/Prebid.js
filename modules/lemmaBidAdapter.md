@@ -42,7 +42,6 @@ var adUnits = [{
 ```
 var adUnits = [{
   mediaType: 'video',
-  sizes: [[640, 480]],
   mediaTypes: {
     video: {
       playerSize: [640, 480], // required

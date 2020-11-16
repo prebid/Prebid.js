@@ -1,6 +1,6 @@
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
-const utils = require('../src/utils');
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+const utils = require('../src/utils.js');
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';

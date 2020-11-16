@@ -57,23 +57,23 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue} from './utils';
-import { parse as parseURL } from './url';
-import { getPriceBucketString } from './cpmBucketManager';
-import { getNativeTargeting } from './native';
-import { getCacheUrl, store } from './videoCache';
-import { Renderer } from './Renderer';
-import { config } from './config';
-import { userSync } from './userSync';
-import { hook } from './hook';
-import find from 'core-js/library/fn/array/find';
-import { OUTSTREAM } from './video';
-import { VIDEO } from './mediaTypes';
+import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl, isBoolean} from './utils.js';
+import { getPriceBucketString } from './cpmBucketManager.js';
+import { getNativeTargeting } from './native.js';
+import { getCacheUrl, store } from './videoCache.js';
+import { Renderer } from './Renderer.js';
+import { config } from './config.js';
+import { userSync } from './userSync.js';
+import { hook } from './hook.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import { OUTSTREAM } from './video.js';
+import { VIDEO } from './mediaTypes.js';
 
 const { syncUsers } = userSync;
-const utils = require('./utils');
-const adapterManager = require('./adapterManager').default;
-const events = require('./events');
+const utils = require('./utils.js');
+const adapterManager = require('./adapterManager.js').default;
+const events = require('./events.js');
 const CONSTANTS = require('./constants.json');
 
 export const AUCTION_STARTED = 'started';
@@ -168,7 +168,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       _auctionEnd = Date.now();
 
       events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
-      bidsBackCallback(_adUnitCodes, function () {
+      bidsBackCallback(_adUnits, function () {
         try {
           if (_callback != null) {
             const adUnitCodes = _adUnitCodes;
@@ -398,10 +398,19 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
 
   function adapterDone() {
     let bidderRequest = this;
+    let bidderRequests = auctionInstance.getBidRequests();
+    const auctionOptionsConfig = config.getConfig('auctionOptions');
 
     bidderRequestsDone.add(bidderRequest);
-    allAdapterCalledDone = auctionInstance.getBidRequests()
-      .every(bidderRequest => bidderRequestsDone.has(bidderRequest));
+
+    if (auctionOptionsConfig && !utils.isEmpty(auctionOptionsConfig)) {
+      const secondaryBidders = auctionOptionsConfig.secondaryBidders;
+      if (secondaryBidders && !bidderRequests.every(bidder => includes(secondaryBidders, bidder.bidderCode))) {
+        bidderRequests = bidderRequests.filter(request => !includes(secondaryBidders, request.bidderCode));
+      }
+    }
+
+    allAdapterCalledDone = bidderRequests.every(bidderRequest => bidderRequestsDone.has(bidderRequest));
 
     bidderRequest.bids.forEach(bid => {
       if (!bidResponseMap[bid.bidId]) {
@@ -484,7 +493,7 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
         afterBidAdded();
       }
     }
-  });
+  }, bidderRequest);
 }, 'callPrebidCache');
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
@@ -513,9 +522,26 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   const bidReq = bidderRequest.bids && find(bidderRequest.bids, bid => bid.adUnitCode == adUnitCode);
   const adUnitRenderer = bidReq && bidReq.renderer;
 
-  if (adUnitRenderer && adUnitRenderer.url) {
-    bidObject.renderer = Renderer.install({ url: adUnitRenderer.url });
-    bidObject.renderer.setRender(adUnitRenderer.render);
+  // a publisher can also define a renderer for a mediaType
+  const bidObjectMediaType = bidObject.mediaType;
+  const bidMediaType = bidReq &&
+        bidReq.mediaTypes &&
+        bidReq.mediaTypes[bidObjectMediaType];
+
+  var mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
+
+  var renderer = null;
+
+  // the renderer for the mediaType takes precendence
+  if (mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render) {
+    renderer = mediaTypeRenderer;
+  } else if (adUnitRenderer && adUnitRenderer.url && !(adUnitRenderer.backupOnly && isBoolean(adUnitRenderer.backupOnly) && bid.renderer)) {
+    renderer = adUnitRenderer;
+  }
+
+  if (renderer) {
+    bidObject.renderer = Renderer.install({ url: renderer.url });
+    bidObject.renderer.setRender(renderer.render);
   }
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
@@ -651,7 +677,7 @@ export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
 
     // Adding hb_cache_host
     if (config.getConfig('cache.url') && (!bidderCode || utils.deepAccess(bidderSettings, `${bidderCode}.sendStandardTargeting`) !== false)) {
-      const urlInfo = parseURL(config.getConfig('cache.url'));
+      const urlInfo = parseUrl(config.getConfig('cache.url'));
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
