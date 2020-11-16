@@ -316,7 +316,7 @@ const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: SYNC_URL+'?tcf='+consentApiVersion,
+        url: SYNC_URL + '?tcf=' + consentApiVersion,
       }];
     }
     utils.logWarn('sspBC adapter requires iframe based user sync.');
@@ -324,32 +324,36 @@ const spec = {
 
   onTimeout(timeoutData) {
     var adSlots = [];
-    const bid = timeoutData[0];
-    if (bid){
+    const bid = timeoutData && timeoutData[0];
+    if (bid) {
       timeoutData.forEach(bid => { adSlots.push(bid.params[0] && bid.params[0].id) })
       const payload = {
         event: 'timeout',
         requestId: bid.auctionId,
-        siteId: bid.params ? bid.params[0].siteId : '',
+        siteId: bid.params ? [bid.params[0].siteId] : [],
         slotId: adSlots,
         timeout: bid.timeout,
       }
       sendNotification(payload);
+      return payload;
     }
   },
 
   onBidWon(bid) {
-    const payload = {
-      event: 'bidWon',
-      requestId: bid.auctionId,
-      siteId: bid.params ? [bid.params[0].siteId] : [],
-      slotId: bid.params ? [bid.params[0].id]: [],
-      cpm: bid.cpm,
-      creativeId: bid.creativeId,
-      adomain: (bid.meta && bid.meta.advertiserDomains) ? bid.meta.advertiserDomains[0] : '',
-      networkName: (bid.meta && bid.meta.networkName) ? bid.meta.networkName : '',
+    if (bid && bid.auctionId) {
+      const payload = {
+        event: 'bidWon',
+        requestId: bid.auctionId,
+        siteId: bid.params ? [bid.params[0].siteId] : [],
+        slotId: bid.params ? [bid.params[0].id] : [],
+        cpm: bid.cpm,
+        creativeId: bid.creativeId,
+        adomain: (bid.meta && bid.meta.advertiserDomains) ? bid.meta.advertiserDomains[0] : '',
+        networkName: (bid.meta && bid.meta.networkName) ? bid.meta.networkName : '',
+      }
+      sendNotification(payload);
+      return payload;
     }
-    sendNotification(payload);
   },
 };
 
