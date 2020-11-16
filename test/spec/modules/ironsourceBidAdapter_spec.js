@@ -278,7 +278,7 @@ describe('ironsourceAdapter', function () {
           mediaType: VIDEO
         }
       ];
-      const result = spec.interpretResponse({ body: [response] });
+      const result = spec.interpretResponse({ body: response });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
   })

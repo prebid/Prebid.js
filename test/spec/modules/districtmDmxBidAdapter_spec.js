@@ -1,6 +1,6 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import * as _ from 'lodash';
-import {spec, matchRequest, checkDeepArray, defaultSize, upto5, cleanSizes, shuffle, getApi, bindUserId, getPlaybackmethod, getProtocols, cleanVast} from '../../../modules/districtmDMXBidAdapter.js';
+import { spec, matchRequest, checkDeepArray, defaultSize, upto5, cleanSizes, shuffle, getApi, bindUserId, getPlaybackmethod, getProtocols, cleanVast } from '../../../modules/districtmDMXBidAdapter.js';
 
 const sample_vast = `<VAST version="3.0">
     <Ad id="6">
@@ -144,8 +144,12 @@ const bidRequestVideo = [{
         'video/mp4'],
     }
   },
-  'mediaTypes': { video: {context: 'instream', // or 'outstream'
-    playerSize: [[640, 480]]} },
+  'mediaTypes': {
+    video: {
+      context: 'instream', // or 'outstream'
+      playerSize: [[640, 480]]
+    }
+  },
   'adUnitCode': 'div-gpt-ad-12345678-1',
   'transactionId': 'f6d13fa6-ebc1-41ac-9afa-d8171d22d2c2',
   'sizes': [
@@ -602,53 +606,53 @@ const emptyResponseSeatBid = { body: { seatbid: [] } };
 
 describe('DistrictM Adaptor', function () {
   const districtm = spec;
-  describe('verification of upto5', function() {
-    it('upto5 function should always break 12 imps into 3 request same for 15', function() {
+  describe('verification of upto5', function () {
+    it('upto5 function should always break 12 imps into 3 request same for 15', function () {
       expect(upto5([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], bidRequest, bidderRequest, 'https://google').length).to.be.equal(3)
       expect(upto5([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], bidRequest, bidderRequest, 'https://google').length).to.be.equal(3)
     })
   })
 
-  describe('test vast tag', function() {
-    it('img tag should not be present', function() {
+  describe('test vast tag', function () {
+    it('img tag should not be present', function () {
       expect(cleanVast(sample_vast).indexOf('img') !== -1).to.be.equal(false)
     })
   })
-  describe('Test getApi function', function() {
+  describe('Test getApi function', function () {
     const data = {
-      protocols: ['VPAID_1_0']
+      api: [1]
     }
-    it('Will return 1 for vpaid version 1', function() {
+    it('Will return 1 for vpaid version 1', function () {
       expect(getApi(data)[0]).to.be.equal(1)
     })
-    it('Will return 2 for vpaid default', function() {
+    it('Will return 2 for vpaid default', function () {
       expect(getApi({})[0]).to.be.equal(2)
     })
   })
 
-  describe('Test cleanSizes function', function() {
-    it('sequence will be respected', function() {
+  describe('Test cleanSizes function', function () {
+    it('sequence will be respected', function () {
       expect(cleanSizes(bidderRequest.bids[0].sizes).toString()).to.be.equal('300,250,300,600')
     })
-    it('sequence will be respected', function() {
+    it('sequence will be respected', function () {
       expect(cleanSizes([[728, 90], [970, 90], [300, 600], [320, 50]]).toString()).to.be.equal('728,90,320,50,300,600,970,90')
     })
   })
 
-  describe('Test getPlaybackmethod function', function() {
-    it('getPlaybackmethod will return 2', function() {
+  describe('Test getPlaybackmethod function', function () {
+    it('getPlaybackmethod will return 2', function () {
       expect(getPlaybackmethod([])[0]).to.be.equal(2)
     })
-    it('getPlaybackmethod will return 6', function() {
+    it('getPlaybackmethod will return 6', function () {
       expect(getPlaybackmethod(['viewport_sound_off'])[0]).to.be.equal(6)
     })
   })
 
-  describe('Test getProtocols function', function() {
-    it('getProtocols will return 3', function() {
-      expect(getProtocols({protocols: ['VAST_3_0']})[0]).to.be.equal(3)
+  describe('Test getProtocols function', function () {
+    it('getProtocols will return 3', function () {
+      expect(getProtocols({ protocols: [3] })[0]).to.be.equal(3)
     })
-    it('getProtocols will return 6', function() {
+    it('getProtocols will return 6', function () {
       expect(_.isEqual(getProtocols({}), [2, 3, 5, 6, 7, 8])).to.be.equal(true)
     })
   })
@@ -687,7 +691,7 @@ describe('DistrictM Adaptor', function () {
       memberid: 10003,
     };
     it(`function should return true`, function () {
-      expect(districtm.isBidRequestValid({params})).to.be.equal(true);
+      expect(districtm.isBidRequestValid({ params })).to.be.equal(true);
     });
     it(`function should return false`, function () {
       expect(districtm.isBidRequestValid({ params: { memberid: 12345 } })).to.be.equal(false);
@@ -716,19 +720,19 @@ describe('DistrictM Adaptor', function () {
     it(`the function should return an array`, function () {
       expect(buildRequestResults).to.be.an('object');
     });
-    it(`contain gdpr consent & ccpa`, function() {
+    it(`contain gdpr consent & ccpa`, function () {
       const bidr = JSON.parse(buildRequestResults.data)
       expect(bidr.regs.ext.gdpr).to.be.equal(1);
       expect(bidr.regs.ext.us_privacy).to.be.equal('1NY');
       expect(bidr.user.ext.consent).to.be.an('string');
     });
-    it(`test contain COPPA`, function() {
+    it(`test contain COPPA`, function () {
       const bidr = JSON.parse(buildRequestResults.data)
       bidr.regs = bidr.regs || {};
       bidr.regs.coppa = 1;
       expect(bidr.regs.coppa).to.be.equal(1)
     })
-    it(`test should not contain COPPA`, function() {
+    it(`test should not contain COPPA`, function () {
       const bidr = JSON.parse(buildRequestResultsNoCoppa.data)
       expect(bidr.regs.coppa).to.be.equal(0)
     })
@@ -737,17 +741,17 @@ describe('DistrictM Adaptor', function () {
     });
   });
 
-  describe('bidRequest Video testing', function() {
+  describe('bidRequest Video testing', function () {
     const request = districtm.buildRequests(bidRequestVideo, bidRequestVideo);
     const data = JSON.parse(request.data)
     expect(data instanceof Object).to.be.equal(true)
   })
 
   describe(`interpretResponse test usage`, function () {
-    const responseResults = districtm.interpretResponse(responses, {bidderRequest});
-    const emptyResponseResults = districtm.interpretResponse(emptyResponse, {bidderRequest});
-    const emptyResponseResultsNegation = districtm.interpretResponse(responsesNegative, {bidderRequest});
-    const emptyResponseResultsEmptySeat = districtm.interpretResponse(emptyResponseSeatBid, {bidderRequest});
+    const responseResults = districtm.interpretResponse(responses, { bidderRequest });
+    const emptyResponseResults = districtm.interpretResponse(emptyResponse, { bidderRequest });
+    const emptyResponseResultsNegation = districtm.interpretResponse(responsesNegative, { bidderRequest });
+    const emptyResponseResultsEmptySeat = districtm.interpretResponse(emptyResponseSeatBid, { bidderRequest });
     it(`the function should return an array`, function () {
       expect(responseResults).to.be.an('array');
     });
@@ -767,10 +771,10 @@ describe('DistrictM Adaptor', function () {
   });
 
   describe(`check validation for id sync gdpr ccpa`, () => {
-    let allin = spec.getUserSyncs({iframeEnabled: true}, {}, bidderRequest.gdprConsent, bidderRequest.uspConsent)[0]
-    let noCCPA = spec.getUserSyncs({iframeEnabled: true}, {}, bidderRequest.gdprConsent, null)[0]
-    let noGDPR = spec.getUserSyncs({iframeEnabled: true}, {}, null, bidderRequest.uspConsent)[0]
-    let nothing = spec.getUserSyncs({iframeEnabled: true}, {}, null, null)[0]
+    let allin = spec.getUserSyncs({ iframeEnabled: true }, {}, bidderRequest.gdprConsent, bidderRequest.uspConsent)[0]
+    let noCCPA = spec.getUserSyncs({ iframeEnabled: true }, {}, bidderRequest.gdprConsent, null)[0]
+    let noGDPR = spec.getUserSyncs({ iframeEnabled: true }, {}, null, bidderRequest.uspConsent)[0]
+    let nothing = spec.getUserSyncs({ iframeEnabled: true }, {}, null, null)[0]
 
     /*
 
@@ -793,10 +797,10 @@ describe('DistrictM Adaptor', function () {
   })
 
   describe(`Helper function testing`, function () {
-    const bid = matchRequest('29a28a1bbc8a8d', {bidderRequest});
-    const {width, height} = defaultSize(bid);
+    const bid = matchRequest('29a28a1bbc8a8d', { bidderRequest });
+    const { width, height } = defaultSize(bid);
     it(`test matchRequest`, function () {
-      expect(matchRequest('29a28a1bbc8a8d', {bidderRequest})).to.be.an('object');
+      expect(matchRequest('29a28a1bbc8a8d', { bidderRequest })).to.be.an('object');
     });
     it(`test checkDeepArray`, function () {
       expect(_.isEqual(checkDeepArray([728, 90]), [728, 90])).to.be.equal(true);

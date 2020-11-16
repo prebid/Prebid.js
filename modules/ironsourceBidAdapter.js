@@ -48,7 +48,7 @@ export const spec = {
       creativeId: body.requestId,
       currency: body.currency,
       netRevenue: body.netRevenue,
-      ttl: TTL,
+      ttl: body.ttl || TTL,
       vastXml: body.vastXml,
       mediaType: VIDEO
     };
