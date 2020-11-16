@@ -64,6 +64,7 @@ export const identityLinkSubmodule = {
         window.ats.retrieveEnvelope(function (envelope) {
           if (envelope) {
             utils.logInfo('An envelope can be retrieved from ATS!');
+            setEnvelopeSource(true);
             callback(JSON.parse(envelope).envelope);
           } else {
             getEnvelope(url, callback);
@@ -100,6 +101,7 @@ function getEnvelope(url, callback) {
   if (!storage.getCookie('_lr_retry_request')) {
     setRetryCookie();
     utils.logInfo('A 3P retrieval is attempted!');
+    setEnvelopeSource(false);
     ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
   }
 }
@@ -108,6 +110,12 @@ function setRetryCookie() {
   let now = new Date();
   now.setTime(now.getTime() + 3600000);
   storage.setCookie('_lr_retry_request', 'true', now.toUTCString());
+}
+
+function setEnvelopeSource(src) {
+  let now = new Date();
+  now.setTime(now.getTime() + 3600000);
+  storage.setCookie('_lr_env_src_ats', src, now.toUTCString());
 }
 
 submodule('userId', identityLinkSubmodule);
