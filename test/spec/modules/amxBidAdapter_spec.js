@@ -189,6 +189,45 @@ describe('AmxBidAdapter', () => {
       expect(data.tm).to.equal(true);
     });
 
+    it('if prebid is in an iframe, will use the frame url as domain, if the topmost is not avialable', () => {
+      const { data } = spec.buildRequests([sampleBidRequestBase], {
+        ...sampleBidderRequest,
+        refererInfo: {
+          numIframes: 1,
+          referer: 'http://search-traffic-source.com',
+          stack: []
+        }
+      });
+      expect(data.do).to.equal('localhost')
+      expect(data.re).to.equal('http://search-traffic-source.com');
+    });
+
+    it('if we are in AMP, make sure we use the canonical URL or the referrer (which is sourceUrl)', () => {
+      const { data } = spec.buildRequests([sampleBidRequestBase], {
+        ...sampleBidderRequest,
+        refererInfo: {
+          isAmp: true,
+          referer: 'http://real-publisher-site.com/content',
+          stack: []
+        }
+      });
+      expect(data.do).to.equal('real-publisher-site.com')
+      expect(data.re).to.equal('http://real-publisher-site.com/content');
+    })
+
+    it('if prebid is in an iframe, will use the topmost url as domain', () => {
+      const { data } = spec.buildRequests([sampleBidRequestBase], {
+        ...sampleBidderRequest,
+        refererInfo: {
+          numIframes: 1,
+          referer: 'http://search-traffic-source.com',
+          stack: ['http://top-site.com', 'http://iframe.com']
+        }
+      });
+      expect(data.do).to.equal('top-site.com');
+      expect(data.re).to.equal('http://search-traffic-source.com');
+    });
+
     it('handles referer data and GDPR, USP Consent, COPPA', () => {
       const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
       delete data.m; // don't deal with "m" in this test

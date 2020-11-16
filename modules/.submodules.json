@@ -15,7 +15,10 @@
     "intentIqIdSystem",
     "zeotapIdPlusIdSystem",
     "haloIdSystem",
-    "quantcastIdSystem"
+    "quantcastIdSystem",
+    "idxIdSystem",
+    "fabrickIdSystem",
+    "verizonMediaIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -23,7 +26,8 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
-    "audigentRtdProvider",
-    "jwplayerRtdProvider"
+    "haloRtdProvider",
+    "jwplayerRtdProvider",
+    "reconciliationRtdProvider"
   ]
 }

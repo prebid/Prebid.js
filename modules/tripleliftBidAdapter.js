@@ -3,20 +3,17 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 
+const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 let gdprApplies = true;
 let consentString = null;
 
 export const tripleliftAdapterSpec = {
-
+  gvlid: GVLID,
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
-    if (bid.mediaTypes.video) {
-      let video = _getORTBVideo(bid);
-      if (!video.w || !video.h) return false;
-    }
     return typeof bid.params.inventoryCode !== 'undefined';
   },
 
@@ -119,7 +116,8 @@ function _buildPostBody(bidRequests) {
       tagid: bidRequest.params.inventoryCode,
       floor: _getFloor(bidRequest)
     };
-    if (bidRequest.mediaTypes.video) {
+    // remove the else to support multi-imp
+    if (_isInstreamBidRequest(bidRequest)) {
       imp.video = _getORTBVideo(bidRequest);
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
@@ -145,6 +143,16 @@ function _buildPostBody(bidRequests) {
     data.ext = ext;
   }
   return data;
+}
+
+function _isInstreamBidRequest(bidRequest) {
+  if (!bidRequest.mediaTypes.video) return false;
+  if (!bidRequest.mediaTypes.video.context) return false;
+  if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 function _getORTBVideo(bidRequest) {
@@ -277,7 +285,7 @@ function _buildResponseObject(bidderRequest, bid) {
       meta: {}
     };
 
-    if (breq.mediaTypes.video) {
+    if (_isInstreamBidRequest(breq)) {
       bidResponse.vastXml = bid.ad;
       bidResponse.mediaType = 'video';
     };

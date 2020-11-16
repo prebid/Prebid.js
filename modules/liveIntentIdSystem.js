@@ -5,14 +5,32 @@
  * @requires module:modules/userId
  */
 import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import { triggerPixel } from '../src/utils.js';
+import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/cjs/live-connect.js';
-import { uspDataHandler } from '../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager(null, MODULE_NAME);
+const calls = {
+  ajaxGet: (url, onSuccess, onError, timeout) => {
+    ajaxBuilder(timeout)(
+      url,
+      {
+        success: onSuccess,
+        error: onError
+      },
+      undefined,
+      {
+        method: 'GET',
+        withCredentials: true
+      }
+    )
+  },
+  pixelGet: (url, onload) => triggerPixel(url, onload)
+}
 
 let eventFired = false;
 let liveConnect = null;
@@ -64,18 +82,30 @@ function initializeLiveConnect(configParams) {
   if (configParams.partner) {
     identityResolutionConfig.source = configParams.partner
   }
+  if (configParams.ajaxTimeout) {
+    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
+  }
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
+  if (configParams.emailHash) {
+    liveConnectConfig.eventSource = { hash: configParams.emailHash }
+  }
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
   }
+  const gdprConsent = gdprDataHandler.getConsentData()
+  if (gdprConsent) {
+    liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
+    liveConnectConfig.gdprConsent = gdprConsent.consentString;
+  }
 
-  // The second param is the storage object, which means that all LS & Cookie manipulation will go through PBJS utils.
-  liveConnect = LiveConnect(liveConnectConfig, storage);
+  // The second param is the storage object, LS & Cookie manipulation uses PBJS utils.
+  // The third param is the ajax and pixel object, the ajax and pixel use PBJS utils.
+  liveConnect = LiveConnect(liveConnectConfig, storage, calls);
   return liveConnect;
 }
 
@@ -100,10 +130,11 @@ export const liveIntentIdSubmodule = {
    * `publisherId` params.
    * @function
    * @param {{unifiedId:string}} value
-   * @param {SubmoduleParams|undefined} [configParams]
+   * @param {SubmoduleConfig|undefined} config
    * @returns {{lipb:Object}}
    */
-  decode(value, configParams) {
+  decode(value, config) {
+    const configParams = (config && config.params) || {};
     function composeIdObject(value) {
       const base = { 'lipbid': value['unifiedId'] };
       delete value.unifiedId;
@@ -121,20 +152,19 @@ export const liveIntentIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(configParams) {
+  getId(config) {
+    const configParams = (config && config.params) || {};
     const liveConnect = initializeLiveConnect(configParams);
     if (!liveConnect) {
       return;
     }
     tryFireEvent();
-    // Don't do the internal ajax call, but use the composed url and fire it via PBJS ajax module
-    const url = liveConnect.resolutionCallUrl();
-    const result = function (callback) {
-      const callbacks = {
-        success: response => {
+    const result = function(callback) {
+      liveConnect.resolve(
+        response => {
           let responseObj = {};
           if (response) {
             try {
@@ -145,14 +175,14 @@ export const liveIntentIdSubmodule = {
           }
           callback(responseObj);
         },
-        error: error => {
+        error => {
           utils.logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
           callback();
         }
-      };
-      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
-    };
-    return {callback: result};
+      )
+    }
+
+    return { callback: result };
   }
 };
 
