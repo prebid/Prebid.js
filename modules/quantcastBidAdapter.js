@@ -21,7 +21,7 @@ export const QUANTCAST_PROTOCOL = 'https';
 export const QUANTCAST_PORT = '8443';
 export const QUANTCAST_FPA = '__qca';
 
-export const storage = getStorageManager();
+export const storage = getStorageManager(QUANTCAST_VENDOR_ID, BIDDER_CODE);
 
 function makeVideoImp(bid) {
   const video = {};
@@ -118,7 +118,7 @@ let hasUserSynced = false;
  */
 export const spec = {
   code: BIDDER_CODE,
-  GVLID: 11,
+  GVLID: QUANTCAST_VENDOR_ID,
   supportedMediaTypes: ['banner', 'video'],
 
   /**
