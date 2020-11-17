@@ -236,7 +236,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
         clientBidderCodes.length = 0;
       }
 
-      let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig, clientBidderCodes);
+      let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
       let tid = utils.generateUUID();
       adaptersServerSide.forEach(bidderCode => {
         const bidderRequestId = utils.getUniqueIdentifierStr();
