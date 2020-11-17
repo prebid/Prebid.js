@@ -255,7 +255,8 @@ const MOCK = {
         'sizes': [[640, 480]],
         'bidId': '2ecff0db240757',
         'bidderRequestId': '1be65d7958826a',
-        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'src': 'client'
       },
       {
         'bidder': 'rubicon',
@@ -279,7 +280,8 @@ const MOCK = {
         'sizes': [[1000, 300], [970, 250], [728, 90]],
         'bidId': '3bd4ebb1c900e2',
         'bidderRequestId': '1be65d7958826a',
-        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'src': 's2s'
       }
     ],
     'auctionStart': 1519149536560,
