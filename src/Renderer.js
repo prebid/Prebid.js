@@ -115,11 +115,21 @@ function isRendererPreferredFromAdUnit(adUnitCode) {
   const adUnit = find(adUnits, adUnit => {
     return adUnit.code === adUnitCode;
   });
-  return !!(adUnit &&
-    (
-      (adUnit.renderer && adUnit.renderer.url && adUnit.renderer.render && !(utils.isBoolean(adUnit.renderer.backupOnly) && adUnit.renderer.backupOnly)) ||
-      (adUnit.mediaTypes && adUnit.mediaTypes.video && adUnit.mediaTypes.video.renderer.url && adUnit.mediaTypes.video.renderer.render &&
-        !(utils.isBoolean(adUnit.mediaTypes.video.renderer.backupOnly) && adUnit.mediaTypes.video.renderer.backupOnly))
-    )
+
+  if (!adUnit) {
+    return false
+  }
+
+  // renderer defined at adUnit level
+  const adUnitRenderer = utils.deepAccess(adUnit, 'renderer');
+  const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
+
+  // renderer defined at adUnit.mediaTypes level
+  const mediaTypeRenderer = utils.deepAccess(adUnit, 'mediaTypes.video.renderer');
+  const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render)
+
+  return !!(
+    (hasValidAdUnitRenderer && !(adUnitRenderer.backupOnly === true)) ||
+    (hasValidMediaTypeRenderer && !(mediaTypeRenderer.backupOnly === true))
   );
 }
