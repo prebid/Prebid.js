@@ -1245,9 +1245,9 @@ describe('the rubicon adapter', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
               clonedBid.userIdAsEids = [{
-                source: "catchall",
+                source: 'catchall',
                 uids: [{
-                  id: "11111",
+                  id: '11111',
                   atype: 2
                 }]
               }]
