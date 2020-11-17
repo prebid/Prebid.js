@@ -42,7 +42,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', 'cleanmedia', '9MediaOnline'],
+  aliases: ['gambid', 'cleanmedia', '9MediaOnline', 'MobfoxX'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {

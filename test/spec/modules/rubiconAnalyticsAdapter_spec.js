@@ -310,6 +310,7 @@ const MOCK = {
   ],
   BIDDER_DONE: {
     'bidderCode': 'rubicon',
+    'serverResponseTimeMs': 42,
     'bids': [
       BID,
       Object.assign({}, BID2, {

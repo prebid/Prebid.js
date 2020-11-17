@@ -287,6 +287,7 @@ describe('Adagio bid adapter', () => {
       'pageviewId',
       'adUnits',
       'regs',
+      'user',
       'schain',
       'prebidVersion',
       'adapterVersion',
@@ -573,6 +574,53 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.regs.ccpa).to.be.empty;
       });
     });
+
+    describe('with userID modules', function() {
+      const userId = {
+        sharedid: {id: '01EAJWWNEPN3CYMM5N8M5VXY22', third: '01EAJWWNEPN3CYMM5N8M5VXY22'},
+        unsuported: '666'
+      }
+
+      it('should send "user.eids" in the request for Prebid.js supported modules only', function() {
+        const bid01 = new BidRequestBuilder({
+          userId
+        }).withParams().build();
+
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        const expected = [{
+          source: 'sharedid.org',
+          uids: [
+            {
+              atype: 1,
+              ext: {
+                third: '01EAJWWNEPN3CYMM5N8M5VXY22'
+              },
+              id: '01EAJWWNEPN3CYMM5N8M5VXY22'
+            }
+          ]
+        }]
+
+        expect(requests[0].data.user.eids).to.have.lengthOf(1)
+        expect(requests[0].data.user.eids).to.deep.equal(expected)
+      })
+
+      it('should send an empty "user.eids" array in the request if userId module is unsupported', function() {
+        const bid01 = new BidRequestBuilder({
+          userId: {
+            unsuported: '666'
+          }
+        }).withParams().build();
+
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.user.eids).to.be.empty
+      })
+    })
   });
 
   describe('interpretResponse()', function() {

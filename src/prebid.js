@@ -259,6 +259,18 @@ $$PREBID_GLOBAL$$.getNoBids = function () {
 };
 
 /**
+ * This function returns the bids requests involved in an auction but not bid on or the specified adUnitCode
+ * @param  {string} adUnitCode adUnitCode
+ * @alias module:pbjs.getNoBidsForAdUnitCode
+ * @return {Object}           bidResponse object
+ */
+
+$$PREBID_GLOBAL$$.getNoBidsForAdUnitCode = function (adUnitCode) {
+  const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
+  return { bids };
+};
+
+/**
  * This function returns the bid responses at the given moment.
  * @alias module:pbjs.getBidResponses
  * @return {Object}            map | object that contains the bidResponses
