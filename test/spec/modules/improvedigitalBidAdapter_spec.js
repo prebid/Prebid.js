@@ -154,6 +154,8 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.version).to.equal(`${spec.version}-${idClient.CONSTANTS.CLIENT_VERSION}`);
       expect(params.bid_request.gdpr).to.not.exist;
       expect(params.bid_request.us_privacy).to.not.exist;
+      expect(params.bid_request.schain).to.not.exist;
+      expect(params.bid_request.user).to.not.exist;
       expect(params.bid_request.imp).to.deep.equal([
         {
           id: '33e9500b21129f',
@@ -343,6 +345,22 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.schain).to.equal(schain);
+    });
+
+    it('should add eids', function () {
+      const userId = { id5id:	{ uid: '1111' } };
+      const expectedUserObject = { ext: { eids: [{
+        source: 'id5-sync.com',
+        uids: [{
+          atype: 1,
+          id: '1111'
+        }]
+      }]}};
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.userId = userId;
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.user).to.deep.equal(expectedUserObject);
     });
 
     it('should return 2 requests', function () {

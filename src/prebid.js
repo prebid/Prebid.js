@@ -149,7 +149,14 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
 
   adUnits.forEach(adUnit => {
     const mediaTypes = adUnit.mediaTypes;
+    const bids = adUnit.bids;
     let validatedBanner, validatedVideo, validatedNative;
+
+    if (!bids || !utils.isArray(bids)) {
+      utils.logError(`Detected adUnit.code '${adUnit.code}' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction.`);
+      return;
+    }
+
     if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
       utils.logError(`Detected adUnit.code '${adUnit.code}' did not have a 'mediaTypes' object defined.  This is a required field for the auction, so this adUnit has been removed.`);
       return;
@@ -249,6 +256,18 @@ function getBids(type) {
 $$PREBID_GLOBAL$$.getNoBids = function () {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getNoBids', arguments);
   return getBids('getNoBids');
+};
+
+/**
+ * This function returns the bids requests involved in an auction but not bid on or the specified adUnitCode
+ * @param  {string} adUnitCode adUnitCode
+ * @alias module:pbjs.getNoBidsForAdUnitCode
+ * @return {Object}           bidResponse object
+ */
+
+$$PREBID_GLOBAL$$.getNoBidsForAdUnitCode = function (adUnitCode) {
+  const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
+  return { bids };
 };
 
 /**
