@@ -295,6 +295,24 @@ describe('BeachfrontAdapter', function () {
           }]
         });
       });
+
+      it('must add the IdentityLink ID to the request', () => {
+        const idl_env = '4321';
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.userId = { idl_env };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.user.ext.eids[0]).to.deep.equal({
+          source: 'liveramp.com',
+          uids: [{
+            id: idl_env,
+            ext: {
+              rtiPartner: 'idl'
+            }
+          }]
+        });
+      });
     });
 
     describe('for banner bids', function () {
@@ -434,6 +452,16 @@ describe('BeachfrontAdapter', function () {
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
         expect(data.tdid).to.equal(tdid);
+      });
+
+      it('must add the IdentityLink ID to the request', () => {
+        const idl_env = '4321';
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.userId = { idl_env };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.idl).to.equal(idl_env);
       });
     });
 
