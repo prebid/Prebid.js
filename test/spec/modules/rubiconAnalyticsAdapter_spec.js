@@ -1080,6 +1080,31 @@ describe('rubicon analytics adapter', function () {
         expect(message).to.deep.equal(expectedMessage);
       });
 
+      it('should use the query utm param rubicon kv value and pass updated kv and pvid when defined', function () {
+        let fpkvsStub = sinon.stub(utils, 'getWindowSelf').returns({'location': {'search': '?utm_source=other'}});
+
+        config.setConfig({rubicon: {
+          fpkvs: {
+            source: 'fb',
+            link: 'email'
+          }
+        }});
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
+        expectedMessage.fpkvs = [
+          {key: 'source', value: 'other'},
+          {key: 'link', value: 'email'}
+        ]
+        expect(message).to.deep.equal(expectedMessage);
+        fpkvsStub.restore();
+      });
+
       it('should pick up existing localStorage and use its values', function () {
         // set some localStorage
         let inputlocalStorage = {
@@ -1130,6 +1155,62 @@ describe('rubicon analytics adapter', function () {
           fpkvs: { source: 'tw', link: 'email' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
+      });
+
+      it('should overwrite matching localstorge value and use its remaining values', function () {
+        let fpkvsStub = sinon.stub(utils, 'getWindowSelf').returns({'location': {'search': '?utm_source=fb&utm_click=dog'}});
+        // set some localStorage
+        let inputlocalStorage = {
+          id: '987654',
+          start: 1519766113781, // 15 mins before "now"
+          expires: 1519787713781, // six hours later
+          lastSeen: 1519766113781,
+          fpkvs: { source: 'tw', link: 'email' }
+        };
+        getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
+
+        config.setConfig({rubicon: {
+          fpkvs: {
+            link: 'email' // should merge this with what is in the localStorage!
+          }
+        }});
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session = {
+          id: '987654',
+          start: 1519766113781,
+          expires: 1519787713781,
+          pvid: expectedPvid
+        }
+        expectedMessage.fpkvs = [
+          {key: 'source', value: 'fb'},
+          {key: 'link', value: 'email'},
+          {key: 'click', value: 'dog'}
+        ]
+        expect(message).to.deep.equal(expectedMessage);
+
+        let calledWith;
+        try {
+          calledWith = JSON.parse(atob(setDataInLocalStorageStub.getCall(0).args[1]));
+        } catch (e) {
+          calledWith = {};
+        }
+
+        expect(calledWith).to.deep.equal({
+          id: '987654', // should have stayed same
+          start: 1519766113781, // should have stayed same
+          expires: 1519787713781, // should have stayed same
+          lastSeen: 1519767013781, // lastSeen updated to our "now"
+          fpkvs: { source: 'fb', link: 'email', click: 'dog' }, // link merged in
+          pvid: expectedPvid // new pvid stored
+        });
+
+        fpkvsStub.restore();
       });
 
       it('should throw out session if lastSeen > 30 mins ago and create new one', function () {

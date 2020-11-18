@@ -351,7 +351,19 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
   ]);
 }
 
+/*
+  Filters and converts URL Params into an object and returns only KVs that match the 'utm_KEY' format
+*/
+function getUtmParams() {
+  let win = utils.getWindowSelf();
+  let obj = Object.fromEntries(win.location.search && win.location.search.substring(1).split(/&/g).filter(param => param.match(/utm_/)).map(obj => obj.replace(/utm_/, '').split(/=/)));
+
+  return obj;
+}
+
 function getFpkvs() {
+  rubiConf.fpkvs = Object.assign((rubiConf.fpkvs || {}), getUtmParams());
+
   const isValid = rubiConf.fpkvs && typeof rubiConf.fpkvs === 'object' && Object.keys(rubiConf.fpkvs).every(key => typeof rubiConf.fpkvs[key] === 'string');
   return isValid ? rubiConf.fpkvs : {};
 }
