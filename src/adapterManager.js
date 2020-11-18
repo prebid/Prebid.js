@@ -306,7 +306,6 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       bidRequest['uspConsent'] = uspDataHandler.getConsentData();
     });
   }
-
   return bidRequests;
 }, 'makeBidRequests');
 

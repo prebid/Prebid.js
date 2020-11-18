@@ -767,7 +767,7 @@ describe('adapterManager tests', function () {
       'start': 1462918897460
     },
     {
-      'bidderCode': 'rubicon',
+      'bidderCode': 'pubmatic',
       'auctionId': '1863e370099523',
       'bidderRequestId': '2946b569352ef2',
       'tid': '2342342342lfi23',
@@ -788,7 +788,7 @@ describe('adapterManager tests', function () {
           ],
           'bids': [
             {
-              'bidder': 'rubicon',
+              'bidder': 'pubmatic',
               'params': {
                 'placementId': '543221',
                 'test': 'me'
@@ -827,7 +827,7 @@ describe('adapterManager tests', function () {
           ],
           'bids': [
             {
-              'bidder': 'rubicon',
+              'bidder': 'pubmatic',
               'params': {
                 'placementId': '5324321'
               },
@@ -853,7 +853,7 @@ describe('adapterManager tests', function () {
       ],
       'bids': [
         {
-          'bidder': 'rubicon',
+          'bidder': 'pubmatic',
           'params': {
             'placementId': '4799418',
             'test': 'me'
@@ -877,7 +877,7 @@ describe('adapterManager tests', function () {
           'transactionId': '4r42r23r23'
         },
         {
-          'bidder': 'rubicon',
+          'bidder': 'pubmatic',
           'params': {
             'placementId': '4799418'
           },

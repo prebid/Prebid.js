@@ -893,7 +893,7 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.meta = bidObject.meta || {};
           if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
 
-          // TODO: Remove when prebid-server returns ttl and netRevenue
+          // the OpenRTB location for "TTL" as understood by Prebid.js is "exp" (expiration).
           const configTtl = s2sConfig.defaultTtl || DEFAULT_S2S_TTL;
           bidObject.ttl = (bid.exp) ? bid.exp : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
