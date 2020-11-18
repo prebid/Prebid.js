@@ -152,6 +152,19 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
+
+      let gdprConsent = {
+        'gdprApplies': true,
+        'consentString': gdprConsentString
+      }
+      let syncOptions = {
+        'pixelEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null);
+      expect(userSyncs).to.deep.equal([{
+        type: 'image',
+        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=1FW-SSP-gdprConsent-'
+      }]);
     });
   })
 
@@ -226,6 +239,19 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
+
+      let gdprConsent = {
+        'gdprApplies': true,
+        'consentString': gdprConsentString
+      }
+      let syncOptions = {
+        'pixelEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null);
+      expect(userSyncs).to.deep.equal([{
+        type: 'image',
+        url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=1FW-SSP-gdprConsent-'
+      }]);
     });
   })
 
