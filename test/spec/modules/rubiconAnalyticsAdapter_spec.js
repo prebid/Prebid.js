@@ -1081,7 +1081,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should use the query utm param rubicon kv value and pass updated kv and pvid when defined', function () {
-        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=other'});
+        let fpvks = sinon.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=other'});
 
         config.setConfig({rubicon: {
           fpkvs: {
@@ -1102,6 +1102,8 @@ describe('rubicon analytics adapter', function () {
           {key: 'link', value: 'email'}
         ]
         expect(message).to.deep.equal(expectedMessage);
+
+        fpvks.restore();
       });
 
       it('should pick up existing localStorage and use its values', function () {
@@ -1157,7 +1159,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should overwrite matching localstorge value and use its remaining values', function () {
-        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=fb&utm_click=dog'});
+        let fpkvs = sinon.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=fb&utm_click=dog'});
 
         // set some localStorage
         let inputlocalStorage = {
@@ -1192,6 +1194,7 @@ describe('rubicon analytics adapter', function () {
           {key: 'link', value: 'email'},
           {key: 'click', value: 'dog'}
         ]
+
         expect(message).to.deep.equal(expectedMessage);
 
         let calledWith;
@@ -1209,6 +1212,7 @@ describe('rubicon analytics adapter', function () {
           fpkvs: { source: 'fb', link: 'email', click: 'dog' }, // link merged in
           pvid: expectedPvid // new pvid stored
         });
+        fpkvs.restore();
       });
 
       it('should throw out session if lastSeen > 30 mins ago and create new one', function () {
