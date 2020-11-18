@@ -125,7 +125,7 @@ function sendMessage(auctionId, bidWonId) {
         if (source) {
           return source;
         }
-        return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
+        return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.some(s2sBidder => s2sBidder.toLowerCase() === bid.bidder) !== -1
           ? 'server' : 'client'
       },
       'clientLatencyMillis',
@@ -533,7 +533,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             'bidder', bidder => bidder.toLowerCase(),
             'bidId',
             'status', () => 'no-bid', // default a bid to no-bid until response is recieved or bid is timed out
-            'finalSource as source',
+            'source', () => formatSource(bid.src),
             'params', (params, bid) => {
               switch (bid.bidder) {
                 // specify bidder params we want here
