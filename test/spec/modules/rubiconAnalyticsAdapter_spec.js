@@ -1081,7 +1081,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should use the query utm param rubicon kv value and pass updated kv and pvid when defined', function () {
-        sandbox.stub(utils, 'getWindowSelf').returns({'location': {'search': '?utm_source=other'}});
+        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=other'});
 
         config.setConfig({rubicon: {
           fpkvs: {
@@ -1157,7 +1157,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should overwrite matching localstorge value and use its remaining values', function () {
-        sandbox.stub(utils, 'getWindowSelf').returns({'location': {'search': '?utm_source=fb&utm_click=dog'}});
+        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=fb&utm_click=dog'});
 
         // set some localStorage
         let inputlocalStorage = {

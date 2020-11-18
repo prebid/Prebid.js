@@ -355,8 +355,14 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
   Filters and converts URL Params into an object and returns only KVs that match the 'utm_KEY' format
 */
 function getUtmParams() {
-  let win = utils.getWindowSelf();
-  let obj = Object.fromEntries(win.location.search && win.location.search.substring(1).split(/&/g).filter(param => param.match(/utm_/)).map(obj => obj.replace(/utm_/, '').split(/=/)));
+  let search = utils.parseQS(utils.getWindowLocation().search);
+  let obj = {};
+
+  for (var k in search) {
+    if (k.match(/utm_/)) {
+      obj[k.replace(/utm_/, '')] = search[k];
+    }
+  }
 
   return obj;
 }
