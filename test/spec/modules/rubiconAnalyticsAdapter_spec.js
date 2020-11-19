@@ -552,12 +552,11 @@ function performStandardAuction(gptEvents) {
 describe('rubicon analytics adapter', function () {
   let sandbox;
   let clock;
-  let getDataFromLocalStorageStub, setDataInLocalStorageStub, localStorageIsEnabledStub, getUtmQueryStub;
+  let getDataFromLocalStorageStub, setDataInLocalStorageStub, localStorageIsEnabledStub;
   beforeEach(function () {
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
     localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
-    getUtmQueryStub = sinon.stub(utils, 'parseQS');
     mockGpt.disable();
     sandbox = sinon.sandbox.create();
 
@@ -589,7 +588,6 @@ describe('rubicon analytics adapter', function () {
     getDataFromLocalStorageStub.restore();
     setDataInLocalStorageStub.restore();
     localStorageIsEnabledStub.restore();
-    getUtmQueryStub.restore();
   });
 
   it('should require accountId', function () {
@@ -1083,7 +1081,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should use the query utm param rubicon kv value and pass updated kv and pvid when defined', function () {
-        getUtmQueryStub.returns({'utm_source': 'other', 'pbjs_debug': 'true'});
+        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=other', 'pbjs_debug': 'true'});
 
         config.setConfig({rubicon: {
           fpkvs: {
@@ -1103,6 +1101,10 @@ describe('rubicon analytics adapter', function () {
           {key: 'source', value: 'other'},
           {key: 'link', value: 'email'}
         ]
+
+        message.fpkvs.sort((left, right) => left.key < right.key);
+        expectedMessage.fpkvs.sort((left, right) => left.key < right.key);
+
         expect(message).to.deep.equal(expectedMessage);
       });
 
@@ -1159,7 +1161,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       it('should overwrite matching localstorge value and use its remaining values', function () {
-        getUtmQueryStub.returns({'utm_source': 'fb', 'pbjs_debug': 'true', 'utm_click': 'dog'});
+        sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=fb&utm_click=dog'});
 
         // set some localStorage
         let inputlocalStorage = {
@@ -1167,7 +1169,7 @@ describe('rubicon analytics adapter', function () {
           start: 1519766113781, // 15 mins before "now"
           expires: 1519787713781, // six hours later
           lastSeen: 1519766113781,
-          fpkvs: { source: 'tw' }
+          fpkvs: { source: 'tw', link: 'email' }
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
@@ -1194,6 +1196,9 @@ describe('rubicon analytics adapter', function () {
           {key: 'link', value: 'email'},
           {key: 'click', value: 'dog'}
         ]
+
+        message.fpkvs.sort((left, right) => left.key < right.key);
+        expectedMessage.fpkvs.sort((left, right) => left.key < right.key);
 
         expect(message).to.deep.equal(expectedMessage);
 
