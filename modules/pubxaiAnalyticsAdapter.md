@@ -14,7 +14,7 @@ Analytics adapter for prebid provided by Pubx.ai. Contact alex@pubx.ai for infor
   provider: 'pubxai',
     options : {
       pubxId: 'xxx',
-      hostName: 'https://example.com',
+      hostName: 'example.com',
       samplingRate: 1
     }
 }
