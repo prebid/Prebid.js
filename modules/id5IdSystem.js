@@ -42,27 +42,58 @@ export const id5IdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function decode
    * @param {(Object|string)} value
+   * @param {SubmoduleConfig|undefined} config
    * @returns {(Object|undefined)}
    */
-  decode(value) {
-    let uid;
+  decode(value, config) {
+    let universalUid;
     let linkType = 0;
 
     if (value && typeof value.universal_uid === 'string') {
-      uid = value.universal_uid;
+      universalUid = value.universal_uid;
       linkType = value.link_type || linkType;
     } else {
       return undefined;
     }
 
-    return {
-      'id5id': {
-        'uid': uid,
-        'ext': {
-          'linkType': linkType
+    // check for A/B testing configuration and hide ID if in Control Group
+    let abConfig = (config && config.params && config.params.abTesting) || { enabled: false };
+    let controlGroup = false;
+    if (
+      abConfig.enabled === true &&
+      (!utils.isNumber(abConfig.controlGroupPct) ||
+        abConfig.controlGroupPct < 0 ||
+        abConfig.controlGroupPct > 1)
+    ) {
+      // A/B Testing is enabled, but configured improperly, so skip A/B testing
+      utils.logError('User ID - ID5 submodule: A/B Testing controlGroupPct must be a number >= 0 and <= 1! Skipping A/B Testing');
+    } else if (
+      abConfig.enabled === true &&
+      Math.random() < abConfig.controlGroupPct
+    ) {
+      // A/B Testing is enabled and user is in the Control Group, so do not share the ID5 ID
+      utils.logInfo('User ID - ID5 submodule: A/B Testing Enabled - request is in the Control Group, so the ID5 ID is NOT exposed');
+      universalUid = linkType = 0;
+      controlGroup = true;
+    } else if (abConfig.enabled === true) {
+      // A/B Testing is enabled but user is not in the Control Group, so ID5 ID is shared
+      utils.logInfo('User ID - ID5 submodule: A/B Testing Enabled - request is NOT in the Control Group, so the ID5 ID is exposed');
+    }
+
+    let responseObj = {
+      id5id: {
+        uid: universalUid,
+        ext: {
+          linkType: linkType
         }
       }
     };
+
+    if (abConfig.enabled === true) {
+      utils.deepSetValue(responseObj, 'id5id.ext.abTestingControlGroup', controlGroup);
+    }
+
+    return responseObj;
   },
 
   /**
