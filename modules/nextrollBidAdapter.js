@@ -30,12 +30,12 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     let topLocation = utils.parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
-    let consent = hasCCPAConsent(bidderRequest);
-    return validBidRequests.map((bidRequest, index) => {
+
+    return validBidRequests.map((bidRequest) => {
       return {
         method: 'POST',
         options: {
-          withCredentials: consent,
+          withCredentials: true,
         },
         url: BIDDER_ENDPOINT,
         data: {
@@ -59,9 +59,10 @@ export const spec = {
           site: _getSite(bidRequest, topLocation),
           seller: _getSeller(bidRequest),
           device: _getDevice(bidRequest),
+          regs: _getRegs(bidderRequest)
         }
-      }
-    })
+      };
+    });
   },
 
   /**
@@ -82,22 +83,22 @@ export const spec = {
 }
 
 function _getBanner(bidRequest) {
-  let sizes = _getSizes(bidRequest)
-  if (sizes === undefined) return undefined
-  return {format: sizes}
+  let sizes = _getSizes(bidRequest);
+  if (sizes === undefined) return undefined;
+  return {format: sizes};
 }
 
 function _getNative(mediaTypeNative) {
-  if (mediaTypeNative === undefined) return undefined
-  let assets = _getNativeAssets(mediaTypeNative)
-  if (assets === undefined || assets.length == 0) return undefined
+  if (mediaTypeNative === undefined) return undefined;
+  let assets = _getNativeAssets(mediaTypeNative);
+  if (assets === undefined || assets.length == 0) return undefined;
   return {
     request: {
       native: {
         assets: assets
       }
     }
-  }
+  };
 }
 
 /*
@@ -114,44 +115,44 @@ const NATIVE_ASSET_MAP = [
   {id: 4, kind: 'img', key: 'logo', type: 2},
   {id: 5, kind: 'data', key: 'sponsoredBy', type: 1},
   {id: 6, kind: 'data', key: 'body', type: 2}
-]
+];
 
 const ASSET_KIND_MAP = {
   title: _getTitleAsset,
   img: _getImageAsset,
   data: _getDataAsset,
-}
+};
 
 function _getAsset(mediaTypeNative, assetMap) {
-  let asset = mediaTypeNative[assetMap.key]
-  if (asset === undefined) return undefined
-  let assetFunc = ASSET_KIND_MAP[assetMap.kind]
+  const asset = mediaTypeNative[assetMap.key];
+  if (asset === undefined) return undefined;
+  const assetFunc = ASSET_KIND_MAP[assetMap.kind];
   return {
     id: assetMap.id,
     required: (assetMap.required || !!asset.required) ? 1 : 0,
     [assetMap.kind]: assetFunc(asset, assetMap)
-  }
+  };
 }
 
 function _getTitleAsset(title, _assetMap) {
-  return {len: title.len || 0}
+  return {len: title.len || 0};
 }
 
 function _getMinAspectRatio(aspectRatio, property) {
-  if (!utils.isPlainObject(aspectRatio)) return 1
+  if (!utils.isPlainObject(aspectRatio)) return 1;
 
-  let ratio = aspectRatio['ratio_' + property]
-  let min = aspectRatio['min_' + property]
+  const ratio = aspectRatio['ratio_' + property];
+  const min = aspectRatio['min_' + property];
 
-  if (utils.isNumber(ratio)) return ratio
-  if (utils.isNumber(min)) return min
+  if (utils.isNumber(ratio)) return ratio;
+  if (utils.isNumber(min)) return min;
 
-  return 1
+  return 1;
 }
 
 function _getImageAsset(image, assetMap) {
-  let sizes = image.sizes
-  let aspectRatio = image.aspect_ratios ? image.aspect_ratios[0] : undefined
+  const sizes = image.sizes;
+  const aspectRatio = image.aspect_ratios ? image.aspect_ratios[0] : undefined;
 
   return {
     type: assetMap.type,
@@ -159,24 +160,26 @@ function _getImageAsset(image, assetMap) {
     h: (sizes ? sizes[1] : undefined),
     wmin: _getMinAspectRatio(aspectRatio, 'width'),
     hmin: _getMinAspectRatio(aspectRatio, 'height'),
-  }
+  };
 }
 
 function _getDataAsset(data, assetMap) {
   return {
     type: assetMap.type,
     len: data.len || 0
-  }
+  };
 }
 
 function _getNativeAssets(mediaTypeNative) {
-  return NATIVE_ASSET_MAP.map(assetMap => _getAsset(mediaTypeNative, assetMap)).filter(asset => asset !== undefined)
+  return NATIVE_ASSET_MAP
+    .map(assetMap => _getAsset(mediaTypeNative, assetMap))
+    .filter(asset => asset !== undefined);
 }
 
 function _getUser(requests) {
-  let id = utils.deepAccess(requests, '0.userId.nextroll');
+  const id = utils.deepAccess(requests, '0.userId.nextroll');
   if (id === undefined) {
-    return
+    return;
   }
 
   return {
@@ -186,7 +189,7 @@ function _getUser(requests) {
         id
       }]
     }
-  }
+  };
 }
 
 function _buildResponse(bidResponse, bid) {
@@ -200,15 +203,15 @@ function _buildResponse(bidResponse, bid) {
     currency: 'USD',
     netRevenue: true,
     ttl: 300
-  }
+  };
   if (utils.isStr(bid.adm)) {
-    response.mediaType = BANNER
-    response.ad = utils.replaceAuctionPrice(bid.adm, bid.price)
+    response.mediaType = BANNER;
+    response.ad = utils.replaceAuctionPrice(bid.adm, bid.price);
   } else {
-    response.mediaType = NATIVE
-    response.native = _getNativeResponse(bid.adm, bid.price)
+    response.mediaType = NATIVE;
+    response.native = _getNativeResponse(bid.adm, bid.price);
   }
-  return response
+  return response;
 }
 
 const privacyLink = 'https://info.evidon.com/pub_info/573';
@@ -222,30 +225,30 @@ function _getNativeResponse(adm, price) {
     impressionTrackers: adm.imptrackers.map(impTracker => utils.replaceAuctionPrice(impTracker, price)),
     privacyLink: privacyLink,
     privacyIcon: privacyIcon
-  }
+  };
   return adm.assets.reduce((accResponse, asset) => {
-    let assetMaps = NATIVE_ASSET_MAP.filter(assetMap => assetMap.id === asset.id && asset[assetMap.kind] !== undefined)
-    if (assetMaps.length === 0) return accResponse
-    let assetMap = assetMaps[0]
-    accResponse[assetMap.key] = _getAssetResponse(asset, assetMap)
-    return accResponse
-  }, baseResponse)
+    const assetMaps = NATIVE_ASSET_MAP.filter(assetMap => assetMap.id === asset.id && asset[assetMap.kind] !== undefined);
+    if (assetMaps.length === 0) return accResponse;
+    const assetMap = assetMaps[0];
+    accResponse[assetMap.key] = _getAssetResponse(asset, assetMap);
+    return accResponse;
+  }, baseResponse);
 }
 
 function _getAssetResponse(asset, assetMap) {
   switch (assetMap.kind) {
     case 'title':
-      return asset.title.text
+      return asset.title.text;
 
     case 'img':
       return {
         url: asset.img.url,
         width: asset.img.w,
         height: asset.img.h
-      }
+      };
 
     case 'data':
-      return asset.data.value
+      return asset.data.value;
   }
 }
 
@@ -256,25 +259,25 @@ function _getSite(bidRequest, topLocation) {
     publisher: {
       id: utils.getBidIdParameter('publisherId', bidRequest.params)
     }
-  }
+  };
 }
 
 function _getSeller(bidRequest) {
   return {
     id: utils.getBidIdParameter('sellerId', bidRequest.params)
-  }
+  };
 }
 
 function _getSizes(bidRequest) {
   if (!utils.isArray(bidRequest.sizes)) {
-    return undefined
+    return undefined;
   }
   return bidRequest.sizes.filter(_isValidSize).map(size => {
     return {
       w: size[0],
       h: size[1]
     }
-  })
+  });
 }
 
 function _isValidSize(size) {
@@ -288,7 +291,18 @@ function _getDevice(_bidRequest) {
     language: navigator['language'],
     os: _getOs(navigator.userAgent.toLowerCase()),
     osv: _getOsVersion(navigator.userAgent)
+  };
+}
+
+function _getRegs(bidderRequest) {
+  if (!bidderRequest || !bidderRequest.uspConsent) {
+    return undefined;
   }
+  return {
+    ext: {
+      us_privacy: bidderRequest.uspConsent
+    }
+  };
 }
 
 function _getOs(userAgent) {
@@ -308,7 +322,7 @@ function _getOs(userAgent) {
 }
 
 function _getOsVersion(userAgent) {
-  let clientStrings = [
+  const clientStrings = [
     { s: 'Android', r: /Android/ },
     { s: 'iOS', r: /(iPhone|iPad|iPod)/ },
     { s: 'Mac OS X', r: /Mac OS X/ },
@@ -326,28 +340,6 @@ function _getOsVersion(userAgent) {
   ];
   let cs = find(clientStrings, cs => cs.r.test(userAgent));
   return cs ? cs.s : 'unknown';
-}
-
-export function hasCCPAConsent(bidderRequest) {
-  if (bidderRequest === undefined) return true;
-  if (typeof bidderRequest.uspConsent !== 'string') {
-    return true;
-  }
-  const usps = bidderRequest.uspConsent;
-  const version = usps[0];
-
-  // If we don't support the consent string, assume no-consent.
-  if (version !== '1' || usps.length < 3) {
-    return false;
-  }
-
-  const notice = usps[1];
-  const optOut = usps[2];
-
-  if (notice === 'N' || optOut === 'Y') {
-    return false;
-  }
-  return true;
 }
 
 registerBidder(spec);
