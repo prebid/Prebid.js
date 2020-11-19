@@ -18,6 +18,15 @@ Connects to Adagio demand source to fetch bids.
           banner: {
             sizes: [[300, 250], [300, 600]],
           }
+          video: {
+            outstream: {
+              context: 'outstream',
+              playerSize: [640, 480],
+              mimes: ['video/mp4'],
+              skip: 1
+              // Other OpenRTB 2.5 video options…
+            }
+          }
         },
         bids: [{
           bidder: 'adagio', // Required
@@ -38,6 +47,10 @@ Connects to Adagio demand source to fetch bids.
             category: 'sport', // Recommended. Category of the content displayed in the page.
             subcategory: 'handball', // Optional. Subcategory of the content displayed in the page.
             postBid: false // Optional. Use it in case of Post-bid integration only.
+            video: {
+              skip: 0
+              // OpenRTB 2.5 video options defined here override ones defined in mediaTypes.
+            }
           }
         }]
       }
