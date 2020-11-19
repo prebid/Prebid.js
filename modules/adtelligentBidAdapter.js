@@ -18,10 +18,10 @@ const HOST_GETTERS = {
   appaloosa: function () {
     return 'ghb.hb.appaloosa.media';
   },
-  onefiftytwomedia: function(){
+  onefiftytwomedia: function() {
     return 'ghb.ads.152media.com';
   },
-  mediafuse: function(){
+  mediafuse: function() {
     return 'ghb.hbmp.mediafuse.com';
   }
 
