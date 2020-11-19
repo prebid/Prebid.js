@@ -1167,7 +1167,7 @@ describe('rubicon analytics adapter', function () {
           start: 1519766113781, // 15 mins before "now"
           expires: 1519787713781, // six hours later
           lastSeen: 1519766113781,
-          fpkvs: { source: 'tw', link: 'email' }
+          fpkvs: { source: 'tw' }
         };
         getDataFromLocalStorageStub.withArgs('rpaSession').returns(btoa(JSON.stringify(inputlocalStorage)));
 
@@ -1195,7 +1195,7 @@ describe('rubicon analytics adapter', function () {
           {key: 'click', value: 'dog'}
         ]
 
-        expect(message.fpkvs).to.deep.equal(expectedMessage.fpkvs);
+        expect(message).to.deep.equal(expectedMessage);
 
         let calledWith;
         try {
