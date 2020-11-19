@@ -99,6 +99,16 @@ function collectUtmTagData() {
   return pmUtmTags;
 }
 
+function collectPageInfo() {
+  const pageInfo = {
+    domain: window.location.hostname,
+  }
+  if (document.referrer) {
+    pageInfo.referrerDomain = utils.parseUrl(document.referrer).hostname;
+  }
+  return pageInfo;
+}
+
 function flush() {
   if (!pmAnalyticsEnabled) {
     return;
@@ -111,6 +121,7 @@ function flush() {
       bundleId: initOptions.bundleId,
       events: _eventQueue,
       utmTags: collectUtmTagData(),
+      pageInfo: collectPageInfo(),
     };
 
     ajax(
