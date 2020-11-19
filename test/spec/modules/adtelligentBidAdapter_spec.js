@@ -11,7 +11,10 @@ const EXPECTED_ENDPOINTS = [
   'https://ghb.adtelligent.com/v2/auction/'
 ];
 const aliasEP = {
-  appaloosa: 'https://hb.appaloosa.media/v2/auction/'
+  appaloosa: 'https://ghb.hb.appaloosa.media/v2/auction/',
+  appaloosa_publisherSuffix: 'https://ghb.hb.appaloosa.media/v2/auction/',
+  onefiftytwomedia: 'https://ghb.ads.152media.com/v2/auction/',
+  mediafuse: 'https://ghb.hbmp.mediafuse.com/v2/auction/'
 };
 const DISPLAY_REQUEST = {
   'bidder': 'adtelligent',
