@@ -3,7 +3,7 @@
 ```
 Module Name:  Appnexus Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: john.flack@xandr.com, jason.snellbaker@xandr.com
+Maintainer: prebid-js@xandr.com
 ```
 
 # Description
