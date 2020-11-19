@@ -26,7 +26,7 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
-    "audigentRtdProvider",
+    "haloRtdProvider",
     "jwplayerRtdProvider",
     "reconciliationRtdProvider"
   ]

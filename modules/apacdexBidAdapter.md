@@ -1,15 +1,15 @@
 # Overview
 
 ```
-Module Name: Quantum Digital Exchange Bidder Adapter
+Module Name: APAC Digital Exchange Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: ken@quantumdex.io
+Maintainer: ken@apacdex.com
 ```
 
 # Description
 
-Connects to Quantum Digital Exchange for bids.
-Quantumdex bid adapter supports Banner and Video (Instream and Outstream) ads.
+Connects to APAC Digital Exchange for bids.
+Apacdex bid adapter supports Banner and Video (Instream and Outstream) ads.
 
 # Test Parameters
 ```
@@ -23,9 +23,9 @@ var adUnits = [
     },
     bids: [
       {
-          bidder: 'quantumdex',
+          bidder: 'apacdex',
           params: {
-              siteId: 'quantumdex-site-id', // siteId provided by Quantumdex
+              siteId: 'apacdex1234', // siteId provided by Apacdex
           }
       }
     ]
@@ -46,9 +46,9 @@ var videoAdUnit = {
   },
   bids: [
     {
-      bidder: 'quantumdex',
+      bidder: 'apacdex',
       params: {
-        siteId: 'quantumdex-site-id', // siteId provided by Quantumdex
+        siteId: 'apacdex1234', // siteId provided by Apacdex
       }
     }
   ]
