@@ -1195,7 +1195,7 @@ describe('rubicon analytics adapter', function () {
           {key: 'click', value: 'dog'}
         ]
 
-        expect(message).to.deep.equal(expectedMessage);
+        expect(message.fpkvs).to.deep.equal(expectedMessage.fpkvs);
 
         let calledWith;
         try {
