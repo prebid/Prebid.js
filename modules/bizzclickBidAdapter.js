@@ -294,7 +294,6 @@ const addVideoParameters = (bidRequest) => {
     }
   }
 
-
   const size = parseSizes(bidRequest, 'video');
   videoObj.w = size[0];
   videoObj.h = size[1];

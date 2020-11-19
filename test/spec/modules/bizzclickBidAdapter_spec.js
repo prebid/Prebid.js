@@ -44,7 +44,7 @@ const BANNER_BID_REQUEST = {
   code: 'banner_example',
   mediaTypes: {
     banner: {
-      sizes: [[300, 250], [300,600]]
+      sizes: [[300, 250], [300, 600]]
     }
   },
   bidder: 'bizzclick',
@@ -62,42 +62,39 @@ const bidRequest = {
   }
 }
 
-const VIDEO_BID_REQUEST ={
-    code: 'video1',
-    sizes: [640,480],
-    mediaTypes: { video: {
-      minduration:0,
-                maxduration:999,
-                boxingallowed:1,
-                skip:0,
-                mimes:[
-                    'application/javascript',
-                    'video/mp4'
-                ],
-                w:1920,
-                h:1080,
-                protocols:[
-                    2
-                ],
-                linearity:1,
-                api:[
-                    1,
-                    2
-                ]
-    }
+const VIDEO_BID_REQUEST = {
+  code: 'video1',
+  sizes: [640, 480],
+  mediaTypes: { video: {
+    minduration: 0,
+    maxduration: 999,
+    boxingallowed: 1,
+    skip: 0,
+    mimes: [
+      'application/javascript',
+      'video/mp4'
+    ],
+    w: 1920,
+    h: 1080,
+    protocols: [
+      2
+    ],
+    linearity: 1,
+    api: [
+      1,
+      2
+    ]
+  }
   },
 
-                bidder: 'bizzclick',
-                params: {
-                      placementId: 'hash',
-                            accountId: 'accountId'
-                }
-                ,
-                timeout: 1000
+  bidder: 'bizzclick',
+  params: {
+    placementId: 'hash',
+    accountId: 'accountId'
+  },
+  timeout: 1000
 
-  }
-
-
+}
 
 const BANNER_BID_RESPONSE = {
   id: 'request_id',
@@ -155,7 +152,7 @@ const NATIVE_BID_RESPONSE = {
           {
             assets: [
               {id: 0, title: 'dummyText'},
-              {id: 3, image: imgData}, 
+              {id: 3, image: imgData},
               {
                 id: 5,
                 data: {value: 'organization.name'}
@@ -242,7 +239,6 @@ describe('BizzclickAdapter', function() {
       expect(request.url).to.exist;
       expect(request.data).to.exist;
     });
-
 
     it('sends bid request to our endpoint via POST', function () {
       expect(request.method).to.equal('POST');
