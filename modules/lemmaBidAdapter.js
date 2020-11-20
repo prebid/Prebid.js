@@ -147,17 +147,6 @@ function parseRTBResponse(request, response) {
   return bidResponses;
 }
 
-function checkMediaType(adm, newBid) {
-  // Create a regex here to check the strings
-  var admStr = '';
-  var videoRegex = new RegExp(/VAST\s+version/);
-  if (adm.indexOf('span class="PubAPIAd"') >= 0) {
-    newBid.mediaType = VIDEO;
-  } else {
-    newBid.mediaType = BANNER;
-  }
-}
-
 function oRTBTemplate(bidRequests, conf) {
   try {
     var oRTBObject = {
