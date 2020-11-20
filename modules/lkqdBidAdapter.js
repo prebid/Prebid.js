@@ -148,6 +148,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       if (bidRequest.params.hasOwnProperty('dnt') && bidRequest.params.dnt != null) {
         sspData.dnt = bidRequest.params.dnt;
       }
+      if (bidRequest.params.hasOwnProperty('coppa') && bidRequest.params.coppa != null) {
+        sspData.coppa = bidRequest.params.coppa;
+      }
       if (bidRequest.params.hasOwnProperty('pageurl') && bidRequest.params.pageurl != null) {
         sspData.pageurl = bidRequest.params.pageurl;
       } else if (bidderRequest && bidderRequest.refererInfo) {
@@ -176,6 +179,12 @@ function buildRequests(validBidRequests, bidderRequest) {
       sspData.bidId = bidRequest.bidId;
       sspData.bidWidth = playerWidth;
       sspData.bidHeight = playerHeight;
+
+      for (let k = 1; k <= 40; k++) {
+        if (bidRequest.params.hasOwnProperty(`c${k}`) && bidRequest.params[`c${k}`]) {
+          sspData[`c${k}`] = bidRequest.params[`c${k}`];
+        }
+      }
 
       bidRequests.push({
         method: 'GET',
