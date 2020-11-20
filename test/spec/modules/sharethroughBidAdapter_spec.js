@@ -14,7 +14,8 @@ const bidRequests = [
     },
     userId: {
       tdid: 'fake-tdid',
-      pubcid: 'fake-pubcid'
+      pubcid: 'fake-pubcid',
+      idl_env: 'fake-identity-link'
     },
     crumbs: {
       pubcid: 'fake-pubcid-in-crumbs-obj'
@@ -333,6 +334,11 @@ describe('sharethrough adapter spec', function() {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       delete bidRequest.userId;
       expect(bidRequest.data.pubcid).to.eq('fake-pubcid');
+    });
+
+    it('should add the idluid parameter if a bid request contains a value for Identity Link from Live Ramp', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.idluid).to.eq('fake-identity-link');
     });
 
     it('should add Sharethrough specific parameters', function() {

@@ -56,6 +56,10 @@ export const sharethroughAdapterSpec = {
         query.pubcid = bidRequest.crumbs.pubcid;
       }
 
+      if (bidRequest.userId && bidRequest.userId.idl_env) {
+        query.idluid = bidRequest.userId.idl_env;
+      }
+
       if (bidRequest.schain) {
         query.schain = JSON.stringify(bidRequest.schain);
       }
