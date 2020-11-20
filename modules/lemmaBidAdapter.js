@@ -122,9 +122,9 @@ function parseRTBResponse(request, response) {
             newBid.dealId = bid.dealid;
           }
           if (req.imp && req.imp.length > 0) {
-            newBid.mediaType = req.mediaType;
             req.imp.forEach(robj => {
               if (bid.impid === robj.id) {
+                _checkMediaType(bid.adm, newBid);
                 switch (newBid.mediaType) {
                   case BANNER:
                     break;
@@ -145,6 +145,17 @@ function parseRTBResponse(request, response) {
     utils.logError(LOG_WARN_PREFIX, 'ERROR ', error);
   }
   return bidResponses;
+}
+
+function checkMediaType(adm, newBid) {
+  // Create a regex here to check the strings
+  var admStr = '';
+  var videoRegex = new RegExp(/VAST\s+version/);
+  if (adm.indexOf('span class="PubAPIAd"') >= 0) {
+    newBid.mediaType = VIDEO;
+  } else {
+    newBid.mediaType = BANNER;
+  }
 }
 
 function oRTBTemplate(bidRequests, conf) {
@@ -424,4 +435,13 @@ function parse(rawResp) {
   return null;
 }
 
+function _checkMediaType(adm, newBid) {
+  // Create a regex here to check the strings
+  var videoRegex = new RegExp(/VAST.*version/);
+  if (videoRegex.test(adm)) {
+    newBid.mediaType = VIDEO;
+  } else {
+    newBid.mediaType = BANNER;
+  }
+}
 registerBidder(spec);
