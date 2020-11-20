@@ -331,5 +331,39 @@ describe('lemmaBidAdapter', function() {
         });
       });
     });
+    describe('getUserSyncs', function() {
+      const syncurl_iframe = 'https://sync.lemmatechnologies.com/js/usersync.html?pid=1001';
+      let sandbox;
+      beforeEach(function() {
+        sandbox = sinon.sandbox.create();
+      });
+      afterEach(function() {
+        sandbox.restore();
+      });
+
+      it('execute as per config', function() {
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'iframe', url: syncurl_iframe
+        }]);
+      });
+
+      it('CCPA/USP', function() {
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&us_privacy=1NYN`
+        }]);
+      });
+
+      it('GDPR', function() {
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=0&gdpr_consent=foo`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=`
+        }]);
+      });
+    });
   });
 });

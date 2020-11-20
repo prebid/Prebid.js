@@ -89,6 +89,7 @@ export const id5IdSubmodule = {
       'nbPage': incrementNb(config.params.partner),
       'o': 'pbjs',
       'pd': config.params.pd || '',
+      'provider': config.params.provider || '',
       'rf': referer.referer,
       's': signature,
       'top': referer.reachedTop ? 1 : 0,
