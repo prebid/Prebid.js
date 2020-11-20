@@ -40,12 +40,32 @@ const bidRequests = [
       iframe: true,
       iframeSize: [500, 500]
     }
-  }
+  },
+  {
+    bidder: 'sharethrough',
+    bidId: 'bidId4',
+    sizes: [[700, 400]],
+    placementCode: 'bar',
+    params: {
+      pkey: 'dddd4444',
+      badv: ['domain1.com', 'domain2.com']
+    }
+  },
+  {
+    bidder: 'sharethrough',
+    bidId: 'bidId5',
+    sizes: [[700, 400]],
+    placementCode: 'bar',
+    params: {
+      pkey: 'eeee5555',
+      bcat: ['IAB1-1', 'IAB1-2']
+    }
+  },
 ];
 
 const prebidRequests = [
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -57,7 +77,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -69,7 +89,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -82,7 +102,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -94,7 +114,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -225,7 +245,7 @@ describe('sharethrough adapter spec', function() {
 
       expect(builtBidRequests[0].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
       expect(builtBidRequests[1].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
-      expect(builtBidRequests[0].method).to.eq('GET');
+      expect(builtBidRequests[0].method).to.eq('POST');
     });
 
     it('should set the instant_play_capable parameter correctly based on browser userAgent string', function() {
@@ -344,6 +364,18 @@ describe('sharethrough adapter spec', function() {
 
       const builtBidRequest = spec.buildRequests([bidRequest])[0];
       expect(builtBidRequest.data.schain).to.eq(JSON.stringify(bidRequest.schain));
+    });
+
+    it('should add badv if provided', () => {
+      const builtBidRequest = spec.buildRequests([bidRequests[3]])[0];
+
+      expect(builtBidRequest.data.badv).to.have.members(['domain1.com', 'domain2.com'])
+    });
+
+    it('should add bcat if provided', () => {
+      const builtBidRequest = spec.buildRequests([bidRequests[4]])[0];
+
+      expect(builtBidRequest.data.bcat).to.have.members(['IAB1-1', 'IAB1-2'])
     });
 
     it('should not add a supply chain parameter if schain is missing', function() {
