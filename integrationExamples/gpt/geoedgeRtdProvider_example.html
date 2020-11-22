@@ -1,10 +1,6 @@
 <!--
-  This page calls a single bidder for a single ad slot. It can be considered a "hello world" example for using
-  Prebid with the Google Publisher Tag.
-  It also makes a good test page for new adapter PR submissions. Simply set your server's Bid Params object in the
-  bids array inside the adUnits, and it will use your adapter to load an ad.
-  NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
-  set an alias in your /etc/hosts file so that you can load this page from a different domain.
+  This page contains an example of Geoedge real time data module integration.
+  The Prebid setup other than the Geoedge real time data module is identical to /hello_world.html.
 -->
 
 <html>
@@ -46,13 +42,16 @@
 
         pbjs.que.push(function() {
             pbjs.addAdUnits(adUnits);
+			// Call setConfig with Geoedge as RTD provider
 			pbjs.setConfig({
 				realTimeData: {
 					dataProviders: [{
 						name: 'geoedge',
 						params: {
+								// Example key, contact Geoedge to get your key
 							key: 'b954f7bb-9e26-427e-90f7-0c617382176a',
 							bidders: {
+								// Replace 'appnexus' the bidder name you want to monitor, if you aren't using appnexus in your build
 								'appnexus': true
 							}
 						}
