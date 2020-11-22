@@ -22,14 +22,14 @@ import { generateUUID, insertElement, isEmpty, logError } from '../src/utils.js'
 /** @type {string} */
 const SUBMODULE_NAME = 'geoedge';
 /** @type {string} */
-export const WRAPPER_URL = '//wrappers.geoedge.be/wrapper.html';
+export const WRAPPER_URL = 'https://wrappers.geoedge.be/wrapper.html';
 /** @type {string} */
 /* eslint-disable no-template-curly-in-string */
 export const HTML_PLACEHOLDER = '${creative}';
 /** @type {string} */
 const PV_ID = generateUUID();
 /** @type {string} */
-const HOST_NAME = '//rumcdn.geoedge.be';
+const HOST_NAME = 'https://rumcdn.geoedge.be';
 /** @type {string} */
 const FILE_NAME = 'grumi.js';
 /** @type {function} */
@@ -118,11 +118,11 @@ function getMacros(bid, key) {
  * @return {string}
  */
 function replaceMacros(wrapper, macros) {
-  let key;
-  for (key in macros) {
-    wrapper = wrapper.replace(key, replacer(macros[key]));
-  }
-  return wrapper;
+  var re = new RegExp('\\' + Object.keys(macros).join('|'), 'gi');
+
+  return wrapper.replace(re, function(matched) {
+    return macros[matched];
+  });
 }
 
 /**
@@ -173,8 +173,8 @@ function isSupportedBidder(bidder, paramsBidders) {
  */
 function shouldWrap(bid, params) {
   let supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
-  let wap = params.wap ? preloaded : true;
-  return wrapperReady && supportedBidder && wap;
+  let donePreload = params.wap ? preloaded : true;
+  return wrapperReady && supportedBidder && donePreload;
 }
 
 function conditionallyWrap(bidResponse, config, userConsent) {
