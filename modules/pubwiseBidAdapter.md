@@ -14,6 +14,8 @@ Connects to PubWise exchange for bids.
 
 With isTest parameter the system will respond in whatever dimensions provided.
 
+## Banner
+
 ```
 var adUnits = [
     {
@@ -24,11 +26,46 @@ var adUnits = [
         }
         },
         bids: [{
-            siteId: "XXXXXX",
-            spotId: "12345678",
-            isTest: false
+            bidder: 'pubwise',
+            params: {
+                siteId: "XXXXXX",
+                spotId: "12345678",
+                isTest: false
+            }
         }]
     }
 ]
+```
+ ## Native
+```
+ {
+    code: 'native-div',
+    sizes: [[1, 1]],
+    mediaTypes: {
+    native: {
+        title: {
+        required: true
+        },
+        body: {
+        required: true
+        },
+        image: {
+        required: true
+        },
+        sponsoredBy: {
+        required: true
+        },
+        icon: {
+        required: false
+        }
+    }
+    },
+    bids: [{
+        bidder: 'pubwise',
+        params: {
+            spotId: "12345678N"
+        }
+    }]
+}
 ```
 

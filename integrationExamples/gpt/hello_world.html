@@ -15,21 +15,34 @@
         var FAILSAFE_TIMEOUT = 3300;
         var PREBID_TIMEOUT = 1000;
 
-        var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
+        var adUnits = [ {
+            code: 'native-div',
+            sizes: [[1, 1]],
             mediaTypes: {
-                banner: {
-                    sizes: [[300, 250], [300,600]],
+            native: {
+                title: {
+                    required: true
+                },
+                body: {
+                    required: true
+                },
+                image: {
+                    required: true
+                },
+                sponsoredBy: {
+                    required: true
+                },
+                icon: {
+                    required: false
                 }
+            }
             },
-            // Replace this object to test a new Adapter!
             bids: [{
-                bidder: 'appnexus',
+                bidder: 'pubwise',
                 params: {
-                    placementId: 13144370
+                    spotId: "12345678N"
                 }
             }]
-
         }];
 
         var pbjs = pbjs || {};
@@ -72,6 +85,7 @@
     <script>
         googletag.cmd.push(function () {
             googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[1,1]], 'div-gpt-ad-1460505748561-1').addService(googletag.pubads());
 
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
@@ -85,6 +99,11 @@
 <div id='div-gpt-ad-1460505748561-0'>
     <script type='text/javascript'>
         googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+    </script>
+</div>
+<div id='div-gpt-ad-1460505748561-1'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-1'); });
     </script>
 </div>
 </body>

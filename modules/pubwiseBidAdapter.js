@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 // import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-// import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 const VERSION = '0.0.1';
 const BIDDER_CODE = 'pubwise';
 const ENDPOINT_URL = 'https://bid.pubwise.io/prebid';
@@ -9,6 +9,7 @@ const ENDPOINT_URL = 'https://bid.pubwise.io/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, NATIVE],
   /**
      * Determines whether or not the given bid request is valid.
      *
@@ -57,6 +58,7 @@ export const spec = {
     if (serverResponseBody.Responses) {
       serverResponseBody.Responses.forEach(serverBid => {
         utils.logInfo(serverBid);
+        if (rtbBid.rtb[NATIVE]) {
         const bidResponse = {
           requestId: serverBid.RequestID,
           cpm: serverBid.CPM,
