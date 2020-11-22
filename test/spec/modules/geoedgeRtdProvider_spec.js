@@ -85,7 +85,7 @@ describe('Geoedge RTD module', function () {
         expect(geoedgeSubmodule.init(makeConfig())).to.equal(true);
       });
       it('should preload the client', function () {
-        let isLinkPreloadAsScript = arg => arg.tagName === 'LINK' && arg.rel === 'preload' && arg.as === 'script' && arg.href.indexOf(getClientUrl(key)) > 4;
+        let isLinkPreloadAsScript = arg => arg.tagName === 'LINK' && arg.rel === 'preload' && arg.as === 'script' && arg.href === getClientUrl(key);
         expect(insertElementStub.calledWith(sinon.match(isLinkPreloadAsScript))).to.equal(true);
       });
     });
