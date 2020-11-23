@@ -28,9 +28,9 @@ var adUnits = [
         bids: [{
             bidder: 'pubwise',
             params: {
-                siteId: "XXXXXX",
+                siteId: "xxxxxx",
                 spotId: "12345678",
-                isTest: false
+                isTest: true
             }
         }]
     }
@@ -38,34 +38,39 @@ var adUnits = [
 ```
  ## Native
 ```
- {
-    code: 'native-div',
-    sizes: [[1, 1]],
-    mediaTypes: {
-    native: {
-        title: {
-        required: true
-        },
-        body: {
-        required: true
-        },
-        image: {
-        required: true
-        },
-        sponsoredBy: {
-        required: true
-        },
-        icon: {
-        required: false
+var adUnits = [
+    {
+        code: 'native-div',
+        sizes: [[1, 1]],
+        mediaTypes: {
+        native: {
+            title: {
+            required: true
+            },
+            body: {
+            required: true
+            },
+            image: {
+            required: true
+            },
+            sponsoredBy: {
+            required: true
+            },
+            icon: {
+            required: false
+            }
         }
+        },
+        bids: [{
+            bidder: 'pubwise',
+            params: {
+                siteId: "xxxxxx",
+                spotId: "N12345678",
+                isTest: true
+            }
+        }]
     }
-    },
-    bids: [{
-        bidder: 'pubwise',
-        params: {
-            spotId: "12345678N"
-        }
-    }]
-}
+]
+
 ```
 

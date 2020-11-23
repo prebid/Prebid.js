@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 // import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 const VERSION = '0.0.1';
 const BIDDER_CODE = 'pubwise';
 const ENDPOINT_URL = 'https://bid.pubwise.io/prebid';
@@ -53,12 +53,11 @@ export const spec = {
     const serverResponseBody = serverResponse.body;
     const bidResponses = [];
 
-    utils.logInfo(serverResponseBody);
+    utils.logInfo('PubWise Server Response Body', serverResponseBody);
 
-    if (serverResponseBody.Responses) {
-      serverResponseBody.Responses.forEach(serverBid => {
-        utils.logInfo(serverBid);
-        if (rtbBid.rtb[NATIVE]) {
+    if (serverResponseBody.Banner) {
+      serverResponseBody.Banner.forEach(serverBid => {
+        utils.logInfo('Banner Bid', serverBid);
         const bidResponse = {
           requestId: serverBid.RequestID,
           cpm: serverBid.CPM,
@@ -72,6 +71,52 @@ export const spec = {
           referrer: '',
           ad: serverBid.Ad
         };
+        bidResponses.push(bidResponse);
+      });
+    }
+
+    if (serverResponseBody.Native) {
+      serverResponseBody.Native.forEach(serverBid => {
+        utils.logInfo('Native Bid', serverBid);
+        const bidResponse = {
+          requestId: serverBid.RequestID,
+          cpm: serverBid.CPM,
+          width: serverBid.Width,
+          height: serverBid.Height,
+          creativeId: serverBid.CreativeID,
+          dealId: serverBid.DealID,
+          currency: serverBid.Currency,
+          netRevenue: serverBid.NetRevenue,
+          ttl: serverBid.TTL,
+          referrer: ''
+        };
+        bidResponse[NATIVE] = {
+          title: serverBid['Native'].Title,
+          body: serverBid['Native'].Body,
+          cta: '',
+          sponsoredBy: serverBid['Native'].Body,
+          image: {
+            url: serverBid['Native'].Image.URL,
+            height: serverBid['Native'].Image.Height,
+            width: serverBid['Native'].Image.Width,
+          },
+          icon: {
+            url: serverBid['Native'].Icon.URL,
+            height: serverBid['Native'].Icon.Height,
+            width: serverBid['Native'].Icon.Width,
+          },
+          clickUrl: '',
+          impressionTrackers: '',
+        }
+        if (serverBid['Native'].ClickUrl) {
+          bidResponse[NATIVE].clickUrl = serverBid['Native'].ClickUrl;
+        }
+        if (serverBid['Native'].impressionTrackers) {
+          bidResponse[NATIVE].impressionTrackers = serverBid['Native'].impressionTrackers;
+        }
+        if (serverBid['Native'].CTA) {
+          bidResponse[NATIVE].cta = serverBid['Native'].CTA;
+        }
         bidResponses.push(bidResponse);
       });
     }
