@@ -30,7 +30,24 @@ const REQUEST = {
       'id': 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
       'atype': 1
     }]
-  }]
+  }],
+  'schain': {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'indirectseller.com',
+        'sid': '1',
+        'hp': 1
+      },
+      {
+        'asi': 'indirectseller2.com',
+        'name': 'indirectseller2 name with comma , and bang !',
+        'sid': '2',
+        'hp': 1
+      }
+    ]
+  }
 }
 
 const RESPONSE = {
@@ -107,6 +124,10 @@ describe('yieldlabBidAdapter', function () {
       expect(request.url).to.include('extraParam=true&foo=bar')
     })
 
+    it('passes unencoded schain string to bid request', function () {
+      expect(request.url).to.include('schain=1.0,1!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,')
+    })
+
     const refererRequest = spec.buildRequests(bidRequests, {
       refererInfo: {
         canonicalUrl: undefined,
@@ -115,6 +136,12 @@ describe('yieldlabBidAdapter', function () {
         referer: 'https://www.yieldlab.de/test?with=querystring',
         stack: ['https://www.yieldlab.de/test?with=querystring']
       }
+    })
+
+    it('passes unencoded schain string to bid request when complete == 0', function () {
+      REQUEST.schain.complete = 0;
+      const request = spec.buildRequests([REQUEST])
+      expect(request.url).to.include('schain=1.0,0!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,')
     })
 
     it('passes encoded referer to bid request', function () {

@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const GLVID = 744;
+const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
 const BIDDER_CODE = 'vidazoo';
 const BIDDER_VERSION = '1.0.0';
@@ -24,7 +24,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'pubcid': 1,
   'tdid': 1,
 };
-const storage = getStorageManager(GLVID);
+const storage = getStorageManager(GVLID);
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
@@ -116,6 +116,9 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
           break;
         case 'parrableId':
           payloadRef[key] = userId.eid;
+          break;
+        case 'id5id':
+          payloadRef[key] = userId.uid;
           break;
         default:
           payloadRef[key] = userId;
@@ -263,6 +266,7 @@ export function tryParseJSON(value) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   version: BIDDER_VERSION,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
