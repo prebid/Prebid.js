@@ -166,7 +166,7 @@ const USER_IDS_CONFIG = {
 
   // Neustar Fabrick
   'fabrickId': {
-    source: 'agkn.com',
+    source: 'home.neustar',
     atype: 1
   }
 };
