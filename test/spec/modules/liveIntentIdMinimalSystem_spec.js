@@ -146,11 +146,11 @@ describe('LiveIntentMinimalId', function() {
     getDataFromLocalStorageStub.withArgs('_li_duid').returns(oldCookie);
     getDataFromLocalStorageStub.withArgs('_thirdPC').returns('third-pc');
     const configParams = { params: {
-        ...defaultConfigParams.params,
-        ...{
-          'identifiersToResolve': ['_thirdPC']
-        }
-      }};
+      ...defaultConfigParams.params,
+      ...{
+        'identifiersToResolve': ['_thirdPC']
+      }
+    }};
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
@@ -168,11 +168,11 @@ describe('LiveIntentMinimalId', function() {
     getCookieStub.returns(null);
     getDataFromLocalStorageStub.withArgs('_thirdPC').returns({'key': 'value'});
     const configParams = { params: {
-        ...defaultConfigParams.params,
-        ...{
-          'identifiersToResolve': ['_thirdPC']
-        }
-      }};
+      ...defaultConfigParams.params,
+      ...{
+        'identifiersToResolve': ['_thirdPC']
+      }
+    }};
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);

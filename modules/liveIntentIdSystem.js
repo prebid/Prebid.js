@@ -11,7 +11,7 @@ import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/esm/initializer.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { MinimalLiveConnect } from "live-connect-js/esm/minimal-live-connect.js";
+import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js';
 
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager(null, MODULE_NAME);
@@ -65,7 +65,7 @@ function initializeLiveConnect(configParams) {
   }
 
   const publisherId = configParams.publisherId || 'any';
-    const identityResolutionConfig = {
+  const identityResolutionConfig = {
     source: 'prebid',
     publisherId: publisherId
   };
