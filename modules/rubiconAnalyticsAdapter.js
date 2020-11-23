@@ -356,7 +356,6 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
 */
 function getUtmParams() {
   let search;
-  let obj = {};
 
   try {
     search = utils.parseQS(utils.getWindowLocation().search);
@@ -364,13 +363,12 @@ function getUtmParams() {
     search = {};
   }
 
-  for (var k in search) {
-    if (k.match(/utm_/)) {
-      obj[k.replace(/utm_/, '')] = search[k];
+  return Object.keys(search).reduce((accum, param) => {
+    if (param.match(/utm_/)) {
+      accum[param.replace(/utm_/, '')] = search[param];
     }
-  }
-
-  return obj;
+    return accum;
+  }, {});
 }
 
 function getFpkvs() {
