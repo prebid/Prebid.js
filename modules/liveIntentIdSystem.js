@@ -83,9 +83,6 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
-  if (configParams.emailHash) {
-    liveConnectConfig.eventSource = { hash: configParams.emailHash }
-  }
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
@@ -99,6 +96,9 @@ function initializeLiveConnect(configParams) {
   // The second param is the storage object, LS & Cookie manipulation uses PBJS utils.
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS utils.
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
+  if (configParams.emailHash) {
+    liveConnect.push({ hash: configParams.emailHash })
+  }
   return liveConnect;
 }
 
