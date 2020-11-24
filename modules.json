@@ -1,0 +1,20 @@
+[
+    "appnexusBidAdapter",
+    "ixBidAdapter",
+    "lkqdBidAdapter",
+    "oneVideoBidAdapter",
+    "openxBidAdapter",
+    "pubmaticBidAdapter",
+    "rhythmoneBidAdapter",
+    "rubiconBidAdapter",
+    "spotxBidAdapter",
+    "telariaBidAdapter",
+    "medianetBidAdapter",
+    "admanBidAdapter",
+    "ironsourceBidAdapter",
+    "adpod",
+    "consentManagement",
+    "currency",
+    "priceFloors",
+    "schain"
+]
