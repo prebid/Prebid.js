@@ -51,7 +51,6 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    // loop through serverResponses {
     try {
       const {body: {ads = []} = {}} = serverResponse;
       ads.forEach((bidResponse) => {
@@ -85,17 +84,6 @@ export const spec = {
         frm.forEach((url) => pixels.push({type: 'iframe', url}));
       }
     });
-    // if (syncOptions.iframeEnabled && serverResponses.length > 0) {
-    //   const account = serverResponses[0].account;
-    //   if (account) {
-    //     let syncurl = USER_SYNC_BASE_URL + '?account=' + account;
-    //     if (gdprConsent) {
-    //       syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-    //       syncurl += '&consentString=' + encodeURIComponent(gdprConsent.consentString || '');
-    //     }
-    //     return [{type: 'iframe', url: syncurl}];
-    //   }
-    // }
     return pixels;
   }
 };
