@@ -78,15 +78,13 @@ export const id5IdSubmodule = {
       return undefined;
     }
 
-    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
-    const gdprConsentString = hasGdpr ? consentData.consentString : '';
-    const usp = uspDataHandler.getConsentData() || '';
     const url = `https://id5-sync.com/g/v2/${config.params.partner}.json`;
+    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const referer = getRefererInfo();
     const signature = (cacheIdObj && cacheIdObj.signature) ? cacheIdObj.signature : getLegacyCookieSignature();
     const data = {
       'gdpr': hasGdpr,
-      'gdpr_consent': gdprConsentString,
+      'gdpr_consent': hasGdpr ? consentData.consentString : '',
       'partner': config.params.partner,
       'nbPage': incrementNb(config.params.partner),
       'o': 'pbjs',
@@ -96,7 +94,7 @@ export const id5IdSubmodule = {
       's': signature,
       'top': referer.reachedTop ? 1 : 0,
       'u': referer.stack[0] || window.location.href,
-      'us_privacy': usp,
+      'us_privacy': uspDataHandler.getConsentData() || '',
       'v': '$prebid.version$'
     };
 
