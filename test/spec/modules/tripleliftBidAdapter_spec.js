@@ -618,9 +618,9 @@ describe('triplelift adapter', function () {
       });
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
-      expect(payload.ext.fpd).to.not.haveOwnProperty('sens');
-      expect(payload.ext.fpd).to.haveOwnProperty('category');
-      expect(payload.ext.fpd).to.haveOwnProperty('pmp_elig');
+      expect(payload.ext.fpd.user).to.not.exist;
+      expect(payload.ext.fpd.context).to.haveOwnProperty('category');
+      expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
     });
   });
 

@@ -184,12 +184,21 @@ function _getFloor (bid) {
 
 function _getGlobalFpd() {
   let fpd = {};
+  let context = {}
+  let user = {};
+
   const fpdContext = Object.assign({}, config.getConfig('fpd.context'));
   const fpdUser = Object.assign({}, config.getConfig('fpd.user'));
 
-  _addEntries(fpd, fpdContext);
-  _addEntries(fpd, fpdUser);
+  _addEntries(context, fpdContext);
+  _addEntries(user, fpdUser);
 
+  if (!utils.isEmpty(context)) {
+    fpd.context = context;
+  }
+  if (!utils.isEmpty(user)) {
+    fpd.user = user;
+  }
   return fpd;
 }
 
