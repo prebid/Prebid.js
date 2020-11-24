@@ -83,7 +83,7 @@ function collectUtmTagData() {
     if (newUtm === false) {
       utmTags.forEach(function (utmKey) {
         let itemValue = localStorage.getItem(`pm_${utmKey}`);
-        if (itemValue !== null && typeof itemValue !== 'undefined' && itemValue.length !== 0) {
+        if (itemValue && itemValue.length !== 0) {
           pmUtmTags[utmKey] = itemValue;
         }
       });
