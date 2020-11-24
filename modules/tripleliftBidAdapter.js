@@ -114,7 +114,8 @@ function _buildPostBody(bidRequests) {
     let imp = {
       id: index,
       tagid: bidRequest.params.inventoryCode,
-      floor: _getFloor(bidRequest)
+      floor: _getFloor(bidRequest),
+      fpd: _getAdUnitFpd(bidRequest)
     };
     // remove the else to support multi-imp
     if (_isInstreamBidRequest(bidRequest)) {
@@ -199,6 +200,11 @@ function _getGlobalFpd() {
   if (!utils.isEmpty(user)) {
     fpd.user = user;
   }
+  return fpd;
+}
+
+function _getAdUnitFpd(bid) {
+  let fpd = {};
   return fpd;
 }
 
