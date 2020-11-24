@@ -240,7 +240,6 @@ export const spec = {
         source: 'criteo.com',
         id: criteoId
       });
-
       payload.tpuids = tpuids;
     }
 
