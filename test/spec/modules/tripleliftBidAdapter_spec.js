@@ -638,7 +638,8 @@ describe('triplelift adapter', function () {
               ad: 'ad-markup',
               iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
               tl_source: 'tlx',
-              advertiser_name: 'fake advertiser name'
+              advertiser_name: 'fake advertiser name',
+              adomain: ['basspro.com', 'internetalerts.org']
             },
             {
               imp_id: 1,
@@ -746,6 +747,13 @@ describe('triplelift adapter', function () {
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
       expect(result[0].meta.advertiserName).to.equal('fake advertiser name');
       expect(result[1].meta).to.not.have.key('advertiserName');
+    });
+
+    it('should include the advertiser domain array in the meta field if available', function () {
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      expect(result[0].meta.advertiserDomains[0]).to.equal('basspro.com');
+      expect(result[0].meta.advertiserDomains[1]).to.equal('internetalerts.org');
+      expect(result[1].meta).to.not.have.key('advertiserDomains');
     });
   });
 
