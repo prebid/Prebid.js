@@ -204,8 +204,10 @@ function _getGlobalFpd() {
 }
 
 function _getAdUnitFpd(bid) {
-  let fpd = {};
-  return fpd;
+  if (!utils.isEmpty(bid.fpd)) {
+    return bid.fpd;
+  }
+  return null;
 }
 
 function _addEntries(target, source) {
