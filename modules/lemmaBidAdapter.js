@@ -62,18 +62,7 @@ export var spec = {
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     let syncurl = USER_SYNC + 'pid=' + pubId;
-
-    // Attaching GDPR Consent Params in UserSync url
-    if (gdprConsent) {
-      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
-    }
-
-    // CCPA
-    if (uspConsent) {
-      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
-    }
-
+    
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
@@ -277,10 +266,6 @@ function _getDeviceObject(request) {
 
 function setOtherParams(request, ortbRequest) {
   var params = request && request.params ? request.params : null;
-  if (request && request.gdprConsent) {
-    ortbRequest.regs = { ext: { gdpr: request.gdprConsent.gdprApplies ? 1 : 0 } };
-    ortbRequest.user = { ext: { consent: request.gdprConsent.consentString } };
-  }
   if (params) {
     ortbRequest.tmax = params.tmax;
     ortbRequest.bcat = params.bcat;
