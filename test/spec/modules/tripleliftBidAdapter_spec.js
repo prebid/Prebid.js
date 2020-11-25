@@ -605,17 +605,19 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].floor).to.equal(1.99);
     });
-    it('should send global config fpd if kvps are available', function() {
+    it.only('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
       const pmp_elig = 'true';
       const fpd = {
         context: {
-          pmp_elig,
-          category,
+          pmp_elig: pmp_elig,
+          data: {
+            category: category
+          }
         },
         user: {
-          sens,
+          sens: sens,
         }
       }
       sandbox.stub(config, 'getConfig').callsFake(key => {
@@ -627,7 +629,7 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
       expect(payload.ext.fpd.user).to.not.exist;
-      expect(payload.ext.fpd.context).to.haveOwnProperty('category');
+      expect(payload.ext.fpd.context.data).to.haveOwnProperty('category');
       expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
     });
     it('should send ad unit fpd if kvps are available', function() {
