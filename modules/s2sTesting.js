@@ -1,5 +1,5 @@
-import { config } from '../src/config';
-import { setS2STestingModule } from '../src/adapterManager';
+import { config } from '../src/config.js';
+import { setS2STestingModule } from '../src/adapterManager.js';
 
 let s2sTesting = {};
 

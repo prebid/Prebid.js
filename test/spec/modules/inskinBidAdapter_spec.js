@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/inskinBidAdapter';
-import { createBid } from 'src/bidfactory';
+import { spec } from 'modules/inskinBidAdapter.js';
+import { createBid } from 'src/bidfactory.js';
 
 const ENDPOINT = 'https://mfad.inskinad.com/api/v2';
 
@@ -101,6 +101,18 @@ const RESPONSE = {
   }
 };
 
+const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+const bidderRequest = {
+  bidderCode: 'inskin',
+  gdprConsent: {
+    consentString: consentString,
+    gdprApplies: true
+  },
+  refererInfo: {
+    referer: 'https://www.inskinmedia.com'
+  }
+};
+
 describe('InSkin BidAdapter', function () {
   let bidRequests;
   let adapter = spec;
@@ -170,37 +182,29 @@ describe('InSkin BidAdapter', function () {
 
   describe('buildRequests validation', function () {
     it('creates request data', function () {
-      let request = spec.buildRequests(bidRequests);
+      let request = spec.buildRequests(bidRequests, bidderRequest);
 
       expect(request).to.exist.and.to.be.a('object');
     });
 
     it('request to inskin should contain a url', function () {
-      let request = spec.buildRequests(bidRequests);
+      let request = spec.buildRequests(bidRequests, bidderRequest);
 
       expect(request.url).to.have.string('inskinad.com');
     });
 
     it('requires valid bids to make request', function () {
-      let request = spec.buildRequests([]);
+      let request = spec.buildRequests([], bidderRequest);
       expect(request.bidRequest).to.be.empty;
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
-      let request = spec.buildRequests(bidRequests);
+      let request = spec.buildRequests(bidRequests, bidderRequest);
 
       expect(request.method).to.have.string('POST');
     });
 
     it('should add gdpr consent information to the request', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let bidderRequest = {
-        'bidderCode': 'inskin',
-        'gdprConsent': {
-          consentString: consentString,
-          gdprApplies: true
-        }
-      };
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -211,10 +215,95 @@ describe('InSkin BidAdapter', function () {
       expect(payload.consent.gdprConsentString).to.exist.and.to.equal(consentString);
       expect(payload.consent.gdprConsentRequired).to.exist.and.to.be.true;
     });
+
+    it('should not add keywords if TCF v2 purposes are granted', function () {
+      const bidderRequest2 = Object.assign({}, bidderRequest, {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'consentString',
+          vendorData: {
+            vendor: {
+              consents: {
+                150: true
+              }
+            },
+            purpose: {
+              consents: {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true,
+                8: true,
+                9: true,
+                10: true
+              }
+            }
+          },
+          apiVersion: 2
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest2);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.keywords).to.be.an('array').that.is.empty;
+      expect(payload.placements[0].properties).to.be.undefined;
+    });
+
+    it('should add keywords if TCF v2 purposes are not granted', function () {
+      const bidderRequest2 = Object.assign({}, bidderRequest, {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'consentString',
+          vendorData: {
+            vendor: {
+              consents: {
+                150: false
+              }
+            },
+            purpose: {
+              consents: {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true,
+                8: true,
+                9: true,
+                10: true
+              }
+            }
+          },
+          apiVersion: 2
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests, bidderRequest2);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nocookies');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nocontext');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nodmp');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-nodata');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-noclicks');
+      expect(payload.keywords).to.be.an('array').that.includes('cst-noresearch');
+
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nocookies');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nocontext');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nodmp');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('nodata');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('noclicks');
+      expect(payload.placements[0].properties.restrictions).to.be.an('array').that.includes('noresearch');
+    });
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
-      let bidRequest = spec.buildRequests(REQUEST.bidRequest);
+      let bidRequest = spec.buildRequests(REQUEST.bidRequest, bidderRequest);
       let bid = createBid(1, bidRequest.bidRequest[0]);
 
       expect(bid.bidderCode).to.equal('inskin');
@@ -240,7 +329,6 @@ describe('InSkin BidAdapter', function () {
         expect(b).to.have.property('creativeId');
         expect(b).to.have.property('ttl', 360);
         expect(b).to.have.property('netRevenue', true);
-        expect(b).to.have.property('referrer');
       });
     });
 

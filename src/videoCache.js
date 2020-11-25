@@ -9,8 +9,9 @@
  * This trickery helps integrate with ad servers, which set character limits on request params.
  */
 
-import { ajax } from './ajax';
-import { config } from '../src/config';
+import { ajax } from './ajax.js';
+import { config } from './config.js';
+import * as utils from './utils.js';
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -60,11 +61,21 @@ function wrapURI(uri, impUrl) {
  */
 function toStorageRequest(bid) {
   const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+
   let payload = {
     type: 'xml',
     value: vastValue,
     ttlseconds: Number(bid.ttl)
   };
+
+  if (config.getConfig('cache.vasttrack')) {
+    payload.bidder = bid.bidder;
+    payload.bidid = bid.requestId;
+    // function has a thisArg set to bidderRequest for accessing the auctionStart
+    if (utils.isPlainObject(this) && this.hasOwnProperty('auctionStart')) {
+      payload.timestamp = this.auctionStart;
+    }
+  }
 
   if (typeof bid.customCacheKey === 'string' && bid.customCacheKey !== '') {
     payload.key = bid.customCacheKey;
@@ -94,7 +105,7 @@ function toStorageRequest(bid) {
  */
 function shimStorageCallback(done) {
   return {
-    success: function(responseBody) {
+    success: function (responseBody) {
       let ids;
       try {
         ids = JSON.parse(responseBody).responses
@@ -109,7 +120,7 @@ function shimStorageCallback(done) {
         done(new Error("The cache server didn't respond with a responses property."), []);
       }
     },
-    error: function(statusText, responseBody) {
+    error: function (statusText, responseBody) {
       done(new Error(`Error storing video ad in the cache: ${statusText}: ${JSON.stringify(responseBody)}`), []);
     }
   }
@@ -120,11 +131,12 @@ function shimStorageCallback(done) {
  *
  * @param {CacheableBid[]} bids A list of bid objects which should be cached.
  * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
+ * @param {BidderRequest} [bidderRequest]
  * the data has been stored in the cache.
  */
-export function store(bids, done) {
+export function store(bids, done, bidderRequest) {
   const requestData = {
-    puts: bids.map(toStorageRequest)
+    puts: bids.map(toStorageRequest, bidderRequest)
   };
 
   ajax(config.getConfig('cache.url'), shimStorageCallback(done), JSON.stringify(requestData), {

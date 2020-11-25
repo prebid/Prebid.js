@@ -1,9 +1,9 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { ajax } from '../src/ajax';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'slimcut';
-const ENDPOINT_URL = '//sb.freeskreen.com/pbr';
+const ENDPOINT_URL = 'https://sb.freeskreen.com/pbr';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -91,7 +91,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//sb.freeskreen.com/async_usersync.html'
+        url: 'https://sb.freeskreen.com/async_usersync.html'
       }];
     }
     return [];

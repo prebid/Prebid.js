@@ -1,6 +1,12 @@
 import {expect} from 'chai';
+<<<<<<< HEAD
 import {newBidder} from 'src/adapters/bidderFactory';
 import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter';
+=======
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter.js';
+import * as utils from 'src/utils.js';
+>>>>>>> 939c455a469703f0c98d021fd70d3b851ae69ba7
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
 const AD_CODE = 'ssp-!demo!-lufip';
@@ -117,7 +123,7 @@ describe('TelariaAdapter', () => {
   });
 
   describe('buildRequests', () => {
-    const stub = [{
+    const stub = () => ([{
       mediaTypes: {
         video: {
           playerSize: [[640, 480]],
@@ -130,7 +136,9 @@ describe('TelariaAdapter', () => {
         adCode: 'ssp-!demo!-lufip',
         videoId: 'MyCoolVideo'
       }
-    }];
+    }]);
+
+    const schainStub = REQUEST_WITH_SCHAIN;
 
     const schainStub = REQUEST_WITH_SCHAIN;
 
@@ -139,12 +147,12 @@ describe('TelariaAdapter', () => {
     });
 
     it('requires supply code & ad code to make a request', () => {
-      const tempRequest = spec.buildRequests(stub, BIDDER_REQUEST);
+      const tempRequest = spec.buildRequests(stub(), BIDDER_REQUEST);
       expect(tempRequest.length).to.equal(1);
     });
 
     it('generates an array of requests with 4 params, method, url, bidId and vastUrl', () => {
-      const tempRequest = spec.buildRequests(stub, BIDDER_REQUEST);
+      const tempRequest = spec.buildRequests(stub(), BIDDER_REQUEST);
 
       expect(tempRequest.length).to.equal(1);
       expect(tempRequest[0].method).to.equal('GET');
@@ -154,7 +162,7 @@ describe('TelariaAdapter', () => {
     });
 
     it('doesn\'t require player size but is highly recommended', () => {
-      let tempBid = stub;
+      let tempBid = stub();
       tempBid[0].mediaTypes.video.playerSize = null;
       const tempRequest = spec.buildRequests(tempBid, BIDDER_REQUEST);
 
@@ -162,7 +170,7 @@ describe('TelariaAdapter', () => {
     });
 
     it('generates a valid request with sizes as an array of two elements', () => {
-      let tempBid = stub;
+      let tempBid = stub();
       tempBid[0].mediaTypes.video.playerSize = [640, 480];
       tempBid[0].params.adCode = 'ssp-!demo!-lufip';
       tempBid[0].params.supplyCode = 'ssp-demo-rm6rh';
@@ -171,7 +179,7 @@ describe('TelariaAdapter', () => {
     });
 
     it('requires ad code and supply code to make a request', () => {
-      let tempBid = stub;
+      let tempBid = stub();
       tempBid[0].params.adCode = null;
       tempBid[0].params.supplyCode = null;
 
@@ -187,6 +195,35 @@ describe('TelariaAdapter', () => {
       let builtRequests = spec.buildRequests(tempBid, BIDDER_REQUEST);
       expect(builtRequests.length).to.equal(1);
     });
+<<<<<<< HEAD
+=======
+
+    it('adds adUnitCode to the request url', () => {
+      const builtRequests = spec.buildRequests(stub(), BIDDER_REQUEST);
+
+      expect(builtRequests.length).to.equal(1);
+      const parts = builtRequests[0].url.split('adCode=');
+      expect(parts.length).to.equal(2);
+    });
+
+    it('adds srcPageUrl to the request url', () => {
+      const builtRequests = spec.buildRequests(stub(), BIDDER_REQUEST);
+
+      expect(builtRequests.length).to.equal(1);
+      const parts = builtRequests[0].url.split('srcPageUrl=');
+      expect(parts.length).to.equal(2);
+    });
+
+    it('adds srcPageUrl from params to the request only once', () => {
+      const tempBid = stub();
+      tempBid[0].params.srcPageUrl = 'http://www.test.com';
+      const builtRequests = spec.buildRequests(tempBid, BIDDER_REQUEST);
+
+      expect(builtRequests.length).to.equal(1);
+      const parts = builtRequests[0].url.split('srcPageUrl=');
+      expect(parts.length).to.equal(2);
+    });
+>>>>>>> 939c455a469703f0c98d021fd70d3b851ae69ba7
   });
 
   describe('interpretResponse', () => {
@@ -209,7 +246,7 @@ describe('TelariaAdapter', () => {
     it('should get correct bid response', () => {
       let expectedResponseKeys = ['bidderCode', 'width', 'height', 'statusMessage', 'adId', 'mediaType', 'source',
         'getStatusCode', 'getSize', 'requestId', 'cpm', 'creativeId', 'vastXml',
-        'vastUrl', 'currency', 'netRevenue', 'ttl', 'ad'];
+        'vastUrl', 'currency', 'netRevenue', 'ttl', 'ad', 'meta'];
 
       let bidRequest = spec.buildRequests(stub, BIDDER_REQUEST)[0];
       bidRequest.bidId = '1234';
@@ -269,6 +306,17 @@ describe('TelariaAdapter', () => {
       }]
     }];
 
+<<<<<<< HEAD
+=======
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+>>>>>>> 939c455a469703f0c98d021fd70d3b851ae69ba7
     it('should return a pixel url', () => {
       let url = getTimeoutUrl(timeoutData);
       assert(url);
@@ -276,6 +324,10 @@ describe('TelariaAdapter', () => {
 
     it('should fire a pixel', () => {
       expect(spec.onTimeout(timeoutData)).to.be.undefined;
+<<<<<<< HEAD
+=======
+      expect(utils.triggerPixel.called).to.equal(true);
+>>>>>>> 939c455a469703f0c98d021fd70d3b851ae69ba7
     });
   });
 });

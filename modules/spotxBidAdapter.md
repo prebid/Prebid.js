@@ -63,7 +63,8 @@ This adapter requires setup and approval from the SpotX team.
                         continue_out_of_view: '1',
                         ad_volume: '100',
                         content_container_id: 'video1',
-                        hide_skin: '1'
+                        hide_skin: '1',
+                        spotx_all_google_consent: '1'
                     }
                 }
             }
@@ -121,7 +122,6 @@ function myOutstreamFunction(bid) {
     script.setAttribute('data-spotx_click_to_replay', '1');
     script.setAttribute('data-spotx_continue_out_of_view', '1');
     script.setAttribute('data-spotx_ad_volume', '100');
-    script.setAttribute('data-spotx_hide_skin', '1');
     if (bid.renderer.config.inIframe && window.document.getElementById(bid.renderer.config.inIframe).nodeName == 'IFRAME') {
         let rawframe = window.document.getElementById(bid.renderer.config.inIframe);
         let framedoc = rawframe.contentDocument;

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec } from '../../../modules/decenteradsBidAdapter'
+import { spec } from '../../../modules/decenteradsBidAdapter.js'
 import { deepStrictEqual, notEqual, ok, strictEqual } from 'assert'
 
 describe('DecenteradsAdapter', () => {
@@ -39,7 +39,7 @@ describe('DecenteradsAdapter', () => {
     })
 
     it('Returns valid URL', () => {
-      strictEqual('//supply.decenterads.com/?c=o&m=multi', serverRequest.url)
+      strictEqual('https://supply.decenterads.com/?c=o&m=multi', serverRequest.url)
     })
 
     it('Returns valid data if array of bids is valid', () => {
@@ -200,7 +200,7 @@ describe('DecenteradsAdapter', () => {
 
   describe('getUserSyncs', () => {
     it('Returns valid URL and type', () => {
-      const expectedResult = [{ type: 'image', url: '//supply.decenterads.com/?c=o&m=cookie' }]
+      const expectedResult = [{ type: 'image', url: 'https://supply.decenterads.com/?c=o&m=cookie' }]
       deepStrictEqual(expectedResult, spec.getUserSyncs())
     })
   })

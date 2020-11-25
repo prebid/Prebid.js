@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/smartyadsBidAdapter';
+import {spec} from '../../../modules/smartyadsBidAdapter.js';
 
 describe('SmartyadsAdapter', function () {
   let bid = {
@@ -33,7 +33,7 @@ describe('SmartyadsAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('//ssp-nj.webtradehub.com/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://ssp-nj.webtradehub.com/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -46,7 +46,7 @@ describe('SmartyadsAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes');
       expect(placement.placementId).to.equal(0);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal('banner');
@@ -78,7 +78,7 @@ describe('SmartyadsAdapter', function () {
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId');
+        'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
       expect(dataItem.width).to.equal(300);
@@ -108,8 +108,7 @@ describe('SmartyadsAdapter', function () {
 
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId');
-      expect(dataItem.mediaType).to.not.exist;
+        'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');
@@ -122,10 +121,12 @@ describe('SmartyadsAdapter', function () {
       const native = {
         body: [{
           mediaType: 'native',
-          clickUrl: 'test.com',
-          title: 'Test',
-          image: 'test.com',
-          impressionTrackers: ['test.com'],
+          native: {
+            clickUrl: 'test.com',
+            title: 'Test',
+            image: 'test.com',
+            impressionTrackers: ['test.com'],
+          },
           ttl: 120,
           cpm: 0.4,
           requestId: '23fhj33i987f',
@@ -138,15 +139,15 @@ describe('SmartyadsAdapter', function () {
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
       let dataItem = nativeResponses[0];
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'clickUrl', 'impressionTrackers', 'title', 'image', 'ttl', 'creativeId', 'netRevenue', 'currency');
-      expect(dataItem.mediaType).to.not.exist;
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native');
+      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
-      expect(dataItem.clickUrl).to.equal('test.com');
-      expect(dataItem.title).to.equal('Test');
-      expect(dataItem.image).to.equal('test.com');
-      expect(dataItem.impressionTrackers).to.be.an('array').that.is.not.empty;
-      expect(dataItem.impressionTrackers[0]).to.equal('test.com');
+      expect(dataItem.native.clickUrl).to.equal('test.com');
+      expect(dataItem.native.title).to.equal('Test');
+      expect(dataItem.native.image).to.equal('test.com');
+      expect(dataItem.native.impressionTrackers).to.be.an('array').that.is.not.empty;
+      expect(dataItem.native.impressionTrackers[0]).to.equal('test.com');
       expect(dataItem.ttl).to.equal(120);
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
@@ -224,7 +225,7 @@ describe('SmartyadsAdapter', function () {
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
       expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('//ssp-nj.webtradehub.com/?c=o&m=cookie');
+      expect(userSync[0].url).to.be.equal('https://ssp-nj.webtradehub.com/?c=o&m=cookie');
     });
   });
 });

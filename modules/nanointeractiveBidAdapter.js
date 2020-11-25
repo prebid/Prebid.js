@@ -1,6 +1,9 @@
-import * as utils from '../src/utils';
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 export const BIDDER_CODE = 'nanointeractive';
 export const END_POINT_URL = 'https://ad.audiencemanager.de';
@@ -13,6 +16,8 @@ export const CATEGORY_NAME = 'categoryName';
 export const SUB_ID = 'subId';
 export const REF = 'ref';
 export const LOCATION = 'loc';
+
+var nanoPid = '5a1ec660eb0a191dfa591172';
 
 export const spec = {
 
@@ -29,7 +34,7 @@ export const spec = {
     validBidRequests.forEach(
       bid => payload.push(createSingleBidRequest(bid, bidderRequest))
     );
-    const url = getEndpointUrl('main') + '/hb';
+    const url = getEndpointUrl() + '/hb';
 
     return {
       method: 'POST',
@@ -45,6 +50,23 @@ export const spec = {
       }
     });
     return bids;
+  },
+  getUserSyncs: function(syncOptions) {
+    const syncs = [];
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: getEndpointUrl() + '/hb/cookieSync/' + nanoPid
+      });
+    }
+
+    if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: getEndpointUrl() + '/hb/cookieSync/' + nanoPid
+      });
+    }
+    return syncs;
   }
 
 };
@@ -52,6 +74,9 @@ export const spec = {
 function createSingleBidRequest(bid, bidderRequest) {
   const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
   const origin = utils.getOrigin();
+
+  nanoPid = bid.params[SSP_PLACEMENT_ID] || nanoPid;
+
   const data = {
     [SSP_PLACEMENT_ID]: bid.params[SSP_PLACEMENT_ID],
     [NQ]: [createNqParam(bid)],
@@ -75,7 +100,7 @@ function createSingleBidRequest(bid, bidderRequest) {
 
 function createSingleBidResponse(serverBid) {
   if (serverBid.userId) {
-    localStorage.setItem('lsUserId', serverBid.userId);
+    storage.setDataInLocalStorage('lsUserId', serverBid.userId);
   }
   return {
     requestId: serverBid.id,
@@ -117,17 +142,16 @@ function isEngineResponseValid(response) {
 /**
  * Used mainly for debugging
  *
- * @param type
  * @returns string
  */
-function getEndpointUrl(type) {
+function getEndpointUrl() {
   const nanoConfig = config.getConfig('nano');
   return (nanoConfig && nanoConfig['endpointUrl']) || END_POINT_URL;
 }
 
 function getLsUserId() {
-  if (localStorage.getItem('lsUserId') != null) {
-    return localStorage.getItem('lsUserId');
+  if (storage.getDataFromLocalStorage('lsUserId') != null) {
+    return storage.getDataFromLocalStorage('lsUserId');
   }
   return null;
 }

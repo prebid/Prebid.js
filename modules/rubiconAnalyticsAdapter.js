@@ -1,10 +1,27 @@
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import * as utils from '../src/utils';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
 
+const RUBICON_GVL_ID = 52;
+export const storage = getStorageManager(RUBICON_GVL_ID, 'rubicon');
+const COOKIE_NAME = 'rpaSession';
+const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
+const END_EXPIRE_TIME = 21600000; // 6 hours
+
+const pbsErrorMap = {
+  1: 'timeout-error',
+  2: 'input-error',
+  3: 'connect-error',
+  4: 'request-error',
+  999: 'generic-error'
+}
+
+let prebidGlobal = getGlobal();
 const {
   EVENTS: {
     AUCTION_INIT,
@@ -19,6 +36,9 @@ const {
   STATUS: {
     GOOD,
     NO_BID
+  },
+  BID_STATUS: {
+    BID_REJECTED
   }
 } = CONSTANTS;
 
@@ -34,6 +54,31 @@ const cache = {
   auctions: {},
   targeting: {},
   timeouts: {},
+  gpt: {},
+};
+
+const BID_REJECTED_IPF = 'rejected-ipf';
+
+export let rubiConf = {
+  pvid: utils.generateUUID().slice(0, 8)
+};
+// we are saving these as global to this module so that if a pub accidentally overwrites the entire
+// rubicon object, then we do not lose other data
+config.getConfig('rubicon', config => {
+  utils.mergeDeep(rubiConf, config.rubicon);
+  if (utils.deepAccess(config, 'rubicon.updatePageView') === true) {
+    rubiConf.pvid = utils.generateUUID().slice(0, 8)
+  }
+});
+
+export function getHostNameFromReferer(referer) {
+  try {
+    rubiconAdapter.referrerHostname = utils.parseUrl(referer, {noDecodeWholeURL: true}).hostname;
+  } catch (e) {
+    utils.logError('Rubicon Analytics: Unable to parse hostname from supplied url: ', referer, e);
+    rubiconAdapter.referrerHostname = '';
+  }
+  return rubiconAdapter.referrerHostname
 };
 
 function stringProperties(obj) {
@@ -73,14 +118,14 @@ function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return utils.pick(bid, [
       'bidder',
-      'bidId',
+      'bidId', bidId => utils.deepAccess(bid, 'bidResponse.pbsBidId') || utils.deepAccess(bid, 'bidResponse.seatBidId') || bidId,
       'status',
       'error',
       'source', (source, bid) => {
         if (source) {
           return source;
         }
-        return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
+        return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.some(s2sBidder => s2sBidder.toLowerCase() === bid.bidder) !== -1
           ? 'server' : 'client'
       },
       'clientLatencyMillis',
@@ -90,7 +135,10 @@ function sendMessage(auctionId, bidWonId) {
         'bidPriceUSD',
         'dealId',
         'dimensions',
-        'mediaType'
+        'mediaType',
+        'floorValue',
+        'floorRuleValue',
+        'floorRule'
       ]) : undefined
     ]);
   }
@@ -109,18 +157,18 @@ function sendMessage(auctionId, bidWonId) {
       samplingFactor
     });
   }
-  let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
+  let auctionCache = cache.auctions[auctionId];
+  let referrer = config.getConfig('pageUrl') || (auctionCache && auctionCache.referrer);
   let message = {
     eventTimeMillis: Date.now(),
-    integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
+    integration: rubiConf.int_type || DEFAULT_INTEGRATION,
+    ruleId: rubiConf.rule_name,
     version: '$prebid.version$',
-    referrerUri: referrer
+    referrerUri: referrer,
+    referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer),
+    channel: 'web',
+    wrapperName: rubiConf.wrapperName
   };
-  const wrapperName = config.getConfig('rubicon.wrapperName');
-  if (wrapperName) {
-    message.wrapperName = wrapperName;
-  }
-  let auctionCache = cache.auctions[auctionId];
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
       let bid = auctionCache.bids[bidId];
@@ -131,9 +179,12 @@ function sendMessage(auctionId, bidWonId) {
           'transactionId',
           'mediaTypes',
           'dimensions',
-          'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {})
+          'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
+          'gam',
+          'pbAdSlot'
         ]);
         adUnit.bids = [];
+        adUnit.status = 'no-bid'; // default it to be no bid
       }
 
       // Add site and zone id if not there and if we found a rubicon bidder
@@ -174,6 +225,53 @@ function sendMessage(auctionId, bidWonId) {
       adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i])
     };
 
+    // pick our of top level floor data we want to send!
+    if (auctionCache.floorData) {
+      if (auctionCache.floorData.location === 'noData') {
+        auction.floors = utils.pick(auctionCache.floorData, [
+          'location',
+          'fetchStatus',
+          'floorProvider as provider'
+        ]);
+      } else {
+        auction.floors = utils.pick(auctionCache.floorData, [
+          'location',
+          'modelVersion as modelName',
+          'skipped',
+          'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
+          'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),
+          'skipRate',
+          'fetchStatus',
+          'floorMin',
+          'floorProvider as provider'
+        ]);
+      }
+    }
+
+    // gather gdpr info
+    if (auctionCache.gdprConsent) {
+      auction.gdpr = utils.pick(auctionCache.gdprConsent, [
+        'gdprApplies as applies',
+        'consentString',
+        'apiVersion as version'
+      ]);
+    }
+
+    // gather session info
+    if (auctionCache.session) {
+      message.session = utils.pick(auctionCache.session, [
+        'id',
+        'pvid',
+        'start',
+        'expires'
+      ]);
+      if (!utils.isEmpty(auctionCache.session.fpkvs)) {
+        message.fpkvs = Object.keys(auctionCache.session.fpkvs).map(key => {
+          return { key, value: auctionCache.session.fpkvs[key] };
+        });
+      }
+    }
+
     if (serverConfig) {
       auction.serverTimeoutMillis = serverConfig.timeout;
     }
@@ -209,26 +307,61 @@ function sendMessage(auctionId, bidWonId) {
   );
 }
 
-export function parseBidResponse(bid) {
+function getBidPrice(bid) {
+  // get the cpm from bidResponse
+  let cpm;
+  let currency;
+  if (bid.status === BID_REJECTED && utils.deepAccess(bid, 'floorData.cpmAfterAdjustments')) {
+    // if bid was rejected and bid.floorData.cpmAfterAdjustments use it
+    cpm = bid.floorData.cpmAfterAdjustments;
+    currency = bid.floorData.floorCurrency;
+  } else if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
+    // bid is in USD use it
+    return Number(bid.cpm);
+  } else {
+    // else grab cpm
+    cpm = bid.cpm;
+    currency = bid.currency;
+  }
+  // if after this it is still going and is USD then return it.
+  if (currency === 'USD') {
+    return Number(cpm);
+  }
+  // otherwise we convert and return
+  try {
+    return Number(prebidGlobal.convertCurrency(cpm, currency, 'USD'));
+  } catch (err) {
+    utils.logWarn('Rubicon Analytics Adapter: Could not determine the bidPriceUSD of the bid ', bid);
+  }
+}
+
+export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
+  // The current bidResponse for this matching requestId/bidRequestId
+  let responsePrice = getBidPrice(bid)
+  // we need to compare it with the previous one (if there was one)
+  if (previousBidResponse && previousBidResponse.bidPriceUSD > responsePrice) {
+    return previousBidResponse;
+  }
   return utils.pick(bid, [
-    'bidPriceUSD', () => {
-      if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
-        return Number(bid.cpm);
-      }
-      // use currency conversion function if present
-      if (typeof bid.getCpmInNewCurrency === 'function') {
-        return Number(bid.getCpmInNewCurrency('USD'));
-      }
-      utils.logWarn('Rubicon Analytics Adapter: Could not determine the bidPriceUSD of the bid ', bid);
-    },
+    'bidPriceUSD', () => responsePrice,
     'dealId',
     'status',
     'mediaType',
-    'dimensions', () => utils.pick(bid, [
-      'width',
-      'height'
-    ])
+    'dimensions', () => {
+      const width = bid.width || bid.playerWidth;
+      const height = bid.height || bid.playerHeight;
+      return (width && height) ? {width, height} : undefined;
+    },
+    'seatBidId',
+    'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
+    'floorRuleValue', () => utils.deepAccess(bid, 'floorData.floorRuleValue'),
+    'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined
   ]);
+}
+
+function getFpkvs() {
+  const isValid = rubiConf.fpkvs && typeof rubiConf.fpkvs === 'object' && Object.keys(rubiConf.fpkvs).every(key => typeof rubiConf.fpkvs[key] === 'string');
+  return isValid ? rubiConf.fpkvs : {};
 }
 
 let samplingFactor = 1;
@@ -249,8 +382,77 @@ function setRubiconAliases(aliasRegistry) {
   });
 }
 
+function getRpaCookie() {
+  let encodedCookie = storage.getDataFromLocalStorage(COOKIE_NAME);
+  if (encodedCookie) {
+    try {
+      return JSON.parse(window.atob(encodedCookie));
+    } catch (e) {
+      utils.logError(`Rubicon Analytics: Unable to decode ${COOKIE_NAME} value: `, e);
+    }
+  }
+  return {};
+}
+
+function setRpaCookie(decodedCookie) {
+  try {
+    storage.setDataInLocalStorage(COOKIE_NAME, window.btoa(JSON.stringify(decodedCookie)));
+  } catch (e) {
+    utils.logError(`Rubicon Analytics: Unable to encode ${COOKIE_NAME} value: `, e);
+  }
+}
+
+function updateRpaCookie() {
+  const currentTime = Date.now();
+  let decodedRpaCookie = getRpaCookie();
+  if (
+    !Object.keys(decodedRpaCookie).length ||
+    (currentTime - decodedRpaCookie.lastSeen) > LAST_SEEN_EXPIRE_TIME ||
+    decodedRpaCookie.expires < currentTime
+  ) {
+    decodedRpaCookie = {
+      id: utils.generateUUID(),
+      start: currentTime,
+      expires: currentTime + END_EXPIRE_TIME, // six hours later,
+    }
+  }
+  // possible that decodedRpaCookie is undefined, and if it is, we probably are blocked by storage or some other exception
+  if (Object.keys(decodedRpaCookie).length) {
+    decodedRpaCookie.lastSeen = currentTime;
+    decodedRpaCookie.fpkvs = {...decodedRpaCookie.fpkvs, ...getFpkvs()};
+    decodedRpaCookie.pvid = rubiConf.pvid;
+    setRpaCookie(decodedRpaCookie)
+  }
+  return decodedRpaCookie;
+}
+
+function subscribeToGamSlots() {
+  window.googletag.pubads().addEventListener('slotRenderEnded', event => {
+    const isMatchingAdSlot = utils.isAdUnitCodeMatchingSlot(event.slot);
+    // loop through auctions and adUnits and mark the info
+    Object.keys(cache.auctions).forEach(auctionId => {
+      (Object.keys(cache.auctions[auctionId].bids) || []).forEach(bidId => {
+        let bid = cache.auctions[auctionId].bids[bidId];
+        // if this slot matches this bids adUnit, add the adUnit info
+        if (isMatchingAdSlot(bid.adUnit.adUnitCode)) {
+          bid.adUnit.gam = utils.pick(event, [
+            // these come in as `null` from Gpt, which when stringified does not get removed
+            // so set explicitly to undefined when not a number
+            'advertiserId', advertiserId => utils.isNumber(advertiserId) ? advertiserId : undefined,
+            'creativeId', creativeId => utils.isNumber(creativeId) ? creativeId : undefined,
+            'lineItemId', lineItemId => utils.isNumber(lineItemId) ? lineItemId : undefined,
+            'adSlot', () => event.slot.getAdUnitPath(),
+            'isSlotEmpty', () => event.isEmpty || undefined
+          ]);
+        }
+      });
+    });
+  });
+}
+
 let baseAdapter = adapter({analyticsType: 'endpoint'});
 let rubiconAdapter = Object.assign({}, baseAdapter, {
+  referrerHostname: '',
   enableAnalytics(config = {}) {
     let error = false;
     samplingFactor = 1;
@@ -292,7 +494,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   },
   disableAnalytics() {
     this.getUrl = baseAdapter.getUrl;
-    accountId = null;
+    accountId = undefined;
+    rubiConf = {};
+    cache.gpt.registered = false;
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
   track({eventType, args}) {
@@ -306,7 +510,19 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         ]);
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
+        cacheEntry.referrer = utils.deepAccess(args, 'bidderRequests.0.refererInfo.referer');
+        const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
+        if (floorData) {
+          cacheEntry.floorData = {...floorData};
+        }
+        cacheEntry.gdprConsent = utils.deepAccess(args, 'bidderRequests.0.gdprConsent');
+        cacheEntry.session = storage.localStorageIsEnabled() && updateRpaCookie();
         cache.auctions[args.auctionId] = cacheEntry;
+        // register to listen to gpt events if not done yet
+        if (!cache.gpt.registered && utils.isGptPubadsDefined()) {
+          subscribeToGamSlots();
+          cache.gpt.registered = true;
+        }
         break;
       case BID_REQUESTED:
         Object.assign(cache.auctions[args.auctionId].bids, args.bids.reduce((memo, bid) => {
@@ -317,7 +533,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             'bidder', bidder => bidder.toLowerCase(),
             'bidId',
             'status', () => 'no-bid', // default a bid to no-bid until response is recieved or bid is timed out
-            'finalSource as source',
+            'source', () => formatSource(bid.src),
             'params', (params, bid) => {
               switch (bid.bidder) {
                 // specify bidder params we want here
@@ -376,14 +592,29 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                   return Object.keys(types).filter(validMediaType);
                 }
                 return ['banner'];
-              }
+              },
+              'gam', () => {
+                if (utils.deepAccess(bid, 'fpd.context.adServer.name') === 'gam') {
+                  return {adSlot: bid.fpd.context.adServer.adSlot}
+                }
+              },
+              'pbAdSlot', () => utils.deepAccess(bid, 'fpd.context.pbAdSlot')
             ])
           ]);
           return memo;
         }, {}));
         break;
       case BID_RESPONSE:
-        let bid = cache.auctions[args.auctionId].bids[args.requestId];
+        let auctionEntry = cache.auctions[args.auctionId];
+        let bid = auctionEntry.bids[args.requestId];
+        // If floor resolved gptSlot but we have not yet, then update the adUnit to have the adSlot name
+        if (!utils.deepAccess(bid, 'adUnit.gam.adSlot') && utils.deepAccess(args, 'floorData.matchedFields.gptSlot')) {
+          utils.deepSetValue(bid, 'adUnit.gam.adSlot', args.floorData.matchedFields.gptSlot);
+        }
+        // if we have not set enforcements yet set it
+        if (!utils.deepAccess(auctionEntry, 'floorData.enforcements') && utils.deepAccess(args, 'floorData.enforcements')) {
+          auctionEntry.floorData.enforcements = {...args.floorData.enforcements};
+        }
         if (!bid) {
           utils.logError('Rubicon Anlytics Adapter Error: Could not find associated bid request for bid response with requestId: ', args.requestId);
           break;
@@ -395,7 +626,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             delete bid.error; // it's possible for this to be set by a previous timeout
             break;
           case NO_BID:
-            bid.status = 'no-bid';
+            bid.status = args.status === BID_REJECTED ? BID_REJECTED_IPF : 'no-bid';
             delete bid.error;
             break;
           default:
@@ -404,14 +635,26 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
               code: 'request-error'
             };
         }
-        bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
-        bid.bidResponse = parseBidResponse(args);
+        bid.clientLatencyMillis = bid.timeToRespond || Date.now() - cache.auctions[args.auctionId].timestamp;
+        bid.bidResponse = parseBidResponse(args, bid.bidResponse);
         break;
       case BIDDER_DONE:
+        const serverError = utils.deepAccess(args, 'serverErrors.0');
+        const serverResponseTimeMs = args.serverResponseTimeMs;
         args.bids.forEach(bid => {
           let cachedBid = cache.auctions[bid.auctionId].bids[bid.bidId || bid.requestId];
           if (typeof bid.serverResponseTimeMs !== 'undefined') {
             cachedBid.serverLatencyMillis = bid.serverResponseTimeMs;
+          } else if (serverResponseTimeMs && bid.source === 's2s') {
+            cachedBid.serverLatencyMillis = serverResponseTimeMs;
+          }
+          // if PBS said we had an error, and this bid has not been processed by BID_RESPONSE YET
+          if (serverError && (!cachedBid.status || ['no-bid', 'error'].indexOf(cachedBid.status) !== -1)) {
+            cachedBid.status = 'error';
+            cachedBid.error = {
+              code: pbsErrorMap[serverError.code] || pbsErrorMap[999],
+              description: serverError.message
+            }
           }
           if (!cachedBid.status) {
             cachedBid.status = 'no-bid';
@@ -452,10 +695,14 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         args.forEach(badBid => {
           let auctionCache = cache.auctions[badBid.auctionId];
           let bid = auctionCache.bids[badBid.bidId || badBid.requestId];
-          bid.status = 'error';
-          bid.error = {
-            code: 'timeout-error'
-          };
+          // might be set already by bidder-done, so do not overwrite
+          if (bid.status !== 'error') {
+            bid.status = 'error';
+            bid.error = {
+              code: 'timeout-error',
+              message: 'marked by prebid.js as timeout' // will help us diff if timeout was set by PBS or PBJS
+            };
+          }
         });
         break;
     }
@@ -464,7 +711,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: rubiconAdapter,
-  code: 'rubicon'
+  code: 'rubicon',
+  gvlid: RUBICON_GVL_ID
 });
 
 export default rubiconAdapter;

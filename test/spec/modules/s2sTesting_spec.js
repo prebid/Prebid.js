@@ -1,5 +1,5 @@
-import s2sTesting from 'modules/s2sTesting';
-import { config } from 'src/config';
+import s2sTesting from 'modules/s2sTesting.js';
+import { config } from 'src/config.js';
 
 var expect = require('chai').expect;
 

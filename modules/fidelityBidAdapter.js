@@ -1,15 +1,17 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'fidelity';
 const BIDDER_SERVER = 'x.fidelity-media.com';
 const FIDELITY_VENDOR_ID = 408;
 export const spec = {
   code: BIDDER_CODE,
-  isBidRequestValid: function(bid) {
+  aliases: ['kubient'],
+  gvlid: 408,
+  isBidRequestValid: function isBidRequestValid(bid) {
     return !!(bid && bid.params && bid.params.zoneid);
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function buildRequests(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       var server = bidRequest.params.server || BIDDER_SERVER;
 
@@ -24,19 +26,20 @@ export const spec = {
         subid: 'hb',
         flashver: getFlashVersion(),
         tmax: bidderRequest.timeout,
-        defloc: utils.getTopWindowUrl(),
-        referrer: utils.getTopWindowReferrer(),
+        defloc: bidderRequest.refererInfo.referer,
+        referrer: getTopWindowReferrer(),
+        schain: getSupplyChain(bidRequest.schain),
       };
-      setConsentParams(bidderRequest.gdprConsent, payload);
+      setConsentParams(bidderRequest.gdprConsent, bidderRequest.uspConsent, payload);
 
       return {
         method: 'GET',
-        url: '//' + server + '/delivery/hb.php',
+        url: 'https://' + server + '/delivery/hb.php',
         data: payload
       };
     });
   },
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function interpretResponse(serverResponse) {
     serverResponse = serverResponse.body;
     const bidResponses = [];
     if (serverResponse && serverResponse.seatbid) {
@@ -58,13 +61,13 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (syncOptions.iframeEnabled) {
-      var url = '//' + BIDDER_SERVER + '/delivery/matches.php';
+      var url = 'https://' + BIDDER_SERVER + '/delivery/matches.php';
       var payload = {
         type: 'iframe'
       };
-      setConsentParams(gdprConsent, payload);
+      setConsentParams(gdprConsent, uspConsent, payload);
 
       return [{
         type: 'iframe',
@@ -89,7 +92,15 @@ function getFlashVersion() {
   return result || '';
 }
 
-function setConsentParams(gdprConsent, payload) {
+function getTopWindowReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return '';
+  }
+}
+
+function setConsentParams(gdprConsent, uspConsent, payload) {
   if (gdprConsent) {
     payload.gdpr = 0;
     payload.consent_str = '';
@@ -100,10 +111,37 @@ function setConsentParams(gdprConsent, payload) {
     if (typeof gdprConsent.consentString !== 'undefined') {
       payload.consent_str = gdprConsent.consentString;
     }
-    if (gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents && typeof gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
+    if (gdprConsent.apiVersion === 1 && gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents && typeof gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
       payload.consent_given = gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] ? 1 : 0;
     }
+    if (gdprConsent.apiVersion === 2 && gdprConsent.vendorData && gdprConsent.vendorData.vendor && gdprConsent.vendorData.vendor.consents && typeof gdprConsent.vendorData.vendor.consents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
+      payload.consent_given = gdprConsent.vendorData.vendor.consents[FIDELITY_VENDOR_ID.toString(10)] ? 1 : 0;
+    }
+  }
+  if (typeof uspConsent !== 'undefined') {
+    payload.us_privacy = uspConsent;
   }
 }
 
+function getSupplyChain(schain) {
+  var supplyChain = '';
+  if (schain != null && schain.nodes) {
+    supplyChain = schain.ver + ',' + schain.complete;
+    for (let i = 0; i < schain.nodes.length; i++) {
+      supplyChain += '!';
+      supplyChain += (schain.nodes[i].asi) ? encodeURIComponent(schain.nodes[i].asi) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].sid) ? encodeURIComponent(schain.nodes[i].sid) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].hp) ? encodeURIComponent(schain.nodes[i].hp) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].rid) ? encodeURIComponent(schain.nodes[i].rid) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].name) ? encodeURIComponent(schain.nodes[i].name) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].domain) ? encodeURIComponent(schain.nodes[i].domain) : '';
+    }
+  }
+  return supplyChain;
+}
 registerBidder(spec);

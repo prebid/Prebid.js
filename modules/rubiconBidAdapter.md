@@ -28,9 +28,9 @@ globalsupport@rubiconproject.com for more information.
                    {
                        bidder: "rubicon",
                        params: {
-                           accountId: 1001,
-                           siteId: 113932,
-                           zoneId: 535510
+                           accountId: 14062,
+                           siteId: 70608,
+                           zoneId: 498816
                        }
                    }
                ]
@@ -45,9 +45,9 @@ globalsupport@rubiconproject.com for more information.
                    {
                        bidder: "rubicon",
                        params: {
-                           accountId: 1001,
-                           siteId: 113932,
-                           zoneId: 535510
+                           accountId: 14062,
+                           siteId: 70608,
+                           zoneId: 498816
                        }
                    }
                ]
@@ -60,7 +60,7 @@ globalsupport@rubiconproject.com for more information.
          video: {
             context: 'instream',
             playerSize: [640, 480],
-            mimes: ['video/mp4', 'video/x-ms-wmv']
+            mimes: ['video/mp4', 'video/x-ms-wmv'],
             protocols: [2,5],
             maxduration:30,
             linearity: 1,
@@ -72,7 +72,7 @@ globalsupport@rubiconproject.com for more information.
         params: {
             accountId: '7780',
             siteId: '87184',
-            zoneId: '413290',
+            zoneId: '412394',
             video: {
                 language: 'en'
             }

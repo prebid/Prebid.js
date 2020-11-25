@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as bidfactory from '../src/bidfactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as bidfactory from '../src/bidfactory.js';
 var CONSTANTS = require('../src/constants.json');
 const BIDDER_CODE = 'tim';
 
@@ -104,7 +104,7 @@ export const spec = {
     }
 
     bidRequest.bidId = bidReq.bidId;
-    var url = '//hb.timmedia-hb.com/api/v2/services/prebid/' + publisherid + '/' + placementCode + '?' + 'br=' + encodeURIComponent(JSON.stringify(bidRequest));
+    var url = 'https://hb.timmedia-hb.com/api/v2/services/prebid/' + publisherid + '/' + placementCode + '?' + 'br=' + encodeURIComponent(JSON.stringify(bidRequest));
     return {
       method: 'GET',
       url: url,

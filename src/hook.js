@@ -1,5 +1,5 @@
 
-import funHooks from 'fun-hooks/no-eval';
+import funHooks from 'fun-hooks/no-eval/index.js';
 
 export let hook = funHooks({
   ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
