@@ -2,8 +2,28 @@
 
 import {expect} from 'chai';
 import {spec} from 'modules/pubwiseBidAdapter.js';
-import {checkMediaType} from 'modules/pubwiseBidAdapter.js';
+import {_checkMediaType} from 'modules/pubwiseBidAdapter.js'; // this is exported only for testing so maintaining the JS convention of _ to indicate the intent
+import {_parseAdSlot} from 'modules/pubwiseBidAdapter.js'; // this is exported only for testing so maintaining the JS convention of _ to indicate the intent
 import * as utils from 'src/utils.js';
+
+const sampleRequestBanner = {
+  'id': '235da62bde68a6',
+  'tagid': 'div-gpt-ad-1460505748561-0',
+  'secure': 1,
+  'bidfloorcur': 'USD',
+  'banner': {
+    'w': 300,
+    'h': 250,
+    'format': [
+      {
+        'w': 300,
+        'h': 600
+      }
+    ],
+    'pos': 0,
+    'topframe': 1
+  }
+};
 
 const sampleRequest = {
   'at': 1,
@@ -11,24 +31,7 @@ const sampleRequest = {
     'USD'
   ],
   'imp': [
-    {
-      'id': '235da62bde68a6',
-      'tagid': 'div-gpt-ad-1460505748561-0',
-      'secure': 1,
-      'bidfloorcur': 'USD',
-      'banner': {
-        'w': 300,
-        'h': 250,
-        'format': [
-          {
-            'w': 300,
-            'h': 600
-          }
-        ],
-        'pos': 0,
-        'topframe': 1
-      }
-    },
+    sampleRequestBanner,
     {
       'id': '7329ddc1d84eb3',
       'tagid': 'div-gpt-ad-1460505748561-1',
@@ -61,58 +64,60 @@ const sampleRequest = {
   }
 };
 
-const sampleValidBidRequests = [
-  {
-    'bidder': 'pubwise',
-    'params': {
-      'siteId': 'xxxxxx'
-    },
-    'crumbs': {
-      'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
-    },
-    'fpd': {
-      'context': {
-        'adServer': {
-          'name': 'gam',
-          'adSlot': '/19968336/header-bid-tag-0'
-        },
-        'pbAdSlot': '/19968336/header-bid-tag-0'
-      }
-    },
-    'mediaTypes': {
-      'banner': {
-        'sizes': [
-          [
-            300,
-            250
-          ],
-          [
-            300,
-            600
-          ]
-        ]
-      }
-    },
-    'adUnitCode': 'div-gpt-ad-1460505748561-0',
-    'transactionId': '2001a8b2-3bcf-417d-b64f-92641dae21e0',
-    'sizes': [
-      [
-        300,
-        250
-      ],
-      [
-        300,
-        600
-      ]
-    ],
-    'bidId': '235da62bde68a6',
-    'bidderRequestId': '18a45bff5ff705',
-    'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0
+const sampleValidBannerBidRequest = {
+  'bidder': 'pubwise',
+  'params': {
+    'siteId': 'xxxxxx'
   },
+  'crumbs': {
+    'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
+  },
+  'fpd': {
+    'context': {
+      'adServer': {
+        'name': 'gam',
+        'adSlot': '/19968336/header-bid-tag-0'
+      },
+      'pbAdSlot': '/19968336/header-bid-tag-0'
+    }
+  },
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          250
+        ],
+        [
+          300,
+          600
+        ]
+      ]
+    }
+  },
+  'adUnitCode': 'div-gpt-ad-1460505748561-0',
+  'transactionId': '2001a8b2-3bcf-417d-b64f-92641dae21e0',
+  'sizes': [
+    [
+      300,
+      250
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '235da62bde68a6',
+  'bidderRequestId': '18a45bff5ff705',
+  'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0
+};
+
+const sampleValidBidRequests = [
+  sampleValidBannerBidRequest,
   {
     'bidder': 'pubwise',
     'params': {
@@ -189,62 +194,65 @@ const sampleValidBidRequests = [
   }
 ]
 
+const sampleBidderBannerRequest = {
+  'bidder': 'pubwise',
+  'params': {
+    'siteId': 'xxxxxx',
+    'height': 250,
+    'width': 300,
+    'adUnitIndex': '0',
+    'adUnit': '',
+    'adSlot': '',
+  },
+  'crumbs': {
+    'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
+  },
+  'fpd': {
+    'context': {
+      'adServer': {
+        'name': 'gam',
+        'adSlot': '/19968336/header-bid-tag-0'
+      },
+      'pbAdSlot': '/19968336/header-bid-tag-0'
+    }
+  },
+  'mediaTypes': {
+    'banner': {
+      'sizes': [
+        [
+          300,
+          600
+        ]
+      ]
+    }
+  },
+  'adUnitCode': 'div-gpt-ad-1460505748561-0',
+  'transactionId': '2001a8b2-3bcf-417d-b64f-92641dae21e0',
+  'sizes': [
+    [
+      300,
+      250
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '235da62bde68a6',
+  'bidderRequestId': '18a45bff5ff705',
+  'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0
+};
+
 const sampleBidderRequest = {
   'bidderCode': 'pubwise',
   'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
   'bidderRequestId': '18a45bff5ff705',
   'bids': [
-    {
-      'bidder': 'pubwise',
-      'params': {
-        'siteId': 'xxxxxx'
-      },
-      'crumbs': {
-        'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
-      },
-      'fpd': {
-        'context': {
-          'adServer': {
-            'name': 'gam',
-            'adSlot': '/19968336/header-bid-tag-0'
-          },
-          'pbAdSlot': '/19968336/header-bid-tag-0'
-        }
-      },
-      'mediaTypes': {
-        'banner': {
-          'sizes': [
-            [
-              300,
-              250
-            ],
-            [
-              300,
-              600
-            ]
-          ]
-        }
-      },
-      'adUnitCode': 'div-gpt-ad-1460505748561-0',
-      'transactionId': '2001a8b2-3bcf-417d-b64f-92641dae21e0',
-      'sizes': [
-        [
-          300,
-          250
-        ],
-        [
-          300,
-          600
-        ]
-      ],
-      'bidId': '235da62bde68a6',
-      'bidderRequestId': '18a45bff5ff705',
-      'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
-      'src': 'client',
-      'bidRequestsCount': 1,
-      'bidderRequestsCount': 1,
-      'bidderWinsCount': 0
-    },
+    sampleBidderBannerRequest,
     {
       'bidder': 'pubwise',
       'params': {
@@ -404,15 +412,23 @@ describe('PubWiseAdapter', function () {
     it('identifies native adm type', function() {
       let adm = '{"ver":"1.2","assets":[{"title":{"text":"PubWise Test"}},{"img":{"type":3,"url":"http://www.pubwise.io"}},{"img":{"type":1,"url":"http://www.pubwise.io"}},{"data":{"type":2,"value":"PubWise Test Desc"}},{"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":""}}';
       let newBid = {mediaType: 'unknown'};
-      checkMediaType(adm, newBid);
+      _checkMediaType(adm, newBid);
       expect(newBid.mediaType).to.equal('native', adm + ' Is a Native adm');
     });
 
     it('identifies banner adm type', function() {
       let adm = '<div style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;">↵	<h3 style="margin-top:80px;text-align: center;">PubWise Test Bid</h3>↵</div>';
       let newBid = {mediaType: 'unknown'};
-      checkMediaType(adm, newBid);
+      _checkMediaType(adm, newBid);
       expect(newBid.mediaType).to.equal('banner', adm + ' Is a Banner adm');
+    });
+  });
+
+  describe('Properly Parses AdSlot Data', function () {
+    it('parses banner', function() {
+      let testBid = utils.deepClone(sampleValidBannerBidRequest)
+      _parseAdSlot(testBid)
+      expect(testBid).to.deep.equal(sampleBidderBannerRequest);
     });
   });
 });

@@ -14,6 +14,10 @@ Connects to PubWise exchange for bids.
 
 With isTest parameter the system will respond in whatever dimensions provided.
 
+## Params
+
+
+
 ## Banner
 ```
 var adUnits = [

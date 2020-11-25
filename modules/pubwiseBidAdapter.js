@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 const VERSION = '0.1.0';
 const NET_REVENUE = true;
 const UNDEFINED = undefined;
@@ -9,7 +9,6 @@ const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'pubwise';
 const ENDPOINT_URL = 'https://bid.pubwise.io/prebid';
-const LOG_WARN_PREFIX = 'PubWise: ';
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
@@ -94,7 +93,7 @@ export const spec = {
   isBidRequestValid: function (bid) {
     if (bid.params && bid.params) {
       if (!utils.isStr(bid.params.siteId)) {
-        utils.logWarn('siteId is required for bid', bid);
+        _logWarn('siteId is required for bid', bid);
         return false;
       }
     }
@@ -129,7 +128,7 @@ export const spec = {
         // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height
         // The corresponding banner imp object will not be generated, but we still want the native object to be sent, hence the following check
         if (!(bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(NATIVE)) && bid.params.width === 0 && bid.params.height === 0) {
-          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
+          _logWarn('Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
           return;
         }
       }
@@ -138,16 +137,17 @@ export const spec = {
       if (bidCurrency === '') {
         bidCurrency = bid.params.currency || UNDEFINED;
       } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Currency specifier ignored. Only one currency permitted.');
+        _logWarn('Currency specifier ignored. Only one currency permitted.');
       }
       bid.params.currency = bidCurrency;
       // check if dctr is added to more than 1 adunit
-      if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) {
+      if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) { // TODO: support or remove
         dctrArr.push(bid.params.dctr);
       }
-      if (bid.params.hasOwnProperty('bcat') && utils.isArray(bid.params.bcat)) {
+      if (bid.params.hasOwnProperty('bcat') && utils.isArray(bid.params.bcat)) { // TODO: support or remove
         blockedIabCategories = blockedIabCategories.concat(bid.params.bcat);
       }
+
       var impObj = _createImpressionObject(bid, conf);
       if (impObj) {
         payload.imp.push(impObj);
@@ -158,6 +158,9 @@ export const spec = {
       return;
     }
 
+    if (bid.params.isTest) {
+      payload.test = Number(bid.params.isTest) // should be 1 or 0
+    }
     payload.site.publisher.id = bid.params.siteId.trim();
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
@@ -212,6 +215,9 @@ export const spec = {
       options.withCredentials = false
     }
 
+    _logInfo('buildRequests payload', payload);
+    _logInfo('buildRequests bidderRequest', bidderRequest);
+
     return {
       method: 'POST',
       url: ENDPOINT_URL,
@@ -229,7 +235,7 @@ export const spec = {
   interpretResponse: function (response, request) {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
-    utils.logInfo(request);
+    _logInfo('interpretResponse request', request);
     let parsedRequest = request.data; // not currently stringified
     // let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
 
@@ -259,7 +265,7 @@ export const spec = {
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
                 parsedRequest.imp.forEach(req => {
                   if (bid.impid === req.id) {
-                    checkMediaType(bid.adm, newBid);
+                    _checkMediaType(bid.adm, newBid);
                     switch (newBid.mediaType) {
                       case BANNER:
                         break;
@@ -288,7 +294,7 @@ export const spec = {
         });
       }
     } catch (error) {
-      utils.logError(error);
+      _logError(error);
     }
     return bidResponses;
   },
@@ -308,18 +314,18 @@ export const spec = {
 
 }
 
-function checkMediaType(adm, newBid) {
+function _checkMediaType(adm, newBid) {
   // Create a regex here to check the strings
   var admJSON = '';
   if (adm.indexOf('"ver":') >= 0) {
-    // try {
-    admJSON = JSON.parse(adm.replace(/\\/g, ''));
-    if (admJSON && admJSON.assets) {
-      newBid.mediaType = NATIVE;
+    try {
+      admJSON = JSON.parse(adm.replace(/\\/g, ''));
+      if (admJSON && admJSON.assets) {
+        newBid.mediaType = NATIVE;
+      }
+    } catch (e) {
+      _logWarn('Error: Cannot parse native reponse for ad response: ' + adm);
     }
-    // } catch (e) {
-    //   utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
-    // }
   } else {
     newBid.mediaType = BANNER;
   }
@@ -332,7 +338,7 @@ function _parseNativeResponse(bid, newBid) {
     try {
       adm = JSON.parse(bid.adm.replace(/\\/g, ''));
     } catch (ex) {
-      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + newBid.adm);
+      _logWarn('Error: Cannot parse native reponse for ad response: ' + newBid.adm);
       return;
     }
     if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
@@ -413,7 +419,7 @@ function _handleCustomParams(params, conf) {
         if (utils.isStr(value)) {
           conf[key] = value;
         } else {
-          utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : ' + key + ' with value : ' + CUSTOM_PARAMS[key] + ', expects string-value, found ' + typeof value);
+          _logWarn('Ignoring param : ' + key + ' with value : ' + CUSTOM_PARAMS[key] + ', expects string-value, found ' + typeof value);
         }
       }
     }
@@ -451,18 +457,13 @@ function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj;
   var nativeObj = {};
-  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
-  var format = [];
 
   impObj = {
     id: bid.bidId,
     tagid: bid.params.adUnit || undefined,
-    bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
+    bidfloor: _parseSlotParam('bidfloor', bid.params.bidfloor),
     secure: 1,
-    ext: {
-      pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
-    },
     bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
   };
 
@@ -480,50 +481,29 @@ function _createImpressionObject(bid, conf) {
           if (!isInvalidNativeRequest) {
             impObj.native = nativeObj;
           } else {
-            utils.logWarn(LOG_WARN_PREFIX + 'Error: Error in Native adunit ' + bid.params.adUnit + '. Ignoring the adunit. Refer to ' + PREBID_NATIVE_HELP_LINK + ' for more details.');
+            _logWarn('Error: Error in Native adunit ' + bid.params.adUnit + '. Ignoring the adunit. Refer to ' + PREBID_NATIVE_HELP_LINK + ' for more details.');
           }
           break;
       }
     }
   } else {
-    // mediaTypes is not present, so this is a banner only impression
-    // this part of code is required for older testcases with no 'mediaTypes' to run succesfully.
-    bannerObj = {
-      pos: 0,
-      w: bid.params.width,
-      h: bid.params.height,
-      topframe: utils.inIframe() ? 0 : 1
-    };
-    if (utils.isArray(sizes) && sizes.length > 1) {
-      sizes = sizes.splice(1, sizes.length - 1);
-      sizes.forEach(size => {
-        format.push({
-          w: size[0],
-          h: size[1]
-        });
-      });
-      bannerObj.format = format;
-    }
-    impObj.banner = bannerObj;
+    _logWarn('MediaTypes are Required for all Adunit Configs', bid)
   }
 
   _addFloorFromFloorModule(impObj, bid);
 
   return impObj.hasOwnProperty(BANNER) ||
-          impObj.hasOwnProperty(NATIVE) ||
-            impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
+          impObj.hasOwnProperty(NATIVE) ? impObj : UNDEFINED;
 }
 
 function _parseSlotParam(paramName, paramValue) {
   if (!utils.isStr(paramValue)) {
-    paramValue && utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
+    paramValue && _logWarn('Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
     return UNDEFINED;
   }
 
   switch (paramName) {
-    case 'pmzoneid':
-      return paramValue.split(',').slice(0, 50).map(id => id.trim()).join();
-    case 'kadfloor':
+    case 'bidfloor':
       return parseFloat(paramValue) || UNDEFINED;
     case 'lat':
       return parseFloat(paramValue) || UNDEFINED;
@@ -537,6 +517,7 @@ function _parseSlotParam(paramName, paramValue) {
 }
 
 function _parseAdSlot(bid) {
+  _logInfo('parseAdSlot bid', bid)
   bid.params.adUnit = '';
   bid.params.adUnitIndex = '0';
   bid.params.width = 0;
@@ -550,36 +531,28 @@ function _parseAdSlot(bid) {
   if (splits.length == 2) {
     bid.params.adUnitIndex = splits[1];
   }
-  // check if size is mentioned in sizes array. in that case do not check for @ in adslot
-  splits = slot.split('@');
-  bid.params.adUnit = splits[0];
-  if (splits.length > 1) {
-    // i.e size is specified in adslot, so consider that and ignore sizes array
-    splits = splits[1].split('x');
-    if (splits.length != 2) {
-      utils.logWarn('AdSlot Error: adSlot not in required format');
-      return;
-    }
-    bid.params.width = parseInt(splits[0], 10);
-    bid.params.height = parseInt(splits[1], 10);
-  } else if (bid.hasOwnProperty('mediaTypes') &&
-         bid.mediaTypes.hasOwnProperty(BANNER) &&
-          bid.mediaTypes.banner.hasOwnProperty('sizes')) {
-    var i = 0;
-    var sizeArray = [];
-    for (;i < bid.mediaTypes.banner.sizes.length; i++) {
-      if (bid.mediaTypes.banner.sizes[i].length === 2) { // sizes[i].length will not be 2 in case where size is set as fluid, we want to skip that entry
-        sizeArray.push(bid.mediaTypes.banner.sizes[i]);
+
+  if (bid.hasOwnProperty('mediaTypes')) {
+    if (bid.mediaTypes.hasOwnProperty(BANNER) &&
+          bid.mediaTypes.banner.hasOwnProperty('sizes')) { // if its a banner, has mediaTypes and sizes
+      var i = 0;
+      var sizeArray = [];
+      for (;i < bid.mediaTypes.banner.sizes.length; i++) {
+        if (bid.mediaTypes.banner.sizes[i].length === 2) { // sizes[i].length will not be 2 in case where size is set as fluid, we want to skip that entry
+          sizeArray.push(bid.mediaTypes.banner.sizes[i]);
+        }
+      }
+      bid.mediaTypes.banner.sizes = sizeArray;
+      if (bid.mediaTypes.banner.sizes.length >= 1) {
+        // if there is more than one size then pop one onto the banner params width
+        // pop the first into the params, then remove it from mediaTypes
+        bid.params.width = bid.mediaTypes.banner.sizes[0][0];
+        bid.params.height = bid.mediaTypes.banner.sizes[0][1];
+        bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
       }
     }
-    bid.mediaTypes.banner.sizes = sizeArray;
-    if (bid.mediaTypes.banner.sizes.length >= 1) {
-      // set the first size in sizes array in bid.params.width and bid.params.height. These will be sent as primary size.
-      // The rest of the sizes will be sent in format array.
-      bid.params.width = bid.mediaTypes.banner.sizes[0][0];
-      bid.params.height = bid.mediaTypes.banner.sizes[0][1];
-      bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
-    }
+  } else {
+    _logWarn('MediaTypes are Required for all Adunit Configs', bid)
   }
 }
 
@@ -655,7 +628,7 @@ function _createNativeRequest(params) {
                 }
               };
             } else {
-              utils.logWarn(LOG_WARN_PREFIX + 'Error: Title Length is required for native ad: ' + JSON.stringify(params));
+              _logWarn('Error: Title Length is required for native ad: ' + JSON.stringify(params));
             }
             break;
           case NATIVE_ASSETS.IMAGE.KEY:
@@ -674,7 +647,7 @@ function _createNativeRequest(params) {
                 }
               };
             } else {
-              utils.logWarn(LOG_WARN_PREFIX + 'Error: Image sizes is required for native ad: ' + JSON.stringify(params));
+              _logWarn('Error: Image sizes is required for native ad: ' + JSON.stringify(params));
             }
             break;
           case NATIVE_ASSETS.ICON.KEY:
@@ -689,7 +662,7 @@ function _createNativeRequest(params) {
                 }
               };
             } else {
-              utils.logWarn(LOG_WARN_PREFIX + 'Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
+              _logWarn('Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
             };
             break;
           case NATIVE_ASSETS.VIDEO.KEY:
@@ -775,7 +748,7 @@ function _createBannerRequest(bid) {
       if (sizes.length === 0) {
         // i.e. since bid.params does not have width or height, and length of sizes is 0, need to ignore this banner imp
         bannerObj = UNDEFINED;
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
+        _logWarn('Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
         return bannerObj;
       } else {
         bannerObj.w = parseInt(sizes[0][0], 10);
@@ -800,7 +773,7 @@ function _createBannerRequest(bid) {
     bannerObj.pos = 0;
     bannerObj.topframe = utils.inIframe() ? 0 : 1;
   } else {
-    utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
+    _logWarn('Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
     bannerObj = UNDEFINED;
   }
   return bannerObj;
@@ -816,9 +789,32 @@ function _hasPurpose1Consent(bidderRequest) {
   return result;
 }
 
-// export for testing
+// eslint-disable-next-line no-unused-vars
+function _logMessage(textValue, objectValue) {
+  utils.logMessage('PubWise: ' + textValue, objectValue);
+}
+
+function _logInfo(textValue, objectValue) {
+  utils.logInfo('PubWise: ' + textValue, objectValue);
+}
+
+function _logWarn(textValue, objectValue) {
+  utils.logWarn('PubWise: ' + textValue, objectValue);
+}
+
+function _logError(textValue, objectValue) {
+  utils.logError('PubWise: ' + textValue, objectValue);
+}
+
+// function _decorateLog() {
+//   arguments[0] = 'PubWise' + arguments[0];
+//   return arguments
+// }
+
+// these are exported only for testing so maintaining the JS convention of _ to indicate the intent
 export {
-  checkMediaType
+  _checkMediaType,
+  _parseAdSlot
 }
 
 registerBidder(spec);
