@@ -14,10 +14,41 @@ const KEY_EXPIRY = `${KEY_ID}_expiry`;
 const KEY_PROFILE = '_cc_id';
 const MODULE_NAME = 'lotamePanoramaId';
 const NINE_MONTHS_MS = 23328000 * 1000;
-const DAYS_TO_CACHE = 7;
-const DAY_MS = 60 * 60 * 24 * 1000;
 
 export const storage = getStorageManager(null, MODULE_NAME);
+const cookieDomain = findCookieDomain(String(document.domain));
+
+/**
+ * Find the root dommain
+ * @param {string} fullDomain
+ * @return {?string}
+ */
+function findCookieDomain(fullDomain) {
+  const domainParts = fullDomain.split('.');
+  if (domainParts.length == 2) {
+    return fullDomain;
+  }
+  let rootDomain;
+  let continueSearching = true;
+  let startIndex = -2;
+  const TEST_COOKIE_NAME = 'lotame_domain_check';
+  const TEST_COOKIE_VALUE = 'writeable';
+  do {
+    rootDomain = domainParts.slice(startIndex).join('.');
+    let expirationDate = new Date(
+      utils.timestamp() + 10 * 1000
+    ).toUTCString();
+    storage.setCookie(TEST_COOKIE_NAME, TEST_COOKIE_VALUE, expirationDate, 'Lax', `${rootDomain}`, undefined);
+    const value = storage.getCookie(TEST_COOKIE_NAME, undefined);
+    if (value === TEST_COOKIE_VALUE) {
+      continueSearching = false;
+    } else {
+      startIndex += -1;
+      continueSearching = Math.abs(startIndex) <= domainParts.length;
+    }
+  } while (continueSearching);
+  return rootDomain;
+}
 
 /**
  * Set the Lotame First Party Profile ID in the first party namespace
@@ -78,7 +109,7 @@ function getFromStorage(key) {
 function saveLotameCache(
   key,
   value,
-  expirationTimestamp = utils.timestamp() + DAYS_TO_CACHE * DAY_MS
+  expirationTimestamp
 ) {
   if (key && value) {
     let expirationDate = new Date(expirationTimestamp).toUTCString();
@@ -88,7 +119,7 @@ function saveLotameCache(
         value,
         expirationDate,
         'Lax',
-        undefined,
+        cookieDomain,
         undefined
       );
     }
@@ -115,7 +146,7 @@ function getLotameLocalCache() {
   try {
     const rawExpiry = getFromStorage(KEY_EXPIRY);
     if (utils.isStr(rawExpiry)) {
-      cache.expiryTimestampMs = parseInt(rawExpiry, 0);
+      cache.expiryTimestampMs = parseInt(rawExpiry, 10);
     }
   } catch (error) {
     utils.logError(error);
@@ -205,7 +236,11 @@ export const lotamePanoramaIdSubmodule = {
           if (response) {
             try {
               let responseObj = JSON.parse(response);
-              saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts);
+              saveLotameCache(
+                KEY_EXPIRY,
+                responseObj.expiry_ts,
+                responseObj.expiry_ts
+              );
 
               if (utils.isStr(responseObj.profile_id)) {
                 setProfileId(responseObj.profile_id);
