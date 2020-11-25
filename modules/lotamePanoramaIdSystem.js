@@ -16,39 +16,7 @@ const MODULE_NAME = 'lotamePanoramaId';
 const NINE_MONTHS_MS = 23328000 * 1000;
 
 export const storage = getStorageManager(null, MODULE_NAME);
-const cookieDomain = findCookieDomain(String(document.domain));
-
-/**
- * Find the root dommain
- * @param {string} fullDomain
- * @return {?string}
- */
-function findCookieDomain(fullDomain) {
-  const domainParts = fullDomain.split('.');
-  if (domainParts.length == 2) {
-    return fullDomain;
-  }
-  let rootDomain;
-  let continueSearching = true;
-  let startIndex = -2;
-  const TEST_COOKIE_NAME = 'lotame_domain_check';
-  const TEST_COOKIE_VALUE = 'writeable';
-  do {
-    rootDomain = domainParts.slice(startIndex).join('.');
-    let expirationDate = new Date(
-      utils.timestamp() + 10 * 1000
-    ).toUTCString();
-    storage.setCookie(TEST_COOKIE_NAME, TEST_COOKIE_VALUE, expirationDate, 'Lax', `${rootDomain}`, undefined);
-    const value = storage.getCookie(TEST_COOKIE_NAME, undefined);
-    if (value === TEST_COOKIE_VALUE) {
-      continueSearching = false;
-    } else {
-      startIndex += -1;
-      continueSearching = Math.abs(startIndex) <= domainParts.length;
-    }
-  } while (continueSearching);
-  return rootDomain;
-}
+let cookieDomain;
 
 /**
  * Set the Lotame First Party Profile ID in the first party namespace
@@ -57,7 +25,7 @@ function findCookieDomain(fullDomain) {
 function setProfileId(profileId) {
   if (storage.cookiesAreEnabled()) {
     let expirationDate = new Date(utils.timestamp() + NINE_MONTHS_MS).toUTCString();
-    storage.setCookie(KEY_PROFILE, profileId, expirationDate, 'Lax', undefined, undefined);
+    storage.setCookie(KEY_PROFILE, profileId, expirationDate, 'Lax', cookieDomain, undefined);
   }
   if (storage.hasLocalStorage()) {
     storage.setDataInLocalStorage(KEY_PROFILE, profileId, undefined);
@@ -180,6 +148,42 @@ export const lotamePanoramaIdSubmodule = {
   name: MODULE_NAME,
 
   /**
+   * Find the root domain
+   * @param {string} fullDomain
+   * @return {?string}
+   */
+  findCookieDomain: function (fullDomain) {
+    if (!storage.cookiesAreEnabled()) {
+      return fullDomain;
+    }
+
+    const domainParts = fullDomain.split('.');
+    if (domainParts.length == 2) {
+      return fullDomain;
+    }
+    let rootDomain;
+    let continueSearching = true;
+    let startIndex = -2;
+    const TEST_COOKIE_NAME = 'lotame_domain_check';
+    const TEST_COOKIE_VALUE = 'writeable';
+    do {
+      rootDomain = domainParts.slice(startIndex).join('.');
+      let expirationDate = new Date(
+        utils.timestamp() + 10 * 1000
+      ).toUTCString();
+      storage.setCookie(TEST_COOKIE_NAME, TEST_COOKIE_VALUE, expirationDate, 'Lax', `${rootDomain}`, undefined);
+      const value = storage.getCookie(TEST_COOKIE_NAME, undefined);
+      if (value === TEST_COOKIE_VALUE) {
+        continueSearching = false;
+      } else {
+        startIndex += -1;
+        continueSearching = Math.abs(startIndex) <= domainParts.length;
+      }
+    } while (continueSearching);
+    return rootDomain;
+  },
+
+  /**
    * Decode the stored id value for passing to bid requests
    * @function decode
    * @param {(Object|string)} value
@@ -199,6 +203,7 @@ export const lotamePanoramaIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
+    cookieDomain = this.findCookieDomain(String(document.domain));
     let localCache = getLotameLocalCache();
 
     let refreshNeeded = Date.now() > localCache.expiryTimestampMs;

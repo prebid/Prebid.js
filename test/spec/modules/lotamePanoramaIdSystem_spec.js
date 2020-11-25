@@ -446,4 +446,24 @@ describe('LotameId', function() {
       'lotamePanoramaId': '1234'
     });
   });
+
+  describe('findCookieDomain', function() {
+    beforeEach(function() {
+      getCookieStub
+        .onFirstCall()
+        .returns(null) // .co.uk
+        .onSecondCall()
+        .returns('writeable') // realdomain.co.uk;
+    });
+
+    it('should just find the root domain', function() {
+      var domain = lotamePanoramaIdSubmodule.findCookieDomain('sub.realdomain.co.uk')
+      expect(domain).to.be.eq('realdomain.co.uk')
+    });
+
+    it('should find the full domain when no subdomain is present', function() {
+      var domain = lotamePanoramaIdSubmodule.findCookieDomain('realdomain.co.uk')
+      expect(domain).to.be.eq('realdomain.co.uk')
+    });
+  });
 });
