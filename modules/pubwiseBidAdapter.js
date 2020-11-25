@@ -2,8 +2,8 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-const NET_REVENUE = false;
-const VERSION = '0.0.1';
+const VERSION = '0.1.0';
+const NET_REVENUE = true;
 const UNDEFINED = undefined;
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
@@ -182,7 +182,7 @@ export const spec = {
     utils.deepSetValue(payload, 'source.tid', conf.transactionId);
 
     // test bids
-    if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
+    if (window.location.href.indexOf('pubwiseTest=true') !== -1) {
       payload.test = 1;
     }
 
@@ -230,7 +230,7 @@ export const spec = {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
     utils.logInfo(request);
-    let parsedRequest = request.data;
+    let parsedRequest = request.data; // not currently stringified
     // let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
 
     try {
@@ -283,13 +283,6 @@ export const spec = {
                 newBid.meta.clickUrl = bid.adomain[0];
               }
 
-              // adserverTargeting
-              if (seatbidder.ext && seatbidder.ext.buyid) {
-                newBid.adserverTargeting = {
-                  'hb_buyid_pubmatic': seatbidder.ext.buyid
-                };
-              }
-
               bidResponses.push(newBid);
             });
         });
@@ -317,11 +310,8 @@ export const spec = {
 function _checkMediaType(adm, newBid) {
   // Create a regex here to check the strings
   var admStr = '';
-  var videoRegex = new RegExp(/VAST\s+version/);
   if (adm.indexOf('span class="PubAPIAd"') >= 0) {
     newBid.mediaType = BANNER;
-  } else if (videoRegex.test(adm)) {
-    newBid.mediaType = VIDEO;
   } else {
     try {
       admStr = JSON.parse(adm.replace(/\\/g, ''));

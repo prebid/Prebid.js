@@ -383,10 +383,19 @@ describe('PubWiseAdapter', function () {
     });
   });
 
-  describe('Proceess Bids Properly', function () {
+  describe('Handling Request Construction', function () {
+    it('bid requests are not mutable', function() {
+      let sourceBidRequest = utils.deepClone(sampleValidBidRequests)
+      let request = spec.buildRequests(sampleValidBidRequests, {auctinId: 'placeholdr'});
+      expect(sampleValidBidRequests).to.deep.equal(sourceBidRequest, 'Should be unedited as they are used elsewhere');
+    });
     it('should handle complex bidRequest', function() {
       let request = spec.buildRequests(sampleValidBidRequests, sampleBidderRequest);
       expect(request.bidderRequest).to.equal(sampleBidderRequest);
+    });
+    it('must conform to API for buildRequests', function() {
+      let request = spec.buildRequests(sampleValidBidRequests);
+      expect(request.bidderRequest).to.be.undefined;
     });
   });
 });

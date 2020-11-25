@@ -28,7 +28,6 @@ var adUnits = [
             bidder: 'pubwise',
             params: {
                 siteId: "xxxxxx",
-                spotId: "12345678",
                 isTest: true
             }
         }]
