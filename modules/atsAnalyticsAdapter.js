@@ -8,10 +8,13 @@ import {getStorageManager} from '../src/storageManager.js';
 export const storage = getStorageManager();
 
 const analyticsType = 'endpoint';
+const preflightUrl = 'https://analytics-check.publishersite.xyz/check/';
+export const analyticsUrl = 'https://analyticsv2.publishersite.xyz';
 
 let handlerRequest = [];
 let handlerResponse = [];
-let host = '';
+
+let atsAnalyticsAdapterVersion = 1;
 
 let browsersList = [
   /* Googlebot */
@@ -195,6 +198,12 @@ let browsersList = [
   },
 ];
 
+function setSamplingCookie(samplRate) {
+  let now = new Date();
+  now.setTime(now.getTime() + 3600000);
+  storage.setCookie('_lr_sampling_rate', samplRate, now.toUTCString());
+}
+
 let listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
 
 function bidRequestedHandler(args) {
@@ -213,6 +222,7 @@ function bidRequestedHandler(args) {
       auction_start: new Date(args.auctionStart).toJSON(),
       domain: window.location.hostname,
       pid: atsAnalyticsAdapter.context.pid,
+      adapter_version: atsAnalyticsAdapterVersion
     };
   });
   return requests;
@@ -235,13 +245,37 @@ export function parseBrowser() {
       return obj.test.test(ua);
     });
     let browserName = result && result.length ? result[0].name : '';
-    // eslint-disable-next-line no-console
-    console.log('Browser: ', result[0].name);
-    let browserNameResult = listOfSupportedBrowsers.includes(browserName) ? browserName : 'Unknown';
-    return browserNameResult;
+    return listOfSupportedBrowsers.includes(browserName) ? browserName : 'Unknown';
   } catch (err) {
-    utils.logError('Error while checking user browser!', err);
+    utils.logError('ATS Analytics - Error while checking user browser!', err);
   }
+}
+
+function sendDataToAnalytic () {
+  // send data to ats analytic endpoint
+  try {
+    let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
+    let strJSON = JSON.stringify(dataToSend);
+    utils.logInfo('ATS Analytics - tried to send analytics data!');
+    ajax(analyticsUrl, function () {
+    }, strJSON, {method: 'POST', contentType: 'application/json'});
+  } catch (err) {
+    utils.logError('ATS Analytics - request encounter an error: ', err);
+  }
+}
+
+// preflight request, to check did publisher have permission to send data to analytics endpoint
+function preflightRequest (envelopeSourceCookieValue) {
+  ajax(preflightUrl + atsAnalyticsAdapter.context.pid, function (data) {
+    let samplingRateObject = JSON.parse(data);
+    utils.logInfo('ATS Analytics - Sampling Rate: ', samplingRateObject);
+    let samplingRate = samplingRateObject['samplingRate'];
+    setSamplingCookie(samplingRate);
+    let samplingRateNumber = Number(samplingRate);
+    if (data && samplingRate && atsAnalyticsAdapter.shouldFireRequest(samplingRateNumber) && envelopeSourceCookieValue != null) {
+      sendDataToAnalytic();
+    }
+  }, undefined, { method: 'GET', crossOrigin: true });
 }
 
 function callHandler(evtype, args) {
@@ -269,7 +303,6 @@ function callHandler(evtype, args) {
 
 let atsAnalyticsAdapter = Object.assign(adapter(
   {
-    host,
     analyticsType
   }),
 {
@@ -279,22 +312,18 @@ let atsAnalyticsAdapter = Object.assign(adapter(
     }
     if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
       let envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
-      // eslint-disable-next-line no-console
-      console.log('Should Fire Request: ', atsAnalyticsAdapter.shouldFireRequest());
-      // eslint-disable-next-line no-console
-      console.log('envelopeSourceCookieValue: ', envelopeSourceCookieValue);
-      // eslint-disable-next-line no-console
-      console.log('Envelope Source check: ', envelopeSourceCookieValue != null);
-      if (atsAnalyticsAdapter.shouldFireRequest() && envelopeSourceCookieValue != null) {
-        // send data to ats analytic endpoint
-        try {
-          let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
-          let strJSON = JSON.stringify(dataToSend);
-          utils.logInfo('atsAnalytics tried to send analytics data!');
-          ajax(atsAnalyticsAdapter.context.host, function () {
-          }, strJSON, {method: 'POST', contentType: 'application/json'});
-        } catch (err) {
+      try {
+        utils.logInfo('ATS Analytics - preflight request!');
+        let samplingRateCookie = storage.getCookie('_lr_sampling_rate');
+        if (!samplingRateCookie) {
+          preflightRequest(envelopeSourceCookieValue);
+        } else {
+          if (samplingRateCookie && atsAnalyticsAdapter.shouldFireRequest(parseInt(samplingRateCookie)) && envelopeSourceCookieValue != null) {
+            sendDataToAnalytic();
+          }
         }
+      } catch (err) {
+        utils.logError('ATS Analytics - preflight request encounter an error: ', err);
       }
     }
   }
@@ -304,26 +333,20 @@ let atsAnalyticsAdapter = Object.assign(adapter(
 atsAnalyticsAdapter.originEnableAnalytics = atsAnalyticsAdapter.enableAnalytics;
 
 // add check to not fire request every time, but instead to send 1/10 events
-atsAnalyticsAdapter.shouldFireRequest = function () {
-  return (Math.floor((Math.random() * 11)) === 10);
+atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
+  let shouldFireRequestValue = (Math.floor((Math.random() * samplingRate + 1)) === samplingRate);
+  utils.logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
+  return shouldFireRequestValue;
 }
 
 // override enableAnalytics so we can get access to the config passed in from the page
 atsAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.pid) {
-    utils.logError('Publisher ID (pid) option is not defined. Analytics won\'t work');
+    utils.logError('ATS Analytics - Publisher ID (pid) option is not defined. Analytics won\'t work');
     return;
   }
-
-  if (!config.options.host) {
-    utils.logError('Host option is not defined. Analytics won\'t work');
-    return;
-  }
-
-  host = config.options.host;
   atsAnalyticsAdapter.context = {
     events: [],
-    host: config.options.host,
     pid: config.options.pid
   };
   let initOptions = config.options;

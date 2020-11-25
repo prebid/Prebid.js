@@ -4,6 +4,8 @@ import adapterManager from 'src/adapterManager.js';
 import {server} from '../../mocks/xhr.js';
 import {parseBrowser} from '../../../modules/atsAnalyticsAdapter.js';
 import {getStorageManager} from '../../../src/storageManager.js';
+import {analyticsUrl} from '../../../modules/atsAnalyticsAdapter.js';
+
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -34,10 +36,10 @@ describe('ats analytics adapter', function () {
       let now = new Date();
       now.setTime(now.getTime() + 3600000);
       storage.setCookie('_lr_env_src_ats', 'true', now.toUTCString());
+      storage.setCookie('_lr_sampling_rate', '10', now.toUTCString());
 
       let initOptions = {
-        pid: '10433394',
-        host: 'https://example.com/dev',
+        pid: '10433394'
       };
       let auctionTimestamp = 1496510254326;
 
@@ -89,6 +91,7 @@ describe('ats analytics adapter', function () {
       let expectedAfterBid = {
         'Data': [{
           'has_envelope': true,
+          'adapter_version': 1,
           'bidder': 'appnexus',
           'bid_id': '30c77d079cdf17',
           'auction_id': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
@@ -148,8 +151,9 @@ describe('ats analytics adapter', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
 
       let requests = server.requests.filter(req => {
-        return req.url.indexOf(initOptions.host) > -1;
+        return req.url.indexOf(analyticsUrl) > -1;
       });
+
       expect(requests.length).to.equal(1);
 
       let realAfterBid = JSON.parse(requests[0].requestBody);
@@ -157,8 +161,7 @@ describe('ats analytics adapter', function () {
       // Step 6: assert real data after bid and expected data
       expect(realAfterBid['Data']).to.deep.equal(expectedAfterBid['Data']);
 
-      // check that the host and publisher ID is configured via options
-      expect(atsAnalyticsAdapter.context.host).to.equal(initOptions.host);
+      // check that the publisher ID is configured via options
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
     })
     it('check browser is safari', function () {
