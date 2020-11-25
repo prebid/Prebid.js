@@ -214,3 +214,20 @@ const adUnit = {
     }]
 }
 ```
+
+### PublisherId
+
+You can set a publisherId using `pbjs.setBidderConfig` for the bidder `adot`
+
+#### Example
+
+```javascript
+pbjs.setBidderConfig({
+    bidders: ['adot'],
+    config: {
+        adot: {
+            publisherId: '__MY_PUBLISHER_ID__'
+        }
+    }
+});
+```

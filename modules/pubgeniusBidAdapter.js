@@ -37,7 +37,7 @@ export const spec = {
     const data = {
       id: bidderRequest.auctionId,
       imp: bidRequests.map(buildImp),
-      tmax: config.getConfig('bidderTimeout'),
+      tmax: bidderRequest.timeout,
       ext: {
         pbadapter: {
           version: BIDDER_VERSION,

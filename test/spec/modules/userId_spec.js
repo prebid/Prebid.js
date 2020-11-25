@@ -443,7 +443,7 @@ describe('User ID', function () {
       setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 1 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
   });
 
@@ -506,7 +506,7 @@ describe('User ID', function () {
       init(config);
       config.setConfig(getConfigMock(['unifiedId', 'unifiedid', 'cookie']));
 
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 1 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
 
     it('config with 13 configurations should result in 13 submodules add', function () {
@@ -553,7 +553,7 @@ describe('User ID', function () {
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 13 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 13 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
@@ -611,6 +611,7 @@ describe('User ID', function () {
     beforeEach(function () {
       sandbox = sinon.createSandbox();
       sandbox.stub(global, 'setTimeout').returns(2);
+      sandbox.stub(global, 'clearTimeout');
       sandbox.stub(events, 'on');
       sandbox.stub(coreStorage, 'getCookie');
 
@@ -662,6 +663,7 @@ describe('User ID', function () {
       requestBidsHook(auctionSpy, {adUnits});
 
       // check auction was delayed
+      global.clearTimeout.calledOnce.should.equal(false);
       global.setTimeout.calledOnce.should.equal(true);
       global.setTimeout.calledWith(sinon.match.func, 33);
       auctionSpy.calledOnce.should.equal(false);
@@ -696,6 +698,7 @@ describe('User ID', function () {
 
       // check auction was delayed
       // global.setTimeout.calledOnce.should.equal(true);
+      global.clearTimeout.calledOnce.should.equal(false);
       global.setTimeout.calledWith(sinon.match.func, 33);
       auctionSpy.calledOnce.should.equal(false);
 

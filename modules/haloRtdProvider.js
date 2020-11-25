@@ -11,27 +11,77 @@ import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
+export const storage = getStorageManager();
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
-const SUBMODULE_NAME = 'audigent';
-const HALOID_LOCAL_NAME = 'auHaloId';
-const SEG_LOCAL_NAME = '__adgntseg';
+const SUBMODULE_NAME = 'halo';
+
+export const HALOID_LOCAL_NAME = 'auHaloId';
+export const SEG_LOCAL_NAME = '__adgntseg';
+
+const set = (obj, path, val) => {
+  const keys = path.split('.');
+  const lastKey = keys.pop();
+  const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, obj);
+  lastObj[lastKey] = lastObj[lastKey] || val;
+};
+
+/** bid adapter format segment augmentation functions */
+const segmentMappers = {
+  appnexus: function(bid, segments) {
+    set(bid, 'params.user.segments', []);
+    let appnexusSegments = [];
+    segments.forEach(segment => {
+      if (typeof segment.id != 'undefined' && segment.id != null) {
+        appnexusSegments.push(parseInt(segment.id));
+      }
+    })
+    bid.params.user.segments = bid.params.user.segments.concat(appnexusSegments);
+  },
+  generic: function(bid, segments) {
+    bid.segments = bid.segments || [];
+    if (Array.isArray(bid.segments)) {
+      bid.segments = bid.segments.concat(segments);
+    }
+  }
+}
 
 /**
  * decorate adUnits with segment data
  * @param {adUnit[]} adUnits
  * @param {Object} data
  */
-function addSegmentData(adUnits, data) {
+export function addSegmentData(adUnits, segmentData, config) {
   adUnits.forEach(adUnit => {
     if (adUnit.hasOwnProperty('bids')) {
       adUnit.bids.forEach(bid => {
-        bid.audigent_segments = data;
-      })
+        try {
+          set(bid, 'fpd.user.data', []);
+          if (Array.isArray(bid.fpd.user.data)) {
+            bid.fpd.user.data.forEach(fpdData => {
+              let segments = segmentData[fpdData.id] || segmentData[fpdData.name] || [];
+              fpdData.segment = (fpdData.segment || []).concat(segments);
+            });
+          }
+        } catch (err) {
+          utils.logError(err.message);
+        }
+
+        try {
+          if (config.params.mapSegments && config.params.mapSegments[bid.bidder] && segmentData[bid.bidder]) {
+            if (typeof config.params.mapSegments[bid.bidder] == 'function') {
+              config.params.mapSegments[bid.bidder](bid, segmentData[bid.bidder]);
+            } else if (segmentMappers[bid.bidder]) {
+              segmentMappers[bid.bidder](bid, segmentData[bid.bidder]);
+            }
+          }
+        } catch (err) {
+          utils.logError(err.message);
+        }
+      });
     }
-  })
+  });
 
   return adUnits;
 }
@@ -43,24 +93,24 @@ function addSegmentData(adUnits, data) {
  * @param {Object} config
  * @param {Object} userConsent
  */
-function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
+export function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
-  let jsonData = storage.getDataFromLocalStorage(SEG_LOCAL_NAME);
-  if (jsonData) {
-    let data = JSON.parse(jsonData);
-    if (data.audigent_segments) {
-      addSegmentData(adUnits, data.audigent_segments);
-      onDone();
-      return;
+  if (config.params.segmentCache) {
+    let jsonData = storage.getDataFromLocalStorage(SEG_LOCAL_NAME);
+
+    if (jsonData) {
+      let data = JSON.parse(jsonData);
+
+      if (data.audigent_segments) {
+        addSegmentData(adUnits, data.audigent_segments, config);
+        onDone();
+        return;
+      }
     }
   }
 
   const userIds = (getGlobal()).getUserIds();
-  if (typeof userIds == 'undefined' || userIds == null) {
-    onDone();
-    return;
-  }
 
   let haloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
   if (haloId) {
@@ -88,10 +138,11 @@ function getSegments(reqBidsConfigObj, onDone, config, userConsent) {
  * @param {Object} userConsent
  * @param {Object} userIds
  */
-function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
-  let reqParams = {}
-  if (typeof config == 'object' && config != null && Object.keys(config).length > 0) {
-    reqParams = config.params
+export function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
+  let reqParams = {};
+  if (typeof config == 'object' && config != null) {
+    set(config, 'params.requestParams', {});
+    reqParams = config.params.requestParams;
   }
 
   const url = `https://seg.halo.ad.gt/api/v1/rtb_segments`;
@@ -101,7 +152,7 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
         try {
           const data = JSON.parse(response);
           if (data && data.audigent_segments) {
-            addSegmentData(adUnits, data.audigent_segments);
+            addSegmentData(adUnits, data.audigent_segments, config);
             onDone();
             storage.setDataInLocalStorage(SEG_LOCAL_NAME, JSON.stringify(data));
           } else {
@@ -128,18 +179,19 @@ function getSegmentsAsync(adUnits, onDone, config, userConsent, userIds) {
 
 /**
  * module init
- * @param {Object} config
+ * @param {Object} provider
+ * @param {Objkect} userConsent
  * @return {boolean}
  */
-export function init(config) {
+function init(provider, userConsent) {
   return true;
 }
 
 /** @type {RtdSubmodule} */
-export const audigentSubmodule = {
+export const haloSubmodule = {
   name: SUBMODULE_NAME,
   getBidRequestData: getSegments,
   init: init
 };
 
-submodule(MODULE_NAME, audigentSubmodule);
+submodule(MODULE_NAME, haloSubmodule);

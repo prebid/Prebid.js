@@ -62,7 +62,6 @@ export var spec = {
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     let syncurl = USER_SYNC + 'pid=' + pubId;
-    
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',

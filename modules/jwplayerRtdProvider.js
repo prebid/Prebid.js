@@ -247,9 +247,14 @@ function addTargetingToBids(bids, targeting) {
     return;
   }
 
-  bids.forEach(bid => {
-    bid.jwTargeting = targeting;
-  });
+  bids.forEach(bid => addTargetingToBid(bid, targeting));
+}
+
+export function addTargetingToBid(bid, targeting) {
+  const rtd = bid.rtd || {};
+  const jwRtd = {};
+  jwRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], { targeting });
+  bid.rtd = Object.assign({}, rtd, jwRtd);
 }
 
 function getPlayer(playerID) {
