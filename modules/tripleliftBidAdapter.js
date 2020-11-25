@@ -114,8 +114,7 @@ function _buildPostBody(bidRequests) {
     let imp = {
       id: index,
       tagid: bidRequest.params.inventoryCode,
-      floor: _getFloor(bidRequest),
-      fpd: _getAdUnitFpd(bidRequest)
+      floor: _getFloor(bidRequest)
     };
     // remove the else to support multi-imp
     if (_isInstreamBidRequest(bidRequest)) {
@@ -123,6 +122,9 @@ function _buildPostBody(bidRequests) {
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
     };
+    if (!utils.isEmpty(bidRequest.fpd)) {
+      imp.fpd = _getAdUnitFpd(bidRequest.fpd);
+    }
     return imp;
   });
 
@@ -203,11 +205,17 @@ function _getGlobalFpd() {
   return fpd;
 }
 
-function _getAdUnitFpd(bid) {
-  if (!utils.isEmpty(bid.fpd)) {
-    return bid.fpd;
+function _getAdUnitFpd(adUnitFpd) {
+  let fpd = {};
+  let context = {};
+
+  _addEntries(context, adUnitFpd.context);
+
+  if (!utils.isEmpty(context)) {
+    fpd.context = context;
   }
-  return null;
+
+  return fpd;
 }
 
 function _addEntries(target, source) {

@@ -143,6 +143,14 @@ describe('triplelift adapter', function () {
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
+          fpd: {
+            context: {
+              pbAdSlot: 'homepage-top-rect',
+              data: {
+                adUnitSpecificAttribute: 123
+              }
+            }
+          }
         },
         {
           bidder: 'triplelift',
@@ -597,7 +605,7 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].floor).to.equal(1.99);
     });
-    it('should send fpd on root level ext if kvps are available', function() {
+    it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
       const pmp_elig = 'true';
@@ -621,6 +629,13 @@ describe('triplelift adapter', function () {
       expect(payload.ext.fpd.user).to.not.exist;
       expect(payload.ext.fpd.context).to.haveOwnProperty('category');
       expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
+    });
+    it.only('should send ad unit fpd if kvps are available', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[0].fpd.context).to.haveOwnProperty('pbAdSlot');
+      expect(request.data.imp[0].fpd.context).to.haveOwnProperty('data');
+      expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('adUnitSpecificAttribute');
+      expect(request.data.imp[1].fpd).to.not.exist;
     });
   });
 
