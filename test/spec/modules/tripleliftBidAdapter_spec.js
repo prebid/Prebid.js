@@ -605,7 +605,7 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].floor).to.equal(1.99);
     });
-    it.only('should send global config fpd if kvps are available', function() {
+    it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
       const pmp_elig = 'true';
