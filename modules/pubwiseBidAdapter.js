@@ -16,14 +16,10 @@ const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html
 // const USERSYNC_URL = '//127.0.0.1:8080/usersync'
 
 const CUSTOM_PARAMS = {
-  'kadpageurl': '', // Custom page url
   'gender': '', // User gender
   'yob': '', // User year of birth
   'lat': '', // User location - Latitude
   'lon': '', // User Location - Longitude
-  'wiid': '', // OpenWrap Wrapper Impression ID
-  'profId': '', // OpenWrap Legacy: Profile ID
-  'verId': '' // OpenWrap Legacy: version ID
 };
 
 const NATIVE_ASSETS = {
@@ -233,8 +229,10 @@ export const spec = {
   interpretResponse: function (response, request) {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
-    let parsedRequest = JSON.parse(request.data);
-    let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
+    utils.logInfo(request);
+    let parsedRequest = request.data;
+    // let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
+
     try {
       if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
@@ -253,7 +251,6 @@ export const spec = {
                 currency: respCur,
                 netRevenue: NET_REVENUE,
                 ttl: 300,
-                referrer: parsedReferrer,
                 ad: bid.adm,
                 pm_seat: seatbidder.seat || null,
                 pm_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null,
