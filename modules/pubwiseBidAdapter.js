@@ -259,7 +259,7 @@ export const spec = {
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
                 parsedRequest.imp.forEach(req => {
                   if (bid.impid === req.id) {
-                    _checkMediaType(bid.adm, newBid);
+                    checkMediaType(bid.adm, newBid);
                     switch (newBid.mediaType) {
                       case BANNER:
                         break;
@@ -305,22 +305,23 @@ export const spec = {
 
     return syncs;
   }
+
 }
 
-function _checkMediaType(adm, newBid) {
+function checkMediaType(adm, newBid) {
   // Create a regex here to check the strings
-  var admStr = '';
-  if (adm.indexOf('span class="PubAPIAd"') >= 0) {
-    newBid.mediaType = BANNER;
-  } else {
-    try {
-      admStr = JSON.parse(adm.replace(/\\/g, ''));
-      if (admStr && admStr.native) {
-        newBid.mediaType = NATIVE;
-      }
-    } catch (e) {
-      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
+  var admJSON = '';
+  if (adm.indexOf('"ver":') >= 0) {
+    // try {
+    admJSON = JSON.parse(adm.replace(/\\/g, ''));
+    if (admJSON && admJSON.assets) {
+      newBid.mediaType = NATIVE;
     }
+    // } catch (e) {
+    //   utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
+    // }
+  } else {
+    newBid.mediaType = BANNER;
   }
 }
 
@@ -813,6 +814,11 @@ function _hasPurpose1Consent(bidderRequest) {
     }
   }
   return result;
+}
+
+// export for testing
+export {
+  checkMediaType
 }
 
 registerBidder(spec);

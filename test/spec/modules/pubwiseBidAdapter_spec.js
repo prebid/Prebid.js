@@ -2,6 +2,7 @@
 
 import {expect} from 'chai';
 import {spec} from 'modules/pubwiseBidAdapter.js';
+import {checkMediaType} from 'modules/pubwiseBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const sampleRequest = {
@@ -396,6 +397,22 @@ describe('PubWiseAdapter', function () {
     it('must conform to API for buildRequests', function() {
       let request = spec.buildRequests(sampleValidBidRequests);
       expect(request.bidderRequest).to.be.undefined;
+    });
+  });
+
+  describe('Identifies Media Types', function () {
+    it('identifies native adm type', function() {
+      let adm = '{"ver":"1.2","assets":[{"title":{"text":"PubWise Test"}},{"img":{"type":3,"url":"http://www.pubwise.io"}},{"img":{"type":1,"url":"http://www.pubwise.io"}},{"data":{"type":2,"value":"PubWise Test Desc"}},{"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":""}}';
+      let newBid = {mediaType: 'unknown'};
+      checkMediaType(adm, newBid);
+      expect(newBid.mediaType).to.equal('native', adm + ' Is a Native adm');
+    });
+
+    it('identifies banner adm type', function() {
+      let adm = '<div style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;">↵	<h3 style="margin-top:80px;text-align: center;">PubWise Test Bid</h3>↵</div>';
+      let newBid = {mediaType: 'unknown'};
+      checkMediaType(adm, newBid);
+      expect(newBid.mediaType).to.equal('banner', adm + ' Is a Banner adm');
     });
   });
 });
