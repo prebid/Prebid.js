@@ -11,11 +11,18 @@
 
       var adUnits = [{
         code: 'div-gpt-ad-1460505748561-0',
-        jwTargeting: {
-          // Note: the following Ids are placeholders and should be replaced with your Ids.
-          playerID: '123',
-          mediaID: 'abc'
+        fpd: {
+          context: {
+            data: {
+              jwTargeting: {
+                // Note: the following Ids are placeholders and should be replaced with your Ids.
+                playerID: '123',
+                mediaID: 'abc'
+              }
+            },
+          }
         },
+
         mediaTypes: {
           banner: {
             sizes: [[300, 250], [300,600]],
@@ -45,7 +52,7 @@
       pbjs.que.push(function() {
         pbjs.setConfig({
           realTimeData: {
-            auctionDelay: 5000,
+            auctionDelay: 100,
             dataProviders: [{
               name: "jwplayer",
               waitForIt: true,

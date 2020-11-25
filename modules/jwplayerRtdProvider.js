@@ -144,6 +144,7 @@ function enrichBidRequest(bidReqConfig, onDone) {
  * @param {function} onDone
  */
 export function enrichAdUnits(adUnits) {
+  const fpdFallback = config.getConfig('fpd.context.data.jwTargeting');
   adUnits.forEach(adUnit => {
     const onVatResponse = function (vat) {
       if (!vat) {
@@ -153,12 +154,21 @@ export function enrichAdUnits(adUnits) {
       addTargetingToBids(adUnit.bids, targeting);
     };
 
-    loadVat(adUnit.jwTargeting, onVatResponse);
+    const jwTargeting = extractPublisherParams(adUnit, fpdFallback);
+    loadVat(jwTargeting, onVatResponse);
   });
 }
 
+export function extractPublisherParams(adUnit, fallback) {
+  let adUnitTargeting;
+  try {
+    adUnitTargeting = adUnit.fpd.context.data.jwTargeting;
+  } catch (e) {}
+  return Object.assign({}, fallback, adUnitTargeting);
+}
+
 function loadVat(params, onCompletion) {
-  if (!params) {
+  if (!params || !Object.keys(params).length) {
     return;
   }
 
@@ -237,9 +247,14 @@ function addTargetingToBids(bids, targeting) {
     return;
   }
 
-  bids.forEach(bid => {
-    bid.jwTargeting = targeting;
-  });
+  bids.forEach(bid => addTargetingToBid(bid, targeting));
+}
+
+export function addTargetingToBid(bid, targeting) {
+  const rtd = bid.rtd || {};
+  const jwRtd = {};
+  jwRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], { targeting });
+  bid.rtd = Object.assign({}, rtd, jwRtd);
 }
 
 function getPlayer(playerID) {

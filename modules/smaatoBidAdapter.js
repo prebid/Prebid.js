@@ -117,6 +117,11 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     utils.deepSetValue(request, 'device.ifa', ifa);
   }
 
+  const eids = utils.deepAccess(validBidRequests[0], 'userIdAsEids');
+  if (eids && eids.length) {
+    utils.deepSetValue(request, 'user.ext.eids', eids);
+  }
+
   utils.logInfo('[SMAATO] OpenRTB Request:', request);
   return JSON.stringify(request);
 }
