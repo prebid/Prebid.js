@@ -45,6 +45,7 @@ pbjs.setConfig({
 | params | Required | Object | Details for the ID5 Universal ID. | |
 | params.partner | Required | Number | This is the ID5 Partner Number obtained from registering with ID5. | `173` |
 | params.pd | Optional | String | Publisher-supplied data used for linking ID5 IDs across domains. See [our documentation](https://wiki.id5.io/x/BIAZ) for details on generating the string. Omit the parameter or leave as an empty string if no data to supply | `"MT1iNTBjY..."` |
+| params.provider | Optional | String | An identifier provided by ID5 to technology partners who manage Prebid setups on behalf of publishers. Reach out to [ID5](mailto:prebid@id5.io) if you have questions about this parameter  | `pubmatic-identity-hub` |
 | storage | Required | Object | Storage settings for how the User ID module will cache the ID5 ID locally | |
 | storage.type | Required | String | This is where the results of the user ID will be stored. ID5 **requires** `"html5"`. | `"html5"` |
 | storage.name | Required | String | The name of the local storage where the user ID will be stored. ID5 **requires** `"id5id"`. | `"id5id"` |

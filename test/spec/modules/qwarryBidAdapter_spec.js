@@ -11,33 +11,37 @@ const REQUEST = {
   }
 }
 
-const BIDDER_BANNER_RESPONSE = {'prebidResponse': [{
-  'ad': '<div>test</div>',
-  'requestId': 'e64782a4-8e68-4c38-965b-80ccf115d46d',
-  'cpm': 900.5,
-  'currency': 'USD',
-  'width': 640,
-  'height': 480,
-  'ttl': 300,
-  'creativeId': 1,
-  'netRevenue': true,
-  'winUrl': 'http://test.com',
-  'format': 'banner'
-}]}
+const BIDDER_BANNER_RESPONSE = {
+  'prebidResponse': [{
+    'ad': '<div>test</div>',
+    'requestId': 'e64782a4-8e68-4c38-965b-80ccf115d46d',
+    'cpm': 900.5,
+    'currency': 'USD',
+    'width': 640,
+    'height': 480,
+    'ttl': 300,
+    'creativeId': 1,
+    'netRevenue': true,
+    'winUrl': 'http://test.com',
+    'format': 'banner'
+  }]
+}
 
-const BIDDER_VIDEO_RESPONSE = {'prebidResponse': [{
-  'ad': '<xml>vast</xml>',
-  'requestId': 'e64782a4-8e68-4c38-965b-80ccf115d46z',
-  'cpm': 800.4,
-  'currency': 'USD',
-  'width': 1024,
-  'height': 768,
-  'ttl': 200,
-  'creativeId': 2,
-  'netRevenue': true,
-  'winUrl': 'http://test.com',
-  'format': 'video'
-}]}
+const BIDDER_VIDEO_RESPONSE = {
+  'prebidResponse': [{
+    'ad': '<xml>vast</xml>',
+    'requestId': 'e64782a4-8e68-4c38-965b-80ccf115d46z',
+    'cpm': 800.4,
+    'currency': 'USD',
+    'width': 1024,
+    'height': 768,
+    'ttl': 200,
+    'creativeId': 2,
+    'netRevenue': true,
+    'winUrl': 'http://test.com',
+    'format': 'video'
+  }]
+}
 
 const BIDDER_NO_BID_RESPONSE = ''
 
@@ -118,6 +122,15 @@ describe('qwarryBidAdapter', function () {
 
       result = spec.interpretResponse({ body: BIDDER_NO_BID_RESPONSE }, {})
       expect(result).to.deep.equal([])
+    })
+  })
+
+  describe('onBidWon', function () {
+    it('handles banner win: should get true', function () {
+      const win = BIDDER_BANNER_RESPONSE.prebidResponse[0]
+      const bidWonResult = spec.onBidWon(win)
+
+      expect(bidWonResult).to.equal(true)
     })
   })
 })
