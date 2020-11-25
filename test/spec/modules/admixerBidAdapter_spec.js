@@ -121,4 +121,34 @@ describe('AdmixerAdapter', function () {
       expect(result.length).to.equal(0);
     });
   });
+
+  describe('getUserSyncs', function () {
+    let imgUrl = 'https://example.com/img1';
+    let frmUrl = 'https://example.com/frm2';
+    let responses = [{
+      body: {
+        cm: {
+          pixels: [
+            imgUrl
+          ],
+          iframes: [
+            frmUrl
+          ],
+        }
+      }
+    }];
+
+    it('Returns valid values', function () {
+      let userSyncAll = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, responses);
+      let userSyncImg = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false}, responses);
+      let userSyncFrm = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: true}, responses);
+      expect(userSyncAll).to.be.an('array').with.lengthOf(2);
+      expect(userSyncImg).to.be.an('array').with.lengthOf(1);
+      expect(userSyncImg[0].url).to.be.equal(imgUrl);
+      expect(userSyncImg[0].type).to.be.equal('image');
+      expect(userSyncFrm).to.be.an('array').with.lengthOf(1);
+      expect(userSyncFrm[0].url).to.be.equal(frmUrl);
+      expect(userSyncFrm[0].type).to.be.equal('iframe');
+    });
+  });
 });
