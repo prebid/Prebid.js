@@ -86,11 +86,15 @@ Each bid for which targeting information was found will conform to the following
     adUnitCode: 'xyz',
     bidId: 'abc',
     ...,
-    jwTargeting: {
-      segments: ['123', '456'],
-      content: {
-        id: 'jw_abc123'
-      }
+    rtd: {
+        jwplayer: {
+            targeting: {
+                segments: ['123', '456'],
+                content: {
+                    id: 'jw_abc123'
+                }
+            }
+        }   
     }
 }
 ```
