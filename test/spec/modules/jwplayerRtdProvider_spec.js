@@ -1,5 +1,5 @@
 import { fetchTargetingForMediaId, getVatFromCache, extractPublisherParams,
-  formatTargetingResponse, getVatFromPlayer, enrichAdUnits,
+  formatTargetingResponse, getVatFromPlayer, enrichAdUnits, addTargetingToBid,
   fetchTargetingInformation, jwplayerSubmodule } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -252,7 +252,7 @@ describe('jwplayerRtdProvider', function() {
           };
           jwplayerSubmodule.getBidRequestData({ adUnits: [adUnit] }, bidRequestSpy);
           expect(bidRequestSpy.calledOnce).to.be.true;
-          expect(bid).to.have.deep.property('jwTargeting', expectedTargeting);
+          expect(bid.rtd.jwplayer).to.have.deep.property('targeting', expectedTargeting);
           fakeServer.respond();
           expect(bidRequestSpy.calledOnce).to.be.true;
         });
@@ -313,8 +313,8 @@ describe('jwplayerRtdProvider', function() {
       enrichAdUnits([adUnit]);
       const bid1 = bids[0];
       const bid2 = bids[1];
-      expect(bid1).to.not.have.property('jwTargeting');
-      expect(bid2).to.not.have.property('jwTargeting');
+      expect(bid1).to.not.have.property('rtd');
+      expect(bid2).to.not.have.property('rtd');
 
       const request = fakeServer.requests[0];
       request.respond(
@@ -330,8 +330,8 @@ describe('jwplayerRtdProvider', function() {
         })
       );
 
-      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
-      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
+      expect(bid1.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
+      expect(bid2.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
     });
 
     it('immediately adds cached targeting', function () {
@@ -373,8 +373,8 @@ describe('jwplayerRtdProvider', function() {
       enrichAdUnits([adUnit]);
       const bid1 = bids[0];
       const bid2 = bids[1];
-      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
-      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
+      expect(bid1.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
+      expect(bid2.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
     });
 
     it('adds content block when segments are absent and no request is pending', function () {
@@ -407,8 +407,8 @@ describe('jwplayerRtdProvider', function() {
       enrichAdUnits([adUnit]);
       const bid1 = bids[0];
       const bid2 = bids[1];
-      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
-      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
+      expect(bid1.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForFailure);
+      expect(bid2.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForFailure);
     });
   });
 
@@ -454,6 +454,87 @@ describe('jwplayerRtdProvider', function() {
       const targeting = extractPublisherParams(null, null);
       expect(targeting).to.deep.equal({});
     })
+  });
+
+  describe('Add Targeting to Bid', function () {
+    const targeting = {foo: 'bar'};
+
+    it('creates realTimeData when absent from Bid', function () {
+      const targeting = {foo: 'bar'};
+      const bid = {};
+      addTargetingToBid(bid, targeting);
+      expect(bid).to.have.property('rtd');
+      expect(bid).to.have.nested.property('rtd.jwplayer.targeting', targeting);
+    });
+
+    it('adds to existing realTimeData', function () {
+      const otherRtd = {
+        targeting: {
+          seg: 'rtd seg'
+        }
+      };
+
+      const bid = {
+        rtd: {
+          otherRtd
+        }
+      };
+
+      addTargetingToBid(bid, targeting);
+      expect(bid).to.have.property('rtd');
+      const rtd = bid.rtd;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+
+      expect(rtd).to.have.deep.property('otherRtd', otherRtd);
+    });
+
+    it('adds to existing realTimeData.jwplayer', function () {
+      const otherInfo = { seg: 'rtd seg' };
+      const bid = {
+        rtd: {
+          jwplayer: {
+            otherInfo
+          }
+        }
+      };
+      addTargetingToBid(bid, targeting);
+
+      expect(bid).to.have.property('rtd');
+      const rtd = bid.rtd;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.otherInfo', otherInfo);
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
+
+    it('overrides existing jwplayer.targeting', function () {
+      const otherInfo = { seg: 'rtd seg' };
+      const bid = {
+        rtd: {
+          jwplayer: {
+            targeting: {
+              otherInfo
+            }
+          }
+        }
+      };
+      addTargetingToBid(bid, targeting);
+
+      expect(bid).to.have.property('rtd');
+      const rtd = bid.rtd;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
+
+    it('creates jwplayer when absent from realTimeData', function () {
+      const bid = { rtd: {} };
+      addTargetingToBid(bid, targeting);
+
+      expect(bid).to.have.property('rtd');
+      const rtd = bid.rtd;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
   });
 
   describe('jwplayerSubmodule', function () {
@@ -578,7 +659,7 @@ describe('jwplayerRtdProvider', function() {
         };
         jwplayerSubmodule.getBidRequestData({ adUnits: [adUnitWithMediaId, adUnitEmpty] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
-        expect(bid).to.have.deep.property('jwTargeting', expectedTargeting);
+        expect(bid.rtd.jwplayer).to.have.deep.property('targeting', expectedTargeting);
       });
 
       it('excludes segments when absent', function () {
@@ -605,9 +686,9 @@ describe('jwplayerRtdProvider', function() {
 
         jwplayerSubmodule.getBidRequestData({ adUnits: [ adUnit ] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
-        expect(bid.jwTargeting).to.not.have.property('segments');
-        expect(bid.jwTargeting).to.not.have.property('segments');
-        expect(bid).to.have.deep.property('jwTargeting', expectedTargeting);
+        expect(bid.rtd.jwplayer.targeting).to.not.have.property('segments');
+        expect(bid.rtd.jwplayer.targeting).to.not.have.property('segments');
+        expect(bid.rtd.jwplayer).to.have.deep.property('targeting', expectedTargeting);
       });
 
       it('does not modify bid when jwTargeting block is absent', function () {
@@ -637,9 +718,9 @@ describe('jwplayerRtdProvider', function() {
 
         jwplayerSubmodule.getBidRequestData({ adUnits: [adUnitWithMediaId, adUnitEmpty, adUnitEmptyfpd] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
-        expect(bid1).to.not.have.property('jwTargeting');
-        expect(bid2).to.not.have.property('jwTargeting');
-        expect(bid3).to.not.have.property('jwTargeting');
+        expect(bid1).to.not.have.property('rtd');
+        expect(bid2).to.not.have.property('rtd');
+        expect(bid3).to.not.have.property('rtd');
       });
     });
   });

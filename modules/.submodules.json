@@ -26,8 +26,9 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
-    "audigentRtdProvider",
+    "haloRtdProvider",
     "jwplayerRtdProvider",
-    "reconciliationRtdProvider"
+    "reconciliationRtdProvider",
+    "geoedgeRtdProvider"
   ]
 }
