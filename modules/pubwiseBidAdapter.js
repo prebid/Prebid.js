@@ -1,16 +1,32 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+const NET_REVENUE = false;
 const VERSION = '0.0.1';
 const UNDEFINED = undefined;
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'pubwise';
 const ENDPOINT_URL = 'https://bid.pubwise.io/prebid';
+const LOG_WARN_PREFIX = 'PubWise: ';
+const DEFAULT_WIDTH = 0;
+const DEFAULT_HEIGHT = 0;
+const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 // const USERSYNC_URL = '//127.0.0.1:8080/usersync'
 
-const NATIVE_ASSETS_LIST = {
+const CUSTOM_PARAMS = {
+  'kadpageurl': '', // Custom page url
+  'gender': '', // User gender
+  'yob': '', // User year of birth
+  'lat': '', // User location - Latitude
+  'lon': '', // User Location - Longitude
+  'wiid': '', // OpenWrap Wrapper Impression ID
+  'profId': '', // OpenWrap Legacy: Profile ID
+  'verId': '' // OpenWrap Legacy: version ID
+};
+
+const NATIVE_ASSETS = {
   'TITLE': { ID: 1, KEY: 'title', TYPE: 0 },
   'IMAGE': { ID: 2, KEY: 'image', TYPE: 0 },
   'ICON': { ID: 3, KEY: 'icon', TYPE: 0 },
@@ -35,7 +51,7 @@ const NATIVE_ASSETS_LIST = {
   'CTA': { ID: 22, KEY: 'cta', TYPE: 12 }
 };
 
-const NATIVE_ASSET_IMAGE_TYPE_LIST = {
+const NATIVE_ASSET_IMAGE_TYPE = {
   'ICON': 1,
   'LOGO': 2,
   'IMAGE': 3
@@ -44,31 +60,31 @@ const NATIVE_ASSET_IMAGE_TYPE_LIST = {
 // to render any native unit we have to have a few items
 const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
   {
-    id: NATIVE_ASSETS_LIST.SPONSOREDBY.ID,
+    id: NATIVE_ASSETS.SPONSOREDBY.ID,
     required: true,
     data: {
       type: 1
     }
   },
   {
-    id: NATIVE_ASSETS_LIST.TITLE.ID,
+    id: NATIVE_ASSETS.TITLE.ID,
     required: true,
   },
   {
-    id: NATIVE_ASSETS_LIST.IMAGE.ID,
+    id: NATIVE_ASSETS.IMAGE.ID,
     required: true,
   }
 ]
 
-let globInvalidNativeRequest = false
+let isInvalidNativeRequest = false
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
 let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 
 // together allows traversal of NATIVE_ASSETS_LIST in any direction
 // id -> key
-utils._each(NATIVE_ASSETS_LIST, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
+utils._each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
 // key -> asset
-utils._each(NATIVE_ASSETS_LIST, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
+utils._each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -96,50 +112,116 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    var bid;
-
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
     }
     var conf = _initConf(refererInfo);
-    var payload = _createBidTemplate(conf);
+    var payload = _createOrtbTemplate(conf);
+    var bidCurrency = '';
+    var dctrArr = [];
+    var bid;
+    var blockedIabCategories = [];
 
-    validBidRequests.forEach(pbBid => {
-      utils.logInfo('pbBid', pbBid)
-      bid = utils.deepClone(pbBid);
-
-      bid.sizes = _transformSizes(bid.sizes);
-
-      _parseAdSlotParams(bid);
-
-      payload.site.publisher.id = bid.params.siteId.trim();
-
-      utils.logWarn('Bid Payload', payload)
-
-      var impObj = _createImpTemplate(bid, conf);
+    validBidRequests.forEach(originalBid => {
+      bid = utils.deepClone(originalBid);
+      bid.params.adSlot = bid.params.adSlot || '';
+      _parseAdSlot(bid);
+      if (bid.params.hasOwnProperty('video')) {
+        // Nothing to do
+      } else {
+        // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height
+        // The corresponding banner imp object will not be generated, but we still want the native object to be sent, hence the following check
+        if (!(bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(NATIVE)) && bid.params.width === 0 && bid.params.height === 0) {
+          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
+          return;
+        }
+      }
+      conf = _handleCustomParams(bid.params, conf);
+      conf.transactionId = bid.transactionId;
+      if (bidCurrency === '') {
+        bidCurrency = bid.params.currency || UNDEFINED;
+      } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
+        utils.logWarn(LOG_WARN_PREFIX + 'Currency specifier ignored. Only one currency permitted.');
+      }
+      bid.params.currency = bidCurrency;
+      // check if dctr is added to more than 1 adunit
+      if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) {
+        dctrArr.push(bid.params.dctr);
+      }
+      if (bid.params.hasOwnProperty('bcat') && utils.isArray(bid.params.bcat)) {
+        blockedIabCategories = blockedIabCategories.concat(bid.params.bcat);
+      }
+      var impObj = _createImpressionObject(bid, conf);
       if (impObj) {
         payload.imp.push(impObj);
-      } else {
-        utils.logWarn('Bid impObj Invalid', bid)
       }
     });
 
-    let options = {contentType: 'application/json'};
+    if (payload.imp.length == 0) {
+      return;
+    }
 
+    payload.site.publisher.id = bid.params.siteId.trim();
+    payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
+    payload.user.geo = {};
+    payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
+    payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
+    payload.user.yob = _parseSlotParam('yob', conf.yob);
+    payload.device.geo = payload.user.geo;
+    payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
+    payload.site.domain = _getDomainFromURL(payload.site.page);
+
+    // add the content object from config in request
+    if (typeof config.getConfig('content') === 'object') {
+      payload.site.content = config.getConfig('content');
+    }
+
+    // merge the device from config.getConfig('device')
+    if (typeof config.getConfig('device') === 'object') {
+      payload.device = Object.assign(payload.device, config.getConfig('device'));
+    }
+
+    // passing transactionId in source.tid
+    utils.deepSetValue(payload, 'source.tid', conf.transactionId);
+
+    // test bids
+    if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
+      payload.test = 1;
+    }
+
+    // adding schain object
+    if (validBidRequests[0].schain) {
+      utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
+    }
+
+    // Attaching GDPR Consent Params
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+    }
+
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      utils.deepSetValue(payload, 'regs.coppa', 1);
+    }
+
+    var options = {contentType: 'application/json'}
     if (!_hasPurpose1Consent(bidderRequest)) {
       options.withCredentials = false
     }
 
-    utils.logInfo('PubWise Request Options', options);
-    utils.logInfo('PubWise Request Payload', payload);
-
     return {
       method: 'POST',
       url: ENDPOINT_URL,
-      data: JSON.stringify(payload),
-      options,
-      bidderRequest: bidderRequest
+      data: payload,
+      options: options,
+      bidderRequest: bidderRequest,
     };
   },
   /**
@@ -148,80 +230,76 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, bidRequests) {
-    const serverResponseBody = serverResponse.body;
+  interpretResponse: function (response, request) {
     const bidResponses = [];
+    var respCur = DEFAULT_CURRENCY;
+    let parsedRequest = JSON.parse(request.data);
+    let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
+    try {
+      if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
+        // Supporting multiple bid responses for same adSize
+        respCur = response.body.cur || respCur;
+        response.body.seatbid.forEach(seatbidder => {
+          seatbidder.bid &&
+            utils.isArray(seatbidder.bid) &&
+            seatbidder.bid.forEach(bid => {
+              let newBid = {
+                requestId: bid.impid,
+                cpm: (parseFloat(bid.price) || 0).toFixed(2),
+                width: bid.w,
+                height: bid.h,
+                creativeId: bid.crid || bid.id,
+                dealId: bid.dealid,
+                currency: respCur,
+                netRevenue: NET_REVENUE,
+                ttl: 300,
+                referrer: parsedReferrer,
+                ad: bid.adm,
+                pm_seat: seatbidder.seat || null,
+                pm_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null,
+                partnerImpId: bid.id || '' // partner impression Id
+              };
+              if (parsedRequest.imp && parsedRequest.imp.length > 0) {
+                parsedRequest.imp.forEach(req => {
+                  if (bid.impid === req.id) {
+                    _checkMediaType(bid.adm, newBid);
+                    switch (newBid.mediaType) {
+                      case BANNER:
+                        break;
+                      case NATIVE:
+                        _parseNativeResponse(bid, newBid);
+                        break;
+                    }
+                  }
+                });
+              }
 
-    utils.logInfo('PubWise Server Response Body', serverResponseBody);
-    utils.logInfo('PubWise Server Response BidRequest', bidRequests);
+              newBid.meta = {};
+              if (bid.ext && bid.ext.dspid) {
+                newBid.meta.networkId = bid.ext.dspid;
+              }
+              if (bid.ext && bid.ext.advid) {
+                newBid.meta.buyerId = bid.ext.advid;
+              }
+              if (bid.adomain && bid.adomain.length > 0) {
+                newBid.meta.advertiserDomains = bid.adomain;
+                newBid.meta.clickUrl = bid.adomain[0];
+              }
 
-    if (!serverResponseBody.Banner && serverResponseBody.Native) {
-      return [];
+              // adserverTargeting
+              if (seatbidder.ext && seatbidder.ext.buyid) {
+                newBid.adserverTargeting = {
+                  'hb_buyid_pubmatic': seatbidder.ext.buyid
+                };
+              }
+
+              bidResponses.push(newBid);
+            });
+        });
+      }
+    } catch (error) {
+      utils.logError(error);
     }
-
-    serverResponseBody.Banner.forEach(serverBid => {
-      utils.logInfo('Banner Bid', serverBid);
-      const bidResponse = {
-        requestId: serverBid.RequestID,
-        cpm: serverBid.CPM,
-        width: serverBid.Width,
-        height: serverBid.Height,
-        creativeId: serverBid.CreativeID,
-        dealId: serverBid.DealID,
-        currency: serverBid.Currency,
-        netRevenue: serverBid.NetRevenue,
-        ttl: serverBid.TTL,
-        referrer: '',
-        ad: serverBid.Ad
-      };
-      bidResponses.push(bidResponse);
-    });
-
-    serverResponseBody.Native.forEach(serverBid => {
-      utils.logInfo('Native Bid', serverBid);
-      const bidResponse = {
-        requestId: serverBid.RequestID,
-        cpm: serverBid.CPM,
-        width: serverBid.Width,
-        height: serverBid.Height,
-        creativeId: serverBid.CreativeID,
-        dealId: serverBid.DealID,
-        currency: serverBid.Currency,
-        netRevenue: serverBid.NetRevenue,
-        ttl: serverBid.TTL,
-        referrer: ''
-      };
-      bidResponse[NATIVE] = {
-        title: serverBid['Native'].Title,
-        body: serverBid['Native'].Body,
-        cta: '',
-        sponsoredBy: serverBid['Native'].Body,
-        image: {
-          url: serverBid['Native'].Image.URL,
-          height: serverBid['Native'].Image.Height,
-          width: serverBid['Native'].Image.Width,
-        },
-        icon: {
-          url: serverBid['Native'].Icon.URL,
-          height: serverBid['Native'].Icon.Height,
-          width: serverBid['Native'].Icon.Width,
-        },
-        clickUrl: '',
-        impressionTrackers: '',
-      }
-      if (serverBid['Native'].ClickUrl) {
-        bidResponse[NATIVE].clickUrl = serverBid['Native'].ClickUrl;
-      }
-      if (serverBid['Native'].impressionTrackers) {
-        bidResponse[NATIVE].impressionTrackers = serverBid['Native'].impressionTrackers;
-      }
-      if (serverBid['Native'].CTA) {
-        bidResponse[NATIVE].cta = serverBid['Native'].CTA;
-      }
-      bidResponses.push(bidResponse);
-    });
-
-    utils.logInfo('PubWise Active Bid Responses', bidResponses);
     return bidResponses;
   },
 
@@ -239,7 +317,238 @@ export const spec = {
   }
 }
 
-function _parseAdSlotParams(bid) {
+function _checkMediaType(adm, newBid) {
+  // Create a regex here to check the strings
+  var admStr = '';
+  var videoRegex = new RegExp(/VAST\s+version/);
+  if (adm.indexOf('span class="PubAPIAd"') >= 0) {
+    newBid.mediaType = BANNER;
+  } else if (videoRegex.test(adm)) {
+    newBid.mediaType = VIDEO;
+  } else {
+    try {
+      admStr = JSON.parse(adm.replace(/\\/g, ''));
+      if (admStr && admStr.native) {
+        newBid.mediaType = NATIVE;
+      }
+    } catch (e) {
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
+    }
+  }
+}
+
+function _parseNativeResponse(bid, newBid) {
+  newBid.native = {};
+  if (bid.hasOwnProperty('adm')) {
+    var adm = '';
+    try {
+      adm = JSON.parse(bid.adm.replace(/\\/g, ''));
+    } catch (ex) {
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + newBid.adm);
+      return;
+    }
+    if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
+      newBid.mediaType = NATIVE;
+      for (let i = 0, len = adm.native.assets.length; i < len; i++) {
+        switch (adm.native.assets[i].id) {
+          case NATIVE_ASSETS.TITLE.ID:
+            newBid.native.title = adm.native.assets[i].title && adm.native.assets[i].title.text;
+            break;
+          case NATIVE_ASSETS.IMAGE.ID:
+            newBid.native.image = {
+              url: adm.native.assets[i].img && adm.native.assets[i].img.url,
+              height: adm.native.assets[i].img && adm.native.assets[i].img.h,
+              width: adm.native.assets[i].img && adm.native.assets[i].img.w,
+            };
+            break;
+          case NATIVE_ASSETS.ICON.ID:
+            newBid.native.icon = {
+              url: adm.native.assets[i].img && adm.native.assets[i].img.url,
+              height: adm.native.assets[i].img && adm.native.assets[i].img.h,
+              width: adm.native.assets[i].img && adm.native.assets[i].img.w,
+            };
+            break;
+          case NATIVE_ASSETS.SPONSOREDBY.ID:
+          case NATIVE_ASSETS.BODY.ID:
+          case NATIVE_ASSETS.LIKES.ID:
+          case NATIVE_ASSETS.DOWNLOADS.ID:
+          case NATIVE_ASSETS.PRICE:
+          case NATIVE_ASSETS.SALEPRICE.ID:
+          case NATIVE_ASSETS.PHONE.ID:
+          case NATIVE_ASSETS.ADDRESS.ID:
+          case NATIVE_ASSETS.DESC2.ID:
+          case NATIVE_ASSETS.CTA.ID:
+          case NATIVE_ASSETS.RATING.ID:
+          case NATIVE_ASSETS.DISPLAYURL.ID:
+            newBid.native[NATIVE_ASSET_ID_TO_KEY_MAP[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
+            break;
+        }
+      }
+      newBid.native.clickUrl = adm.native.link && adm.native.link.url;
+      newBid.native.clickTrackers = (adm.native.link && adm.native.link.clicktrackers) || [];
+      newBid.native.impressionTrackers = adm.native.imptrackers || [];
+      newBid.native.jstracker = adm.native.jstracker || [];
+      if (!newBid.width) {
+        newBid.width = DEFAULT_WIDTH;
+      }
+      if (!newBid.height) {
+        newBid.height = DEFAULT_HEIGHT;
+      }
+    }
+  }
+}
+
+function _getDomainFromURL(url) {
+  let anchor = document.createElement('a');
+  anchor.href = url;
+  return anchor.hostname;
+}
+
+function _handleCustomParams(params, conf) {
+  if (!conf.kadpageurl) {
+    conf.kadpageurl = conf.pageURL;
+  }
+
+  var key, value, entry;
+  for (key in CUSTOM_PARAMS) {
+    if (CUSTOM_PARAMS.hasOwnProperty(key)) {
+      value = params[key];
+      if (value) {
+        entry = CUSTOM_PARAMS[key];
+
+        if (typeof entry === 'object') {
+          // will be used in future when we want to process a custom param before using
+          // 'keyname': {f: function() {}}
+          value = entry.f(value, conf);
+        }
+
+        if (utils.isStr(value)) {
+          conf[key] = value;
+        } else {
+          utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : ' + key + ' with value : ' + CUSTOM_PARAMS[key] + ', expects string-value, found ' + typeof value);
+        }
+      }
+    }
+  }
+  return conf;
+}
+
+function _createOrtbTemplate(conf) {
+  return {
+    id: '' + new Date().getTime(),
+    at: AUCTION_TYPE,
+    cur: [DEFAULT_CURRENCY],
+    imp: [],
+    site: {
+      page: conf.pageURL,
+      ref: conf.refURL,
+      publisher: {}
+    },
+    device: {
+      ua: navigator.userAgent,
+      js: 1,
+      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+      h: screen.height,
+      w: screen.width,
+      language: navigator.language
+    },
+    user: {},
+    ext: {
+      version: VERSION
+    }
+  };
+}
+
+function _createImpressionObject(bid, conf) {
+  var impObj = {};
+  var bannerObj;
+  var nativeObj = {};
+  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
+  var mediaTypes = '';
+  var format = [];
+
+  impObj = {
+    id: bid.bidId,
+    tagid: bid.params.adUnit || undefined,
+    bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
+    secure: 1,
+    ext: {
+      pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
+    },
+    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
+  };
+
+  if (bid.hasOwnProperty('mediaTypes')) {
+    for (mediaTypes in bid.mediaTypes) {
+      switch (mediaTypes) {
+        case BANNER:
+          bannerObj = _createBannerRequest(bid);
+          if (bannerObj !== UNDEFINED) {
+            impObj.banner = bannerObj;
+          }
+          break;
+        case NATIVE:
+          nativeObj['request'] = JSON.stringify(_createNativeRequest(bid.nativeParams));
+          if (!isInvalidNativeRequest) {
+            impObj.native = nativeObj;
+          } else {
+            utils.logWarn(LOG_WARN_PREFIX + 'Error: Error in Native adunit ' + bid.params.adUnit + '. Ignoring the adunit. Refer to ' + PREBID_NATIVE_HELP_LINK + ' for more details.');
+          }
+          break;
+      }
+    }
+  } else {
+    // mediaTypes is not present, so this is a banner only impression
+    // this part of code is required for older testcases with no 'mediaTypes' to run succesfully.
+    bannerObj = {
+      pos: 0,
+      w: bid.params.width,
+      h: bid.params.height,
+      topframe: utils.inIframe() ? 0 : 1
+    };
+    if (utils.isArray(sizes) && sizes.length > 1) {
+      sizes = sizes.splice(1, sizes.length - 1);
+      sizes.forEach(size => {
+        format.push({
+          w: size[0],
+          h: size[1]
+        });
+      });
+      bannerObj.format = format;
+    }
+    impObj.banner = bannerObj;
+  }
+
+  _addFloorFromFloorModule(impObj, bid);
+
+  return impObj.hasOwnProperty(BANNER) ||
+          impObj.hasOwnProperty(NATIVE) ||
+            impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
+}
+
+function _parseSlotParam(paramName, paramValue) {
+  if (!utils.isStr(paramValue)) {
+    paramValue && utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
+    return UNDEFINED;
+  }
+
+  switch (paramName) {
+    case 'pmzoneid':
+      return paramValue.split(',').slice(0, 50).map(id => id.trim()).join();
+    case 'kadfloor':
+      return parseFloat(paramValue) || UNDEFINED;
+    case 'lat':
+      return parseFloat(paramValue) || UNDEFINED;
+    case 'lon':
+      return parseFloat(paramValue) || UNDEFINED;
+    case 'yob':
+      return parseInt(paramValue) || UNDEFINED;
+    default:
+      return paramValue;
+  }
+}
+
+function _parseAdSlot(bid) {
   bid.params.adUnit = '';
   bid.params.adUnitIndex = '0';
   bid.params.width = 0;
@@ -300,267 +609,6 @@ function _initConf(refererInfo) {
   };
 }
 
-function _createBidTemplate(conf) {
-  return {
-    id: '' + new Date().getTime(),
-    at: AUCTION_TYPE,
-    cur: [DEFAULT_CURRENCY],
-    imp: [],
-    site: {
-      page: conf.pageURL,
-      ref: conf.refURL,
-      publisher: {}
-    },
-    device: {
-      ua: navigator.userAgent,
-      js: 1,
-      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
-      h: screen.height,
-      w: screen.width,
-      language: navigator.language
-    },
-    user: {},
-    test: 0,
-    ext: {'version': VERSION}
-  };
-}
-
-function _createImpTemplate(bid, conf) {
-  var impObj = {};
-  var bannerObj;
-  var nativeObj = {};
-  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
-  var mediaTypes = '';
-  var format = [];
-
-  utils.logInfo('the burrent params', bid.params)
-
-  impObj = {
-    id: bid.bidId,
-    tagid: bid.params.adUnit || bid.adUnitCode,
-    bidfloor: _cleanParam('bidfloor', bid.params.bidfloor),
-    secure: 1,
-    bidfloorcur: bid.params.currency ? _cleanParam('currency', bid.params.currency) : DEFAULT_CURRENCY
-  };
-
-  if (bid.hasOwnProperty('mediaTypes')) {
-    for (mediaTypes in bid.mediaTypes) {
-      switch (mediaTypes) {
-        case BANNER:
-          bannerObj = _createBannerImp(bid);
-          if (bannerObj !== UNDEFINED) {
-            impObj.banner = bannerObj;
-          }
-          break;
-        case NATIVE:
-          nativeObj['request'] = JSON.stringify(_createNativeImp(bid.nativeParams));
-          if (!globInvalidNativeRequest) {
-            impObj.native = nativeObj;
-          } else {
-            utils.logWarn('Error: Error in Native adunit ' + bid.params.adUnit + '. Ignoring the adunit.');
-          }
-          break;
-      }
-    }
-  } else {
-    // mediaTypes is not present, so this is a banner only impression
-    // this part of code is required for older testcases with no 'mediaTypes' to run succesfully.
-    bannerObj = {
-      pos: 0,
-      w: bid.params.width,
-      h: bid.params.height,
-      topframe: utils.inIframe() ? 0 : 1
-    };
-    if (utils.isArray(sizes) && sizes.length > 1) {
-      sizes = sizes.splice(1, sizes.length - 1);
-      sizes.forEach(size => {
-        format.push({
-          w: size[0],
-          h: size[1]
-        });
-      });
-      bannerObj.format = format;
-    }
-    impObj.banner = bannerObj;
-  }
-
-  _addFloorFromFloorModule(impObj, bid);
-
-  return impObj.hasOwnProperty(BANNER) ||
-          impObj.hasOwnProperty(NATIVE) ? impObj : UNDEFINED;
-}
-
-function _createBannerImp(bid) {
-  var sizes = bid.mediaTypes.banner.sizes;
-  var format = [];
-  var bannerObj;
-  if (sizes !== UNDEFINED && utils.isArray(sizes)) {
-    bannerObj = {};
-    if (!bid.params.width && !bid.params.height) {
-      if (sizes.length === 0) {
-        // i.e. since bid.params does not have width or height, and length of sizes is 0, need to ignore this banner imp
-        bannerObj = UNDEFINED;
-        utils.logWarn('Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
-        return bannerObj;
-      } else {
-        bannerObj.w = parseInt(sizes[0][0], 10);
-        bannerObj.h = parseInt(sizes[0][1], 10);
-        sizes = sizes.splice(1, sizes.length - 1);
-      }
-    } else {
-      bannerObj.w = bid.params.width;
-      bannerObj.h = bid.params.height;
-    }
-    if (sizes.length > 0) {
-      format = [];
-      sizes.forEach(function (size) {
-        if (size.length > 1) {
-          format.push({ w: size[0], h: size[1] });
-        }
-      });
-      if (format.length > 0) {
-        bannerObj.format = format;
-      }
-    }
-    bannerObj.pos = 0;
-    bannerObj.topframe = utils.inIframe() ? 0 : 1;
-  } else {
-    utils.logWarn('Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
-    bannerObj = UNDEFINED;
-  }
-  return bannerObj;
-}
-
-function _createNativeImp(params) {
-  var nativeRequestObject = {
-    assets: []
-  };
-  for (var key in params) {
-    if (params.hasOwnProperty(key)) {
-      var assetObj = {};
-      if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
-        switch (key) {
-          case NATIVE_ASSETS_LIST.TITLE.KEY:
-            if (params[key].len || params[key].length) {
-              assetObj = {
-                id: NATIVE_ASSETS_LIST.TITLE.ID,
-                required: params[key].required ? 1 : 0,
-                title: {
-                  len: params[key].len || params[key].length,
-                  ext: params[key].ext
-                }
-              };
-            } else {
-              utils.logWarn('Error: Title Length is required for native ad: ' + JSON.stringify(params));
-            }
-            break;
-          case NATIVE_ASSETS_LIST.IMAGE.KEY:
-            if (params[key].sizes && params[key].sizes.length > 0) {
-              assetObj = {
-                id: NATIVE_ASSETS_LIST.IMAGE.ID,
-                required: params[key].required ? 1 : 0,
-                img: {
-                  type: NATIVE_ASSETS_LIST.IMAGE,
-                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
-                  wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : UNDEFINED),
-                  hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : UNDEFINED),
-                  mimes: params[key].mimes,
-                  ext: params[key].ext,
-                }
-              };
-            } else {
-              utils.logWarn('Error: Image sizes is required for native ad: ' + JSON.stringify(params));
-            }
-            break;
-          case NATIVE_ASSETS_LIST.ICON.KEY:
-            if (params[key].sizes && params[key].sizes.length > 0) {
-              assetObj = {
-                id: NATIVE_ASSETS_LIST.ICON.ID,
-                required: params[key].required ? 1 : 0,
-                img: {
-                  type: NATIVE_ASSET_IMAGE_TYPE_LIST.ICON,
-                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
-                }
-              };
-            } else {
-              utils.logWarn('Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
-            };
-            break;
-          case NATIVE_ASSETS_LIST.VIDEO.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS_LIST.VIDEO.ID,
-              required: params[key].required ? 1 : 0,
-              video: {
-                minduration: params[key].minduration,
-                maxduration: params[key].maxduration,
-                protocols: params[key].protocols,
-                mimes: params[key].mimes,
-                ext: params[key].ext
-              }
-            };
-            break;
-          case NATIVE_ASSETS_LIST.EXT.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS_LIST.EXT.ID,
-              required: params[key].required ? 1 : 0,
-            };
-            break;
-          case NATIVE_ASSETS_LIST.LOGO.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS_LIST.LOGO.ID,
-              required: params[key].required ? 1 : 0,
-              img: {
-                type: NATIVE_ASSETS_LIST.LOGO,
-                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED)
-              }
-            };
-            break;
-          case NATIVE_ASSETS_LIST.SPONSOREDBY.KEY:
-          case NATIVE_ASSETS_LIST.BODY.KEY:
-          case NATIVE_ASSETS_LIST.RATING.KEY:
-          case NATIVE_ASSETS_LIST.LIKES.KEY:
-          case NATIVE_ASSETS_LIST.DOWNLOADS.KEY:
-          case NATIVE_ASSETS_LIST.PRICE.KEY:
-          case NATIVE_ASSETS_LIST.SALEPRICE.KEY:
-          case NATIVE_ASSETS_LIST.PHONE.KEY:
-          case NATIVE_ASSETS_LIST.ADDRESS.KEY:
-          case NATIVE_ASSETS_LIST.DESC2.KEY:
-          case NATIVE_ASSETS_LIST.DISPLAYURL.KEY:
-          case NATIVE_ASSETS_LIST.CTA.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSET_KEY_TO_ASSET_MAP[key], params);
-            break;
-        }
-      }
-    }
-    if (assetObj && assetObj.id) {
-      nativeRequestObject.assets[nativeRequestObject.assets.length] = assetObj;
-    }
-  };
-
-  // for native image adtype prebid has to have few required assests i.e. title,sponsoredBy, image
-  // if any of these are missing from the request then request will not be sent
-  var requiredAssetCount = NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.length;
-  var presentrequiredAssetCount = 0;
-  NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
-    var lengthOfExistingAssets = nativeRequestObject.assets.length;
-    for (var i = 0; i < lengthOfExistingAssets; i++) {
-      if (ele.id == nativeRequestObject.assets[i].id) {
-        presentrequiredAssetCount++;
-        break;
-      }
-    }
-  });
-  if (requiredAssetCount == presentrequiredAssetCount) {
-    globInvalidNativeRequest = false;
-  } else {
-    globInvalidNativeRequest = true;
-  }
-  return nativeRequestObject;
-}
-
 function _commonNativeRequestObject(nativeAsset, params) {
   var key = nativeAsset.KEY;
   return {
@@ -572,26 +620,6 @@ function _commonNativeRequestObject(nativeAsset, params) {
       ext: params[key].ext
     }
   };
-}
-
-function _cleanParam(paramName, paramValue) {
-  if (!utils.isStr(paramValue)) {
-    paramValue && utils.logWarn('Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
-    return UNDEFINED;
-  }
-
-  switch (paramName) {
-    case 'bidfloor':
-      return parseFloat(paramValue) || UNDEFINED;
-    case 'lat':
-      return parseFloat(paramValue) || UNDEFINED;
-    case 'lon':
-      return parseFloat(paramValue) || UNDEFINED;
-    case 'yob':
-      return parseInt(paramValue) || UNDEFINED;
-    default:
-      return paramValue;
-  }
 }
 
 function _addFloorFromFloorModule(impObj, bid) {
@@ -619,6 +647,177 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
+function _createNativeRequest(params) {
+  var nativeRequestObject = {
+    assets: []
+  };
+  for (var key in params) {
+    if (params.hasOwnProperty(key)) {
+      var assetObj = {};
+      if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
+        switch (key) {
+          case NATIVE_ASSETS.TITLE.KEY:
+            if (params[key].len || params[key].length) {
+              assetObj = {
+                id: NATIVE_ASSETS.TITLE.ID,
+                required: params[key].required ? 1 : 0,
+                title: {
+                  len: params[key].len || params[key].length,
+                  ext: params[key].ext
+                }
+              };
+            } else {
+              utils.logWarn(LOG_WARN_PREFIX + 'Error: Title Length is required for native ad: ' + JSON.stringify(params));
+            }
+            break;
+          case NATIVE_ASSETS.IMAGE.KEY:
+            if (params[key].sizes && params[key].sizes.length > 0) {
+              assetObj = {
+                id: NATIVE_ASSETS.IMAGE.ID,
+                required: params[key].required ? 1 : 0,
+                img: {
+                  type: NATIVE_ASSET_IMAGE_TYPE.IMAGE,
+                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
+                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
+                  wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : UNDEFINED),
+                  hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : UNDEFINED),
+                  mimes: params[key].mimes,
+                  ext: params[key].ext,
+                }
+              };
+            } else {
+              utils.logWarn(LOG_WARN_PREFIX + 'Error: Image sizes is required for native ad: ' + JSON.stringify(params));
+            }
+            break;
+          case NATIVE_ASSETS.ICON.KEY:
+            if (params[key].sizes && params[key].sizes.length > 0) {
+              assetObj = {
+                id: NATIVE_ASSETS.ICON.ID,
+                required: params[key].required ? 1 : 0,
+                img: {
+                  type: NATIVE_ASSET_IMAGE_TYPE.ICON,
+                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
+                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
+                }
+              };
+            } else {
+              utils.logWarn(LOG_WARN_PREFIX + 'Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
+            };
+            break;
+          case NATIVE_ASSETS.VIDEO.KEY:
+            assetObj = {
+              id: NATIVE_ASSETS.VIDEO.ID,
+              required: params[key].required ? 1 : 0,
+              video: {
+                minduration: params[key].minduration,
+                maxduration: params[key].maxduration,
+                protocols: params[key].protocols,
+                mimes: params[key].mimes,
+                ext: params[key].ext
+              }
+            };
+            break;
+          case NATIVE_ASSETS.EXT.KEY:
+            assetObj = {
+              id: NATIVE_ASSETS.EXT.ID,
+              required: params[key].required ? 1 : 0,
+            };
+            break;
+          case NATIVE_ASSETS.LOGO.KEY:
+            assetObj = {
+              id: NATIVE_ASSETS.LOGO.ID,
+              required: params[key].required ? 1 : 0,
+              img: {
+                type: NATIVE_ASSET_IMAGE_TYPE.LOGO,
+                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
+                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED)
+              }
+            };
+            break;
+          case NATIVE_ASSETS.SPONSOREDBY.KEY:
+          case NATIVE_ASSETS.BODY.KEY:
+          case NATIVE_ASSETS.RATING.KEY:
+          case NATIVE_ASSETS.LIKES.KEY:
+          case NATIVE_ASSETS.DOWNLOADS.KEY:
+          case NATIVE_ASSETS.PRICE.KEY:
+          case NATIVE_ASSETS.SALEPRICE.KEY:
+          case NATIVE_ASSETS.PHONE.KEY:
+          case NATIVE_ASSETS.ADDRESS.KEY:
+          case NATIVE_ASSETS.DESC2.KEY:
+          case NATIVE_ASSETS.DISPLAYURL.KEY:
+          case NATIVE_ASSETS.CTA.KEY:
+            assetObj = _commonNativeRequestObject(NATIVE_ASSET_KEY_TO_ASSET_MAP[key], params);
+            break;
+        }
+      }
+    }
+    if (assetObj && assetObj.id) {
+      nativeRequestObject.assets[nativeRequestObject.assets.length] = assetObj;
+    }
+  };
+
+  // for native image adtype prebid has to have few required assests i.e. title,sponsoredBy, image
+  // if any of these are missing from the request then request will not be sent
+  var requiredAssetCount = NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.length;
+  var presentrequiredAssetCount = 0;
+  NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
+    var lengthOfExistingAssets = nativeRequestObject.assets.length;
+    for (var i = 0; i < lengthOfExistingAssets; i++) {
+      if (ele.id == nativeRequestObject.assets[i].id) {
+        presentrequiredAssetCount++;
+        break;
+      }
+    }
+  });
+  if (requiredAssetCount == presentrequiredAssetCount) {
+    isInvalidNativeRequest = false;
+  } else {
+    isInvalidNativeRequest = true;
+  }
+  return nativeRequestObject;
+}
+
+function _createBannerRequest(bid) {
+  var sizes = bid.mediaTypes.banner.sizes;
+  var format = [];
+  var bannerObj;
+  if (sizes !== UNDEFINED && utils.isArray(sizes)) {
+    bannerObj = {};
+    if (!bid.params.width && !bid.params.height) {
+      if (sizes.length === 0) {
+        // i.e. since bid.params does not have width or height, and length of sizes is 0, need to ignore this banner imp
+        bannerObj = UNDEFINED;
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
+        return bannerObj;
+      } else {
+        bannerObj.w = parseInt(sizes[0][0], 10);
+        bannerObj.h = parseInt(sizes[0][1], 10);
+        sizes = sizes.splice(1, sizes.length - 1);
+      }
+    } else {
+      bannerObj.w = bid.params.width;
+      bannerObj.h = bid.params.height;
+    }
+    if (sizes.length > 0) {
+      format = [];
+      sizes.forEach(function (size) {
+        if (size.length > 1) {
+          format.push({ w: size[0], h: size[1] });
+        }
+      });
+      if (format.length > 0) {
+        bannerObj.format = format;
+      }
+    }
+    bannerObj.pos = 0;
+    bannerObj.topframe = utils.inIframe() ? 0 : 1;
+  } else {
+    utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
+    bannerObj = UNDEFINED;
+  }
+  return bannerObj;
+}
+
 function _hasPurpose1Consent(bidderRequest) {
   let result = true;
   if (bidderRequest && bidderRequest.gdprConsent) {
@@ -627,29 +826,6 @@ function _hasPurpose1Consent(bidderRequest) {
     }
   }
   return result;
-}
-
-/* Modify sizes into more compatible format for downstream processing */
-function _transformSizes(requestSizes) {
-  let sizes = [];
-  let sizeObj = {};
-
-  if (utils.isArray(requestSizes) && requestSizes.length === 2 &&
-    !utils.isArray(requestSizes[0])) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    sizes.push(sizeObj);
-  } else if (typeof requestSizes === 'object') {
-    for (let i = 0; i < requestSizes.length; i++) {
-      let size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      sizes.push(sizeObj);
-    }
-  }
-
-  return sizes;
 }
 
 registerBidder(spec);
