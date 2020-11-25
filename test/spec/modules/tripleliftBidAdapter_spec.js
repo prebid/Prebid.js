@@ -630,7 +630,7 @@ describe('triplelift adapter', function () {
       expect(payload.ext.fpd.context).to.haveOwnProperty('category');
       expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
     });
-    it.only('should send ad unit fpd if kvps are available', function() {
+    it('should send ad unit fpd if kvps are available', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].fpd.context).to.haveOwnProperty('pbAdSlot');
       expect(request.data.imp[0].fpd.context).to.haveOwnProperty('data');
