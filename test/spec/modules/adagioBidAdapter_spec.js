@@ -264,7 +264,7 @@ describe('Adagio bid adapter', () => {
         // replace by the values defined in beforeEach
         window.top.ADAGIO = {
           ...window.ADAGIO
-        }
+        };
 
         spec.isBidRequestValid(bid01);
         spec.isBidRequestValid(bid02);
@@ -416,7 +416,7 @@ describe('Adagio bid adapter', () => {
           const request = spec.buildRequests([bid01], bidderRequest)[0];
 
           expect(request.data.adUnits[0].mediaTypes.video.playerName).to.equal('other');
-          sinon.assert.calledWith(utils.logWarn, 'Adagio: renderer.backupOnly has not been set. Adagio recommends to use its own player to get expected behavior.')
+          sinon.assert.calledWith(utils.logWarn, 'Adagio: renderer.backupOnly has not been set. Adagio recommends to use its own player to get expected behavior.');
         });
       });
 
@@ -460,13 +460,13 @@ describe('Adagio bid adapter', () => {
           protocols: [8],
           w: 300,
           h: 250
-        }
+        };
 
         const requests = spec.buildRequests([bid01], bidderRequest);
         expect(requests).to.have.lengthOf(1);
         expect(requests[0].data.adUnits[0].mediaTypes.video).to.deep.equal(expected);
         sinon.assert.calledTwice(utils.logWarn);
-      })
+      });
     });
 
     describe('with sChain', function() {
@@ -635,7 +635,7 @@ describe('Adagio bid adapter', () => {
     describe('with USPrivacy', function() {
       const bid01 = new BidRequestBuilder().withParams().build();
 
-      const consent = 'Y11N'
+      const consent = 'Y11N';
 
       it('should send the USPrivacy "ccpa.uspConsent" in the request', function () {
         const bidderRequest = new BidderRequestBuilder({
@@ -664,7 +664,7 @@ describe('Adagio bid adapter', () => {
       const userId = {
         sharedid: {id: '01EAJWWNEPN3CYMM5N8M5VXY22', third: '01EAJWWNEPN3CYMM5N8M5VXY22'},
         unsuported: '666'
-      }
+      };
 
       it('should send "user.eids" in the request for Prebid.js supported modules only', function() {
         const bid01 = new BidRequestBuilder({
@@ -686,11 +686,11 @@ describe('Adagio bid adapter', () => {
               id: '01EAJWWNEPN3CYMM5N8M5VXY22'
             }
           ]
-        }]
+        }];
 
-        expect(requests[0].data.user.eids).to.have.lengthOf(1)
-        expect(requests[0].data.user.eids).to.deep.equal(expected)
-      })
+        expect(requests[0].data.user.eids).to.have.lengthOf(1);
+        expect(requests[0].data.user.eids).to.deep.equal(expected);
+      });
 
       it('should send an empty "user.eids" array in the request if userId module is unsupported', function() {
         const bid01 = new BidRequestBuilder({
@@ -703,9 +703,9 @@ describe('Adagio bid adapter', () => {
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
-        expect(requests[0].data.user.eids).to.be.empty
-      })
-    })
+        expect(requests[0].data.user.eids).to.be.empty;
+      });
+    });
   });
 
   describe('interpretResponse()', function() {
@@ -825,7 +825,7 @@ describe('Adagio bid adapter', () => {
         playerSize: [[300, 250]],
         mimes: ['video/mp4'],
         skip: true
-      }
+      };
 
       const serverResponseWithOutstream = utils.deepClone(serverResponse);
       serverResponseWithOutstream.body.bids[0].ad = 'https://foo.bar/vast.xml';
@@ -838,13 +838,13 @@ describe('Adagio bid adapter', () => {
       it('should set a renderer in video outstream context', function() {
         const bidResponse = spec.interpretResponse(serverResponseWithOutstream, bidRequestWithOutstream)[0];
         expect(bidResponse).to.have.any.keys('outstream', 'renderer', 'mediaType');
-        expect(bidResponse.renderer).to.be.a('object')
-        expect(bidResponse.renderer.url).to.equal(RENDERER_URL)
-        expect(bidResponse.renderer.config.bvwUrl).to.be.ok
-        expect(bidResponse.renderer.config.impUrl).to.be.ok
-        expect(bidResponse.renderer.loaded).to.not.be.ok
-        expect(bidResponse.width).to.equal(300)
-        expect(bidResponse.height).to.equal(250)
+        expect(bidResponse.renderer).to.be.a('object');
+        expect(bidResponse.renderer.url).to.equal(RENDERER_URL);
+        expect(bidResponse.renderer.config.bvwUrl).to.be.ok;
+        expect(bidResponse.renderer.config.impUrl).to.be.ok;
+        expect(bidResponse.renderer.loaded).to.not.be.ok;
+        expect(bidResponse.width).to.equal(300);
+        expect(bidResponse.height).to.equal(250);
       });
     });
   });
@@ -1310,7 +1310,7 @@ describe('Adagio bid adapter', () => {
 
         expect(loadExternalScript.called).to.be.false;
         expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
-      })
+      });
     });
 
     it('should verify valid hash with valid script', function () {

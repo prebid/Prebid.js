@@ -2,7 +2,7 @@ import find from 'core-js-pure/features/array/find.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { loadExternalScript } from '../src/adloader.js'
+import { loadExternalScript } from '../src/adloader.js';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt.js';
 import sha256 from 'crypto-js/sha256.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -57,7 +57,7 @@ export const ORTB_VIDEO_PARAMS = {
   'delivery': (value) => [1, 2, 3].includes(value),
   'pos': (value) => [0, 1, 2, 3, 4, 5, 6, 7].includes(value),
   'api': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].includes(v))
-}
+};
 
 let currentWindow;
 
@@ -96,7 +96,7 @@ export function adagioScriptFromLocalStorageCb(ls) {
 
 export function getAdagioScript() {
   storage.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY, (ls) => {
-    internal.adagioScriptFromLocalStorageCb(ls)
+    internal.adagioScriptFromLocalStorageCb(ls);
   });
 
   storage.localStorageIsEnabled(isValid => {
@@ -367,7 +367,7 @@ function getOrAddAdagioAdUnit(adUnitCode) {
   w.ADAGIO = w.ADAGIO || {};
 
   if (w.ADAGIO.adUnits[adUnitCode]) {
-    return w.ADAGIO.adUnits[adUnitCode]
+    return w.ADAGIO.adUnits[adUnitCode];
   }
 
   return w.ADAGIO.adUnits[adUnitCode] = {};
@@ -467,7 +467,7 @@ function getElementFromTopWindow(element, currentWindow) {
 };
 
 function autoDetectAdUnitElementId(adUnitCode) {
-  const autoDetectedAdUnit = utils.getGptSlotInfoForAdUnitCode(adUnitCode)
+  const autoDetectedAdUnit = utils.getGptSlotInfoForAdUnitCode(adUnitCode);
   let adUnitElementId = null;
 
   if (autoDetectedAdUnit && autoDetectedAdUnit.divId) {
@@ -482,16 +482,16 @@ function autoDetectEnvironment() {
   let environment;
   switch (device) {
     case 2:
-      environment = 'desktop'
+      environment = 'desktop';
       break;
     case 4:
-      environment = 'mobile'
+      environment = 'mobile';
       break;
     case 5:
-      environment = 'tablet'
+      environment = 'tablet';
       break;
   };
-  return environment
+  return environment;
 };
 
 function getFeatures(bidRequest, bidderRequest) {
@@ -546,7 +546,7 @@ function isRendererPreferredFromPublisher(bidRequest) {
 
   // renderer defined at adUnit.mediaTypes level
   const mediaTypeRenderer = utils.deepAccess(bidRequest, 'mediaTypes.video.renderer');
-  const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render)
+  const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render);
 
   return !!(
     (hasValidAdUnitRenderer && !(adUnitRenderer.backupOnly === true)) ||
@@ -587,7 +587,7 @@ function _getGdprConsent(bidderRequest) {
   const consent = {};
 
   if (apiVersion !== undefined) {
-    consent.apiVersion = apiVersion
+    consent.apiVersion = apiVersion;
   }
 
   if (consentString !== undefined) {
@@ -623,21 +623,21 @@ function _getSchain(bidRequest) {
 
 function _getEids(bidRequest) {
   if (utils.deepAccess(bidRequest, 'userId')) {
-    return createEidsArray(bidRequest.userId)
+    return createEidsArray(bidRequest.userId);
   }
 }
 
 function _buildVideoBidRequest(bidRequest) {
-  const videoAdUnitParams = utils.deepAccess(bidRequest, 'mediaTypes.video', {})
-  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {})
-  const computedParams = {}
+  const videoAdUnitParams = utils.deepAccess(bidRequest, 'mediaTypes.video', {});
+  const videoBidderParams = utils.deepAccess(bidRequest, 'params.video', {});
+  const computedParams = {};
 
   // Special case for playerSize.
   // Eeach props will be overrided if they are defined in config.
   if (Array.isArray(videoAdUnitParams.playerSize)) {
     const tempSize = (Array.isArray(videoAdUnitParams.playerSize[0])) ? videoAdUnitParams.playerSize[0] : videoAdUnitParams.playerSize;
-    computedParams.w = tempSize[0]
-    computedParams.h = tempSize[1]
+    computedParams.w = tempSize[0];
+    computedParams.h = tempSize[1];
   }
 
   const videoParams = {
@@ -650,7 +650,7 @@ function _buildVideoBidRequest(bidRequest) {
     bidRequest.mediaTypes.video.playerName = (internal.isRendererPreferredFromPublisher(bidRequest)) ? 'other' : 'adagio';
 
     if (bidRequest.mediaTypes.video.playerName === 'other') {
-      utils.logWarn(`${LOG_PREFIX} renderer.backupOnly has not been set. Adagio recommends to use its own player to get expected behavior.`)
+      utils.logWarn(`${LOG_PREFIX} renderer.backupOnly has not been set. Adagio recommends to use its own player to get expected behavior.`);
     }
   }
 
@@ -660,13 +660,13 @@ function _buildVideoBidRequest(bidRequest) {
   Object.keys(ORTB_VIDEO_PARAMS).forEach(paramName => {
     if (videoParams.hasOwnProperty(paramName)) {
       if (ORTB_VIDEO_PARAMS[paramName](videoParams[paramName])) {
-        bidRequest.mediaTypes.video[paramName] = videoParams[paramName]
+        bidRequest.mediaTypes.video[paramName] = videoParams[paramName];
       } else {
         delete bidRequest.mediaTypes.video[paramName];
-        utils.logWarn(`${LOG_PREFIX} The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`)
+        utils.logWarn(`${LOG_PREFIX} The OpenRTB video param ${paramName} has been skipped due to misformating. Please refer to OpenRTB 2.5 spec.`);
       }
     }
-  })
+  });
 }
 
 function _renderer(bid) {
@@ -700,7 +700,7 @@ export const spec = {
       ...params,
       adUnitElementId,
       environment
-    }
+    };
 
     const debugData = () => ({
       action: 'pb-dbg',
@@ -731,7 +731,7 @@ export const spec = {
     // Store adUnits config.
     // If an adUnitCode has already been stored, it will be replaced.
     w.ADAGIO = w.ADAGIO || {};
-    w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode)
+    w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
     w.ADAGIO.pbjsAdUnits.push({
       code: adUnitCode,
       mediaTypes: mediaTypes || {},
@@ -769,7 +769,7 @@ export const spec = {
       bidRequest.features = internal.getFeatures(bidRequest, bidderRequest);
 
       if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
-        _buildVideoBidRequest(bidRequest)
+        _buildVideoBidRequest(bidRequest);
       }
 
       return bidRequest;
@@ -779,7 +779,7 @@ export const spec = {
     const groupedAdUnits = adUnits.reduce((groupedAdUnits, adUnit) => {
       adUnit.params.organizationId = adUnit.params.organizationId.toString();
 
-      groupedAdUnits[adUnit.params.organizationId] = groupedAdUnits[adUnit.params.organizationId] || []
+      groupedAdUnits[adUnit.params.organizationId] = groupedAdUnits[adUnit.params.organizationId] || [];
       groupedAdUnits[adUnit.params.organizationId].push(adUnit);
 
       return groupedAdUnits;
@@ -814,7 +814,7 @@ export const spec = {
         options: {
           contentType: 'text/plain'
         }
-      }
+      };
     });
 
     return requests;
