@@ -31,7 +31,8 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    const location = utils.getWindowTop().location;
+    const winTop = utils.getWindowTop();
+    const location = winTop.location;
     const placements = [];
     const request = {
       'deviceWidth': winTop.screen.width,
