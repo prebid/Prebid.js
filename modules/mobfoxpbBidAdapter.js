@@ -31,16 +31,7 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    let winTop = window;
-    let location;
-    try {
-      location = new URL(bidderRequest.refererInfo.referer)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      utils.logMessage(e);
-    };
-
+    const location = utils.getWindowTop().location;
     const placements = [];
     const request = {
       'deviceWidth': winTop.screen.width,
