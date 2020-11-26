@@ -99,7 +99,7 @@ export const spec = {
       width: size.width,
       height: size.height,
       currency: response.cur,
-      ttl: 100,
+      ttl: bidRequest.params.video.ttl || 300,
       netRevenue: true,
       adUnitCode: bidRequest.adUnitCode
     };
@@ -113,7 +113,6 @@ export const spec = {
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
-
     if (bidRequest.mediaTypes.video) {
       bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
     }
