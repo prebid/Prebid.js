@@ -124,7 +124,7 @@ function getDefaultSrcPageUrl() {
 }
 
 function getEncodedValIfNotEmpty(val) {
-  return (val && (val !== '')) ? encodeURIComponent(val) : '';
+  return (val !== '') ? encodeURIComponent(val) : '';
 }
 
 /**
