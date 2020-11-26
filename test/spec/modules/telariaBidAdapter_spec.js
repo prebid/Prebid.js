@@ -1,12 +1,7 @@
 import {expect} from 'chai';
-<<<<<<< HEAD
-import {newBidder} from 'src/adapters/bidderFactory';
-import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter';
-=======
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter.js';
 import * as utils from 'src/utils.js';
->>>>>>> 939c455a469703f0c98d021fd70d3b851ae69ba7
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
 const AD_CODE = 'ssp-!demo!-lufip';
@@ -140,8 +135,6 @@ describe('TelariaAdapter', () => {
 
     const schainStub = REQUEST_WITH_SCHAIN;
 
-    const schainStub = REQUEST_WITH_SCHAIN;
-
     it('exists and is a function', () => {
       expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
@@ -195,8 +188,6 @@ describe('TelariaAdapter', () => {
       let builtRequests = spec.buildRequests(tempBid, BIDDER_REQUEST);
       expect(builtRequests.length).to.equal(1);
     });
-<<<<<<< HEAD
-=======
 
     it('adds adUnitCode to the request url', () => {
       const builtRequests = spec.buildRequests(stub(), BIDDER_REQUEST);
@@ -223,7 +214,6 @@ describe('TelariaAdapter', () => {
       const parts = builtRequests[0].url.split('srcPageUrl=');
       expect(parts.length).to.equal(2);
     });
->>>>>>> 939c455a469703f0c98d021fd70d3b851ae69ba7
   });
 
   describe('interpretResponse', () => {
@@ -306,8 +296,6 @@ describe('TelariaAdapter', () => {
       }]
     }];
 
-<<<<<<< HEAD
-=======
     beforeEach(function() {
       sinon.stub(utils, 'triggerPixel');
     });
@@ -316,7 +304,6 @@ describe('TelariaAdapter', () => {
       utils.triggerPixel.restore();
     });
 
->>>>>>> 939c455a469703f0c98d021fd70d3b851ae69ba7
     it('should return a pixel url', () => {
       let url = getTimeoutUrl(timeoutData);
       assert(url);
@@ -324,10 +311,7 @@ describe('TelariaAdapter', () => {
 
     it('should fire a pixel', () => {
       expect(spec.onTimeout(timeoutData)).to.be.undefined;
-<<<<<<< HEAD
-=======
       expect(utils.triggerPixel.called).to.equal(true);
->>>>>>> 939c455a469703f0c98d021fd70d3b851ae69ba7
     });
   });
 });
