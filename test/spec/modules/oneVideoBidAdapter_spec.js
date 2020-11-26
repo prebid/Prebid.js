@@ -317,7 +317,7 @@ describe('OneVideoBidAdapter', function () {
     })
   });
 
-  describe('spec.interpretResponse', function () {
+  xdescribe('spec.interpretResponse', function () {
     it('should return no bids if the response is not valid', function () {
       const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
       expect(bidResponse.length).to.equal(0);

@@ -99,7 +99,7 @@ export const spec = {
       width: size.width,
       height: size.height,
       currency: response.cur,
-      ttl: bidRequest.params.video.ttl || 300,
+      ttl: bidRequest.params.video.ttl <= 3600 ? bidRequest.params.video.ttl : 300,
       netRevenue: true,
       adUnitCode: bidRequest.adUnitCode
     };
