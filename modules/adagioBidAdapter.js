@@ -838,18 +838,26 @@ export const spec = {
             const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
 
             if (bidReq) {
-              if (bidObj.mediaType === VIDEO && utils.deepAccess(bidReq, 'mediaTypes.video.context') === OUTSTREAM) {
-                bidObj.renderer = Renderer.install({
-                  id: bidObj.requestId,
-                  adUnitCode: bidObj.adUnitCode,
-                  url: bidObj.urlRenderer || RENDERER_URL,
-                  config: {
-                    ...utils.deepAccess(bidReq, 'mediaTypes.video'),
-                    ...utils.deepAccess(bidObj, 'outstream', {})
-                  }
-                });
+              if (bidObj.mediaType === VIDEO) {
+                const mediaTypeContext = utils.deepAccess(bidReq, 'mediaTypes.video.context');
+                // Adagio SSP returns a `vastXml` only. No `vastUrl` nor `videoCacheKey`.
+                if (!bidObj.vastUrl && bidObj.vastXml) {
+                  bidObj.vastUrl = 'data:text/xml;charset=utf-8;base64,' + btoa(bidObj.vastXml.replace(/\\"/g, '"'));
+                }
 
-                bidObj.renderer.setRender(_renderer);
+                if (mediaTypeContext === OUTSTREAM) {
+                  bidObj.renderer = Renderer.install({
+                    id: bidObj.requestId,
+                    adUnitCode: bidObj.adUnitCode,
+                    url: bidObj.urlRenderer || RENDERER_URL,
+                    config: {
+                      ...utils.deepAccess(bidReq, 'mediaTypes.video'),
+                      ...utils.deepAccess(bidObj, 'outstream', {})
+                    }
+                  });
+
+                  bidObj.renderer.setRender(_renderer);
+                }
               }
 
               bidObj.site = bidReq.params.site;

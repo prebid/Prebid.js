@@ -828,7 +828,7 @@ describe('Adagio bid adapter', () => {
       };
 
       const serverResponseWithOutstream = utils.deepClone(serverResponse);
-      serverResponseWithOutstream.body.bids[0].ad = 'https://foo.bar/vast.xml';
+      serverResponseWithOutstream.body.bids[0].vastXml = '<VAST version="4.0"><Ad></Ad></VAST>';
       serverResponseWithOutstream.body.bids[0].mediaType = 'video';
       serverResponseWithOutstream.body.bids[0].outstream = {
         bvwUrl: 'https://foo.baz',
@@ -845,6 +845,7 @@ describe('Adagio bid adapter', () => {
         expect(bidResponse.renderer.loaded).to.not.be.ok;
         expect(bidResponse.width).to.equal(300);
         expect(bidResponse.height).to.equal(250);
+        expect(bidResponse.vastUrl).to.match(/^data:text\/xml;/)
       });
     });
   });
