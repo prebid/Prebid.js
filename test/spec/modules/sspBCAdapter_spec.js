@@ -1,6 +1,8 @@
 import { assert, expect } from 'chai';
 import { spec } from 'modules/sspBCAdapter.js';
 import * as utils from 'src/utils.js';
+import * as sinon from 'sinon';
+import * as ajax from 'src/ajax.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
@@ -60,8 +62,31 @@ describe('SSPBC adapter', function () {
       },
       auctionId,
       bidderRequestId,
-      bidId: auctionId + '1',
+      bidId: auctionId + '2',
       transactionId,
+    }
+    ];
+    const bids_timeouted = [{
+      adUnitCode: 'test_wideboard',
+      bidder: BIDDER_CODE,
+      params: [{
+        id: '003',
+        siteId: '8816',
+      }],
+      auctionId,
+      bidId: auctionId + '1',
+      timeout: 100,
+    },
+    {
+      adUnitCode: 'test_rectangle',
+      bidder: BIDDER_CODE,
+      params: [{
+        id: '005',
+        siteId: '8816',
+      }],
+      auctionId,
+      bidId: auctionId + '2',
+      timeout: 100,
     }
     ];
     const bids_test = [{
@@ -209,6 +234,7 @@ describe('SSPBC adapter', function () {
     return {
       bids,
       bids_test,
+      bids_timeouted,
       bidRequest,
       bidRequestSingle,
       bidRequestTest,
@@ -323,12 +349,52 @@ describe('SSPBC adapter', function () {
 
     it('should provide correct url, if frame sync is allowed', function () {
       expect(syncResultAll).to.have.length(1);
-      expect(syncResultAll[0].url).to.be.equal(SYNC_URL);
+      expect(syncResultAll[0].url).to.have.string(SYNC_URL);
     });
 
     it('should send no syncs, if frame sync is not allowed', function () {
       expect(syncResultImage).to.be.undefined;
       expect(syncResultNone).to.be.undefined;
+    });
+  });
+
+  describe('onBidWon', function () {
+    it('should generate no notification if bid is undefined', function () {
+      let notificationPayload = spec.onBidWon();
+      expect(notificationPayload).to.be.undefined;
+    });
+
+    it('should generate notification with event name and request/site/slot data, if correct bid is provided', function () {
+      const { bids } = prepareTestData();
+      let bid = bids[0];
+      bid.params = [bid.params];
+
+      let notificationPayload = spec.onBidWon(bid);
+      expect(notificationPayload).to.have.property('event').that.equals('bidWon');
+      expect(notificationPayload).to.have.property('requestId').that.equals(bid.auctionId);
+      expect(notificationPayload).to.have.property('siteId').that.deep.equals([bid.params[0].siteId]);
+      expect(notificationPayload).to.have.property('slotId').that.deep.equals([bid.params[0].id]);
+    });
+  });
+
+  describe('onTimeout', function () {
+    it('should generate no notification if timeout data is undefined / has no bids', function () {
+      let notificationPayloadUndefined = spec.onTimeout();
+      let notificationPayloadNoBids = spec.onTimeout([]);
+
+      expect(notificationPayloadUndefined).to.be.undefined;
+      expect(notificationPayloadNoBids).to.be.undefined;
+    });
+
+    it('should generate single notification for any number of timeouted bids', function () {
+      const { bids_timeouted } = prepareTestData();
+
+      let notificationPayload = spec.onTimeout(bids_timeouted);
+
+      expect(notificationPayload).to.have.property('event').that.equals('timeout');
+      expect(notificationPayload).to.have.property('requestId').that.equals(bids_timeouted[0].auctionId);
+      expect(notificationPayload).to.have.property('siteId').that.deep.equals([bids_timeouted[0].params[0].siteId]);
+      expect(notificationPayload).to.have.property('slotId').that.deep.equals([bids_timeouted[0].params[0].id, bids_timeouted[1].params[0].id]);
     });
   });
 });
