@@ -117,7 +117,6 @@ export const spec = {
     var conf = _initConf(refererInfo);
     var payload = _createOrtbTemplate(conf);
     var bidCurrency = '';
-    var dctrArr = [];
     var bid;
     var blockedIabCategories = [];
 
@@ -128,17 +127,10 @@ export const spec = {
 
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;
-      if (bidCurrency === '') {
-        bidCurrency = bid.params.currency || UNDEFINED;
-      } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
-        _logWarn('Currency specifier ignored. Only one currency permitted.');
-      }
+      bidCurrency = bid.params.currency || UNDEFINED;
       bid.params.currency = bidCurrency;
-      // check if dctr is added to more than 1 adunit
-      if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) { // TODO: support or remove
-        dctrArr.push(bid.params.dctr);
-      }
-      if (bid.params.hasOwnProperty('bcat') && utils.isArray(bid.params.bcat)) { // TODO: support or remove
+
+      if (bid.params.hasOwnProperty('bcat') && utils.isArray(bid.params.bcat)) {
         blockedIabCategories = blockedIabCategories.concat(bid.params.bcat);
       }
 
@@ -148,8 +140,14 @@ export const spec = {
       }
     });
 
+    // no payload imps, no rason to continue
     if (payload.imp.length == 0) {
       return;
+    }
+
+    // test bids can also be turned on here
+    if (window.location.href.indexOf('pubwiseTestBid=true') !== -1) {
+      payload.test = 1;
     }
 
     if (bid.params.isTest) {
@@ -178,36 +176,28 @@ export const spec = {
     // passing transactionId in source.tid
     utils.deepSetValue(payload, 'source.tid', conf.transactionId);
 
-    // test bids
-    if (window.location.href.indexOf('pubwiseTest=true') !== -1) {
-      payload.test = 1;
-    }
-
-    // adding schain object
+    // schain
     if (validBidRequests[0].schain) {
       utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
 
-    // Attaching GDPR Consent Params
+    // gdpr consent
     if (bidderRequest && bidderRequest.gdprConsent) {
       utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
-    // CCPA
+    // ccpa on the root object
     if (bidderRequest && bidderRequest.uspConsent) {
       utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    // coppa compliance
+    // if coppa is in effect then note it
     if (config.getConfig('coppa') === true) {
       utils.deepSetValue(payload, 'regs.coppa', 1);
     }
 
     var options = {contentType: 'application/json'}
-    if (!_hasPurpose1Consent(bidderRequest)) {
-      options.withCredentials = false
-    }
 
     _logInfo('buildRequests payload', payload);
     _logInfo('buildRequests bidderRequest', bidderRequest);
@@ -452,9 +442,9 @@ function _createImpressionObject(bid, conf) {
   impObj = {
     id: bid.bidId,
     tagid: bid.params.adUnit || undefined,
-    bidFloor: _parseSlotParam('bidFloor', bid.params.bidFloor),
+    bidfloor: _parseSlotParam('bidFloor', bid.params.bidFloor), // capitalization dicated by 3.2.4 spec
     secure: 1,
-    bidFloorCur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
+    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY // capitalization dicated by 3.2.4 spec
   };
 
   if (bid.hasOwnProperty('mediaTypes')) {
@@ -767,16 +757,6 @@ function _createBannerRequest(bid) {
     bannerObj = UNDEFINED;
   }
   return bannerObj;
-}
-
-function _hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(utils.deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
 }
 
 // various error levels are not always used

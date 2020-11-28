@@ -9,6 +9,7 @@ import * as utils from 'src/utils.js';
 const sampleRequestBanner = {
   'id': '6c148795eb836a',
   'tagid': 'div-gpt-ad-1460505748561-0',
+  'bidfloor': 1,
   'secure': 1,
   'bidfloorcur': 'USD',
   'banner': {
@@ -55,12 +56,26 @@ const sampleRequest = {
     'dnt': 0,
     'h': 600,
     'w': 800,
-    'language': 'en-US'
+    'language': 'en-US',
+    'geo': {
+      'lat': 33.91989876432274,
+      'lon': -84.38897708175764
+    }
   },
-  'user': {},
+  'user': {
+    'gender': 'M',
+    'geo': {
+      'lat': 33.91989876432274,
+      'lon': -84.38897708175764
+    },
+    'yob': 2000
+  },
   'test': 0,
   'ext': {
     'version': '0.0.1'
+  },
+  'source': {
+    'tid': '2c8cd034-f068-4419-8c30-f07292c0d17b'
   }
 };
 
@@ -74,7 +89,13 @@ const sampleValidBannerBidRequest = {
     'lat': '33.91989876432274',
     'lon': '-84.38897708175764',
     'yob': '2000',
+    'bcat': ['IAB25-3', 'IAB26-1', 'IAB26-2', 'IAB26-3', 'IAB26-4'],
   },
+  'gdprConsent': {
+    'consentString': 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
+    'gdprApplies': 1,
+  },
+  'uspConsent': 1,
   'crumbs': {
     'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
   },
@@ -99,44 +120,6 @@ const sampleValidBannerBidRequest = {
           600
         ]
       ]
-    }
-  },
-  'adUnitCode': 'div-gpt-ad-1460505748561-0',
-  'transactionId': '2001a8b2-3bcf-417d-b64f-92641dae21e0',
-  'sizes': [
-    [
-      300,
-      250
-    ],
-    [
-      300,
-      600
-    ]
-  ],
-  'bidId': '6c148795eb836a',
-  'bidderRequestId': '18a45bff5ff705',
-  'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
-  'src': 'client',
-  'bidRequestsCount': 1,
-  'bidderRequestsCount': 1,
-  'bidderWinsCount': 0
-};
-
-const sampleInvalidBannerBidRequest = {
-  'bidder': 'pubwise',
-  'params': {
-    'siteId': 'xxxxxx'
-  },
-  'crumbs': {
-    'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
-  },
-  'fpd': {
-    'context': {
-      'adServer': {
-        'name': 'gam',
-        'adSlot': '/19968336/header-bid-tag-0'
-      },
-      'pbAdSlot': '/19968336/header-bid-tag-0'
     }
   },
   'adUnitCode': 'div-gpt-ad-1460505748561-0',
@@ -253,7 +236,19 @@ const sampleBidderBannerRequest = {
     'lon': '-84.38897708175764',
     'bidFloor': '1.00',
     'currency': 'USD',
+    'bcat': [
+      'IAB25-3',
+      'IAB26-1',
+      'IAB26-2',
+      'IAB26-3',
+      'IAB26-4',
+    ],
   },
+  'gdprConsent': {
+    'consentString': 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
+    'gdprApplies': 1
+  },
+  'uspConsent': 1,
   'crumbs': {
     'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
   },
@@ -274,50 +269,6 @@ const sampleBidderBannerRequest = {
           600
         ]
       ]
-    }
-  },
-  'adUnitCode': 'div-gpt-ad-1460505748561-0',
-  'transactionId': '2001a8b2-3bcf-417d-b64f-92641dae21e0',
-  'sizes': [
-    [
-      300,
-      250
-    ],
-    [
-      300,
-      600
-    ]
-  ],
-  'bidId': '6c148795eb836a',
-  'bidderRequestId': '18a45bff5ff705',
-  'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
-  'src': 'client',
-  'bidRequestsCount': 1,
-  'bidderRequestsCount': 1,
-  'bidderWinsCount': 0
-};
-
-// no mediaTypes
-const sampleInvalidBidderBannerRequest = {
-  'bidder': 'pubwise',
-  'params': {
-    'siteId': 'xxxxxx',
-    'height': 250,
-    'width': 300,
-    'adUnitIndex': '0',
-    'adUnit': '',
-    'adSlot': '',
-  },
-  'crumbs': {
-    'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
-  },
-  'fpd': {
-    'context': {
-      'adServer': {
-        'name': 'gam',
-        'adSlot': '/19968336/header-bid-tag-0'
-      },
-      'pbAdSlot': '/19968336/header-bid-tag-0'
     }
   },
   'adUnitCode': 'div-gpt-ad-1460505748561-0',
