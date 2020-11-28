@@ -67,7 +67,13 @@ const sampleRequest = {
 const sampleValidBannerBidRequest = {
   'bidder': 'pubwise',
   'params': {
-    'siteId': 'xxxxxx'
+    'siteId': 'xxxxxx',
+    'bidFloor': '1.00',
+    'currency': 'USD',
+    'gender': 'M',
+    'lat': '33.91989876432274',
+    'lon': '-84.38897708175764',
+    'yob': '2000',
   },
   'crumbs': {
     'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
@@ -232,84 +238,6 @@ const sampleValidBidRequests = [
   }
 ]
 
-const sampleInvalidBidRequests = [
-  sampleInvalidBannerBidRequest,
-  {
-    'bidder': 'pubwise',
-    'params': {
-      'siteId': 'xxxxxx'
-    },
-    'crumbs': {
-      'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
-    },
-    'nativeParams': {
-      'title': {
-        'required': true,
-        'len': 80
-      },
-      'body': {
-        'required': true
-      },
-      'image': {
-        'required': true,
-        'sizes': [
-          150,
-          50
-        ]
-      },
-      'sponsoredBy': {
-        'required': true
-      },
-      'icon': {
-        'required': false
-      }
-    },
-    'fpd': {
-      'context': {
-        'adServer': {
-          'name': 'gam',
-          'adSlot': '/19968336/header-bid-tag-0'
-        },
-        'pbAdSlot': '/19968336/header-bid-tag-0'
-      }
-    },
-    'mediaTypes': {
-      'native': {
-        'title': {
-          'required': true,
-          'len': 80
-        },
-        'body': {
-          'required': true
-        },
-        'image': {
-          'required': true,
-          'sizes': [
-            150,
-            50
-          ]
-        },
-        'sponsoredBy': {
-          'required': true
-        },
-        'icon': {
-          'required': false
-        }
-      }
-    },
-    'adUnitCode': 'div-gpt-ad-1460505748561-1',
-    'transactionId': '2c8cd034-f068-4419-8c30-f07292c0d17b',
-    'sizes': [],
-    'bidId': '30ab7516a51a7c',
-    'bidderRequestId': '18a45bff5ff705',
-    'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0
-  }
-]
-
 const sampleBidderBannerRequest = {
   'bidder': 'pubwise',
   'params': {
@@ -319,6 +247,12 @@ const sampleBidderBannerRequest = {
     'adUnitIndex': '0',
     'adUnit': '',
     'adSlot': '',
+    'gender': 'M',
+    'yob': '2000',
+    'lat': '33.91989876432274',
+    'lon': '-84.38897708175764',
+    'bidFloor': '1.00',
+    'currency': 'USD',
   },
   'crumbs': {
     'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'

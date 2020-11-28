@@ -162,7 +162,7 @@ export const spec = {
     payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
     payload.user.yob = _parseSlotParam('yob', conf.yob);
     payload.device.geo = payload.user.geo;
-    payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
+    payload.site.page = payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
     // add the content object from config in request
@@ -334,8 +334,6 @@ function _parseNativeResponse(bid, newBid) {
       _logWarn('Error: Cannot parse native reponse for ad response: ' + newBid.adm);
       return;
     }
-    // eslint-disable-next-line no-console
-    console.log(JSON.stringify(adm));
     if (adm && adm.assets && adm.assets.length > 0) {
       newBid.mediaType = NATIVE;
       for (let i = 0, len = adm.assets.length; i < len; i++) {
@@ -394,10 +392,6 @@ function _getDomainFromURL(url) {
 }
 
 function _handleCustomParams(params, conf) {
-  if (!conf.kadpageurl) {
-    conf.kadpageurl = conf.pageURL;
-  }
-
   var key, value, entry;
   for (key in CUSTOM_PARAMS) {
     if (CUSTOM_PARAMS.hasOwnProperty(key)) {
@@ -406,7 +400,8 @@ function _handleCustomParams(params, conf) {
         entry = CUSTOM_PARAMS[key];
 
         if (typeof entry === 'object') {
-          // will be used in future when we want to process a custom param before using
+          // will be used in future when we want to
+          // process a custom param before using
           // 'keyname': {f: function() {}}
           value = entry.f(value, conf);
         }
@@ -457,9 +452,9 @@ function _createImpressionObject(bid, conf) {
   impObj = {
     id: bid.bidId,
     tagid: bid.params.adUnit || undefined,
-    bidfloor: _parseSlotParam('bidfloor', bid.params.bidfloor),
+    bidFloor: _parseSlotParam('bidFloor', bid.params.bidFloor),
     secure: 1,
-    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
+    bidFloorCur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY
   };
 
   if (bid.hasOwnProperty('mediaTypes')) {
@@ -498,7 +493,7 @@ function _parseSlotParam(paramName, paramValue) {
   }
 
   switch (paramName) {
-    case 'bidfloor':
+    case 'bidFloor':
       return parseFloat(paramValue) || UNDEFINED;
     case 'lat':
       return parseFloat(paramValue) || UNDEFINED;
@@ -585,8 +580,8 @@ function _addFloorFromFloorModule(impObj, bid) {
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubwise.disableFloors')) {
     [BANNER, NATIVE].forEach(mediaType => {
       if (impObj.hasOwnProperty(mediaType)) {
-        let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
-        if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+        let floorInfo = bid.getFloor({ currency: impObj.bidFloorCur, mediaType: mediaType, size: '*' });
+        if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidFloorCur && !isNaN(parseInt(floorInfo.floor))) {
           let mediaTypeFloor = parseFloat(floorInfo.floor);
           bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
         }
