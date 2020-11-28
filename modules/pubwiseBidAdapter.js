@@ -21,6 +21,9 @@ const CUSTOM_PARAMS = {
   'lon': '', // User Location - Longitude
 };
 
+// rtb native types are meant to be dynamic and extendable
+// the extendable data asset types are nicely aligned
+// in practice we set an ID that is distinct for each real type of return
 const NATIVE_ASSETS = {
   'TITLE': { ID: 1, KEY: 'title', TYPE: 0 },
   'IMAGE': { ID: 2, KEY: 'image', TYPE: 0 },
@@ -248,8 +251,8 @@ export const spec = {
                 netRevenue: NET_REVENUE,
                 ttl: 300,
                 ad: bid.adm,
-                pm_seat: seatbidder.seat || null,
-                pm_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null,
+                pw_seat: seatbidder.seat || null,
+                pw_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null,
                 partnerImpId: bid.id || '' // partner impression Id
               };
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
@@ -331,25 +334,27 @@ function _parseNativeResponse(bid, newBid) {
       _logWarn('Error: Cannot parse native reponse for ad response: ' + newBid.adm);
       return;
     }
-    if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify(adm));
+    if (adm && adm.assets && adm.assets.length > 0) {
       newBid.mediaType = NATIVE;
-      for (let i = 0, len = adm.native.assets.length; i < len; i++) {
-        switch (adm.native.assets[i].id) {
+      for (let i = 0, len = adm.assets.length; i < len; i++) {
+        switch (adm.assets[i].id) {
           case NATIVE_ASSETS.TITLE.ID:
-            newBid.native.title = adm.native.assets[i].title && adm.native.assets[i].title.text;
+            newBid.native.title = adm.assets[i].title && adm.assets[i].title.text;
             break;
           case NATIVE_ASSETS.IMAGE.ID:
             newBid.native.image = {
-              url: adm.native.assets[i].img && adm.native.assets[i].img.url,
-              height: adm.native.assets[i].img && adm.native.assets[i].img.h,
-              width: adm.native.assets[i].img && adm.native.assets[i].img.w,
+              url: adm.assets[i].img && adm.assets[i].img.url,
+              height: adm.assets[i].img && adm.assets[i].img.h,
+              width: adm.assets[i].img && adm.assets[i].img.w,
             };
             break;
           case NATIVE_ASSETS.ICON.ID:
             newBid.native.icon = {
-              url: adm.native.assets[i].img && adm.native.assets[i].img.url,
-              height: adm.native.assets[i].img && adm.native.assets[i].img.h,
-              width: adm.native.assets[i].img && adm.native.assets[i].img.w,
+              url: adm.assets[i].img && adm.assets[i].img.url,
+              height: adm.assets[i].img && adm.assets[i].img.h,
+              width: adm.assets[i].img && adm.assets[i].img.w,
             };
             break;
           case NATIVE_ASSETS.SPONSOREDBY.ID:
@@ -364,14 +369,14 @@ function _parseNativeResponse(bid, newBid) {
           case NATIVE_ASSETS.CTA.ID:
           case NATIVE_ASSETS.RATING.ID:
           case NATIVE_ASSETS.DISPLAYURL.ID:
-            newBid.native[NATIVE_ASSET_ID_TO_KEY_MAP[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
+            newBid.native[NATIVE_ASSET_ID_TO_KEY_MAP[adm.assets[i].id]] = adm.assets[i].data && adm.assets[i].data.value;
             break;
         }
       }
-      newBid.native.clickUrl = adm.native.link && adm.native.link.url;
-      newBid.native.clickTrackers = (adm.native.link && adm.native.link.clicktrackers) || [];
-      newBid.native.impressionTrackers = adm.native.imptrackers || [];
-      newBid.native.jstracker = adm.native.jstracker || [];
+      newBid.clickUrl = adm.link && adm.link.url;
+      newBid.clickTrackers = (adm.link && adm.link.clicktrackers) || [];
+      newBid.impressionTrackers = adm.imptrackers || [];
+      newBid.jstracker = adm.jstracker || [];
       if (!newBid.width) {
         newBid.width = DEFAULT_WIDTH;
       }

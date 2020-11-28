@@ -7,7 +7,7 @@ import {_parseAdSlot} from 'modules/pubwiseBidAdapter.js'; // this is exported o
 import * as utils from 'src/utils.js';
 
 const sampleRequestBanner = {
-  'id': '235da62bde68a6',
+  'id': '6c148795eb836a',
   'tagid': 'div-gpt-ad-1460505748561-0',
   'secure': 1,
   'bidfloorcur': 'USD',
@@ -107,7 +107,7 @@ const sampleValidBannerBidRequest = {
       600
     ]
   ],
-  'bidId': '235da62bde68a6',
+  'bidId': '6c148795eb836a',
   'bidderRequestId': '18a45bff5ff705',
   'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
   'src': 'client',
@@ -145,7 +145,7 @@ const sampleInvalidBannerBidRequest = {
       600
     ]
   ],
-  'bidId': '235da62bde68a6',
+  'bidId': '6c148795eb836a',
   'bidderRequestId': '18a45bff5ff705',
   'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
   'src': 'client',
@@ -354,7 +354,7 @@ const sampleBidderBannerRequest = {
       600
     ]
   ],
-  'bidId': '235da62bde68a6',
+  'bidId': '6c148795eb836a',
   'bidderRequestId': '18a45bff5ff705',
   'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
   'src': 'client',
@@ -398,7 +398,7 @@ const sampleInvalidBidderBannerRequest = {
       600
     ]
   ],
-  'bidId': '235da62bde68a6',
+  'bidId': '6c148795eb836a',
   'bidderRequestId': '18a45bff5ff705',
   'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
   'src': 'client',
@@ -510,22 +510,19 @@ const sampleRTBResponse = {
       {
         'bid': [
           {
-            'id': '1606524398292',
+            'id': '1606579704052',
             'impid': '6c148795eb836a',
             'price': 1.23,
             'adm': '\u003cdiv style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;"\u003e\n\t\u003ch3 style="margin-top:80px;text-align: center;"\u003ePubWise Test Bid\u003c/h3\u003e\n\u003c/div\u003e',
             'crid': 'test',
             'w': 300,
             'h': 250
-          }
-        ]
-      }, {
-        'bid': [
+          },
           {
-            'id': '1606524398292',
+            'id': '1606579704052',
             'impid': '7329ddc1d84eb3',
             'price': 1.23,
-            'adm': '{"ver":"1.2","assets":[{"title":{"text":"PubWise Test"}},{"img":{"type":3,"url":"http://www.pubwise.io"}},{"img":{"type":1,"url":"http://www.pubwise.io"}},{"data":{"type":2,"value":"PubWise Test Desc"}},{"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":""}}',
+            'adm': '{"ver":"1.2","assets":[{"id":1,"title":{"text":"PubWise Test"}},{"id":2,"img":{"type":3,"url":"http://www.pubwise.io","w":300,"h":250}},{"id":3,"img":{"type":1,"url":"http://www.pubwise.io","w":150,"h":125}},{"id":5,"data":{"type":2,"value":"PubWise Test Desc"}},{"id":4,"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":"http://www.pubwise.io"}}',
             'crid': 'test',
             'w': 300,
             'h': 250
@@ -548,10 +545,11 @@ const samplePBBidObjects = [
     'netRevenue': true,
     'ttl': 300,
     'ad': '<div style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;">\n\t<h3 style="margin-top:80px;text-align: center;">PubWise Test Bid</h3>\n</div>',
-    'pm_seat': null,
-    'pm_dspid': null,
-    'partnerImpId': '1606524398292',
-    'meta': {}
+    'pw_seat': null,
+    'pw_dspid': null,
+    'partnerImpId': '1606579704052',
+    'meta': {},
+    'mediaType': 'banner',
   },
   {
     'requestId': '7329ddc1d84eb3',
@@ -562,13 +560,31 @@ const samplePBBidObjects = [
     'currency': 'USD',
     'netRevenue': true,
     'ttl': 300,
-    'ad': '{"ver":"1.2","assets":[{"title":{"text":"PubWise Test"}},{"img":{"type":3,"url":"http://www.pubwise.io"}},{"img":{"type":1,"url":"http://www.pubwise.io"}},{"data":{"type":2,"value":"PubWise Test Desc"}},{"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":""}}',
-    'pm_seat': null,
-    'pm_dspid': null,
-    'partnerImpId': '1606524398292',
+    'ad': '{\"ver\":\"1.2\",\"assets\":[{\"id\":1,\"title\":{\"text\":\"PubWise Test\"}},{\"id\":2,\"img\":{\"type\":3,\"url\":\"http://www.pubwise.io\",\"w\":300,\"h\":250}},{\"id\":3,\"img\":{\"type\":1,\"url\":\"http://www.pubwise.io\",\"w\":150,\"h\":125}},{\"id\":5,\"data\":{\"type\":2,\"value\":\"PubWise Test Desc\"}},{\"id\":4,\"data\":{\"type\":1,\"value\":\"PubWise.io\"}}],\"link\":{\"url\":\"http://www.pubwise.io\"}}',
+    'pw_seat': null,
+    'pw_dspid': null,
+    'partnerImpId': '1606579704052',
     'mediaType': 'native',
-    'native': {},
-    'meta': {}
+    'native': {
+      'body': 'PubWise Test Desc',
+      'icon': {
+        'height': 125,
+        'url': 'http://www.pubwise.io',
+        'width': 150,
+      },
+      'image': {
+        'height': 250,
+        'url': 'http://www.pubwise.io',
+        'width': 300,
+      },
+      'sponsoredBy': 'PubWise.io',
+      'title': 'PubWise Test'
+    },
+    'meta': {},
+    'impressionTrackers': [],
+    'jstracker': [],
+    'clickTrackers': [],
+    'clickUrl': 'http://www.pubwise.io'
   }
 ];
 
@@ -662,7 +678,7 @@ describe('PubWiseAdapter', function () {
   });
 
   describe('Properly Handles Response', function () {
-    it('handles banners', function() {
+    it('handles response with muiltiple responses', function() {
       // the request when it comes back is on the data object
       let pbResponse = spec.interpretResponse(sampleRTBResponse, {'data': sampleRequest})
       expect(pbResponse).to.deep.equal(samplePBBidObjects);
