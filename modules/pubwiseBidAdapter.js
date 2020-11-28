@@ -122,16 +122,7 @@ export const spec = {
       bid = utils.deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
-      if (bid.params.hasOwnProperty('video')) {
-        // Nothing to do
-      } else {
-        // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height
-        // The corresponding banner imp object will not be generated, but we still want the native object to be sent, hence the following check
-        if (!(bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(NATIVE)) && bid.params.width === 0 && bid.params.height === 0) {
-          _logWarn('Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
-          return;
-        }
-      }
+
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;
       if (bidCurrency === '') {
@@ -239,12 +230,12 @@ export const spec = {
     let parsedRequest = request.data; // not currently stringified
     // let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
 
-    try {
-      if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
-        // Supporting multiple bid responses for same adSize
-        respCur = response.body.cur || respCur;
-        response.body.seatbid.forEach(seatbidder => {
-          seatbidder.bid &&
+    // try {
+    if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
+      // Supporting multiple bid responses for same adSize
+      respCur = response.body.cur || respCur;
+      response.body.seatbid.forEach(seatbidder => {
+        seatbidder.bid &&
             utils.isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
               let newBid = {
@@ -253,7 +244,6 @@ export const spec = {
                 width: bid.w,
                 height: bid.h,
                 creativeId: bid.crid || bid.id,
-                dealId: bid.dealid,
                 currency: respCur,
                 netRevenue: NET_REVENUE,
                 ttl: 300,
@@ -291,11 +281,11 @@ export const spec = {
 
               bidResponses.push(newBid);
             });
-        });
-      }
-    } catch (error) {
-      _logError(error);
+      });
     }
+    // } catch (error) {
+    // _logError(error);
+    // }
     return bidResponses;
   },
 
@@ -789,19 +779,23 @@ function _hasPurpose1Consent(bidderRequest) {
   return result;
 }
 
+// various error levels are not always used
 // eslint-disable-next-line no-unused-vars
 function _logMessage(textValue, objectValue) {
   utils.logMessage('PubWise: ' + textValue, objectValue);
 }
 
+// eslint-disable-next-line no-unused-vars
 function _logInfo(textValue, objectValue) {
   utils.logInfo('PubWise: ' + textValue, objectValue);
 }
 
+// eslint-disable-next-line no-unused-vars
 function _logWarn(textValue, objectValue) {
   utils.logWarn('PubWise: ' + textValue, objectValue);
 }
 
+// eslint-disable-next-line no-unused-vars
 function _logError(textValue, objectValue) {
   utils.logError('PubWise: ' + textValue, objectValue);
 }

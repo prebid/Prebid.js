@@ -116,8 +116,124 @@ const sampleValidBannerBidRequest = {
   'bidderWinsCount': 0
 };
 
+const sampleInvalidBannerBidRequest = {
+  'bidder': 'pubwise',
+  'params': {
+    'siteId': 'xxxxxx'
+  },
+  'crumbs': {
+    'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
+  },
+  'fpd': {
+    'context': {
+      'adServer': {
+        'name': 'gam',
+        'adSlot': '/19968336/header-bid-tag-0'
+      },
+      'pbAdSlot': '/19968336/header-bid-tag-0'
+    }
+  },
+  'adUnitCode': 'div-gpt-ad-1460505748561-0',
+  'transactionId': '2001a8b2-3bcf-417d-b64f-92641dae21e0',
+  'sizes': [
+    [
+      300,
+      250
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '235da62bde68a6',
+  'bidderRequestId': '18a45bff5ff705',
+  'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0
+};
+
 const sampleValidBidRequests = [
   sampleValidBannerBidRequest,
+  {
+    'bidder': 'pubwise',
+    'params': {
+      'siteId': 'xxxxxx'
+    },
+    'crumbs': {
+      'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
+    },
+    'nativeParams': {
+      'title': {
+        'required': true,
+        'len': 80
+      },
+      'body': {
+        'required': true
+      },
+      'image': {
+        'required': true,
+        'sizes': [
+          150,
+          50
+        ]
+      },
+      'sponsoredBy': {
+        'required': true
+      },
+      'icon': {
+        'required': false
+      }
+    },
+    'fpd': {
+      'context': {
+        'adServer': {
+          'name': 'gam',
+          'adSlot': '/19968336/header-bid-tag-0'
+        },
+        'pbAdSlot': '/19968336/header-bid-tag-0'
+      }
+    },
+    'mediaTypes': {
+      'native': {
+        'title': {
+          'required': true,
+          'len': 80
+        },
+        'body': {
+          'required': true
+        },
+        'image': {
+          'required': true,
+          'sizes': [
+            150,
+            50
+          ]
+        },
+        'sponsoredBy': {
+          'required': true
+        },
+        'icon': {
+          'required': false
+        }
+      }
+    },
+    'adUnitCode': 'div-gpt-ad-1460505748561-1',
+    'transactionId': '2c8cd034-f068-4419-8c30-f07292c0d17b',
+    'sizes': [],
+    'bidId': '30ab7516a51a7c',
+    'bidderRequestId': '18a45bff5ff705',
+    'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
+    'src': 'client',
+    'bidRequestsCount': 1,
+    'bidderRequestsCount': 1,
+    'bidderWinsCount': 0
+  }
+]
+
+const sampleInvalidBidRequests = [
+  sampleInvalidBannerBidRequest,
   {
     'bidder': 'pubwise',
     'params': {
@@ -247,6 +363,50 @@ const sampleBidderBannerRequest = {
   'bidderWinsCount': 0
 };
 
+// no mediaTypes
+const sampleInvalidBidderBannerRequest = {
+  'bidder': 'pubwise',
+  'params': {
+    'siteId': 'xxxxxx',
+    'height': 250,
+    'width': 300,
+    'adUnitIndex': '0',
+    'adUnit': '',
+    'adSlot': '',
+  },
+  'crumbs': {
+    'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
+  },
+  'fpd': {
+    'context': {
+      'adServer': {
+        'name': 'gam',
+        'adSlot': '/19968336/header-bid-tag-0'
+      },
+      'pbAdSlot': '/19968336/header-bid-tag-0'
+    }
+  },
+  'adUnitCode': 'div-gpt-ad-1460505748561-0',
+  'transactionId': '2001a8b2-3bcf-417d-b64f-92641dae21e0',
+  'sizes': [
+    [
+      300,
+      250
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  'bidId': '235da62bde68a6',
+  'bidderRequestId': '18a45bff5ff705',
+  'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0
+};
+
 const sampleBidderRequest = {
   'bidderCode': 'pubwise',
   'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
@@ -343,6 +503,75 @@ const sampleBidderRequest = {
   'start': 1606269202004
 };
 
+const sampleRTBResponse = {
+  'body': {
+    'id': '1606251348404',
+    'seatbid': [
+      {
+        'bid': [
+          {
+            'id': '1606524398292',
+            'impid': '6c148795eb836a',
+            'price': 1.23,
+            'adm': '\u003cdiv style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;"\u003e\n\t\u003ch3 style="margin-top:80px;text-align: center;"\u003ePubWise Test Bid\u003c/h3\u003e\n\u003c/div\u003e',
+            'crid': 'test',
+            'w': 300,
+            'h': 250
+          }
+        ]
+      }, {
+        'bid': [
+          {
+            'id': '1606524398292',
+            'impid': '7329ddc1d84eb3',
+            'price': 1.23,
+            'adm': '{"ver":"1.2","assets":[{"title":{"text":"PubWise Test"}},{"img":{"type":3,"url":"http://www.pubwise.io"}},{"img":{"type":1,"url":"http://www.pubwise.io"}},{"data":{"type":2,"value":"PubWise Test Desc"}},{"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":""}}',
+            'crid': 'test',
+            'w': 300,
+            'h': 250
+          }
+        ]
+      }
+    ],
+    'bidid': 'testtesttest'
+  }
+};
+
+const samplePBBidObjects = [
+  {
+    'requestId': '6c148795eb836a',
+    'cpm': '1.23',
+    'width': 300,
+    'height': 250,
+    'creativeId': 'test',
+    'currency': 'USD',
+    'netRevenue': true,
+    'ttl': 300,
+    'ad': '<div style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;">\n\t<h3 style="margin-top:80px;text-align: center;">PubWise Test Bid</h3>\n</div>',
+    'pm_seat': null,
+    'pm_dspid': null,
+    'partnerImpId': '1606524398292',
+    'meta': {}
+  },
+  {
+    'requestId': '7329ddc1d84eb3',
+    'cpm': '1.23',
+    'width': 300,
+    'height': 250,
+    'creativeId': 'test',
+    'currency': 'USD',
+    'netRevenue': true,
+    'ttl': 300,
+    'ad': '{"ver":"1.2","assets":[{"title":{"text":"PubWise Test"}},{"img":{"type":3,"url":"http://www.pubwise.io"}},{"img":{"type":1,"url":"http://www.pubwise.io"}},{"data":{"type":2,"value":"PubWise Test Desc"}},{"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":""}}',
+    'pm_seat': null,
+    'pm_dspid': null,
+    'partnerImpId': '1606524398292',
+    'mediaType': 'native',
+    'native': {},
+    'meta': {}
+  }
+];
+
 describe('PubWiseAdapter', function () {
   describe('Properly Validates Bids', function () {
     it('valid bid', function () {
@@ -429,6 +658,14 @@ describe('PubWiseAdapter', function () {
       let testBid = utils.deepClone(sampleValidBannerBidRequest)
       _parseAdSlot(testBid)
       expect(testBid).to.deep.equal(sampleBidderBannerRequest);
+    });
+  });
+
+  describe('Properly Handles Response', function () {
+    it('handles banners', function() {
+      // the request when it comes back is on the data object
+      let pbResponse = spec.interpretResponse(sampleRTBResponse, {'data': sampleRequest})
+      expect(pbResponse).to.deep.equal(samplePBBidObjects);
     });
   });
 });
