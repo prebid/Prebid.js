@@ -244,11 +244,6 @@ const sampleBidderBannerRequest = {
       'IAB26-4',
     ],
   },
-  'gdprConsent': {
-    'consentString': 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
-    'gdprApplies': 1
-  },
-  'uspConsent': 1,
   'crumbs': {
     'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
   },
@@ -289,7 +284,12 @@ const sampleBidderBannerRequest = {
   'src': 'client',
   'bidRequestsCount': 1,
   'bidderRequestsCount': 1,
-  'bidderWinsCount': 0
+  'bidderWinsCount': 0,
+  'gdprConsent': {
+    'consentString': 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
+    'gdprApplies': 1,
+  },
+  'uspConsent': 1,
 };
 
 const sampleBidderRequest = {
@@ -375,6 +375,11 @@ const sampleBidderRequest = {
   ],
   'auctionStart': 1606269202001,
   'timeout': 1000,
+  'gdprConsent': {
+    'consentString': 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
+    'gdprApplies': 1,
+  },
+  'uspConsent': 1,
   'refererInfo': {
     'referer': 'http://localhost:9999/integrationExamples/gpt/hello_world.html?pbjs_debug=true',
     'reachedTop': true,
@@ -525,7 +530,7 @@ describe('PubWiseAdapter', function () {
   describe('Handling Request Construction', function () {
     it('bid requests are not mutable', function() {
       let sourceBidRequest = utils.deepClone(sampleValidBidRequests)
-      let request = spec.buildRequests(sampleValidBidRequests, {auctinId: 'placeholdr'});
+      let request = spec.buildRequests(sampleValidBidRequests, {auctinId: 'placeholder'});
       expect(sampleValidBidRequests).to.deep.equal(sourceBidRequest, 'Should be unedited as they are used elsewhere');
     });
     it('should handle complex bidRequest', function() {
