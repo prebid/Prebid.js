@@ -15,77 +15,22 @@
         var FAILSAFE_TIMEOUT = 3300;
         var PREBID_TIMEOUT = 1000;
 
-        var adUnits = [ {
-                code: "div-gpt-ad-1460505748561-0",
-                mediaTypes: {
-                    banner: {
-                        sizes: [[300, 250]]
-                    }
-                },
-                bids: [{
-                    bidder: 'pubwise',
-                    params: {
-                        siteId: "xxxxxx",
-                        isTest: true
-                    },
-                },{
-                    bidder: 'appnexus',
-                    params: {
-                        placementId: 13144370,                        
-                    }
-                },{
-                    bidder: 'pubmatic',
-                    params: {
-                        publisherId: '156209',               // required, must be wrapped in quotes
-                        oustreamAU: 'renderer_test_pubmatic',   // required if mediaTypes-> video-> context is 'outstream'. This value can be get by BlueBillyWig Team.
-                        adSlot: 'pubmatic_testA',            // optional
-                        pmzoneid: 'zone1, zone11',           // optional
-                        lat: '40.712775',                    // optional
-                        lon: '-74.005973',                   // optional
-                        yob: '1982',                         // optional
-                        kadpageurl: 'www.test.com',          // optional							
-                        gender: 'M',                         // optional
-                        kadfloor: '0.50',                    // optional
-                        currency: 'AUD',                     // optional (Value configured only in the 1st adunit will be passed on. < br/> Values if present in subsequent adunits, will be ignored.)
-                        dctr: 'key1=123|key2=345',            // optional (Value configured only in the 1st adunit will be passed on. < br/> Values if present in subsequent adunits, will be ignored.)
-                        bcat: ['IAB1-5', 'IAB1-7'],                // Optional: Blocked IAB Categories. (Values from all slots will be combined and only unique values will be passed. An array of strings only. Each category should be a string of a length of more than 3 characters.)
-                        deals: ['deal-id-1', 'deal-id-200']   // optional: PMP Deals, should be array of strings
-                    }
-                }]
-            },{
-                code: 'div-gpt-ad-1460505748561-1',
-                sizes: [[1, 1]],
-                mediaTypes: {
-                    native: {
-                        title: {
-                            required: true,
-                            len: 80
-                        },
-                        body: {
-                            required: true
-                        },
-                        image: {
-                            required: true,
-                            sizes: [150, 50]
-                        },
-                        sponsoredBy: {
-                            required: true
-                        },
-                        icon: {
-                            required: false,
-                            sizes: [150, 50]
-                        }
-                    }
-                },
-                bids: [{
-                    bidder: 'pubwise',
-                    params: {
-                        siteId: "xxxxxx",
-                        isTest: true                        
-                    },
-                }]
-            }
-        ];
+        var adUnits = [{
+            code: 'div-gpt-ad-1460505748561-0',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250], [300,600]],
+                }
+            },
+            // Replace this object to test a new Adapter!
+            bids: [{
+                bidder: 'appnexus',
+                params: {
+                    placementId: 13144370
+                }
+            }]
+
+        }];
 
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
@@ -127,7 +72,6 @@
     <script>
         googletag.cmd.push(function () {
             googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[1,1]], 'div-gpt-ad-1460505748561-1').addService(googletag.pubads());
 
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
@@ -141,11 +85,6 @@
 <div id='div-gpt-ad-1460505748561-0'>
     <script type='text/javascript'>
         googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
-    </script>
-</div>
-<div id='div-gpt-ad-1460505748561-1'>
-    <script type='text/javascript'>
-        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-1'); });
     </script>
 </div>
 </body>
