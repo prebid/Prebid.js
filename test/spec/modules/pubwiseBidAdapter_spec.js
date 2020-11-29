@@ -496,7 +496,7 @@ describe('PubWiseAdapter', function () {
           bidder: 'pubwise',
           params: {
             siteId: 'xxxxxx',
-            placeHolder: ''
+            gender: 'M',
           }
         },
         isValid = spec.isBidRequestValid(validBid);
@@ -504,22 +504,21 @@ describe('PubWiseAdapter', function () {
     });
 
     it('invalid bid: no siteId', function () {
-      let validBid = {
+      let inValidBid = {
           bidder: 'pubwise',
           params: {
-            placeHolder: ''
+            gender: 'M',
           }
         },
-        isValid = spec.isBidRequestValid(validBid);
+        isValid = spec.isBidRequestValid(inValidBid);
       expect(isValid).to.equal(false);
     });
 
-    it('invalid bid: siteId shuold be a sring', function () {
+    it('invalid bid: siteId should be a string', function () {
       let validBid = {
           bidder: 'pubwise',
           params: {
-            publisherId: 100000,
-            placeHolder: ''
+            siteId: 123456
           }
         },
         isValid = spec.isBidRequestValid(validBid);
@@ -530,7 +529,7 @@ describe('PubWiseAdapter', function () {
   describe('Handling Request Construction', function () {
     it('bid requests are not mutable', function() {
       let sourceBidRequest = utils.deepClone(sampleValidBidRequests)
-      let request = spec.buildRequests(sampleValidBidRequests, {auctinId: 'placeholder'});
+      spec.buildRequests(sampleValidBidRequests, {auctinId: 'placeholder'});
       expect(sampleValidBidRequests).to.deep.equal(sourceBidRequest, 'Should be unedited as they are used elsewhere');
     });
     it('should handle complex bidRequest', function() {
