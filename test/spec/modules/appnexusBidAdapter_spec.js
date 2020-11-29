@@ -824,6 +824,11 @@ describe('AppNexusAdapter', function () {
         rti_partner: 'TDID'
       });
 
+      expect(payload.eids).to.deep.include({
+        source: 'criteo.com',
+        id: 'sample-criteo-userid',
+      });
+
       expect(payload.tpuids).to.deep.include({
         provider: 'criteo',
         user_id: 'sample-criteo-userid',

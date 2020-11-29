@@ -66,7 +66,9 @@ export const spec = {
 
   onBidWon: function (bid) {
     if (bid.winUrl) {
-      ajax(bid.winUrl, null);
+      const cpm = bid.cpm;
+      const winUrl = bid.winUrl.replace(/\$\{AUCTION_PRICE\}/, cpm);
+      ajax(winUrl, null);
       return true;
     }
     return false;

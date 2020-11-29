@@ -141,6 +141,7 @@ describe('ID5 ID System', function() {
       expect(requestBody.o).to.eq('pbjs');
       expect(requestBody.pd).to.eq('');
       expect(requestBody.s).to.eq('');
+      expect(requestBody.provider).to.eq('');
       expect(requestBody.v).to.eq('$prebid.version$');
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
