@@ -375,7 +375,7 @@ describe('OneVideoBidAdapter', function () {
     });
   });
 
-  xdescribe('spec.interpretResponse', function () {
+  describe('spec.interpretResponse', function () {
     it('should return no bids if the response is not valid', function () {
       const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
@@ -407,7 +407,7 @@ describe('OneVideoBidAdapter', function () {
         height: 480,
         mediaType: 'video',
         currency: 'USD',
-        ttl: 100,
+        ttl: 300,
         netRevenue: true,
         adUnitCode: bidRequest.adUnitCode,
         renderer: (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined,
