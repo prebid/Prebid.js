@@ -168,9 +168,9 @@ describe('Verizon Media ID Submodule', () => {
     const VALID_API_RESPONSE = {
       vmuid: '1234'
     };
-    it('should return a newly constructed object with the vcuid property', () => {
+    it('should return a newly constructed object with the vmconnectid property', () => {
       expect(verizonMediaIdSubmodule.decode(VALID_API_RESPONSE)).to.deep.equal(
-        {vmcid: VALID_API_RESPONSE.vmuid}
+        {vmconnectid: VALID_API_RESPONSE.vmuid}
       );
     });
 

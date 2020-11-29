@@ -33,13 +33,13 @@ export const verizonMediaIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @returns {{vmcid: string} | undefined}
+   * @returns {{vmconnectid: string} | undefined}
    */
   decode(value) {
-    return (value && typeof value.vmuid === 'string') ? {vmcid: value.vmuid} : undefined;
+    return (value && typeof value.vmuid === 'string') ? {vmconnectid: value.vmuid} : undefined;
   },
   /**
-   * get the VerizonMedia Id
+   * Gets the Verizon Media Connect ID
    * @function
    * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
