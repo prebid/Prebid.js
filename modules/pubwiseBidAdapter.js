@@ -503,18 +503,9 @@ function _parseSlotParam(paramName, paramValue) {
 function _parseAdSlot(bid) {
   _logInfo('parseAdSlot bid', bid)
   bid.params.adUnit = '';
-  bid.params.adUnitIndex = '0';
   bid.params.width = 0;
   bid.params.height = 0;
   bid.params.adSlot = _cleanSlotName(bid.params.adSlot);
-
-  var slot = bid.params.adSlot;
-  var splits = slot.split(':');
-
-  slot = splits[0];
-  if (splits.length == 2) {
-    bid.params.adUnitIndex = splits[1];
-  }
 
   if (bid.hasOwnProperty('mediaTypes')) {
     if (bid.mediaTypes.hasOwnProperty(BANNER) &&
