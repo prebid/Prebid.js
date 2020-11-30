@@ -115,5 +115,21 @@ function isRendererPreferredFromAdUnit(adUnitCode) {
   const adUnit = find(adUnits, adUnit => {
     return adUnit.code === adUnitCode;
   });
-  return !!(adUnit && adUnit.renderer && adUnit.renderer.url && adUnit.renderer.render && !(utils.isBoolean(adUnit.renderer.backupOnly) && adUnit.renderer.backupOnly));
+
+  if (!adUnit) {
+    return false
+  }
+
+  // renderer defined at adUnit level
+  const adUnitRenderer = utils.deepAccess(adUnit, 'renderer');
+  const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
+
+  // renderer defined at adUnit.mediaTypes level
+  const mediaTypeRenderer = utils.deepAccess(adUnit, 'mediaTypes.video.renderer');
+  const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render)
+
+  return !!(
+    (hasValidAdUnitRenderer && !(adUnitRenderer.backupOnly === true)) ||
+    (hasValidMediaTypeRenderer && !(mediaTypeRenderer.backupOnly === true))
+  );
 }

@@ -149,6 +149,14 @@ describe('Adform adapter', function () {
       });
     });
 
+    it('should allow to pass custom extended ids', function () {
+      bids[0].params.eids = 'some_id_value';
+      let request = spec.buildRequests(bids);
+      let eids = parseUrl(request.url).query.eids;
+
+      assert.equal(eids, 'some_id_value');
+    });
+
     describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});
