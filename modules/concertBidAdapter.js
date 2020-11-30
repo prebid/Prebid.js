@@ -42,7 +42,7 @@ export const spec = {
         debug: utils.debugTurnedOn(),
         uid: getUid(bidderRequest),
         optedOut: hasOptedOutOfPersonalization(),
-        adapterVersion: '1.1.0',
+        adapterVersion: '1.1.1',
         uspConsent: bidderRequest.uspConsent,
         gdprConsent: bidderRequest.gdprConsent
       }
@@ -53,9 +53,12 @@ export const spec = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
         transactionId: bidRequest.transactionId,
-        sizes: bidRequest.sizes,
+        sizes: slot.params.sizes || bidRequest.sizes,
         partnerId: bidRequest.params.partnerId,
-        slotType: bidRequest.params.slotType
+        slotType: bidRequest.params.slotType,
+        adSlot: slot.params.slot || bidRequest.adUnitCode,
+        placementId: slot.params.placementId || '',
+        site: slot.params.site || bidderRequest.refererInfo.referer
       }
 
       return slot;
