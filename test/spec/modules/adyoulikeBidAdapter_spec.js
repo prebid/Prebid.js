@@ -275,6 +275,29 @@ describe('Adyoulike Adapter', function () {
       expect(payload.uspConsent).to.exist.and.to.equal(uspConsentData);
     });
 
+    it('should not set a default value for gdpr consentRequired', function () {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let uspConsentData = '1YCC';
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gdprConsent': {
+          consentString: consentString
+        },
+        'uspConsent': uspConsentData
+      };
+
+      bidderRequest.bids = bidRequestWithSinglePlacement;
+
+      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gdprConsent).to.exist;
+      expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
+      expect(payload.gdprConsent.consentRequired).to.be.null;
+    });
+
     it('sends bid request to endpoint with single placement', function () {
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
       const payload = JSON.parse(request.data);
@@ -283,6 +306,7 @@ describe('Adyoulike Adapter', function () {
       expect(request.method).to.equal('POST');
       expect(request.url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
       expect(request.url).to.contains('RefererUrl=' + encodeURIComponent(referrerUrl));
+      expect(request.url).to.contains('PublisherDomain=http%3A%2F%2Flocalhost%3A9876');
 
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');

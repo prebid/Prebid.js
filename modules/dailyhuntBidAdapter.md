@@ -10,7 +10,7 @@ Maintainer: Dailyhunt
 
 Connects to dailyhunt for bids.
 
-Dailyhunt bid adapter supports Banner and Native.
+Dailyhunt bid adapter supports Banner, Native and Video.
 
 # Test Parameters
 ```
@@ -27,7 +27,12 @@ Dailyhunt bid adapter supports Banner and Native.
                 {
                     bidder: 'dailyhunt',
                     params: {
-                      partnerId: 'pb-partnerId'
+                        placement_id: 1,
+                        publisher_id: 1,
+                        partner_name: 'dailyhunt',
+                        device: {
+                            ip: "182.23.143.212"
+                        }
                     }
                 }
             ]
@@ -55,15 +60,42 @@ Dailyhunt bid adapter supports Banner and Native.
                 {
                     bidder: 'dailyhunt',
                     params: {
-                      partnerId: 'pb-partnerId'
+                        placement_id: 1,
+                        publisher_id: 1,
+                        partner_name: 'dailyhunt',
+                        device: {
+                            ip: "182.23.143.212"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            code: '/83414793/prebid_test_video',
+            mediaTypes: {
+                video: {
+                    playerSize: [1280, 720],
+                    context: 'instream'
+                }
+            },
+            bids: [
+                {
+                    bidder: 'dailyhunt',
+                    params: {
+                        placement_id: 1,
+                        publisher_id: 1,
+                        partner_name: 'dailyhunt',
+                        device: {
+                            ip: "182.23.143.212"
+                        },
+                        video: {
+                            mimes: [
+                                'video/mp4'
+                            ]
+                        }
                     }
                 }
             ]
         }
     ];
-```
-
-# CheckList
-```
-https://drive.google.com/open?id=1t4rmcyHl5OmRF3sYiqBi-VKEjzX6iN-A
 ```

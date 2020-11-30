@@ -69,6 +69,18 @@ describe('RTBHouseAdapter', () => {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
         'transactionId': 'example-transaction-id',
+        'schain': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'directseller.com',
+              'sid': '00001',
+              'rid': 'BidRequest1',
+              'hp': 1
+            }
+          ]
+        }
       }
     ];
     const bidderRequest = {
@@ -171,6 +183,36 @@ describe('RTBHouseAdapter', () => {
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].bidfloor).to.equal(0.01)
+    });
+
+    it('should include source.ext.schain in request', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.source.ext.schain).to.deep.equal({
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'directseller.com',
+            'sid': '00001',
+            'rid': 'BidRequest1',
+            'hp': 1
+          }
+        ]
+      });
+    });
+
+    it('should not include invalid schain', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].schain = {
+        'nodes': [{
+          'unknown_key': 1
+        }]
+      };
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.source).to.not.have.property('ext');
     });
 
     describe('native imp', () => {

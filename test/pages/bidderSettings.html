@@ -1,125 +1,127 @@
 <html>
+
 <head>
-    <script async src="../../build/dist/prebid.js"></script>
-    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
-    <script>
-        var PREBID_TIMEOUT = 5000;
+  <script async src="../../build/dist/prebid.js"></script>
+  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script>
+    var PREBID_TIMEOUT = 5000;
 
-        var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
-            mediaTypes: {
-                banner: {
-                    sizes: [[300, 250], [300,600]],
-                }
-            },
-            // Replace this object to test a new Adapter!
-            bids: [{
-                bidder: 'appnexus',
-                params: {
-                    placementId: 13144370
-                }
-            }]
-
-        },{
-			code: '/19968336/prebid_native_example_2',
-			sizes: [
-				[1, 1]
-			],
-			mediaTypes: {
-				native: {
-					title: {
-						required: true
-					},
-					body: {
-						required: true
-					},
-					image: {
-						required: true
-					},
-					sponsoredBy: {
-						required: true
-					},
-					icon: {
-						required: false
-					},
-				}
-			},
-			bids: [{
-				bidder: 'appnexus',
-				params: {
-					placementId: 13232354,
-					allowSmallerSizes: true
-				}
-			}]
-		}];
-
-        var pbjs = pbjs || {};
-        pbjs.que = pbjs.que || [];
-
-    </script>
-
-    <script>
-        var googletag = googletag || {};
-        googletag.cmd = googletag.cmd || [];
-        googletag.cmd.push(function() {
-            googletag.pubads().disableInitialLoad();
-        });
-
-        pbjs.que.push(function() {
-            pbjs.addAdUnits(adUnits);
-            pbjs.bidderSettings = {
-                appnexus: {
-                adserverTargeting: [
-                    {
-                        key: "apn_pbMg",
-                        val: function(bidResponse) {
-                            return bidResponse.pbMg;
-                        }
-                    }, {
-                        key: "apn_adId",
-                        val: function(bidResponse) {
-                            return bidResponse.adId;
-                        }
-                    }
-                ]
-                }
-            }
-            pbjs.requestBids({
-                bidsBackHandler: sendAdserverRequest,
-                timeout: PREBID_TIMEOUT
-            });
-        });
-
-        function sendAdserverRequest() {
-            if (pbjs.adserverRequestSent) return;
-            pbjs.adserverRequestSent = true;
-            googletag.cmd.push(function() {
-                pbjs.que.push(function() {
-                    pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh();
-                });
-            });
+    var adUnits = [{
+      code: 'div-gpt-ad-1460505748561-0',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]],
         }
+      },
+      // Replace this object to test a new Adapter!
+      bids: [{
+        bidder: 'appnexus',
+        params: {
+          placementId: 13144370
+        }
+      }]
 
-    </script>
+    }, {
+      code: '/19968336/prebid_native_example_2',
+      sizes: [
+        [1, 1]
+      ],
+      mediaTypes: {
+        native: {
+          title: {
+            required: true
+          },
+          body: {
+            required: true
+          },
+          image: {
+            required: true
+          },
+          sponsoredBy: {
+            required: true
+          },
+          icon: {
+            required: false
+          },
+        }
+      },
+      bids: [{
+        bidder: 'appnexus',
+        params: {
+          placementId: 13232354,
+          allowSmallerSizes: true
+        }
+      }]
+    }];
 
-    <script>
-        googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
 
-            googletag.pubads().enableSingleRequest();
-            googletag.enableServices();
+  </script>
+
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function () {
+      googletag.pubads().disableInitialLoad();
+    });
+
+    pbjs.que.push(function () {
+      pbjs.addAdUnits(adUnits);
+      pbjs.bidderSettings = {
+        appnexus: {
+          adserverTargeting: [
+            {
+              key: "apn_pbMg",
+              val: function (bidResponse) {
+                return bidResponse.pbMg;
+              }
+            }, {
+              key: "apn_adId",
+              val: function (bidResponse) {
+                return bidResponse.adId;
+              }
+            }
+          ]
+        }
+      }
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest,
+        timeout: PREBID_TIMEOUT
+      });
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
         });
-    </script>
+      });
+    }
+
+  </script>
+
+  <script>
+    googletag.cmd.push(function () {
+      googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
 </head>
 
 <body>
-<h2>Prebid.js Test</h2>
-<h5>Div-1</h5>
-<div id='div-gpt-ad-1460505748561-0'>
+  <h2>Prebid.js Test</h2>
+  <h5>Div-1</h5>
+  <div id='div-gpt-ad-1460505748561-0'>
     <script type='text/javascript'>
-        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+      googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
     </script>
-</div>
+  </div>
 </body>
+
 </html>

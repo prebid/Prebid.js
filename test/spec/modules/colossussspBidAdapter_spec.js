@@ -108,7 +108,7 @@ describe('ColossussspAdapter', function () {
     bid.userId.britepoolid = 'britepoolid123';
     bid.userId.idl_env = 'idl_env123';
     bid.userId.tdid = 'tdid123';
-    bid.userId.id5id = 'id5id123'
+    bid.userId.id5id = { uid: 'id5id123' };
     let serverRequest = spec.buildRequests([bid], bidderRequest);
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;

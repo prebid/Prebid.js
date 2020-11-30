@@ -57,6 +57,9 @@ export const spec = {
       parallel: true
     }, validBidRequests[0].params);
 
+    data.keywords = data.keywords || [];
+    const restrictions = [];
+
     if (bidderRequest && bidderRequest.gdprConsent) {
       data.consent = {
         gdprVendorId: 150,
@@ -64,6 +67,33 @@ export const spec = {
         // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
         gdprConsentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
       };
+
+      if (bidderRequest.gdprConsent.apiVersion === 2) {
+        const purposes = [
+          {id: 1, kw: 'nocookies'},
+          {id: 2, kw: 'nocontext'},
+          {id: 3, kw: 'nodmp'},
+          {id: 4, kw: 'nodata'},
+          {id: 7, kw: 'noclicks'},
+          {id: 9, kw: 'noresearch'}
+        ];
+
+        const d = bidderRequest.gdprConsent.vendorData;
+
+        if (d) {
+          if (d.purposeOneTreatment) {
+            data.keywords.push('cst-nodisclosure');
+            restrictions.push('nodisclosure');
+          }
+
+          purposes.map(p => {
+            if (!checkConsent(p.id, d)) {
+              data.keywords.push('cst-' + p.kw);
+              restrictions.push(p.kw);
+            }
+          });
+        }
+      }
     }
 
     validBidRequests.map(bid => {
@@ -77,6 +107,11 @@ export const spec = {
       }, bid.params);
 
       placement.adTypes.push(5, 9, 163, 2163, 3006);
+
+      if (restrictions.length) {
+        placement.properties = placement.properties || {};
+        placement.properties.restrictions = restrictions;
+      }
 
       if (placement.networkId && placement.siteId) {
         data.placements.push(placement);
@@ -153,6 +188,7 @@ export const spec = {
 
         const id = 'ism_tag_' + Math.floor((Math.random() * 10e16));
         window[id] = {
+          plr_AdSlot: e.source.frameElement,
           bidId: e.data.bidId,
           bidPrice: bidsMap[e.data.bidId].price,
           serverResponse
@@ -240,6 +276,99 @@ function getSize(sizes) {
 
 function retrieveAd(bidId, decision) {
   return "<script>window.top.postMessage({from: 'ism-bid', bidId: '" + bidId + "'}, '*');\x3c/script>" + utils.createTrackPixelHtml(decision.impressionUrl);
+}
+
+function checkConsent(P, d) {
+  const GVL = {'150': {'id': 150, 'name': 'Inskin Media LTD', 'purposes': {'1': 1, '3': 3, '4': 4, '9': 9, '10': 10}, 'legIntPurposes': {'2': 2, '7': 7}, 'flexiblePurposes': {'2': 2, '7': 7}, 'specialPurposes': {'1': 1, '2': 2}, 'features': {'3': 3}, 'specialFeatures': {}, 'policyUrl': 'http://www.inskinmedia.com/privacy-policy.html'}};
+  const V = 150;
+
+  // vendor claims (inflexible) consent as their basis, publisher doesn't
+  // restrict the purpose, user consents to the purpose and user consents
+  // to the vendor
+  try {
+    if (
+      GVL[V].purposes[P] && !GVL[V].flexiblePurposes[P] &&
+      d.purpose.consents[P] &&
+      d.vendor.consents[V]
+    ) {
+      return true;
+    }
+  } catch (e) {}
+
+  // vendor claims (inflexible) legitimate interest as their basis,
+  // publisher doesn't restrict the purpose, user was provided notice of the
+  // legitimate interest basis for this purpose and user was provided notice
+  // for the LI basis for this vendor
+  try {
+    if (
+      GVL[V].legIntPurposes[P] && !GVL[V].flexiblePurposes[P] &&
+      d.purpose.legitimateInterests[P] &&
+      d.vendor.legitimateInterests[V]
+    ) {
+      return true;
+    }
+  } catch (e) {}
+
+  // vendor claims flexible legal basis with legitimate interest as the
+  // default, publisher restriction doesn't require consent, and ((user was
+  // provided notice of the legitimate interest basis for this
+  // purpose + vendor) OR (user consents to purpose + vendor))
+  try {
+    if (
+      GVL[V].legIntPurposes[P] && GVL[V].flexiblePurposes[P] &&
+      (
+        (d.purpose.legitimateInterests[P] && d.vendor.legitimateInterests[V]) ||
+        (d.purpose.consents[P] && d.vendor.consents[V])
+      )
+    ) {
+      return true;
+    }
+  } catch (e) {}
+
+  // vendor claims flexible legal basis with legitimate interest as the
+  // default, publisher restriction does require consent, and user consents
+  // to purpose + vendor
+  try {
+    if (
+      GVL[V].legIntPurposes[P] && GVL[V].flexiblePurposes[P] &&
+      d.purpose.consents[P] &&
+      d.vendor.consents[V]
+    ) {
+      return true;
+    }
+  } catch (e) {}
+
+  // vendor claims flexible legal basis with consent as the default,
+  // publisher restriction doesn't require legitimate interest, and ((user
+  // was provided notice of the legitimate interest basis for this purpose +
+  // vendor) OR (user consents to purpose + vendor))
+  try {
+    if (
+      GVL[V].purposes[P] && GVL[V].flexiblePurposes[P] &&
+      (
+        (d.purpose.legitimateInterests[P] && d.vendor.legitimateInterests[V]) ||
+        (d.purpose.consents[P] && d.vendor.consents[V])
+      )
+    ) {
+      return true;
+    }
+  } catch (e) {}
+
+  // vendor claims flexible legal basis with consent as the default,
+  // publisher restriction does require legitimate interest, and user was
+  // provided notice for the legitimate interest basis for this purpose +
+  // vendor
+  try {
+    if (
+      GVL[V].purposes[P] && GVL[V].flexiblePurposes[P] &&
+      d.purpose.legitimateInterests[P] &&
+      d.vendor.legitimateInterests[V]
+    ) {
+      return true;
+    }
+  } catch (e) {}
+
+  return false;
 }
 
 registerBidder(spec);

@@ -54,7 +54,7 @@ export const spec = {
     if (width == 320 && height == 50) {
       cpm = cpm * 0.55;
     }
-    if (cpm < 1) {
+    if (cpm <= 0) {
       return bidResponses;
     }
     if (width !== 0 && height !== 0 && cpm !== 0 && crid !== 0) {

@@ -10,7 +10,11 @@ describe('The Konduit vast wrapper module', function () {
     config.setConfig({ konduit: { konduitId } });
   });
 
-  describe('processBids function', () => {
+  describe('processBids function (send one bid)', () => {
+    beforeEach(function() {
+      config.setConfig({ enableSendAllBids: false });
+    });
+
     it(`should make a correct processBids request and add kCpm and konduitCacheKey
      to the passed bids and to the adserverTargeting object`, function () {
       const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
@@ -35,7 +39,7 @@ describe('The Konduit vast wrapper module', function () {
       expect(bid.adserverTargeting).to.be.an('object');
 
       expect(bid.adserverTargeting.k_cpm).to.equal(bid.pbCg || bid.pbAg);
-      expect(bid.adserverTargeting.konduit_cache_key).to.equal('test_cache_key');
+      expect(bid.adserverTargeting.k_cache_key).to.equal('test_cache_key');
       expect(bid.adserverTargeting.konduit_id).to.equal(konduitId);
     });
 
@@ -60,7 +64,7 @@ describe('The Konduit vast wrapper module', function () {
       expect(bid.kCpm).to.equal(bid.cpm);
 
       expect(bid.adserverTargeting.k_cpm).to.equal(bid.pbCg || bid.pbAg);
-      expect(bid.adserverTargeting.konduit_cache_key).to.be.undefined;
+      expect(bid.adserverTargeting.k_cache_key).to.be.undefined;
       expect(bid.adserverTargeting.konduit_id).to.be.undefined;
 
       expect(callback.firstCall.args[0]).to.be.an('error');
@@ -111,12 +115,122 @@ describe('The Konduit vast wrapper module', function () {
       const callback = sinon.spy();
       processBids({
         bid: null,
+        bids: [],
         callback
       });
 
       expect(callback.calledOnce).to.be.true;
       expect(callback.firstCall.args[0]).to.be.an('error');
-      expect(callback.firstCall.args[0].message).to.equal(errorMessages.NO_BID);
+      expect(callback.firstCall.args[0].message).to.equal(errorMessages.NO_BIDS);
+    });
+  });
+  describe('processBids function (send all bids)', () => {
+    beforeEach(function() {
+      config.setConfig({ enableSendAllBids: true });
+    });
+
+    it(`should make a correct processBids request and add kCpm and konduitCacheKey
+     to the passed bids and to the adserverTargeting object`, function () {
+      const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+
+      server.respondWith(JSON.stringify({
+        kCpmData: { [`${bid.bidderCode}:${bid.creativeId}`]: bid.cpm },
+        cacheData: { [`${bid.bidderCode}:${bid.creativeId}`]: 'test_cache_key' },
+      }));
+
+      processBids({ adUnitCode: 'video1', bids: [bid] });
+      server.respond();
+
+      expect(server.requests.length).to.equal(1);
+
+      const requestBody = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBody.clientId).to.equal(konduitId);
+
+      expect(bid.konduitCacheKey).to.equal('test_cache_key');
+      expect(bid.kCpm).to.equal(bid.cpm);
+
+      expect(bid.adserverTargeting).to.be.an('object');
+
+      expect(bid.adserverTargeting.k_cpm).to.equal(bid.pbCg || bid.pbAg);
+      expect(bid.adserverTargeting[`k_cpm_${bid.bidderCode}`]).to.equal(bid.pbCg || bid.pbAg);
+      expect(bid.adserverTargeting.k_cache_key).to.equal('test_cache_key');
+      expect(bid.adserverTargeting[`k_cache_key_${bid.bidderCode}`]).to.equal('test_cache_key');
+      expect(bid.adserverTargeting.konduit_id).to.equal(konduitId);
+    });
+
+    it(`should call callback with error object in arguments if cacheData is empty in the response`, function () {
+      const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+
+      server.respondWith(JSON.stringify({
+        kCpmData: { [`${bid.bidderCode}:${bid.creativeId}`]: bid.cpm },
+        cacheData: {},
+      }));
+      const callback = sinon.spy();
+      processBids({ adUnitCode: 'video1', bids: [bid], callback });
+      server.respond();
+
+      expect(server.requests.length).to.equal(1);
+
+      const requestBody = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBody.clientId).to.equal(konduitId);
+
+      expect(bid.konduitCacheKey).to.be.undefined;
+      expect(bid.kCpm).to.equal(bid.cpm);
+
+      expect(bid.adserverTargeting.k_cpm).to.equal(bid.pbCg || bid.pbAg);
+      expect(bid.adserverTargeting[`k_cpm_${bid.bidderCode}`]).to.equal(bid.pbCg || bid.pbAg);
+      expect(bid.adserverTargeting.k_cache_key).to.be.undefined;
+      expect(bid.adserverTargeting[`k_cache_key_${bid.bidderCode}`]).to.be.undefined;
+      expect(bid.adserverTargeting.konduit_id).to.be.undefined;
+
+      expect(callback.firstCall.args[0]).to.be.an('error');
+    });
+
+    it('should call callback if processBids request is sent successfully', function () {
+      const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+      server.respondWith(JSON.stringify({ key: 'test' }));
+      const callback = sinon.spy();
+      processBids({ adUnitCode: 'video1', bid: [bid], callback });
+      server.respond();
+
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('should call callback with error object in arguments if processBids request is failed', function () {
+      const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+      const callback = sinon.spy();
+      processBids({ adUnitCode: 'video1', bid: [bid], callback });
+      server.respond();
+
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args[0]).to.be.an('error');
+    });
+
+    it('should call callback with error object in arguments if no konduitId in configs', function () {
+      config.setConfig({ konduit: { konduitId: null } });
+
+      const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
+      const callback = sinon.spy();
+      processBids({ adUnitCode: 'video1', bid: [bid], callback });
+
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args[0]).to.be.an('error');
+      expect(callback.firstCall.args[0].message).to.equal(errorMessages.NO_KONDUIT_ID);
+    });
+
+    it('should call callback with error object in arguments if no bids found', function () {
+      const callback = sinon.spy();
+      processBids({
+        bid: null,
+        bids: [],
+        callback
+      });
+
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args[0]).to.be.an('error');
+      expect(callback.firstCall.args[0].message).to.equal(errorMessages.NO_BIDS);
     });
   });
 });
@@ -152,7 +266,7 @@ function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid,
     'bidder': 'appnexus',
     'timeToRespond': 61,
     'pbLg': '5.00',
-    'pbMg': '5.00',
+    'pbMg': `${cpm}.00`,
     'pbHg': '5.00',
     'pbAg': `${cpm}.00`,
     'pbDg': '5.00',
@@ -170,7 +284,7 @@ function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid,
     },
     'customCacheKey': `${priceIndustryDuration}_${uuid}`,
     'meta': {
-      'iabSubCatId': 'iab-1',
+      'primaryCatId': 'iab-1',
       'adServerCatId': label
     },
     'videoCacheKey': '4cf395af-8fee-4960-af0e-88d44e399f14'
