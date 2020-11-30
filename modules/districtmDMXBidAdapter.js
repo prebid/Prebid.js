@@ -128,9 +128,12 @@ export const spec = {
       dmxRequest.regs = {};
       dmxRequest.regs.ext = {};
       dmxRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
-      dmxRequest.user = {};
-      dmxRequest.user.ext = {};
-      dmxRequest.user.ext.consent = bidderRequest.gdprConsent.consentString;
+
+      if (bidderRequest.gdprConsent.gdprApplies === true) {
+        dmxRequest.user = {};
+        dmxRequest.user.ext = {};
+        dmxRequest.user.ext.consent = bidderRequest.gdprConsent.consentString;
+      }
     }
     dmxRequest.regs = dmxRequest.regs || {};
     dmxRequest.regs.coppa = config.getConfig('coppa') === true ? 1 : 0;

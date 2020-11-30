@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'admixer';
 const ALIASES = ['go2net'];
-const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.0.aspx';
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.1.aspx';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
@@ -51,10 +51,9 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    // loop through serverResponses {
     try {
-      serverResponse = serverResponse.body;
-      serverResponse.forEach((bidResponse) => {
+      const {body: {ads = []} = {}} = serverResponse;
+      ads.forEach((bidResponse) => {
         const bidResp = {
           requestId: bidResponse.bidId,
           cpm: bidResponse.cpm,
@@ -73,6 +72,19 @@ export const spec = {
       utils.logError(e);
     }
     return bidResponses;
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const pixels = [];
+    serverResponses.forEach(({body: {cm = {}} = {}}) => {
+      const {pixels: img = [], iframes: frm = []} = cm;
+      if (syncOptions.pixelEnabled) {
+        img.forEach((url) => pixels.push({type: 'image', url}));
+      }
+      if (syncOptions.iframeEnabled) {
+        frm.forEach((url) => pixels.push({type: 'iframe', url}));
+      }
+    });
+    return pixels;
   }
 };
 registerBidder(spec);
