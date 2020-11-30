@@ -454,7 +454,7 @@ describe('TheMediaGrid Adapter', function () {
         'floor': 1.50
       };
       const bidRequest = Object.assign({
-        getFloor: _ => {
+        getFloor: (_) => {
           return floorTestData;
         }
       }, bidRequests[1]);
