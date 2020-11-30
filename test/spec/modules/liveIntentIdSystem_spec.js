@@ -7,7 +7,7 @@ const PUBLISHER_ID = '89899';
 const defaultConfigParams = { params: {publisherId: PUBLISHER_ID} };
 const responseHeader = {'Content-Type': 'application/json'}
 
-xdescribe('LiveIntentId', function() {
+describe('LiveIntentId', function() {
   let logErrorStub;
   let uspConsentDataStub;
   let gdprConsentDataStub;
