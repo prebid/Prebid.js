@@ -852,6 +852,7 @@ describe('rubicon analytics adapter', function () {
       auctionInit.bidderRequests[0].bids[0].floorData = {
         skipped: false,
         modelVersion: 'someModelName',
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 15,
         fetchStatus: 'error',
@@ -953,6 +954,7 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].floors).to.deep.equal({
         location: 'setConfig',
         modelName: 'someModelName',
+        modelTimestamp: 1606772895,
         skipped: false,
         enforcement: true,
         dealsEnforced: false,
@@ -998,6 +1000,7 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].floors).to.deep.equal({
         location: 'setConfig',
         modelName: 'someModelName',
+        modelTimestamp: 1606772895,
         skipped: false,
         enforcement: true,
         dealsEnforced: false,
