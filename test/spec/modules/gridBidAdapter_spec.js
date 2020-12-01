@@ -173,7 +173,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[1].bidId,
           'tagid': bidRequests[1].params.uid,
           'ext': {'divid': bidRequests[1].adUnitCode},
-          'bidfloor': 0,
           'banner': {
             'w': 300,
             'h': 250,
@@ -211,7 +210,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[1].bidId,
           'tagid': bidRequests[1].params.uid,
           'ext': {'divid': bidRequests[1].adUnitCode},
-          'bidfloor': 0,
           'banner': {
             'w': 300,
             'h': 250,
@@ -221,7 +219,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[2].bidId,
           'tagid': bidRequests[2].params.uid,
           'ext': {'divid': bidRequests[2].adUnitCode},
-          'bidfloor': 0,
           'video': {
             'w': 400,
             'h': 600,
@@ -259,7 +256,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[1].bidId,
           'tagid': bidRequests[1].params.uid,
           'ext': {'divid': bidRequests[1].adUnitCode},
-          'bidfloor': 0,
           'banner': {
             'w': 300,
             'h': 250,
@@ -269,7 +265,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[2].bidId,
           'tagid': bidRequests[2].params.uid,
           'ext': {'divid': bidRequests[2].adUnitCode},
-          'bidfloor': 0,
           'video': {
             'w': 400,
             'h': 600,
@@ -279,7 +274,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[3].bidId,
           'tagid': bidRequests[3].params.uid,
           'ext': {'divid': bidRequests[3].adUnitCode},
-          'bidfloor': 0,
           'banner': {
             'w': 728,
             'h': 90,
@@ -460,7 +454,7 @@ describe('TheMediaGrid Adapter', function () {
         'floor': 1.50
       };
       const bidRequest = Object.assign({
-        getFloor: _ => {
+        getFloor: (_) => {
           return floorTestData;
         }
       }, bidRequests[1]);

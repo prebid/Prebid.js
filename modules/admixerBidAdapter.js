@@ -65,6 +65,7 @@ export const spec = {
           netRevenue: bidResponse.netRevenue,
           currency: bidResponse.currency,
           vastUrl: bidResponse.vastUrl,
+          dealId: bidResponse.dealId,
         };
         bidResponses.push(bidResp);
       });
