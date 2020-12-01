@@ -23,8 +23,6 @@ Module that connects to Concert demand sources
       bids: [
         {
           bidder: "concert",
-        {
-          bidder: "concert",
           params: {
             partnerId: 'test_partner',
             site: 'site_name',
