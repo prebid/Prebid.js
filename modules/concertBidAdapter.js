@@ -53,12 +53,12 @@ export const spec = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
         transactionId: bidRequest.transactionId,
-        sizes: slot.params.sizes || bidRequest.sizes,
+        sizes: bidRequest.params.sizes || bidRequest.sizes,
         partnerId: bidRequest.params.partnerId,
         slotType: bidRequest.params.slotType,
-        adSlot: slot.params.slot || bidRequest.adUnitCode,
-        placementId: slot.params.placementId || '',
-        site: slot.params.site || bidderRequest.refererInfo.referer
+        adSlot: bidRequest.params.slot || bidRequest.adUnitCode,
+        placementId: bidRequest.params.placementId || '',
+        site: bidRequest.params.site || bidderRequest.refererInfo.referer
       }
 
       return slot;
