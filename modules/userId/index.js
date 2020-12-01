@@ -34,6 +34,14 @@
 
 /**
  * @function
+ * @summary Opts out of submodule
+ * @name Submodule#optout
+ * @param {SubmoduleConfig} config
+ * @return {(IdResponse)} A response object that contains id.
+ */
+
+/**
+ * @function
  * @summary decode a stored value for passing to bid requests
  * @name Submodule#decode
  * @param {Object|string} value
@@ -732,7 +740,7 @@ export function init(config) {
 
 export function optOutUserIds() {
   let response;
-  coreStorage.setCookie('_pbjs_id_optout', '1', new Date(2147483647 * 1000).toUTCString());
+  coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '1', new Date(2147483647 * 1000).toUTCString());
   submodules.forEach(function (submodule) {
     response = submodule.submodule.optout(submodule.config);
     if (utils.isPlainObject(response)) {
