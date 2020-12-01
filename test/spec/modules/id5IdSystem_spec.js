@@ -143,6 +143,9 @@ describe('ID5 ID System', function() {
       expect(requestBody.s).to.eq('');
       expect(requestBody.provider).to.eq('');
       expect(requestBody.v).to.eq('$prebid.version$');
+      expect(requestBody.gdpr).to.exist;
+      expect(requestBody.gdpr_consent).to.exist
+      expect(requestBody.us_privacy).to.exist;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
       expect(callbackSpy.calledOnce).to.be.true;
