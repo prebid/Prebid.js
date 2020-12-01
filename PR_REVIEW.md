@@ -5,6 +5,16 @@ If the PR is for a standard bid adapter or a standard analytics adapter, just th
 
 For modules and core platform updates, the initial reviewer should request an additional team member to review as a sanity check. Merge should only happen when the PR has 2 `LGTM` from the core team and a documentation PR if required.
 
+### Running Tests and Verifying Integrations
+
+General gulp commands include separate commands for serving the codebase on a built in webserver, creating code coverage reports and allowing serving integration examples. The `review-start` gulp command combinese those into one command.
+
+- Run `gulp review-start` adding the host parameter `gulp review-start --host=0.0.0.0` will bind to all IPs on the machine
+- Navigate to `http://host-ip:9999`
+- Navigate to build/coverage/lcov-report/index.html to view coverage
+- Navigate to integrationExamples/gpt/hellow_world.html for basic integration testing
+- The hello_world.html and other exampls can be edited and used as needed to verify functionality
+
 ### General PR review Process
 - All required global and bidder-adapter rules defined in the [Module Rules](https://docs.prebid.org/dev-docs/module-rules.html) must be followed. Please review these rules often - we depend on reviewers to enforce them.
 - Checkout the branch (these instructions are available on the github PR page as well).
