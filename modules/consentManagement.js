@@ -224,7 +224,6 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
 
       // call CMP
       window[apiName](commandName, cmpVersion, moduleCallback);
-
     } else {
       window[apiName] = function (cmd, arg, callback) {
         let msg = {
@@ -245,10 +244,6 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
       // call CMP
       window[apiName](commandName, undefined, moduleCallback);
     }
-
-
-
-
 
     function readPostMessageResponse(event) {
       let cmpDataPkgName = `${apiName}Return`;
