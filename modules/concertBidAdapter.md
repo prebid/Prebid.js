@@ -26,7 +26,7 @@ Module that connects to Concert demand sources
           params: {
             partnerId: 'test_partner',
             site: 'site_name',
-            placementId: placement_id,
+            placementId: 1234567,
             slot: 'slot_name',
             sizes: [[1030, 590]]
           }
