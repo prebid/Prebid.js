@@ -162,7 +162,7 @@ export const lotamePanoramaIdSubmodule = {
       return fullDomain;
     }
     let rootDomain;
-    let continueSearching = true;
+    let continueSearching;
     let startIndex = -2;
     const TEST_COOKIE_NAME = 'lotame_domain_check';
     const TEST_COOKIE_VALUE = 'writeable';
