@@ -727,6 +727,23 @@ export function init(config) {
   (getGlobal()).getUserIds = getUserIds;
   (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
   (getGlobal()).refreshUserIds = refreshUserIds;
+  (getGlobal()).userIdOptOut = optOutUserIds;
+}
+
+export function optOutUserIds() {
+  let response;
+  coreStorage.setCookie('_pbjs_id_optout', '1', new Date(2147483647 * 1000).toUTCString());
+  submodules.forEach(function (submodule) {
+    response = submodule.submodule.optout(submodule.config);
+    if (utils.isPlainObject(response)) {
+      if (response.id) {
+        // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
+        utils.logInfo(' Opting out ' + response.id);
+        setStoredValue(submodule, response.id);
+      }
+    }
+  }
+  );
 }
 
 // init config update listener to start the application

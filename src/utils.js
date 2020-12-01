@@ -1270,3 +1270,50 @@ export function cyrb53Hash(str, seed = 0) {
   h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
 }
+
+/**
+ * Inserts empty iframe with the specified `url` for cookie sync
+ * @param  {string} url URL to be requested
+ * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
+ * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
+ */
+export function insertStorageAccessSandboxIframe(url, id, done) {
+  let iframeHtml = createStorageAccessSandboxIframeHtml(url, false, id);
+  let div = document.createElement('div');
+  div.innerHTML = iframeHtml;
+  let iframe = div.firstChild;
+  if (done && internal.isFn(done)) {
+    iframe.addEventListener('load', done);
+    iframe.addEventListener('error', done);
+  }
+  internal.insertElement(iframe, document, 'html', true);
+};
+
+/**
+ * Creates a snippet of Iframe HTML with Storage acess sandbox
+ * @param  {string} url plain URL to be requested
+ * @param  {string} encodeUri boolean if URL should be encoded beforeretrieves the specified `url` inserted. Defaults to true
+ * @return {string}     HTML snippet that contains the iframe src = set to `url`
+ */
+export function createStorageAccessSandboxIframeHtml(url, encodeUri = true, id) {
+  if (!url) {
+    return '';
+  }
+  if (encodeUri) {
+    url = encodeURI(url);
+  }
+  if (!id) {
+    id = getUniqueIdentifierStr();
+  }
+
+  let sandbox = `sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin"`;
+  return `<iframe ${sandbox} id="${id}"
+      frameborder="0"
+      allowtransparency="true"
+      marginheight="0" marginwidth="0"
+      width="0" hspace="0" vspace="0" height="0"
+      style="height:0px;width:0px;display:none;"
+      scrolling="no"
+      src="${url}">
+    </iframe>`;
+}

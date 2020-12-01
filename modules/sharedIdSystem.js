@@ -10,9 +10,13 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 
 const MODULE_NAME = 'sharedId';
-const ID_SVC = 'https://id.sharedid.org/id';
+const SHAREDID_URL = 'https://id-qa.sharedid.org';
+const ID_SVC = SHAREDID_URL + '/id';
+const SYNC_SVC = SHAREDID_URL + '/iframe/optout';
+const OPTOUT_SVC = SHAREDID_URL + '/optout'
 const DEFAULT_24_HOURS = 86400;
 const OPT_OUT_VALUE = '00000000000000000000000000';
+const iframeId = utils.getUniqueIdentifierStr();
 // These values should NEVER change. If
 // they do, we're no longer making ulids!
 const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford's Base32
@@ -28,12 +32,15 @@ const GVLID = 887;
  * @param needsSync
  * @returns {string}
  */
-function constructCookieValue(value, needsSync) {
+function constructCookieValue(value, needsSync, userOptout) {
   const cookieValue = {};
   cookieValue.id = value;
   cookieValue.ts = utils.timestamp();
   if (needsSync) {
     cookieValue.ns = true;
+  }
+  if (userOptout) {
+    cookieValue.uoo = true;
   }
   utils.logInfo('SharedId: cookie Value: ' + JSON.stringify(cookieValue));
   return cookieValue;
@@ -47,6 +54,10 @@ function constructCookieValue(value, needsSync) {
  */
 function isIdSynced(configParams, storedId) {
   const needSync = storedId.ns;
+  const userOptOut = storedId.uoo;
+  if (userOptOut) {
+    return false;
+  }
   if (needSync) {
     return true;
   }
@@ -63,6 +74,40 @@ function isIdSynced(configParams, storedId) {
     return secondBetweenTwoDate >= syncTime;
   }
   return false;
+}
+
+/**
+ * optout call back
+ * @returns {{success: success, error: error}}
+ */
+function optOutGenerationCallback() {
+  return {
+    success: function (responseBody) {
+      utils.logInfo('SharedId: Opted out of SharedId.org ');
+    },
+    error: function (statusText) {
+      utils.logInfo('SharedId: Failed to Optout');
+    }
+  }
+}
+
+/**
+ * Post opt out request to SharedId
+ */
+function postOptOutRequest() {
+  var iframe = document.getElementById(iframeId);
+  iframe.contentWindow.postMessage('optout-request', SHAREDID_URL);
+}
+
+/**
+ * Checks if the storage access API is supported on the browser.
+ * @returns {boolean}
+ */
+function storageAccessAPISupported() {
+  return (
+    'hasStorageAccess' in document &&
+    'requestStorageAccess' in document
+  );
 }
 
 /**
@@ -90,7 +135,7 @@ function idGenerationCallback(callback) {
         try {
           let responseObj = JSON.parse(responseBody);
           utils.logInfo('SharedId: Generated SharedId: ' + responseObj.sharedId);
-          value = constructCookieValue(responseObj.sharedId, false);
+          value = constructCookieValue(responseObj.sharedId, false, false);
         } catch (error) {
           utils.logError(error);
         }
@@ -98,7 +143,7 @@ function idGenerationCallback(callback) {
       callback(value);
     },
     error: function (statusText, responseBody) {
-      const value = constructCookieValue(id(), true);
+      const value = constructCookieValue(id(), true, false);
       utils.logInfo('SharedId: Ulid Generated SharedId: ' + value.id);
       callback(value);
     }
@@ -255,6 +300,11 @@ function encodeRandom (len, prng) {
   return str;
 }
 
+function createIframeToOptOut() {
+  if (storageAccessAPISupported) {
+    utils.insertStorageAccessSandboxIframe(SYNC_SVC, iframeId);
+  }
+}
 /**
  * detects the pseudorandom number generator and generates the random number
  * @function
@@ -306,6 +356,9 @@ export const sharedIdSubmodule = {
    * @returns {sharedId}
    */
   getId(config) {
+    if (storageAccessAPISupported()) {
+      createIframeToOptOut()
+    }
     const resp = function (callback) {
       utils.logInfo('SharedId: Sharedid doesnt exists, new cookie creation');
       ajax(ID_SVC, idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
@@ -320,6 +373,9 @@ export const sharedIdSubmodule = {
    * @returns {{callback: *}}
    */
   extendId(config, storedId) {
+    if (storageAccessAPISupported()) {
+      createIframeToOptOut()
+    }
     const configParams = (config && config.params) || {};
     utils.logInfo('SharedId: Existing shared id ' + storedId.id);
     const resp = function (callback) {
@@ -333,6 +389,18 @@ export const sharedIdSubmodule = {
       }
     };
     return {callback: resp};
+  },
+  optout(config) {
+    utils.logInfo('SharedId: Opting Out');
+    if (storageAccessAPISupported()) {
+      postOptOutRequest();
+    } else {
+      utils.logInfo(' SharedId : Has no Storage access api');
+      ajax(OPTOUT_SVC, optOutGenerationCallback(), undefined, {method: 'GET', withCredentials: true});
+    }
+    let coptedOutCookieValue = constructCookieValue(OPT_OUT_VALUE, false, true)
+    utils.logInfo(' SharedId : Has no Storage access api');
+    return { id: coptedOutCookieValue };
   }
 };
 

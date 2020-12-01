@@ -7,8 +7,7 @@ import {
   setStoredConsentData,
   setStoredValue,
   setSubmoduleRegistry,
-  syncDelay,
-  PBJS_USER_ID_OPTOUT_NAME
+  syncDelay
 } from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
@@ -92,7 +91,9 @@ describe('User ID', function () {
   }
 
   before(function () {
-    localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
+    coreStorage.setCookie('_pubcid_optout', '', EXPIRED_COOKIE_DATE);
+    localStorage.removeItem('_pbjs_id_optout');
+    localStorage.removeItem('_pubcid_optout');
   });
 
   beforeEach(function () {
@@ -412,7 +413,7 @@ describe('User ID', function () {
 
   describe('Opt out', function () {
     before(function () {
-      coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '1', (new Date(Date.now() + 5000).toUTCString()));
+      coreStorage.setCookie('_pbjs_id_optout', '1', (new Date(Date.now() + 5000).toUTCString()));
     });
 
     beforeEach(function () {
@@ -421,10 +422,14 @@ describe('User ID', function () {
 
     afterEach(function () {
       // removed cookie
-      coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie('_pbjs_id_optout', '', EXPIRED_COOKIE_DATE);
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       utils.logInfo.restore();
       config.resetConfig();
+    });
+
+    after(function () {
+      coreStorage.setCookie('_pbjs_id_optout', '', EXPIRED_COOKIE_DATE);
     });
 
     it('fails initialization if opt out cookie exists', function () {
@@ -2188,11 +2193,13 @@ describe('User ID', function () {
     let mockGetId = sinon.stub();
     let mockDecode = sinon.stub();
     let mockExtendId = sinon.stub();
+    let mockoptOut = sinon.stub();
     const mockIdSystem = {
       name: 'mockId',
       getId: mockGetId,
       decode: mockDecode,
-      extendId: mockExtendId
+      extendId: mockExtendId,
+      optout: mockoptOut
     };
     const userIdConfig = {
       userSync: {
@@ -2236,6 +2243,7 @@ describe('User ID', function () {
       mockGetId.reset();
       mockDecode.reset();
       mockExtendId.reset();
+      mockoptOut.reset();
       cmpStub.restore();
       resetConsentData();
       delete window.__cmp;
@@ -2280,6 +2288,7 @@ describe('User ID', function () {
         sinon.assert.notCalled(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.calledOnce(mockExtendId);
+        sinon.assert.notCalled(mockoptOut);
       });
 
       it('calls getId if no stored consent data but refresh is needed', function () {
@@ -2296,6 +2305,7 @@ describe('User ID', function () {
         sinon.assert.calledOnce(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.notCalled(mockExtendId);
+        sinon.assert.notCalled(mockoptOut);
       });
 
       it('calls getId if empty stored consent and refresh not needed', function () {
@@ -2314,6 +2324,7 @@ describe('User ID', function () {
         sinon.assert.calledOnce(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.notCalled(mockExtendId);
+        sinon.assert.notCalled(mockoptOut);
       });
 
       it('calls getId if stored consent does not match current consent and refresh not needed', function () {
@@ -2336,6 +2347,7 @@ describe('User ID', function () {
         sinon.assert.calledOnce(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.notCalled(mockExtendId);
+        sinon.assert.notCalled(mockoptOut);
       });
 
       it('does not call getId if stored consent matches current consent and refresh not needed', function () {
@@ -2358,6 +2370,7 @@ describe('User ID', function () {
         sinon.assert.notCalled(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.calledOnce(mockExtendId);
+        sinon.assert.notCalled(mockoptOut);
       });
     });
   });
