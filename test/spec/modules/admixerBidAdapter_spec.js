@@ -88,7 +88,8 @@ describe('AdmixerAdapter', function () {
           'creativeId': 'ccca3e5e-0c54-4761-9667-771322fbdffc',
           'ttl': 360,
           'netRevenue': false,
-          'bidId': '5e4e763b6bc60b'
+          'bidId': '5e4e763b6bc60b',
+          'dealId': 'asd123',
         }]
       }
     };
@@ -107,6 +108,7 @@ describe('AdmixerAdapter', function () {
           'currency': ads[0].currency,
           'netRevenue': ads[0].netRevenue,
           'ttl': ads[0].ttl,
+          'dealId': ads[0].dealId,
         }
       ];
 
