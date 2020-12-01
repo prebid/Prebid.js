@@ -4,6 +4,7 @@ import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'krushmedia';
 const AD_URL = 'https://ads4.krushmedia.com/?c=rtb&m=hb';
+const SYNC_URL = 'https://cs.krushmedia.com/html?src=pbjs'
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -99,6 +100,24 @@ export const spec = {
     }
     return response;
   },
+
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    let syncUrl = SYNC_URL
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+    return [{
+      type: 'iframe',
+      url: syncUrl
+    }];
+  }
 };
 
 registerBidder(spec);
