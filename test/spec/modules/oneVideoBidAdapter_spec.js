@@ -364,14 +364,14 @@ describe('OneVideoBidAdapter', function () {
       };
       const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const custom = requests[0].data.imp[0].ext.custom;
-      expect(custom['key1']).to.be.a('string');
-      expect(custom['key2']).to.be.a('string');
-      expect(custom['key3']).to.be.a('number');
-      expect(custom['key4']).to.not.exist;
-      expect(custom['key5']).to.not.exist;
-      expect(custom['key6']).to.not.exist;
-      expect(custom['key7']).to.not.exist;
-      expect(custom['key8']).to.not.exist;
+      expect(custom["key1"]).to.be.a('string');
+      expect(custom["key2"]).to.be.a('string');
+      expect(custom["key3"]).to.be.a('number');
+      expect(custom["key4"]).to.not.exist;
+      expect(custom["key5"]).to.not.exist;
+      expect(custom["key6"]).to.not.exist;
+      expect(custom["key7"]).to.not.exist;
+      expect(custom["key8"]).to.not.exist;
     });
   });
 
