@@ -83,7 +83,7 @@ function collectUtmTagData() {
     if (newUtm === false) {
       utmTags.forEach(function (utmKey) {
         let itemValue = localStorage.getItem(`pm_${utmKey}`);
-        if (itemValue.length !== 0) {
+        if (itemValue && itemValue.length !== 0) {
           pmUtmTags[utmKey] = itemValue;
         }
       });
@@ -99,6 +99,16 @@ function collectUtmTagData() {
   return pmUtmTags;
 }
 
+function collectPageInfo() {
+  const pageInfo = {
+    domain: window.location.hostname,
+  }
+  if (document.referrer) {
+    pageInfo.referrerDomain = utils.parseUrl(document.referrer).hostname;
+  }
+  return pageInfo;
+}
+
 function flush() {
   if (!pmAnalyticsEnabled) {
     return;
@@ -111,6 +121,7 @@ function flush() {
       bundleId: initOptions.bundleId,
       events: _eventQueue,
       utmTags: collectUtmTagData(),
+      pageInfo: collectPageInfo(),
     };
 
     ajax(

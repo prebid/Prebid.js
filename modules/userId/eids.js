@@ -162,6 +162,12 @@ const USER_IDS_CONFIG = {
   'vmconnectid': {
     source: 'verizonmedia.com',
     atype: 1
+  },
+
+  // Neustar Fabrick
+  'fabrickId': {
+    source: 'neustar.biz',
+    atype: 1
   }
 };
 
