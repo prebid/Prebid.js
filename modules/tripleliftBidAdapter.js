@@ -186,9 +186,9 @@ function _getFloor (bid) {
 }
 
 function _getGlobalFpd() {
-  let fpd = {};
-  let context = {}
-  let user = {};
+  const fpd = {};
+  const context = {}
+  const user = {};
 
   const fpdContext = Object.assign({}, config.getConfig('fpd.context'));
   const fpdUser = Object.assign({}, config.getConfig('fpd.user'));
@@ -206,8 +206,8 @@ function _getGlobalFpd() {
 }
 
 function _getAdUnitFpd(adUnitFpd) {
-  let fpd = {};
-  let context = {};
+  const fpd = {};
+  const context = {};
 
   _addEntries(context, adUnitFpd.context);
 
