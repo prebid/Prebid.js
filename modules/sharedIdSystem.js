@@ -10,7 +10,7 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 
 const MODULE_NAME = 'sharedId';
-const SHAREDID_URL = 'https://id-qa.sharedid.org';
+const SHAREDID_URL = 'https://id.sharedid.org';
 const ID_SVC = SHAREDID_URL + '/id';
 const SYNC_SVC = SHAREDID_URL + '/iframe/optout';
 const OPTOUT_SVC = SHAREDID_URL + '/optout'
