@@ -57,6 +57,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
           break;
         }
       } catch (e) {}
+
       try {
         if (f.frames['__uspapiLocator']) {
           uspapiFrame = f;
@@ -106,10 +107,10 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   // to collect the user's consent choices represented as a string (via getUSPData)
 
   // the following code also determines where the USPAPI is located and uses the proper workflow to communicate with it:
-  // - use the USPAPI locator code to see if USP's located in the current window or an ancestor window. This works in friendly or cross domain iframes
+  // - use the USPAPI locator code to see if USP's located in the current window or an ancestor window.
+  // - else assume prebid is in an iframe, and use the locator to see if the CMP is located in a higher parent window. This works in cross domain iframes.
   // - if USPAPI is not found, the iframe function will call the uspError exit callback to abort the rest of the USPAPI workflow
-  // - try to call the __uspapi() function directly, otherwise use the postMessage() api
-  // find the CMP frame/window
+
   if (utils.isFn(uspapiFunction)) {
     utils.logInfo('Detected USP CMP is directly accessible, calling it now...');
     uspapiFunction(
