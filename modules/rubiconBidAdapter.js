@@ -102,7 +102,8 @@ var sizeMap = {
   274: '1800x200',
   278: '320x500',
   282: '320x400',
-  288: '640x380'
+  288: '640x380',
+  548: '500x1000'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -237,15 +238,6 @@ export const spec = {
       const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       if (eids && eids.length) {
         utils.deepSetValue(data, 'user.ext.eids', eids);
-
-        // liveintent requires additional props to be set
-        const liveIntentEid = find(data.user.ext.eids, eid => eid.source === 'liveintent.com');
-        if (liveIntentEid) {
-          utils.deepSetValue(data, 'user.ext.tpid', { source: liveIntentEid.source, uid: liveIntentEid.uids[0].id });
-          if (liveIntentEid.ext && liveIntentEid.ext.segments) {
-            utils.deepSetValue(data, 'rp.target.LIseg', liveIntentEid.ext.segments);
-          }
-        }
       }
 
       // set user.id value from config value
@@ -373,6 +365,7 @@ export const spec = {
   getOrderedParams: function(params) {
     const containsTgV = /^tg_v/
     const containsTgI = /^tg_i/
+    const containsUId = /^eid_|^tpid_/
 
     const orderedParams = [
       'account_id',
@@ -385,18 +378,15 @@ export const spec = {
       'gdpr_consent',
       'us_privacy',
       'rp_schain',
-      'tpid_tdid',
-      'tpid_liveintent.com',
-      'tg_v.LIseg',
-      'ppuid',
-      'eid_pubcid.org',
-      'eid_sharedid.org',
-      'eid_criteo.com',
-      'rf',
-      'p_geo.latitude',
-      'p_geo.longitude',
-      'kw'
-    ].concat(Object.keys(params).filter(item => containsTgV.test(item)))
+    ].concat(Object.keys(params).filter(item => containsUId.test(item)))
+      .concat([
+        'x_liverampidl',
+        'ppuid',
+        'rf',
+        'p_geo.latitude',
+        'p_geo.longitude',
+        'kw'
+      ]).concat(Object.keys(params).filter(item => containsTgV.test(item)))
       .concat(Object.keys(params).filter(item => containsTgI.test(item)))
       .concat([
         'tk_flint',
@@ -502,51 +492,47 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
-      const unifiedId = find(bidRequest.userIdAsEids, eid => eid.source === 'adserver.org');
-      if (unifiedId) {
-        data['tpid_tdid'] = unifiedId.uids[0].id;
-      }
-      const liveintentId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveintent.com');
-      if (liveintentId) {
-        data['tpid_liveintent.com'] = liveintentId.uids[0].id;
-        if (liveintentId.ext && Array.isArray(liveintentId.ext.segments) && liveintentId.ext.segments.length) {
-          data['tg_v.LIseg'] = liveintentId.ext.segments.join(',');
-        }
-      }
-      const liverampId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveramp.com');
-      if (liverampId) {
-        data['x_liverampidl'] = liverampId.uids[0].id;
-      }
-      const sharedId = find(bidRequest.userIdAsEids, eid => eid.source === 'sharedid.org');
-      if (sharedId) {
-        data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
-      }
-      const pubcid = find(bidRequest.userIdAsEids, eid => eid.source === 'pubcid.org');
-      if (pubcid) {
-        data['eid_pubcid.org'] = `${pubcid.uids[0].id}^${pubcid.uids[0].atype}`;
-      }
-      const criteoId = find(bidRequest.userIdAsEids, eid => eid.source === 'criteo.com');
-      if (criteoId) {
-        data['eid_criteo.com'] = `${criteoId.uids[0].id}^${criteoId.uids[0].atype}`;
-      }
-    }
-
-    // set ppuid value from config value
+    // pass publisher provided userId if configured
     const configUserId = config.getConfig('user.id');
     if (configUserId) {
       data['ppuid'] = configUserId;
-    } else {
-      // if config.getConfig('user.id') doesn't return anything, then look for the first eid.uids[*].ext.stype === 'ppuid'
-      for (let i = 0; bidRequest.userIdAsEids && i < bidRequest.userIdAsEids.length; i++) {
-        if (bidRequest.userIdAsEids[i].uids) {
-          const pubProvidedId = find(bidRequest.userIdAsEids[i].uids, uid => uid.ext && uid.ext.stype === 'ppuid');
-          if (pubProvidedId && pubProvidedId.id) {
-            data['ppuid'] = pubProvidedId.id;
-            break;
+    }
+    // loop through userIds and add to request
+    if (bidRequest.userIdAsEids) {
+      bidRequest.userIdAsEids.forEach(eid => {
+        try {
+          // special cases
+          if (eid.source === 'adserver.org') {
+            data['tpid_tdid'] = eid.uids[0].id;
+            data['eid_adserver.org'] = eid.uids[0].id;
+          } else if (eid.source === 'liveintent.com') {
+            data['tpid_liveintent.com'] = eid.uids[0].id;
+            data['eid_liveintent.com'] = eid.uids[0].id;
+            if (eid.ext && Array.isArray(eid.ext.segments) && eid.ext.segments.length) {
+              data['tg_v.LIseg'] = eid.ext.segments.join(',');
+            }
+          } else if (eid.source === 'liveramp.com') {
+            data['x_liverampidl'] = eid.uids[0].id;
+          } else if (eid.source === 'sharedid.org') {
+            data['eid_sharedid.org'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.third) || ''}`;
+          } else if (eid.source === 'id5-sync.com') {
+            data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.ext && eid.ext.linkType) || ''}`;
+          } else {
+            // add anything else with this generic format
+            data[`eid_${eid.source}`] = `${eid.uids[0].id}^${eid.uids[0].atype || ''}`;
           }
+          // send AE "ppuid" signal if exists, and hasn't already been sent
+          if (!data['ppuid']) {
+            // get the first eid.uids[*].ext.stype === 'ppuid', if one exists
+            const ppId = find(eid.uids, uid => uid.ext && uid.ext.stype === 'ppuid');
+            if (ppId && ppId.id) {
+              data['ppuid'] = ppId.id;
+            }
+          }
+        } catch (e) {
+          utils.logWarn('Rubicon: error reading eid:', eid, e);
         }
-      }
+      });
     }
 
     if (bidderRequest.gdprConsent) {
@@ -684,6 +670,14 @@ export const spec = {
             bidObject.dealId = bid.dealid;
           }
 
+          if (bid.adomain) {
+            utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
+          }
+
+          if (utils.deepAccess(bid, 'ext.bidder.rp.advid')) {
+            utils.deepSetValue(bidObject, 'meta.advertiserId', bid.ext.bidder.rp.advid);
+          }
+
           let serverResponseTimeMs = utils.deepAccess(responseObj, 'ext.responsetimemillis.rubicon');
           if (bidRequest && serverResponseTimeMs) {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
@@ -691,6 +685,7 @@ export const spec = {
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
+            utils.deepSetValue(bidObject, 'meta.mediaType', VIDEO);
             const extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
 
             // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
@@ -756,12 +751,16 @@ export const spec = {
             advertiserId: ad.advertiser, networkId: ad.network
           },
           meta: {
-            advertiserId: ad.advertiser, networkId: ad.network
+            advertiserId: ad.advertiser, networkId: ad.network, mediaType: BANNER
           }
         };
 
         if (ad.creative_type) {
           bid.mediaType = ad.creative_type;
+        }
+
+        if (ad.adomain) {
+          bid.meta.advertiserDomains = Array.isArray(ad.adomain) ? ad.adomain : [ad.adomain];
         }
 
         if (ad.creative_type === VIDEO) {

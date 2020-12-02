@@ -39,6 +39,12 @@ describe('consentManagement', function () {
         expect(userCMP).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       });
+
+      it('should exit consentManagement module if config is "undefined"', function() {
+        setConsentConfig(undefined);
+        expect(userCMP).to.be.undefined;
+        sinon.assert.calledOnce(utils.logWarn);
+      });
     });
 
     describe('valid setConsentConfig value', function () {

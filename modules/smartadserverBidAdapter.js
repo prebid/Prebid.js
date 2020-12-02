@@ -13,8 +13,10 @@ import {
   createEidsArray
 } from './userId/eids.js';
 const BIDDER_CODE = 'smartadserver';
+const GVL_ID = 45;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   aliases: ['smart'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
   /**
@@ -99,6 +101,7 @@ export const spec = {
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
+        payload.addtl_consent = bidderRequest.gdprConsent.addtlConsent;
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
       }

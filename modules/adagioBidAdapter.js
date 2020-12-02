@@ -7,10 +7,11 @@ import JSEncrypt from 'jsencrypt/bin/jsencrypt.js';
 import sha256 from 'crypto-js/sha256.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import { createEidsArray } from './userId/eids.js';
 
 export const BIDDER_CODE = 'adagio';
 export const LOG_PREFIX = 'Adagio:';
-export const VERSION = '2.4.0';
+export const VERSION = '2.5.0';
 export const FEATURES_VERSION = '1';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
 export const SUPPORTED_MEDIA_TYPES = ['banner'];
@@ -572,6 +573,12 @@ function _getSchain(bidRequest) {
   }
 }
 
+function _getEids(bidRequest) {
+  if (utils.deepAccess(bidRequest, 'userId')) {
+    return createEidsArray(bidRequest.userId)
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -657,6 +664,7 @@ export const spec = {
     const uspConsent = _getUspConsent(bidderRequest) || {};
     const coppa = _getCoppa();
     const schain = _getSchain(validBidRequests[0]);
+    const eids = _getEids(validBidRequests[0]) || [];
     const adUnits = utils._map(validBidRequests, (bidRequest) => {
       bidRequest.features = internal.getFeatures(bidRequest, bidderRequest);
       return bidRequest;
@@ -691,6 +699,9 @@ export const spec = {
             ccpa: uspConsent
           },
           schain: schain,
+          user: {
+            eids: eids
+          },
           prebidVersion: '$prebid.version$',
           adapterVersion: VERSION,
           featuresVersion: FEATURES_VERSION
