@@ -72,6 +72,13 @@ var adUnits = [
           // other video parameters as in OpenRTB v2.5 spec
           video: {
             skip: 1
+
+            // the following overrides mediaTypes.video of the ad unit
+            placement: 1,
+            w: 640,
+            h: 360,
+            mimes: ['video/mp4'],
+            protocols: [3],
           }
         }
       }
