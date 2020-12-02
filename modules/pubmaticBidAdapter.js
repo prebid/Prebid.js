@@ -14,9 +14,13 @@ const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
+// removeIf(disableNativeRelatedCode)
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
+// endRemoveIf(disableNativeRelatedCode)
+// removeIf(disableOutStreamRelatedCode)
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
+// endRemoveIf(disableOutStreamRelatedCode)
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -51,6 +55,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'maxbitrate': DATA_TYPES.NUMBER
 }
 
+// removeIf(disableNativeRelatedCode)
 const NATIVE_ASSETS = {
   'TITLE': { ID: 1, KEY: 'title', TYPE: 0 },
   'IMAGE': { ID: 2, KEY: 'image', TYPE: 0 },
@@ -99,7 +104,8 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
     id: NATIVE_ASSETS.IMAGE.ID,
     required: true,
   }
-]
+];
+// endRemoveIf(disableNativeRelatedCode)
 
 const NET_REVENUE = false;
 const dealChannelValues = {
@@ -107,6 +113,8 @@ const dealChannelValues = {
   5: 'PREF',
   6: 'PMPG'
 };
+
+// removeIf(disableOutStreamRelatedCode)
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -161,16 +169,19 @@ const BB_RENDERER = {
     return `${pub}-${renderer}`; // NB convention!
   }
 };
+// endRemoveIf(disableOutStreamRelatedCode)
 
 let publisherId = 0;
 let isInvalidNativeRequest = false;
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
 let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 
+// removeIf(disableNativeRelatedCode)
 // loading NATIVE_ASSET_ID_TO_KEY_MAP
 utils._each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
 // loading NATIVE_ASSET_KEY_TO_ASSET_MAP
 utils._each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
+// endRemoveIf(disableNativeRelatedCode)
 
 function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
@@ -338,6 +349,7 @@ function _checkParamDataType(key, value, datatype) {
   return UNDEFINED;
 }
 
+// removeIf(disableNativeRelatedCode)
 function _commonNativeRequestObject(nativeAsset, params) {
   var key = nativeAsset.KEY;
   return {
@@ -480,6 +492,7 @@ function _createNativeRequest(params) {
   }
   return nativeRequestObject;
 }
+// endRemoveIf(disableNativeRelatedCode)
 
 function _createBannerRequest(bid) {
   var sizes = bid.mediaTypes.banner.sizes;
@@ -604,6 +617,7 @@ function _createImpressionObject(bid, conf) {
             impObj.banner = bannerObj;
           }
           break;
+        // removeIf(disableNativeRelatedCode)
         case NATIVE:
           nativeObj['request'] = JSON.stringify(_createNativeRequest(bid.nativeParams));
           if (!isInvalidNativeRequest) {
@@ -612,6 +626,7 @@ function _createImpressionObject(bid, conf) {
             utils.logWarn(LOG_WARN_PREFIX + 'Error: Error in Native adunit ' + bid.params.adUnit + '. Ignoring the adunit. Refer to ' + PREBID_NATIVE_HELP_LINK + ' for more details.');
           }
           break;
+        // endRemoveIf(disableNativeRelatedCode)
         case VIDEO:
           videoObj = _createVideoRequest(bid);
           if (videoObj !== UNDEFINED) {
@@ -700,6 +715,7 @@ function _checkMediaType(adm, newBid) {
   }
 }
 
+// removeIf(disableNativeRelatedCode)
 function _parseNativeResponse(bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
@@ -760,6 +776,7 @@ function _parseNativeResponse(bid, newBid) {
     }
   }
 }
+// endRemoveIf(disableNativeRelatedCode)
 
 function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
   blockedIabCategories = blockedIabCategories
@@ -817,6 +834,7 @@ function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
   }
 }
 
+// removeIf(disableOutStreamRelatedCode)
 function _assignRenderer(newBid, request) {
   let bidParams, context, adUnitCode;
   if (request.bidderRequest && request.bidderRequest.bids) {
@@ -833,6 +851,7 @@ function _assignRenderer(newBid, request) {
     }
   }
 };
+// endRemoveIf(disableOutStreamRelatedCode)
 
 export const spec = {
   code: BIDDER_CODE,
@@ -1066,9 +1085,11 @@ export const spec = {
                         newBid.vastXml = bid.adm;
                         _assignRenderer(newBid, request);
                         break;
+                      // removeIf(disableNativeRelatedCode)  
                       case NATIVE:
                         _parseNativeResponse(bid, newBid);
                         break;
+                      // endRemoveIf(disableNativeRelatedCode) 
                     }
                   }
                 });
