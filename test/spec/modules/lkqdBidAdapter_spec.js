@@ -89,7 +89,7 @@ describe('LKQD Bid Adapter Test', () => {
       expect(r1).to.have.string('&sid=662921&');
       expect(r1).to.have.string('&width=300&');
       expect(r1).to.have.string('&height=250&');
-      expect(r1).to.have.string('&coppa=true&');
+      expect(r1).to.have.string('&coppa=1&');
       expect(r1).to.have.string('&c1=newWindow&');
       expect(r1).to.have.string('&c20=lkqdCustom');
       const r2 = requests[1].data;
@@ -97,7 +97,7 @@ describe('LKQD Bid Adapter Test', () => {
       expect(r2).to.have.string('&sid=662921&');
       expect(r2).to.have.string('&width=640&');
       expect(r2).to.have.string('&height=480&');
-      expect(r2).to.have.string('&coppa=true&');
+      expect(r2).to.have.string('&coppa=1&');
       expect(r2).to.have.string('&c1=newWindow&');
       expect(r2).to.have.string('&c20=lkqdCustom');
 
@@ -105,6 +105,10 @@ describe('LKQD Bid Adapter Test', () => {
     });
 
     it('should not populate unspecified parameters', () => {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(false);
+
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(2);
       const r1 = requests[0].data;
@@ -125,6 +129,8 @@ describe('LKQD Bid Adapter Test', () => {
       expect(r2).to.not.have.string('&schain=');
       expect(r2).to.not.have.string('&c39=');
       expect(r2).to.not.have.string('coppa');
+
+      config.getConfig.restore();
     });
 
     it('should handle single size request', () => {

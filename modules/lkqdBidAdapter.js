@@ -150,7 +150,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         sspData.dnt = bidRequest.params.dnt;
       }
       if (config.getConfig('coppa') === true) {
-        sspData.coppa = true;
+        sspData.coppa = 1;
       }
       if (bidRequest.params.hasOwnProperty('pageurl') && bidRequest.params.pageurl != null) {
         sspData.pageurl = bidRequest.params.pageurl;
