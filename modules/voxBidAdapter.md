@@ -17,14 +17,14 @@ var adUnits = [{
     code: 'banner_ad_unit',
     mediaTypes: {
         banner: {
-            sizes: [[728, 90]]
+            sizes: [[160, 600]]
         }
     },
     bids: [{
         bidder: "vox",
         params: {
             placement: "banner",                      // required
-            placementId: "5af45ad34d506ee7acad0c26"   // required
+            placementId: "5fc77bc5a757531e24c89a4c"   // required
         }
     }]
 }];
@@ -45,7 +45,7 @@ var adUnits = [{
         bidder: 'vox',
         params: {
             placement: "video",                       // required
-            placementId: "5af45ad34d506ee7acad0c26"   // required
+            placementId: "5fc77a94a757531e24c89a3d"   // required
         }
     }]
 }];
@@ -65,8 +65,8 @@ var adUnits = [{
         bidder: "vox",
         params: {
             placement: "inImage",
-            placementId: "102030405060708090000020",
-            imageUrl: "https://hybrid.ai/images/image.jpg"
+            placementId: "5fc77b40a757531e24c89a42",
+            imageUrl: "https://gallery.voxexchange.io/vox-main.png"
         }
     }]
 }];
@@ -105,8 +105,8 @@ var adUnits = [{
                 bidder: "vox",
                 params: {
                     placement: "inImage",
-                    placementId: "102030405060708090000020",
-                    imageUrl: "https://hybrid.ai/images/image.jpg"
+                    placementId: "5fc77b40a757531e24c89a42",
+                    imageUrl: "https://gallery.voxexchange.io/vox-main.png"
                 }
             }]
         }];
@@ -137,7 +137,7 @@ var adUnits = [{
 <body>
 	<h2>Prebid.js InImage Banner Test</h2>
 	<div style="width: 600px;">
-        <img src="https://hybrid.ai/images/image.jpg" />
+        <img src="https://gallery.voxexchange.io/vox-main.png" />
         <iframe id='test-div' class="banner-block" style="display: none;"></iframe>
     </div>
 </body>
@@ -185,8 +185,8 @@ var adUnits = [{
 				bidder: "vox",
 				params: {
 					placement: "inImage",
-					placementId: "102030405060708090000020",
-					imageUrl: "https://hybrid.ai/images/image.jpg"
+					placementId: "5fc77b40a757531e24c89a42",
+					imageUrl: "https://gallery.voxexchange.io/vox-main.png"
 				}
 			}]
 		}];
@@ -225,7 +225,7 @@ var adUnits = [{
 <body>
 	<h2>Prebid.js Banner Ad Unit Test</h2>
 	<div style="width: 600px; position: relative">
-		<img src="https://hybrid.ai/images/image.jpg" />
+		<img src="https://gallery.voxexchange.io/vox-main.png" />
 		<div id='div-gpt-ad-1574864639578-0' class="banner-block">
 			<script>
 				googletag.cmd.push(() => { googletag.display('div-gpt-ad-1574864639578-0'); });
