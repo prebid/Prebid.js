@@ -26,6 +26,7 @@ var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
+const removeCode = require('gulp-remove-code');
 const path = require('path');
 const execa = require('execa');
 
@@ -120,6 +121,20 @@ function watch(done) {
   done();
 };
 
+function getRemoveCodeConfig(){
+  const removeCodeConfigFile = "removeCodeConfig.json";
+  try {
+    return JSON.parse(
+      fs.readFileSync(removeCodeConfigFile, 'utf8')
+    )
+  } catch (e) {
+    throw new gutil.PluginError({
+      plugin: 'modules',
+      message: 'failed reading: ' + removeCodeConfigFile
+    });
+  }
+}
+
 function makeDevpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
   cloned.devtool = 'source-map';
@@ -131,6 +146,7 @@ function makeDevpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
+    .pipe(removeCode(getRemoveCodeConfig()))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 }
@@ -147,6 +163,7 @@ function makeWebpackPkg() {
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
+    .pipe(removeCode(getRemoveCodeConfig()))
     .pipe(uglify())
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));

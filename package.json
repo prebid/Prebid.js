@@ -60,6 +60,7 @@
     "gulp-header": "^1.7.1",
     "gulp-if": "^2.0.2",
     "gulp-js-escape": "^1.0.1",
+    "gulp-remove-code": "^3.0.4",
     "gulp-replace": "^1.0.0",
     "gulp-shell": "^0.5.2",
     "gulp-sourcemaps": "^2.6.0",
