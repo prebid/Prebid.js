@@ -1,4 +1,4 @@
-import {sharedIdSubmodule} from 'modules/SharedIdSystem.js';
+import {sharedIdSubmodule} from 'modules/sharedIdSystem.js';
 import {server} from '../../mocks/xhr.js';
 const responseHeader = {'Content-Type': 'application/json'}
 
