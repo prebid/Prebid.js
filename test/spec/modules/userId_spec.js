@@ -92,7 +92,6 @@ describe('User ID', function () {
   }
 
   before(function () {
-    coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
     localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
   });
 
@@ -427,11 +426,6 @@ describe('User ID', function () {
       utils.logInfo.restore();
       config.resetConfig();
     });
-
-    after(function () {
-      coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
-    });
-
     it('fails initialization if opt out cookie exists', function () {
       setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
