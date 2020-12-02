@@ -301,7 +301,7 @@ function encodeRandom (len, prng) {
 }
 
 function createIframeToOptOut() {
-  if (storageAccessAPISupported) {
+  if (storageAccessAPISupported()) {
     utils.insertStorageAccessSandboxIframe(SYNC_SVC, iframeId);
   }
 }
@@ -356,9 +356,7 @@ export const sharedIdSubmodule = {
    * @returns {sharedId}
    */
   getId(config) {
-    if (storageAccessAPISupported()) {
-      createIframeToOptOut()
-    }
+    createIframeToOptOut()
     const resp = function (callback) {
       utils.logInfo('SharedId: Sharedid doesnt exists, new cookie creation');
       ajax(ID_SVC, idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
@@ -373,9 +371,7 @@ export const sharedIdSubmodule = {
    * @returns {{callback: *}}
    */
   extendId(config, storedId) {
-    if (storageAccessAPISupported()) {
-      createIframeToOptOut()
-    }
+    createIframeToOptOut()
     const configParams = (config && config.params) || {};
     utils.logInfo('SharedId: Existing shared id ' + storedId.id);
     const resp = function (callback) {
