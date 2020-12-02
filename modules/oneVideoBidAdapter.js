@@ -302,6 +302,14 @@ function getRequestData(bid, consentData, bidRequest) {
     bidData.site.ref = 'https://verizonmedia.com';
     bidData.tmax = 1000;
   }
+  if (bid.params.video.custom && Object.prototype.toString.call(bid.params.video.custom) === '[object Object]') {
+    bidData.imp[0].ext.custom = {};
+    for (const key in bid.params.video.custom) {
+      if (typeof bid.params.video.custom[key] === 'string' || typeof bid.params.video.custom[key] === 'number') {
+        bidData.imp[0].ext.custom[key] = bid.params.video.custom[key];
+      }
+    }
+  }
   return bidData;
 }
 
