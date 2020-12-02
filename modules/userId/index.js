@@ -34,7 +34,8 @@
 
 /**
  * @function
- * @summary Opts out of submodule
+ * @summary This optional method which each submodule can use to indicate opting out of user id module.
+ *  If IdResponse#id is defined, then it will be written to the current active storage even if it exists already.
  * @name Submodule#optout
  * @param {SubmoduleConfig} config
  * @return {(IdResponse)} A response object that contains id.
