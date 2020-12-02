@@ -2,7 +2,9 @@
 
 import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils.js';
 import { getLabels, resolveStatus } from './sizeMapping.js';
+// removeIf(disableNativeRelatedCode)
 import { processNativeAdUnitParams, nativeAdapters } from './native.js';
+// endRemoveIf(disableNativeRelatedCode)
 import { newBidder } from './adapters/bidderFactory.js';
 import { ajaxBuilder } from './ajax.js';
 import { config, RANDOM } from './config.js';
@@ -57,6 +59,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
     if (active) {
       result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
         .reduce((bids, bid) => {
+          // removeIf(disableNativeRelatedCode)
           const nativeParams =
             adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
           if (nativeParams) {
@@ -64,7 +67,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
               nativeParams: processNativeAdUnitParams(nativeParams),
             });
           }
-
+          // endRemoveIf(disableNativeRelatedCode)
           bid = Object.assign({}, bid, getDefinedParams(adUnit, [
             'fpd',
             'mediaType',
@@ -401,7 +404,9 @@ function isTestingServerOnly() {
 function getSupportedMediaTypes(bidderCode) {
   let result = [];
   if (includes(adapterManager.videoAdapters, bidderCode)) result.push('video');
+  // removeIf(disableNativeRelatedCode)
   if (includes(nativeAdapters, bidderCode)) result.push('native');
+  // endRemoveIf(disableNativeRelatedCode)
   return result;
 }
 
@@ -415,9 +420,11 @@ adapterManager.registerBidAdapter = function (bidAdaptor, bidderCode, {supported
       if (includes(supportedMediaTypes, 'video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
+      // removeIf(disableNativeRelatedCode)
       if (includes(supportedMediaTypes, 'native')) {
         nativeAdapters.push(bidderCode);
       }
+      // endRemoveIf(disableNativeRelatedCode)
     } else {
       utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
     }

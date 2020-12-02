@@ -1,6 +1,8 @@
 import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp, deepAccess, deepClone, logError, logWarn, logInfo } from './utils.js';
 import { config } from './config.js';
+// removeIf(disableNativeRelatedCode)
 import { NATIVE_TARGETING_KEYS } from './native.js';
+// endRemoveIf(disableNativeRelatedCode)
 import { auctionManager } from './auctionManager.js';
 import { sizeSupported } from './sizeMapping.js';
 import { ADPOD } from './mediaTypes.js';
@@ -162,7 +164,11 @@ export function newTargeting(auctionManager) {
    */
   function getDealBids(adUnitCodes, bidsReceived) {
     if (config.getConfig('targetingControls.alwaysIncludeDeals') === true) {
-      const standardKeys = TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
+      const standardKeys = TARGETING_KEYS.concat(
+        // removeIf(disableNativeRelatedCode)
+        NATIVE_TARGETING_KEYS
+        // endRemoveIf(disableNativeRelatedCode)
+      );
 
       // we only want the top bid from bidders who have multiple entries per ad unit code
       const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm);

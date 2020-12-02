@@ -3,7 +3,9 @@ import adapterManager from '../adapterManager.js';
 import { config } from '../config.js';
 import { createBid } from '../bidfactory.js';
 import { userSync } from '../userSync.js';
+// removeIf(disableNativeRelatedCode)
 import { nativeBidIsValid } from '../native.js';
+// endRemoveIf(disableNativeRelatedCode)
 import { isValidVideoBid } from '../video.js';
 import CONSTANTS from '../constants.json';
 import events from '../events.js';
@@ -494,11 +496,12 @@ export function isValid(adUnitCode, bid, bidRequests) {
     logError(errorMessage(`Bidder ${bid.bidderCode} is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.`));
     return false;
   }
-
+  // removeIf(disableNativeRelatedCode)
   if (bid.mediaType === 'native' && !nativeBidIsValid(bid, bidRequests)) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
   }
+  // endRemoveIf(disableNativeRelatedCode)
   if (bid.mediaType === 'video' && !isValidVideoBid(bid, bidRequests)) {
     logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
     return false;

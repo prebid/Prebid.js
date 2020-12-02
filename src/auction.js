@@ -59,7 +59,9 @@
 
 import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl} from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
+// removeIf(disableNativeRelatedCode)
 import { getNativeTargeting } from './native.js';
+// endRemoveIf(disableNativeRelatedCode)
 import { getCacheUrl, store } from './videoCache.js';
 import { Renderer } from './Renderer.js';
 import { config } from './config.js';
@@ -711,10 +713,12 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, bidReq) {
     }
   }
 
+  // removeIf(disableNativeRelatedCode)
   // set native key value targeting
   if (custBidObj['native']) {
     keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj, bidReq));
   }
+  // endRemoveIf(disableNativeRelatedCode)
 
   return keyValues;
 }

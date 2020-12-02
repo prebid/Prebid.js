@@ -4,7 +4,9 @@
  */
 
 import events from './events.js';
+// removeIf(disableNativeRelatedCode)
 import { fireNativeTrackers, getAssetMessage } from './native.js';
+// endRemoveIf(disableNativeRelatedCode)
 import constants from './constants.json';
 import { logWarn, replaceAuctionPrice } from './utils.js';
 import { auctionManager } from './auctionManager.js';
@@ -41,6 +43,7 @@ function receiveMessage(ev) {
       events.emit(BID_WON, adObject);
     }
 
+    // removeIf(disableNativeRelatedCode)
     // handle this script from native template in an ad server
     // window.parent.postMessage(JSON.stringify({
     //   message: 'Prebid Native',
@@ -59,6 +62,7 @@ function receiveMessage(ev) {
       auctionManager.addWinningBid(adObject);
       events.emit(BID_WON, adObject);
     }
+    // endRemoveIf(disableNativeRelatedCode)
   }
 }
 
