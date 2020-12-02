@@ -9,7 +9,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 
 General gulp commands include separate commands for serving the codebase on a built in webserver, creating code coverage reports and allowing serving integration examples. The `review-start` gulp command combinese those into one command.
 
-- Run `gulp review-start` adding the host parameter `gulp review-start --host=0.0.0.0` will bind to all IPs on the machine
+- Run `gulp review-start`, adding the host parameter `gulp review-start --host=0.0.0.0` will bind to all IPs on the machine
 - Navigate to `http://host-ip:9999`
 - Navigate to build/coverage/lcov-report/index.html to view coverage
 - Navigate to integrationExamples/gpt/hellow_world.html for basic integration testing
