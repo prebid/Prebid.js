@@ -1085,11 +1085,11 @@ export const spec = {
                         newBid.vastXml = bid.adm;
                         _assignRenderer(newBid, request);
                         break;
-                      // removeIf(disableNativeRelatedCode)  
+                      // removeIf(disableNativeRelatedCode)
                       case NATIVE:
                         _parseNativeResponse(bid, newBid);
                         break;
-                      // endRemoveIf(disableNativeRelatedCode) 
+                      // endRemoveIf(disableNativeRelatedCode)
                     }
                   }
                 });
