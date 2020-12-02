@@ -8,7 +8,7 @@ describe('SharedId submodule', function () {
     let callBackSpy = sinon.spy();
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    expect(request.url).to.be.eq('https://id-qa.sharedid.org/id');
+    expect(request.url).to.be.eq('https://id.sharedid.org/id');
     request.respond(
       200,
       responseHeader,
