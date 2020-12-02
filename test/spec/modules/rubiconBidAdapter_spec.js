@@ -396,7 +396,10 @@ describe('the rubicon adapter', function () {
       describe('to fastlane', function () {
         it('should make a well-formed request object', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let duplicate = Object.assign(bidderRequest);
+          duplicate.bids[0].params.floor = 0.01;
+
+          let [request] = spec.buildRequests(duplicate.bids, duplicate);
           let data = parseQuery(request.data);
 
           expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
@@ -551,7 +554,7 @@ describe('the rubicon adapter', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_floor', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
@@ -566,7 +569,6 @@ describe('the rubicon adapter', function () {
             'size_id': '15',
             'alt_size_ids': '43',
             'p_pos': 'atf',
-            'rp_floor': '0.01',
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
@@ -883,7 +885,6 @@ describe('the rubicon adapter', function () {
               'size_id': '15',
               'alt_size_ids': '43',
               'p_pos': 'atf',
-              'rp_floor': '0.01',
               'rp_secure': /[01]/,
               'rand': '0.1',
               'tk_flint': INTEGRATION,
@@ -2047,7 +2048,6 @@ describe('the rubicon adapter', function () {
             'size_id': 15,
             'alt_size_ids': '43',
             'p_pos': 'atf',
-            'rp_floor': 0.01,
             'rp_secure': /[01]/,
             'tk_flint': INTEGRATION,
             'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
