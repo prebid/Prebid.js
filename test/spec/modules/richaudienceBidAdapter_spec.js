@@ -348,7 +348,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   describe('UID test', function () {
-    pbjs.setConfig({
+    config.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
@@ -739,7 +739,7 @@ describe('Richaudience adapter tests', function () {
     }, [], {consentString: '', gdprApplies: true});
     expect(syncs).to.have.lengthOf(0);
 
-    pbjs.setConfig({
+    config.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
