@@ -121,10 +121,7 @@ function bidResponseAvailable(request, response) {
         netRevenue: DEFAULT_NET_REVENUE,
         currency: bidResponse.cur || DEFAULT_CURRENCY
       };
-      if (idToImpMap[id]['native']) {
-        bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
-        bid.mediaType = 'native';
-      } else if (idToImpMap[id].video) {
+      if (idToImpMap[id].video) {
         // for outstream, a renderer is specified
         if (idToSlotConfig[id] && utils.deepAccess(idToSlotConfig[id], 'mediaTypes.video.context') === 'outstream') {
           bid.renderer = outstreamRenderer(utils.deepAccess(idToSlotConfig[id], 'renderer.options'), utils.deepAccess(idToBidMap[id], 'ext.outstream'));
@@ -133,10 +130,13 @@ function bidResponseAvailable(request, response) {
         bid.mediaType = 'video';
         bid.width = idToBidMap[id].w;
         bid.height = idToBidMap[id].h;
-      } else {
+      } else if (idToImpMap[id].banner) {
         bid.ad = idToBidMap[id].adm;
         bid.width = idToBidMap[id].w || idToImpMap[id].banner.w;
         bid.height = idToBidMap[id].h || idToImpMap[id].banner.h;
+      } else if (idToImpMap[id]['native']) {
+        bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
+        bid.mediaType = 'native';
       }
       bids.push(bid);
     }
