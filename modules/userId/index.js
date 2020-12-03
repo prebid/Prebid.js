@@ -743,12 +743,13 @@ export function optOutUserIds() {
   let response;
   coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '1', new Date(2147483647 * 1000).toUTCString());
   submodules.forEach(function (submodule) {
-    response = submodule.submodule.optout(submodule.config);
-    if (utils.isPlainObject(response)) {
-      if (response.id) {
-        // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
-        utils.logInfo(' Opting out ' + response.id);
-        setStoredValue(submodule, response.id);
+    if (typeof submodule.submodule.optout === 'function') {
+      response = submodule.submodule.optout(submodule.config);
+      if (utils.isPlainObject(response)) {
+        if (response.id) {
+          utils.logInfo(' Opting out ' + response.id);
+          setStoredValue(submodule, response.id);
+        }
       }
     }
   }

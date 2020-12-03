@@ -307,6 +307,56 @@ describe('User ID', function () {
       expect((getGlobal()).getUserIdsAsEids()).to.deep.equal(createEidsArray((getGlobal()).getUserIds()));
     });
 
+    it('pbjs.userIdOptOut', function () {
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'pubCommonId', value: {'pubcid': '11111'}
+          }]
+        }
+      });
+      getGlobal().userIdOptOut();
+      var optOutCookies = coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME);
+      expect(optOutCookies).to.deep.equal('1');
+      expect(typeof (getGlobal()).userIdOptOut).to.equal('function');
+    });
+    it('pbjs.userIdOptOut submodule optout', function() {
+      let sandbox = sinon.createSandbox();
+
+      let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
+      let mockoptOut = sandbox.stub();
+      init(config);
+      let mockIdSystem = {
+        name: 'mockId',
+        decode: function(value) {
+          return {
+            'mid': value['MOCKID']
+          };
+        },
+        getId: mockIdCallback,
+        optout: mockoptOut
+      };
+
+      setSubmoduleRegistry([mockIdSystem]);
+
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'mockId',
+            value: {id: {mockId: '1111'}}
+          }]
+        }
+      });
+      (getGlobal()).getUserIds();
+      expect(typeof (getGlobal()).userIdOptOut).to.equal('function');
+      getGlobal().userIdOptOut();
+      expect(mockoptOut.callCount).to.equal(1);
+    });
+
     it('pbjs.refreshUserIds refreshes', function() {
       let sandbox = sinon.createSandbox();
 
