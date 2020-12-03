@@ -64,15 +64,15 @@ describe('adWMGBidAdapter', function () {
     });
 
     it('should return correct OS name', function() {
-      let userDeviceInfo = spec.parseUserAgent(ua_tablet);
+      let userDeviceInfo = spec.parseUserAgent(ua_desktop);
       expect(userDeviceInfo.os).to.equal('Windows');
     });
 
     it('should return correct OS version', function() {
-      let userDeviceInfo = spec.parseUserAgent(ua_tablet);
+      let userDeviceInfo = spec.parseUserAgent(ua_desktop);
       expect(userDeviceInfo.osv).to.equal('10.0');
     });
-  })
+  });
 
   describe('buildRequests', function () {
     let bidRequests;
@@ -244,7 +244,8 @@ describe('adWMGBidAdapter', function () {
       const syncOptions = {
         'iframeEnabled': false,
         'pixelEnabled': false
-      }
+      };
+
       let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs).to.deep.equal([]);
     });
@@ -253,20 +254,22 @@ describe('adWMGBidAdapter', function () {
       const syncOptions = {
         'iframeEnabled': true,
         'pixelEnabled': false
-      }
+      };
+
       let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).includes('http://rtb.adwmg.com/cphb.html?');
+      expect(syncs[0].url).includes('https://rtb.adwmg.com/cphb.html?');
     });
 
     it('should register iframe sync when iframe and image are enabled', function () {
       const syncOptions = {
         'iframeEnabled': true,
         'pixelEnabled': true
-      }
+      };
+
       let syncs = spec.getUserSyncs(syncOptions);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).includes('http://rtb.adwmg.com/cphb.html?');
+      expect(syncs[0].url).includes('https://rtb.adwmg.com/cphb.html?');
     });
 
     it('should send GDPR consent if enabled', function() {
@@ -284,6 +287,6 @@ describe('adWMGBidAdapter', function () {
       let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
       expect(syncs[0].url).includes('gdpr=1');
       expect(syncs[0].url).includes(`gdpr_consent=${gdprConsent.consentString}`);
-    })
+    });
   });
 });
