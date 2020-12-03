@@ -387,6 +387,7 @@ function createBannerRequestData(bids, bidderRequest) {
       slot: bid.adUnitCode,
       id: getBannerBidParam(bid, 'appId'),
       bidfloor: getBannerBidParam(bid, 'bidfloor'),
+      tagid: getBannerBidParam(bid, 'tagid'),
       sizes: getBannerSizes(bid)
     };
   });
