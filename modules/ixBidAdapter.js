@@ -1,6 +1,7 @@
 import * as utils from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
 import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -18,7 +19,7 @@ const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
-
+const RENDERER_URL = 'https://js-sec.indexww.com/htv/video-player.js';
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
  *
@@ -129,6 +130,7 @@ function parseBid(rawBid, currency, bidRequest) {
     bid.width = bidRequest.video.w;
     bid.height = bidRequest.video.h;
     bid.mediaType = VIDEO;
+    bid.mediaTypes = bidRequest.mediaTypes;
     bid.ttl = VIDEO_TIME_TO_LIVE;
   } else {
     bid.ad = rawBid.adm;
@@ -198,17 +200,22 @@ function isValidBidFloorParams(bidFloor, bidFloorCur) {
 }
 
 /**
- * Finds the impression with the associated id.
+ * Create bid request object with the associated id.
  *
  * @param  {*}      id          Id of the impression.
  * @param  {array}  impressions List of impressions sent in the request.
  * @return {object}             The impression with the associated id.
  */
-function getBidRequest(id, impressions) {
+function getBidRequest(id, impressions, validBidRequests) {
   if (!id) {
     return;
   }
-  return find(impressions, imp => imp.id === id);
+  const bidRequest = {
+    ...find(validBidRequests, bid => bid.bidId === id),
+    ...find(impressions, imp => imp.id === id)
+  }
+
+  return bidRequest;
 }
 
 /**
@@ -482,7 +489,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     requests.push({
       method: 'GET',
       url: baseUrl,
-      data: clonedPayload
+      data: clonedPayload,
+      validBidRequests
     });
   }
 
@@ -644,6 +652,42 @@ function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
       missingBannerSizes[transactionID] = newAdUnitEntry;
     }
   }
+}
+
+/**
+ * Initialize Outstream Renderer
+ * @param {Object} bid
+ */
+function outstreamRenderer (bid) {
+  bid.renderer.push(() => {
+    var config = {
+      width: bid.width,
+      height: bid.height,
+      timeout: 3000
+    };
+
+    window.IXOutstreamPlayer(bid.vastUrl, bid.adUnitCode, config);
+  });
+}
+
+/**
+ * Create Outstream Renderer
+ * @param {string} id
+ */
+function createRenderer (id) {
+  const renderer = Renderer.install({
+    id: id,
+    url: RENDERER_URL,
+    loaded: false
+  });
+
+  try {
+    renderer.setRender(outstreamRenderer);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  return renderer;
 }
 
 /**
@@ -850,8 +894,13 @@ export const spec = {
       let requestBid = JSON.parse(bidderRequest.data.r);
 
       for (let j = 0; j < innerBids.length; j++) {
-        const bidRequest = getBidRequest(innerBids[j].impid, requestBid.imp);
+        const bidRequest = getBidRequest(innerBids[j].impid, requestBid.imp, bidderRequest.validBidRequests);
         bid = parseBid(innerBids[j], responseBody.cur, bidRequest);
+
+        if (!utils.deepAccess(bid, 'mediaTypes.video.renderer') && bid.mediaType === 'video' && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
+          bid.mediaTypes.video.renderer = createRenderer(innerBids[j].bidId);
+        }
+
         bids.push(bid);
       }
     }
