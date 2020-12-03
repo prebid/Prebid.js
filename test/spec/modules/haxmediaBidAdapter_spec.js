@@ -1,18 +1,18 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/krushmediaBidAdapter.js';
+import {spec} from '../../../modules/haxmediaBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 
-describe('KrushmediabBidAdapter', function () {
+describe('haxmediaBidAdapter', function () {
   const bid = {
     bidId: '23fhj33i987f',
-    bidder: 'krushmedia',
+    bidder: 'haxmedia',
     mediaTypes: {
       [BANNER]: {
         sizes: [[300, 250]]
       }
     },
     params: {
-      key: 783,
+      placementId: 783,
       traffic: BANNER
     }
   };
@@ -28,7 +28,7 @@ describe('KrushmediabBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
     it('Should return false if at least one of parameters is not present', function () {
-      delete bid.params.key;
+      delete bid.params.placementId;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
@@ -45,7 +45,7 @@ describe('KrushmediabBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://ads4.krushmedia.com/?c=rtb&m=hb');
+      expect(serverRequest.url).to.equal('https://balancer.haxmedia.io/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -60,8 +60,8 @@ describe('KrushmediabBidAdapter', function () {
       expect(data.gdpr).to.not.exist;
       expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('key', 'bidId', 'traffic', 'sizes', 'schain');
-      expect(placement.key).to.equal(783);
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'schain');
+      expect(placement.placementId).to.equal(783);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal(BANNER);
       expect(placement.schain).to.be.an('object');
@@ -80,7 +80,7 @@ describe('KrushmediabBidAdapter', function () {
       expect(data).to.be.an('object');
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
-      expect(placement).to.have.keys('key', 'bidId', 'traffic', 'wPlayer', 'hPlayer', 'schain');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'wPlayer', 'hPlayer', 'schain');
       expect(placement.traffic).to.equal(VIDEO);
       expect(placement.wPlayer).to.equal(playerSize[0]);
       expect(placement.hPlayer).to.equal(playerSize[1]);
@@ -108,7 +108,7 @@ describe('KrushmediabBidAdapter', function () {
       expect(data).to.be.an('object');
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
-      expect(placement).to.have.keys('key', 'bidId', 'traffic', 'native', 'schain');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'native', 'schain');
       expect(placement.traffic).to.equal(NATIVE);
       expect(placement.native).to.equal(native);
     });
@@ -299,31 +299,6 @@ describe('KrushmediabBidAdapter', function () {
       };
       let serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
-    });
-  });
-  describe('getUserSyncs', function() {
-    it('Should return array of objects with proper sync config , include GDPR', function() {
-      const syncData = spec.getUserSyncs({}, {}, {
-        consentString: 'ALL',
-        gdprApplies: true,
-      }, {});
-      expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('iframe')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.krushmedia.com/html?src=pbjs&gdpr=1&gdpr_consent=ALL')
-    });
-    it('Should return array of objects with proper sync config , include CCPA', function() {
-      const syncData = spec.getUserSyncs({}, {}, {}, {
-        consentString: '1NNN'
-      });
-      expect(syncData).to.be.an('array').which.is.not.empty;
-      expect(syncData[0]).to.be.an('object')
-      expect(syncData[0].type).to.be.a('string')
-      expect(syncData[0].type).to.equal('iframe')
-      expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.krushmedia.com/html?src=pbjs&ccpa_consent=1NNN')
     });
   });
 });

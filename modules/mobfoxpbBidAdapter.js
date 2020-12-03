@@ -1,10 +1,9 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 
-const BIDDER_CODE = 'krushmedia';
-const AD_URL = 'https://ads4.krushmedia.com/?c=rtb&m=hb';
-const SYNC_URL = 'https://cs.krushmedia.com/html?src=pbjs'
+const BIDDER_CODE = 'mobfoxpb';
+const AD_URL = 'https://bes.mobfox.com/?c=o&m=multi';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -28,20 +27,12 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(parseInt(bid.params.key)));
+    return Boolean(bid.bidId && bid.params && !isNaN(parseInt(bid.params.placementId)));
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    let winTop = window;
-    let location;
-    try {
-      location = new URL(bidderRequest.refererInfo.referer)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      utils.logMessage(e);
-    };
-
+    const winTop = utils.getWindowTop();
+    const location = winTop.location;
     const placements = [];
     const request = {
       'deviceWidth': winTop.screen.width,
@@ -66,19 +57,22 @@ export const spec = {
     for (let i = 0; i < len; i++) {
       const bid = validBidRequests[i];
       const placement = {
-        key: bid.params.key,
+        placementId: bid.params.placementId,
         bidId: bid.bidId,
-        traffic: bid.params.traffic || BANNER,
         schain: bid.schain || {},
       };
+      const mediaType = bid.mediaTypes
 
-      if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
-        placement.sizes = bid.mediaTypes[BANNER].sizes;
-      } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
-        placement.wPlayer = bid.mediaTypes[VIDEO].playerSize[0];
-        placement.hPlayer = bid.mediaTypes[VIDEO].playerSize[1];
-      } else if (bid.mediaTypes && bid.mediaTypes[NATIVE]) {
-        placement.native = bid.mediaTypes[NATIVE];
+      if (mediaType && mediaType[BANNER] && mediaType[BANNER].sizes) {
+        placement.sizes = mediaType[BANNER].sizes;
+        placement.traffic = BANNER;
+      } else if (mediaType && mediaType[VIDEO] && mediaType[VIDEO].playerSize) {
+        placement.wPlayer = mediaType[VIDEO].playerSize[0];
+        placement.hPlayer = mediaType[VIDEO].playerSize[1];
+        placement.traffic = VIDEO;
+      } else if (mediaType && mediaType[NATIVE]) {
+        placement.native = mediaType[NATIVE];
+        placement.traffic = NATIVE;
       }
       placements.push(placement);
     }
@@ -100,24 +94,6 @@ export const spec = {
     }
     return response;
   },
-
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let syncUrl = SYNC_URL
-    if (gdprConsent && gdprConsent.consentString) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
-      }
-    }
-    if (uspConsent && uspConsent.consentString) {
-      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
-    }
-    return [{
-      type: 'iframe',
-      url: syncUrl
-    }];
-  }
 };
 
 registerBidder(spec);
