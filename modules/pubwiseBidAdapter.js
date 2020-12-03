@@ -3,6 +3,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 const VERSION = '0.1.0';
+const GVLID = 842;
 const NET_REVENUE = true;
 const UNDEFINED = undefined;
 const DEFAULT_CURRENCY = 'USD';
@@ -11,7 +12,7 @@ const BIDDER_CODE = 'pubwise';
 const ENDPOINT_URL = 'https://bid.pubwise.io/prebid';
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
-const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
+const PREBID_NATIVE_HELP_LINK = 'https://prebid.org/dev-docs/show-native-ads.html';
 // const USERSYNC_URL = '//127.0.0.1:8080/usersync'
 
 const CUSTOM_PARAMS = {
@@ -86,6 +87,7 @@ utils._each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KE
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
@@ -284,21 +286,7 @@ export const spec = {
     // _logError(error);
     // }
     return bidResponses;
-  },
-
-  /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @return {UserSync[]} The user syncs which should be dropped.
-   */
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
-
-    return syncs;
   }
-
 }
 
 function _checkMediaType(adm, newBid) {
