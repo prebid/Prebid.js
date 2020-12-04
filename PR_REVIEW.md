@@ -18,7 +18,10 @@ For modules and core platform updates, the initial reviewer should request an ad
 - If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
 - If all above is good, add a `LGTM` comment and, if the change is in PBS-core or is an important module like the prebidServerBidAdapter, request 1 additional core member to review.
 - Once there are 2 `LGTM` on the PR, merge to master
-- Add a line into the [draft release](https://github.com/prebid/Prebid.js/releases) notes for this submission. If no draft release is available, create one using [this template]( https://gist.github.com/mkendall07/c3af6f4691bed8a46738b3675cb5a479)
+- The [draft release](https://github.com/prebid/Prebid.js/releases) notes are managed by [release drafter](https://github.com/release-drafter/release-drafter). To get the PR added to the release notes do the steps below. A github action will use that information to build the release notes.
+    - Adjust the PR Title to be appropriate for release notes
+    - Add a label for feature, maintenance, fix, bugfix or bug to categorize the PR
+    - Add a semver label of major, minor or patch to indicate the scope of change    
 
 ### Reviewing a New or Updated Bid Adapter
 Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/bidder-adaptor.html
