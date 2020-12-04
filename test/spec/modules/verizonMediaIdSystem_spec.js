@@ -165,13 +165,34 @@ describe('Verizon Media ID Submodule', () => {
   });
 
   describe('decode()', () => {
-    const VALID_API_RESPONSE = {
-      vmuid: '1234'
-    };
-    it('should return a newly constructed object with the vmconnectid property', () => {
-      expect(verizonMediaIdSubmodule.decode(VALID_API_RESPONSE)).to.deep.equal(
-        {vmconnectid: VALID_API_RESPONSE.vmuid}
-      );
+    const VALID_API_RESPONSES = [{
+      key: 'vmiud',
+      expected: '1234',
+      payload: {
+        vmuid: '1234'
+      }
+    },
+    {
+      key: 'connectid',
+      expected: '4567',
+      payload: {
+        connectid: '4567'
+      }
+    },
+    {
+      key: 'both',
+      expected: '4567',
+      payload: {
+        vmuid: '1234',
+        connectid: '4567'
+      }
+    }];
+    VALID_API_RESPONSES.forEach(responseData => {
+      it('should return a newly constructed object with the connectid for a payload with ${responseData.key} key(s)', () => {
+        expect(verizonMediaIdSubmodule.decode(responseData.payload)).to.deep.equal(
+          {connectid: responseData.expected}
+        );
+      });
     });
 
     [{}, '', {foo: 'bar'}].forEach((response) => {
