@@ -1,5 +1,5 @@
 /**
- * This module adds Parrable to the User ID module
+ * This module adds MediaWallah OpenLink to the User ID module
  * The {@link module:modules/userId} module is required
  * @module modules/mwOpenLinkIdSystem
  * @requires module:modules/userId
@@ -8,6 +8,9 @@
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { uspDataHandler } from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 var openLinkID = {
   name: 'mwol',
@@ -15,6 +18,7 @@ var openLinkID = {
   value: ''
 }
 
+const storage = getStorageManager();
 var configParams = {};
 
 function getExpirationDate() {
@@ -41,21 +45,48 @@ function isValidConfig(configParams) {
   return true;
 }
 
-async function readCookie(name) {
-  name += '=';
-  for (var ca = document.cookie.split(/;\s*/), i = ca.length - 1; i >= 0; i--) {
-    if (!ca[i].indexOf(name)) {
-      return ca[i].replace(name, '');
-    }
-  }
+function deserializeMWOlId(mwOLIdStr) {
+  const mwOLId = {};
+  const values = mwOLId.split(',');
+
+  values.forEach(function(value) {
+    const pair = value.split(':');
+    // unpack a value of 1 as true
+    mwOLId[pair[0]] = +pair[1] === 1 ? true : pair[1];
+  });
+
+  return mwOLId;
 }
 
-async function writeCookie(name, value) {
-  var date = new Date();
-  date.setTime(date.getTime() + getExpirationDate()); // 3 year expiration
-  var expires = '; expires=' + date.toUTCString();
+function serializeMWOLId(mwOLId) {
+  let components = [];
 
-  document.cookie = name + '=' + value + expires + '; path=/';
+  if (mwOLId.eid) {
+    components.push('eid:' + mwOLId.eid);
+  }
+  if (mwOLId.ibaOptout) {
+    components.push('ibaOptout:1');
+  }
+  if (mwOLId.ccpaOptout) {
+    components.push('ccpaOptout:1');
+  }
+
+  return components.join(',');
+}
+
+function readCookie(name) {
+  const mwOlIdStr = storage.getCookie(name);
+  if (mwOlIdStr) {
+    return deserializeMWOlId(decodeURIComponent(mwOlIdStr));
+  }
+  return null;
+}
+
+function writeCookie(mwOLId) {
+  if (mwOLId) {
+    const mwOLIdStr = encodeURIComponent(serializeMWOLId(mwOLId));
+    storage.setCookie(openLinkID.name, mwOLIdStr, getExpirationDate(), 'lax');
+  }
 }
 
 /* MW */
@@ -76,40 +107,6 @@ async function generateUUID() { // Public Domain/MIT
   });
 }
 
-async function localStorageSupported() {
-  try {
-    var item = 1;
-    localStorage.setItem(item, item);
-    localStorage.removeItem(item);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-async function readLocalStorage(name) {
-  var localStorageItem = localStorage.getItem(name);
-  return (localStorageItem != 'undefined') ? localStorageItem : '';
-}
-
-async function confirmID() {
-  openLinkID.value = await readCookie(openLinkID.name) || '';
-  if (typeof openLinkID.value != 'undefined' &&
-        openLinkID.value !== null &&
-        openLinkID.value.length > 0) {
-  } else {
-    openLinkID.value = (await localStorageSupported() == true) ? await readLocalStorage(openLinkID.name) : openLinkID.value;
-  }
-  if (typeof openLinkID.value != 'undefined' &&
-        openLinkID.value !== null &&
-        openLinkID.value.length > 0) {
-  } else {
-    openLinkID.value = await generateUUID();
-    register(openLinkID.value);
-  }
-  return openLinkID.value;
-}
-
 async function register(olid) {
   var accountId = (configParams.accountId != 'undefined') ? configParams.accountId : '';
   var partnerId = (configParams.partnerId != 'undefined') ? configParams.partnerId : '';
@@ -123,15 +120,56 @@ async function register(olid) {
   ajax(url);
 }
 
-async function setID() {
-  var olid = await confirmID();
+async function setID(configParams) {
+  if (!isValidConfig(configParams)) return;
 
-  if (localStorageSupported() == true) {
-    localStorage.setItem(openLinkID.name, olid);
+  let mwOLId = readCookie();
+  openLinkID.value = await generateUUID();
+  register(openLinkID.value);
+
+  const eid = (mwOLId) ? mwOLId.eid : null;
+  const refererInfo = getRefererInfo();
+  const uspString = uspDataHandler.getConsentData();
+
+  const data = {
+    eid,
+    trackers: configParams.partner.split(','),
+    url: refererInfo.referer
+  };
+
+  const searchParams = {
+    data: btoa(JSON.stringify(data)),
+    _rand: Math.random()
+  };
+
+  if (uspString) {
+    searchParams.us_privacy = uspString;
   }
-  writeCookie(openLinkID.name, olid);
-  return olid;
-}
+
+  let newmwOLId = mwOLId ? utils.deepClone(mwOLId) : generateUUID();
+  try {
+    let responseObj = JSON.parse(response);
+    if (responseObj) {
+      if (responseObj.ccpaOptout !== true) {
+        newmwOLId.eid = responseObj.eid;
+      } else {
+        newmwOLId.eid = null;
+        newmwOLId.ccpaOptout = true;
+      }
+      if (responseObj.ibaOptout === true) {
+        newmwOLId.ibaOptout = true;
+      }
+    }
+  } catch (error) {
+    utils.logError(error);
+  }
+  writeCookie(newmwOLId);
+  register(mwOLId);
+
+  return {
+    id: mwOLId
+  };
+};
 
 /* End MW */
 
@@ -171,8 +209,7 @@ export const mwOpenLinkSubModule = {
       utils.logInfo('Consent string is required to generate or retrieve ID.');
       return;
     }
-    var Id = setID(configParams);
-    return Id;
+    return setID(configParams);
   }
 };
 
