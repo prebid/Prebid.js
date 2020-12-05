@@ -8,8 +8,6 @@
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 var openLinkID = {
@@ -47,7 +45,7 @@ function isValidConfig(configParams) {
 
 function deserializeMWOlId(mwOLIdStr) {
   const mwOLId = {};
-  const values = mwOLId.split(',');
+  const values = mwOLIdStr.split(',');
 
   values.forEach(function(value) {
     const pair = value.split(':');
@@ -75,6 +73,7 @@ function serializeMWOLId(mwOLId) {
 }
 
 function readCookie(name) {
+  if (!name) name = openLinkID.name;
   const mwOlIdStr = storage.getCookie(name);
   if (mwOlIdStr) {
     return deserializeMWOlId(decodeURIComponent(mwOlIdStr));
@@ -91,7 +90,7 @@ function writeCookie(mwOLId) {
 
 /* MW */
 
-async function generateUUID() { // Public Domain/MIT
+function generateUUID() { // Public Domain/MIT
   var d = new Date().getTime();// Timestamp
   var d2 = (performance && performance.now && (performance.now() * 1000)) || 0;// Time in microseconds since page-load or 0 if unsupported
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -107,7 +106,7 @@ async function generateUUID() { // Public Domain/MIT
   });
 }
 
-async function register(olid) {
+function register(olid) {
   var accountId = (configParams.accountId != 'undefined') ? configParams.accountId : '';
   var partnerId = (configParams.partnerId != 'undefined') ? configParams.partnerId : '';
   var uid = (configParams.uid != 'undefined') ? configParams.uid : '';
@@ -120,52 +119,15 @@ async function register(olid) {
   ajax(url);
 }
 
-async function setID(configParams) {
+function setID(configParams) {
   if (!isValidConfig(configParams)) return;
 
   let mwOLId = readCookie();
-  openLinkID.value = await generateUUID();
-  register(openLinkID.value);
+  openLinkID.value = generateUUID();
 
-  const eid = (mwOLId) ? mwOLId.eid : null;
-  const refererInfo = getRefererInfo();
-  const uspString = uspDataHandler.getConsentData();
-
-  const data = {
-    eid,
-    trackers: configParams.partner.split(','),
-    url: refererInfo.referer
-  };
-
-  const searchParams = {
-    data: btoa(JSON.stringify(data)),
-    _rand: Math.random()
-  };
-
-  if (uspString) {
-    searchParams.us_privacy = uspString;
-  }
-
-  let newmwOLId = mwOLId ? utils.deepClone(mwOLId) : generateUUID();
-  try {
-    let responseObj = JSON.parse(response);
-    if (responseObj) {
-      if (responseObj.ccpaOptout !== true) {
-        newmwOLId.eid = responseObj.eid;
-      } else {
-        newmwOLId.eid = null;
-        newmwOLId.ccpaOptout = true;
-      }
-      if (responseObj.ibaOptout === true) {
-        newmwOLId.ibaOptout = true;
-      }
-    }
-  } catch (error) {
-    utils.logError(error);
-  }
+  let newmwOLId = mwOLId ? utils.deepClone(mwOLId) : {eid: openLinkID.value};
   writeCookie(newmwOLId);
-  register(mwOLId);
-
+  register(newmwOLId.eid);
   return {
     id: mwOLId
   };
@@ -201,15 +163,16 @@ export const mwOpenLinkSubModule = {
      * @returns {function(callback:function), id:MwOlId}
      */
   getId(configParams, consentData, currentStoredId) {
-    if (!isValidConfig(configParams)) return;
+    if (!isValidConfig(configParams)) return { id: undefined };
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
     // use protocol relative urls for http or https
     if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
       utils.logInfo('Consent string is required to generate or retrieve ID.');
-      return;
+      // return { id: undefined };
     }
-    return setID(configParams);
+    const newId = setID(configParams);
+    return newId;
   }
 };
 
