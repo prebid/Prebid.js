@@ -20,8 +20,8 @@ For modules and core platform updates, the initial reviewer should request an ad
 - Once there are 2 `LGTM` on the PR, merge to master
 - The [draft release](https://github.com/prebid/Prebid.js/releases) notes are managed by [release drafter](https://github.com/release-drafter/release-drafter). To get the PR added to the release notes do the steps below. A github action will use that information to build the release notes.
     - Adjust the PR Title to be appropriate for release notes
-    - Add a label for feature, maintenance, fix, bugfix or bug to categorize the PR
-    - Add a semver label of major, minor or patch to indicate the scope of change    
+    - Add a label for `feature`, `maintenance`, `fix`, `bugfix` or `bug` to categorize the PR
+    - Add a semver label of `major`, `minor` or `patch` to indicate the scope of change    
 
 ### Reviewing a New or Updated Bid Adapter
 Documentation they're supposed to be following is https://docs.prebid.org/dev-docs/bidder-adaptor.html
