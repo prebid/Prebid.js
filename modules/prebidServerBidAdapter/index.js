@@ -750,8 +750,8 @@ const OPEN_RTB_PROTOCOL = {
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
             let sizes = bidRequest.sizes && bidRequest.sizes[0];
-            bidObject.playerHeight = sizes[0];
-            bidObject.playerWidth = sizes[1];
+            bidObject.playerWidth = sizes[0];
+            bidObject.playerHeight = sizes[1];
 
             // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
