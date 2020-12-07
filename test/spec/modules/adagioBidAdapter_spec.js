@@ -229,7 +229,8 @@ describe('Adagio bid adapter', () => {
               placement: 'PAVE_ATF',
               site: 'SITE-NAME',
               adUnitElementId: 'gpt-adunit-code',
-              environment: 'desktop'
+              environment: 'desktop',
+              supportIObs: true
             }
           }],
           auctionId: '4fd1ca2d-846c-4211-b9e5-321dfe1709c9',
@@ -249,7 +250,8 @@ describe('Adagio bid adapter', () => {
               placement: 'PAVE_ATF',
               site: 'SITE-NAME',
               adUnitElementId: 'gpt-adunit-code',
-              environment: 'desktop'
+              environment: 'desktop',
+              supportIObs: true
             }
           }],
           auctionId: '4fd1ca2d-846c-4211-b9e5-321dfe1709c9',
@@ -272,6 +274,18 @@ describe('Adagio bid adapter', () => {
 
         expect(find(window.top.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-01')).to.deep.eql(expected[0]);
         expect(find(window.top.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-02')).to.deep.eql(expected[1]);
+      });
+
+      it('should detect IntersectionObserver support', function() {
+        sandbox.stub(adagio, 'getCurrentWindow').returns(window.top);
+        sandbox.stub(adagio, 'supportIObs').returns(false);
+        window.top.ADAGIO = {
+          ...window.ADAGIO
+        };
+
+        spec.isBidRequestValid(bid01);
+        const validBidReq = find(window.top.ADAGIO.pbjsAdUnits, aU => aU.code === 'adunit-code-01');
+        expect(validBidReq.bids[0].params.supportIObs).to.equal(false);
       });
 
       it('should store bids config once by bid in current window', function() {
@@ -740,7 +754,8 @@ describe('Adagio bid adapter', () => {
             pagetype: 'ARTICLE',
             category: 'NEWS',
             subcategory: 'SPORT',
-            environment: 'desktop'
+            environment: 'desktop',
+            supportIObs: true
           },
           adUnitCode: 'adunit-code',
           mediaTypes: {
