@@ -475,6 +475,14 @@ describe('user sync', function () {
           });
           expect(userSync.canBidderRegisterSync('iframe', 'otherTestBidder')).to.equal(false);
         });
+
+        it('should return false for iframe if the default filter settings are enabled', function () {
+          const userSync = newUserSync({
+            config: USERSYNC_DEFAULT_CONFIG
+          });
+          expect(userSync.canBidderRegisterSync('iframe', 'otherTestBidder')).to.equal(false);
+        });
+
         it('should return true if filter settings does allow it', function () {
           const userSync = newUserSync({
             config: {
