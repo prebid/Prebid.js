@@ -157,6 +157,18 @@ const USER_IDS_CONFIG = {
     source: 'idx.lat',
     atype: 1
   },
+
+  // Verizon Media
+  'vmuid': {
+    source: 'verizonmedia.com',
+    atype: 1
+  },
+
+  // Neustar Fabrick
+  'fabrickId': {
+    source: 'neustar.biz',
+    atype: 1
+  }
 };
 
 // this function will create an eid object for the given UserId sub-module

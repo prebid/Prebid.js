@@ -142,7 +142,7 @@ This runs some code quality checks, starts a web server at `http://localhost:999
 
 ### Build Optimization
 
-The standard build output contains all the available modules from within the `modules` folder.
+The standard build output contains all the available modules from within the `modules` folder.  Note, however that there are bid adapters which support multiple bidders through aliases, so if you don't see a file in modules for a bid adapter, you may need to grep the repository to find the name of the module you need to include.
 
 You might want to exclude some/most of them from the final bundle.  To make sure the build only includes the modules you want, you can specify the modules to be included with the `--modules` CLI argument.
 
