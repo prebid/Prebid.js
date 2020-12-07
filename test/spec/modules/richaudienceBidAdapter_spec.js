@@ -348,25 +348,30 @@ describe('Richaudience adapter tests', function () {
   });
 
   describe('UID test', function () {
-    pbjs.setConfig({
+    config.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
         allowAuctionWithoutConsent: true
+      },
+      userSync: {
+        userIds: [{
+          name: 'id5Id',
+          params: {
+            partner: 173, // change to the Partner Number you received from ID5
+            pd: 'MT1iNTBjY...' // optional, see table below for a link to how to generate this
+          },
+          storage: {
+            type: 'html5', // "html5" is the required storage type
+            name: 'id5id', // "id5id" is the required storage name
+            expires: 90, // storage lasts for 90 days
+            refreshInSeconds: 8 * 3600 // refresh ID every 8 hours to ensure it's fresh
+          }
+        }],
+        auctionDelay: 50 // 50ms maximum auction delay, applies to all userId modules
       }
     });
     it('Verify build id5', function () {
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: 'id5-user-id' };
-
-      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
-
-      expect(requestContent.user).to.deep.equal([{
-        'userId': 'id5-user-id',
-        'source': 'id5-sync.com'
-      }]);
-
       var request;
       DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
       DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: 1 };
@@ -739,7 +744,7 @@ describe('Richaudience adapter tests', function () {
     }, [], {consentString: '', gdprApplies: true});
     expect(syncs).to.have.lengthOf(0);
 
-    pbjs.setConfig({
+    config.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
