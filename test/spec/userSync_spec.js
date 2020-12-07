@@ -476,10 +476,22 @@ describe('user sync', function () {
           expect(userSync.canBidderRegisterSync('iframe', 'otherTestBidder')).to.equal(false);
         });
 
-        it('should return false for iframe if the default filter settings are enabled', function () {
+        it('should return false for iframe if there is no iframe filterSettings', function () {
           const userSync = newUserSync({
-            config: USERSYNC_DEFAULT_CONFIG
+            config: {
+              syncEnabled: true,
+              filterSettings: {
+                image: {
+                  bidders: '*',
+                  filter: 'include'
+                }
+              },
+              syncsPerBidder: 5,
+              syncDelay: 3000,
+              auctionDelay: 0
+            }
           });
+
           expect(userSync.canBidderRegisterSync('iframe', 'otherTestBidder')).to.equal(false);
         });
 
