@@ -87,7 +87,7 @@ pbjs.setConfig({
                   id: '2706', // required
                   name: 'Publishers Name',
                   domain: 'publisher.com'
-                }
+                },
                 tagid: 'tag-id'
             },
         }]
