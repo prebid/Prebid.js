@@ -88,6 +88,14 @@ export const spec = {
         };
       }
 
+      let segmentsString = utils.getBidIdParameter('segments', bid.params)
+
+      if (segmentsStr) {
+        let dealids = segmentsStr.split(',');
+        utils.deepSetValue(sovrnBidReq, 'imp.ext.dealids', dealids);
+      }
+
+
       if (bidderRequest.gdprConsent) {
         utils.deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
         utils.deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
