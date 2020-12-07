@@ -276,6 +276,32 @@ describe('sovrnBidAdapter', function() {
       expect(data.user.ext.tpid[0].uid).to.equal('A_CRITEO_ID')
       expect(data.user.ext.prebid_criteoid).to.equal('A_CRITEO_ID')
     });
+
+    it('should ignore empty segments', function() {
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].ext.dealids).to.be.empty
+    })
+
+    it('should pass segments param as dealids array', function() {
+      const segmentsRequests = [{
+        'bidder': 'sovrn',
+        'params': {
+          'segments': 'test1,test2'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [
+          [300, 250],
+          [300, 600]
+        ],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }];
+      const request = spec.buildRequests(segmentsRequests, bidderRequest)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].ext.dealids[0]).to.equal('test1')
+      expect(payload.imp[0].ext.dealids[1]).to.equal('test2')
+    })
   });
 
   describe('interpretResponse', function () {
