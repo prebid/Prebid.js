@@ -72,11 +72,12 @@ export const spec = {
       if (!userId) {
         userId = bid.userId;
       }
-      const {params: {uid, keywords, bidFloor}, mediaTypes, bidId, adUnitCode, rtd} = bid;
+      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd} = bid;
       bidsMap[bidId] = bid;
       if (!pageKeywords && !utils.isEmpty(keywords)) {
         pageKeywords = utils.transformBidderParamKeywords(keywords);
       }
+      const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
       if (jwTargeting) {
         if (!jwpseg && jwTargeting.segments) {
@@ -91,9 +92,12 @@ export const spec = {
         tagid: uid.toString(),
         ext: {
           divid: adUnitCode
-        },
-        bidfloor: _getFloor(mediaTypes || {}, bidFloor, bid)
+        }
       };
+
+      if (bidFloor) {
+        impObj.bidfloor = bidFloor;
+      }
 
       if (!mediaTypes || mediaTypes[BANNER]) {
         const banner = createBannerRequest(bid, mediaTypes ? mediaTypes[BANNER] : {});
@@ -323,13 +327,12 @@ export const spec = {
 /**
  * Gets bidfloor
  * @param {Object} mediaTypes
- * @param {Number} bidfloor
  * @param {Object} bid
  * @returns {Number} floor
  */
-function _getFloor (mediaTypes, bidfloor, bid) {
+function _getFloor (mediaTypes, bid) {
   const curMediaType = mediaTypes.video ? 'video' : 'banner';
-  let floor = bidfloor || 0;
+  let floor = bid.params.bidFloor || 0;
 
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({

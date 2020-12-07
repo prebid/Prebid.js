@@ -18,7 +18,8 @@
     "quantcastIdSystem",
     "idxIdSystem",
     "fabrickIdSystem",
-    "verizonMediaIdSystem"
+    "verizonMediaIdSystem",
+    "pubProvidedIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -26,8 +27,9 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
-    "audigentRtdProvider",
+    "haloRtdProvider",
     "jwplayerRtdProvider",
-    "reconciliationRtdProvider"
+    "reconciliationRtdProvider",
+    "geoedgeRtdProvider"
   ]
 }

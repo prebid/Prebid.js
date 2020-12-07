@@ -407,11 +407,20 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
+    var gdprParams = '';
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `?gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
     if (syncOptions && syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: USER_SYNC_URL
+        url: USER_SYNC_URL + gdprParams
       }];
     } else {
       return [];

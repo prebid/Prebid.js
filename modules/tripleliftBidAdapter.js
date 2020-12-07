@@ -293,6 +293,10 @@ function _buildResponseObject(bidderRequest, bid) {
     if (bid.advertiser_name) {
       bidResponse.meta.advertiserName = bid.advertiser_name;
     }
+
+    if (bid.adomain && bid.adomain.length) {
+      bidResponse.meta.advertiserDomains = bid.adomain;
+    }
   };
   return bidResponse;
 }
