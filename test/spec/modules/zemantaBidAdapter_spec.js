@@ -45,25 +45,72 @@ describe('Zemanta Adapter', function () {
     }
 
     describe('isBidRequestValid', function () {
+      before(() => {
+        config.setConfig({
+          zemanta: {
+            bidderUrl: 'https://bidder-url.com',
+          }
+        }
+        )
+      })
+      after(() => {
+        config.resetConfig()
+      })
+
       it('should fail when bid is invalid', function () {
         const bid = {
-          bidder: 'zemanta'
+          bidder: 'zemanta',
+          params: {
+            publisher: {
+              id: 'publisher-id',
+            }
+          },
         }
         expect(spec.isBidRequestValid(bid)).to.equal(false)
       })
-      it('should work when bid contains native params', function () {
+      it('should succeed when bid contains native params', function () {
         const bid = {
           bidder: 'zemanta',
+          params: {
+            publisher: {
+              id: 'publisher-id',
+            }
+          },
           ...nativeBidRequestParams,
         }
         expect(spec.isBidRequestValid(bid)).to.equal(true)
       })
-      it('should work when bid contains sizes', function () {
+      it('should succeed when bid contains sizes', function () {
         const bid = {
           bidder: 'zemanta',
+          params: {
+            publisher: {
+              id: 'publisher-id',
+            }
+          },
           ...displayBidRequestParams,
         }
         expect(spec.isBidRequestValid(bid)).to.equal(true)
+      })
+      it('should fail if publisher id is not set', function () {
+        const bid = {
+          bidder: 'zemanta',
+          ...nativeBidRequestParams,
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
+      })
+      it('should fail if bidder url is not set', function () {
+        const bid = {
+          bidder: 'zemanta',
+          params: {
+            publisher: {
+              id: 'publisher-id',
+            }
+          },
+          ...nativeBidRequestParams,
+        }
+        config.resetConfig()
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
       })
     })
 
@@ -416,6 +463,12 @@ describe('Zemanta Adapter', function () {
 
     it('should not return user sync if pixel disabled', function () {
       const ret = spec.getUserSyncs({pixelEnabled: false})
+      expect(ret).to.be.an('array').that.is.empty
+    })
+
+    it('should not return user sync if url is not set', function () {
+      config.resetConfig()
+      const ret = spec.getUserSyncs({pixelEnabled: true})
       expect(ret).to.be.an('array').that.is.empty
     })
   })

@@ -25,7 +25,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ NATIVE, BANNER ],
   isBidRequestValid: (bid) => {
-    return !!(bid.nativeParams || bid.sizes);
+    return (
+      !!config.getConfig('zemanta.bidderUrl') &&
+      !!utils.deepAccess(bid, 'params.publisher.id') &&
+      !!(bid.nativeParams || bid.sizes)
+    );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const page = bidderRequest.refererInfo.referer;
@@ -133,7 +137,7 @@ export const spec = {
   getUserSyncs: (syncOptions) => {
     const syncs = [];
     const syncUrl = config.getConfig('zemanta.usersyncUrl');
-    if (syncOptions.pixelEnabled) {
+    if (syncOptions.pixelEnabled && syncUrl) {
       syncs.push({
         type: 'image',
         url: syncUrl
