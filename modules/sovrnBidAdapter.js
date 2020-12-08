@@ -53,7 +53,7 @@ export const spec = {
         bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
         bidSizes = bidSizes.filter(size => utils.isArray(size))
         const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
-        sovrnImps.push({
+        const imp = {
           adunitcode: bid.adUnitCode,
           id: bid.bidId,
           banner: {
@@ -63,7 +63,17 @@ export const spec = {
           },
           tagid: String(utils.getBidIdParameter('tagid', bid.params)),
           bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
-        });
+        }
+
+        const segmentsString = utils.getBidIdParameter('segments', bid.params)
+
+        if (segmentsString) {
+          imp.ext = {
+            deals: segmentsString.split(',')
+          }
+        }
+
+        sovrnImps.push(imp);
       });
 
       const page = bidderRequest.refererInfo.referer
