@@ -30,7 +30,6 @@ export const spec = {
       let eids;
       let tpid = []
       let criteoId;
-      let imp;
 
       utils._each(bidReqs, function (bid) {
         if (!eids && bid.userId) {
@@ -54,7 +53,7 @@ export const spec = {
         bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
         bidSizes = bidSizes.filter(size => utils.isArray(size))
         const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
-        imp = {
+        const imp = {
           adunitcode: bid.adUnitCode,
           id: bid.bidId,
           banner: {
@@ -66,8 +65,6 @@ export const spec = {
           bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
         }
 
-        sovrnImps.push(imp);
-
         const segmentsString = utils.getBidIdParameter('segments', bid.params)
 
         if (segmentsString) {
@@ -75,6 +72,8 @@ export const spec = {
             deals: segmentsString.split(',')
           }
         }
+
+        sovrnImps.push(imp);
       });
 
       const page = bidderRequest.refererInfo.referer
