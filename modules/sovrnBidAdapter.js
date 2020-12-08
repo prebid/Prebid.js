@@ -88,10 +88,10 @@ export const spec = {
         };
       }
 
-      let segmentsString = utils.getBidIdParameter('segments', bid.params)
+      const segmentsString = utils.getBidIdParameter('segments', bid.params)
 
       if (segmentsStr) {
-        let dealids = segmentsStr.split(',');
+        const dealids = segmentsStr.split(',');
         utils.deepSetValue(sovrnBidReq, 'imp.ext.dealids', dealids);
       }
 
