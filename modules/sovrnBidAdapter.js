@@ -72,7 +72,7 @@ export const spec = {
 
         if (segmentsString) {
           imp.ext = {
-            dealids: segmentsString.split(',')
+            deals: segmentsString.split(',')
           }
         }
       });

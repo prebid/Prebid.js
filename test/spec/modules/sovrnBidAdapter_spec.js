@@ -299,8 +299,8 @@ describe('sovrnBidAdapter', function() {
       }];
       const request = spec.buildRequests(segmentsRequests, bidderRequest)
       const payload = JSON.parse(request.data)
-      expect(payload.imp[0].ext.dealids[0]).to.equal('test1')
-      expect(payload.imp[0].ext.dealids[1]).to.equal('test2')
+      expect(payload.imp[0].ext.deals[0]).to.equal('test1')
+      expect(payload.imp[0].ext.deals[1]).to.equal('test2')
     })
   });
 
