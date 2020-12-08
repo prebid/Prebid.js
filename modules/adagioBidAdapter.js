@@ -697,8 +697,11 @@ export const spec = {
       return false;
     }
 
-    const { organizationId, site, placement } = params;
-    const adUnitElementId = params.adUnitElementId || internal.autoDetectAdUnitElementId(adUnitCode);
+    const { organizationId, site } = params;
+    const adUnitElementId = (params.useAdUnitCodeAsAdUnitElementId === true)
+      ? adUnitCode
+      : params.adUnitElementId || internal.autoDetectAdUnitElementId(adUnitCode);
+    const placement = (params.useAdUnitCodeAsPlacement === true) ? adUnitCode : params.placement;
     const environment = params.environment || internal.autoDetectEnvironment();
     const supportIObs = internal.supportIObs();
 
@@ -707,6 +710,7 @@ export const spec = {
       ...params,
       adUnitElementId,
       environment,
+      placement,
       supportIObs
     };
 
