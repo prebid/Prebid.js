@@ -279,7 +279,7 @@ describe('sovrnBidAdapter', function() {
 
     it('should ignore empty segments', function() {
       const payload = JSON.parse(request.data)
-      expect(payload.imp[0].ext.dealids).to.be.empty
+      expect(payload.imp[0].ext).to.be.undefined
     })
 
     it('should pass segments param as dealids array', function() {

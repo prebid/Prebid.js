@@ -30,6 +30,7 @@ export const spec = {
       let eids;
       let tpid = []
       let criteoId;
+      let imp;
 
       utils._each(bidReqs, function (bid) {
         if (!eids && bid.userId) {
@@ -53,7 +54,7 @@ export const spec = {
         bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
         bidSizes = bidSizes.filter(size => utils.isArray(size))
         const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
-        sovrnImps.push({
+        imp = {
           adunitcode: bid.adUnitCode,
           id: bid.bidId,
           banner: {
@@ -63,7 +64,17 @@ export const spec = {
           },
           tagid: String(utils.getBidIdParameter('tagid', bid.params)),
           bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
-        });
+        }
+
+        sovrnImps.push(imp);
+
+        const segmentsString = utils.getBidIdParameter('segments', bid.params)
+
+        if (segmentsString) {
+          imp.ext = {
+            dealids: segmentsString.split(',')
+          }
+        }
       });
 
       const page = bidderRequest.refererInfo.referer
@@ -87,14 +98,6 @@ export const spec = {
           }
         };
       }
-
-      const segmentsString = utils.getBidIdParameter('segments', bid.params)
-
-      if (segmentsStr) {
-        const dealids = segmentsStr.split(',');
-        utils.deepSetValue(sovrnBidReq, 'imp.ext.dealids', dealids);
-      }
-
 
       if (bidderRequest.gdprConsent) {
         utils.deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
