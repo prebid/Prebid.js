@@ -262,6 +262,7 @@ describe('Adagio bid adapter', () => {
 
       it('should store bids config once by bid in window.top if it accessible', function() {
         sandbox.stub(adagio, 'getCurrentWindow').returns(window.top);
+        sandbox.stub(adagio, 'supportIObs').returns(true);
 
         // replace by the values defined in beforeEach
         window.top.ADAGIO = {
@@ -279,6 +280,7 @@ describe('Adagio bid adapter', () => {
       it('should detect IntersectionObserver support', function() {
         sandbox.stub(adagio, 'getCurrentWindow').returns(window.top);
         sandbox.stub(adagio, 'supportIObs').returns(false);
+
         window.top.ADAGIO = {
           ...window.ADAGIO
         };
@@ -290,6 +292,7 @@ describe('Adagio bid adapter', () => {
 
       it('should store bids config once by bid in current window', function() {
         sandbox.stub(adagio, 'getCurrentWindow').returns(window.self);
+        sandbox.stub(adagio, 'supportIObs').returns(true);
 
         spec.isBidRequestValid(bid01);
         spec.isBidRequestValid(bid02);
