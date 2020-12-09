@@ -144,6 +144,19 @@ describe('Adagio bid adapter', () => {
       sinon.assert.callCount(utils.logWarn, 1);
     });
 
+    it('should use adUnit code for adUnitElementId and placement params', function() {
+      const bid01 = new BidRequestBuilder({ params: {
+        organizationId: '1000',
+        site: 'site-name',
+        useAdUnitCodeAsPlacement: true,
+        useAdUnitCodeAsAdUnitElementId: true
+      }}).build();
+
+      expect(spec.isBidRequestValid(bid01)).to.equal(true);
+      expect(bid01.params.adUnitElementId).to.equal('adunit-code');
+      expect(bid01.params.placement).to.equal('adunit-code');
+    })
+
     it('should return false when a required param is missing', function() {
       const bid01 = new BidRequestBuilder({ params: {
         organizationId: '1000',
