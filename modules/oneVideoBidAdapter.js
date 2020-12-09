@@ -310,6 +310,26 @@ function getRequestData(bid, consentData, bidRequest) {
       }
     }
   }
+  if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
+    const contentStringKeys = ["id","title","series","season","artist","genre","album","isrc","producer","url","contentrating", "userrating","keywords","language",];
+    const contentNumberkeys = ["prodq","context","qagmediarating","livestream","sourcerelationship","len","embeddable"];
+    const contentArrayKeys = ["cat", "data"];
+    const contentObjectKeys = ["ext"];
+
+    for (const contentKey in bid.params.video.content) {
+      if (contentStringKeys.includes(contentKey)){
+        //validate most common strings
+      } else if (contentNumberkeys.includes(contentKey)){
+        //integer validation
+      } else if (contentArrayKeys.includes(contentKey)) {
+        //array validation
+      } else if (contentObjectKeys.includes(contentKey)) {
+        //obj validation
+      } else {
+        utils.logMessage("oneVideo bid adapter validation error: ",contentKey ," is not supported ib ORTB V2.5");
+      }
+    }
+  }
   return bidData;
 }
 
