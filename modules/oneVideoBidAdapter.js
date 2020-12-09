@@ -315,10 +315,13 @@ function getRequestData(bid, consentData, bidRequest) {
     const contentNumberkeys = ["prodq","context","qagmediarating","livestream","sourcerelationship","len","embeddable"];
     const contentArrayKeys = ["cat", "data"];
     const contentObjectKeys = ["ext"];
+    bidData.imp[0].content = {};
 
     for (const contentKey in bid.params.video.content) {
       if (contentStringKeys.includes(contentKey)){
-        //validate most common strings
+        if (utils.isStr(bid.params.video.content[contentKey])) {
+          //string validation
+        }
       } else if (contentNumberkeys.includes(contentKey)){
         //integer validation
       } else if (contentArrayKeys.includes(contentKey)) {
