@@ -122,6 +122,9 @@ function _buildPostBody(bidRequests) {
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
     };
+    if (!utils.isEmpty(bidRequest.fpd)) {
+      imp.fpd = _getAdUnitFpd(bidRequest.fpd);
+    }
     return imp;
   });
 
@@ -183,12 +186,34 @@ function _getFloor (bid) {
 }
 
 function _getGlobalFpd() {
-  let fpd = {};
+  const fpd = {};
+  const context = {}
+  const user = {};
+
   const fpdContext = Object.assign({}, config.getConfig('fpd.context'));
   const fpdUser = Object.assign({}, config.getConfig('fpd.user'));
 
-  _addEntries(fpd, fpdContext);
-  _addEntries(fpd, fpdUser);
+  _addEntries(context, fpdContext);
+  _addEntries(user, fpdUser);
+
+  if (!utils.isEmpty(context)) {
+    fpd.context = context;
+  }
+  if (!utils.isEmpty(user)) {
+    fpd.user = user;
+  }
+  return fpd;
+}
+
+function _getAdUnitFpd(adUnitFpd) {
+  const fpd = {};
+  const context = {};
+
+  _addEntries(context, adUnitFpd.context);
+
+  if (!utils.isEmpty(context)) {
+    fpd.context = context;
+  }
 
   return fpd;
 }
