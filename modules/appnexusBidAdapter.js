@@ -229,16 +229,14 @@ export const spec = {
     }
 
     const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
+    let eids = [];
     if (criteoId) {
-      let tpuids = [];
-      tpuids.push({
-        'provider': 'criteo',
-        'user_id': criteoId
+      eids.push({
+        source: 'criteo.com',
+        id: criteoId
       });
-      payload.tpuids = tpuids;
     }
 
-    let eids = [];
     const tdid = utils.deepAccess(bidRequests[0], `userId.tdid`);
     if (tdid) {
       eids.push({
