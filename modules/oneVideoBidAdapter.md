@@ -40,6 +40,7 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
                   inventoryid: 123,
                   minduration: 10,
                   maxduration: 30,
+                  ttl: 300,
                   custom: {
                     key1: "value1",
                     key2: 123345
@@ -89,6 +90,7 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
                   inventoryid: 123,
                   minduration: 10,
                   maxduration: 30,
+                  ttl: 300
                 },
                 site: {
                     id: 1,
