@@ -107,7 +107,19 @@ export const spec = {
         .filter(param => includes(USER_PARAMS, param))
         .forEach((param) => {
           let uparam = utils.convertCamelToUnderscore(param);
-          userObj[uparam] = userObjBid.params.user[param]
+          if (param === 'segments' && utils.isArray(userObjBid.params.user[param])) {
+            let segs = [];
+            userObjBid.params.user[param].forEach(val => {
+              if (utils.isNumber(val)) {
+                segs.push({'id': val});
+              } else if (utils.isPlainObject(val)) {
+                segs.push(val);
+              }
+            });
+            userObj[uparam] = segs;
+          } else if (param !== 'segments') {
+            userObj[uparam] = userObjBid.params.user[param];
+          }
         });
     }
 
