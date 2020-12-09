@@ -38,6 +38,8 @@ Connects to Adagio demand source to fetch bids.
             category: 'sport', // Recommended. Category of the content displayed in the page.
             subcategory: 'handball', // Optional. Subcategory of the content displayed in the page.
             postBid: false, // Optional. Use it in case of Post-bid integration only.
+            useAdUnitCodeAsAdUnitElementId: false // Optional. Use it by-pass adUnitElementId and use the adUnit code as value
+            useAdUnitCodeAsPlacement: false // Optional. Use it to by-pass placement and use the adUnit code as value
             // Optional debug mode, used to get a bid response with expected cpm.
             debug: {
               enabled: true,
@@ -76,6 +78,8 @@ Connects to Adagio demand source to fetch bids.
             category: 'sport', // Recommended. Category of the content displayed in the page.
             subcategory: 'handball', // Optional. Subcategory of the content displayed in the page.
             postBid: false, // Optional. Use it in case of Post-bid integration only.
+            useAdUnitCodeAsAdUnitElementId: false // Optional. Use it by-pass adUnitElementId and use the adUnit code as value
+            useAdUnitCodeAsPlacement: false // Optional. Use it to by-pass placement and use the adUnit code as value
             video: {
               skip: 0
               // OpenRTB 2.5 video options defined here override ones defined in mediaTypes.
