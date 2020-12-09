@@ -496,7 +496,9 @@ function autoDetectEnvironment() {
 };
 
 function supportIObs() {
-  return !!(internal.getCurrentWindow().IntersectionObserver);
+  const currentWindow = internal.getCurrentWindow();
+  return !!(currentWindow && currentWindow.IntersectionObserver && currentWindow.IntersectionObserverEntry &&
+    currentWindow.IntersectionObserverEntry.prototype && 'intersectionRatio' in currentWindow.IntersectionObserverEntry.prototype);
 }
 
 function getFeatures(bidRequest, bidderRequest) {
