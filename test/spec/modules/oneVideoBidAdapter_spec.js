@@ -373,6 +373,12 @@ describe('OneVideoBidAdapter', function () {
       expect(custom['key7']).to.not.exist;
       expect(custom['key8']).to.not.exist;
     });
+    // TODO Unit tests for Content Object
+    // TODO check Str validation
+    // TODO check Number validation
+    // TODO check Array validation
+    // TODO check Object validation
+
   });
 
   describe('spec.interpretResponse', function () {

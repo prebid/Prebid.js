@@ -312,18 +312,20 @@ function getRequestData(bid, consentData, bidRequest) {
   }
   if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
     bidData.imp[0].content = {};
-    const contentStringKeys = ["id","title","series","season","artist","genre","album","isrc","producer","url","contentrating", "userrating","keywords","language",];
-    const contentNumberkeys = ["prodq","context","qagmediarating","livestream","sourcerelationship","len","embeddable"];
-    const contentArrayKeys = ["cat", "data"];
-    const contentObjectKeys = ["ext"];
+    const contentStringKeys = ['id', 'title', 'series', 'season', 'artist', 'genre', 'album', 'isrc', 'producer', 'url', 'contentrating', 'userrating', 'keywords', 'language'];
+    const contentNumberkeys = ['prodq', 'context', 'qagmediarating', 'livestream', 'sourcerelationship', 'len', 'embeddable'];
+    const contentArrayKeys = ['cat', 'data'];
+    const contentObjectKeys = ['ext'];
     for (const contentKey in bid.params.video.content) {
-      if ((contentStringKeys.includes(contentKey) && utils.isStr(bid.params.video.content[contentKey]))
-      || (contentNumberkeys.includes(contentKey) && utils.isNumber(bid.params.video.content[contentKey]))
-      || (contentArrayKeys.includes(contentKey) && utils.isArray(bid.params.video.content[contentKey]))
-      || (contentObjectKeys.includes(contentKey) && utils.isPlainObject(bid.params.video.content[contentKey]))) {
+      if ((contentStringKeys.includes(contentKey) && utils.isStr(bid.params.video.content[contentKey])) ||
+      (contentNumberkeys.includes(contentKey) && utils.isNumber(bid.params.video.content[contentKey])) ||
+      (contentArrayKeys.includes(contentKey) && utils.isArray(bid.params.video.content[contentKey])) ||
+      (contentObjectKeys.includes(contentKey) && utils.isPlainObject(bid.params.video.content[contentKey]))) {
+        //TODO should i add validation for url?
+        //TODO should i uppercase language and iab cat?
         bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
       } else {
-        utils.logMessage("oneVideo bid adapter validation error: ",contentKey ," is not supported is OpenRTB V2.5");
+        utils.logMessage('oneVideo bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
       }
     }
   }

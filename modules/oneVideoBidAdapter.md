@@ -298,3 +298,83 @@ var adUnits = [
       }
   ]
 ```
+# Content Object Support
+//TODO: need to update general text here
+
+```
+const adUnits = [{
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    context: 'instream',
+                    playerSize: [640, 480]
+                }
+            },
+            bids: [{
+                bidder: 'oneVideo',
+                params: {
+                    video: {
+                        playerWidth: 640,
+                        playerHeight: 480,
+                        mimes: ['video/mp4', 'application/javascript'],
+                        protocols: [2, 5],
+                        api: [1, 2],
+                        content: {
+                            id: "1234",
+                            episode: "Episode",
+                            title: "Title",
+                            series: "Series",
+                            season: "Season",
+                            artist: "Artist",
+                            genre: "Genre",
+                            album: "Album",
+                            isrc: "Isrc",
+                            producer: "Producer",
+                            url: "http://something.com",
+                            cat: [
+                                "IAB1",
+                                "IAB1-1",
+                                "IAB1-2",
+                                "IAB2",
+                                "IAB2-1"
+                            ],
+                            prodq: "Number",
+                            context: 1,
+                            contentrating: "C-Rating",
+                            userrating: "U-Rating",
+                            qagmediarating: 1,
+                            keywords: "key,word,values",
+                            livestream: 0,
+                            sourcerelationship: 0,
+                            len: 360,
+                            language: "EN",
+                            embeddable: 0,
+                            data: [{
+                                id: "Data-id",
+                                name: "Data-name",
+                                segment: [{
+                                    id: "seg-id",
+                                    name: "seg-name",
+                                    value: "seg-value",
+                                    ext: {}
+                                }],
+                                ext: {}
+                            }],
+                            ext: {
+                                network: "ext-network",
+                                channel: "ext-channel"
+                            }
+
+                        }
+                    },
+                    pubId: 'HBExchange'
+                }
+            }]
+        }];
+```
+
+
+# TTL Support
+Dynamic cache "Time To Live" setting
+TODO update the TTL example here
+
