@@ -282,11 +282,11 @@ describe('sovrnBidAdapter', function() {
       expect(payload.imp[0].ext).to.be.undefined
     })
 
-    it('should pass segments param as dealids array', function() {
+    it('should pass the segments param value as trimmed deal ids array', function() {
       const segmentsRequests = [{
         'bidder': 'sovrn',
         'params': {
-          'segments': 'test1,test2'
+          'segments': ' test1,test2 '
         },
         'adUnitCode': 'adunit-code',
         'sizes': [

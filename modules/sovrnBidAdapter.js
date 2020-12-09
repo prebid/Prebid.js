@@ -69,7 +69,7 @@ export const spec = {
 
         if (segmentsString) {
           imp.ext = {
-            deals: segmentsString.split(',')
+            deals: segmentsString.split(',').map(deal => deal.trim())
           }
         }
 
