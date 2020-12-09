@@ -311,25 +311,30 @@ function getRequestData(bid, consentData, bidRequest) {
     }
   }
   if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
+    bidData.imp[0].content = {};
     const contentStringKeys = ["id","title","series","season","artist","genre","album","isrc","producer","url","contentrating", "userrating","keywords","language",];
     const contentNumberkeys = ["prodq","context","qagmediarating","livestream","sourcerelationship","len","embeddable"];
     const contentArrayKeys = ["cat", "data"];
     const contentObjectKeys = ["ext"];
-    bidData.imp[0].content = {};
-
     for (const contentKey in bid.params.video.content) {
       if (contentStringKeys.includes(contentKey)){
         if (utils.isStr(bid.params.video.content[contentKey])) {
-          //string validation
+          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
         }
       } else if (contentNumberkeys.includes(contentKey)){
-        //integer validation
+        if (utils.isNumber(bid.params.video.content[contentKey])) {
+          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
+        }
       } else if (contentArrayKeys.includes(contentKey)) {
-        //array validation
+        if (utils.isArray(bid.params.video.content[contentKey])) {
+          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
+        }
       } else if (contentObjectKeys.includes(contentKey)) {
-        //obj validation
+        if (utils.isPlainObject(bid.params.video.content[contentKey])) {
+          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
+        }
       } else {
-        utils.logMessage("oneVideo bid adapter validation error: ",contentKey ," is not supported ib ORTB V2.5");
+        utils.logMessage("oneVideo bid adapter validation error: ",contentKey ," is not supported in OpenRTB V2.5");
       }
     }
   }
