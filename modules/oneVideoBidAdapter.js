@@ -323,7 +323,7 @@ function getRequestData(bid, consentData, bidRequest) {
       || (contentObjectKeys.includes(contentKey) && utils.isPlainObject(bid.params.video.content[contentKey]))) {
         bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
       } else {
-        utils.logMessage("oneVideo bid adapter validation error: ",contentKey ," is not supported ib ORTB V2.5");
+        utils.logMessage("oneVideo bid adapter validation error: ",contentKey ," is not supported is OpenRTB V2.5");
       }
     }
   }
