@@ -317,24 +317,13 @@ function getRequestData(bid, consentData, bidRequest) {
     const contentArrayKeys = ["cat", "data"];
     const contentObjectKeys = ["ext"];
     for (const contentKey in bid.params.video.content) {
-      if (contentStringKeys.includes(contentKey)){
-        if (utils.isStr(bid.params.video.content[contentKey])) {
-          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
-        }
-      } else if (contentNumberkeys.includes(contentKey)){
-        if (utils.isNumber(bid.params.video.content[contentKey])) {
-          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
-        }
-      } else if (contentArrayKeys.includes(contentKey)) {
-        if (utils.isArray(bid.params.video.content[contentKey])) {
-          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
-        }
-      } else if (contentObjectKeys.includes(contentKey)) {
-        if (utils.isPlainObject(bid.params.video.content[contentKey])) {
-          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
-        }
+      if ((contentStringKeys.includes(contentKey) && utils.isStr(bid.params.video.content[contentKey]))
+      || (contentNumberkeys.includes(contentKey) && utils.isNumber(bid.params.video.content[contentKey]))
+      || (contentArrayKeys.includes(contentKey) && utils.isArray(bid.params.video.content[contentKey]))
+      || (contentObjectKeys.includes(contentKey) && utils.isPlainObject(bid.params.video.content[contentKey]))) {
+        bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
       } else {
-        utils.logMessage("oneVideo bid adapter validation error: ",contentKey ," is not supported in OpenRTB V2.5");
+        utils.logMessage("oneVideo bid adapter validation error: ",contentKey ," is not supported ib ORTB V2.5");
       }
     }
   }
