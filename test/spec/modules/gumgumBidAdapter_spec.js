@@ -146,19 +146,18 @@ describe('gumgumAdapter', function () {
     const zoneParam = { 'zone': '123a' };
     const pubIdParam = { 'pubId': 123 };
 
-    
     it('should set pubId param if found', function () {
       const request = { ...bidRequests[0], params: pubIdParam };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.pubId).to.equal(pubIdParam.pubId);
     });
-    
+
     it('should set t param when zone param is found', function () {
       const request = { ...bidRequests[0], params: zoneParam };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.t).to.equal(zoneParam.zone);
     });
-    
+
     describe('product id', function () {
       it('should set the correct pi param if native param is found', function () {
         const request = { ...bidRequests[0], params: { ...zoneParam, native: 2 } };
