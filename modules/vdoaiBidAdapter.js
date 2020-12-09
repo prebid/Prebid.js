@@ -30,14 +30,12 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return [];
     }
+
     return validBidRequests.map(bidRequest => {
-      const sizes = utils.parseSizesInput(bidRequest.params.size || bidRequest.sizes)[0];
-      const width = sizes.split('x')[0];
-      const height = sizes.split('x')[1];
+      const sizes = utils.getAdUnitSizes(bidRequest);
       const payload = {
         placementId: bidRequest.params.placementId,
-        width: width,
-        height: height,
+        sizes: sizes,
         bidId: bidRequest.bidId,
         referer: bidderRequest.refererInfo.referer,
         id: bidRequest.auctionId
