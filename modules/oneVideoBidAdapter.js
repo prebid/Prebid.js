@@ -320,8 +320,8 @@ function getRequestData(bid, consentData, bidRequest) {
   }
   if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
     bidData.imp[0].content = {};
-    const contentStringKeys = ['id', 'title', 'series', 'season', 'episode', 'artist', 'genre', 'contentrating', 'language'];
-    const contentNumberkeys = ['prodq', 'context', 'livestream', 'len'];
+    const contentStringKeys = ['id', 'title', 'series', 'season', 'artist', 'genre', 'contentrating', 'language'];
+    const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
     const contentArrayKeys = ['cat'];
     const contentObjectKeys = ['ext'];
     for (const contentKey in bid.params.video.content) {

@@ -434,7 +434,6 @@ describe('OneVideoBidAdapter', function () {
       it('should not append content string parameters if value is not string ', function () {
         bidRequest.params.video.content = {
           id: 1234,
-          episode: ['Episode'],
           title: ['Title'],
           series: ['Series'],
           season: ['Season'],
@@ -449,6 +448,7 @@ describe('OneVideoBidAdapter', function () {
       });
       it('should not append content Number parameters if value is not Number ', function () {
         bidRequest.params.video.content = {
+          episode: '1',
           context: 'context',
           livestream: {0: 'stream'},
           len: [360],
@@ -483,13 +483,13 @@ describe('OneVideoBidAdapter', function () {
           title: 'Title',
           series: 'Series',
           season: 'Season',
-          episode: 'Episode',
           cat: [
             'IAB1'
           ],
           genre: 'Genre',
           contentrating: 'C-Rating',
           language: 'EN',
+          episode: 1,
           prodq: 1,
           context: 1,
           livestream: 0,
