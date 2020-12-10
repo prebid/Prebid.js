@@ -265,6 +265,7 @@ describe('AppNexusAdapter', function () {
             placementId: '10433394',
             user: {
               externalUid: '123',
+              segments: [123, { id: 987, value: 876 }],
               foobar: 'invalid'
             }
           }
@@ -277,6 +278,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
         external_uid: '123',
+        segments: [{id: 123}, {id: 987, value: 876}]
       });
     });
 
