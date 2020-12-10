@@ -320,23 +320,18 @@ function getRequestData(bid, consentData, bidRequest) {
   }
   if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
     bidData.imp[0].content = {};
-    const contentStringKeys = ['id', 'title', 'series', 'season', 'episode', 'artist', 'genre', 'album', 'isrc', 'url', 'contentrating', 'userrating', 'keywords', 'language'];
-    const contentNumberkeys = ['prodq', 'context', 'qagmediarating', 'livestream', 'sourcerelationship', 'len', 'embeddable'];
-    const contentArrayKeys = ['cat', 'data'];
-    const contentObjectKeys = ['producer', 'ext'];
+    const contentStringKeys = ['id', 'title', 'series', 'season', 'episode', 'artist', 'genre', 'contentrating', 'language'];
+    const contentNumberkeys = ['prodq', 'context', 'livestream', 'len'];
+    const contentArrayKeys = ['cat'];
+    const contentObjectKeys = ['ext'];
     for (const contentKey in bid.params.video.content) {
-      if ((contentStringKeys.indexOf(contentKey) > -1 && utils.isStr(bid.params.video.content[contentKey])) ||
+      if (
+        (contentStringKeys.indexOf(contentKey) > -1 && utils.isStr(bid.params.video.content[contentKey])) ||
         (contentNumberkeys.indexof(contentKey) > -1 && utils.isNumber(bid.params.video.content[contentKey])) ||
-        (contentObjectKeys.indexof(contentKey) > -1 && utils.isPlainObject(bid.params.video.content[contentKey]))) {
+        (contentObjectKeys.indexof(contentKey) > -1 && utils.isPlainObject(bid.params.video.content[contentKey])) ||
+        (contentArrayKeys.indexof(contentKey) > -1 && utils.isArray(bid.params.video.content[contentKey]) &&
+        bid.params.video.content[contentKey].every(catStr => utils.isStr(catStr)))) {
         bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
-      } else if (contentArrayKeys.indexof(contentKey) > -1 && utils.isArray(bid.params.video.content[contentKey])) {
-        if (contentKey === 'cat' &&
-        bid.params.video.content[contentKey].every(catStr => utils.isStr(catStr))) {
-          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
-        } else if ((contentKey === 'data' || contentKey === 'producer') &&
-        bid.params.video.content[contentKey].every(dataObj => utils.isPlainObject(dataObj))) {
-          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
-        }
       } else {
         utils.logMessage('oneVideo bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
       }

@@ -438,14 +438,8 @@ describe('OneVideoBidAdapter', function () {
           title: ['Title'],
           series: ['Series'],
           season: ['Season'],
-          artist: ['Artist'],
           genre: ['Genre'],
-          album: ['Album'],
-          isrc: ['Isrc'],
-          url: {1: 'http://something.com'},
           contentrating: {1: 'C-Rating'},
-          userrating: {1: 'U-Rating'},
-          keywords: {1: 'key,word,values'},
           language: {1: 'EN'}
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
@@ -456,12 +450,9 @@ describe('OneVideoBidAdapter', function () {
       it('should not append content Number parameters if value is not Number ', function () {
         bidRequest.params.video.content = {
           context: 'context',
-          qagmediarating: [1, 2, 3],
           livestream: {0: 'stream'},
-          sourcerelationship: [0],
           len: [360],
           prodq: [1],
-          embeddable: [0],
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
@@ -471,7 +462,6 @@ describe('OneVideoBidAdapter', function () {
       it('should not append content Array parameters if value is not Array ', function () {
         bidRequest.params.video.content = {
           cat: 'categories',
-          data: {a: [1, 2, 3]}
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
@@ -494,29 +484,16 @@ describe('OneVideoBidAdapter', function () {
           series: 'Series',
           season: 'Season',
           episode: 'Episode',
-          artist: 'Artist',
           cat: [
             'IAB1'
           ],
           genre: 'Genre',
-          album: 'Album',
-          isrc: 'Isrc',
-          producer: {name: 'Producer'},
-          url: 'http://something.com',
           contentrating: 'C-Rating',
-          userrating: 'U-Rating',
-          keywords: 'key,word,values',
           language: 'EN',
           prodq: 1,
           context: 1,
-          data: [
-            {}
-          ],
-          qagmediarating: 1,
           livestream: 0,
-          sourcerelationship: 0,
           len: 360,
-          embeddable: 0,
           ext: {}
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
