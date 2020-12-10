@@ -377,11 +377,11 @@ function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
     .filter(i => !(i.config.bidders && utils.isArray(i.config.bidders)) || i.config.bidders.includes(bidder))
     .filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .reduce((carry, i) => {
-    Object.keys(i.idObj).forEach(key => {
-      carry[key] = i.idObj[key];
-    });
-    return carry;
-  }, {});
+      Object.keys(i.idObj).forEach(key => {
+        carry[key] = i.idObj[key];
+      });
+      return carry;
+    }, {});
 }
 
 /**
