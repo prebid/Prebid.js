@@ -365,6 +365,26 @@ function getCombinedSubmoduleIds(submodules) {
 }
 
 /**
+ * This function will create a combined object for bidder with allowed subModule Ids
+ * @param {SubmoduleContainer[]} submodules
+ * @param {string} bidder
+ */
+function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
+  if (!Array.isArray(submodules) || !submodules.length || !bidder) {
+    return {};
+  }
+  return submodules
+    .filter(i => !(i.config.bidders && utils.isArray(i.config.bidders)) || i.config.bidders.includes(bidder))
+    .filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
+    .reduce((carry, i) => {
+    Object.keys(i.idObj).forEach(key => {
+      carry[key] = i.idObj[key];
+    });
+    return carry;
+  }, {});
+}
+
+/**
  * @param {AdUnit[]} adUnits
  * @param {SubmoduleContainer[]} submodules
  */
@@ -372,19 +392,19 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
   if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
     return;
   }
-  const combinedSubmoduleIds = getCombinedSubmoduleIds(submodules);
-  const combinedSubmoduleIdsAsEids = createEidsArray(combinedSubmoduleIds);
-  if (Object.keys(combinedSubmoduleIds).length) {
-    adUnits.forEach(adUnit => {
-      if (adUnit.bids && utils.isArray(adUnit.bids)) {
-        adUnit.bids.forEach(bid => {
+  adUnits.forEach(adUnit => {
+    if (adUnit.bids && utils.isArray(adUnit.bids)) {
+      adUnit.bids.forEach(bid => {
+        const combinedSubmoduleIds = getCombinedSubmoduleIdsForBidder(submodules, bid.bidder);
+        if (Object.keys(combinedSubmoduleIds).length) {
+          const combinedSubmoduleIdsAsEids = createEidsArray(combinedSubmoduleIds);
           // create a User ID object on the bid,
           bid.userId = combinedSubmoduleIds;
           bid.userIdAsEids = combinedSubmoduleIdsAsEids;
-        });
-      }
-    });
-  }
+        }
+      });
+    }
+  });
 }
 
 /**
