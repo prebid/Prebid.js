@@ -139,17 +139,17 @@ export const spec = {
 
     if (syncOptions.pixelEnabled) {
       return [{
-          type: 'image',
-          url: spec.SYNC_ENDPOINT1
-        },
-        {
-          type: 'image',
-          url: `https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0` + encodeURI(`&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`)
-        },
-        {
-          type: 'image',
-          url: spec.SYNC_ENDPOINT2
-        }
+        type: 'image',
+        url: spec.SYNC_ENDPOINT1
+      },
+      {
+        type: 'image',
+        url: `https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0` + encodeURI(`&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`)
+      },
+      {
+        type: 'image',
+        url: spec.SYNC_ENDPOINT2
+      }
       ];
     }
   }
