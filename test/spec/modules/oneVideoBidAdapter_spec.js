@@ -381,98 +381,154 @@ describe('OneVideoBidAdapter', function () {
       expect(custom['key7']).to.not.exist;
       expect(custom['key8']).to.not.exist;
     });
-    it('should not accept content object if value is Undefined ', function () {
-      bidRequest.params.video.content = null;
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = requests[0].data;
-      expect(data.imp[0].ext.content).to.be.undefined;
-    });
-    it('should not accept content object if value is is Array ', function () {
-      bidRequest.params.video.content = [];
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = requests[0].data;
-      expect(data.imp[0].ext.content).to.be.undefined;
-    });
-    it('should not accept content object if value is Number ', function () {
-      bidRequest.params.video.content = 123456;
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = requests[0].data;
-      expect(data.imp[0].ext.content).to.be.undefined;
-    });
-    it('should not accept content object if value is String ', function () {
-      bidRequest.params.video.content = 'keyValuePairs';
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = requests[0].data;
-      expect(data.imp[0].ext.content).to.be.undefined;
-    });
-    it('should not accept content object if value is Boolean ', function () {
-      bidRequest.params.video.content = true;
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = requests[0].data;
-      expect(data.imp[0].ext.content).to.be.undefined;
-    });
-    it('should not accept content if value is Object ', function () {
-      bidRequest.params.video.content = {};
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = requests[0].data;
-      expect(data.imp[0].ext.content).to.be.a('object');
-    });
-    it('should not accept content if value is Object ', function () {
-      bidRequest.params.video.content = {
-        id: '1234',
-        episode: 'Episode',
-        title: 'Title',
-        series: 'Series',
-        season: 'Season',
-        artist: 'Artist',
-        genre: 'Genre',
-        album: 'Album',
-        isrc: 'Isrc',
-        producer: 'Producer',
-        url: 'http://something.com',
-        cat: [
-          'IAB-1',
-          'IAB-2'
-        ],
-        prodq: 1,
-        context: 1,
-        contentrating: 'C-Rating',
-        userrating: 'U-Rating',
-        qagmediarating: 1,
-        keywords: 'key,word,values',
-        livestream: 0,
-        sourcerelationship: 0,
-        len: 360,
-        language: 'EN',
-        embeddable: 0,
-        data: [{
-          id: 'Data-id',
-          name: 'Data-name',
-          segment: [{
-            id: 'seg-id',
-            name: 'seg-name',
-            value: 'seg-value',
-            ext: {}
-          }],
+
+    describe('content object validations', function () {
+      it('should not accept content object if value is Undefined ', function () {
+        bidRequest.params.video.content = null;
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.be.undefined;
+      });
+      it('should not accept content object if value is is Array ', function () {
+        bidRequest.params.video.content = [];
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.be.undefined;
+      });
+      it('should not accept content object if value is Number ', function () {
+        bidRequest.params.video.content = 123456;
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.be.undefined;
+      });
+      it('should not accept content object if value is String ', function () {
+        bidRequest.params.video.content = 'keyValuePairs';
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.be.undefined;
+      });
+      it('should not accept content object if value is Boolean ', function () {
+        bidRequest.params.video.content = true;
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.be.undefined;
+      });
+      it('should accept content object if value is Object ', function () {
+        bidRequest.params.video.content = {};
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.be.a('object');
+      });
+
+      it('should not append unsupported content object keys', function () {
+        bidRequest.params.video.content = {
+          id: '1234',
+          episode: 'Episode',
+          title: 'Title',
+          fake: 'news',
+          unreal: 'param',
+          counterfit: 'data'
+        };
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content.id).to.exist;
+        expect(data.imp[0].content.episode).to.exist;
+        expect(data.imp[0].content.title).to.exist;
+        expect(data.imp[0].content.fake).to.not.exist;
+        expect(data.imp[0].content.unreal).to.not.exist;
+        expect(data.imp[0].content.counterfit).to.exist;
+      });
+
+      it('should not append content string parameters if value is not string ', function () {
+        bidRequest.params.video.content = {
+          id: 1234,
+          episode: ['Episode'],
+          title: ['Title'],
+          series: ['Series'],
+          season: ['Season'],
+          artist: ['Artist'],
+          genre: ['Genre'],
+          album: ['Album'],
+          isrc: ['Isrc'],
+          producer: {1: 'Producer'},
+          url: {1: 'http://something.com'},
+          contentrating: {1: 'C-Rating'},
+          userrating: {1: 'U-Rating'},
+          keywords: {1: 'key,word,values'},
+          language: {1: 'EN'}
+        };
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.be.a('object');
+        expect(data.imp[0].content).to.be.empty
+      });
+      it('should not append content Number parameters if value is not Number ', function () {
+        bidRequest.params.video.content = {
+          context: 'context',
+          qagmediarating: [1, 2, 3],
+          livestream: {0: 'stream'},
+          sourcerelationship: [0],
+          len: [360],
+          prodq: [1],
+          embeddable: [0],
+        };
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.be.a('object');
+        expect(data.imp[0].content).to.be.empty
+      });
+      it('should not append content Array parameters if value is not Array ', function () {
+        bidRequest.params.video.content = {
+          cat: 'categories',
+          data: {a: [1, 2, 3]}
+        };
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.be.a('object');
+        expect(data.imp[0].content).to.be.empty
+      });
+      it('should not append content ext if value is not Object ', function () {
+        bidRequest.params.video.content = {
+          ext: 'content.ext',
+        };
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.be.a('object');
+        expect(data.imp[0].content).to.be.empty
+      });
+      it('should append supported parameters if value match validations ', function () {
+        bidRequest.params.video.content = {
+          id: '1234',
+          episode: 'Episode',
+          title: 'Title',
+          series: 'Series',
+          season: 'Season',
+          artist: 'Artist',
+          genre: 'Genre',
+          album: 'Album',
+          isrc: 'Isrc',
+          producer: 'Producer',
+          url: 'http://something.com',
+          contentrating: 'C-Rating',
+          userrating: 'U-Rating',
+          language: 'EN',
+          keywords: 'key,word,values',
+          context: 1,
+          qagmediarating: 1,
+          livestream: 0,
+          sourcerelationship: 0,
+          len: 360,
+          prodq: 1,
+          embeddable: 0,
+          data: [{}],
+          cat: ['IAB1'],
           ext: {}
-        }],
-        ext: {
-          network: 'ext-network',
-          channel: 'ext-channel'
-        }
-      };
-      const requests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = requests[0].data;
-      expect(data.imp[0].ext.content).to.be.a('object');
+        };
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
+        const data = requests[0].data;
+        expect(data.imp[0].content).to.deep.equal(bidRequest.params.video.content);
+      });
     });
-
-
-    // TODO Unit tests for Content Object
-    // TODO check Str validation
-    // TODO check Number validation
-    // TODO check Array validation
-    // TODO check Object validation
-
   });
 
   describe('spec.interpretResponse', function () {
