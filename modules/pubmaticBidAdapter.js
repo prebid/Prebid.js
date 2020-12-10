@@ -101,6 +101,33 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
   }
 ]
 
+function log_ga_event(event, ad_unit) {
+  try {
+    var http = new XMLHttpRequest();
+    var url = 'https://www.google-analytics.com/collect';
+    http.open('POST', url, true);
+
+    //Send the proper header information along with the request
+    http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+    var params = new URLSearchParams();
+    params.set("v", 1);
+    params.set("t", "event");
+    params.set("tid", "UA-5708546-6");
+    params.set("cid", Math.random() * 1000000);
+    params.set("dp", window.location.pathname);
+    params.set("dh", window.location.hostname);
+    params.set("ec", "OpenWrap Outstream");
+    params.set("ea", event);
+    params.set("el", ad_unit);
+
+    http.send(params.toString());
+
+  } catch (error) {
+    console.error("OpnWrap Extra Tracker Error: " + error.toString());
+  }
+}
+
 const NET_REVENUE = false;
 const dealChannelValues = {
   1: 'PMP',
@@ -155,7 +182,8 @@ const BB_RENDERER = {
     return renderer;
   },
   outstreamRender: function(bid) {
-    bid.renderer.push(function() { BB_RENDERER.bootstrapPlayer(bid) });
+    log_ga_event("Render Phase 1", bid.adUnitCode);
+    bid.renderer.push(function() {   log_ga_event("Render Phase 2", bid.adUnitCode); BB_RENDERER.bootstrapPlayer(bid) });
   },
   getRendererId: function(pub, renderer) {
     return `${pub}-${renderer}`; // NB convention!
