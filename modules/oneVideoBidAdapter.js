@@ -320,7 +320,7 @@ function getRequestData(bid, consentData, bidRequest) {
   }
   if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
     bidData.imp[0].content = {};
-    const contentStringKeys = ['id', 'title', 'series', 'season', 'artist', 'genre', 'album', 'isrc', 'producer', 'url', 'contentrating', 'userrating', 'keywords', 'language'];
+    const contentStringKeys = ['id', 'title', 'series', 'season', 'episode', 'artist', 'genre', 'album', 'isrc', 'producer', 'url', 'contentrating', 'userrating', 'keywords', 'language'];
     const contentNumberkeys = ['prodq', 'context', 'qagmediarating', 'livestream', 'sourcerelationship', 'len', 'embeddable'];
     const contentArrayKeys = ['cat', 'data'];
     const contentObjectKeys = ['ext'];
@@ -330,10 +330,10 @@ function getRequestData(bid, consentData, bidRequest) {
         (contentObjectKeys.includes(contentKey) && utils.isPlainObject(bid.params.video.content[contentKey]))) {
         bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
       } else if (contentArrayKeys.includes(contentKey) && utils.isArray(bid.params.video.content[contentKey])) {
-        if ((bid.params.video.content[contentKey] === 'cat') &&
+        if (contentKey === 'cat' &&
         bid.params.video.content[contentKey].every(catStr => utils.isStr(catStr))) {
           bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
-        } else if ((bid.params.video.content[contentKey] === 'data') &&
+        } else if (contentKey === 'data' &&
         bid.params.video.content[contentKey].every(dataObj => utils.isPlainObject(dataObj))) {
           bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
         }

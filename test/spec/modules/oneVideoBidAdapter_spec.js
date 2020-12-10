@@ -422,21 +422,13 @@ describe('OneVideoBidAdapter', function () {
 
       it('should not append unsupported content object keys', function () {
         bidRequest.params.video.content = {
-          id: '1234',
-          episode: 'Episode',
-          title: 'Title',
           fake: 'news',
           unreal: 'param',
           counterfit: 'data'
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
-        expect(data.imp[0].content.id).to.exist;
-        expect(data.imp[0].content.episode).to.exist;
-        expect(data.imp[0].content.title).to.exist;
-        expect(data.imp[0].content.fake).to.not.exist;
-        expect(data.imp[0].content.unreal).to.not.exist;
-        expect(data.imp[0].content.counterfit).to.exist;
+        expect(data.imp[0].content).to.be.empty;
       });
 
       it('should not append content string parameters if value is not string ', function () {
@@ -499,11 +491,14 @@ describe('OneVideoBidAdapter', function () {
       it('should append supported parameters if value match validations ', function () {
         bidRequest.params.video.content = {
           id: '1234',
-          episode: 'Episode',
           title: 'Title',
           series: 'Series',
           season: 'Season',
+          episode: 'Episode',
           artist: 'Artist',
+          cat: [
+            'IAB1'
+          ],
           genre: 'Genre',
           album: 'Album',
           isrc: 'Isrc',
@@ -511,17 +506,18 @@ describe('OneVideoBidAdapter', function () {
           url: 'http://something.com',
           contentrating: 'C-Rating',
           userrating: 'U-Rating',
-          language: 'EN',
           keywords: 'key,word,values',
+          language: 'EN',
+          prodq: 1,
           context: 1,
+          data: [
+            {}
+          ],
           qagmediarating: 1,
           livestream: 0,
           sourcerelationship: 0,
           len: 360,
-          prodq: 1,
           embeddable: 0,
-          data: [{}],
-          cat: ['IAB1'],
           ext: {}
         };
         const requests = spec.buildRequests([bidRequest], bidderRequest);

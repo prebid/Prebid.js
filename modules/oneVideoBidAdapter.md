@@ -299,14 +299,14 @@ var adUnits = [
   ]
 ```
 # Content Object Support
-//TODO: need to update general text here
+The oneVideoBidAdapter supports passing of OpenRTB V2.5 Content Object.
 
 ```
 const adUnits = [{
             code: 'video1',
             mediaTypes: {
                 video: {
-                    context: 'instream',
+                    context: 'outstream',
                     playerSize: [640, 480]
                 }
             },
@@ -319,18 +319,14 @@ const adUnits = [{
                         mimes: ['video/mp4', 'application/javascript'],
                         protocols: [2, 5],
                         api: [1, 2],
+                        ttl: 300,
                         content: {
                             id: "1234",
-                            episode: "Episode",
                             title: "Title",
                             series: "Series",
                             season: "Season",
+                            episode: "Episode",
                             artist: "Artist",
-                            genre: "Genre",
-                            album: "Album",
-                            isrc: "Isrc",
-                            producer: "Producer",
-                            url: "http://something.com",
                             cat: [
                                 "IAB1",
                                 "IAB1-1",
@@ -338,17 +334,17 @@ const adUnits = [{
                                 "IAB2",
                                 "IAB2-1"
                             ],
-                            prodq: "Number",
-                            context: 1,
+                            genre: "Genre",
+                            album: "Album",
+                            isrc: "Isrc",
+                            producer: "Producer",
+                            url: "http://something.com",
                             contentrating: "C-Rating",
                             userrating: "U-Rating",
-                            qagmediarating: 1,
                             keywords: "key,word,values",
-                            livestream: 0,
-                            sourcerelationship: 0,
-                            len: 360,
                             language: "EN",
-                            embeddable: 0,
+                            prodq: 1,
+                            context: 1,
                             data: [{
                                 id: "Data-id",
                                 name: "Data-name",
@@ -360,21 +356,52 @@ const adUnits = [{
                                 }],
                                 ext: {}
                             }],
+                            qagmediarating: 1,
+                            livestream: 0,
+                            sourcerelationship: 0,
+                            len: 360,
+                            embeddable: 0,
                             ext: {
                                 network: "ext-network",
                                 channel: "ext-channel"
                             }
-
                         }
-                    },
-                    pubId: 'HBExchange'
+                      },
+                      pubId: 'HBExchange'
+                    }
                 }
             }]
-        }];
+        }]
 ```
 
 
 # TTL Support
-Dynamic cache "Time To Live" setting
-TODO update the TTL example here
+The oneVideoBidAdapter supports passing of "Time To Live" (ttl)  that indicates to prebid chache for how long to keep the chaced winning bid alive.
+Value is Number in seconds
+You can enter any number between 1 - 3600 (seconds)
+```
+const adUnits = [{
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480]
+                }
+            },
+            bids: [{
+                bidder: 'oneVideo',
+                params: {
+                    video: {
+                        playerWidth: 640,
+                        playerHeight: 480,
+                        mimes: ['video/mp4', 'application/javascript'],
+                        protocols: [2, 5],
+                        api: [1, 2],
+                        ttl: 300
+                    },
+                    pubId: 'HBExchange'
+                }
+            }]
+        }]
+```
 
