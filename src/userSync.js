@@ -226,13 +226,8 @@ export function newUserSync(userSyncDependencies) {
       return checkForFiltering[filterType](biddersToFilter, bidder);
     }
 
-    // iframes are disabled by default.
-    // so if the iframe config is invalid, we should use the permittedPixels object to tell us if the bidder should be blocked when trying to register an iframe pixel.
-    if (!isFilterConfigValid(filterConfig, type) && type === 'iframe') {
-      return !permittedPixels[type];
-    }
+    return !permittedPixels[type];
 
-    return false;
   }
 
   /**
