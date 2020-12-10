@@ -68,7 +68,8 @@
     "FORMAT": "hb_format",
     "UUID": "hb_uuid",
     "CACHE_ID": "hb_cache_id",
-    "CACHE_HOST": "hb_cache_host"
+    "CACHE_HOST": "hb_cache_host",
+    "ADOMAIN" : "hb_adomain"
   },
   "NATIVE_KEYS": {
     "title": "hb_native_title",
