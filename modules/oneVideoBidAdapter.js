@@ -327,9 +327,9 @@ function getRequestData(bid, consentData, bidRequest) {
     for (const contentKey in bid.params.video.content) {
       if (
         (contentStringKeys.indexOf(contentKey) > -1 && utils.isStr(bid.params.video.content[contentKey])) ||
-        (contentNumberkeys.indexof(contentKey) > -1 && utils.isNumber(bid.params.video.content[contentKey])) ||
-        (contentObjectKeys.indexof(contentKey) > -1 && utils.isPlainObject(bid.params.video.content[contentKey])) ||
-        (contentArrayKeys.indexof(contentKey) > -1 && utils.isArray(bid.params.video.content[contentKey]) &&
+        (contentNumberkeys.indexOf(contentKey) > -1 && utils.isNumber(bid.params.video.content[contentKey])) ||
+        (contentObjectKeys.indexOf(contentKey) > -1 && utils.isPlainObject(bid.params.video.content[contentKey])) ||
+        (contentArrayKeys.indexOf(contentKey) > -1 && utils.isArray(bid.params.video.content[contentKey]) &&
         bid.params.video.content[contentKey].every(catStr => utils.isStr(catStr)))) {
         bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
       } else {
