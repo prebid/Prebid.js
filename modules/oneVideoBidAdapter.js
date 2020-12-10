@@ -1,5 +1,7 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {
+  registerBidder
+} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
@@ -16,7 +18,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
       return false;
     }
@@ -49,7 +51,7 @@ export const spec = {
    * @param bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bids, bidRequest) {
+  buildRequests: function (bids, bidRequest) {
     let consentData = bidRequest ? bidRequest.gdprConsent : null;
 
     return bids.map(bid => {
@@ -75,7 +77,9 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(response, { bidRequest }) {
+  interpretResponse: function (response, {
+    bidRequest
+  }) {
     let bid;
     let size;
     let bidResponse;
@@ -127,29 +131,33 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, responses, consentData = {}) {
-    let { gdprApplies, consentString = '' } = consentData;
+  getUserSyncs: function (syncOptions, responses, consentData = {}) {
+    let {
+      gdprApplies,
+      consentString = ''
+    } = consentData;
 
     if (syncOptions.pixelEnabled) {
       return [{
-        type: 'image',
-        url: spec.SYNC_ENDPOINT1
-      },
-      {
-        type: 'image',
-        url: `https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0` + encodeURI(`&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`)
-      },
-      {
-        type: 'image',
-        url: spec.SYNC_ENDPOINT2
-      }];
+          type: 'image',
+          url: spec.SYNC_ENDPOINT1
+        },
+        {
+          type: 'image',
+          url: `https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0` + encodeURI(`&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`)
+        },
+        {
+          type: 'image',
+          url: spec.SYNC_ENDPOINT2
+        }
+      ];
     }
   }
 };
 
 function getSize(sizes) {
   let parsedSizes = utils.parseSizesInput(sizes);
-  let [ width, height ] = parsedSizes.length ? parsedSizes[0].split('x') : [];
+  let [width, height] = parsedSizes.length ? parsedSizes[0].split('x') : [];
   return {
     width: parseInt(width, 10) || undefined,
     height: parseInt(height, 10) || undefined
@@ -318,12 +326,17 @@ function getRequestData(bid, consentData, bidRequest) {
     const contentObjectKeys = ['ext'];
     for (const contentKey in bid.params.video.content) {
       if ((contentStringKeys.includes(contentKey) && utils.isStr(bid.params.video.content[contentKey])) ||
-      (contentNumberkeys.includes(contentKey) && utils.isNumber(bid.params.video.content[contentKey])) ||
-      (contentArrayKeys.includes(contentKey) && utils.isArray(bid.params.video.content[contentKey])) ||
-      (contentObjectKeys.includes(contentKey) && utils.isPlainObject(bid.params.video.content[contentKey]))) {
-        //TODO should i add validation for url?
-        //TODO should i uppercase language and iab cat?
+        (contentNumberkeys.includes(contentKey) && utils.isNumber(bid.params.video.content[contentKey])) ||
+        (contentObjectKeys.includes(contentKey) && utils.isPlainObject(bid.params.video.content[contentKey]))) {
         bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
+      } else if (contentArrayKeys.includes(contentKey) && utils.isArray(bid.params.video.content[contentKey])) {
+        if ((bid.params.video.content[contentKey] === 'cat') &&
+        bid.params.video.content[contentKey].every(catStr => utils.isStr(catStr))) {
+          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
+        } else if ((bid.params.video.content[contentKey] === 'data') &&
+        bid.params.video.content[contentKey].every(dataObj => utils.isPlainObject(dataObj))) {
+          bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
+        }
       } else {
         utils.logMessage('oneVideo bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
       }
@@ -343,7 +356,7 @@ function newRenderer(bidRequest, bid) {
   if (!bidRequest.renderer) {
     bidRequest.renderer = {};
     bidRequest.renderer.url = 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js';
-    bidRequest.renderer.render = function(bid) {
+    bidRequest.renderer.render = function (bid) {
       setTimeout(function () {
         // eslint-disable-next-line no-undef
         o2PlayerRender(bid);
