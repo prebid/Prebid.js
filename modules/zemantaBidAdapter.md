@@ -69,6 +69,12 @@ pbjs.setConfig({
             }
         }]
     ];
+
+    pbjs.setConfig({
+        zemanta: {
+          bidderUrl: 'https://prebidtest.zemanta.com/api/bidder/prebidtest/bid/'
+        }
+    });
 ```
 
 # Test Display Parameters
@@ -92,4 +98,10 @@ pbjs.setConfig({
             },
         }]
     ];
+
+    pbjs.setConfig({
+        zemanta: {
+          bidderUrl: 'https://prebidtest.zemanta.com/api/bidder/prebidtest/bid/'
+        }
+    });
 ```
