@@ -98,7 +98,7 @@ function interpretResponse(serverResponse, bidderRequest) {
       creativeId: bid.creativeId,
       dealId: bid.dealId == null ? bid.dealId : '',
       currency: bid.currency,
-      netRevenue: false,
+      netRevenue: bid.netRevenue || false,
       mediaType: bid.mediaType,
       meta: {
         mediaType: bid.mediaType
