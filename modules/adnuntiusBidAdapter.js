@@ -27,6 +27,8 @@ export const spec = {
       tzo = bid.params.tzo || '0'
     }
 
+    const tzo = bid.params.tzo || '0'
+
     const networkKeys = Object.keys(networks)
     for (var j = 0; j < networkKeys.length; j++) {
       const network = networkKeys[j];
