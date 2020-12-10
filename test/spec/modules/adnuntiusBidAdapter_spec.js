@@ -4,7 +4,7 @@ import { spec } from 'modules/adnuntiusBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('adnuntiusBidAdapter', function () {
-  const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=-60&format=json';
+  const ENDPOINT_URL = 'https://delivery.adnuntius.com/i?tzo=0&format=json';
   const adapter = newBidder(spec);
   const bidRequests = [
     {
