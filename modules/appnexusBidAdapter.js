@@ -498,6 +498,12 @@ function formatRequest(payload, bidderRequest) {
     }
   }
 
+  if (utils.getParameterByName('apn_test').toUpperCase() === 'TRUE' || config.getConfig('apn_test') === true) {
+    options.customHeaders = {
+      'X-Is-Test': 1
+    }
+  }
+
   if (payload.tags.length > MAX_IMPS_PER_REQUEST) {
     const clonedPayload = utils.deepClone(payload);
 
