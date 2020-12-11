@@ -8,7 +8,7 @@ const BIDDER_CODE = 'eplanning';
 const rnd = Math.random();
 const DEFAULT_SV = 'ads.us.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
-const PARAMS = ['ci', 'sv', 't', 'ml'];
+const PARAMS = ['ci', 'sv', 't', 'ml', 'sn'];
 const DOLLARS = 'USD';
 const NET_REVENUE = true;
 const TTL = 120;
@@ -197,7 +197,14 @@ function getSpaces(bidRequests, ml) {
   let es = {str: '', vs: '', map: {}};
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
-    let name = ml ? cleanName(bid.adUnitCode) : getSize(bid, true) + '_' + i;
+
+    let name;
+    if (ml) {
+      name = cleanName(bid.adUnitCode);
+    } else {
+      name = (bid.params && bid.params.sn) || (getSize(bid, true) + '_' + i);
+    }
+
     es.map[name] = bid.bidId;
     return name + ':' + getSize(bid);
   }).join('+')).join('+');

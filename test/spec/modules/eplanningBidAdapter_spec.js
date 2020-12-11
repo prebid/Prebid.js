@@ -32,6 +32,15 @@ describe('E-Planning Adapter', function () {
     'adUnitCode': ADUNIT_CODE,
     'sizes': [[300, 250], [300, 600]],
   };
+  const validBid2 = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID2,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE2,
+    'sizes': [[300, 250], [300, 600]],
+  };
   const ML = '1';
   const validBidMappingLinear = {
     'bidder': 'eplanning',
@@ -43,13 +52,14 @@ describe('E-Planning Adapter', function () {
     'adUnitCode': ADUNIT_CODE,
     'sizes': [[300, 250], [300, 600]],
   };
-  const validBid2 = {
+  const SN = 'spaceName';
+  const validBidSpaceName = {
     'bidder': 'eplanning',
-    'bidId': BID_ID2,
+    'bidId': BID_ID,
     'params': {
       'ci': CI,
+      'sn': SN,
     },
-    'adUnitCode': ADUNIT_CODE2,
     'sizes': [[300, 250], [300, 600]],
   };
   const validBidView = {
@@ -278,6 +288,12 @@ describe('E-Planning Adapter', function () {
       expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':300x250,300x600');
     });
 
+    it('should return e parameter with space name attribute with value according to the adunit sizes', function () {
+      let bidRequestsSN = [validBidSpaceName];
+      const e = spec.buildRequests(bidRequestsSN, bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600');
+    });
+
     it('should return correct e parameter with more than one adunit', function () {
       const NEW_CODE = ADUNIT_CODE + '2';
       const CLEAN_NEW_CODE = CLEAN_ADUNIT_CODE + '2';
@@ -312,6 +328,23 @@ describe('E-Planning Adapter', function () {
 
       const e = spec.buildRequests(bidRequestsML, bidderRequest).data.e;
       expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':300x250,300x600+' + CLEAN_NEW_CODE + ':100x100');
+    });
+
+    it('should return correct e parameter with space name attribute with more than one adunit', function () {
+      let bidRequestsSN = [validBidSpaceName];
+      const NEW_SN = 'anotherNameSpace';
+      const anotherBid = {
+        'bidder': 'eplanning',
+        'params': {
+          'ci': CI,
+          'sn': NEW_SN,
+        },
+        'sizes': [[100, 100]],
+      };
+      bidRequestsSN.push(anotherBid);
+
+      const e = spec.buildRequests(bidRequestsSN, bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600+' + NEW_SN + ':100x100');
     });
 
     it('should return correct e parameter when the adunit has no size', function () {
