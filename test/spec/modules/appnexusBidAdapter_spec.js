@@ -265,6 +265,7 @@ describe('AppNexusAdapter', function () {
             placementId: '10433394',
             user: {
               externalUid: '123',
+              segments: [123, { id: 987, value: 876 }],
               foobar: 'invalid'
             }
           }
@@ -277,6 +278,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
         external_uid: '123',
+        segments: [{id: 123}, {id: 987, value: 876}]
       });
     });
 
@@ -808,7 +810,7 @@ describe('AppNexusAdapter', function () {
       expect(request.options).to.deep.equal({withCredentials: false});
     });
 
-    it('should populate eids and tpuids when ttd id and criteo is available', function () {
+    it('should populate eids when ttd id and criteo is available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
           tdid: 'sample-userid',
@@ -824,9 +826,9 @@ describe('AppNexusAdapter', function () {
         rti_partner: 'TDID'
       });
 
-      expect(payload.tpuids).to.deep.include({
-        provider: 'criteo',
-        user_id: 'sample-criteo-userid',
+      expect(payload.eids).to.deep.include({
+        source: 'criteo.com',
+        id: 'sample-criteo-userid',
       });
     });
 

@@ -1,14 +1,17 @@
 import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
+const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TMAX = 450;
-const BIDDER_VERSION = '4.5';
+const BIDDER_VERSION = '4.6';
 const W = window;
 const { navigator } = W;
+var consentApiVersion;
 
 const cookieSupport = () => {
   const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
@@ -53,6 +56,7 @@ const applyClientHints = ortbRequest => {
 
 function applyGdpr(bidderRequest, ortbRequest) {
   if (bidderRequest && bidderRequest.gdprConsent) {
+    consentApiVersion = bidderRequest.gdprConsent.apiVersion;
     ortbRequest.regs = Object.assign(ortbRequest.regs, { '[ortb_extensions.gdpr]': bidderRequest.gdprConsent.gdprApplies ? 1 : 0 });
     ortbRequest.user = Object.assign(ortbRequest.user, { '[ortb_extensions.consent]': bidderRequest.gdprConsent.consentString });
   }
@@ -66,6 +70,14 @@ function setOnAny(collection, key) {
       return result;
     }
   }
+}
+
+function sendNotification(payload) {
+  ajax(NOTIFY_URL, null, JSON.stringify(payload), {
+    withCredentials: false,
+    method: 'POST',
+    crossOrigin: true
+  });
 }
 
 /**
@@ -278,6 +290,7 @@ const spec = {
               mediaType: 'banner',
               meta: {
                 advertiserDomains: serverBid.adomain,
+                networkName: seat,
               },
               netRevenue: true,
               ad: renderCreative(site, response.id, serverBid, seat, request.bidderRequest),
@@ -303,12 +316,44 @@ const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: SYNC_URL,
+        url: SYNC_URL + '?tcf=' + consentApiVersion,
       }];
     }
     utils.logWarn('sspBC adapter requires iframe based user sync.');
   },
-  onTimeout() {
+
+  onTimeout(timeoutData) {
+    var adSlots = [];
+    const bid = timeoutData && timeoutData[0];
+    if (bid) {
+      timeoutData.forEach(bid => { adSlots.push(bid.params[0] && bid.params[0].id) })
+      const payload = {
+        event: 'timeout',
+        requestId: bid.auctionId,
+        siteId: bid.params ? [bid.params[0].siteId] : [],
+        slotId: adSlots,
+        timeout: bid.timeout,
+      }
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
+  onBidWon(bid) {
+    if (bid && bid.auctionId) {
+      const payload = {
+        event: 'bidWon',
+        requestId: bid.auctionId,
+        siteId: bid.params ? [bid.params[0].siteId] : [],
+        slotId: bid.params ? [bid.params[0].id] : [],
+        cpm: bid.cpm,
+        creativeId: bid.creativeId,
+        adomain: (bid.meta && bid.meta.advertiserDomains) ? bid.meta.advertiserDomains[0] : '',
+        networkName: (bid.meta && bid.meta.networkName) ? bid.meta.networkName : '',
+      }
+      sendNotification(payload);
+      return payload;
+    }
   },
 };
 

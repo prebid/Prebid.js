@@ -134,6 +134,7 @@ const CONSENT_DATA_COOKIE_STORAGE_CONFIG = {
   name: '_pbjs_userid_consent_data',
   expires: 30 // 30 days expiration, which should match how often consent is refreshed by CMPs
 };
+export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userid');
 
 /** @type {string[]} */
@@ -701,15 +702,15 @@ export function init(config) {
   ].filter(i => i !== null);
 
   // exit immediately if opt out cookie or local storage keys exists.
-  if (validStorageTypes.indexOf(COOKIE) !== -1 && (coreStorage.getCookie('_pbjs_id_optout') || coreStorage.getCookie('_pubcid_optout'))) {
+  if (validStorageTypes.indexOf(COOKIE) !== -1 && coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
     utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
     return;
   }
-  // _pubcid_optout is checked for compatibility with pubCommonId
-  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (coreStorage.getDataFromLocalStorage('_pbjs_id_optout') || coreStorage.getDataFromLocalStorage('_pubcid_optout'))) {
+  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
     utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
     return;
   }
+
   // listen for config userSyncs to be set
   config.getConfig(conf => {
     // Note: support for 'usersync' was dropped as part of Prebid.js 4.0
