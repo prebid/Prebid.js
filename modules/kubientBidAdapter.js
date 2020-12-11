@@ -1,5 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'kubient';
 const END_POINT = 'https://kssp.kbntx.ch/pbjs';
@@ -16,7 +17,7 @@ export const spec = {
     if (!validBidRequests || !bidderRequest) {
       return;
     }
-    var result = validBidRequests.map(function (bid) {
+    const result = validBidRequests.map(function (bid) {
       let data = {
         v: VERSION,
         requestId: bid.bidderRequestId,
@@ -66,9 +67,9 @@ export const spec = {
     });
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    var syncs = [];
-    var gdprParams = '';
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = [];
+    let gdprParams = '';
     if (gdprConsent && typeof gdprConsent.consentString === 'string') {
       gdprParams = `?consent_str=${gdprConsent.consentString}`;
       if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -94,21 +95,16 @@ export const spec = {
 
 function kubientGetConsentGiven(gdprConsent) {
   let consentGiven = 0;
-  if (
-    gdprConsent.apiVersion === 1 &&
-    gdprConsent.vendorData &&
-    gdprConsent.vendorData.vendorConsents &&
-    typeof gdprConsent.vendorData.vendorConsents[VENDOR_ID.toString(10)] !== 'undefined'
-  ) {
-    consentGiven = gdprConsent.vendorData.vendorConsents[VENDOR_ID.toString(10)] ? 1 : 0;
-  } else if (
-    gdprConsent.apiVersion === 2 &&
-    gdprConsent.vendorData &&
-    gdprConsent.vendorData.vendor &&
-    gdprConsent.vendorData.vendor.consents &&
-    typeof gdprConsent.vendorData.vendor.consents[VENDOR_ID.toString(10)] !== 'undefined'
-  ) {
-    consentGiven = gdprConsent.vendorData.vendor.consents[VENDOR_ID.toString(10)] ? 1 : 0;
+  if (typeof gdprConsent !== 'undefined') {
+    let apiVersion = utils.deepAccess(gdprConsent, `apiVersion`);
+    switch (apiVersion) {
+      case 1:
+        consentGiven = utils.deepAccess(gdprConsent, `vendorData.vendorConsents.${VENDOR_ID}`) ? 1 : 0;
+        break;
+      case 2:
+        consentGiven = utils.deepAccess(gdprConsent, `vendorData.vendor.consents.${VENDOR_ID}`) ? 1 : 0;
+        break;
+    }
   }
   return consentGiven;
 }
