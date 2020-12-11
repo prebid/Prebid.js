@@ -9,7 +9,14 @@ Maintainer: contact@adblender.net
 Connects to Go2Net demand source to fetch bids.  
 Banner and Video formats are supported.  
 Please use ```adblender``` as the bidder code.  
-
+#Bidder Config
+You can set an alternate endpoint url `pbjs.setBidderConfig` for the bidder `adblender`
+```
+pbjs.setBidderConfig({
+        bidders: ["adblender"],
+        config: {"adblender": { "endpoint_url": "https://inv-nets.admixer.net/adblender.1.1.aspx"}}
+      })
+```
 # Ad Unit Example
 ```
     var adUnits = [
