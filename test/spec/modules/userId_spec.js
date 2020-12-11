@@ -410,6 +410,51 @@ describe('User ID', function () {
     });
   });
 
+  describe('findRootDomain', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+      config.setConfig({
+        userSync: {
+          syncDelay: 0,
+          userIds: [
+            {
+              name: 'pubCommonId',
+              value: { pubcid: '11111' },
+            },
+          ],
+        },
+      });
+      sandbox = sinon.createSandbox()
+      sandbox
+        .stub(coreStorage, 'getCookie')
+        .onFirstCall()
+        .returns(null) // .co.uk
+        .onSecondCall()
+        .returns('writeable'); // realdomain.co.uk;
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    })
+
+    it('should be a global function', function() {
+      expect(typeof (getGlobal()).findRootDomain).to.equal('function');
+    })
+
+    it('should just find the root domain', function () {
+      var domain = getGlobal().findRootDomain('sub.realdomain.co.uk');
+      expect(domain).to.be.eq('realdomain.co.uk');
+    });
+
+    it('should find the full domain when no subdomain is present', function () {
+      var domain = getGlobal().findRootDomain('realdomain.co.uk');
+      expect(domain).to.be.eq('realdomain.co.uk');
+    });
+  });
+
   describe('Opt out', function () {
     before(function () {
       coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '1', (new Date(Date.now() + 5000).toUTCString()));
