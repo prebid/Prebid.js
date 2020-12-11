@@ -237,6 +237,7 @@ function sendMessage(auctionId, bidWonId) {
         auction.floors = utils.pick(auctionCache.floorData, [
           'location',
           'modelVersion as modelName',
+          'modelWeight',
           'skipped',
           'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
           'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),

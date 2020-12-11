@@ -291,6 +291,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
         skipRate: floorData.skipRate,
         floorMin: floorData.floorMin,
         modelVersion: utils.deepAccess(floorData, 'data.modelVersion'),
+        modelWeight: utils.deepAccess(floorData, 'data.modelWeight'),
         location: utils.deepAccess(floorData, 'data.location', 'noData'),
         floorProvider: floorData.floorProvider,
         fetchStatus: _floorsConfig.fetchStatus
