@@ -332,7 +332,7 @@ function findRootDomain(fullDomain = document.domain) {
   let rootDomain;
   let continueSearching;
   let startIndex = -2;
-  const TEST_COOKIE_NAME = '_rdc';
+  const TEST_COOKIE_NAME = `_rdc${Date.now()}`;
   const TEST_COOKIE_VALUE = 'writeable';
   do {
     rootDomain = domainParts.slice(startIndex).join('.');
