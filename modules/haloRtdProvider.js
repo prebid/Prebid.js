@@ -33,9 +33,8 @@ const segmentMappers = {
     set(bid, 'params.user.segments', []);
     let appnexusSegments = [];
     segments.forEach(segment => {
-      if (typeof segment.value != 'undefined' && segment.value != null) {
-        let appnexusSegment = {'id': segment.id, 'value': segment.value};
-        appnexusSegments.push(appnexusSegment);
+      if (typeof segment.id != 'undefined' && segment.id != null) {
+        appnexusSegments.push(parseInt(segment.id));
       }
     })
     bid.params.user.segments = bid.params.user.segments.concat(appnexusSegments);

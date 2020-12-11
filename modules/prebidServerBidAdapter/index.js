@@ -369,6 +369,18 @@ function addWurl(auctionId, adId, wurl) {
   }
 }
 
+function getPbsResponseData(bidderRequests, response, pbsName, pbjsName) {
+  const bidderValues = utils.deepAccess(response, `ext.${pbsName}`);
+  if (bidderValues) {
+    Object.keys(bidderValues).forEach(bidder => {
+      let biddersReq = find(bidderRequests, bidderReq => bidderReq.bidderCode === bidder);
+      if (biddersReq) {
+        biddersReq[pbjsName] = bidderValues[bidder];
+      }
+    });
+  }
+}
+
 /**
  * @param {string} auctionId
  * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
@@ -676,6 +688,9 @@ const OPEN_RTB_PROTOCOL = {
   interpretResponse(response, bidderRequests) {
     const bids = [];
 
+    [['errors', 'serverErrors'], ['responsetimemillis', 'serverResponseTimeMs']]
+      .forEach(info => getPbsResponseData(bidderRequests, response, info[0], info[1]))
+
     if (response.seatbid) {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
@@ -698,6 +713,8 @@ const OPEN_RTB_PROTOCOL = {
 
           bidObject.cpm = cpm;
 
+          // temporarily leaving attaching it to each bidResponse so no breaking change
+          // BUT: this is a flat map, so it should be only attached to bidderRequest, a the change above does
           let serverResponseTimeMs = utils.deepAccess(response, ['ext', 'responsetimemillis', seatbid.seat].join('.'));
           if (bidRequest && serverResponseTimeMs) {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
@@ -733,8 +750,8 @@ const OPEN_RTB_PROTOCOL = {
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
             let sizes = bidRequest.sizes && bidRequest.sizes[0];
-            bidObject.playerHeight = sizes[0];
-            bidObject.playerWidth = sizes[1];
+            bidObject.playerWidth = sizes[0];
+            bidObject.playerHeight = sizes[1];
 
             // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback

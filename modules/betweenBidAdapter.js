@@ -59,6 +59,10 @@ export const spec = {
         }
       }
 
+      if (i.schain) {
+        params.schain = encodeToBase64WebSafe(JSON.stringify(i.schain));
+      }
+
       if (refInfo && refInfo.referer) params.ref = refInfo.referer;
 
       if (gdprConsent) {
@@ -164,6 +168,10 @@ function getFl() {
 
 function getTz() {
   return new Date().getTimezoneOffset();
+}
+
+function encodeToBase64WebSafe(string) {
+  return btoa(string).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 /*

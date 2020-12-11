@@ -1,14 +1,14 @@
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'vdo.ai';
 const ENDPOINT_URL = 'https://prebid.vdo.ai/auction';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -40,7 +40,8 @@ export const spec = {
         height: height,
         bidId: bidRequest.bidId,
         referer: bidderRequest.refererInfo.referer,
-        id: bidRequest.auctionId
+        id: bidRequest.auctionId,
+        mediaType: bidRequest.mediaTypes.video ? 'video' : 'banner'
       };
       bidRequest.params.bidFloor && (payload['bidFloor'] = bidRequest.params.bidFloor);
       return {
@@ -90,8 +91,15 @@ export const spec = {
         ttl: config.getConfig('_bidderTimeout'),
         // referrer: referrer,
         // ad: response.adm
-        ad: adCreative
+        // ad: adCreative,
+        mediaType: response.mediaType
       };
+
+      if (response.mediaType == 'video') {
+        bidResponse.vastXml = adCreative;
+      } else {
+        bidResponse.ad = adCreative;
+      }
       bidResponses.push(bidResponse);
     }
     return bidResponses;
