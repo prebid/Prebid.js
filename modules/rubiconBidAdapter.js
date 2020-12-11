@@ -254,26 +254,12 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
-      const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
-      const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
-      if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
-        const bidderData = {
-          bidders: [ bidderRequest.bidderCode ],
-          config: {
-            fpd: {}
-          }
-        };
+      const bidFpd = {
+        user: bidRequest.params.visitor || {},
+        context: utils.mergeDeep({}, bidRequest.params.inventory || {}, {keywords: (bidRequest.params.keywords || '')})
+      };
 
-        if (!utils.isEmpty(siteData)) {
-          bidderData.config.fpd.site = siteData;
-        }
-
-        if (!utils.isEmpty(userData)) {
-          bidderData.config.fpd.user = userData;
-        }
-
-        utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
-      }
+      validateFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), VIDEO, data);
 
       /**
        * Prebid AdSlot
@@ -547,31 +533,12 @@ export const spec = {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
-    // visitor properties
-    const visitorData = Object.assign({}, params.visitor, config.getConfig('fpd.user'));
-    Object.keys(visitorData).forEach((key) => {
-      if (visitorData[key] != null && key !== 'keywords') {
-        data[`tg_v.${key}`] = typeof visitorData[key] === 'object' && !Array.isArray(visitorData[key])
-          ? JSON.stringify(visitorData[key])
-          : visitorData[key].toString(); // initialize array;
-      }
-    });
+    const bidFpd = {
+      user: bidRequest.params.visitor || {},
+      context: utils.mergeDeep({}, bidRequest.params.inventory || {}, {keywords: (bidRequest.params.keywords || '')})
+    };
 
-    // inventory properties
-    const inventoryData = Object.assign({}, params.inventory, config.getConfig('fpd.context'));
-    Object.keys(inventoryData).forEach((key) => {
-      if (inventoryData[key] != null && key !== 'keywords') {
-        data[`tg_i.${key}`] = typeof inventoryData[key] === 'object' && !Array.isArray(inventoryData[key])
-          ? JSON.stringify(inventoryData[key])
-          : inventoryData[key].toString();
-      }
-    });
-
-    // keywords
-    const keywords = (params.keywords || []).concat(
-      utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
-      utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
-    data.kw = Array.isArray(keywords) && keywords.length ? keywords.join(',') : '';
+    validateFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), BANNER, data);
 
     /**
      * Prebid AdSlot
@@ -947,6 +914,44 @@ function addVideoParameters(data, bidRequest) {
   const size = parseSizes(bidRequest, 'video')
   data.imp[0].video.w = size[0]
   data.imp[0].video.h = size[1]
+}
+
+function validateFPD(fpd, mediaType, data) {
+  const map = {user: {banner: 'tg_v.', video: 'user'}, context: {banner: 'tg_i.', video: 'site'}};
+
+  Object.keys(fpd).filter(value => fpd[value] && map[value] && typeof fpd[value] === 'object').forEach((type) => {
+    if (utils.deepAccess(fpd, `${type}.ext.data`) && mediaType === BANNER) {
+      utils.mergeDeep(fpd, {[type]: utils.deepAccess(fpd, `${type}.ext.data`)});
+    }
+
+    if (mediaType === BANNER && utils.deepAccess(fpd, 'user.keywords')) {
+      utils.mergeDeep(fpd, {context: {keywords: utils.deepAccess(fpd, 'user.keywords')}});
+      delete fpd.user.keywords;
+    }
+
+    Object.keys(fpd[type]).filter(value => fpd[type][value] && value !== 'ext').forEach((key) => {
+      if (mediaType === BANNER) {
+        if (typeof fpd[type][key] === 'object' && !Array.isArray(fpd[type][key])) {
+          utils.logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
+        } else {
+          data[(key === 'keywords' && type === 'context' ? 'kw' : `${map[type][mediaType]}${key}`)] = (Array.isArray(fpd[type][key])) ? fpd[type][key].filter(value => {
+            if (typeof value !== 'object') return value;
+
+            utils.logWarn('Rubicon: Filtered data value: ', value, ': Expected value to be string, integer, or an array of strings/ints');
+          }).toString() : fpd[type][key].toString();
+        }
+      } else {
+        if (key !== 'keywords') {
+          utils.mergeDeep(fpd[type], {ext: {data: {[key]: fpd[type][key]}}});
+          delete fpd[type][key];
+        }
+      }
+    });
+
+    if (mediaType === VIDEO) utils.mergeDeep(data, {[map[type][mediaType]]: fpd[type]});
+  });
+
+  return data;
 }
 
 /**

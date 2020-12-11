@@ -824,16 +824,26 @@ describe('the rubicon adapter', function () {
             });
           });
 
-          it('should use first party data from getConfig over the bid params, if present', () => {
+          it('should merge first party data from getConfig with the bid params, if present', () => {
             const context = {
               keywords: ['e', 'f'],
-              rating: '4-star'
+              rating: '4-star',
+              ext: {
+                data: {
+                  page: 'home'
+                }
+              }
             };
             const user = {
-              keywords: ['d'],
               gender: 'M',
               yob: '1984',
-              geo: {country: 'ca'}
+              geo: {country: 'ca'},
+              keywords: ['d'],
+              ext: {
+                data: {
+                  age: 40
+                }
+              }
             };
 
             sandbox.stub(config, 'getConfig').callsFake(key => {
@@ -847,14 +857,15 @@ describe('the rubicon adapter', function () {
             });
 
             const expectedQuery = {
-              'kw': 'a,b,c,d,e,f',
+              'kw': 'e,f,a,b,c,d',
               'tg_v.ucat': 'new',
               'tg_v.lastsearch': 'iphone',
               'tg_v.likes': 'sports,video games',
               'tg_v.gender': 'M',
+              'tg_v.age': '40',
               'tg_v.yob': '1984',
-              'tg_v.geo': '{"country":"ca"}',
-              'tg_i.rating': '4-star',
+              'tg_i.rating': '5-star',
+              'tg_i.page': 'home',
               'tg_i.prodtype': 'tech,mobile',
             };
 
@@ -1827,10 +1838,20 @@ describe('the rubicon adapter', function () {
           createVideoBidderRequest();
 
           const context = {
+            ext: {
+              data: {
+                page: 'home'
+              }
+            },
             keywords: ['e', 'f'],
             rating: '4-star'
           };
           const user = {
+            ext: {
+              data: {
+                age: 31
+              }
+            },
             keywords: ['d'],
             gender: 'M',
             yob: '1984',
@@ -1847,18 +1868,22 @@ describe('the rubicon adapter', function () {
             return utils.deepAccess(config, key);
           });
 
-          const expected = [{
-            bidders: ['rubicon'],
-            config: {
-              fpd: {
-                site: Object.assign({}, bidderRequest.bids[0].params.inventory, context),
-                user: Object.assign({}, bidderRequest.bids[0].params.visitor, user)
-              }
-            }
-          }];
-
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.ext.prebid.bidderconfig).to.deep.equal(expected);
+
+          const expected = {
+            site: Object.assign({}, context, context.ext.data, bidderRequest.bids[0].params.inventory),
+            user: Object.assign({}, user, user.ext.data, bidderRequest.bids[0].params.visitor)
+          };
+
+          delete expected.site.ext;
+          delete expected.user.ext;
+          delete expected.site.keywords;
+          delete expected.user.keywords;
+
+          expect(request.data.site.keywords).to.deep.equal(['e', 'f', 'a', 'b', 'c']);
+          expect(request.data.user.keywords).to.deep.equal(['d']);
+          expect(request.data.site.ext.data).to.deep.equal(expected.site);
+          expect(request.data.user.ext.data).to.deep.equal(expected.user);
         });
 
         it('should include storedAuctionResponse in video bid request', function () {
@@ -2042,7 +2067,7 @@ describe('the rubicon adapter', function () {
         it('should not fail if keywords param is not an array', function () {
           bidderRequest.bids[0].params.keywords = 'a,b,c';
           const slotParams = spec.createSlotParams(bidderRequest.bids[0], bidderRequest);
-          expect(slotParams.kw).to.equal('');
+          expect(slotParams.kw).to.equal('a,b,c');
         });
       });
 
