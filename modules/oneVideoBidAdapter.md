@@ -325,7 +325,7 @@ const adUnits = [{
                             title: "Title",
                             series: "Series",
                             season: "Season",
-                            episode: "Episode",
+                            episode: 1
                             cat: [
                                 "IAB1",
                                 "IAB1-1",
