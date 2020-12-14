@@ -20,8 +20,9 @@ const SHAREDID_URL = 'https://id.sharedid.org/id';
 const SHAREDID_SUFFIX = '_sharedid';
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const SHAREDID_DEFAULT_STATE = false;
+const GVLID = 887;
 
-const storage = getStorageManager(null, 'pubCommonId');
+const storage = getStorageManager(GVLID, 'pubCommonId');
 
 /**
  * Store sharedid in either cookie or local storage
@@ -159,7 +160,11 @@ export const pubCommonIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
-
+  /**
+   * Vendor id of prebid
+   * @type {Number}
+   */
+  gvlid: GVLID,
   /**
    * Return a callback function that calls the pixelUrl with id as a query parameter
    * @param pixelUrl

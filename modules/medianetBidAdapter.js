@@ -204,7 +204,7 @@ function slotParams(bidRequest) {
     params.tagid = bidRequest.params.crid.toString();
   }
 
-  let bidFloor = parseFloat(bidRequest.params.bidfloor);
+  let bidFloor = parseFloat(bidRequest.params.bidfloor || bidRequest.params.bidFloor);
   if (bidFloor) {
     params.bidfloor = bidFloor;
   }

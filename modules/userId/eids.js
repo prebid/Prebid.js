@@ -158,9 +158,15 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // Verizon Media
-  'vmuid': {
+  // Verizon Media ConnectID
+  'connectid': {
     source: 'verizonmedia.com',
+    atype: 1
+  },
+
+  // Neustar Fabrick
+  'fabrickId': {
+    source: 'neustar.biz',
     atype: 1
   }
 };
