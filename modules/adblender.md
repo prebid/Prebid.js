@@ -2,7 +2,7 @@
 
 Module Name: AdBlender Bidder Adapter  
 Module Type: Bidder Adapter  
-Maintainer: contact@adblender.net
+Maintainer: contact@ad-blender.com
 
 # Description
 
