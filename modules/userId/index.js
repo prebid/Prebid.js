@@ -124,6 +124,7 @@ import CONSTANTS from '../../src/constants.json';
 import { module, hook } from '../../src/hook.js';
 import { createEidsArray } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
+import {getEidPermissions} from "./eids";
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -393,14 +394,15 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
     return;
   }
   adUnits.forEach(adUnit => {
+    let eidPermissions = getEidPermissions(submodules);
     if (adUnit.bids && utils.isArray(adUnit.bids)) {
       adUnit.bids.forEach(bid => {
         const combinedSubmoduleIds = getCombinedSubmoduleIdsForBidder(submodules, bid.bidder);
         if (Object.keys(combinedSubmoduleIds).length) {
-          const combinedSubmoduleIdsAsEids = createEidsArray(combinedSubmoduleIds);
           // create a User ID object on the bid,
           bid.userId = combinedSubmoduleIds;
-          bid.userIdAsEids = combinedSubmoduleIdsAsEids;
+          bid.userIdAsEids = createEidsArray(combinedSubmoduleIds);
+          bid.eidPermissions = eidPermissions;
         }
       });
     }

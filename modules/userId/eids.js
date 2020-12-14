@@ -1,4 +1,5 @@
 import * as utils from '../../src/utils.js';
+import {isArray} from "../../src/utils";
 
 // Each user-id sub-module is expected to mention respective config here
 const USER_IDS_CONFIG = {
@@ -213,4 +214,29 @@ export function createEidsArray(bidRequestUserId) {
     }
   }
   return eids;
+}
+
+/**
+ * @param {SubmoduleContainer[]} submodules
+ */
+export function getEidPermissions(submodules) {
+  let eidPermissions = [];
+  submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length && i.config)
+    .forEach(i => {
+      Object.keys(i.idObj).forEach(key => {
+        let conf = USER_IDS_CONFIG[key];
+        if (conf) {
+          let source = conf['source'];
+          if (source) {
+            eidPermissions.push(
+              {
+                source: source,
+                bidder: (i.config.bidders && isArray(i.config.bidders) ? i.config.bidders : ['*'])
+              }
+            )
+          }
+        }
+      });
+    });
+  return eidPermissions;
 }

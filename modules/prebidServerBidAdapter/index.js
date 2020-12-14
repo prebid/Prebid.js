@@ -637,6 +637,11 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'user.ext.eids', bidUserIdAsEids);
     }
 
+    const eidPermissions = utils.deepAccess(bidRequests, '0.bids.0.eidPermissions');
+    if (utils.isArray(eidPermissions) && eidPermissions.length > 0) {
+      utils.deepSetValue(request, 'ext.prebid.data.eidPermissions', eidPermissions);
+    }
+
     if (bidRequests) {
       if (firstBidRequest.gdprConsent) {
         // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
