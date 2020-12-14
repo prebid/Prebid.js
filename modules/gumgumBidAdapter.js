@@ -273,6 +273,10 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.iriscat = params.iriscat;
     }
 
+    if (params.irisid && typeof params.irisid === 'string') {
+      data.irisid = params.irisid;
+    }
+
     if (params.zone) {
       data.t = params.zone;
       data.pi = 2; // inscreen
