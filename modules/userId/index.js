@@ -394,7 +394,7 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
     return;
   }
   adUnits.forEach(adUnit => {
-    let eidPermissions = getEidPermissions(submodules);
+    const eidPermissions = getEidPermissions(submodules);
     if (adUnit.bids && utils.isArray(adUnit.bids)) {
       adUnit.bids.forEach(bid => {
         const combinedSubmoduleIds = getCombinedSubmoduleIdsForBidder(submodules, bid.bidder);
