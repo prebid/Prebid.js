@@ -335,7 +335,7 @@ describe('sovrnBidAdapter', function() {
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
         'ext': {
-          "ttl": 90
+          'ttl': 90
         }
       }];
 
@@ -358,7 +358,7 @@ describe('sovrnBidAdapter', function() {
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
         'ext': {
-          "ttl": 90
+          'ttl': 90
         }
       }];
 
@@ -381,7 +381,7 @@ describe('sovrnBidAdapter', function() {
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
         'ext': {
-          "ttl": 480
+          'ttl': 480
         }
       }];
 
