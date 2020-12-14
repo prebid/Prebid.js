@@ -293,7 +293,8 @@ describe('sovrnBidAdapter', function() {
               'nurl': '<!-- NURL -->',
               'adm': '<!-- Creative -->',
               'h': 90,
-              'w': 728
+              'w': 728,
+              'ext': {}
             }]
           }]
         }
