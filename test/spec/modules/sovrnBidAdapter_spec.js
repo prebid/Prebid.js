@@ -293,8 +293,7 @@ describe('sovrnBidAdapter', function() {
               'nurl': '<!-- NURL -->',
               'adm': '<!-- Creative -->',
               'h': 90,
-              'w': 728,
-              'ext': {}
+              'w': 728
             }]
           }]
         }
@@ -362,7 +361,7 @@ describe('sovrnBidAdapter', function() {
     });
 
     it('should get correct bid response when ttl is set', function () {
-      response.body.seatbid[0].bid[0].ext.ttl = 480;
+      response.body.seatbid[0].bid[0].ext = { 'ttl': 480 };
 
       let expectedResponse = [{
         'requestId': '263c448586f5a1',
