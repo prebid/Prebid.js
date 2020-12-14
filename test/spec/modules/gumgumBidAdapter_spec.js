@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -462,16 +463,15 @@ describe('gumgumAdapter', function () {
       pi: 3
     }
     let expectedResponse = {
-      'ad': '<html><h3>I am an ad</h3></html>',
-      'cpm': 0,
-      'creativeId': 29593,
-      'currency': 'USD',
-      'height': '250',
-      'netRevenue': true,
-      'requestId': 12345,
-      'width': '300',
-      // dealId: DEAL_ID,
-      // referrer: REFERER,
+      ad: '<html><h3>I am an ad</h3></html>',
+      cpm: 0,
+      creativeId: 29593,
+      currency: 'USD',
+      height: '250',
+      netRevenue: true,
+      requestId: 12345,
+      width: '300',
+      mediaType: BANNER,
       ttl: 60
     };
 
@@ -551,6 +551,20 @@ describe('gumgumAdapter', function () {
       const bidResponse = spec.interpretResponse({ body: response }, bidRequest)[0].ad;
       const decodedResponse = JSON.parse(atob(bidResponse));
       expect(decodedResponse.jcsi).to.eql(JCSI);
+    });
+
+    it('sets the correct mediaType depending on product', function () {
+      const bannerBidResponse = spec.interpretResponse({ body: serverResponse }, bidRequest)[0];
+      const invideoBidResponse = spec.interpretResponse({ body: serverResponse }, { ...bidRequest, data: { pi: 6 } })[0];
+      const videoBidResponse = spec.interpretResponse({ body: serverResponse }, { ...bidRequest, data: { pi: 7 } })[0];
+      expect(bannerBidResponse.mediaType).to.equal(BANNER);
+      expect(invideoBidResponse.mediaType).to.equal(VIDEO);
+      expect(videoBidResponse.mediaType).to.equal(VIDEO);
+    });
+
+    it('sets a vastXml property if mediaType is video', function () {
+      const videoBidResponse = spec.interpretResponse({ body: serverResponse }, { ...bidRequest, data: { pi: 7 } })[0];
+      expect(videoBidResponse.vastXml).to.exist;
     });
   })
   describe('getUserSyncs', function () {

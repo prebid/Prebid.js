@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-const BIDDER_CODE = 'Zeta Global';
+const BIDDER_CODE = 'zeta_global';
 const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
 const USER_SYNC_URL = 'https://p.rfihub.com/cm?pub=42770&in=1';
 const DEFAULT_CUR = 'USD';
@@ -26,7 +26,8 @@ export const spec = {
       bid.params &&
       bid.params.ip &&
       bid.params.user &&
-      bid.params.user.buyeruid
+      bid.params.user.buyeruid &&
+      bid.params.definerId
     );
     if (!isValid) {
       utils.logWarn('Invalid bid request');
@@ -67,6 +68,9 @@ export const spec = {
         buyeruid: params.user.buyeruid,
         uid: params.user.uid
       },
+      ext: {
+        definerId: params.definerId
+      }
     };
     if (params.test) {
       payload.test = params.test;

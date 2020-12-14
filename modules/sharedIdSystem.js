@@ -21,6 +21,7 @@ const TIME_MAX = Math.pow(2, 48) - 1;
 const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 const id = factory();
+const GVLID = 887;
 /**
  * Constructs cookie value
  * @param value
@@ -284,6 +285,11 @@ export const sharedIdSubmodule = {
   name: MODULE_NAME,
 
   /**
+   * Vendor id of Prebid
+   * @type {Number}
+   */
+  gvlid: GVLID,
+  /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
@@ -296,10 +302,10 @@ export const sharedIdSubmodule = {
   /**
    * performs action to obtain id and return a value.
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @returns {sharedId}
    */
-  getId(configParams) {
+  getId(config) {
     const resp = function (callback) {
       utils.logInfo('SharedId: Sharedid doesnt exists, new cookie creation');
       ajax(ID_SVC, idGenerationCallback(callback), undefined, {method: 'GET', withCredentials: true});
@@ -309,11 +315,12 @@ export const sharedIdSubmodule = {
 
   /**
    * performs actions even if the id exists and returns a value
-   * @param configParams
+   * @param config
    * @param storedId
    * @returns {{callback: *}}
    */
-  extendId(configParams, storedId) {
+  extendId(config, storedId) {
+    const configParams = (config && config.params) || {};
     utils.logInfo('SharedId: Existing shared id ' + storedId.id);
     const resp = function (callback) {
       const needSync = isIdSynced(configParams, storedId);

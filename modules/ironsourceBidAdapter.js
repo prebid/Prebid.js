@@ -7,7 +7,11 @@ const SUPPORTED_AD_TYPES = [VIDEO];
 const BIDDER_CODE = 'ironsource';
 const BIDDER_VERSION = '4.0.0';
 const TTL = 360;
-const SELLER_ENDPOINT = 'https://hb.yellowblue.io/hb';
+const SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
+const MODES = {
+  PRODUCTION: 'hb',
+  TEST: 'hb-test'
+}
 const SUPPORTED_SYNC_METHODS = {
   IFRAME: 'iframe',
   PIXEL: 'pixel'
@@ -44,7 +48,7 @@ export const spec = {
       creativeId: body.requestId,
       currency: body.currency,
       netRevenue: body.netRevenue,
-      ttl: TTL,
+      ttl: body.ttl || TTL,
       vastXml: body.vastXml,
       mediaType: VIDEO
     };
@@ -86,9 +90,10 @@ registerBidder(spec);
  */
 function buildVideoRequest(bid, bidderRequest) {
   const sellerParams = generateParameters(bid, bidderRequest);
+  const {params} = bid;
   return {
     method: 'GET',
-    url: SELLER_ENDPOINT,
+    url: getEndpoint(params.testMode),
     data: sellerParams
   };
 }
@@ -167,6 +172,17 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
   const isInclude = syncRule.filter === 'include';
   const bidders = utils.isArray(syncRule.bidders) ? syncRule.bidders : [bidderCode];
   return isInclude && utils.contains(bidders, bidderCode);
+}
+
+/**
+ * Get the seller endpoint
+ * @param testMode {boolean}
+ * @returns {string}
+ */
+function getEndpoint(testMode) {
+  return testMode
+    ? SELLER_ENDPOINT + MODES.TEST
+    : SELLER_ENDPOINT + MODES.PRODUCTION;
 }
 
 /**

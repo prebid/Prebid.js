@@ -150,6 +150,24 @@ const USER_IDS_CONFIG = {
   'quantcastId': {
     source: 'quantcast.com',
     atype: 1
+  },
+
+  // IDx
+  'idx': {
+    source: 'idx.lat',
+    atype: 1
+  },
+
+  // Verizon Media ConnectID
+  'connectid': {
+    source: 'verizonmedia.com',
+    atype: 1
+  },
+
+  // Neustar Fabrick
+  'fabrickId': {
+    source: 'neustar.biz',
+    atype: 1
   }
 };
 

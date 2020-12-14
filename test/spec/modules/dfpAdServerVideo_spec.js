@@ -7,6 +7,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { targeting } from 'src/targeting.js';
 import { auctionManager } from 'src/auctionManager.js';
+import { uspDataHandler } from 'src/adapterManager.js';
 import * as adpod from 'modules/adpod.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -113,6 +114,44 @@ describe('The DFP video support module', function () {
     expect(customParams).to.have.property('hb_adid', 'ad_id');
     expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
     expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
+  });
+
+  it('should include the us_privacy key when USP Consent is available', function () {
+    let uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
+    uspDataHandlerStub.returns('1YYY');
+
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
+      hb_adid: 'ad_id',
+    });
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = utils.parseQS(url.query);
+    expect(queryObject.us_privacy).to.equal('1YYY');
+    uspDataHandlerStub.restore();
+  });
+
+  it('should not include the us_privacy key when USP Consent is not available', function () {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
+      hb_adid: 'ad_id',
+    });
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = utils.parseQS(url.query);
+    expect(queryObject.us_privacy).to.equal(undefined);
   });
 
   describe('special targeting unit test', function () {
@@ -350,6 +389,8 @@ describe('The DFP video support module', function () {
 
     it('should return masterTag url', function() {
       amStub.returns(getBidsReceived());
+      let uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
+      uspDataHandlerStub.returns('1YYY');
       let url;
       parse(buildAdpodVideoUrl({
         code: 'adUnitCode-1',
@@ -380,10 +421,12 @@ describe('The DFP video support module', function () {
         expect(queryParams).to.have.property('unviewed_position_start', '1');
         expect(queryParams).to.have.property('url');
         expect(queryParams).to.have.property('cust_params');
+        expect(queryParams).to.have.property('us_privacy', '1YYY');
 
         const custParams = utils.parseQS(decodeURIComponent(queryParams.cust_params));
         expect(custParams).to.have.property('hb_cache_id', '123');
         expect(custParams).to.have.property('hb_pb_cat_dur', '15.00_395_15s,15.00_406_30s,10.00_395_15s');
+        uspDataHandlerStub.restore();
       }
     });
 
