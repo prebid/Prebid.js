@@ -312,7 +312,9 @@ describe('sovrnBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
-        'ttl': 60000
+        'ext': {
+          'ttl': 60000
+        }
       }];
 
       let result = spec.interpretResponse(response);
@@ -332,7 +334,9 @@ describe('sovrnBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
-        'ttl': 90
+        'ext': {
+          "ttl": 90
+        }
       }];
 
       let result = spec.interpretResponse(response);
@@ -353,7 +357,9 @@ describe('sovrnBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
-        'ttl': 90
+        'ext': {
+          "ttl": 90
+        }
       }];
 
       let result = spec.interpretResponse(response);
@@ -361,7 +367,7 @@ describe('sovrnBidAdapter', function() {
     });
 
     it('should get correct bid response when ttl is set', function () {
-      response.body.seatbid[0].bid[0].ttl = 480;
+      response.body.seatbid[0].bid[0].ext.ttl = 480;
 
       let expectedResponse = [{
         'requestId': '263c448586f5a1',
@@ -374,7 +380,9 @@ describe('sovrnBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
-        'ttl': 480
+        'ext': {
+          "ttl": 480
+        }
       }];
 
       let result = spec.interpretResponse(response);
