@@ -1,7 +1,5 @@
 import * as utils from '../src/utils.js';
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
@@ -18,7 +16,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function (bid) {
+  isBidRequestValid: function(bid) {
     if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
       return false;
     }
@@ -51,7 +49,7 @@ export const spec = {
    * @param bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (bids, bidRequest) {
+  buildRequests: function(bids, bidRequest) {
     let consentData = bidRequest ? bidRequest.gdprConsent : null;
 
     return bids.map(bid => {
@@ -77,9 +75,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (response, {
-    bidRequest
-  }) {
+  interpretResponse: function(response, {bidRequest}) {
     let bid;
     let size;
     let bidResponse;
@@ -131,7 +127,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function (syncOptions, responses, consentData = {}) {
+  getUserSyncs: function(syncOptions, responses, consentData = {}) {
     let {
       gdprApplies,
       consentString = ''
@@ -149,15 +145,14 @@ export const spec = {
       {
         type: 'image',
         url: spec.SYNC_ENDPOINT2
-      }
-      ];
+      }];
     }
   }
 };
 
 function getSize(sizes) {
   let parsedSizes = utils.parseSizesInput(sizes);
-  let [width, height] = parsedSizes.length ? parsedSizes[0].split('x') : [];
+  let [ width, height ] = parsedSizes.length ? parsedSizes[0].split('x') : [];
   return {
     width: parseInt(width, 10) || undefined,
     height: parseInt(height, 10) || undefined
@@ -320,7 +315,7 @@ function getRequestData(bid, consentData, bidRequest) {
   }
   if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
     bidData.imp[0].content = {};
-    const contentStringKeys = ['id', 'title', 'series', 'season', 'artist', 'genre', 'contentrating', 'language'];
+    const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
     const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
     const contentArrayKeys = ['cat'];
     const contentObjectKeys = ['ext'];
@@ -351,8 +346,8 @@ function newRenderer(bidRequest, bid) {
   if (!bidRequest.renderer) {
     bidRequest.renderer = {};
     bidRequest.renderer.url = 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js';
-    bidRequest.renderer.render = function (bid) {
-      setTimeout(function () {
+    bidRequest.renderer.render = function(bid) {
+      setTimeout(function() {
         // eslint-disable-next-line no-undef
         o2PlayerRender(bid);
       }, 700)

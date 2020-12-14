@@ -326,7 +326,6 @@ const adUnits = [{
                             series: "Series",
                             season: "Season",
                             episode: "Episode",
-                            artist: "Artist",
                             cat: [
                                 "IAB1",
                                 "IAB1-1",
@@ -335,32 +334,12 @@ const adUnits = [{
                                 "IAB2-1"
                             ],
                             genre: "Genre",
-                            album: "Album",
-                            isrc: "Isrc",
-                            producer: "Producer",
-                            url: "http://something.com",
                             contentrating: "C-Rating",
-                            userrating: "U-Rating",
-                            keywords: "key,word,values",
                             language: "EN",
                             prodq: 1,
                             context: 1,
-                            data: [{
-                                id: "Data-id",
-                                name: "Data-name",
-                                segment: [{
-                                    id: "seg-id",
-                                    name: "seg-name",
-                                    value: "seg-value",
-                                    ext: {}
-                                }],
-                                ext: {}
-                            }],
-                            qagmediarating: 1,
                             livestream: 0,
-                            sourcerelationship: 0,
                             len: 360,
-                            embeddable: 0,
                             ext: {
                                 network: "ext-network",
                                 channel: "ext-channel"
