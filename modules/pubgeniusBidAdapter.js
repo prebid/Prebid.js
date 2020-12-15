@@ -253,10 +253,6 @@ function interpretBid(bid) {
         bidResponse.vastXml = bid.adm;
       }
 
-      if (pbadapter.cacheKey) {
-        bidResponse.videoCacheKey = pbadapter.cacheKey;
-      }
-
       bidResponse.mediaType = VIDEO;
       break;
     default: // banner by default
