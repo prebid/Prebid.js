@@ -61,9 +61,9 @@ export const spec = {
     const response = serverResponse.body;
     const creativeId = response.adid || 0;
     // const width = response.w || 0;
-    const width = bidRequest.data.width;
+    const width = response.width;
     // const height = response.h || 0;
-    const height = bidRequest.data.height;
+    const height = response.height;
     const cpm = response.price || 0;
 
     response.rWidth = width;
