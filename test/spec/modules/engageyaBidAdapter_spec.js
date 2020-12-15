@@ -4,6 +4,17 @@ import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://recs.engageya.com/rec-api/getrecs.json';
 
+export const _getUrlVars = function(url) {
+  var hash;
+  var myJson = {};
+  var hashes = url.slice(url.indexOf('?') + 1).split('&');
+  for (var i = 0; i < hashes.length; i++) {
+    hash = hashes[i].split('=');
+    myJson[hash[0]] = hash[1];
+  }
+  return myJson;
+}
+
 describe('engageya adapter', function() {
   let bidRequests;
   let nativeBidRequests;
