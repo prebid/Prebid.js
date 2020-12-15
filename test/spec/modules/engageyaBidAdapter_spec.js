@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, _getUrlVars} from 'modules/engageyaBidAdapter.js';
+import {spec} from 'modules/engageyaBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://recs.engageya.com/rec-api/getrecs.json';
