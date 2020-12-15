@@ -784,6 +784,18 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
+    it('should set the X-Is-Test customHeader if test flag is enabled', function () {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon.stub(config, 'getConfig')
+        .withArgs('apn_test')
+        .returns(true);
+
+      const request = spec.buildRequests([bidRequest]);
+      expect(request.options.customHeaders).to.deep.equal({'X-Is-Test': 1});
+
+      config.getConfig.restore();
+    });
+
     it('should set withCredentials to false if purpose 1 consent is not given', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {

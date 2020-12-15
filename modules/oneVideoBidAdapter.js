@@ -4,7 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  VERSION: '3.0.4',
+  VERSION: '3.0.5',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   E2ETESTENDPOINT: 'https://ads-wc.v.ssp.yahoo.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true',
@@ -99,7 +99,7 @@ export const spec = {
       width: size.width,
       height: size.height,
       currency: response.cur,
-      ttl: 100,
+      ttl: (bidRequest.params.video.ttl > 0 && bidRequest.params.video.ttl <= 3600) ? bidRequest.params.video.ttl : 300,
       netRevenue: true,
       adUnitCode: bidRequest.adUnitCode
     };
@@ -113,7 +113,6 @@ export const spec = {
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
-
     if (bidRequest.mediaTypes.video) {
       bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
     }
