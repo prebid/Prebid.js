@@ -64,7 +64,7 @@ var adUnits = [
         placement: 1,
         protocols: [1, 2]
       }
-    }
+    },
     bids: [
       {
         bidder: 'gumgum',
