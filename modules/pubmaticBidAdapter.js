@@ -847,7 +847,7 @@ export const spec = {
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric (wrap it in quotes in your config). Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
       // video ad validation
@@ -938,7 +938,7 @@ export const spec = {
     payload.ext.wrapper = {};
     payload.ext.wrapper.profile = parseInt(conf.profId) || UNDEFINED;
     payload.ext.wrapper.version = parseInt(conf.verId) || UNDEFINED;
-    payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
+    payload.ext.wrapper.wiid = conf.wiid || bidderRequest.auctionId;
     // eslint-disable-next-line no-undef
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
@@ -951,6 +951,11 @@ export const spec = {
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
+
+    // add the content object from config in request
+    if (typeof config.getConfig('content') === 'object') {
+      payload.site.content = config.getConfig('content');
+    }
 
     // merge the device from config.getConfig('device')
     if (typeof config.getConfig('device') === 'object') {
@@ -997,6 +1002,11 @@ export const spec = {
       // not copying domain from site as it is a derived value from page
       payload.app.publisher = payload.site.publisher;
       payload.app.ext = payload.site.ext || UNDEFINED;
+      // We will also need to pass content object in app.content if app object is also set into the config;
+      // BUT do not use content object from config if content object is present in app as app.content
+      if (typeof payload.app.content !== 'object') {
+        payload.app.content = payload.site.content || UNDEFINED;
+      }
       delete payload.site;
     }
 

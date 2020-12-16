@@ -369,6 +369,18 @@ function addWurl(auctionId, adId, wurl) {
   }
 }
 
+function getPbsResponseData(bidderRequests, response, pbsName, pbjsName) {
+  const bidderValues = utils.deepAccess(response, `ext.${pbsName}`);
+  if (bidderValues) {
+    Object.keys(bidderValues).forEach(bidder => {
+      let biddersReq = find(bidderRequests, bidderReq => bidderReq.bidderCode === bidder);
+      if (biddersReq) {
+        biddersReq[pbjsName] = bidderValues[bidder];
+      }
+    });
+  }
+}
+
 /**
  * @param {string} auctionId
  * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
@@ -504,6 +516,9 @@ const OPEN_RTB_PROTOCOL = {
           // Don't push oustream w/o renderer to request object.
           utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
         } else {
+          if (videoParams.context === 'instream' && !videoParams.hasOwnProperty('placement')) {
+            videoParams.placement = 1;
+          }
           mediaTypes['video'] = videoParams;
         }
       }
@@ -551,13 +566,15 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       /**
-       * GAM Ad Unit
-       * @type {(string|undefined)}
+       * Copy GAM AdUnit and Name to imp
        */
-      const gamAdUnit = utils.deepAccess(adUnit, 'fpd.context.adServer.adSlot');
-      if (typeof gamAdUnit === 'string' && gamAdUnit) {
-        utils.deepSetValue(imp, 'ext.context.data.adslot', gamAdUnit);
-      }
+      ['name', 'adSlot'].forEach(name => {
+        /** @type {(string|undefined)} */
+        const value = utils.deepAccess(adUnit, `fpd.context.adserver.${name}`);
+        if (typeof value === 'string' && value) {
+          utils.deepSetValue(imp, `ext.context.data.adserver.${name.toLowerCase()}`, value);
+        }
+      });
 
       Object.assign(imp, mediaTypes);
 
@@ -641,6 +658,9 @@ const OPEN_RTB_PROTOCOL = {
         }
         utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
         utils.deepSetValue(request, 'user.ext.consent', firstBidRequest.gdprConsent.consentString);
+        if (firstBidRequest.gdprConsent.addtlConsent && typeof firstBidRequest.gdprConsent.addtlConsent === 'string') {
+          utils.deepSetValue(request, 'user.ext.ConsentedProvidersSettings.consented_providers', firstBidRequest.gdprConsent.addtlConsent);
+        }
       }
 
       // US Privacy (CCPA) support
@@ -668,6 +688,9 @@ const OPEN_RTB_PROTOCOL = {
   interpretResponse(response, bidderRequests) {
     const bids = [];
 
+    [['errors', 'serverErrors'], ['responsetimemillis', 'serverResponseTimeMs']]
+      .forEach(info => getPbsResponseData(bidderRequests, response, info[0], info[1]))
+
     if (response.seatbid) {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
@@ -690,6 +713,8 @@ const OPEN_RTB_PROTOCOL = {
 
           bidObject.cpm = cpm;
 
+          // temporarily leaving attaching it to each bidResponse so no breaking change
+          // BUT: this is a flat map, so it should be only attached to bidderRequest, a the change above does
           let serverResponseTimeMs = utils.deepAccess(response, ['ext', 'responsetimemillis', seatbid.seat].join('.'));
           if (bidRequest && serverResponseTimeMs) {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
@@ -725,8 +750,8 @@ const OPEN_RTB_PROTOCOL = {
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
             let sizes = bidRequest.sizes && bidRequest.sizes[0];
-            bidObject.playerHeight = sizes[0];
-            bidObject.playerWidth = sizes[1];
+            bidObject.playerWidth = sizes[0];
+            bidObject.playerHeight = sizes[1];
 
             // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
@@ -817,9 +842,9 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.meta = bidObject.meta || {};
           if (bid.adomain) { bidObject.meta.advertiserDomains = bid.adomain; }
 
-          // TODO: Remove when prebid-server returns ttl and netRevenue
           const configTtl = _s2sConfig.defaultTtl || DEFAULT_S2S_TTL;
-          bidObject.ttl = (bid.ttl) ? bid.ttl : configTtl;
+          // the OpenRTB location for "TTL" as understood by Prebid.js is "exp" (expiration).
+          bidObject.ttl = (bid.exp) ? bid.exp : configTtl;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
           bids.push({ adUnit: bid.impid, bid: bidObject });

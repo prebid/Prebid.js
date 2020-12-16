@@ -107,7 +107,19 @@ export const spec = {
         .filter(param => includes(USER_PARAMS, param))
         .forEach((param) => {
           let uparam = utils.convertCamelToUnderscore(param);
-          userObj[uparam] = userObjBid.params.user[param]
+          if (param === 'segments' && utils.isArray(userObjBid.params.user[param])) {
+            let segs = [];
+            userObjBid.params.user[param].forEach(val => {
+              if (utils.isNumber(val)) {
+                segs.push({'id': val});
+              } else if (utils.isPlainObject(val)) {
+                segs.push(val);
+              }
+            });
+            userObj[uparam] = segs;
+          } else if (param !== 'segments') {
+            userObj[uparam] = userObjBid.params.user[param];
+          }
         });
     }
 
@@ -157,6 +169,7 @@ export const spec = {
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
     const schain = bidRequests[0].schain;
+    const omidSupport = find(bidRequests, hasOmidSupport);
 
     const payload = {
       tags: [...tags],
@@ -167,6 +180,13 @@ export const spec = {
       },
       schain: schain
     };
+
+    if (omidSupport) {
+      payload['iab_support'] = {
+        omidpn: 'Appnexus',
+        omidpv: '$prebid.version$'
+      }
+    }
 
     if (member > 0) {
       payload.member_id = member;
@@ -220,8 +240,8 @@ export const spec = {
       });
     }
 
-    let eids = [];
     const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
+    let eids = [];
     if (criteoId) {
       eids.push({
         source: 'criteo.com',
@@ -475,6 +495,12 @@ function formatRequest(payload, bidderRequest) {
   if (!hasPurpose1Consent(bidderRequest)) {
     options = {
       withCredentials: false
+    }
+  }
+
+  if (utils.getParameterByName('apn_test').toUpperCase() === 'TRUE' || config.getConfig('apn_test') === true) {
+    options.customHeaders = {
+      'X-Is-Test': 1
     }
   }
 
@@ -764,14 +790,25 @@ function bidToTag(bid) {
             type = (utils.isArray(type)) ? type[0] : type;
             tag.video[param] = VIDEO_MAPPING[param][type];
             break;
+          // Deprecating tags[].video.frameworks in favor of tags[].video_frameworks
+          case 'frameworks':
+            break;
           default:
             tag.video[param] = bid.params.video[param];
         }
       });
+
+    if (bid.params.video.frameworks && utils.isArray(bid.params.video.frameworks)) {
+      tag['video_frameworks'] = bid.params.video.frameworks;
+    }
   }
 
   if (bid.renderer) {
     tag.video = Object.assign({}, tag.video, { custom_renderer_present: true });
+  }
+
+  if (bid.params.frameworks && utils.isArray(bid.params.frameworks)) {
+    tag['banner_frameworks'] = bid.params.frameworks;
   }
 
   let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
@@ -840,6 +877,19 @@ function hasAdPod(bid) {
     bid.mediaTypes.video &&
     bid.mediaTypes.video.context === ADPOD
   );
+}
+
+function hasOmidSupport(bid) {
+  let hasOmid = false;
+  const bidderParams = bid.params;
+  const videoParams = bid.params.video;
+  if (bidderParams.frameworks && utils.isArray(bidderParams.frameworks)) {
+    hasOmid = includes(bid.params.frameworks, 6);
+  }
+  if (!hasOmid && videoParams && videoParams.frameworks && utils.isArray(videoParams.frameworks)) {
+    hasOmid = includes(bid.params.video.frameworks, 6);
+  }
+  return hasOmid;
 }
 
 /**

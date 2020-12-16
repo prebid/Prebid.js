@@ -269,7 +269,7 @@ describe('synacormediaBidAdapter ', function () {
       let req = spec.buildRequests([mismatchedSeatBidRequest, validBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/somethingelse?');
+      expect(req.url).to.contain('https://somethingelse.technoratimedia.com/openrtb/bids/somethingelse?');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {

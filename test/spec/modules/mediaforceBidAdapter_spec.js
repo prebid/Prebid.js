@@ -100,6 +100,37 @@ describe('mediaforce bid adapter', function () {
       transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
     };
 
+    const multiBid = [
+      {
+        publisher_id: 'pub123',
+        placement_id: '202',
+      },
+      {
+        publisher_id: 'pub123',
+        placement_id: '203',
+      },
+      {
+        publisher_id: 'pub124',
+        placement_id: '202',
+      },
+      {
+        publisher_id: 'pub123',
+        placement_id: '203',
+        transactionId: '8df76688-1618-417a-87b1-60ad046841c9'
+      }
+    ].map(({publisher_id, placement_id, transactionId}) => {
+      return {
+        bidder: 'mediaforce',
+        params: {publisher_id, placement_id},
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [600, 400]]
+          }
+        },
+        transactionId: transactionId || 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+      }
+    });
+
     const refererInfo = {
       referer: 'https://www.prebid.org',
       reachedTop: true,
@@ -111,7 +142,9 @@ describe('mediaforce bid adapter', function () {
 
     const requestUrl = `${baseUrl}/header_bid`;
     const dnt = utils.getDNT() ? 1 : 0;
-    const secure = 1;
+    const secure = window.location.protocol === 'https' ? 1 : 0;
+    const pageUrl = window.location.href;
+    const timeout = 1500;
 
     it('should return undefined if no validBidRequests passed', function () {
       assert.equal(spec.buildRequests([]), undefined);
@@ -127,18 +160,29 @@ describe('mediaforce bid adapter', function () {
       bid.params.bidfloor = 0.5;
 
       let bidRequests = [bid];
-      let bidderRequest = {bids: bidRequests, refererInfo: refererInfo};
+      let bidderRequest = {
+        bids: bidRequests,
+        refererInfo: refererInfo,
+        timeout: timeout,
+        auctionId: '210a474e-88f0-4646-837f-4253b7cf14fb'
+      };
 
       let [request] = spec.buildRequests(bidRequests, bidderRequest);
 
       let data = JSON.parse(request.data);
       assert.deepEqual(data, {
-        id: bid.transactionId,
+        id: data.id,
+        tmax: timeout,
+        ext: {
+          mediaforce: {
+            hb_key: bidderRequest.auctionId
+          }
+        },
         site: {
           id: bid.params.publisher_id,
           publisher: {id: bid.params.publisher_id},
           ref: encodeURIComponent(refererInfo.referer),
-          page: encodeURIComponent(refererInfo.referer),
+          page: pageUrl,
         },
         device: {
           ua: navigator.userAgent,
@@ -150,6 +194,11 @@ describe('mediaforce bid adapter', function () {
           tagid: bid.params.placement_id,
           secure: secure,
           bidfloor: bid.params.bidfloor,
+          ext: {
+            mediaforce: {
+              transactionId: bid.transactionId
+            }
+          },
           banner: {w: 300, h: 250},
           native: {
             ver: '1.2',
@@ -170,7 +219,7 @@ describe('mediaforce bid adapter', function () {
       assert.deepEqual(request, {
         method: 'POST',
         url: requestUrl,
-        data: '{"id":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b","site":{"page":"https%3A%2F%2Fwww.prebid.org","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + language + '"},"imp":[{"tagid":"202","secure":1,"bidfloor":0.5,"banner":{"w":300,"h":250},"native":{"ver":"1.2","request":{"assets":[{"required":1,"id":1,"title":{"len":800}},{"required":1,"id":3,"img":{"type":3,"w":300,"h":250}},{"required":1,"id":5,"data":{"type":1}}],"context":1,"plcmttype":1,"ver":"1.2"}}}]}',
+        data: '{"id":"' + data.id + '","site":{"page":"' + pageUrl + '","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + language + '"},"ext":{"mediaforce":{"hb_key":"210a474e-88f0-4646-837f-4253b7cf14fb"}},"tmax":1500,"imp":[{"tagid":"202","secure":' + secure + ',"bidfloor":0.5,"ext":{"mediaforce":{"transactionId":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b"}},"banner":{"w":300,"h":250},"native":{"ver":"1.2","request":{"assets":[{"required":1,"id":1,"title":{"len":800}},{"required":1,"id":3,"img":{"type":3,"w":300,"h":250}},{"required":1,"id":5,"data":{"type":1}}],"context":1,"plcmttype":1,"ver":"1.2"}}}]}',
       });
     });
 
@@ -185,6 +234,116 @@ describe('mediaforce bid adapter', function () {
       let [request] = spec.buildRequests([bid]);
       let data = JSON.parse(request.data);
       assert.deepEqual(data.imp[0].banner, {w: 300, h: 600, format: [{w: 300, h: 250}]});
+    });
+
+    it('should return proper requests for multiple imps', function () {
+      let bidderRequest = {
+        bids: multiBid,
+        refererInfo: refererInfo,
+        timeout: timeout,
+        auctionId: '210a474e-88f0-4646-837f-4253b7cf14fb'
+      };
+
+      let requests = spec.buildRequests(multiBid, bidderRequest);
+      assert.equal(requests.length, 2);
+      requests.forEach((req) => {
+        req.data = JSON.parse(req.data);
+      });
+
+      assert.deepEqual(requests, [
+        {
+          method: 'POST',
+          url: requestUrl,
+          data: {
+            id: requests[0].data.id,
+            tmax: timeout,
+            ext: {
+              mediaforce: {
+                hb_key: bidderRequest.auctionId
+              }
+            },
+            site: {
+              id: 'pub123',
+              publisher: {id: 'pub123'},
+              ref: encodeURIComponent(refererInfo.referer),
+              page: pageUrl,
+            },
+            device: {
+              ua: navigator.userAgent,
+              dnt: dnt,
+              js: 1,
+              language: language,
+            },
+            imp: [{
+              tagid: '202',
+              secure: secure,
+              bidfloor: 0,
+              ext: {
+                mediaforce: {
+                  transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+                }
+              },
+              banner: {w: 300, h: 250, format: [{w: 600, h: 400}]},
+            }, {
+              tagid: '203',
+              secure: secure,
+              bidfloor: 0,
+              ext: {
+                mediaforce: {
+                  transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+                }
+              },
+              banner: {w: 300, h: 250, format: [{w: 600, h: 400}]},
+            }, {
+              tagid: '203',
+              secure: secure,
+              bidfloor: 0,
+              ext: {
+                mediaforce: {
+                  transactionId: '8df76688-1618-417a-87b1-60ad046841c9'
+                }
+              },
+              banner: {w: 300, h: 250, format: [{w: 600, h: 400}]},
+            }]
+          }
+        },
+        {
+          method: 'POST',
+          url: requestUrl,
+          data: {
+            id: requests[1].data.id,
+            tmax: timeout,
+            ext: {
+              mediaforce: {
+                hb_key: bidderRequest.auctionId
+              }
+            },
+            site: {
+              id: 'pub124',
+              publisher: {id: 'pub124'},
+              ref: encodeURIComponent(refererInfo.referer),
+              page: pageUrl,
+            },
+            device: {
+              ua: navigator.userAgent,
+              dnt: dnt,
+              js: 1,
+              language: language,
+            },
+            imp: [{
+              tagid: '202',
+              secure: secure,
+              bidfloor: 0,
+              ext: {
+                mediaforce: {
+                  transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+                }
+              },
+              banner: {w: 300, h: 250, format: [{w: 600, h: 400}]},
+            }]
+          }
+        }
+      ]);
     });
   });
 

@@ -4,18 +4,36 @@ import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const storage = getStorageManager();
-const yuktamediaAnalyticsVersion = 'v3.0.0';
+const yuktamediaAnalyticsVersion = 'v3.1.0';
 
 let initOptions;
-let auctionTimestamp;
 
 const events = {
   auctions: {}
 };
 const localStoragePrefix = 'yuktamediaAnalytics_';
 const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+const location = utils.getWindowLocation();
+const referer = getRefererInfo().referer;
+const _pageInfo = {
+  userAgent: window.navigator.userAgent,
+  timezoneOffset: new Date().getTimezoneOffset(),
+  language: window.navigator.language,
+  screenWidth: window.screen.width,
+  screenHeight: window.screen.height,
+  pageViewId: utils.generateUUID(),
+  host: location.host,
+  path: location.pathname,
+  search: location.search,
+  hash: location.hash,
+  referer: referer,
+  refererDomain: utils.parseUrl(referer).host,
+  yuktamediaAnalyticsVersion: yuktamediaAnalyticsVersion,
+  prebidVersion: $$PREBID_GLOBAL$$.version
+};
 
 function getParameterByName(param) {
   let vars = {};
@@ -60,20 +78,12 @@ function isUtmTimeoutExpired() {
 }
 
 function send(data, status) {
-  const location = utils.getWindowLocation();
-  data.initOptions = Object.assign({ host: location.host, path: location.pathname, search: location.search }, initOptions);
-
+  data.initOptions = Object.assign(_pageInfo, initOptions);
   const yuktamediaAnalyticsRequestUrl = utils.buildUrl({
     protocol: 'https',
     hostname: 'analytics-prebid.yuktamedia.com',
-    pathname: '/api/bids',
-    search: {
-      auctionTimestamp: auctionTimestamp,
-      yuktamediaAnalyticsVersion: yuktamediaAnalyticsVersion,
-      prebidVersion: $$PREBID_GLOBAL$$.version
-    }
+    pathname: '/api/bids'
   });
-
   if (isNavigatorSendBeaconSupported()) {
     window.navigator.sendBeacon(yuktamediaAnalyticsRequestUrl, JSON.stringify(data));
   } else {
@@ -81,7 +91,7 @@ function send(data, status) {
   }
 }
 
-var yuktamediaAnalyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}), {
+var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
     if (typeof args !== 'undefined') {
       switch (eventType) {
@@ -89,7 +99,6 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint
           utils.logInfo(localStoragePrefix + 'AUCTION_INIT:', JSON.stringify(args));
           if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
             events.auctions[args.auctionId] = { bids: {} };
-            auctionTimestamp = args.timestamp;
           }
           break;
         case CONSTANTS.EVENTS.BID_REQUESTED:

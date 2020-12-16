@@ -9,7 +9,7 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.5.2';
+const SUBLIME_VERSION = '0.7.0';
 
 /**
  * Debug log message
@@ -23,7 +23,8 @@ export function log(msg, obj) {
 // Default state
 export const state = {
   zoneId: '',
-  transactionId: ''
+  transactionId: '',
+  notifyId: ''
 };
 
 /**
@@ -47,9 +48,9 @@ export function sendEvent(eventName) {
     z: state.zoneId,
     e: eventName,
     src: 'pa',
-    puid: state.transactionId,
-    trId: state.transactionId,
-    ver: SUBLIME_VERSION,
+    puid: state.transactionId || state.notifyId,
+    trId: state.transactionId || state.notifyId,
+    pbav: SUBLIME_VERSION,
   };
 
   log('Sending pixel for event: ' + eventName, eventObject);
@@ -101,6 +102,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     setState({
       transactionId: bid.transactionId,
+      notifyId: bid.params.notifyId,
       zoneId: bid.params.zoneId,
       debug: bid.params.debug || false,
     });
@@ -117,6 +119,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         h: size[1],
       })),
       transactionId: bid.transactionId,
+      notifyId: bid.params.notifyId,
       zoneId: bid.params.zoneId,
     };
 
@@ -125,10 +128,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     return {
       method: 'POST',
       url: protocol + '://' + bidHost + '/bid',
-      data: payload,
+      data: JSON.stringify(payload),
       options: {
-        contentType: 'application/json',
-        withCredentials: true
+        contentType: 'text/plain',
+        withCredentials: false
       },
     }
   });
@@ -207,6 +210,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: BIDDER_GVLID,
   aliases: [],
+  sendEvent: sendEvent,
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
