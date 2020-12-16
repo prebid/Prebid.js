@@ -256,10 +256,12 @@ export const spec = {
 
       const bidFpd = {
         user: bidRequest.params.visitor || {},
-        context: utils.mergeDeep({}, bidRequest.params.inventory || {}, {keywords: (bidRequest.params.keywords || '')})
+        context: bidRequest.params.inventory || {}
       };
 
-      validateFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), VIDEO, data);
+      if (bidRequest.params.keywords) bidFpd.context.keywords = bidRequest.params.keywords;
+
+      applyFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), VIDEO, data);
 
       /**
        * Prebid AdSlot
@@ -535,10 +537,12 @@ export const spec = {
 
     const bidFpd = {
       user: bidRequest.params.visitor || {},
-      context: utils.mergeDeep({}, bidRequest.params.inventory || {}, {keywords: (bidRequest.params.keywords || '')})
+      context: bidRequest.params.inventory || {}
     };
 
-    validateFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), BANNER, data);
+    if (bidRequest.params.keywords) bidFpd.context.keywords = bidRequest.params.keywords;
+
+    applyFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), BANNER, data);
 
     /**
      * Prebid AdSlot
@@ -916,42 +920,55 @@ function addVideoParameters(data, bidRequest) {
   data.imp[0].video.h = size[1]
 }
 
-function validateFPD(fpd, mediaType, data) {
-  const map = {user: {banner: 'tg_v.', video: 'user'}, context: {banner: 'tg_i.', video: 'site'}};
+function applyFPD(fpd, mediaType, data) {
+  const map = {user: {banner: 'tg_v.', code: 'user'}, context: {banner: 'tg_i.', code: 'site'}};
+  let obj = {};
+  let keywords = [];
+  const validate = function(e, t) {
+    if (typeof e === 'object' && !Array.isArray(e)) {
+      utils.logWarn('Rubicon: Filtered FPD key: ', t, ': Expected value to be string, integer, or an array of strings/ints');
+    } else if (e) {
+      return (Array.isArray(e)) ? e.filter(value => {
+        if (typeof value !== 'object' && value) return value;
+
+        utils.logWarn('Rubicon: Filtered value: ', value, 'for key', t, ': Expected value to be string, integer, or an array of strings/ints');
+      }).toString() : e.toString();
+    }
+  };
 
   Object.keys(fpd).filter(value => fpd[value] && map[value] && typeof fpd[value] === 'object').forEach((type) => {
-    if (utils.deepAccess(fpd, `${type}.ext.data`) && mediaType === BANNER) {
-      utils.mergeDeep(fpd, {[type]: utils.deepAccess(fpd, `${type}.ext.data`)});
-    }
+    obj[map[type].code] = Object.keys(fpd[type]).filter(value => fpd[type][value]).reduce((result, key) => {
+      if (key === 'keywords') {
+        if (!Array.isArray(fpd[type][key]) && mediaType === BANNER) fpd[type][key] = [fpd[type][key]]
 
-    if (mediaType === BANNER && utils.deepAccess(fpd, 'user.keywords')) {
-      utils.mergeDeep(fpd, {context: {keywords: utils.deepAccess(fpd, 'user.keywords')}});
-      delete fpd.user.keywords;
-    }
+        result[key] = fpd[type][key];
 
-    Object.keys(fpd[type]).filter(value => fpd[type][value] && value !== 'ext').forEach((key) => {
-      if (mediaType === BANNER) {
-        if (typeof fpd[type][key] === 'object' && !Array.isArray(fpd[type][key])) {
-          utils.logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
-        } else {
-          data[(key === 'keywords' && type === 'context' ? 'kw' : `${map[type][mediaType]}${key}`)] = (Array.isArray(fpd[type][key])) ? fpd[type][key].filter(value => {
-            if (typeof value !== 'object') return value;
-
-            utils.logWarn('Rubicon: Filtered data value: ', value, ': Expected value to be string, integer, or an array of strings/ints');
-          }).toString() : fpd[type][key].toString();
-        }
+        if (mediaType === BANNER) keywords = keywords.concat(fpd[type][key]);
+      } else if (key === 'data') {
+        utils.mergeDeep(result, {ext: {data: fpd[type][key]}});
       } else {
-        if (key !== 'keywords') {
-          utils.mergeDeep(fpd[type], {ext: {data: {[key]: fpd[type][key]}}});
-          delete fpd[type][key];
-        }
+        utils.mergeDeep(result, {ext: {data: {[key]: fpd[type][key]}}});
       }
-    });
 
-    if (mediaType === VIDEO) utils.mergeDeep(data, {[map[type][mediaType]]: fpd[type]});
+      return result;
+    }, {});
+
+    if (mediaType === BANNER) {
+      let duplicate = (typeof obj[map[type].code].ext === 'object' && obj[map[type].code].ext.data) || {};
+      Object.keys(duplicate).forEach((key) => {
+        const val = validate(duplicate[key], key);
+
+        if (val) data[`${map[type][BANNER]}${key}`] = val;
+      });
+    }
   });
 
-  return data;
+  if (mediaType === BANNER) {
+    let kw = validate(keywords, 'keywords');
+    if (kw) data.kw = kw;
+  } else {
+    utils.mergeDeep(data, obj);
+  }
 }
 
 /**

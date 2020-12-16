@@ -828,10 +828,8 @@ describe('the rubicon adapter', function () {
             const context = {
               keywords: ['e', 'f'],
               rating: '4-star',
-              ext: {
-                data: {
-                  page: 'home'
-                }
+              data: {
+                page: 'home'
               }
             };
             const user = {
@@ -839,10 +837,8 @@ describe('the rubicon adapter', function () {
               yob: '1984',
               geo: {country: 'ca'},
               keywords: ['d'],
-              ext: {
-                data: {
-                  age: 40
-                }
+              data: {
+                age: 40
               }
             };
 
@@ -1838,19 +1834,15 @@ describe('the rubicon adapter', function () {
           createVideoBidderRequest();
 
           const context = {
-            ext: {
-              data: {
-                page: 'home'
-              }
+            data: {
+              page: 'home'
             },
             keywords: ['e', 'f'],
             rating: '4-star'
           };
           const user = {
-            ext: {
-              data: {
-                age: 31
-              }
+            data: {
+              age: 31
             },
             keywords: ['d'],
             gender: 'M',
@@ -1871,12 +1863,12 @@ describe('the rubicon adapter', function () {
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           const expected = {
-            site: Object.assign({}, context, context.ext.data, bidderRequest.bids[0].params.inventory),
-            user: Object.assign({}, user, user.ext.data, bidderRequest.bids[0].params.visitor)
+            site: Object.assign({}, context, context.data, bidderRequest.bids[0].params.inventory),
+            user: Object.assign({}, user, user.data, bidderRequest.bids[0].params.visitor)
           };
 
-          delete expected.site.ext;
-          delete expected.user.ext;
+          delete expected.site.data;
+          delete expected.user.data;
           delete expected.site.keywords;
           delete expected.user.keywords;
 
