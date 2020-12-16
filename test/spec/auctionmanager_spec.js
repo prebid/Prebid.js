@@ -793,6 +793,38 @@ describe('auctionmanager.js', function () {
         assert.equal(addedBid.renderer.url, renderer.url);
       });
 
+      it('installs bidder-defined renderer when onlyBackup is true in mediaTypes.video options ', function () {
+        const renderer = {
+          url: 'videoRenderer.js',
+          backupOnly: true,
+          render: (bid) => bid
+        };
+        let myBid = mockBid();
+        let bidRequest = mockBidRequest(myBid);
+
+        bidRequest.bids[0] = {
+          ...bidRequest.bids[0],
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              renderer
+            }
+          }
+        };
+        makeRequestsStub.returns([bidRequest]);
+
+        myBid.mediaType = 'video';
+        myBid.renderer = {
+          url: 'renderer.js',
+          render: sinon.spy()
+        };
+        spec.interpretResponse.returns(myBid);
+        auction.callBids();
+
+        const addedBid = auction.getBidsReceived().pop();
+        assert.strictEqual(addedBid.renderer.url, myBid.renderer.url);
+      });
+
       it('bid for a regular unit and a video unit', function() {
         let renderer = {
           url: 'renderer.js',

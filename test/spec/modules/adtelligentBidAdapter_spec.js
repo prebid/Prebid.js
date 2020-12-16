@@ -11,8 +11,13 @@ const EXPECTED_ENDPOINTS = [
   'https://ghb.adtelligent.com/v2/auction/'
 ];
 const aliasEP = {
-  appaloosa: 'https://hb.appaloosa.media/v2/auction/'
+  appaloosa: 'https://ghb.hb.appaloosa.media/v2/auction/',
+  appaloosa_publisherSuffix: 'https://ghb.hb.appaloosa.media/v2/auction/',
+  onefiftytwomedia: 'https://ghb.ads.152media.com/v2/auction/',
+  mediafuse: 'https://ghb.hbmp.mediafuse.com/v2/auction/'
 };
+
+const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };
 const DISPLAY_REQUEST = {
   'bidder': 'adtelligent',
   'params': {
@@ -244,10 +249,10 @@ describe('adtelligentBidAdapter', () => {
     let videoBidRequests = [VIDEO_REQUEST];
     let displayBidRequests = [DISPLAY_REQUEST];
     let videoAndDisplayBidRequests = [DISPLAY_REQUEST, VIDEO_REQUEST];
-    const displayRequest = spec.buildRequests(displayBidRequests, {});
-    const videoRequest = spec.buildRequests(videoBidRequests, {});
-    const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, {});
-    const rotatingRequest = spec.buildRequests(displayBidRequests, {});
+    const displayRequest = spec.buildRequests(displayBidRequests, DEFAULT_ADATPER_REQ);
+    const videoRequest = spec.buildRequests(videoBidRequests, DEFAULT_ADATPER_REQ);
+    const videoAndDisplayRequests = spec.buildRequests(videoAndDisplayBidRequests, DEFAULT_ADATPER_REQ);
+    const rotatingRequest = spec.buildRequests(displayBidRequests, DEFAULT_ADATPER_REQ);
     it('rotates endpoints', () => {
       const bidReqUrls = [displayRequest[0], videoRequest[0], videoAndDisplayRequests[0], rotatingRequest[0]].map(br => br.url);
       expect(bidReqUrls).to.deep.equal(EXPECTED_ENDPOINTS);
@@ -276,7 +281,7 @@ describe('adtelligentBidAdapter', () => {
       expect(videoAndDisplayRequests.every(comparator)).to.be.true;
     });
     it('forms correct ADPOD request', () => {
-      const pbBidReqData = spec.buildRequests([ADPOD_REQUEST], {})[0].data;
+      const pbBidReqData = spec.buildRequests([ADPOD_REQUEST], DEFAULT_ADATPER_REQ)[0].data;
       const impRequest = pbBidReqData.BidRequests[0]
       expect(impRequest.AdType).to.be.equal('video');
       expect(impRequest.Adpod).to.be.a('object');

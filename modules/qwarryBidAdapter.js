@@ -4,7 +4,7 @@ import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'qwarry';
-export const ENDPOINT = 'https://ui-bidder.kantics.co/bid/adtag?prebid=true'
+export const ENDPOINT = 'https://bidder.qwarry.co/bid/adtag?prebid=true'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -66,7 +66,9 @@ export const spec = {
 
   onBidWon: function (bid) {
     if (bid.winUrl) {
-      ajax(bid.winUrl, null);
+      const cpm = bid.cpm;
+      const winUrl = bid.winUrl.replace(/\$\{AUCTION_PRICE\}/, cpm);
+      ajax(winUrl, null);
       return true;
     }
     return false;
