@@ -12,6 +12,7 @@ import includes from 'core-js-pure/features/array/includes.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import find from 'core-js-pure/features/array/find.js';
+import { getEidPermissions } from '../userId/index.js';
 
 const getConfig = config.getConfig;
 
@@ -397,7 +398,7 @@ export function resetWurlMap() {
 }
 
 const OPEN_RTB_PROTOCOL = {
-  buildRequest(s2sBidRequest, bidRequests, adUnits) {
+  buildRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders) {
     let imps = [];
     let aliases = {};
     const firstBidRequest = bidRequests[0];
@@ -637,8 +638,11 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'user.ext.eids', bidUserIdAsEids);
     }
 
-    const eidPermissions = utils.deepAccess(bidRequests, '0.bids.0.eidPermissions');
+    const eidPermissions = getEidPermissions();
     if (utils.isArray(eidPermissions) && eidPermissions.length > 0) {
+      eidPermissions.forEach(i => {
+        i.bidders = i.bidders.filter(bidder => requestedBidders.includes(bidder) || bidder === '*');
+      });
       utils.deepSetValue(request, 'ext.prebid.data.eidPermissions', eidPermissions);
     }
 
@@ -893,9 +897,11 @@ export function PrebidServer() {
 
       queueSync(syncBidders, gdprConsent, uspConsent);
     }
-
-    const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits);
+    utils.logInfo('PrebidServer bidRequests: ' + JSON.stringify(bidRequests));
+    utils.logInfo('PrebidServer requested: ' + JSON.stringify(requestedBidders));
+    const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits, requestedBidders);
     const requestJson = request && JSON.stringify(request);
+    utils.logInfo('PrebidServer request: ' + JSON.stringify(request));
     if (request && requestJson) {
       ajax(
         _s2sConfig.endpoint,

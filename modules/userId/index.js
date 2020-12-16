@@ -122,9 +122,8 @@ import { getGlobal } from '../../src/prebidGlobal.js';
 import { gdprDataHandler } from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import { module, hook } from '../../src/hook.js';
-import { createEidsArray } from './eids.js';
+import { createEidsArray, buildEidPermissions } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
-import {getEidPermissions} from "./eids";
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -198,6 +197,10 @@ export function setStoredValue(submodule, value) {
   } catch (error) {
     utils.logError(error);
   }
+}
+
+export function getEidPermissions() {
+  return buildEidPermissions(initializedSubmodules);
 }
 
 /**
@@ -394,7 +397,6 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
     return;
   }
   adUnits.forEach(adUnit => {
-    const eidPermissions = getEidPermissions(submodules);
     if (adUnit.bids && utils.isArray(adUnit.bids)) {
       adUnit.bids.forEach(bid => {
         const combinedSubmoduleIds = getCombinedSubmoduleIdsForBidder(submodules, bid.bidder);
@@ -402,7 +404,6 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
           // create a User ID object on the bid,
           bid.userId = combinedSubmoduleIds;
           bid.userIdAsEids = createEidsArray(combinedSubmoduleIds);
-          bid.eidPermissions = eidPermissions;
         }
       });
     }
