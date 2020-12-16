@@ -8,8 +8,12 @@ import {getStorageManager} from '../src/storageManager.js';
 export const storage = getStorageManager();
 
 const analyticsType = 'endpoint';
-const preflightUrl = 'https://analytics-check.publishersite.xyz/check/';
-export const analyticsUrl = 'https://analyticsv2.publishersite.xyz';
+// dev endpoints
+// const preflightUrl = 'https://analytics-check.publishersite.xyz/check/';
+// export const analyticsUrl = 'https://analyticsv2.publishersite.xyz';
+
+const preflightUrl = 'https://check.analytics.rlcdn.com/check/';
+export const analyticsUrl = 'https://analytics.rlcdn.com';
 
 let handlerRequest = [];
 let handlerResponse = [];
