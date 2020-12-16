@@ -897,11 +897,8 @@ export function PrebidServer() {
 
       queueSync(syncBidders, gdprConsent, uspConsent);
     }
-    utils.logInfo('PrebidServer bidRequests: ' + JSON.stringify(bidRequests));
-    utils.logInfo('PrebidServer requested: ' + JSON.stringify(requestedBidders));
     const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits, requestedBidders);
     const requestJson = request && JSON.stringify(request);
-    utils.logInfo('PrebidServer request: ' + JSON.stringify(request));
     if (request && requestJson) {
       ajax(
         _s2sConfig.endpoint,
