@@ -4,7 +4,7 @@ Module Name: ReadPeak Bid Adapter
 
 Module Type: Bidder Adapter
 
-Maintainer: tuomo.tilli@readpeak.com
+Maintainer: devteam@readpeak.com
 
 # Description
 
