@@ -263,26 +263,6 @@ export const spec = {
 
       applyFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), VIDEO, data);
 
-      /**
-       * Prebid AdSlot
-       * @type {(string|undefined)}
-       */
-      const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-      if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(data.imp[0].ext, 'context.data.pbadslot', pbAdSlot);
-      }
-
-      /**
-       * Copy GAM AdUnit and Name to imp
-       */
-      ['name', 'adSlot'].forEach(name => {
-        /** @type {(string|undefined)} */
-        const value = utils.deepAccess(bidRequest, `fpd.context.adserver.${name}`);
-        if (typeof value === 'string' && value) {
-          utils.deepSetValue(data.imp[0].ext, `context.data.adserver.${name.toLowerCase()}`, value);
-        }
-      });
-
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
         utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
@@ -543,24 +523,6 @@ export const spec = {
     if (bidRequest.params.keywords) bidFpd.context.keywords = bidRequest.params.keywords;
 
     applyFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), BANNER, data);
-
-    /**
-     * Prebid AdSlot
-     * @type {(string|undefined)}
-     */
-    const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-    if (typeof pbAdSlot === 'string' && pbAdSlot) {
-      data['tg_i.pbadslot'] = pbAdSlot.replace(/^\/+/, '');
-    }
-
-    /**
-     * GAM Ad Unit
-     * @type {(string|undefined)}
-     */
-    const gamAdUnit = utils.deepAccess(bidRequest, 'fpd.context.adServer.adSlot');
-    if (typeof gamAdUnit === 'string' && gamAdUnit) {
-      data['tg_i.dfp_ad_unit_code'] = gamAdUnit.replace(/^\/+/, '');
-    }
 
     if (config.getConfig('coppa') === true) {
       data['coppa'] = 1;
@@ -921,7 +883,7 @@ function addVideoParameters(data, bidRequest) {
 }
 
 function applyFPD(fpd, mediaType, data) {
-  const map = {user: {banner: 'tg_v.', code: 'user'}, context: {banner: 'tg_i.', code: 'site'}};
+  const map = {user: {banner: 'tg_v.', code: 'user'}, context: {banner: 'tg_i.', code: 'site'}, adserver: 'dfp_ad_unit_code'};
   let obj = {};
   let keywords = [];
   const validate = function(e, t) {
@@ -946,6 +908,12 @@ function applyFPD(fpd, mediaType, data) {
         if (mediaType === BANNER) keywords = keywords.concat(fpd[type][key]);
       } else if (key === 'data') {
         utils.mergeDeep(result, {ext: {data: fpd[type][key]}});
+      } else if (key === 'adServer' || key === 'pbAdSlot') {
+        (key === 'adServer') ? ['name', 'adSlot'].forEach(name => {
+          const value = validate(fpd[type][key][name]);
+
+          if (value) utils.mergeDeep(result, {ext: {data: {adserver: {[name.toLowerCase()]: value.replace(/^\/+/, '')}}}});
+        }) : utils.mergeDeep(result, {ext: {data: {[key.toLowerCase()]: fpd[type][key].replace(/^\/+/, '')}}});
       } else {
         utils.mergeDeep(result, {ext: {data: {[key]: fpd[type][key]}}});
       }
@@ -956,9 +924,9 @@ function applyFPD(fpd, mediaType, data) {
     if (mediaType === BANNER) {
       let duplicate = (typeof obj[map[type].code].ext === 'object' && obj[map[type].code].ext.data) || {};
       Object.keys(duplicate).forEach((key) => {
-        const val = validate(duplicate[key], key);
+        const val = (key === 'adserver') ? duplicate.adserver.adslot : validate(duplicate[key], key);
 
-        if (val) data[`${map[type][BANNER]}${key}`] = val;
+        if (val) data[(map[key]) ? `${map[type][BANNER]}${map[key]}` : `${map[type][BANNER]}${key}`] = val;
       });
     }
   });

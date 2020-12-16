@@ -1907,14 +1907,14 @@ describe('the rubicon adapter', function () {
           );
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].ext.context.data.pbadslot).to.equal('1234567890');
+          expect(request.data.site.ext.data.pbadslot).to.equal('1234567890');
         });
 
         it('should include GAM ad unit in bid request', function () {
           createVideoBidderRequest();
           bidderRequest.bids[0].fpd = {
             context: {
-              adserver: {
+              adServer: {
                 adSlot: '1234567890',
                 name: 'adServerName1'
               }
@@ -1926,8 +1926,8 @@ describe('the rubicon adapter', function () {
           );
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].ext.context.data.adserver.adslot).to.equal('1234567890');
-          expect(request.data.imp[0].ext.context.data.adserver.name).to.equal('adServerName1');
+          expect(request.data.site.ext.data.adserver.adslot).to.equal('1234567890');
+          expect(request.data.site.ext.data.adserver.name).to.equal('adServerName1');
         });
 
         it('should use the integration type provided in the config instead of the default', () => {
