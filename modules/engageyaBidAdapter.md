@@ -26,7 +26,7 @@ Module that connects to Engageya's demand sources
                     params: {
 						widgetId: '<put here widget id>',
 						websiteId: '<put here website id>',
-						pageUrl:[PAGE_URL]
+						pageUrl:'[PAGE_URL]'
 					}
                 }
             ]
@@ -59,7 +59,7 @@ Module that connects to Engageya's demand sources
                     params: {
                         widgetId: '<put here widget id>',
 						websiteId: '<put here website id>',
-						pageUrl:[PAGE_URL]
+						pageUrl:'[PAGE_URL]'
                     }
                 }
             ]
