@@ -1197,5 +1197,33 @@ describe('Utils', function () {
         expect(typeof utils.cyrb53Hash(stringOne)).to.equal('string');
       });
     });
+
+    describe('findRootDomain', function () {
+      let sandbox;
+
+      beforeEach(function () {
+        sandbox = sinon.createSandbox();
+        sandbox
+          .stub(utils.coreStorage, 'getCookie')
+          .onFirstCall()
+          .returns(null) // .co.uk
+          .onSecondCall()
+          .returns('writeable'); // realdomain.co.uk;
+      });
+
+      afterEach(function () {
+        sandbox.restore();
+      });
+
+      it('should just find the root domain', function () {
+        var domain = utils.findRootDomain('sub.realdomain.co.uk');
+        expect(domain).to.be.eq('realdomain.co.uk');
+      });
+
+      it('should find the full domain when no subdomain is present', function () {
+        var domain = utils.findRootDomain('realdomain.co.uk');
+        expect(domain).to.be.eq('realdomain.co.uk');
+      });
+    });
   });
 });
