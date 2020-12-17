@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
@@ -19,7 +20,7 @@ export const spec = {
    * From Prebid.js: isBidRequestValid - Verify the the AdUnits.bids, respond with true (valid) or false (invalid).
    *
    * @param {object} bid The bid to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
+   * @return {boolean} True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
     if (bid && typeof bid.params !== 'object') {
@@ -64,14 +65,24 @@ export const spec = {
    * from Prebid.js: buildRequests - Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
    *
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
-   * @return ServerRequest Info describing the request to the server.
+   * @param {object} bidderRequest - The master bidRequest object.
+   * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    const page = bidderRequest.refererInfo.referer;
-    const isPageSecure = !!page.match(/^https:/)
+    const referer = bidderRequest.refererInfo.referer;
+    const isPageSecure = !!referer.match(/^https:/);
 
     const siteId = '';
     const spotxRequests = bidRequests.map(function(bid) {
+      let page;
+      if (utils.getBidIdParameter('page', bid.params)) {
+        page = utils.getBidIdParameter('page', bid.params);
+      } else if (config.getConfig('pageUrl')) {
+        page = config.getConfig('pageUrl');
+      } else {
+        page = referer;
+      }
+
       const channelId = utils.getBidIdParameter('channel_id', bid.params);
       let pubcid = null;
 
@@ -436,11 +447,11 @@ function createOutstreamScript(bid) {
 
   const customOverride = utils.getBidIdParameter('custom_override', bid.renderer.config.outstream_options);
   if (customOverride && utils.isPlainObject(customOverride)) {
-    utils.logMessage('[SPOTX][renderer] Custom beahavior.');
+    utils.logMessage('[SPOTX][renderer] Custom behavior.');
     for (let name in customOverride) {
       if (customOverride.hasOwnProperty(name)) {
         if (name === 'channel_id' || name === 'vast_url' || name === 'content_page_url' || name === 'ad_unit') {
-          utils.logWarn('[SPOTX][renderer] Custom beahavior: following option cannot be overrided: ' + name);
+          utils.logWarn('[SPOTX][renderer] Custom behavior: following option cannot be overridden: ' + name);
         } else {
           dataSpotXParams['data-spotx_' + name] = customOverride[name];
         }

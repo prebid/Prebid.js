@@ -152,21 +152,22 @@ export const lotamePanoramaIdSubmodule = {
    * Decode the stored id value for passing to bid requests
    * @function decode
    * @param {(Object|string)} value
+   * @param {SubmoduleConfig|undefined} config
    * @returns {(Object|undefined)}
    */
-  decode(value, configParams) {
+  decode(value, config) {
     return utils.isStr(value) ? { 'lotamePanoramaId': value } : undefined;
   },
 
   /**
    * Retrieve the Lotame Panorama Id
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
    * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
    */
-  getId(configParams, consentData, cacheIdObj) {
+  getId(config, consentData, cacheIdObj) {
     let localCache = getLotameLocalCache();
 
     let refreshNeeded = Date.now() > localCache.expiryTimestampMs;
