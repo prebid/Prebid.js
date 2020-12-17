@@ -8,7 +8,7 @@ let email;
 let conf;
 const LOG_PRE_FIX = 'ID-Library: ';
 const CONF_DEFAULT_OBSERVER_DEBOUNCE_MS = 250;
-const CONF_DEFAULT_FULL_BODY_SCAN = true;
+const CONF_DEFAULT_FULL_BODY_SCAN = false;
 const OBSERVER_CONFIG = {
   subtree: true,
   attributes: true,
