@@ -217,7 +217,7 @@ describe('OneVideoBidAdapter', function () {
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
-      const VERSION = '3.0.4';
+      const VERSION = '3.0.5';
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
@@ -315,6 +315,64 @@ describe('OneVideoBidAdapter', function () {
       const schain = data.source.ext.schain;
       expect(schain.nodes[0].hp).to.equal(bidRequest.params.video.hp);
     })
+    it('should not accept key values pairs if custom is Undefined ', function () {
+      bidRequest.params.video.custom = null;
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      expect(data.imp[0].ext.custom).to.be.undefined;
+    });
+    it('should not accept key values pairs if custom is Array ', function () {
+      bidRequest.params.video.custom = [];
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      expect(data.imp[0].ext.custom).to.be.undefined;
+    });
+    it('should not accept key values pairs if custom is Number ', function () {
+      bidRequest.params.video.custom = 123456;
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      expect(data.imp[0].ext.custom).to.be.undefined;
+    });
+    it('should not accept key values pairs if custom is String ', function () {
+      bidRequest.params.video.custom = 'keyValuePairs';
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      expect(data.imp[0].ext.custom).to.be.undefined;
+    });
+    it('should not accept key values pairs if custom is Boolean ', function () {
+      bidRequest.params.video.custom = true;
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      expect(data.imp[0].ext.custom).to.be.undefined;
+    });
+    it('should accept key values pairs if custom is Object ', function () {
+      bidRequest.params.video.custom = {};
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const data = requests[0].data;
+      expect(data.imp[0].ext.custom).to.be.a('object');
+    });
+    it('should accept key values pairs if custom is Object ', function () {
+      bidRequest.params.video.custom = {
+        key1: 'value1',
+        key2: 'value2',
+        key3: 4444444,
+        key4: false,
+        key5: {nested: 'object'},
+        key6: ['string', 2, true, null],
+        key7: null,
+        key8: undefined
+      };
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+      const custom = requests[0].data.imp[0].ext.custom;
+      expect(custom['key1']).to.be.a('string');
+      expect(custom['key2']).to.be.a('string');
+      expect(custom['key3']).to.be.a('number');
+      expect(custom['key4']).to.not.exist;
+      expect(custom['key5']).to.not.exist;
+      expect(custom['key6']).to.not.exist;
+      expect(custom['key7']).to.not.exist;
+      expect(custom['key8']).to.not.exist;
+    });
   });
 
   describe('spec.interpretResponse', function () {
@@ -349,7 +407,7 @@ describe('OneVideoBidAdapter', function () {
         height: 480,
         mediaType: 'video',
         currency: 'USD',
-        ttl: 100,
+        ttl: 300,
         netRevenue: true,
         adUnitCode: bidRequest.adUnitCode,
         renderer: (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined,
@@ -375,6 +433,30 @@ describe('OneVideoBidAdapter', function () {
       expect(bidResponse.ad).to.equal('<div>DAP UNIT HERE</div>');
       expect(bidResponse.mediaType).to.equal('banner');
       expect(bidResponse.renderer).to.be.undefined;
+    });
+
+    it('should default ttl to 300', function () {
+      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+      expect(bidResponse.ttl).to.equal(300);
+    });
+    it('should not allow ttl above 3601, default to 300', function () {
+      bidRequest.params.video.ttl = 3601;
+      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+      expect(bidResponse.ttl).to.equal(300);
+    });
+    it('should not allow ttl below 1, default to 300', function () {
+      bidRequest.params.video.ttl = 0;
+      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+      expect(bidResponse.ttl).to.equal(300);
+    });
+    it('should use custom ttl if under 3600', function () {
+      bidRequest.params.video.ttl = 1000;
+      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+      expect(bidResponse.ttl).to.equal(1000);
     });
   });
 

@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 
-const VERSION = '3.2.1';
+const VERSION = '3.3.0';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
@@ -56,12 +56,24 @@ export const sharethroughAdapterSpec = {
         query.pubcid = bidRequest.crumbs.pubcid;
       }
 
+      if (bidRequest.userId && bidRequest.userId.idl_env) {
+        query.idluid = bidRequest.userId.idl_env;
+      }
+
       if (bidRequest.schain) {
         query.schain = JSON.stringify(bidRequest.schain);
       }
 
       if (bidRequest.bidfloor) {
         query.bidfloor = parseFloat(bidRequest.bidfloor);
+      }
+
+      if (bidRequest.params.badv) {
+        query.badv = bidRequest.params.badv;
+      }
+
+      if (bidRequest.params.bcat) {
+        query.bcat = bidRequest.params.bcat;
       }
 
       // Data that does not need to go to the server,
@@ -73,7 +85,7 @@ export const sharethroughAdapterSpec = {
       };
 
       return {
-        method: 'GET',
+        method: 'POST',
         url: STR_ENDPOINT,
         data: query,
         strData: strData
