@@ -49,6 +49,9 @@ export const spec = {
     return {
       method: 'POST',
       url: 'https://prebid.owneriq.net:8443/bidder/pb/bid',
+      options: {
+        withCredentials: true
+      },
       data: payloadString,
     };
   },
