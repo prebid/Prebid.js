@@ -1,6 +1,14 @@
 **Table of Contents**
 - [Release Schedule](#release-schedule)
 - [Release Process](#release-process)
+  - [1. Make sure that all PRs have been named and labeled properly per the PR Process](#1-make-sure-that-all-prs-have-been-named-and-labeled-properly-per-the-pr-process)
+  - [2. Make sure all browserstack tests are passing](#2-make-sure-all-browserstack-tests-are-passing)
+  - [3. Prepare Prebid Code](#3-prepare-prebid-code)
+  - [4. Verify the Release](#4-verify-the-release)
+  - [5. Create a GitHub release](#5-create-a-github-release)
+  - [6. Update coveralls _(skip for legacy)_](#6-update-coveralls-skip-for-legacy)
+  - [7. Distribute the code](#7-distribute-the-code)
+  - [8. Increment Version for Next Release](#8-increment-version-for-next-release)
 - [Beta Releases](#beta-releases)
 - [FAQs](#faqs)
 
@@ -19,11 +27,11 @@ Announcements regarding releases will be made to the #headerbidding-dev channel 
 
 _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for your repo, all of the following git commands will have to be modified to reference the proper remote (e.g. `upstream`)_
 
-1. ### Make sure that all PRs have been named and labeled properly per the [PR Process](https://github.com/prebid/Prebid.js/blob/master/PR_REVIEW.md#general-pr-review-process)
+### 1. Make sure that all PRs have been named and labeled properly per the [PR Process](https://github.com/prebid/Prebid.js/blob/master/PR_REVIEW.md#general-pr-review-process)
    * Do this by checking the latest draft release from the [releases page](https://github.com/prebid/Prebid.js/releases) and make sure nothing appears in the first section called "In This Release". If they do, please open the PRs and add the appropriate labels.
    * Do a quick check that all the titles/descriptions look ok, and if not, adjust the PR title.
 
-2. ### Make sure all browserstack tests are passing
+### 2. Make sure all browserstack tests are passing
 
    On PR merge to master, CircleCI will run unit tests on browserstack. Checking the last CircleCI build [here](https://circleci.com/gh/prebid/Prebid.js) for master branch will show you detailed results.**
 
@@ -49,7 +57,7 @@ _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for 
    ```
 
 
-3. ### Prepare Prebid Code
+### 3. Prepare Prebid Code
 
    Update the package.json version to become the current release. Then commit your changes.
 
@@ -58,11 +66,11 @@ _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for 
    git push
    ```
 
-4. ### Verify the Release
+### 4. Verify the Release
 
    Make sure your there are no more merges to master branch. Prebid code is clean and up to date.
 
-5. ### Create a GitHub release
+### 5. Create a GitHub release
 
    Edit the most recent [release notes](https://github.com/prebid/Prebid.js/releases) draft and make sure the correct version is set and the master branch is selected in the dropdown. Click `Publish release`. GitHub will create release tag.
 
@@ -74,7 +82,7 @@ _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for 
 
    and verify the tag.
 
-6. ### Update coveralls _(skip for legacy)_
+### 6. Update coveralls _(skip for legacy)_
 
    We use https://coveralls.io/ to show parts of code covered by unit tests.
 
@@ -86,9 +94,9 @@ _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for 
 
    Run `gulp coveralls` to update code coverage history.
 
-7. ### Distribute the code
+### 7. Distribute the code
 
-   _Note: do not go to step 7 until step 6 has been verified completed._
+   _Note: do not go to step 8 until step 7 has been verified completed._
 
    Reach out to any of the Appnexus folks to trigger the jenkins job.
 
@@ -96,7 +104,7 @@ _Note: If `github.com/prebid/Prebid.js` is not configured as the git origin for 
    Jenkins job is moving files to appnexus cdn, pushing prebid.js to npm, purging cache and sending notification to slack.
    Move all the files from Appnexus CDN to jsDelivr and create bash script to do above tasks.
 
-8. ### Increment Version for Next Release
+### 8. Increment Version for Next Release
 
    Update the version by manually editing Prebid's `package.json` to become "4.x.x-pre" (using the values for the next release). Then commit your changes.
    ```
