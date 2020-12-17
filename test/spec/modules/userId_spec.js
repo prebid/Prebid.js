@@ -2,6 +2,7 @@ import {
   attachIdSystem,
   auctionDelay,
   coreStorage,
+  getEidPermissions,
   init,
   requestBidsHook,
   setStoredConsentData,
@@ -35,7 +36,6 @@ import {sharedIdSubmodule} from 'modules/sharedIdSystem.js';
 import {haloIdSubmodule} from 'modules/haloIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import {criteoIdSubmodule} from 'modules/criteoIdSystem.js';
-import {getEidPermissions} from 'modules/userId/index';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
