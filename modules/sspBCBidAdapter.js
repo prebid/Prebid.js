@@ -22,11 +22,11 @@ const getNotificationPayload = bidData => {
   if (bidData) {
     const bids = utils.isArray(bidData) ? bidData : [bidData];
     if (bids.length > 0) {
-      let result = {
+      const result = {
         requestId: undefined,
         siteId: [],
         adUnit: [],
-        id: [],
+        slotId: [],
       }
       bids.forEach(bid => {
         let params = utils.isArray(bid.params) ? bid.params[0] : bid.params;
@@ -34,15 +34,15 @@ const getNotificationPayload = bidData => {
 
         // check for stored detection
         if (oneCodeDetection[bid.requestId]) {
-          params.siteId = oneCodeDetection[bid.requestId].id;
-          params.id = oneCodeDetection[bid.requestId].slot;
+          params.siteId = oneCodeDetection[bid.requestId][0];
+          params.id = oneCodeDetection[bid.requestId][1];
         }
 
         if (params.siteId) {
           result.siteId.push(params.siteId);
         }
         if (params.id) {
-          result.id.push(params.id);
+          result.slotId.push(params.id);
         }
         if (bid.cpm) {
           const meta = bid.meta || {};
@@ -217,7 +217,7 @@ function renderCreative(site, auctionId, bid, seat, request) {
 </style>
   <script>
   window.rekid = ${site.id};
-  window.slot = ${site.slot};
+  window.slot = ${parseInt(site.slot, 10)};
   window.wp_sn = "${site.sn}";
   window.mcad = JSON.parse(decodeURI(atob("${mcbase}")));
   window.gdpr = ${JSON.stringify(request.gdprConsent)};
@@ -291,7 +291,7 @@ const spec = {
   interpretResponse(serverResponse, request) {
     const response = serverResponse.body;
     const bids = [];
-    let site = JSON.parse(request.data).site; // get page and referer data from request
+    const site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
     let seat;
 
@@ -316,7 +316,7 @@ const spec = {
 
           if (bidRequest && site.id && !site.id.includes('bidid')) {
             // store site data for future notification
-            oneCodeDetection[bidRequest.bidId] = site;
+            oneCodeDetection[bidRequest.bidId] = [site.id, site.slot];
 
             const bidFloor = (bidRequest.params && bidRequest.params.bidFloor) ? bidRequest.params.bidFloor : 0;
 

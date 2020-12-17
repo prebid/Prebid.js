@@ -452,7 +452,7 @@ describe('SSPBC adapter', function () {
       expect(notificationPayload).to.have.property('requestId').that.equals(bid.auctionId);
       expect(notificationPayload).to.have.property('adUnit').that.deep.equals([bid.adUnitCode]);
       expect(notificationPayload).to.have.property('siteId').that.is.an('array');
-      expect(notificationPayload).to.have.property('id').that.is.an('array');
+      expect(notificationPayload).to.have.property('slotId').that.is.an('array');
     });
   });
 
