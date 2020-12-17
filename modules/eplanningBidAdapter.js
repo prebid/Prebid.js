@@ -16,6 +16,9 @@ const NULL_SIZE = '1x1';
 const FILE = 'file';
 const STORAGE_RENDER_PREFIX = 'pbsr_';
 const STORAGE_VIEW_PREFIX = 'pbvi_';
+const isMobile = isMobileDevice();
+const PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC = ['1x1', '300x50', '320x50', '300x250'];
+const PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC = ['1x1', '970x90', '970x250', '160x600', '300x600', '728x90', '300x250'];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -140,6 +143,15 @@ export const spec = {
   },
 }
 
+function getUserAgent() {
+  return window.navigator.userAgent;
+}
+function getInnerWidth() {
+  return window.innerWidth;
+}
+function isMobileDevice() {
+  return (getInnerWidth() <= 1024) || window.orientation || getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
+}
 function getUrlConfig(bidRequests) {
   if (isTestRequest(bidRequests)) {
     return getTestConfig(bidRequests.filter(br => br.params.t));
@@ -173,8 +185,32 @@ function getTestConfig(bidRequests) {
   };
 }
 
+function compareSizesByPriority(size1, size2) {
+  var priorityOrderForSizesAsc = isMobile ? PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC : PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC;
+  var index1 = priorityOrderForSizesAsc.indexOf(size1);
+  var index2 = priorityOrderForSizesAsc.indexOf(size2);
+  if (index1 > -1) {
+    if (index2 > -1) {
+      return (index1 < index2) ? 1 : -1;
+    } else {
+      return -1;
+    }
+  } else {
+    return (index2 > -1) ? 1 : 0;
+  }
+}
+
+function getSizesSortedByPriority(sizes) {
+  return utils.parseSizesInput(sizes).sort(compareSizesByPriority);
+}
+
 function getSize(bid, first) {
-  return bid.sizes && bid.sizes.length ? utils.parseSizesInput(first ? bid.sizes[0] : bid.sizes).join(',') : NULL_SIZE;
+  var arraySizes = bid.sizes && bid.sizes.length ? getSizesSortedByPriority(bid.sizes) : [];
+  if (arraySizes.length) {
+    return first ? arraySizes[0] : arraySizes.join(',');
+  } else {
+    return NULL_SIZE;
+  }
 }
 
 function getSpacesStruct(bids) {

@@ -105,6 +105,24 @@ describe('E-Planning Adapter', function () {
     'adUnitCode': 'adunit-code',
     'sizes': [[300, 250], [300, 600]],
   };
+  const validBidExistingSizesInPriorityListForMobile = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [320, 50], [300, 50]],
+  };
+  const validBidSizesNotExistingInPriorityListForMobile = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [300, 70], [160, 600]],
+  };
   const response = {
     body: {
       'sI': {
@@ -420,6 +438,18 @@ describe('E-Planning Adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const dataRequest = request.data;
       expect(dataRequest.ccpa).to.equal('consentCcpa');
+    });
+
+    it('should return the e parameter with a value according to the sizes in order corresponding to the mobile priority list of the ad units', function () {
+      let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForMobile];
+      const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
+      expect(e).to.equal('320x50_0:320x50,300x50,970x250');
+    });
+
+    it('should return the e parameter with a value according to the sizes in order as they are sent from the ad units', function () {
+      let bidRequestsPrioritySizes2 = [validBidSizesNotExistingInPriorityListForMobile];
+      const e = spec.buildRequests(bidRequestsPrioritySizes2, bidderRequest).data.e;
+      expect(e).to.equal('970x250_0:970x250,300x70,160x600');
     });
   });
 
