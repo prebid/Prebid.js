@@ -38,7 +38,7 @@ function getEmail(value) {
   if (!matched) {
     return null;
   }
-  logInfo('Email found' + matched[0]);
+  logInfo('Email found: ' + matched[0]);
   return matched[0];
 }
 
