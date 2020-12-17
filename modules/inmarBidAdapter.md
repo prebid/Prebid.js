@@ -25,7 +25,7 @@ Please reach out to your account manager for more information.
                         bidder: 'inmar',
                         params: {
                             partnerId: 12345,
-                            adnetId: 'ADb1f40rmi',
+                            inmarId: 'ADb1f40rmi',
                             position: 1
                         }
                     }]
@@ -37,7 +37,7 @@ Please reach out to your account manager for more information.
                         bidder: 'inmar',
                         params: {
                             partnerId: 12345,
-                            adnetId: 'ADb1f40rmo',
+                            inmarId: 'ADb1f40rmo',
                             position: 0
                         }
                     }]
