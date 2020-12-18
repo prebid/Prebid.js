@@ -50,12 +50,12 @@ describe('currency', function () {
     it('results with config default fullscan ', function () {
       let config = { 'url': 'URL' }
       idlibrary.setConfig(config);
-      expect(config.fullscan).to.be.equal(true);
+      expect(config.fullscan).to.be.equal(false);
     });
     it('results with config fullscan ', function () {
-      let config = { 'url': 'URL', 'fullscan': false }
+      let config = { 'url': 'URL', 'fullscan': true }
       idlibrary.setConfig(config);
-      expect(config.fullscan).to.be.equal(false);
+      expect(config.fullscan).to.be.equal(true);
     });
   });
 });
