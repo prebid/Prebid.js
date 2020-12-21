@@ -249,12 +249,8 @@ export function parseBrowser() {
       return obj.test.test(ua);
     });
     let browserName = result && result.length ? result[0].name : '';
-    // eslint-disable-next-line no-console
-    console.log('browserName: ', browserName);
-    return listOfSupportedBrowsers.includes(browserName) ? browserName : 'Unknown';
+    return (listOfSupportedBrowsers.indexOf(browserName) >= 0) ? browserName : 'Unknown';
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.log('parseBrowser: ', err);
     utils.logError('ATS Analytics - Error while checking user browser!', err);
   }
 }
