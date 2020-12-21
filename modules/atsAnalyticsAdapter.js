@@ -322,7 +322,7 @@ let atsAnalyticsAdapter = Object.assign(adapter(
         if (!samplingRateCookie) {
           preflightRequest(envelopeSourceCookieValue);
         } else {
-          if (samplingRateCookie && atsAnalyticsAdapter.shouldFireRequest(parseInt(samplingRateCookie)) && envelopeSourceCookieValue != null) {
+          if (atsAnalyticsAdapter.shouldFireRequest(parseInt(samplingRateCookie)) && envelopeSourceCookieValue != null) {
             sendDataToAnalytic();
           }
         }
