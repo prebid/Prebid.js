@@ -34,7 +34,7 @@ describe('haloRtdProvider', function() {
                       id: 'appnexus',
                       segment: [
                         {
-                          id: 'apnseg0'
+                          id: '0'
                         }
                       ]
                     }
@@ -43,7 +43,7 @@ describe('haloRtdProvider', function() {
               },
               params: {
                 user: {
-                  segments: [{'id': 'apnseg0', 'value': 0}]
+                  segments: [0]
                 }
               }
             }
@@ -82,22 +82,22 @@ describe('haloRtdProvider', function() {
       ];
 
       const data = {
-        appnexus: [{id: 'apnseg1', value: 0}, {id: 'apnseg2', value: 2}, {id: 'apnseg3'}],
+        appnexus: [{id: '1'}, {id: '2'}, {id: '3'}],
         generic: [{id: 'seg1'}, {id: 'seg2'}, {id: 'seg3'}]
       };
 
     	addSegmentData(adUnits, data, config);
 
-      expect(adUnits[0].bids[0].fpd.user.data[0].segment[0]).to.have.deep.property('id', 'apnseg0');
-      expect(adUnits[0].bids[0].fpd.user.data[0].segment[1]).to.have.deep.property('id', 'apnseg1');
-      expect(adUnits[0].bids[0].fpd.user.data[0].segment[2]).to.have.deep.property('id', 'apnseg2');
-      expect(adUnits[0].bids[0].fpd.user.data[0].segment[3]).to.have.deep.property('id', 'apnseg3');
-      expect(adUnits[0].bids[0].params.user).to.have.deep.property('segments', [{'id': 'apnseg0', 'value': 0}, {'id': 'apnseg1', 'value': 0}, {'id': 'apnseg2', 'value': 2}]);
+      expect(adUnits[0].bids[0].fpd.user.data[0].segment[0]).to.have.deep.property('id', '0');
+      expect(adUnits[0].bids[0].fpd.user.data[0].segment[1]).to.have.deep.property('id', '1');
+      expect(adUnits[0].bids[0].fpd.user.data[0].segment[2]).to.have.deep.property('id', '2');
+      expect(adUnits[0].bids[0].fpd.user.data[0].segment[3]).to.have.deep.property('id', '3');
+      expect(adUnits[0].bids[0].params.user).to.have.deep.property('segments', [0, 1, 2, 3]);
 
-      expect(adUnits[1].bids[0].fpd.user.data[0].segment[0]).to.have.deep.property('id', 'apnseg1');
-      expect(adUnits[1].bids[0].fpd.user.data[0].segment[1]).to.have.deep.property('id', 'apnseg2');
-      expect(adUnits[1].bids[0].fpd.user.data[0].segment[2]).to.have.deep.property('id', 'apnseg3');
-      expect(adUnits[1].bids[0].params.user).to.have.deep.property('segments', [{'id': 'apnseg1', 'value': 0}, {'id': 'apnseg2', 'value': 2}]);
+      expect(adUnits[1].bids[0].fpd.user.data[0].segment[0]).to.have.deep.property('id', '1');
+      expect(adUnits[1].bids[0].fpd.user.data[0].segment[1]).to.have.deep.property('id', '2');
+      expect(adUnits[1].bids[0].fpd.user.data[0].segment[2]).to.have.deep.property('id', '3');
+      expect(adUnits[1].bids[0].params.user).to.have.deep.property('segments', [1, 2, 3]);
 
       expect(adUnits[1].bids[1].fpd.user.data[0].segment[0]).to.have.deep.property('id', 'seg1');
       expect(adUnits[1].bids[1].fpd.user.data[0].segment[1]).to.have.deep.property('id', 'seg2');

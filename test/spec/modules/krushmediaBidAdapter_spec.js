@@ -301,4 +301,29 @@ describe('KrushmediabBidAdapter', function () {
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
+  describe('getUserSyncs', function() {
+    it('Should return array of objects with proper sync config , include GDPR', function() {
+      const syncData = spec.getUserSyncs({}, {}, {
+        consentString: 'ALL',
+        gdprApplies: true,
+      }, {});
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('iframe')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://cs.krushmedia.com/html?src=pbjs&gdpr=1&gdpr_consent=ALL')
+    });
+    it('Should return array of objects with proper sync config , include CCPA', function() {
+      const syncData = spec.getUserSyncs({}, {}, {}, {
+        consentString: '1NNN'
+      });
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('iframe')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://cs.krushmedia.com/html?src=pbjs&ccpa_consent=1NNN')
+    });
+  });
 });

@@ -8,6 +8,7 @@ import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, bui
 import { config } from '../src/config.js';
 import { getHook, submodule } from '../src/hook.js';
 import { auctionManager } from '../src/auctionManager.js';
+import { uspDataHandler } from '../src/adapterManager.js';
 import events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
@@ -100,6 +101,9 @@ export function buildDfpVideoUrl(options) {
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
 
+  const uspConsent = uspDataHandler.getConsentData();
+  if (uspConsent) { queryParams.us_privacy = uspConsent; }
+
   return buildUrl({
     protocol: 'https',
     host: 'securepubads.g.doubleclick.net',
@@ -182,6 +186,9 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
       params,
       { cust_params: encodedCustomParams }
     );
+
+    const uspConsent = uspDataHandler.getConsentData();
+    if (uspConsent) { queryParams.us_privacy = uspConsent; }
 
     const masterTag = buildUrl({
       protocol: 'https',
