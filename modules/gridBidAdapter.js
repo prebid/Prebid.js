@@ -170,11 +170,6 @@ export const spec = {
       userExt.eids = [...userIdAsEids];
     }
 
-    if (userId && userId.digitrustid && userId.digitrustid.data && userId.digitrustid.data.id) {
-      userExt = userExt || {};
-      userExt.digitrust = Object.assign({}, userId.digitrustid.data);
-    }
-
     if (userExt && Object.keys(userExt).length) {
       user = user || {};
       user.ext = userExt;

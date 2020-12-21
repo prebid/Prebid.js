@@ -332,10 +332,7 @@ describe('TheMediaGrid Adapter', function () {
       ];
       const bidRequestsWithUserIds = bidRequests.map((bid) => {
         return Object.assign({
-          userIdAsEids: eids,
-          userId: {
-            digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}}
-          }
+          userIdAsEids: eids
         }, bid);
       });
       const request = spec.buildRequests(bidRequestsWithUserIds, bidderRequest);
@@ -343,15 +340,6 @@ describe('TheMediaGrid Adapter', function () {
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('user');
       expect(payload.user).to.have.property('ext');
-      expect(payload.user.ext.digitrust).to.deep.equal({
-        id: 'DTID',
-        keyv: 4,
-        privacy: {
-          optout: false
-        },
-        producer: 'ABC',
-        version: 2
-      });
       expect(payload.user.ext.eids).to.deep.equal(eids);
     });
 
