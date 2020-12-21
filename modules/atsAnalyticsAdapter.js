@@ -245,7 +245,7 @@ function bidResponseHandler(args) {
 export function parseBrowser() {
   let ua = window.navigator.userAgent;
   try {
-    let result = browsersList.filter(obj => {
+    let result = browsersList.filter(function(obj) {
       return obj.test.test(ua);
     });
     let browserName = result && result.length ? result[0].name : '';
