@@ -67,7 +67,7 @@ describe('User ID', function () {
       code,
       mediaTypes: {banner: {}, native: {}},
       sizes: [[300, 200], [300, 600]],
-      bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}]
+      bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}, {bidder: 'anotherSampleBidder', params: {placementId: 'banner-only-bidder'}}]
     };
   }
 
@@ -1188,7 +1188,6 @@ describe('User ID', function () {
             {
               name: 'sharedId',
               pbjs_bidders: [
-                'rubicon',
                 'sampleBidder'
               ],
               storage: {
@@ -1205,7 +1204,7 @@ describe('User ID', function () {
         const eidPermissions = getEidPermissions();
         expect(eidPermissions).to.deep.equal(
           [
-            {source: 'sharedid.org', pbjs_bidders: ['rubicon', 'sampleBidder']}
+            {source: 'sharedid.org', pbjs_bidders: ['sampleBidder']}
           ]
         );
         adUnits.forEach(unit => {
@@ -1225,6 +1224,10 @@ describe('User ID', function () {
                   }
                 ]
               });
+            }
+            if (bid.bidder === 'anotherSampleBidder') {
+              expect(bid).to.not.have.deep.nested.property('userId.sharedid');
+              expect(bid).to.not.have.property('userIdAsEids');
             }
           });
         });
