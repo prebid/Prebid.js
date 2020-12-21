@@ -1187,7 +1187,7 @@ describe('User ID', function () {
           userIds: [
             {
               name: 'sharedId',
-              bidders: [
+              pbjs_bidders: [
                 'rubicon',
                 'sampleBidder'
               ],
@@ -1205,7 +1205,7 @@ describe('User ID', function () {
         const eidPermissions = getEidPermissions();
         expect(eidPermissions).to.deep.equal(
           [
-            {source: 'sharedid.org', bidders: ['rubicon', 'sampleBidder']}
+            {source: 'sharedid.org', pbjs_bidders: ['rubicon', 'sampleBidder']}
           ]
         );
         adUnits.forEach(unit => {
@@ -1261,7 +1261,7 @@ describe('User ID', function () {
         const eidPermissions = getEidPermissions();
         expect(eidPermissions).to.deep.equal(
           [
-            {source: 'sharedid.org', bidders: ['*']}
+            {source: 'sharedid.org'}
           ]
         );
         adUnits.forEach(unit => {

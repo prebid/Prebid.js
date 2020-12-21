@@ -220,16 +220,15 @@ export function createEidsArray(bidRequestUserId) {
  */
 export function buildEidPermissions(submodules) {
   let eidPermissions = [];
-  submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length && i.config)
+  submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .forEach(i => {
       Object.keys(i.idObj).forEach(key => {
         if (utils.deepAccess(USER_IDS_CONFIG, key + '.source')) {
-          eidPermissions.push(
-            {
-              source: USER_IDS_CONFIG[key].source,
-              bidders: (i.config.bidders && Array.isArray(i.config.bidders) ? i.config.bidders : ['*'])
-            }
-          )
+          let eidPermission = { source: USER_IDS_CONFIG[key].source };
+          if (utils.deepAccess(i, 'config.pbjs_bidders') && Array.isArray(i.config.pbjs_bidders)) {
+            eidPermission.pbjs_bidders = i.config.pbjs_bidders;
+          }
+          eidPermissions.push(eidPermission);
         }
       });
     });
