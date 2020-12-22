@@ -14,7 +14,7 @@ export const storage = getStorageManager();
 describe('ats analytics adapter', function () {
   let userAgentStub;
   let userAgent;
-  let savedUserAgent = navigator.userAgent;
+  let savedUserAgent = window.navigator.userAgent;
 
   beforeEach(function () {
     sinon.stub(events, 'getEvents').returns([]);
@@ -29,7 +29,7 @@ describe('ats analytics adapter', function () {
     atsAnalyticsAdapter.disableAnalytics();
     // Should be returned when sinon fix restore for ie11 https://github.com/sinonjs/sinon/issues/1881
     // userAgentStub.restore();
-    userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+    sinon.stub(navigator, 'userAgent').get(function () {
       return savedUserAgent;
     });
   });
