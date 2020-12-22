@@ -14,6 +14,7 @@ export const storage = getStorageManager();
 describe('ats analytics adapter', function () {
   let userAgentStub;
   let userAgent;
+  let savedUserAgent = navigator.userAgent;
 
   beforeEach(function () {
     sinon.stub(events, 'getEvents').returns([]);
@@ -26,7 +27,8 @@ describe('ats analytics adapter', function () {
   afterEach(function () {
     events.getEvents.restore();
     atsAnalyticsAdapter.disableAnalytics();
-    userAgentStub.restore();
+    // userAgentStub.restore();
+    userAgent = savedUserAgent;
   });
 
   describe('track', function () {
@@ -157,10 +159,6 @@ describe('ats analytics adapter', function () {
       expect(requests.length).to.equal(1);
 
       let realAfterBid = JSON.parse(requests[0].requestBody);
-      // eslint-disable-next-line no-console
-      console.log('realAfterBid; ', realAfterBid['Data']);
-      // eslint-disable-next-line no-console
-      console.log('expected: ', expectedAfterBid['Data']);
       // Step 6: assert real data after bid and expected data
       expect(realAfterBid['Data']).to.deep.equal(expectedAfterBid['Data']);
 
