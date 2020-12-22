@@ -6,7 +6,7 @@ Maintainer: contact@ad-blender.com
 
 # Description
 
-Connects to Go2Net demand source to fetch bids.  
+Connects to AdBlender demand source to fetch bids.  
 Banner and Video formats are supported.  
 Please use ```adblender``` as the bidder code.  
 #Bidder Config
