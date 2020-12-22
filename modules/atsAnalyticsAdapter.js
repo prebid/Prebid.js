@@ -243,7 +243,7 @@ function bidResponseHandler(args) {
 }
 
 export function parseBrowser() {
-  let ua = window.navigator.userAgent;
+  let ua = atsAnalyticsAdapter.getUserAgent();
   try {
     let result = browsersList.filter(function(obj) {
       return obj.test.test(ua);
@@ -343,6 +343,9 @@ atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
   return shouldFireRequestValue;
 }
 
+atsAnalyticsAdapter.getUserAgent = function () {
+  return window.navigator.userAgent;
+}
 // override enableAnalytics so we can get access to the config passed in from the page
 atsAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.pid) {

@@ -12,33 +12,21 @@ let constants = require('src/constants.json');
 export const storage = getStorageManager();
 
 describe('ats analytics adapter', function () {
-  let userAgentStub;
-  let userAgent;
-  let savedUserAgent = window.navigator.userAgent;
-
   beforeEach(function () {
     sinon.stub(events, 'getEvents').returns([]);
-    userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
-      return userAgent;
-    });
     storage.setCookie('_lr_env_src_ats', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
   });
 
   afterEach(function () {
     events.getEvents.restore();
+    atsAnalyticsAdapter.getUserAgent.restore();
     atsAnalyticsAdapter.disableAnalytics();
-    // Should be returned when sinon fix restore for ie11 https://github.com/sinonjs/sinon/issues/1881
-    // userAgentStub.restore();
-    userAgent = savedUserAgent;
-    userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
-      return userAgent;
-    });
   });
 
   describe('track', function () {
     it('builds and sends request and response data', function () {
-      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25';
       sinon.stub(atsAnalyticsAdapter, 'shouldFireRequest').returns(true);
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       let now = new Date();
       now.setTime(now.getTime() + 3600000);
       storage.setCookie('_lr_env_src_ats', 'true', now.toUTCString());
@@ -170,22 +158,22 @@ describe('ats analytics adapter', function () {
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
     })
     it('check browser is safari', function () {
-      userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25';
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.25 (KHTML, like Gecko) Version/6.0 Safari/536.25');
       let browser = parseBrowser();
       expect(browser).to.equal('Safari');
     })
     it('check browser is chrome', function () {
-      userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1';
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1');
       let browser = parseBrowser();
       expect(browser).to.equal('Chrome');
     })
     it('check browser is edge', function () {
-      userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43';
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43');
       let browser = parseBrowser();
       expect(browser).to.equal('Microsoft Edge');
     })
     it('check browser is firefox', function () {
-      userAgent = 'Mozilla/5.0 (iPhone; CPU OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/23.0  Mobile/15E148 Safari/605.1.15';
+      sinon.stub(atsAnalyticsAdapter, 'getUserAgent').returns('Mozilla/5.0 (iPhone; CPU OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/23.0  Mobile/15E148 Safari/605.1.15');
       let browser = parseBrowser();
       expect(browser).to.equal('Firefox');
     })
