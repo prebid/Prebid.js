@@ -29,8 +29,9 @@ describe('ats analytics adapter', function () {
     atsAnalyticsAdapter.disableAnalytics();
     // Should be returned when sinon fix restore for ie11 https://github.com/sinonjs/sinon/issues/1881
     // userAgentStub.restore();
-    sinon.stub(navigator, 'userAgent').get(function () {
-      return savedUserAgent;
+    userAgent = savedUserAgent;
+    userAgentStub = sinon.stub(navigator, 'userAgent').get(function () {
+      return userAgent;
     });
   });
 
