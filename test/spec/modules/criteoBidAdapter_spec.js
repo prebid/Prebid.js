@@ -4,7 +4,7 @@ import {
   spec,
   PROFILE_ID_PUBLISHERTAG,
   ADAPTER_VERSION,
-  canFastBid, getFastBidUrl
+  canFastBid, getFastBidUrl, FAST_BID_VERSION_CURRENT
 } from 'modules/criteoBidAdapter.js';
 import { createBid } from 'src/bidfactory.js';
 import CONSTANTS from 'src/constants.json';
@@ -1208,10 +1208,10 @@ describe('The Criteo bidding adapter', function () {
   describe('getFastBidUrl', function () {
     it('should properly detect the version of fastbid', function () {
       const testCasesAndExpectedResult = [
-        ['', 'https://static.criteo.net/js/ld/publishertag.prebid.js'],
-        [undefined, 'https://static.criteo.net/js/ld/publishertag.prebid.js'],
-        [null, 'https://static.criteo.net/js/ld/publishertag.prebid.js'],
-        [NaN, 'https://static.criteo.net/js/ld/publishertag.prebid.js'],
+        ['', 'https://static.criteo.net/js/ld/publishertag.prebid.' + FAST_BID_VERSION_CURRENT + '.js'],
+        [undefined, 'https://static.criteo.net/js/ld/publishertag.prebid.' + FAST_BID_VERSION_CURRENT + '.js'],
+        [null, 'https://static.criteo.net/js/ld/publishertag.prebid.' + FAST_BID_VERSION_CURRENT + '.js'],
+        [NaN, 'https://static.criteo.net/js/ld/publishertag.prebid.' + FAST_BID_VERSION_CURRENT + '.js'],
         [123, 'https://static.criteo.net/js/ld/publishertag.prebid.123.js'],
         ['123', 'https://static.criteo.net/js/ld/publishertag.prebid.123.js'],
         ['latest', 'https://static.criteo.net/js/ld/publishertag.prebid.js']

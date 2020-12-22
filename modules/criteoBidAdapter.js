@@ -18,6 +18,7 @@ const LOG_PREFIX = 'Criteo: ';
 
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
+export const FAST_BID_VERSION_CURRENT = 102;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
@@ -465,14 +466,16 @@ export function canFastBid(fastBidVersion) {
 
 export function getFastBidUrl(fastBidVersion) {
   let version;
-  if (fastBidVersion && fastBidVersion !== FAST_BID_VERSION_LATEST) {
+  if (fastBidVersion === FAST_BID_VERSION_LATEST) {
+    version = '';
+  } else if (fastBidVersion) {
     let majorVersion = String(fastBidVersion).split('.')[0];
     if (majorVersion < 102) {
-      utils.logWarn('Specifying')
+      utils.logWarn('Specifying a Fastbid version which is not supporting version selection.')
     }
     version = '.' + fastBidVersion;
   } else {
-    version = '';
+    version = '.' + FAST_BID_VERSION_CURRENT;
   }
 
   return PUBLISHER_TAG_URL_TEMPLATE.replace(FAST_BID_VERSION_PLACEHOLDER, version);
