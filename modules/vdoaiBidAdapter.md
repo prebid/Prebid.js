@@ -32,3 +32,26 @@ Module that connects to VDO.AI's demand sources
         }
     ];
 ```
+
+
+# Video Test Parameters
+```
+var videoAdUnit = {
+  code: 'test-div',
+  sizes: [[640, 480]],
+  mediaTypes: {
+    video: {
+      playerSize: [[640, 480]],
+      context: 'instream'
+    },
+  },
+  bids: [
+    {
+        bidder: "vdo.ai",
+        params: {
+            placement: 'newsdv77'
+        }
+    }
+  ]
+};
+```

@@ -173,7 +173,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[1].bidId,
           'tagid': bidRequests[1].params.uid,
           'ext': {'divid': bidRequests[1].adUnitCode},
-          'bidfloor': 0,
           'banner': {
             'w': 300,
             'h': 250,
@@ -211,7 +210,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[1].bidId,
           'tagid': bidRequests[1].params.uid,
           'ext': {'divid': bidRequests[1].adUnitCode},
-          'bidfloor': 0,
           'banner': {
             'w': 300,
             'h': 250,
@@ -221,7 +219,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[2].bidId,
           'tagid': bidRequests[2].params.uid,
           'ext': {'divid': bidRequests[2].adUnitCode},
-          'bidfloor': 0,
           'video': {
             'w': 400,
             'h': 600,
@@ -259,7 +256,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[1].bidId,
           'tagid': bidRequests[1].params.uid,
           'ext': {'divid': bidRequests[1].adUnitCode},
-          'bidfloor': 0,
           'banner': {
             'w': 300,
             'h': 250,
@@ -269,7 +265,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[2].bidId,
           'tagid': bidRequests[2].params.uid,
           'ext': {'divid': bidRequests[2].adUnitCode},
-          'bidfloor': 0,
           'video': {
             'w': 400,
             'h': 600,
@@ -279,7 +274,6 @@ describe('TheMediaGrid Adapter', function () {
           'id': bidRequests[3].bidId,
           'tagid': bidRequests[3].params.uid,
           'ext': {'divid': bidRequests[3].adUnitCode},
-          'bidfloor': 0,
           'banner': {
             'w': 728,
             'h': 90,
@@ -317,16 +311,28 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('if userId is present payload must have user.ext param with right keys', function () {
+      const eids = [
+        {
+          source: 'pubcid.org',
+          uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+          }]
+        },
+        {
+          source: 'adserver.org',
+          uids: [{
+            id: 'some-random-id-value',
+            atype: 1,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        }
+      ];
       const bidRequestsWithUserIds = bidRequests.map((bid) => {
         return Object.assign({
-          userId: {
-            id5id: { uid: 'id5id_1', ext: { linkType: 2 } },
-            tdid: 'tdid_1',
-            digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
-            lipb: {lipbid: 'lipb_1'},
-            idl_env: 'idl_env_1',
-            criteoId: 'criteoId_1'
-          }
+          userIdAsEids: eids
         }, bid);
       });
       const request = spec.buildRequests(bidRequestsWithUserIds, bidderRequest);
@@ -334,51 +340,7 @@ describe('TheMediaGrid Adapter', function () {
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('user');
       expect(payload.user).to.have.property('ext');
-      expect(payload.user.ext.digitrust).to.deep.equal({
-        id: 'DTID',
-        keyv: 4,
-        privacy: {
-          optout: false
-        },
-        producer: 'ABC',
-        version: 2
-      });
-      expect(payload.user.ext.eids).to.deep.equal([
-        {
-          source: 'adserver.org',
-          uids: [{
-            id: 'tdid_1',
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }]
-        },
-        {
-          source: 'id5-sync.com',
-          uids: [{
-            id: 'id5id_1'
-          }],
-          ext: { linkType: 2 }
-        },
-        {
-          source: 'liveintent.com',
-          uids: [{
-            id: 'lipb_1'
-          }]
-        },
-        {
-          source: 'identityLink',
-          uids: [{
-            id: 'idl_env_1'
-          }]
-        },
-        {
-          source: 'criteo.com',
-          uids: [{
-            id: 'criteoId_1'
-          }]
-        }
-      ]);
+      expect(payload.user.ext.eids).to.deep.equal(eids);
     });
 
     it('if schain is present payload must have source.ext.schain param', function () {
@@ -409,15 +371,19 @@ describe('TheMediaGrid Adapter', function () {
     it('if content and segment is present in jwTargeting, payload must have right params', function () {
       const jsContent = {id: 'test_jw_content_id'};
       const jsSegments = ['test_seg_1', 'test_seg_2'];
-      const bidRequestsWithUserIds = bidRequests.map((bid) => {
+      const bidRequestsWithJwTargeting = bidRequests.map((bid) => {
         return Object.assign({
-          jwTargeting: {
-            segments: jsSegments,
-            content: jsContent
+          rtd: {
+            jwplayer: {
+              targeting: {
+                segments: jsSegments,
+                content: jsContent
+              }
+            }
           }
         }, bid);
       });
-      const request = spec.buildRequests(bidRequestsWithUserIds, bidderRequest);
+      const request = spec.buildRequests(bidRequestsWithJwTargeting, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('user');
@@ -456,7 +422,7 @@ describe('TheMediaGrid Adapter', function () {
         'floor': 1.50
       };
       const bidRequest = Object.assign({
-        getFloor: _ => {
+        getFloor: (_) => {
           return floorTestData;
         }
       }, bidRequests[1]);

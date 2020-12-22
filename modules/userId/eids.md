@@ -22,13 +22,22 @@ userIdAsEids = [
     },
 
     {
+        source: 'neustar.biz',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'id5-sync.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
         },
         ext: {
-            linkType: 2
+            linkType: 2,
+            abTestingControlGroup: false
         }]
     },
 
