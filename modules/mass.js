@@ -95,7 +95,7 @@ function getRenderPayload(e) {
  * Render a MASS ad.
  */
 function render(payload) {
-  const ns = window.MASS = window.MASS || {};
+  const ns = window.mass = window.mass || {};
 
   ns.bootloader = ns.bootloader || {queue: []};
   ns.bootloader.queue.push(payload);
@@ -104,7 +104,7 @@ function render(payload) {
     const s = document.createElement('script');
     s.type = 'text/javascript';
     s.async = true;
-    s.src = 'https://cdn.massplatform.net/v1/bootloader.js';
+    s.src = 'https://cdn.massplatform.net/bootloader/v1/bootloader.js';
 
     const x = document.getElementsByTagName('script')[0];
     x.parentNode.insertBefore(s, x);
