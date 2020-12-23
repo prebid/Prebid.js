@@ -39,7 +39,7 @@ function addBidResponseHook(next, adUnitCode, bid) {
 
   massBids[bid.requestId] = {
     bidRequest,
-    bidResponse: bid,
+    bid,
     adm: bid.ad
   };
 
@@ -86,7 +86,7 @@ function getRenderPayload(e) {
   };
 
   Object.assign(payload, massBids[e.data.massBidId]);
-  delete payload.bidResponse.ad;
+  delete payload.bid.ad;
 
   return payload;
 }
