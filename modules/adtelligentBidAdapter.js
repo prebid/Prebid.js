@@ -208,6 +208,11 @@ function prepareBidRequests(bidReq) {
     'AdType': mediaType,
     'Sizes': utils.parseSizesInput(sizes).join(',')
   };
+
+  bidReqParams.PlacementId = bidReq.adUnitCode;
+  if (bidReq.params.vpb_placement_id) {
+    bidReqParams.PlacementId = bidReq.params.vpb_placement_id;
+  }
   if (mediaType === VIDEO) {
     const context = utils.deepAccess(bidReq, 'mediaTypes.video.context');
     if (context === ADPOD) {
