@@ -57,7 +57,7 @@ export const id5IdSubmodule = {
     }
 
     // check for A/B testing configuration and hide ID if in Control Group
-    let abConfig = (config && config.params && config.params.abTesting) || { enabled: false };
+    let abConfig = getAbTestingConfig(config);
     let controlGroup = false;
     if (
       abConfig.enabled === true &&
@@ -128,6 +128,10 @@ export const id5IdSubmodule = {
       'us_privacy': uspDataHandler.getConsentData() || '',
       'v': '$prebid.version$'
     };
+
+    if (getAbTestingConfig(config).enabled === true) {
+      utils.deepSetValue(data, 'features.ab', 1);
+    }
 
     const resp = function (callback) {
       const callbacks = {
@@ -276,6 +280,16 @@ export function getFromLocalStorage(key) {
 export function storeInLocalStorage(key, value, expDays) {
   storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
   storage.setDataInLocalStorage(`${key}`, value);
+}
+
+/**
+ * gets the existing abTesting config or generates a default config with abTesting off
+ *
+ * @param {SubmoduleConfig|undefined} config
+ * @returns {(Object|undefined)}
+ */
+function getAbTestingConfig(config) {
+  return (config && config.params && config.params.abTesting) || { enabled: false };
 }
 
 submodule('userId', id5IdSubmodule);
