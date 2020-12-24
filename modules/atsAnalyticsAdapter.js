@@ -341,11 +341,11 @@ atsAnalyticsAdapter.shouldFireRequest = function (samplingRate) {
   let shouldFireRequestValue = (Math.floor((Math.random() * samplingRate + 1)) === samplingRate);
   utils.logInfo('ATS Analytics - Should Fire Request: ', shouldFireRequestValue);
   return shouldFireRequestValue;
-}
+};
 
 atsAnalyticsAdapter.getUserAgent = function () {
   return window.navigator.userAgent;
-}
+};
 // override enableAnalytics so we can get access to the config passed in from the page
 atsAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.pid) {
