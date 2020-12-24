@@ -5,7 +5,7 @@ import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'gothamads';
 const ACCOUNTID_MACROS = '[account_id]';
-const URL_ENDPOINT = `https://us-e-node31.trading-rtbg.com/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;
+const URL_ENDPOINT = `https://us-e-node1.gothamads.com/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
 const NATIVE_PARAMS = {
   title: {
