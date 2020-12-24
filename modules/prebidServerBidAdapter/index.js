@@ -493,7 +493,7 @@ const OPEN_RTB_PROTOCOL = {
         // check for and store valid aliases to add to the request
         if (adapterManager.aliasRegistry[bid.bidder]) {
           const bidder = adapterManager.bidderRegistry[bid.bidder];
-          if(bidder && !bidder.getSpec().skipPbsAliasing){
+          if (bidder && !bidder.getSpec().skipPbsAliasing) {
             aliases[bid.bidder] = adapterManager.aliasRegistry[bid.bidder];
           }
         }
