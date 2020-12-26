@@ -8,7 +8,7 @@ Maintainer: prebid@temedya.com
 
 Module that connects to TE Medya's demand sources.
 
-TE Medya supports Native. 
+TE Medya supports Native and Banner. 
 
 
 # Test Parameters
