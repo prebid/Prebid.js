@@ -12,7 +12,7 @@ TE Medya supports Native and Banner.
 
 
 # Test Parameters
-# native
+# Native
 ```
 
     var adUnits = [
@@ -38,7 +38,7 @@ TE Medya supports Native and Banner.
     ];
 ```
 # Test Parameters
-# banner
+# Banner
 ```
 
     var adUnits = [

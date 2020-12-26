@@ -26,7 +26,6 @@ export const spec = {
   * @return ServerRequest Info describing the request to the server.
   */
   buildRequests: function (validBidRequests, bidderRequest) {
-
     return validBidRequests.map(req => {
       const mediaType = this._isBannerRequest(req) ? 'display' : NATIVE;
 
@@ -52,9 +51,7 @@ export const spec = {
         options: { withCredentials: false, requestId: req.bidId, mediaType: mediaType }
       };
     });
-
   },
-
   /**
   * Unpack the response from the server into a list of bids.
   *
@@ -65,10 +62,8 @@ export const spec = {
     try {
       const bidResponse = serverResponse.body;
       const bidResponses = [];
-
-      if (bidResponse && bidRequest.options.mediaType == NATIVE ) {
+      if (bidResponse && bidRequest.options.mediaType == NATIVE) {
         bidResponse.ads.forEach(function(ad) {
-
           bidResponses.push({
             requestId: bidRequest.options.requestId,
             cpm: parseFloat(ad.assets.cpm) || 1,
@@ -101,34 +96,31 @@ export const spec = {
             },
           });
         });
-      } else if (bidResponse && bidRequest.options.mediaType == 'display' ) {
-
+      } else if (bidResponse && bidRequest.options.mediaType == 'display') {
         bidResponse.ads.forEach(function(ad) {
-
           let w = ad.assets.width || 300;
           let h = ad.assets.height || 250;
 
           let htmlTag = '<div id="TEM_TAG" style="border: 1px inset rgba(0,0,0,.85); padding: 0; margin: 0;" width="' + w + '" height="' + h + '">';
-          htmlTag+= '<style>';
-          htmlTag+= '#TEM_TAG .text-elements {position: absolute;bottom: 0;left: 0; right: 0; padding: 10px; background: rgba(0,0,0,.85)}';
-          htmlTag+= '#TEM_TAG .text-elements h2 {margin: 0!important; text-align: left; font-weight: bold; font-size: 16px!important;line-height: 20px!important;font-style: normal;text-decoration: none;color: #fff; font-family: Helvetica, sans-serif;}';
-          htmlTag+= '#TEM_TAG .text-elements p {font-weight: 700!important; margin: 10px 0; font-size: 11px!important; line-height: 14px!important; font-style: normal!important; text-decoration: none!important; font-family: Helvetica, sans-serif !important; display: block!important; overflow: hidden!important; padding-top: 1px!important; text-transform: uppercase; letter-spacing: 1.2px; color: #fff; opacity: .5;}';
-          htmlTag+= '</style>';
-          htmlTag+= '<a href="' + ad.assets.click_url + '" target="_blank">';
-          htmlTag+= '<div class="image-with-text">';
-          htmlTag+= '<div class="tem-img"><img src="' + ad.assets.files[0] + '" style="width:' + w + 'px;height:' + h + 'px;"/></div>';
-          if(ad.assets.title) {
-            htmlTag+= '<div class="text-elements">';
-            htmlTag+= '<h2>' + ad.assets.title + '</h2>';
-            htmlTag+= '<p>' + (ad.assets.sponsor || '') + '</p>';
-            htmlTag+= '</div>';
+          htmlTag += '<style>';
+          htmlTag += '#TEM_TAG .text-elements {position: absolute;bottom: 0;left: 0; right: 0; padding: 10px; background: rgba(0,0,0,.85)}';
+          htmlTag += '#TEM_TAG .text-elements h2 {margin: 0!important; text-align: left; font-weight: bold; font-size: 16px!important;line-height: 20px!important;font-style: normal;text-decoration: none;color: #fff; font-family: Helvetica, sans-serif;}';
+          htmlTag += '#TEM_TAG .text-elements p {font-weight: 700!important; margin: 10px 0; font-size: 11px!important; line-height: 14px!important; font-style: normal!important; text-decoration: none!important; font-family: Helvetica, sans-serif !important; display: block!important; overflow: hidden!important; padding-top: 1px!important; text-transform: uppercase; letter-spacing: 1.2px; color: #fff; opacity: .5;}';
+          htmlTag += '</style>';
+          htmlTag += '<a href="' + ad.assets.click_url + '" target="_blank">';
+          htmlTag += '<div class="image-with-text">';
+          htmlTag += '<div class="tem-img"><img src="' + ad.assets.files[0] + '" style="width:' + w + 'px;height:' + h + 'px;"/></div>';
+          if (ad.assets.title) {
+            htmlTag += '<div class="text-elements">';
+            htmlTag += '<h2>' + ad.assets.title + '</h2>';
+            htmlTag += '<p>' + (ad.assets.sponsor || '') + '</p>';
+            htmlTag += '</div>';
           };
-          htmlTag+= '</div></a><img style="display: none;" src="' + bidResponse.base.widget.impression + '&ids=' + ad.id + ':' + ad.assets.id + '">';
-          htmlTag+= '</div>';
-
+          htmlTag += '</div></a><img style="display: none;" src="' + bidResponse.base.widget.impression + '&ids=' + ad.id + ':' + ad.assets.id + '">';
+          htmlTag += '</div>';
           bidResponses.push({
             requestId: bidRequest.options.requestId,
-            cpm: parseFloat(ad.assets.cpm) || 1,
+            cpm: parseFloat(ad.assets.cpm) || 1,
             width: w,
             height: h,
             creativeId: ad.assets.id,
@@ -138,17 +130,14 @@ export const spec = {
             mediaType: BANNER,
             ad: htmlTag
           });
-
         });
       }
-
       return bidResponses;
     } catch (err) {
       utils.logError(err);
       return [];
     }
   },
-
   /**
    * @param {BidRequest} req
    * @return {boolean}
