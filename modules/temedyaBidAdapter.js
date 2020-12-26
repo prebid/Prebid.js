@@ -66,14 +66,8 @@ export const spec = {
       const bidResponse = serverResponse.body;
       const bidResponses = [];
 
-      //utils.logInfo(`bidResponse`, bidResponse);
-
       if (bidResponse && bidRequest.options.mediaType == NATIVE ) {
         bidResponse.ads.forEach(function(ad) {
-
-          utils.logInfo(`bidRequest.options`, bidRequest.options);
-          utils.logInfo(`ad`, ad);
-          utils.logInfo(`NATIVE`, NATIVE);
 
           bidResponses.push({
             requestId: bidRequest.options.requestId,
@@ -147,8 +141,6 @@ export const spec = {
 
         });
       }
-
-      utils.logInfo(`bidResponse`, bidResponses);
 
       return bidResponses;
     } catch (err) {
