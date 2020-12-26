@@ -22,10 +22,6 @@ TE Medya supports Native.
                 native: {
                     title: {
                         required: true
-                    },
-                    icon: {
-                        required: true,
-                        size: [320 , 240]
                     }
                 }
             },
@@ -35,6 +31,31 @@ TE Medya supports Native.
                     params: {
                         widgetId: 753497,
                         count: 1
+                    }
+                }
+            ]
+        }
+    ];
+```
+# Test Parameters
+# banner
+```
+
+    var adUnits = [
+        {
+            code:'tme_div_id',
+            mediaTypes:{
+                banner: {
+                    banner: {
+                        sizes:[300, 250]
+                    }
+                }
+            },
+            bids:[
+                {
+                    bidder: 'temedya',
+                    params: {
+                        widgetId: 753497
                     }
                 }
             ]
