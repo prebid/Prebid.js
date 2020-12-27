@@ -101,12 +101,9 @@ export const spec = {
           let w = ad.assets.width || 300;
           let h = ad.assets.height || 250;
 
-          let htmlTag = '<div id="TEM_TAG" style="border: 1px inset rgba(0,0,0,.85); padding: 0; margin: 0;" width="' + w + '" height="' + h + '">';
-          htmlTag += '<style>';
-          htmlTag += '#TEM_TAG .text-elements {position: absolute;bottom: 0;left: 0; right: 0; padding: 10px; background: rgba(0,0,0,.85)}';
-          htmlTag += '#TEM_TAG .text-elements h2 {margin: 0!important; text-align: left; font-weight: bold; font-size: 16px!important;line-height: 20px!important;font-style: normal;text-decoration: none;color: #fff; font-family: Helvetica, sans-serif;}';
-          htmlTag += '#TEM_TAG .text-elements p {font-weight: 700!important; margin: 10px 0; font-size: 11px!important; line-height: 14px!important; font-style: normal!important; text-decoration: none!important; font-family: Helvetica, sans-serif !important; display: block!important; overflow: hidden!important; padding-top: 1px!important; text-transform: uppercase; letter-spacing: 1.2px; color: #fff; opacity: .5;}';
-          htmlTag += '</style>';
+          let htmlTag = '<link rel="stylesheet" href="https://widget.cdn.vidyome.com/builds/neytivme.css">';
+          htmlTag += '<div id="tem_banner" class="size' + w + '-' + h + '" style="width:' + w + 'px;height:' + h + 'px">';
+          htmlTag += '<i onclick="window.open(\'https://www.temedya.com\', \'_blank\')"></i>';
           htmlTag += '<a href="' + ad.assets.click_url + '" target="_blank">';
           htmlTag += '<div class="image-with-text">';
           htmlTag += '<div class="tem-img"><img src="' + ad.assets.files[0] + '" style="width:' + w + 'px;height:' + h + 'px;"/></div>';
@@ -114,6 +111,7 @@ export const spec = {
             htmlTag += '<div class="text-elements">';
             htmlTag += '<h2>' + ad.assets.title + '</h2>';
             htmlTag += '<p>' + (ad.assets.sponsor || '') + '</p>';
+            htmlTag += '<em><canvas height="100" width="100"></canvas></em>';
             htmlTag += '</div>';
           };
           htmlTag += '</div></a><img style="display: none;" src="' + bidResponse.base.widget.impression + '&ids=' + ad.id + ':' + ad.assets.id + '">';
