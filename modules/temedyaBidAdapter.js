@@ -101,9 +101,9 @@ export const spec = {
           let w = ad.assets.width || 300;
           let h = ad.assets.height || 250;
 
-          let htmlTag = '<link rel="stylesheet" href="https://widget.cdn.vidyome.com/builds/neytivme.css">';
-          htmlTag += '<div id="tem_banner" class="size' + w + '-' + h + '" style="width:' + w + 'px;height:' + h + 'px">';
-          htmlTag += '<i onclick="window.open(\'https://www.temedya.com\', \'_blank\')"></i>';
+          let htmlTag = '<!doctype html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="https://widget.cdn.vidyome.com/builds/neytivme.css"></head>';
+          htmlTag += '<body><div id="tem_banner" class="size' + w + '-' + h + '" style="width:' + w + 'px;height:' + h + 'px">';
+          htmlTag += '<i onclick="window.open(\'https://www.temedya.com\', \'_blank\')">TE Medya</i>';
           htmlTag += '<a href="' + ad.assets.click_url + '" target="_blank">';
           htmlTag += '<div class="image-with-text">';
           htmlTag += '<div class="tem-img"><img src="' + ad.assets.files[0] + '" style="width:' + w + 'px;height:' + h + 'px;"/></div>';
@@ -115,7 +115,7 @@ export const spec = {
             htmlTag += '</div>';
           };
           htmlTag += '</div></a><img style="display: none;" src="' + bidResponse.base.widget.impression + '&ids=' + ad.id + ':' + ad.assets.id + '">';
-          htmlTag += '</div>';
+          htmlTag += '</div></body></html>';
           bidResponses.push({
             requestId: bidRequest.options.requestId,
             cpm: parseFloat(ad.assets.cpm) || 1,
