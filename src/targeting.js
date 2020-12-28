@@ -235,7 +235,8 @@ export function newTargeting(auctionManager) {
     // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
     var targeting = getWinningBidTargeting(adUnitCodes, bidsReceived)
       .concat(getCustomBidTargeting(adUnitCodes, bidsReceived))
-      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : getDealBids(adUnitCodes, bidsReceived));
+      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : getDealBids(adUnitCodes, bidsReceived))
+      .concat(getAdUnitTargeting(adUnitCodes));
 
     // store a reference of the targeting keys
     targeting.map(adUnitCode => {
@@ -607,6 +608,27 @@ export function newTargeting(auctionManager) {
         [`${key}_${bid.bidderCode}`.substring(0, MAX_DFP_KEYLENGTH)]: [bid.adserverTargeting[key]]
       };
     });
+  }
+
+  function getAdUnitTargeting(adUnitCodes) {
+    function getTargetingObj(adUnit) {
+      return deepAccess(adUnit, CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING);
+    }
+
+    function getTargetingValues(adUnit) {
+      const aut = getTargetingObj(adUnit);
+
+      return Object.keys(aut)
+        .map(function(key) {
+          return {[key]: utils.isArray(aut[key]) ? aut[key] : aut[key].split(',')};
+        });
+    }
+
+    return auctionManager.getAdUnits()
+      .filter(adUnit => includes(adUnitCodes, adUnit.code) && getTargetingObj(adUnit))
+      .map(adUnit => {
+        return {[adUnit.code]: getTargetingValues(adUnit)}
+      });
   }
 
   targeting.isApntagDefined = function() {

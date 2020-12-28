@@ -6,10 +6,10 @@ import {server} from 'test/mocks/xhr.js';
 const partner = 10;
 const pai = '11';
 const pcid = '12';
-const defaultConfigParams = {partner: partner};
-const paiConfigParams = {partner: partner, pai: pai};
-const pcidConfigParams = {partner: partner, pcid: pcid};
-const allConfigParams = {partner: partner, pai: pai, pcid: pcid};
+const defaultConfigParams = { params: {partner: partner} };
+const paiConfigParams = { params: {partner: partner, pai: pai} };
+const pcidConfigParams = { params: {partner: partner, pcid: pcid} };
+const allConfigParams = { params: {partner: partner, pai: pai, pcid: pcid} };
 const responseHeader = {'Content-Type': 'application/json'}
 
 describe('IntentIQ tests', function () {
@@ -24,19 +24,19 @@ describe('IntentIQ tests', function () {
   });
 
   it('should log an error if no configParams were passed when getId', function () {
-    let submodule = intentIqIdSubmodule.getId();
+    let submodule = intentIqIdSubmodule.getId({ params: {} });
     expect(logErrorStub.calledOnce).to.be.true;
     expect(submodule).to.be.undefined;
   });
 
   it('should log an error if partner configParam was not passed when getId', function () {
-    let submodule = intentIqIdSubmodule.getId({});
+    let submodule = intentIqIdSubmodule.getId({ params: {} });
     expect(logErrorStub.calledOnce).to.be.true;
     expect(submodule).to.be.undefined;
   });
 
   it('should log an error if partner configParam was not a numeric value', function () {
-    let submodule = intentIqIdSubmodule.getId({partner: '10'});
+    let submodule = intentIqIdSubmodule.getId({ params: {partner: '10'} });
     expect(logErrorStub.calledOnce).to.be.true;
     expect(submodule).to.be.undefined;
   });
