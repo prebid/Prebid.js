@@ -28,7 +28,6 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(req => {
       const mediaType = this._isBannerRequest(req) ? 'display' : NATIVE;
-
       const data = {
         wid: req.params.widgetId,
         type: mediaType,
@@ -36,13 +35,11 @@ export const spec = {
         mediaType: mediaType,
         requestid: req.bidId
       };
-
       if (mediaType === 'display') {
         data.sizes = utils.parseSizesInput(
           req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
         ).join('|')
       }
-
       /** @type {ServerRequest} */
       return {
         method: ENDPOINT_METHOD,
@@ -100,7 +97,6 @@ export const spec = {
         bidResponse.ads.forEach(function(ad) {
           let w = ad.assets.width || 300;
           let h = ad.assets.height || 250;
-
           let htmlTag = '<!doctype html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="https://widget.cdn.vidyome.com/builds/neytivme.css"></head>';
           htmlTag += '<body><div id="tem_banner" class="size' + w + '-' + h + '" style="width:' + w + 'px;height:' + h + 'px">';
           htmlTag += '<i onclick="window.open(\'https://www.temedya.com\', \'_blank\')">TE Medya</i>';
@@ -143,7 +139,6 @@ export const spec = {
    */
   _isBannerRequest(req) {
     return !!(req.mediaTypes && req.mediaTypes.banner);
-  },
-
+  }
 }
 registerBidder(spec);
