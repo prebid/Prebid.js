@@ -336,6 +336,7 @@ describe('BeachfrontAdapter', function () {
         const width = 300;
         const height = 250;
         const bidRequest = bidRequests[0];
+        bidRequest.params.tagid = '7cd7a7b4-ef3f-4aeb-9565-3627f255fa10';
         bidRequest.mediaTypes = {
           banner: {
             sizes: [ width, height ]
@@ -354,6 +355,7 @@ describe('BeachfrontAdapter', function () {
             slot: bidRequest.adUnitCode,
             id: bidRequest.params.appId,
             bidfloor: bidRequest.params.bidfloor,
+            tagid: bidRequest.params.tagid,
             sizes: [{ w: width, h: height }]
           }
         ]);
