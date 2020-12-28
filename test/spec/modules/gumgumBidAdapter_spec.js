@@ -1,7 +1,8 @@
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -35,7 +36,7 @@ describe('gumgumAdapter', function () {
 
     it('should return true when required params found', function () {
       const zoneBid = { ...bid, params: { 'zone': '123' } };
-      const pubIdBid = { ...bid, params: { 'pubId': '123' } };
+      const pubIdBid = { ...bid, params: { 'pubId': 123 } };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
       expect(spec.isBidRequestValid(zoneBid)).to.equal(true);
       expect(spec.isBidRequestValid(pubIdBid)).to.equal(true);
@@ -143,23 +144,54 @@ describe('gumgumAdapter', function () {
         protocols: [1, 2]
       }
     };
+    const zoneParam = { 'zone': '123a' };
+    const pubIdParam = { 'pubId': 123 };
 
-    describe('zone param', function () {
-      const zoneParam = { 'zone': '123a' };
+    it('should set pubId param if found', function () {
+      const request = { ...bidRequests[0], params: pubIdParam };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.pubId).to.equal(pubIdParam.pubId);
+    });
 
-      it('should set t and pi param', function () {
-        const request = { ...bidRequests[0], params: zoneParam };
-        const bidRequest = spec.buildRequests([request])[0];
-        expect(bidRequest.data.t).to.equal(zoneParam.zone);
-        expect(bidRequest.data.pi).to.equal(2);
-      });
-      it('should set the correct pi param if slot param is found', function () {
-        const request = { ...bidRequests[0], params: { ...zoneParam, 'slot': 1 } };
-        const bidRequest = spec.buildRequests([request])[0];
-        expect(bidRequest.data.pi).to.equal(3);
-      });
+    it('should set t param when zone param is found', function () {
+      const request = { ...bidRequests[0], params: zoneParam };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.t).to.equal(zoneParam.zone);
+    });
+
+    it('should set the iriscat param when found', function () {
+      const request = { ...bidRequests[0], params: { iriscat: 'abc123' } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.have.property('iriscat');
+    });
+
+    it('should not set the iriscat param when not found', function () {
+      const request = { ...bidRequests[0] }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('iriscat');
+    });
+
+    it('should set the irisid param when found', function () {
+      const request = { ...bidRequests[0], params: { irisid: 'abc123' } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.have.property('irisid');
+    });
+
+    it('should not set the irisid param when not found', function () {
+      const request = { ...bidRequests[0] }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('irisid');
+    });
+
+    it('should not set the irisid param when not of type string', function () {
+      const request = { ...bidRequests[0], params: { irisid: 123456 } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('irisid');
+    });
+
+    describe('product id', function () {
       it('should set the correct pi param if native param is found', function () {
-        const request = { ...bidRequests[0], params: { ...zoneParam, 'native': 2 } };
+        const request = { ...bidRequests[0], params: { ...zoneParam, native: 2 } };
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.pi).to.equal(5);
       });
@@ -174,25 +206,18 @@ describe('gumgumAdapter', function () {
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.pi).to.equal(6);
       });
-    });
-
-    describe('pubId zone', function () {
-      const pubIdParam = { 'pubId': 'abc' };
-
-      it('should set t param', function () {
-        const request = { ...bidRequests[0], params: pubIdParam };
+      it('should set the correct pi param if slot param is found', function () {
+        const request = { ...bidRequests[0], params: { ...zoneParam, slot: '123s' } };
         const bidRequest = spec.buildRequests([request])[0];
-        expect(bidRequest.data.pubId).to.equal(pubIdParam.pubId);
+        expect(bidRequest.data.pi).to.equal(3);
       });
-
-      it('should set the correct pi depending on what is found in mediaTypes', function () {
-        const request = { ...bidRequests[0], params: pubIdParam };
-        const bidRequest = spec.buildRequests([request])[0];
-        const vidRequest = { ...bidRequests[0], mediaTypes: vidMediaTypes, params: { 'videoPubID': 123 } };
-        const vidBidRequest = spec.buildRequests([vidRequest])[0];
-
-        expect(bidRequest.data.pi).to.equal(2);
-        expect(vidBidRequest.data.pi).to.equal(7);
+      it('should default the pi param to 2 if only zone or pubId param is found', function () {
+        const zoneRequest = { ...bidRequests[0], params: zoneParam };
+        const pubIdRequest = { ...bidRequests[0], params: pubIdParam };
+        const zoneBidRequest = spec.buildRequests([zoneRequest])[0];
+        const pubIdBidRequest = spec.buildRequests([pubIdRequest])[0];
+        expect(zoneBidRequest.data.pi).to.equal(2);
+        expect(pubIdBidRequest.data.pi).to.equal(2);
       });
     });
 
