@@ -1,5 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js'
 
 const BIDDER_CODE = 'adtrue';
 const ADTRUE_CURRENCY = 'USD';
@@ -16,7 +17,6 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     let bids = JSON.parse(JSON.stringify(validBidRequests))
-
     const payload = {};
 
     payload.device = {};
@@ -27,7 +27,11 @@ export const spec = {
 
     payload.site = {};
     payload.site.zoneId = bids[0].params.zoneId;
-    payload.site.referrer = _getPageUrl(validBidRequests, bidderRequest);
+    payload.site.referrer = extractTopWindowReferrerFromBidRequest(bidderRequest);
+    payload.site.pageUrl = extractTopWindowUrlFromBidRequest(bidderRequest);
+
+    payload.gdpr =  extractGdprFromBidderRequest(bidderRequest);
+    payload.size = extractSizesFromBidRequest(bidRequest);
 
     payload.bids = bids;
 
@@ -61,6 +65,7 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponses) {
+    const syncs = [];
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
@@ -78,19 +83,74 @@ export const spec = {
   }
 };
 
+export function extractSizesFromBidRequest(bidRequest) {
+  // since pbjs 3.0
+  if (bidRequest && utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes')) {
+    return bidRequest.mediaTypes.banner.sizes;
+
+    // for backward compatibility
+  } else if (bidRequest && bidRequest.sizes) {
+    return bidRequest.sizes;
+
+    // fallback
+  } else {
+    return [];
+  }
+}
+
 /**
- * @param {BidRequest} bidRequest
- * @param bidderRequest
+ * Extracts the GDPR information from given bidder request
+ *
+ * @param {*} bidderRequest
+ * @returns {*}
+ */
+export function extractGdprFromBidderRequest(bidderRequest) {
+  let gdpr = null;
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    gdpr = {
+      consentString: bidderRequest.gdprConsent.consentString,
+      consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+    };
+  }
+
+  return gdpr;
+}
+
+/**
+ * Extracts the page url from given bid request or use the (top) window location as fallback
+ *
+ * @param {*} bidRequest
  * @returns {string}
  */
-function _getPageUrl(bidRequest, bidderRequest) {
-  let pageUrl = config.getConfig('pageUrl');
-  if (bidRequest.params.referrer) {
-    pageUrl = bidRequest.params.referrer;
-  } else if (!pageUrl) {
-    pageUrl = bidderRequest.refererInfo.referer;
+export function extractTopWindowUrlFromBidRequest(bidRequest) {
+  if (bidRequest && utils.deepAccess(bidRequest, 'refererInfo.canonicalUrl')) {
+    return bidRequest.refererInfo.canonicalUrl;
   }
-  return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
+
+  try {
+    return window.top.location.href;
+  } catch (e) {
+    return window.location.href;
+  }
+}
+
+/**
+ * Extracts the referrer from given bid request or use the (top) document referrer as fallback
+ *
+ * @param {*} bidRequest
+ * @returns {string}
+ */
+export function extractTopWindowReferrerFromBidRequest(bidRequest) {
+  if (bidRequest && utils.deepAccess(bidRequest, 'refererInfo.referer')) {
+    return bidRequest.refererInfo.referer;
+  }
+
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return window.document.referrer;
+  }
 }
 
 
