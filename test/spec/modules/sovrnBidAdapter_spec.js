@@ -4,11 +4,26 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
 
+const adUnitBidRequest = {
+  'bidder': 'sovrn',
+  'params': {
+    'tagid': '403370'
+  },
+  'adUnitCode': 'adunit-code',
+  'sizes': [
+    [300, 250],
+    [300, 600]
+  ],
+  'bidId': '30b31c1838de1e',
+  'bidderRequestId': '22edbae2733bf6',
+  'auctionId': '1d1a030790a475',
+}
+
 describe('sovrnBidAdapter', function() {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'sovrn',
       'params': {
         'tagid': '403370'
@@ -296,11 +311,31 @@ describe('sovrnBidAdapter', function() {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475'
-      }];
+      }]
       const request = spec.buildRequests(segmentsRequests, bidderRequest)
       const payload = JSON.parse(request.data)
       expect(payload.imp[0].ext.deals[0]).to.equal('test1')
       expect(payload.imp[0].ext.deals[1]).to.equal('test2')
+    })
+    it('should use the floor provided from the floor module if present', function() {
+      const floorBid = {...adUnitBidRequest, getFloor: () => ({currency: 'USD', floor: 1.10})}
+      floorBid.params = {
+        tagid: 1234,
+        bidfloor: 2.00
+      }
+      const request = spec.buildRequests([floorBid], bidderRequest)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].bidfloor).to.equal(1.10)
+    })
+    it('should use the floor from the param if there is no floor from the floor module', function() {
+      const floorBid = {...adUnitBidRequest, getFloor: () => ({})}
+      floorBid.params = {
+        tagid: 1234,
+        bidfloor: 2.00
+      }
+      const request = spec.buildRequests([floorBid], bidderRequest)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].bidfloor).to.equal(2.00)
     })
   });
 
