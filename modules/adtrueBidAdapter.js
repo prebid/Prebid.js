@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js'
+import {config} from '../src/config.js'
 
 const BIDDER_CODE = 'adtrue';
 const ADTRUE_CURRENCY = 'USD';
@@ -27,11 +27,8 @@ export const spec = {
 
     payload.site = {};
     payload.site.zoneId = bids[0].params.zoneId;
-    payload.site.referrer = extractTopWindowReferrerFromBidRequest(bidderRequest);
-    payload.site.pageUrl = extractTopWindowUrlFromBidRequest(bidderRequest);
-
-    payload.gdpr =  extractGdprFromBidderRequest(bidderRequest);
-    payload.size = extractSizesFromBidRequest(bidRequest);
+    payload.site.referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
+    payload.site.pageUrl = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
 
     payload.bids = bids;
 
@@ -63,7 +60,6 @@ export const spec = {
     });
     return bidResponses;
   },
-
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     if (syncOptions.iframeEnabled) {
@@ -82,76 +78,4 @@ export const spec = {
     return syncs;
   }
 };
-
-export function extractSizesFromBidRequest(bidRequest) {
-  // since pbjs 3.0
-  if (bidRequest && utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes')) {
-    return bidRequest.mediaTypes.banner.sizes;
-
-    // for backward compatibility
-  } else if (bidRequest && bidRequest.sizes) {
-    return bidRequest.sizes;
-
-    // fallback
-  } else {
-    return [];
-  }
-}
-
-/**
- * Extracts the GDPR information from given bidder request
- *
- * @param {*} bidderRequest
- * @returns {*}
- */
-export function extractGdprFromBidderRequest(bidderRequest) {
-  let gdpr = null;
-
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    gdpr = {
-      consentString: bidderRequest.gdprConsent.consentString,
-      consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
-    };
-  }
-
-  return gdpr;
-}
-
-/**
- * Extracts the page url from given bid request or use the (top) window location as fallback
- *
- * @param {*} bidRequest
- * @returns {string}
- */
-export function extractTopWindowUrlFromBidRequest(bidRequest) {
-  if (bidRequest && utils.deepAccess(bidRequest, 'refererInfo.canonicalUrl')) {
-    return bidRequest.refererInfo.canonicalUrl;
-  }
-
-  try {
-    return window.top.location.href;
-  } catch (e) {
-    return window.location.href;
-  }
-}
-
-/**
- * Extracts the referrer from given bid request or use the (top) document referrer as fallback
- *
- * @param {*} bidRequest
- * @returns {string}
- */
-export function extractTopWindowReferrerFromBidRequest(bidRequest) {
-  if (bidRequest && utils.deepAccess(bidRequest, 'refererInfo.referer')) {
-    return bidRequest.refererInfo.referer;
-  }
-
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return window.document.referrer;
-  }
-}
-
-
 registerBidder(spec);
