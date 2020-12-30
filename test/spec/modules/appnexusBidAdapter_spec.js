@@ -265,6 +265,7 @@ describe('AppNexusAdapter', function () {
             placementId: '10433394',
             user: {
               externalUid: '123',
+              segments: [123, { id: 987, value: 876 }],
               foobar: 'invalid'
             }
           }
@@ -277,6 +278,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
         external_uid: '123',
+        segments: [{id: 123}, {id: 987, value: 876}]
       });
     });
 
@@ -778,6 +780,18 @@ describe('AppNexusAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.user.coppa).to.equal(true);
+
+      config.getConfig.restore();
+    });
+
+    it('should set the X-Is-Test customHeader if test flag is enabled', function () {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon.stub(config, 'getConfig')
+        .withArgs('apn_test')
+        .returns(true);
+
+      const request = spec.buildRequests([bidRequest]);
+      expect(request.options.customHeaders).to.deep.equal({'X-Is-Test': 1});
 
       config.getConfig.restore();
     });

@@ -422,7 +422,7 @@ describe('sovrnBidAdapter', function() {
     });
 
     it('should get correct bid response when ttl is set', function () {
-      response.body.seatbid[0].bid[0].ttl = 480;
+      response.body.seatbid[0].bid[0].ext = { 'ttl': 480 };
 
       let expectedResponse = [{
         'requestId': '263c448586f5a1',

@@ -36,7 +36,8 @@ userIdAsEids = [
             atype: 1
         },
         ext: {
-            linkType: 2
+            linkType: 2,
+            abTestingControlGroup: false
         }]
     },
 
