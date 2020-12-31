@@ -17,19 +17,19 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     let bids = JSON.parse(JSON.stringify(validBidRequests))
+
     const payload = {};
+    payload.prebid = true;
+    payload.zoneId = bids[0].params.zoneId;
 
-    payload.device = {};
-    payload.device.ua = navigator.userAgent;
-    payload.device.w = screen.width;
-    payload.device.h = screen.height;
-    payload.device.lang = navigator.language;
-
-    payload.site = {};
-    payload.site.zoneId = bids[0].params.zoneId;
-    payload.site.referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-    payload.site.pageUrl = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
-
+    if (bidderRequest && bidderRequest.refererInfo) {
+      payload.site = {};
+      payload.site.ref = encodeURIComponent(bidderRequest.refererInfo.referer);
+      payload.site.lang = navigator.language;
+      payload.site.top = bidderRequest.refererInfo.reachedTop;
+      payload.site.ifs = bidderRequest.refererInfo.numIframes;
+      payload.site.stk = bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
+    }
     payload.bids = bids;
 
     return {
