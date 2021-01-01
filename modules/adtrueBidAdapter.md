@@ -25,7 +25,8 @@ var adUnits = [
       {
           bidder: 'adtrue',
           params: {
-              zoneId: '6677028', // required, zoneId provided by AdTrue
+              zoneId: '6677028', // required, Zone Id provided by AdTrue
+              publisherId: '1088', // required, Publisher Id provided by AdTrue  
               reserve: 0.1         // optional  
           }
       }
@@ -49,8 +50,9 @@ var videoAdUnit = {
     {
       bidder: 'adtrue',
       params: {
-        zoneId: '6677028', // required, zoneId provided by AdTrue
-        reserve: 0.1         // optional 
+           zoneId: '6677029', // required, Zone Id provided by AdTrue
+           publisherId: '1088', // required, Publisher Id provided by AdTrue  
+           reserve: 0.1         // optional  
       }
     }
   ]

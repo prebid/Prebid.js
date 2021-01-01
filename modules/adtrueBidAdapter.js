@@ -18,6 +18,7 @@ const DEFAULT_HEIGHT = 0;
 const USER_SYNC_URL_IFRAME = 'https://hb.adtrue.com/prebid/usersync_async?p=';
 const USER_SYNC_URL_IMAGE = 'https://hb.adtrue.com/prebid/usersync_pixel?p=';
 
+let publisherId = 0;
 
 function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
@@ -26,10 +27,6 @@ function _getDomainFromURL(url) {
 }
 
 function _parseSlotParam(paramName, paramValue) {
-  if (!utils.isStr(paramValue)) {
-    paramValue && utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
-    return UNDEFINED;
-  }
   switch (paramName) {
     case 'reserve':
       return parseFloat(paramValue) || UNDEFINED;
@@ -39,32 +36,10 @@ function _parseSlotParam(paramName, paramValue) {
 }
 
 function _parseAdSlot(bid) {
-  bid.params.adUnit = '';
-  bid.params.adUnitIndex = '0';
   bid.params.width = 0;
   bid.params.height = 0;
-  bid.params.adSlot = _cleanSlot(bid.params.adSlot);
-
-  var slot = bid.params.adSlot;
-  var splits = slot.split(':');
-
-  slot = splits[0];
-  if (splits.length == 2) {
-    bid.params.adUnitIndex = splits[1];
-  }
   // check if size is mentioned in sizes array. in that case do not check for @ in adslot
-  splits = slot.split('@');
-  bid.params.adUnit = splits[0];
-  if (splits.length > 1) {
-    // i.e size is specified in adslot, so consider that and ignore sizes array
-    splits = splits[1].split('x');
-    if (splits.length != 2) {
-      utils.logWarn(LOG_WARN_PREFIX + 'AdSlot Error: adSlot not in required format');
-      return;
-    }
-    bid.params.width = parseInt(splits[0], 10);
-    bid.params.height = parseInt(splits[1], 10);
-  } else if (bid.hasOwnProperty('mediaTypes') &&
+  if (bid.hasOwnProperty('mediaTypes') &&
     bid.mediaTypes.hasOwnProperty(BANNER) &&
     bid.mediaTypes.banner.hasOwnProperty('sizes')) {
     var i = 0;
@@ -222,14 +197,12 @@ function _createImpressionObject(bid, conf) {
 
   impObj = {
     id: bid.bidId,
-    tagid: bid.params.adUnit || undefined,
+    tagid: String(bid.params.zoneId || undefined),
     bidfloor: _parseSlotParam('reserve', bid.params.reserve),
     secure: 1,
     ext: {},
     bidfloorcur: DEFAULT_CURRENCY
   };
-
-  _addPMPDealsInImpression(impObj, bid);
 
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
@@ -309,18 +282,8 @@ export const spec = {
 
     validBidRequests.forEach(originalBid => {
       bid = utils.deepClone(originalBid);
-      bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
-      if (bid.params.hasOwnProperty('video')) {
-        // Nothing to do
-      } else {
-        // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height
-        // The corresponding banner imp object will not be generated, but we still want the native object to be sent, hence the following check
-        if (!(bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(NATIVE)) && bid.params.width === 0 && bid.params.height === 0) {
-          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
-          return;
-        }
-      }
+
       conf.zoneId = conf.zoneId || bid.params.zoneId;
       conf.pubId = conf.pubId || bid.params.publisherId;
 
@@ -340,8 +303,9 @@ export const spec = {
     if (payload.imp.length == 0) {
       return;
     }
-    payload.site.publisher.id = conf.pubId.trim();
+    publisherId = conf.pubId.trim();
 
+    payload.site.publisher.id = conf.pubId.trim();
     payload.ext.wrapper = {};
 
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
