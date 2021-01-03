@@ -2,11 +2,15 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from "../src/mediaTypes";
 import {config} from "../src/config";
+import {getStorageManager} from "../src/storageManager";
+
+const storage = getStorageManager();
 
 const BIDDER_CODE = 'adtrue';
 const ADTRUE_CURRENCY = 'USD';
 const ADTRUE_TTL = 120;
-const ENDPOINT_URL = 'https://hb.adtrue.com/prebid/auction';
+// const ENDPOINT_URL = 'https://hb.adtrue.com/prebid/auction';
+const ENDPOINT_URL = 'http://localhost:8080/prebid/auction';
 const LOG_WARN_PREFIX = 'AdTrue: ';
 
 const DEFAULT_CURRENCY = 'USD';
@@ -15,8 +19,10 @@ const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 
-const USER_SYNC_URL_IFRAME = 'https://hb.adtrue.com/prebid/usersync_async?p=';
-const USER_SYNC_URL_IMAGE = 'https://hb.adtrue.com/prebid/usersync_pixel?p=';
+// const USER_SYNC_URL_IFRAME = 'https://hb.adtrue.com/prebid/usersync_async?p=';
+// const USER_SYNC_URL_IMAGE = 'https://hb.adtrue.com/prebid/usersync_pixel?p=';
+const USER_SYNC_URL_IFRAME = 'http://localhost:8080/prebid/usersync_async?p=';
+const USER_SYNC_URL_IMAGE = 'http://localhost:8080/prebid/usersync_pixel?p=';
 
 let publisherId = 0;
 
@@ -34,6 +40,36 @@ function _parseSlotParam(paramName, paramValue) {
       return paramValue;
   }
 }
+
+let platform = (function getPlatform() {
+  var ua = navigator.userAgent;
+  if (ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1) {
+    return 'Android'
+  }
+  if (ua.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/)) {
+    return 'iOS'
+  }
+  return 'windows'
+})();
+
+function _generateGUID() {
+  var d = new Date().getTime();
+  var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = (d + Math.random() * 16) % 16 | 0;
+    d = Math.floor(d / 16);
+    return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  })
+  return guid;
+}
+
+function _isMobile() {
+  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
+}
+
+function _isConnectedTV() {
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
+}
+
 
 function _parseAdSlot(bid) {
   bid.params.width = 0;
@@ -67,7 +103,18 @@ function _initConf(refererInfo) {
   };
 }
 
+function _getLanguage() {
+  const language = navigator.language ? 'language' : 'userLanguage';
+  return navigator[language].split('-')[0];
+}
+
 function _createOrtbTemplate(conf) {
+  var guid;
+  if (storage.getDataFromLocalStorage('adtrue_user_id') == null) {
+    storage.setDataInLocalStorage('adtrue_user_id', _generateGUID())
+  }
+  guid = storage.getDataFromLocalStorage('adtrue_user_id')
+
   return {
     id: '' + new Date().getTime(),
     at: AUCTION_TYPE,
@@ -79,14 +126,26 @@ function _createOrtbTemplate(conf) {
       publisher: {}
     },
     device: {
+      ip: 'caller',
       ua: navigator.userAgent,
+      os: platform,
       js: 1,
       dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
       h: screen.height,
       w: screen.width,
-      language: navigator.language
+      language: _getLanguage(),
+      devicetype: _isMobile() ? 1 : _isConnectedTV() ? 3 : 2,
+      geo: {
+        country: '',
+        type: 0,
+        ipservice: 1,
+        region: '',
+        city: '',
+      },
     },
-    user: {},
+    user: {
+      id: guid
+    },
     ext: {}
   };
 }
