@@ -20,7 +20,7 @@ The adapter supports Video(instream). For the integration, Rise returns content 
 
 | Name | Scope | Type | Description | Example
 | ---- | ----- | ---- | ----------- | -------
-| `isOrg` | required | String |  Rise publisher Id provided by your Rise representative  | "56f91cd4d3e360002000033"
+| `isOrg` | required | String |  Rise publisher Id provided by your Rise representative  | "56f91cd4d3e3660002000033"
 | `floorPrice` | optional | Number |  Minimum price in USD. Misuse of this parameter can impact revenue | 2.00
 | `ifa` | optional | String |  The ID for advertisers (also referred to as "IDFA")  | "XXX-XXX"
 | `testMode` | optional | Boolean |  This activates the test mode  | false
@@ -40,7 +40,7 @@ var adUnits = [
         bids: [{
           bidder: 'rise',
           params: {
-            isOrg: '56f91cd4d3e360002000033', // Required
+            isOrg: '56f91cd4d3e3660002000033', // Required
             floorPrice: 2.00, // Optional
             ifa: 'XXX-XXX', // Optional
             testMode: false // Optional
