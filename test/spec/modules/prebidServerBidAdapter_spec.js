@@ -1207,7 +1207,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[1]).is.equal('segB');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].uids[0].id).is.equal('11111');
-      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].ext.linkType).is.equal('some-link-type');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].uids[0].ext.linkType).is.equal('some-link-type');
       // LiveRamp should exist
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveramp.com')[0].uids[0].id).is.equal('0000-1111-2222-3333');
     });
