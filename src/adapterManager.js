@@ -179,7 +179,20 @@ export let uspDataHandler = {
   }
 };
 
-let clientTestAdapters = [];
+// export for testing
+export let clientTestAdapters = [];
+export const allS2SBidders = [];
+
+export function getAllS2SBidders() {
+  adapterManager.s2STestingEnabled = false;
+  _s2sConfigs.forEach(s2sConfig => {
+    if (s2sConfig && s2sConfig.enabled) {
+      if (s2sConfig.bidders && s2sConfig.bidders.length) {
+        allS2SBidders.push(...s2sConfig.bidders);
+      }
+    }
+  })
+}
 
 adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels) {
   /**
@@ -197,41 +210,44 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   let clientBidderCodes = bidderCodes;
 
   let bidRequests = [];
-  const allS2SBidders = [];
+
+  if (allS2SBidders.length === 0) {
+    getAllS2SBidders();
+  }
 
   _s2sConfigs.forEach(s2sConfig => {
     if (s2sConfig && s2sConfig.enabled) {
-      if (s2sConfig.bidders && s2sConfig.bidders.length) {
-        allS2SBidders.push(...s2sConfig.bidders);
-      }
-
-      // if s2sConfig.bidderControl testing is turned on
       if (doingS2STesting(s2sConfig)) {
-        const bidderMap = s2sTestingModule.getSourceBidderMap(adUnits);
+        s2sTestingModule.calculateBidSources(s2sConfig);
+        const bidderMap = s2sTestingModule.getSourceBidderMap(adUnits, allS2SBidders);
         // get all adapters doing client testing
-        clientTestAdapters = bidderMap[s2sTestingModule.CLIENT];
+        bidderMap[s2sTestingModule.CLIENT].forEach(bidder => {
+          if (!includes(clientTestAdapters, bidder)) {
+            clientTestAdapters.push(bidder);
+          }
+        })
       }
     }
-  });
+  })
 
   // don't call these client side (unless client request is needed for testing)
   clientBidderCodes = bidderCodes.filter(bidderCode => {
     return !includes(allS2SBidders, bidderCode) || includes(clientTestAdapters, bidderCode)
   });
 
+  // these are called on the s2s adapter
+  let adaptersServerSide = allS2SBidders;
+
+  const adUnitsContainServerRequests = (adUnits, s2sConfig) => Boolean(
+    find(adUnits, adUnit => find(adUnit.bids, bid => (
+      bid.bidSource ||
+      (s2sConfig.bidderControl && s2sConfig.bidderControl[bid.bidder])
+    ) && bid.finalSource === s2sTestingModule.SERVER))
+  );
+
   _s2sConfigs.forEach(s2sConfig => {
     if (s2sConfig && s2sConfig.enabled) {
-      // these are called on the s2s adapter
-      let adaptersServerSide = s2sConfig.bidders;
-
-      const adUnitsContainServerRequests = (adUnits, s2sConfig) => Boolean(
-        find(adUnits, adUnit => find(adUnit.bids, bid => (
-          bid.bidSource ||
-          (s2sConfig.bidderControl && s2sConfig.bidderControl[bid.bidder])
-        ) && bid.finalSource === s2sTestingModule.SERVER))
-      );
-
-      if (isTestingServerOnly(s2sConfig) && adUnitsContainServerRequests(adUnits, s2sConfig)) {
+      if ((isTestingServerOnly(s2sConfig) && adUnitsContainServerRequests(adUnits, s2sConfig))) {
         utils.logWarn('testServerOnly: True.  All client requests will be suppressed.');
         clientBidderCodes.length = 0;
       }
@@ -272,6 +288,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       });
     }
   })
+
   // client adapters
   let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
   clientBidderCodes.forEach(bidderCode => {

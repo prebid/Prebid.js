@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
+import adapterManager, { allS2SBidders, clientTestAdapters, gdprDataHandler } from 'src/adapterManager.js';
 import {
   getAdUnits,
   getServerTestingConfig,
@@ -54,6 +54,11 @@ var rubiconAdapterMock = {
   callBids: sinon.stub()
 };
 
+var pubmaticAdapterMock = {
+  bidder: 'rubicon',
+  callBids: sinon.stub()
+};
+
 var badAdapterMock = {
   bidder: 'badBidder',
   callBids: sinon.stub().throws(Error('some fake error'))
@@ -92,6 +97,7 @@ describe('adapterManager tests', function () {
       appnexusAdapterMock.callBids.reset();
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
+      adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
       adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
     });
 
@@ -630,6 +636,10 @@ describe('adapterManager tests', function () {
       prebidServerAdapterMock.callBids.reset();
     });
 
+    afterEach(function () {
+      allS2SBidders.length = 0;
+    });
+
     const bidRequests = [{
       'bidderCode': 'appnexus',
       'auctionId': '1863e370099523',
@@ -1041,7 +1051,6 @@ describe('adapterManager tests', function () {
     });
 
     afterEach(function () {
-      config.setConfig({s2sConfig: {}});
       s2sTesting.getSourceBidderMap.restore();
     });
 
@@ -1071,20 +1080,6 @@ describe('adapterManager tests', function () {
 
       // adequant
       sinon.assert.notCalled(adequantAdapterMock.callBids);
-    });
-
-    it('calls client adapters if client sources defined', function () {
-      stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
-      callBids();
-
-      // server adapter
-      checkServerCalled(2, 2);
-
-      // appnexus
-      checkClientCalled(appnexusAdapterMock, 2);
-
-      // adequant
-      checkClientCalled(adequantAdapterMock, 2);
     });
 
     it('calls client adapters if client sources defined', function () {
@@ -1178,6 +1173,334 @@ describe('adapterManager tests', function () {
     });
   });
 
+  describe('Multiple Server s2sTesting', function () {
+    let doneStub = sinon.stub();
+    let ajaxStub = sinon.stub();
+
+    function getTestAdUnits() {
+      // copy adUnits
+      return utils.deepClone(getAdUnits()).map(adUnit => {
+        adUnit.bids = adUnit.bids.filter(bid => {
+          return includes(['adequant', 'appnexus', 'pubmatic', 'rubicon'],
+            bid.bidder);
+        });
+        return adUnit;
+      })
+    }
+
+    function callBids(adUnits = getTestAdUnits()) {
+      let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+      adapterManager.callBids(adUnits, bidRequests, doneStub, ajaxStub);
+    }
+
+    function checkServerCalled(numAdUnits, firstConfigNumBids, secondConfigNumBids) {
+      let requestObjects = [];
+      let configBids;
+      if (firstConfigNumBids === 0 || secondConfigNumBids === 0) {
+        configBids = Math.max(firstConfigNumBids, secondConfigNumBids)
+        sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
+        let requestObj1 = prebidServerAdapterMock.callBids.firstCall.args[0];
+        requestObjects.push(requestObj1)
+      } else {
+        sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+        let requestObj1 = prebidServerAdapterMock.callBids.firstCall.args[0];
+        let requestObj2 = prebidServerAdapterMock.callBids.secondCall.args[0];
+        requestObjects.push(requestObj1, requestObj2);
+      }
+
+      requestObjects.forEach((requestObj, index) => {
+        const numBids = configBids !== undefined ? configBids : index === 0 ? firstConfigNumBids : secondConfigNumBids
+        expect(requestObj.ad_units.length).to.equal(numAdUnits);
+        for (let i = 0; i < numAdUnits; i++) {
+          expect(requestObj.ad_units[i].bids.filter((bid) => {
+            return bid.bidder === 'appnexus' || bid.bidder === 'adequant' || bid.bidder === 'pubmatic';
+          }).length).to.equal(numBids);
+        }
+      })
+    }
+
+    function checkClientCalled(adapter, numBids) {
+      sinon.assert.calledOnce(adapter.callBids);
+      expect(adapter.callBids.firstCall.args[0].bids.length).to.equal(numBids);
+    }
+
+    beforeEach(function () {
+      allS2SBidders.length = 0;
+      clientTestAdapters.length = 0
+
+      adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
+      adapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
+      adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
+      adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
+      adapterManager.bidderRegistry['pubmatic'] = pubmaticAdapterMock;
+
+      prebidServerAdapterMock.callBids.reset();
+      adequantAdapterMock.callBids.reset();
+      appnexusAdapterMock.callBids.reset();
+      rubiconAdapterMock.callBids.reset();
+      pubmaticAdapterMock.callBids.reset();
+    });
+
+    it('calls server adapter if no sources defined for config where testing is true, ' +
+    'calls client adapter for second config where testing is false', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        testing: true,
+      });
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+
+      callBids();
+
+      // server adapter
+      checkServerCalled(2, 2, 1);
+
+      // appnexus
+      sinon.assert.notCalled(appnexusAdapterMock.callBids);
+
+      // adequant
+      sinon.assert.notCalled(adequantAdapterMock.callBids);
+
+      // pubmatic
+      sinon.assert.notCalled(pubmaticAdapterMock.callBids);
+
+      // rubicon
+      sinon.assert.called(rubiconAdapterMock.callBids);
+    });
+
+    it('calls client adapter if one client source defined for config where testing is true, ' +
+    'calls client adapter for second config where testing is false', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        bidderControl: {
+          appnexus: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true,
+      });
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      callBids();
+
+      // server adapter
+      checkServerCalled(2, 1, 1);
+
+      // appnexus
+      checkClientCalled(appnexusAdapterMock, 2);
+
+      // adequant
+      sinon.assert.notCalled(adequantAdapterMock.callBids);
+
+      // pubmatic
+      sinon.assert.notCalled(pubmaticAdapterMock.callBids);
+
+      // rubicon
+      checkClientCalled(rubiconAdapterMock, 1);
+    });
+
+    it('calls client adapters if client sources defined in first config and server in second config', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        bidderControl: {
+          appnexus: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+          adequant: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true,
+      });
+
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+
+      callBids();
+
+      // server adapter
+      checkServerCalled(2, 0, 1);
+
+      // appnexus
+      checkClientCalled(appnexusAdapterMock, 2);
+
+      // adequant
+      checkClientCalled(adequantAdapterMock, 2);
+
+      // pubmatic
+      sinon.assert.notCalled(pubmaticAdapterMock.callBids);
+
+      // rubicon
+      checkClientCalled(rubiconAdapterMock, 1);
+    });
+
+    it('does not call server adapter for bidders that go to client when both configs are set to client', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        bidderControl: {
+          appnexus: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+          adequant: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true,
+      });
+
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        bidderControl: {
+          pubmatic: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      callBids();
+
+      sinon.assert.notCalled(prebidServerAdapterMock.callBids);
+
+      // appnexus
+      checkClientCalled(appnexusAdapterMock, 2);
+
+      // adequant
+      checkClientCalled(adequantAdapterMock, 2);
+
+      // pubmatic
+      checkClientCalled(pubmaticAdapterMock, 2);
+
+      // rubicon
+      checkClientCalled(rubiconAdapterMock, 1);
+    });
+
+    it('does not call client adapters for bidders in either config when testServerOnly if true in first config', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        testServerOnly: true,
+        bidderControl: {
+          appnexus: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+          adequant: {
+            bidSource: { server: 100, client: 0 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true,
+      });
+
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        bidderControl: {
+          pubmatic: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          }
+        },
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      callBids();
+
+      // server adapter
+      checkServerCalled(2, 1, 0);
+
+      // appnexus
+      sinon.assert.notCalled(appnexusAdapterMock.callBids);
+
+      // adequant
+      sinon.assert.notCalled(adequantAdapterMock.callBids);
+
+      // pubmatic
+      sinon.assert.notCalled(pubmaticAdapterMock.callBids);
+
+      // rubicon
+      sinon.assert.notCalled(rubiconAdapterMock.callBids);
+    });
+
+    it('does not call client adapters for bidders in either config when testServerOnly if true in second config', function () {
+      let TEST_CONFIG = utils.deepClone(CONFIG);
+      Object.assign(TEST_CONFIG, {
+        bidders: ['appnexus', 'adequant'],
+        bidderControl: {
+          appnexus: {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+          adequant: {
+            bidSource: { server: 100, client: 0 },
+            includeSourceKvp: true,
+          },
+        },
+        testing: true,
+      });
+
+      let TEST_CONFIG2 = utils.deepClone(CONFIG2);
+      Object.assign(TEST_CONFIG2, {
+        bidders: ['pubmatic'],
+        testServerOnly: true,
+        bidderControl: {
+          pubmatic: {
+            bidSource: { server: 100, client: 0 },
+            includeSourceKvp: true,
+          }
+        },
+        testing: true
+      });
+
+      config.setConfig({s2sConfig: [TEST_CONFIG, TEST_CONFIG2]});
+      callBids();
+
+      // server adapter
+      checkServerCalled(2, 1, 1);
+
+      // appnexus
+      sinon.assert.notCalled(appnexusAdapterMock.callBids);
+
+      // adequant
+      sinon.assert.notCalled(adequantAdapterMock.callBids);
+
+      // pubmatic
+      sinon.assert.notCalled(pubmaticAdapterMock.callBids);
+
+      // rubicon
+      sinon.assert.notCalled(rubiconAdapterMock.callBids);
+    });
+  });
+
   describe('aliasBidderAdaptor', function() {
     const CODE = 'sampleBidder';
 
@@ -1259,6 +1582,7 @@ describe('adapterManager tests', function () {
   describe('makeBidRequests', function () {
     let adUnits;
     beforeEach(function () {
+      allS2SBidders.length = 0
       adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
         return adUnit;
@@ -1310,6 +1634,8 @@ describe('adapterManager tests', function () {
 
     describe('sizeMapping', function () {
       beforeEach(function () {
+        allS2SBidders.length = 0;
+        clientTestAdapters.length = 0;
         sinon.stub(window, 'matchMedia').callsFake(() => ({matches: true}));
       });
 
@@ -1443,7 +1769,7 @@ describe('adapterManager tests', function () {
           []
         );
 
-          // only valid sizes as specified in size config should show up in bidRequests
+        // only valid sizes as specified in size config should show up in bidRequests
         bidRequests.forEach(bidRequest => {
           bidRequest.bids.forEach(bid => {
             bid.sizes.forEach(size => {
@@ -1550,9 +1876,13 @@ describe('adapterManager tests', function () {
     describe('s2sTesting - testServerOnly', () => {
       beforeEach(() => {
         config.setConfig({ s2sConfig: getServerTestingConfig(CONFIG) });
+        allS2SBidders.length = 0
+        s2sTesting.bidSource = {};
       });
 
-      afterEach(() => config.resetConfig());
+      afterEach(() => {
+        config.resetConfig();
+      });
 
       const makeBidRequests = ads => {
         let bidRequests = adapterManager.makeBidRequests(
@@ -1675,7 +2005,11 @@ describe('adapterManager tests', function () {
         config.setConfig({s2sConfig: [getServerTestingConfig(CONFIG), CONFIG2]});
       });
 
-      afterEach(() => config.resetConfig());
+      afterEach(() => {
+        config.resetConfig()
+        allS2SBidders.length = 0;
+        s2sTesting.bidSource = {};
+      });
 
       const makeBidRequests = ads => {
         let bidRequests = adapterManager.makeBidRequests(
@@ -1722,6 +2056,56 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].bids).lengthOf(1);
         expect(bidRequests[2].bids[0].bidder).equals('rubicon');
         expect(bidRequests[2].bids[0].finalSource).equals('server');
+      });
+
+      it('should not surpress client side bids if testServerOnly is true in one config, ' +
+      ',bidderControl resolves to server in another config' +
+      'and there are no bid with bidSource at the adUnit Level', () => {
+        let testConfig1 = utils.deepClone(getServerTestingConfig(CONFIG));
+        let testConfig2 = utils.deepClone(CONFIG2);
+        testConfig1.testServerOnly = false;
+        testConfig2.testServerOnly = true;
+        testConfig2.testing = true;
+        testConfig2.bidderControl = {
+          'pubmatic': {
+            bidSource: { server: 0, client: 100 },
+            includeSourceKvp: true,
+          },
+        };
+        config.setConfig({s2sConfig: [testConfig1, testConfig2]});
+
+        let ads = [
+          {
+            code: 'test_div_1',
+            sizes: [[300, 250]],
+            bids: [{ bidder: 'adequant' }]
+          },
+          {
+            code: 'test_div_2',
+            sizes: [[300, 250]],
+            bids: [{ bidder: 'openx' }]
+          },
+          {
+            code: 'test_div_3',
+            sizes: [[300, 250]],
+            bids: [{ bidder: 'pubmatic' }]
+          },
+        ];
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(3);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('adequant');
+        expect(bidRequests[0].bids[0].finalSource).equals('client');
+
+        expect(bidRequests[1].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('openx');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('pubmatic');
+        expect(bidRequests[2].bids[0].finalSource).equals('client');
       });
 
       // todo: update description
