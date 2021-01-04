@@ -9,8 +9,7 @@ const storage = getStorageManager();
 const BIDDER_CODE = 'adtrue';
 const ADTRUE_CURRENCY = 'USD';
 const ADTRUE_TTL = 120;
-// const ENDPOINT_URL = 'https://hb.adtrue.com/prebid/auction';
-const ENDPOINT_URL = 'http://localhost:8080/prebid/auction';
+const ENDPOINT_URL = 'https://hb.adtrue.com/prebid/auction';
 const LOG_WARN_PREFIX = 'AdTrue: ';
 
 const DEFAULT_CURRENCY = 'USD';
@@ -19,10 +18,8 @@ const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 
-// const USER_SYNC_URL_IFRAME = 'https://hb.adtrue.com/prebid/usersync_async?p=';
-// const USER_SYNC_URL_IMAGE = 'https://hb.adtrue.com/prebid/usersync_pixel?p=';
-const USER_SYNC_URL_IFRAME = 'http://localhost:8080/prebid/usersync_async?p=';
-const USER_SYNC_URL_IMAGE = 'http://localhost:8080/prebid/usersync_pixel?p=';
+const USER_SYNC_URL_IFRAME = 'https://hb.adtrue.com/prebid/usersync?t=iframe&p=';
+const USER_SYNC_URL_IMAGE = 'https://hb.adtrue.com/prebid/usersync?t=img&p=';
 
 let publisherId = 0;
 
@@ -126,7 +123,7 @@ function _createOrtbTemplate(conf) {
       publisher: {}
     },
     device: {
-      ip: 'caller',
+      ip: '{client_ip}',
       ua: navigator.userAgent,
       os: platform,
       js: 1,
@@ -136,7 +133,7 @@ function _createOrtbTemplate(conf) {
       language: _getLanguage(),
       devicetype: _isMobile() ? 1 : _isConnectedTV() ? 3 : 2,
       geo: {
-        country: '',
+        country: '{country_code}',
         type: 0,
         ipservice: 1,
         region: '',
