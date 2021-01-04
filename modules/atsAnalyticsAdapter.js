@@ -18,7 +18,7 @@ function bidRequestedHandler(args) {
       bidder: bid.bidder,
       bid_id: bid.bidId,
       auction_id: args.auctionId,
-      user_browser: (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari()),
+      user_browser: checkUserBrowser(),
       user_platform: navigator.platform,
       auction_start: new Date(args.auctionStart).toJSON(),
       domain: window.location.hostname,
@@ -36,6 +36,24 @@ function bidResponseHandler(args) {
     cpm: args.cpm,
     net_revenue: args.netRevenue
   };
+}
+
+export function checkUserBrowser() {
+  let firefox = browserIsFirefox();
+  let chrome = browserIsChrome();
+  let edge = browserIsEdge();
+  let safari = browserIsSafari();
+  if (firefox) {
+    return firefox;
+  } if (chrome) {
+    return chrome;
+  } if (edge) {
+    return edge;
+  } if (safari) {
+    return safari;
+  } else {
+    return 'Unknown'
+  }
 }
 
 export function browserIsFirefox() {
@@ -67,7 +85,7 @@ export function browserIsChrome() {
 }
 
 export function browserIsSafari() {
-  if (navigator.vendor.indexOf('Apple')) {
+  if (window.safari !== undefined) {
     return 'Safari'
   } else {
     return false;
@@ -108,13 +126,16 @@ let atsAnalyticsAdapter = Object.assign(adapter(
       callHandler(eventType, args);
     }
     if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
-      // send data to ats analytic endpoint
-      try {
-        let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
-        let strJSON = JSON.stringify(dataToSend);
-        ajax(atsAnalyticsAdapter.context.host, function () {
-        }, strJSON, {method: 'POST', contentType: 'application/json'});
-      } catch (err) {
+      if (atsAnalyticsAdapter.shouldFireRequest()) {
+        // send data to ats analytic endpoint
+        try {
+          let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
+          let strJSON = JSON.stringify(dataToSend);
+          utils.logInfo('atsAnalytics tried to send analytics data!');
+          ajax(atsAnalyticsAdapter.context.host, function () {
+          }, strJSON, {method: 'POST', contentType: 'application/json'});
+        } catch (err) {
+        }
       }
     }
   }
@@ -122,6 +143,11 @@ let atsAnalyticsAdapter = Object.assign(adapter(
 
 // save the base class function
 atsAnalyticsAdapter.originEnableAnalytics = atsAnalyticsAdapter.enableAnalytics;
+
+// add check to not fire request every time, but instead to send 1/10 events
+atsAnalyticsAdapter.shouldFireRequest = function () {
+  return (Math.floor((Math.random() * 11)) === 10);
+}
 
 // override enableAnalytics so we can get access to the config passed in from the page
 atsAnalyticsAdapter.enableAnalytics = function (config) {
@@ -147,7 +173,8 @@ atsAnalyticsAdapter.enableAnalytics = function (config) {
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: atsAnalyticsAdapter,
-  code: 'atsAnalytics'
+  code: 'atsAnalytics',
+  gvlid: 97
 });
 
 export default atsAnalyticsAdapter;

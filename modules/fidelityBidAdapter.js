@@ -110,8 +110,11 @@ function setConsentParams(gdprConsent, uspConsent, payload) {
     if (typeof gdprConsent.consentString !== 'undefined') {
       payload.consent_str = gdprConsent.consentString;
     }
-    if (gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents && typeof gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
+    if (gdprConsent.apiVersion === 1 && gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents && typeof gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
       payload.consent_given = gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] ? 1 : 0;
+    }
+    if (gdprConsent.apiVersion === 2 && gdprConsent.vendorData && gdprConsent.vendorData.vendor && gdprConsent.vendorData.vendor.consents && typeof gdprConsent.vendorData.vendor.consents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
+      payload.consent_given = gdprConsent.vendorData.vendor.consents[FIDELITY_VENDOR_ID.toString(10)] ? 1 : 0;
     }
   }
   if (typeof uspConsent !== 'undefined') {

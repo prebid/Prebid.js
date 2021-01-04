@@ -126,10 +126,66 @@ describe('Renderer', function () {
         id: 1,
         adUnitCode: 'video1'
       });
+      testRenderer.setRender(() => {})
+
+      testRenderer.render()
       expect(utilsSpy.callCount).to.equal(1);
     });
 
-    it('should call loadExternalScript() for script not defined on adUnit', function() {
+    it('should load renderer adunit renderer when backupOnly', function() {
+      $$PREBID_GLOBAL$$.adUnits = [{
+        code: 'video1',
+        renderer: {
+          url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+          backupOnly: true,
+          render: sinon.spy()
+        }
+      }]
+
+      let testRenderer = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { test: 'config1' },
+        id: 1,
+        adUnitCode: 'video1'
+
+      });
+      testRenderer.setRender(() => {})
+
+      testRenderer.render()
+      expect(loadExternalScript.called).to.be.true;
+    });
+
+    it('should load external script instead of publisher-defined one when backupOnly option is true in mediaTypes.video options', function() {
+      $$PREBID_GLOBAL$$.adUnits = [{
+        code: 'video1',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            mimes: ['video/mp4'],
+            playerSize: [[400, 300]],
+            renderer: {
+              url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+              backupOnly: true,
+              render: sinon.spy()
+            },
+          }
+        }
+      }]
+
+      let testRenderer = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { test: 'config1' },
+        id: 1,
+        adUnitCode: 'video1'
+
+      });
+      testRenderer.setRender(() => {})
+
+      testRenderer.render()
+      expect(loadExternalScript.called).to.be.true;
+    });
+
+    it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function() {
       $$PREBID_GLOBAL$$.adUnits = [{
         code: 'video1',
         renderer: {
@@ -143,6 +199,9 @@ describe('Renderer', function () {
         id: 1,
         adUnitCode: undefined
       });
+      expect(loadExternalScript.called).to.be.false;
+
+      testRenderer.render()
       expect(loadExternalScript.called).to.be.true;
     });
   });

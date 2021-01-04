@@ -3,7 +3,6 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'revcontent';
 const NATIVE_PARAMS = {
@@ -223,13 +222,7 @@ export const spec = {
     return bidResponses;
   },
   onBidWon: function (bid) {
-    var winUrl = bid.nurl;
-    winUrl = winUrl.replace(/\$\{AUCTION_PRICE\}/, bid.cpm);
-    var host = extractHostname(winUrl);
-
-    ajax(winUrl + '&viewed=1', null, {withCredentials: true});
-    ajax('https://' + host + '/imp.php', null, 'v=' + encodeURIComponent(encodeURIComponent(getQueryVariable('d', winUrl))) + '&i=' + encodeURIComponent(window.location.href), {method: 'POST', contentType: 'application/x-www-form-urlencoded'});
-
+    utils.triggerPixel(bid.nurl);
     return true;
   }
 };
@@ -279,15 +272,4 @@ function extractHostname(url) {
   hostname = hostname.split('?')[0];
 
   return hostname;
-}
-
-function getQueryVariable(variable, url) {
-  var query = url;
-  var vars = query.split('&');
-  for (var i = 0; i < vars.length; i++) {
-    var pair = vars[i].split('=');
-    if (decodeURIComponent(pair[0]) == variable) {
-      return decodeURIComponent(pair[1]);
-    }
-  }
 }

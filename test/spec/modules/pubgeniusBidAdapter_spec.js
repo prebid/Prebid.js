@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 
 import { spec } from 'modules/pubgeniusBidAdapter.js';
-import { deepClone, parseQueryStringParameters } from 'src/utils.js';
 import { config } from 'src/config.js';
+import { VIDEO } from 'src/mediaTypes.js';
+import { deepClone, parseQueryStringParameters } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 
 const {
@@ -23,8 +24,8 @@ describe('pubGENIUS adapter', () => {
   });
 
   describe('supportedMediaTypes', () => {
-    it('should contain only banner', () => {
-      expect(supportedMediaTypes).to.deep.equal(['banner']);
+    it('should contain banner and video', () => {
+      expect(supportedMediaTypes).to.deep.equal(['banner', 'video']);
     });
   });
 
@@ -77,6 +78,51 @@ describe('pubGENIUS adapter', () => {
 
       expect(isBidRequestValid(bid)).to.be.false;
     });
+
+    it('should return false without banner or video', () => {
+      bid.mediaTypes = {};
+
+      expect(isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return true with valid video media type', () => {
+      bid.mediaTypes = {
+        video: {
+          context: 'instream',
+          playerSize: [[100, 100]],
+          mimes: ['video/mp4'],
+          protocols: [1],
+        },
+      };
+
+      expect(isBidRequestValid(bid)).to.be.true;
+    });
+
+    it('should return true with valid video params', () => {
+      bid.params.video = {
+        placement: 1,
+        w: 200,
+        h: 200,
+        mimes: ['video/mp4'],
+        protocols: [1],
+      };
+
+      expect(isBidRequestValid(bid)).to.be.true;
+    });
+
+    it('should return false without video protocols', () => {
+      bid.mediaTypes = {
+        video: {
+          context: 'instream',
+          playerSize: [[100, 100]],
+        },
+      };
+      bid.params.video = {
+        mimes: ['video/mp4'],
+      };
+
+      expect(isBidRequestValid(bid)).to.be.false;
+    });
   });
 
   describe('buildRequests', () => {
@@ -122,6 +168,7 @@ describe('pubGENIUS adapter', () => {
         bidderCode: 'pubgenius',
         bidderRequestId: 'fakebidderrequestid',
         refererInfo: {},
+        timeout: 1200,
       };
 
       expectedRequest = {
@@ -142,14 +189,14 @@ describe('pubGENIUS adapter', () => {
           tmax: 1200,
           ext: {
             pbadapter: {
-              version: '1.0.0',
+              version: '1.1.0',
             },
           },
         },
       };
 
       config.setConfig({
-        bidderTimeout: 1200,
+        bidderTimeout: 1000,
         pageUrl: undefined,
         coppa: undefined,
       });
@@ -194,6 +241,14 @@ describe('pubGENIUS adapter', () => {
 
     it('should take pageUrl in config over referer in refererInfo', () => {
       config.setConfig({ pageUrl: 'http://pageurl.org' });
+      bidderRequest.refererInfo.referer = 'http://referer.org';
+      expectedRequest.data.site = { page: 'http://pageurl.org' };
+
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
+    });
+
+    it('should use canonical URL over referer in refererInfo', () => {
+      bidderRequest.refererInfo.canonicalUrl = 'http://pageurl.org';
       bidderRequest.refererInfo.referer = 'http://referer.org';
       expectedRequest.data.site = { page: 'http://pageurl.org' };
 
@@ -248,7 +303,7 @@ describe('pubGENIUS adapter', () => {
           }
         ]
       };
-      bidderRequest.schain = deepClone(schain);
+      bidRequest.schain = deepClone(schain);
       expectedRequest.data.source = {
         ext: { schain: deepClone(schain) },
       };
@@ -302,6 +357,44 @@ describe('pubGENIUS adapter', () => {
 
     it('should not take empty user IDs', () => {
       bidRequest.userIdAsEids = [];
+
+      expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
+    });
+
+    it('should build video imp', () => {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'instream',
+          playerSize: [[200, 100]],
+          mimes: ['video/mp4'],
+          protocols: [2, 3],
+          api: [1, 2],
+          playbackmethod: [3, 4],
+        },
+      };
+      bidRequest.params.video = {
+        minduration: 5,
+        maxduration: 100,
+        skip: 1,
+        skipafter: 1,
+        startdelay: -1,
+      };
+
+      delete expectedRequest.data.imp[0].banner;
+      expectedRequest.data.imp[0].video = {
+        mimes: ['video/mp4'],
+        minduration: 5,
+        maxduration: 100,
+        protocols: [2, 3],
+        w: 200,
+        h: 100,
+        startdelay: -1,
+        placement: 1,
+        skip: 1,
+        skipafter: 1,
+        playbackmethod: [3, 4],
+        api: [1, 2],
+      };
 
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);
     });
@@ -360,6 +453,29 @@ describe('pubGENIUS adapter', () => {
 
     it('should interpret no bids', () => {
       expect(interpretResponse({ body: {} })).to.deep.equal([]);
+    });
+
+    it('should interpret video response', () => {
+      serverResponse.body.seatbid[0].bid[0] = {
+        ...serverResponse.body.seatbid[0].bid[0],
+        nurl: 'http://vasturl/cache?id=x',
+        ext: {
+          pbadapter: {
+            mediaType: 'video',
+            cacheKey: 'x',
+          },
+        },
+      };
+
+      delete expectedBidResponse.ad;
+      expectedBidResponse = {
+        ...expectedBidResponse,
+        vastUrl: 'http://vasturl/cache?id=x',
+        vastXml: 'fake_creative',
+        mediaType: VIDEO,
+      };
+
+      expect(interpretResponse(serverResponse)).to.deep.equal([expectedBidResponse]);
     });
   });
 

@@ -5,6 +5,50 @@ import { server } from 'test/mocks/xhr.js';
 
 const should = chai.should();
 
+function getMockBid(bidder, auctionId, bidderRequestId) {
+  return {
+    'bidder': bidder,
+    'params': {
+      'placementId': '10433394',
+      'member': 123,
+      'keywords': {
+        'foo': ['bar', 'baz'],
+        'fizz': ['buzz']
+      }
+    },
+    'bid_id': '12345abc',
+    'adUnitCode': 'div-gpt-ad-1460505748561-0',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 250]]
+      }
+    },
+    'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
+    'sizes': [300, 250],
+    'bidId': '123',
+    'bidderRequestId': bidderRequestId,
+    'auctionId': auctionId,
+    'storedAuctionResponse': 11111
+  };
+}
+
+function getMockBidRequest(bidder = 'appnexus', auctionId = '173afb6d132ba3', bidderRequestId = '3d1063078dfcc8') {
+  return {
+    'bidderCode': bidder,
+    'auctionId': auctionId,
+    'bidderRequestId': bidderRequestId,
+    'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
+    'bids': [getMockBid(bidder, auctionId, bidderRequestId)],
+    'auctionStart': 1510852447530,
+    'timeout': 5000,
+    'src': 's2s',
+    'doneCbCallCount': 0,
+    'refererInfo': {
+      'referer': 'http://mytestpage.com'
+    }
+  }
+}
+
 describe('The video cache', function () {
   function assertError(callbackSpy) {
     callbackSpy.calledOnce.should.equal(true);
@@ -186,6 +230,61 @@ describe('The video cache', function () {
           key: customKey2,
           bidid: 'cba54321',
           bidder: 'rubicon'
+        }]
+      };
+
+      JSON.parse(request.requestBody).should.deep.equal(payload);
+    });
+
+    it('should include additional params in request payload should config.cache.vasttrack be true and bidderRequest argument was defined', () => {
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache',
+          vasttrack: true
+        }
+      });
+
+      const customKey1 = 'vasttrack_123';
+      const customKey2 = 'vasttrack_abc';
+      const vastXml1 = '<VAST version="3.0">testvast1</VAST>';
+      const vastXml2 = '<VAST version="3.0">testvast2</VAST>';
+
+      const bids = [{
+        vastXml: vastXml1,
+        ttl: 25,
+        customCacheKey: customKey1,
+        requestId: '12345abc',
+        bidder: 'appnexus'
+      }, {
+        vastXml: vastXml2,
+        ttl: 25,
+        customCacheKey: customKey2,
+        requestId: 'cba54321',
+        bidder: 'rubicon'
+      }];
+
+      store(bids, function () { }, getMockBidRequest());
+      const request = server.requests[0];
+      request.method.should.equal('POST');
+      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
+      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      let payload = {
+        puts: [{
+          type: 'xml',
+          value: vastXml1,
+          ttlseconds: 25,
+          key: customKey1,
+          bidid: '12345abc',
+          bidder: 'appnexus',
+          timestamp: 1510852447530
+        }, {
+          type: 'xml',
+          value: vastXml2,
+          ttlseconds: 25,
+          key: customKey2,
+          bidid: 'cba54321',
+          bidder: 'rubicon',
+          timestamp: 1510852447530
         }]
       };
 

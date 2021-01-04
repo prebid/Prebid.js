@@ -1,6 +1,8 @@
 import { spec, isValid, hasTypeVideo } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
+import find from 'core-js-pure/features/array/find.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import {INSTREAM, OUTSTREAM} from 'src/video.js';
 
 describe('onetag', function () {
   function createBid() {
@@ -26,7 +28,7 @@ describe('onetag', function () {
     return bid;
   }
 
-  function createVideoBid(bidRequest) {
+  function createInstreamVideoBid(bidRequest) {
     const bid = bidRequest || createBid();
     bid.mediaTypes = bid.mediaTypes || {};
     bid.mediaTypes.video = {
@@ -37,7 +39,7 @@ describe('onetag', function () {
     return bid;
   }
 
-  function createWrongVideoOutstreamBid(bidRequest) {
+  function createOutstreamVideoBid(bidRequest) {
     const bid = bidRequest || createBid();
     bid.mediaTypes = bid.mediaTypes || {};
     bid.mediaTypes.video = {
@@ -49,12 +51,12 @@ describe('onetag', function () {
   }
 
   function createMultiFormatBid() {
-    return createVideoBid(createBannerBid());
+    return createInstreamVideoBid(createBannerBid());
   }
 
   const bannerBid = createBannerBid();
-  const videoBid = createVideoBid();
-  const outstreamVideoBid = createWrongVideoOutstreamBid();
+  const instreamVideoBid = createInstreamVideoBid();
+  const outstreamVideoBid = createOutstreamVideoBid();
 
   describe('isBidRequestValid', function () {
     it('Should return true when required params are found', function () {
@@ -76,30 +78,30 @@ describe('onetag', function () {
     });
     describe('video bidRequest', function () {
       it('Should return false when the context is undefined', function () {
-        videoBid.mediaTypes.video.context = undefined;
-        expect(spec.isBidRequestValid(videoBid)).to.be.false;
+        instreamVideoBid.mediaTypes.video.context = undefined;
+        expect(spec.isBidRequestValid(instreamVideoBid)).to.be.false;
       });
       it('Should return false when the context is not instream or outstream', function () {
-        videoBid.mediaTypes.video.context = 'wrong';
-        expect(spec.isBidRequestValid(videoBid)).to.be.false;
+        instreamVideoBid.mediaTypes.video.context = 'wrong';
+        expect(spec.isBidRequestValid(instreamVideoBid)).to.be.false;
       });
       it('Should return false when playerSize is undefined', function () {
-        const videoBid = createVideoBid();
+        const videoBid = createInstreamVideoBid();
         videoBid.mediaTypes.video.playerSize = undefined;
         expect(spec.isBidRequestValid(videoBid)).to.be.false;
       });
       it('Should return false when playerSize is not an array', function () {
-        const videoBid = createVideoBid();
+        const videoBid = createInstreamVideoBid();
         videoBid.mediaTypes.video.playerSize = 30;
         expect(spec.isBidRequestValid(videoBid)).to.be.false;
       });
       it('Should return false when playerSize is an empty array', function () {
-        const videoBid = createVideoBid();
+        const videoBid = createInstreamVideoBid();
         videoBid.mediaTypes.video.playerSize = [];
         expect(spec.isBidRequestValid(videoBid)).to.be.false;
       });
-      it('Should return false when context is outstream but no renderer object is defined', function () {
-        expect(spec.isBidRequestValid(outstreamVideoBid)).to.be.false;
+      it('Should return true when context is outstream', function () {
+        expect(spec.isBidRequestValid(outstreamVideoBid)).to.be.true;
       });
     });
     describe('multi format bidRequest', function () {
@@ -111,7 +113,7 @@ describe('onetag', function () {
   });
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests([bannerBid, videoBid]);
+    let serverRequest = spec.buildRequests([bannerBid, instreamVideoBid]);
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
@@ -128,12 +130,12 @@ describe('onetag', function () {
     const d = serverRequest.data;
     try {
       const data = JSON.parse(d);
-      it('Should contains all keys', function () {
+      it('Should contain all keys', function () {
         expect(data).to.be.an('object');
-        expect(data).to.have.all.keys('location', 'masked', 'referrer', 'sHeight', 'sWidth', 'timeOffset', 'date', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset');
+        expect(data).to.include.all.keys('location', 'referrer', 'masked', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'timing', 'version');
         expect(data.location).to.be.a('string');
-        expect(data.masked).to.be.a('number');
-        expect(data.referrer).to.be.a('string');
+        expect(data.masked).to.be.oneOf([0, 1, 2]);
+        expect(data.referrer).to.satisfy(referrer => referrer === null || typeof referrer === 'string');
         expect(data.sHeight).to.be.a('number');
         expect(data.sWidth).to.be.a('number');
         expect(data.wWidth).to.be.a('number');
@@ -145,10 +147,8 @@ describe('onetag', function () {
         expect(data.sLeft).to.be.a('number');
         expect(data.sTop).to.be.a('number');
         expect(data.hLength).to.be.a('number');
-        expect(data.timeOffset).to.be.a('number');
-        expect(data.date).to.be.a('string');
         expect(data.bids).to.be.an('array');
-
+        expect(data.version).to.have.all.keys('prebid', 'adapter');
         const bids = data['bids'];
         for (let i = 0; i < bids.length; i++) {
           const bid = bids[i];
@@ -190,7 +190,7 @@ describe('onetag', function () {
       expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
     });
-    it('should send us privacy string', function () {
+    it('Should send us privacy string', function () {
       let consentString = 'us_foo';
       let bidderRequest = {
         'bidderCode': 'onetag',
@@ -207,70 +207,44 @@ describe('onetag', function () {
     });
   });
   describe('interpretResponse', function () {
-    function getBannerRes() {
-      return {
-        ad: '<div>Advertising</div>',
-        cpm: 13,
-        width: 300,
-        height: 250,
-        creativeId: '1820',
-        dealId: 'dishfo',
-        currency: 'USD',
-        requestId: 'sdiceobxcw',
-        mediaType: BANNER
-      }
-    }
-    function getVideoRes() {
-      return {
-        ad: '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0"></VAST>',
-        cpm: 13,
-        width: 300,
-        height: 250,
-        creativeId: '1820',
-        dealId: 'dishfo',
-        currency: 'USD',
-        requestId: 'sdiceobxcw',
-        mediaType: VIDEO
-      }
-    }
-    function getBannerAdnVideoRes() {
-      return {
-        body: {
-          nobid: false,
-          bids: [getBannerRes(), getVideoRes()]
-        }
-      };
-    }
-    const responseObj = getBannerAdnVideoRes();
+    const request = getBannerVideoRequest();
+    const response = getBannerVideoResponse();
+    const requestData = JSON.parse(request.data);
     it('Returns an array of valid server responses if response object is valid', function () {
-      const serverResponses = spec.interpretResponse(responseObj);
-
-      expect(serverResponses).to.be.an('array').that.is.not.empty;
-      for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
-        if (dataItem.mediaType === VIDEO) {
-          expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'dealId');
-        } else if (dataItem.mediaType === BANNER) {
-          expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'dealId');
+      const interpretedResponse = spec.interpretResponse(response, request);
+      expect(interpretedResponse).to.be.an('array').that.is.not.empty;
+      for (let i = 0; i < interpretedResponse.length; i++) {
+        let dataItem = interpretedResponse[i];
+        expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');
+        if (dataItem.meta.mediaType === VIDEO) {
+          const {context} = find(requestData.bids, (item) => item.bidId === dataItem.requestId);
+          if (context === INSTREAM) {
+            expect(dataItem).to.include.all.keys('videoCacheKey', 'vastUrl');
+            expect(dataItem.vastUrl).to.be.a('string');
+            expect(dataItem.videoCacheKey).to.be.a('string');
+          } else if (context === OUTSTREAM) {
+            expect(dataItem).to.include.all.keys('renderer', 'vastXml', 'vastUrl');
+            expect(dataItem.renderer).to.be.an('object');
+            expect(dataItem.vastUrl).to.be.a('string');
+            expect(dataItem.vastXml).to.be.a('string');
+          }
+        } else if (dataItem.meta.mediaType === BANNER) {
+          expect(dataItem).to.include.all.keys('ad');
+          expect(dataItem.ad).to.be.a('string');
         }
         expect(dataItem.requestId).to.be.a('string');
         expect(dataItem.cpm).to.be.a('number');
         expect(dataItem.width).to.be.a('number');
         expect(dataItem.height).to.be.a('number');
-        if (dataItem.mediaType === VIDEO) {
-          expect(dataItem.vastXml).to.be.a('string');
-        } else if (dataItem.mediaType === BANNER) {
-          expect(dataItem.ad).to.be.a('string');
-        }
         expect(dataItem.ttl).to.be.a('number');
         expect(dataItem.creativeId).to.be.a('string');
         expect(dataItem.netRevenue).to.be.a('boolean');
         expect(dataItem.currency).to.be.a('string');
       }
-      it('Returns an empty array if invalid response is passed', function () {
-        const serverResponses = spec.interpretResponse('invalid_response');
-        expect(serverResponses).to.be.an('array').that.is.empty;
-      });
+    });
+    it('Returns an empty array if response is not valid', function () {
+      const serverResponses = spec.interpretResponse('invalid_response', { data: '{}' });
+      expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
   describe('getUserSyncs', function () {
@@ -333,3 +307,105 @@ describe('onetag', function () {
     });
   });
 });
+
+function getBannerVideoResponse() {
+  return {
+    body: {
+      nobid: false,
+      bids: [
+        {
+          ad: '<div>Advertising</div>',
+          cpm: 13,
+          width: 300,
+          height: 250,
+          creativeId: '1820',
+          dealId: 'dishfo',
+          currency: 'USD',
+          requestId: 'banner',
+          mediaType: BANNER,
+        },
+        {
+          cpm: 13,
+          width: 300,
+          height: 250,
+          creativeId: '1820',
+          dealId: 'dishfo',
+          currency: 'USD',
+          requestId: 'videoInstream',
+          vastUrl: 'https://videoinstream.org',
+          videoCacheKey: 'key',
+          mediaType: VIDEO
+        },
+        {
+          cpm: 13,
+          width: 300,
+          height: 250,
+          creativeId: '1820',
+          dealId: 'dishfo',
+          currency: 'USD',
+          vastUrl: 'https://videooutstream.org',
+          requestId: 'videoOutstream',
+          ad: '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0"></VAST>',
+          rendererUrl: 'https://testRenderer',
+          mediaType: VIDEO
+        }
+      ]
+    }
+  };
+}
+
+function getBannerVideoRequest() {
+  return {
+    data: JSON.stringify({
+      bids: [
+        {
+          adUnitCode: 'target-div',
+          bidId: 'videoOutstream',
+          bidderRequestId: '12bb1e0f9fb669',
+          auctionId: '80784b4d-79ad-49ef-a006-75d8888b7609',
+          transactionId: '5f132731-3091-49b2-8fab-0e9c917733bc',
+          pubId: '386276e072',
+          context: 'outstream',
+          mimes: [],
+          playerSize: [],
+          type: 'video'
+        },
+        {
+          adUnitCode: 'target-div',
+          bidId: 'videoInstream',
+          bidderRequestId: '12bb1e0f9fb669',
+          auctionId: '80784b4d-79ad-49ef-a006-75d8888b7609',
+          transactionId: '5f132731-3091-49b2-8fab-0e9c917733bc',
+          pubId: '386276e072',
+          context: 'instream',
+          mimes: [],
+          playerSize: [],
+          type: 'video'
+        }
+      ],
+      location: 'https%3A%2F%2Flocal.onetag.net%3A9000%2Fv2%2Fprebid-video%2Fvideo.html%3Fpbjs_debug%3Dtrue',
+      referrer: '0',
+      masked: 0,
+      wWidth: 860,
+      wHeight: 949,
+      oWidth: 1853,
+      oHeight: 1053,
+      sWidth: 1920,
+      sHeight: 1080,
+      aWidth: 1920,
+      aHeight: 1053,
+      sLeft: 1987,
+      sTop: 27,
+      xOffset: 0,
+      yOffset: 0,
+      docHidden: false,
+      hLength: 2,
+      timing: {
+        pageLoadTime: -1593433770022,
+        connectTime: 42,
+        renderTime: -1593433770092
+      },
+      onetagSid: 'user_id'
+    })
+  }
+}

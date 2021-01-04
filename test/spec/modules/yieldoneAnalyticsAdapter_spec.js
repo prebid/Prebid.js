@@ -219,14 +219,6 @@ describe('Yieldone Prebid Analytic', function () {
         {
           eventType: constants.EVENTS.BID_TIMEOUT,
           params: Object.assign(request[2])
-        },
-        {
-          eventType: constants.EVENTS.AUCTION_END,
-          params: {
-            auctionId: auctionId,
-            adServerTargeting: fakeTargeting,
-            bidsReceived: preparedResponses.slice(0, 3)
-          }
         }
       ];
       const expectedResult = {
