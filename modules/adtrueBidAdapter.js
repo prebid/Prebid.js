@@ -1,31 +1,47 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from "../src/mediaTypes";
-import {config} from "../src/config";
-import {getStorageManager} from "../src/storageManager";
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const storage = getStorageManager();
-
 const BIDDER_CODE = 'adtrue';
 const ADTRUE_CURRENCY = 'USD';
-const ADTRUE_TTL = 120;
 const ENDPOINT_URL = 'https://hb.adtrue.com/prebid/auction';
 const LOG_WARN_PREFIX = 'AdTrue: ';
-
-const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 const NET_REVENUE = false;
-
 const USER_SYNC_URL_IFRAME = 'https://hb.adtrue.com/prebid/usersync?t=iframe&p=';
 const USER_SYNC_URL_IMAGE = 'https://hb.adtrue.com/prebid/usersync?t=img&p=';
-
 let publisherId = 0;
-
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
-let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
+
+const DATA_TYPES = {
+  'NUMBER': 'number',
+  'STRING': 'string',
+  'BOOLEAN': 'boolean',
+  'ARRAY': 'array',
+  'OBJECT': 'object'
+};
+const VIDEO_CUSTOM_PARAMS = {
+  'mimes': DATA_TYPES.ARRAY,
+  'minduration': DATA_TYPES.NUMBER,
+  'maxduration': DATA_TYPES.NUMBER,
+  'startdelay': DATA_TYPES.NUMBER,
+  'playbackmethod': DATA_TYPES.ARRAY,
+  'api': DATA_TYPES.ARRAY,
+  'protocols': DATA_TYPES.ARRAY,
+  'w': DATA_TYPES.NUMBER,
+  'h': DATA_TYPES.NUMBER,
+  'battr': DATA_TYPES.ARRAY,
+  'linearity': DATA_TYPES.NUMBER,
+  'placement': DATA_TYPES.NUMBER,
+  'minbitrate': DATA_TYPES.NUMBER,
+  'maxbitrate': DATA_TYPES.NUMBER
+}
 
 const NATIVE_ASSETS = {
   'TITLE': {ID: 1, KEY: 'title', TYPE: 0},
@@ -51,33 +67,6 @@ const NATIVE_ASSETS = {
   'DISPLAYURL': {ID: 21, KEY: 'displayurl', TYPE: 11},
   'CTA': {ID: 22, KEY: 'cta', TYPE: 12}
 };
-
-const NATIVE_ASSET_IMAGE_TYPE = {
-  'ICON': 1,
-  'LOGO': 2,
-  'IMAGE': 3
-}
-
-// check if title, image can be added with mandatory field default values
-const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
-  {
-    id: NATIVE_ASSETS.SPONSOREDBY.ID,
-    required: true,
-    data: {
-      type: 1
-    }
-  },
-  {
-    id: NATIVE_ASSETS.TITLE.ID,
-    required: true,
-  },
-  {
-    id: NATIVE_ASSETS.IMAGE.ID,
-    required: true,
-  }
-]
-
-
 function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
   anchor.href = url;
@@ -121,7 +110,6 @@ function _isMobile() {
 function _isConnectedTV() {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
-
 
 function _parseAdSlot(bid) {
   bid.params.width = 0;
@@ -170,7 +158,7 @@ function _createOrtbTemplate(conf) {
   return {
     id: '' + new Date().getTime(),
     at: AUCTION_TYPE,
-    cur: [DEFAULT_CURRENCY],
+    cur: [ADTRUE_CURRENCY],
     imp: [],
     site: {
       page: conf.pageURL,
@@ -392,7 +380,7 @@ function _createImpressionObject(bid, conf) {
     bidfloor: _parseSlotParam('reserve', bid.params.reserve),
     secure: 1,
     ext: {},
-    bidfloorcur: DEFAULT_CURRENCY
+    bidfloorcur: ADTRUE_CURRENCY
   };
 
   if (bid.hasOwnProperty('mediaTypes')) {
@@ -438,8 +426,6 @@ function _createImpressionObject(bid, conf) {
   impObj.hasOwnProperty(NATIVE) ||
   impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
 }
-
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner', 'video'],
@@ -467,10 +453,7 @@ export const spec = {
     let conf = _initConf(refererInfo);
     let payload = _createOrtbTemplate(conf);
     let bidCurrency = '';
-    let dctrArr = [];
     let bid;
-    let blockedIabCategories = [];
-
     validBidRequests.forEach(originalBid => {
       bid = utils.deepClone(originalBid);
       _parseAdSlot(bid);
@@ -499,7 +482,6 @@ export const spec = {
     payload.site.publisher.id = conf.pubId.trim();
     payload.ext.wrapper = {};
 
-    payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wiid = conf.wiid || bidderRequest.auctionId;
     payload.ext.wrapper.wp = 'pbjs';
@@ -553,7 +535,7 @@ export const spec = {
   },
   interpretResponse: function (serverResponses, bidderRequest) {
     const bidResponses = [];
-    var respCur = DEFAULT_CURRENCY;
+    var respCur = ADTRUE_CURRENCY;
     let parsedRequest = JSON.parse(bidderRequest.data);
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {

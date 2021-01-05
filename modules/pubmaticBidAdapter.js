@@ -17,15 +17,12 @@ const DEFAULT_HEIGHT = 0;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
+
 const CUSTOM_PARAMS = {
-  'kadpageurl': '', // Custom page url
   'gender': '', // User gender
   'yob': '', // User year of birth
   'lat': '', // User location - Latitude
   'lon': '', // User Location - Longitude
-  'wiid': '', // OpenWrap Wrapper Impression ID
-  'profId': '', // OpenWrap Legacy: Profile ID
-  'verId': '' // OpenWrap Legacy: version ID
 };
 const DATA_TYPES = {
   'NUMBER': 'number',
@@ -274,8 +271,7 @@ function _handleCustomParams(params, conf) {
         entry = CUSTOM_PARAMS[key];
 
         if (typeof entry === 'object') {
-          // will be used in future when we want to process a custom param before using
-          // 'keyname': {f: function() {}}
+
           value = entry.f(value, conf);
         }
 
