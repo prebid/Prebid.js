@@ -23,7 +23,7 @@ describe('riseAdapter', function () {
       'adUnitCode': 'adunit-code',
       'sizes': [['640', '480']],
       'params': {
-        'isOrg': 'jdye8weeyirk00000001'
+        'org': 'jdye8weeyirk00000001'
       }
     };
 
@@ -35,7 +35,7 @@ describe('riseAdapter', function () {
       const newBid = Object.assign({}, bid);
       delete newBid.params;
       newBid.params = {
-        'isOrg': null
+        'org': null
       };
       expect(spec.isBidRequestValid(newBid)).to.equal(false);
     });
@@ -48,7 +48,7 @@ describe('riseAdapter', function () {
         'adUnitCode': 'adunit-code',
         'sizes': [[640, 480]],
         'params': {
-          'isOrg': 'jdye8weeyirk00000001'
+          'org': 'jdye8weeyirk00000001'
         },
         'bidId': '299ffc8cca0b87',
         'bidderRequestId': '1144f487e563f9',
@@ -62,7 +62,7 @@ describe('riseAdapter', function () {
         'adUnitCode': 'adunit-code',
         'sizes': [[640, 480]],
         'params': {
-          'isOrg': 'jdye8weeyirk00000001',
+          'org': 'jdye8weeyirk00000001',
           'testMode': true
         },
         'bidId': '299ffc8cca0b87',

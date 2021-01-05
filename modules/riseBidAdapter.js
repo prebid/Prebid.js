@@ -22,7 +22,7 @@ export const spec = {
   version: BIDDER_VERSION,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bidRequest) {
-    return !!(bidRequest.params.isOrg);
+    return !!(bidRequest.params.org);
   },
   buildRequests: function (bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
@@ -205,7 +205,7 @@ function generateParameters(bid, bidderRequest) {
     tmax: timeout,
     width: width,
     height: height,
-    publisher_id: params.isOrg,
+    publisher_id: params.org,
     floor_price: params.floorPrice,
     ua: navigator.userAgent,
     bid_id: utils.getBidIdParameter('bidId', bid),
