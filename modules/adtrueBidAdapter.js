@@ -18,7 +18,6 @@ const USER_SYNC_URL_IFRAME = 'https://hb.adtrue.com/prebid/usersync?t=iframe&p='
 const USER_SYNC_URL_IMAGE = 'https://hb.adtrue.com/prebid/usersync?t=img&p=';
 let publisherId = 0;
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
-
 const DATA_TYPES = {
   'NUMBER': 'number',
   'STRING': 'string',
