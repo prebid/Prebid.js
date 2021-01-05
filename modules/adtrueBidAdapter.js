@@ -17,11 +17,66 @@ const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
+const NET_REVENUE = false;
 
 const USER_SYNC_URL_IFRAME = 'https://hb.adtrue.com/prebid/usersync?t=iframe&p=';
 const USER_SYNC_URL_IMAGE = 'https://hb.adtrue.com/prebid/usersync?t=img&p=';
 
 let publisherId = 0;
+
+let NATIVE_ASSET_ID_TO_KEY_MAP = {};
+let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
+
+const NATIVE_ASSETS = {
+  'TITLE': {ID: 1, KEY: 'title', TYPE: 0},
+  'IMAGE': {ID: 2, KEY: 'image', TYPE: 0},
+  'ICON': {ID: 3, KEY: 'icon', TYPE: 0},
+  'SPONSOREDBY': {ID: 4, KEY: 'sponsoredBy', TYPE: 1}, // please note that type of SPONSORED is also 1
+  'BODY': {ID: 5, KEY: 'body', TYPE: 2}, // please note that type of DESC is also set to 2
+  'CLICKURL': {ID: 6, KEY: 'clickUrl', TYPE: 0},
+  'VIDEO': {ID: 7, KEY: 'video', TYPE: 0},
+  'EXT': {ID: 8, KEY: 'ext', TYPE: 0},
+  'DATA': {ID: 9, KEY: 'data', TYPE: 0},
+  'LOGO': {ID: 10, KEY: 'logo', TYPE: 0},
+  'SPONSORED': {ID: 11, KEY: 'sponsored', TYPE: 1}, // please note that type of SPONSOREDBY is also set to 1
+  'DESC': {ID: 12, KEY: 'data', TYPE: 2}, // please note that type of BODY is also set to 2
+  'RATING': {ID: 13, KEY: 'rating', TYPE: 3},
+  'LIKES': {ID: 14, KEY: 'likes', TYPE: 4},
+  'DOWNLOADS': {ID: 15, KEY: 'downloads', TYPE: 5},
+  'PRICE': {ID: 16, KEY: 'price', TYPE: 6},
+  'SALEPRICE': {ID: 17, KEY: 'saleprice', TYPE: 7},
+  'PHONE': {ID: 18, KEY: 'phone', TYPE: 8},
+  'ADDRESS': {ID: 19, KEY: 'address', TYPE: 9},
+  'DESC2': {ID: 20, KEY: 'desc2', TYPE: 10},
+  'DISPLAYURL': {ID: 21, KEY: 'displayurl', TYPE: 11},
+  'CTA': {ID: 22, KEY: 'cta', TYPE: 12}
+};
+
+const NATIVE_ASSET_IMAGE_TYPE = {
+  'ICON': 1,
+  'LOGO': 2,
+  'IMAGE': 3
+}
+
+// check if title, image can be added with mandatory field default values
+const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
+  {
+    id: NATIVE_ASSETS.SPONSOREDBY.ID,
+    required: true,
+    data: {
+      type: 1
+    }
+  },
+  {
+    id: NATIVE_ASSETS.TITLE.ID,
+    required: true,
+  },
+  {
+    id: NATIVE_ASSETS.IMAGE.ID,
+    required: true,
+  }
+]
+
 
 function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
@@ -123,7 +178,7 @@ function _createOrtbTemplate(conf) {
       publisher: {}
     },
     device: {
-      ip: '{client_ip}',
+      ip: '',
       ua: navigator.userAgent,
       os: platform,
       js: 1,
@@ -170,6 +225,68 @@ function _checkParamDataType(key, value, datatype) {
   utils.logWarn(LOG_WARN_PREFIX + errMsg);
   return UNDEFINED;
 }
+
+function _parseNativeResponse(bid, newBid) {
+  newBid.native = {};
+  if (bid.hasOwnProperty('adm')) {
+    var adm = '';
+    try {
+      adm = JSON.parse(bid.adm.replace(/\\/g, ''));
+    } catch (ex) {
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + newBid.adm);
+      return;
+    }
+    if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
+      newBid.mediaType = NATIVE;
+      for (let i = 0, len = adm.native.assets.length; i < len; i++) {
+        switch (adm.native.assets[i].id) {
+          case NATIVE_ASSETS.TITLE.ID:
+            newBid.native.title = adm.native.assets[i].title && adm.native.assets[i].title.text;
+            break;
+          case NATIVE_ASSETS.IMAGE.ID:
+            newBid.native.image = {
+              url: adm.native.assets[i].img && adm.native.assets[i].img.url,
+              height: adm.native.assets[i].img && adm.native.assets[i].img.h,
+              width: adm.native.assets[i].img && adm.native.assets[i].img.w,
+            };
+            break;
+          case NATIVE_ASSETS.ICON.ID:
+            newBid.native.icon = {
+              url: adm.native.assets[i].img && adm.native.assets[i].img.url,
+              height: adm.native.assets[i].img && adm.native.assets[i].img.h,
+              width: adm.native.assets[i].img && adm.native.assets[i].img.w,
+            };
+            break;
+          case NATIVE_ASSETS.SPONSOREDBY.ID:
+          case NATIVE_ASSETS.BODY.ID:
+          case NATIVE_ASSETS.LIKES.ID:
+          case NATIVE_ASSETS.DOWNLOADS.ID:
+          case NATIVE_ASSETS.PRICE:
+          case NATIVE_ASSETS.SALEPRICE.ID:
+          case NATIVE_ASSETS.PHONE.ID:
+          case NATIVE_ASSETS.ADDRESS.ID:
+          case NATIVE_ASSETS.DESC2.ID:
+          case NATIVE_ASSETS.CTA.ID:
+          case NATIVE_ASSETS.RATING.ID:
+          case NATIVE_ASSETS.DISPLAYURL.ID:
+            newBid.native[NATIVE_ASSET_ID_TO_KEY_MAP[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
+            break;
+        }
+      }
+      newBid.native.clickUrl = adm.native.link && adm.native.link.url;
+      newBid.native.clickTrackers = (adm.native.link && adm.native.link.clicktrackers) || [];
+      newBid.native.impressionTrackers = adm.native.imptrackers || [];
+      newBid.native.jstracker = adm.native.jstracker || [];
+      if (!newBid.width) {
+        newBid.width = DEFAULT_WIDTH;
+      }
+      if (!newBid.height) {
+        newBid.height = DEFAULT_HEIGHT;
+      }
+    }
+  }
+}
+
 
 function _createBannerRequest(bid) {
   var sizes = bid.mediaTypes.banner.sizes;
@@ -241,6 +358,24 @@ function _createVideoRequest(bid) {
     utils.logWarn(LOG_WARN_PREFIX + 'Error: Video config params missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
   }
   return videoObj;
+}
+
+function _checkMediaType(adm, newBid) {
+  var admStr = '';
+  var videoRegex = new RegExp(/VAST\s+version/);
+  newBid.mediaType = BANNER;
+  if (videoRegex.test(adm)) {
+    newBid.mediaType = VIDEO;
+  } else {
+    try {
+      admStr = JSON.parse(adm.replace(/\\/g, ''));
+      if (admStr && admStr.native) {
+        newBid.mediaType = NATIVE;
+      }
+    } catch (e) {
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
+    }
+  }
 }
 
 function _createImpressionObject(bid, conf) {
@@ -418,22 +553,74 @@ export const spec = {
   },
   interpretResponse: function (serverResponses, bidderRequest) {
     const bidResponses = [];
-    utils._each(serverResponses.body, function (response) {
-      if (response.cpm > 0) {
-        const bidResponse = {
-          requestId: response.id,
-          creativeId: response.id,
-          adId: response.id,
-          cpm: response.cpm,
-          width: response.width,
-          height: response.height,
-          currency: ADTRUE_CURRENCY,
-          netRevenue: true,
-          ad: response.ad
-        };
-        bidResponses.push(bidResponse);
+    var respCur = DEFAULT_CURRENCY;
+    let parsedRequest = JSON.parse(bidderRequest.data);
+    let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
+    try {
+      if (serverResponses.body && serverResponses.body.seatbid && utils.isArray(serverResponses.body.seatbid)) {
+        // Supporting multiple bid responses for same adSize
+        respCur = serverResponses.body.cur || respCur;
+        serverResponses.body.seatbid.forEach(seatbidder => {
+          seatbidder.bid &&
+          utils.isArray(seatbidder.bid) &&
+          seatbidder.bid.forEach(bid => {
+            let newBid = {
+              requestId: bid.impid,
+              cpm: (parseFloat(bid.price) || 0).toFixed(2),
+              width: bid.w,
+              height: bid.h,
+              creativeId: bid.crid || bid.id,
+              dealId: bid.dealid,
+              currency: respCur,
+              netRevenue: NET_REVENUE,
+              ttl: 300,
+              referrer: parsedReferrer,
+              ad: bid.adm,
+              partnerImpId: bid.id || '' // partner impression Id
+            };
+            if (parsedRequest.imp && parsedRequest.imp.length > 0) {
+              parsedRequest.imp.forEach(req => {
+                if (bid.impid === req.id) {
+                  _checkMediaType(bid.adm, newBid);
+                  switch (newBid.mediaType) {
+                    case BANNER:
+                      break;
+                    case VIDEO:
+                      break;
+                    case NATIVE:
+                      _parseNativeResponse(bid, newBid);
+                      break;
+                  }
+                }
+              });
+            }
+
+            newBid.meta = {};
+            if (bid.ext && bid.ext.dspid) {
+              newBid.meta.networkId = bid.ext.dspid;
+            }
+            if (bid.ext && bid.ext.advid) {
+              newBid.meta.buyerId = bid.ext.advid;
+            }
+            if (bid.adomain && bid.adomain.length > 0) {
+              newBid.meta.advertiserDomains = bid.adomain;
+              newBid.meta.clickUrl = bid.adomain[0];
+            }
+
+            // adserverTargeting
+            if (seatbidder.ext && seatbidder.ext.buyid) {
+              newBid.adserverTargeting = {
+                'hb_buyid_adtrue': seatbidder.ext.buyid
+              };
+            }
+
+            bidResponses.push(newBid);
+          });
+        });
       }
-    });
+    } catch (error) {
+      utils.logError(error);
+    }
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
