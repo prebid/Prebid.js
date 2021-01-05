@@ -175,7 +175,7 @@ describe('The DFP video support module', function () {
       }
     }));
     const queryObject = utils.parseQS(url.query);
-    expect(queryObject.gdpr).to.equal('true');
+    expect(queryObject.gdpr).to.equal('1');
     expect(queryObject.gdpr_consent).to.equal('consent');
     expect(queryObject.addtl_consent).to.equal('moreConsent');
     gdprDataHandlerStub.restore();
@@ -220,7 +220,7 @@ describe('The DFP video support module', function () {
       }
     }));
     const queryObject = utils.parseQS(url.query);
-    expect(queryObject.gdpr).to.equal('true');
+    expect(queryObject.gdpr).to.equal('1');
     expect(queryObject.gdpr_consent).to.equal('consent');
     expect(queryObject.addtl_consent).to.equal(undefined);
     gdprDataHandlerStub.restore();
@@ -500,7 +500,7 @@ describe('The DFP video support module', function () {
         expect(queryParams).to.have.property('url');
         expect(queryParams).to.have.property('cust_params');
         expect(queryParams).to.have.property('us_privacy', '1YYY');
-        expect(queryParams).to.have.property('gdpr', 'true');
+        expect(queryParams).to.have.property('gdpr', '1');
         expect(queryParams).to.have.property('gdpr_consent', 'consent');
         expect(queryParams).to.have.property('addtl_consent', 'moreConsent');
 

@@ -103,7 +103,7 @@ export function buildDfpVideoUrl(options) {
 
   const gdprConsent = gdprDataHandler.getConsentData();
   if (gdprConsent) {
-    if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = gdprConsent.gdprApplies; }
+    if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
     if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
     if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
   }
@@ -196,7 +196,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
 
     const gdprConsent = gdprDataHandler.getConsentData();
     if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = gdprConsent.gdprApplies; }
+      if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
       if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
       if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
     }
