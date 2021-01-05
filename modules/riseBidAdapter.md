@@ -4,14 +4,14 @@ Module Name: Rise Bidder Adapter
 
 Module Type: Bidder Adapter
 
-Maintainer: prebid-digital-brands@ironsrc.com
+Maintainer: prebid-rise-engage@risecodes.com
 
 
 # Description
 
 Module that connects to Rise's demand sources.
 
-The Rise adapter requires setup and approval from the Rise. Please reach out to prebid-digital-brands@ironsrc.com to create an Rise account.
+The Rise adapter requires setup and approval from the Rise. Please reach out to prebid-rise-engage@risecodes.com to create an Rise account.
 
 The adapter supports Video(instream). For the integration, Rise returns content as vastXML and requires the publisher to define the cache url in config passed to Prebid for it to be valid in the auction.
 
