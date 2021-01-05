@@ -193,7 +193,7 @@ function getEndpoint(testMode) {
  */
 function generateParameters(bid, bidderRequest) {
   const timeout = config.getConfig('bidderTimeout');
-  const { syncEnabled, filterSettings } = config.getConfig('userSync');
+  const { syncEnabled, filterSettings } = config.getConfig('userSync') || {};
   const [ width, height ] = getSizes(bid);
   const { params } = bid;
   const { bidderCode } = bidderRequest;
