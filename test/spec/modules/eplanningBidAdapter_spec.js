@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/eplanningBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -122,6 +123,21 @@ describe('E-Planning Adapter', function () {
     },
     'adUnitCode': ADUNIT_CODE,
     'sizes': [[970, 250], [300, 70], [160, 600]],
+  };
+  const validBidExistingSizesInPriorityListForDesktop = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[970, 250], [300, 600], [300, 250]],
+    'ext': {
+      'screen': {
+        'w': 1025,
+        'h': 1025
+      }
+    }
   };
   const response = {
     body: {
@@ -275,6 +291,27 @@ describe('E-Planning Adapter', function () {
 
   describe('buildRequests', function () {
     let bidRequests = [validBid];
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    const createWindow = () => {
+      const win = {};
+      win.self = win;
+      win.innerWidth = 1025;
+      return win;
+    };
+
+    function setupSingleWindow(sandBox) {
+      const win = createWindow();
+      sandBox.stub(utils, 'getWindowSelf').returns(win);
+    }
+
     it('should create the url correctly', function () {
       const url = spec.buildRequests(bidRequests, bidderRequest).url;
       expect(url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
@@ -444,6 +481,13 @@ describe('E-Planning Adapter', function () {
       let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForMobile];
       const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
       expect(e).to.equal('320x50_0:320x50,300x50,970x250');
+    });
+
+    it('should return the e parameter with a value according to the sizes in order corresponding to the desktop priority list of the ad units', function () {
+      let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
+      setupSingleWindow(sandbox);
+      const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
+      expect(e).to.equal('300x250_0:300x250,300x600,970x250');
     });
 
     it('should return the e parameter with a value according to the sizes in order as they are sent from the ad units', function () {

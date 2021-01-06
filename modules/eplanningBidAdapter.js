@@ -16,7 +16,7 @@ const NULL_SIZE = '1x1';
 const FILE = 'file';
 const STORAGE_RENDER_PREFIX = 'pbsr_';
 const STORAGE_VIEW_PREFIX = 'pbvi_';
-const isMobile = isMobileDevice();
+const mobileUserAgent = isMobileUserAgent();
 const PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC = ['1x1', '300x50', '320x50', '300x250'];
 const PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC = ['1x1', '970x90', '970x250', '160x600', '300x600', '728x90', '300x250'];
 
@@ -147,10 +147,13 @@ function getUserAgent() {
   return window.navigator.userAgent;
 }
 function getInnerWidth() {
-  return window.innerWidth;
+  return utils.getWindowSelf().innerWidth;
+}
+function isMobileUserAgent() {
+  return getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
 }
 function isMobileDevice() {
-  return (getInnerWidth() <= 1024) || window.orientation || getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
+  return (getInnerWidth() <= 1024) || window.orientation || mobileUserAgent;
 }
 function getUrlConfig(bidRequests) {
   if (isTestRequest(bidRequests)) {
@@ -186,7 +189,7 @@ function getTestConfig(bidRequests) {
 }
 
 function compareSizesByPriority(size1, size2) {
-  var priorityOrderForSizesAsc = isMobile ? PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC : PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC;
+  var priorityOrderForSizesAsc = isMobileDevice() ? PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC : PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC;
   var index1 = priorityOrderForSizesAsc.indexOf(size1);
   var index2 = priorityOrderForSizesAsc.indexOf(size2);
   if (index1 > -1) {
