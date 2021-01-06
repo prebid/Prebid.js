@@ -83,15 +83,21 @@ describe('triplelift adapter', function () {
       expect(tripleliftAdapterSpec.isBidRequestValid(instreamBid)).to.equal(true);
     });
 
+    it('should return true when required params found - instream - 2', function () {
+      delete instreamBid.mediaTypes.playerSize;
+      delete instreamBid.params.video.w;
+      delete instreamBid.params.video.h;
+      // the only required param is inventoryCode
+      expect(tripleliftAdapterSpec.isBidRequestValid(instreamBid)).to.equal(true);
+    });
+
     it('should return false when required params are not passed', function () {
       delete bid.params.inventoryCode;
       expect(tripleliftAdapterSpec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when required params are not passed - instream', function () {
-      delete instreamBid.mediaTypes.playerSize;
-      delete instreamBid.params.video.w;
-      delete instreamBid.params.video.h;
+      delete instreamBid.params.inventoryCode;
       expect(tripleliftAdapterSpec.isBidRequestValid(instreamBid)).to.equal(false);
     });
   });
@@ -137,6 +143,14 @@ describe('triplelift adapter', function () {
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
+          fpd: {
+            context: {
+              pbAdSlot: 'homepage-top-rect',
+              data: {
+                adUnitSpecificAttribute: 123
+              }
+            }
+          }
         },
         {
           bidder: 'triplelift',
@@ -155,6 +169,174 @@ describe('triplelift adapter', function () {
             video: {
               context: 'instream',
               playerSize: [640, 480]
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // banner and outstream video
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480]
+            },
+            banner: {
+              sizes: [
+                [970, 250],
+                [1, 1]
+              ]
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // banner and incomplete video
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+
+            },
+            banner: {
+              sizes: [
+                [970, 250],
+                [1, 1]
+              ]
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // incomplete banner and incomplete video
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+
+            },
+            banner: {
+
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // banner and instream video
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [640, 480]
+            },
+            banner: {
+              sizes: [
+                [970, 250],
+                [1, 1]
+              ]
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // banner and outream video and native
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480]
+            },
+            banner: {
+              sizes: [
+                [970, 250],
+                [1, 1]
+              ]
+            },
+            native: {
+
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -228,6 +410,26 @@ describe('triplelift adapter', function () {
       expect(payload.imp[1].tagid).to.equal('insteam_test');
       expect(payload.imp[1].floor).to.equal(1.0);
       expect(payload.imp[1].video).to.exist.and.to.be.a('object');
+      // banner and outstream video
+      expect(payload.imp[2]).to.not.have.property('video');
+      expect(payload.imp[2]).to.have.property('banner');
+      expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      // banner and incomplete video
+      expect(payload.imp[3]).to.not.have.property('video');
+      expect(payload.imp[3]).to.have.property('banner');
+      expect(payload.imp[3].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      // incomplete mediatypes.banner and incomplete video
+      expect(payload.imp[4]).to.not.have.property('video');
+      expect(payload.imp[4]).to.have.property('banner');
+      expect(payload.imp[4].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      // banner and instream video
+      expect(payload.imp[5]).to.not.have.property('banner');
+      expect(payload.imp[5]).to.have.property('video');
+      expect(payload.imp[5].video).to.exist.and.to.be.a('object');
+      // banner and outream video and native
+      expect(payload.imp[6]).to.not.have.property('video');
+      expect(payload.imp[6]).to.have.property('banner');
+      expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
     it('should add tdid to the payload if included', function () {
@@ -403,17 +605,19 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].floor).to.equal(1.99);
     });
-    it('should send fpd on root level ext if kvps are available', function() {
+    it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
       const pmp_elig = 'true';
       const fpd = {
         context: {
-          pmp_elig,
-          category,
+          pmp_elig: pmp_elig,
+          data: {
+            category: category
+          }
         },
         user: {
-          sens,
+          sens: sens,
         }
       }
       sandbox.stub(config, 'getConfig').callsFake(key => {
@@ -424,9 +628,16 @@ describe('triplelift adapter', function () {
       });
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
-      expect(payload.ext.fpd).to.not.haveOwnProperty('sens');
-      expect(payload.ext.fpd).to.haveOwnProperty('category');
-      expect(payload.ext.fpd).to.haveOwnProperty('pmp_elig');
+      expect(payload.ext.fpd.user).to.not.exist;
+      expect(payload.ext.fpd.context.data).to.haveOwnProperty('category');
+      expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
+    });
+    it('should send ad unit fpd if kvps are available', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[0].fpd.context).to.haveOwnProperty('pbAdSlot');
+      expect(request.data.imp[0].fpd.context).to.haveOwnProperty('data');
+      expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('adUnitSpecificAttribute');
+      expect(request.data.imp[1].fpd).to.not.exist;
     });
   });
 
@@ -444,7 +655,8 @@ describe('triplelift adapter', function () {
               ad: 'ad-markup',
               iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
               tl_source: 'tlx',
-              advertiser_name: 'fake advertiser name'
+              advertiser_name: 'fake advertiser name',
+              adomain: ['basspro.com', 'internetalerts.org']
             },
             {
               imp_id: 1,
@@ -550,8 +762,15 @@ describe('triplelift adapter', function () {
 
     it('should include the advertiser name in the meta field if available', function () {
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
-      expect(result[0].meta.advertiserName).to.equal('fake advertiser name')
+      expect(result[0].meta.advertiserName).to.equal('fake advertiser name');
       expect(result[1].meta).to.not.have.key('advertiserName');
+    });
+
+    it('should include the advertiser domain array in the meta field if available', function () {
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      expect(result[0].meta.advertiserDomains[0]).to.equal('basspro.com');
+      expect(result[0].meta.advertiserDomains[1]).to.equal('internetalerts.org');
+      expect(result[1].meta).to.not.have.key('advertiserDomains');
     });
   });
 

@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {isStr, isArray, isNumber, isPlainObject, isBoolean, logError, replaceAuctionPrice} from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
+import { config } from '../src/config.js';
 
 const ADAPTER_VERSION = 'v1.0.0';
 const BID_METHOD = 'POST';
@@ -334,13 +335,17 @@ function generateSiteFromAdUnitContext(adUnitContext) {
   if (!adUnitContext || !adUnitContext.refererInfo) return null;
 
   const domain = extractSiteDomainFromURL(adUnitContext.refererInfo.referer);
+  const publisherId = config.getConfig('adot.publisherId');
 
   if (!domain) return null;
 
   return {
     page: adUnitContext.refererInfo.referer,
     domain: domain,
-    name: domain
+    name: domain,
+    publisher: {
+      id: publisherId
+    }
   };
 }
 

@@ -211,4 +211,37 @@ describe('config API', function () {
     setConfig({ bidderSequence: 'random' });
     expect(logWarnSpy.called).to.equal(false);
   });
+
+  it('sets auctionOptions', function () {
+    const auctionOptionsConfig = {
+      'secondaryBidders': ['rubicon', 'appnexus']
+    }
+    setConfig({ auctionOptions: auctionOptionsConfig });
+    expect(getConfig('auctionOptions')).to.eql(auctionOptionsConfig);
+  });
+
+  it('should log warning for the wrong value passed to auctionOptions', function () {
+    setConfig({ auctionOptions: '' });
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options must be an object';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid auctionOptions bidder values', function () {
+    setConfig({ auctionOptions: {
+      'secondaryBidders': 'appnexus, rubicon',
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options secondaryBidders must be of type Array';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
+
+  it('should log warning for invalid properties to auctionOptions', function () {
+    setConfig({ auctionOptions: {
+      'testing': true
+    }});
+    expect(logWarnSpy.calledOnce).to.equal(true);
+    const warning = 'Auction Options given an incorrect param: testing';
+    assert.ok(logWarnSpy.calledWith(warning), 'expected warning was logged');
+  });
 });
