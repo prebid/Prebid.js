@@ -1,9 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/temedyaBidAdapter.js';
 import * as utils from 'src/utils.js';
-
 const ENDPOINT_URL = 'https://adm.vidyome.com/';
-
 export const _getUrlVars = function(url) {
   var hash;
   var myJson = {};
@@ -105,7 +103,7 @@ describe('temedya adapter', function() {
       data.count = bidRequests[0].params.count;
     })
   })
-
+ 
   describe('interpretResponse', function () {
     let response = {
       ads: [
