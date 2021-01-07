@@ -9,6 +9,7 @@ const DEFAULT_DC = 'hb-api';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: ['BANNER', 'NATIVE'],
   aliases: ['ayl'], // short code
   /**
    * Determines whether or not the given bid request is valid.
@@ -203,34 +204,150 @@ function getSize(sizesArray) {
   return parsed;
 }
 
+function getImageUrl(config, resource, width, height) {
+  // use default cropping
+  var auto = resource.ZoneHeight === 0 || resource.ZoneWidth === 0;
+
+  let url = '';
+  const crop = 1 / 3;
+
+  const dynPrefix = config.DynamicPrefix;
+
+  switch (resource.Kind) {
+    case 'INTERNAL':
+      url = dynPrefix + '/native/preview/image?key=' + resource.Data.Internal.BlobReference.Uid;
+      url += '&kind=INTERNAL';
+      if (!auto) {
+        url += '&ztop=' + resource.ZoneTop;
+        url += '&zleft=' + resource.ZoneLeft;
+        url += '&zwidth=' + resource.ZoneWidth;
+        url += '&zheight=' + resource.ZoneHeight;
+      } else {
+        url += '&ztop=' + crop;
+        url += '&zleft=' + crop;
+        url += '&zwidth=' + crop;
+        url += '&zheight=' + crop;
+      }
+      url += '&width=' + width;
+      url += '&height=' + height;
+
+      break;
+
+    case 'EXTERNAL':
+      let extUrl = resource.Data.External.Url;
+      extUrl = extUrl.replace(/\[height\]/i, '' + height);
+      extUrl = extUrl.replace(/\[width\]/i, '' + width);
+      if (extUrl.indexOf(dynPrefix) >= 0) {
+        url = extUrl;
+      } else {
+        url = dynPrefix + '/native/preview/image?url=' + extUrl;
+        url += '&kind=' + resource.Kind;
+        if (!auto) {
+          url += '&ztop=' + resource.ZoneTop;
+          url += '&zleft=' + resource.ZoneLeft;
+          url += '&zwidth=' + resource.ZoneWidth;
+          url += '&zheight=' + resource.ZoneHeight;
+        } else {
+          url += '&ztop=' + crop;
+          url += '&zleft=' + crop;
+          url += '&zwidth=' + crop;
+          url += '&zheight=' + crop;
+        }
+        url += '&width=' + width;
+        url += '&height=' + height;
+      }
+
+      if (resource.Smart) { // resource.Smart could have the string value 'false'
+        url += '&smart=' + (resource.Smart);
+      }
+
+      if (resource.NoTransform) {
+        url += '&notransform=' + resource.NoTransform;
+      }
+
+      break
+  }
+
+  return url;
+}
+
+function getNativeAssets(response) {
+  if (typeof response.Native === 'object') {
+    return response.Native;
+  } else {
+    const adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//));
+    const textsJson = adJson.Content.Preview.Text;
+
+    const width = response.Width || 300;
+    const height = response.Height || 250;
+
+    var impressionUrl = adJson.TrackingPrefix +
+            '/pixel?event_kind=IMPRESSION&attempt=' + adJson.Attempt;
+
+    if (adJson.Campaign) {
+      impressionUrl += '&campaign=' + adJson.Campaign;
+    }
+
+    return {
+      title: textsJson.TITLE,
+      body: textsJson.DESCRIPTION,
+      cta: textsJson.CALLTOACTION,
+      sponsoredBy: textsJson.SPONSOR,
+      image: {
+        url: getImageUrl(adJson, adJson.Thumbnail.Image, width, height),
+        height: height,
+        width: width,
+      },
+      icon: {
+        url: adJson.HasSponsorImage && getImageUrl(adJson, adJson.Content.Preview.Sponsor.Logo.Resource, 50, 50),
+        height: 50,
+        width: 50,
+      },
+      clickUrl: adJson.Content.Landing.Url,
+      impressionTrackers: [
+        impressionUrl
+      ],
+    };
+  }
+}
+
 /* Create bid from response */
 function createBid(response, bidRequests) {
   if (!response || !response.Ad) {
     return
   }
 
+  const request = bidRequests && bidRequests[response.BidID];
+
   // In case we don't retreive the size from the adserver, use the given one.
-  if (bidRequests && bidRequests[response.BidID]) {
+  if (request) {
     if (!response.Width || response.Width === '0') {
-      response.Width = bidRequests[response.BidID].Width;
+      response.Width = request.Width;
     }
 
     if (!response.Height || response.Height === '0') {
-      response.Height = bidRequests[response.BidID].Height;
+      response.Height = request.Height;
     }
   }
 
-  return {
+  const bid = {
     requestId: response.BidID,
     width: response.Width,
     height: response.Height,
-    ad: response.Ad,
     ttl: 3600,
     creativeId: response.CreativeID,
     cpm: response.Price,
     netRevenue: true,
     currency: 'USD'
   };
+
+  if (request && request.mediaTypes === 'native') {
+    bid.native = getNativeAssets(response);
+  } else {
+    bid.ad = response.Ad;
+  }
+
+  return bid;
 }
 
 registerBidder(spec);
