@@ -139,7 +139,7 @@ describe('temedya adapter', function() {
         'isDesktop': true,
         'isConnectedTv': false,
         'country': 'tr',
-        'wid': '122129',
+        'wid': 753497,
         'type': 'native',
         'locale': 'tr',
         'widget': {
