@@ -18,7 +18,7 @@ const DAYS_TO_CACHE = 7;
 const DAY_MS = 60 * 60 * 24 * 1000;
 const GVLID = 95;
 
-export const storage = getStorageManager(null, MODULE_NAME);
+export const storage = getStorageManager(GVLID, MODULE_NAME);
 
 /**
  * Set the Lotame First Party Profile ID in the first party namespace
