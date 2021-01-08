@@ -98,7 +98,8 @@ function impression(slot) {
     id: slot.bidId,
     native: nativeImpression(slot),
     bidfloor: slot.params.bidfloor || 0,
-    bidfloorcur: slot.params.bidfloorcur || 'USD'
+    bidfloorcur: slot.params.bidfloorcur || 'USD',
+    tagId: slot.params.tagId || '0'
   };
 }
 
