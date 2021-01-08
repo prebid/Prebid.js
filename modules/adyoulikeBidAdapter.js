@@ -347,9 +347,12 @@ function createBid(response, bidRequests) {
     currency: 'USD'
   };
 
-  if (request && request.mediaTypes === 'native') {
+  if (request && request.Native) {
     bid.native = getNativeAssets(response);
+    bid.mediaType = 'native';
   } else {
+    bid.width = response.Width;
+    bid.height = response.Height;
     bid.ad = response.Ad;
   }
 
