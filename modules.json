@@ -17,5 +17,6 @@
     "gdprEnforcement",
     "currency",
     "priceFloors",
-    "schain"
+    "schain",
+    "consentManagementUsp"
 ]
