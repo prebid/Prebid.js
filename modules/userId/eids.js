@@ -231,8 +231,8 @@ export function buildEidPermissions(submodules) {
       Object.keys(i.idObj).forEach(key => {
         if (utils.deepAccess(USER_IDS_CONFIG, key + '.source')) {
           let eidPermission = { source: USER_IDS_CONFIG[key].source };
-          if (utils.deepAccess(i, 'config.pbjs_bidders') && Array.isArray(i.config.pbjs_bidders)) {
-            eidPermission.pbjs_bidders = i.config.pbjs_bidders;
+          if (utils.deepAccess(i, 'config.pbjsBidders') && Array.isArray(i.config.pbjsBidders)) {
+            eidPermission.pbjsBidders = i.config.pbjsBidders;
           }
           eidPermissions.push(eidPermission);
         }

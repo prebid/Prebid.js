@@ -379,7 +379,7 @@ function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
     return {};
   }
   return submodules
-    .filter(i => !i.config.pbjs_bidders || !utils.isArray(i.config.pbjs_bidders) || i.config.pbjs_bidders.includes(bidder))
+    .filter(i => !i.config.pbjsBidders || !utils.isArray(i.config.pbjsBidders) || i.config.pbjsBidders.includes(bidder))
     .filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .reduce((carry, i) => {
       Object.keys(i.idObj).forEach(key => {

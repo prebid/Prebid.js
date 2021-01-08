@@ -1182,7 +1182,7 @@ describe('User ID', function () {
           userIds: [
             {
               name: 'sharedId',
-              pbjs_bidders: [
+              pbjsBidders: [
                 'sampleBidder'
               ],
               storage: {
@@ -1199,7 +1199,7 @@ describe('User ID', function () {
         const eidPermissions = getEidPermissions();
         expect(eidPermissions).to.deep.equal(
           [
-            {source: 'sharedid.org', pbjs_bidders: ['sampleBidder']}
+            {source: 'sharedid.org', pbjsBidders: ['sampleBidder']}
           ]
         );
         adUnits.forEach(unit => {

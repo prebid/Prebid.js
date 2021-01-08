@@ -654,8 +654,8 @@ const OPEN_RTB_PROTOCOL = {
     if (utils.isArray(eidPermissions) && eidPermissions.length > 0) {
       if (requestedBidders && utils.isArray(requestedBidders)) {
         eidPermissions.forEach(i => {
-          if (i.pbjs_bidders) {
-            i.pbjs_bidders = i.pbjs_bidders.filter(bidder => requestedBidders.includes(bidder))
+          if (i.pbjsBidders) {
+            i.pbjsBidders = i.pbjsBidders.filter(bidder => requestedBidders.includes(bidder))
           }
         });
       }
