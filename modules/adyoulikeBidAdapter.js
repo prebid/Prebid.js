@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
@@ -9,7 +10,7 @@ const DEFAULT_DC = 'hb-api';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['BANNER', 'NATIVE'],
+  supportedMediaTypes: [BANNER, NATIVE],
   aliases: ['ayl'], // short code
   /**
    * Determines whether or not the given bid request is valid.
@@ -19,10 +20,10 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     const sizes = getSize(getSizeArray(bid));
-    if (!bid.params || !bid.params.placement || !sizes.width || !sizes.height) {
-      return false;
-    }
-    return true;
+
+    // allows no size fornative only
+    return bid.params && bid.params.placement &&
+    (bid.mediaTypes.native || (sizes.width && sizes.height));
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -42,6 +43,7 @@ export const spec = {
         accumulator[bid.bidId].Width = size.width;
         accumulator[bid.bidId].Height = size.height;
         accumulator[bid.bidId].AvailableSizes = sizesArray.join(',');
+        accumulator[bid.bidId].Native = !!bid.mediaTypes.native;
         return accumulator;
       }, {}),
       PageRefreshed: getPageRefreshed()
