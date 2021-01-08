@@ -16,6 +16,7 @@ const MODULE_NAME = 'lotamePanoramaId';
 const NINE_MONTHS_MS = 23328000 * 1000;
 const DAYS_TO_CACHE = 7;
 const DAY_MS = 60 * 60 * 24 * 1000;
+const MISSING_CORE_CONSENT = 111;
 
 export const storage = getStorageManager(null, MODULE_NAME);
 let cookieDomain;
@@ -221,10 +222,17 @@ export const lotamePanoramaIdSubmodule = {
           if (response) {
             try {
               let responseObj = JSON.parse(response);
-              saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts);
+              const shouldUpdateProfileId = !(
+                utils.isArray(responseObj.errors) &&
+                responseObj.errors.includes(MISSING_CORE_CONSENT)
+              );
+
+              saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts, responseObj.expiry_ts);
 
               if (utils.isStr(responseObj.profile_id)) {
-                setProfileId(responseObj.profile_id);
+                if (shouldUpdateProfileId) {
+                  setProfileId(responseObj.profile_id);
+                }
 
                 if (utils.isStr(responseObj.core_id)) {
                   saveLotameCache(
@@ -237,7 +245,9 @@ export const lotamePanoramaIdSubmodule = {
                   clearLotameCache(KEY_ID);
                 }
               } else {
-                clearLotameCache(KEY_PROFILE);
+                if (shouldUpdateProfileId) {
+                  clearLotameCache(KEY_PROFILE);
+                }
                 clearLotameCache(KEY_ID);
               }
             } catch (error) {
