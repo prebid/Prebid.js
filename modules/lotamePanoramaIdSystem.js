@@ -18,6 +18,7 @@ const DAYS_TO_CACHE = 7;
 const DAY_MS = 60 * 60 * 24 * 1000;
 
 export const storage = getStorageManager(null, MODULE_NAME);
+let cookieDomain;
 
 /**
  * Set the Lotame First Party Profile ID in the first party namespace
@@ -26,7 +27,14 @@ export const storage = getStorageManager(null, MODULE_NAME);
 function setProfileId(profileId) {
   if (storage.cookiesAreEnabled()) {
     let expirationDate = new Date(utils.timestamp() + NINE_MONTHS_MS).toUTCString();
-    storage.setCookie(KEY_PROFILE, profileId, expirationDate, 'Lax', undefined, undefined);
+    storage.setCookie(
+      KEY_PROFILE,
+      profileId,
+      expirationDate,
+      'Lax',
+      cookieDomain,
+      undefined
+    );
   }
   if (storage.hasLocalStorage()) {
     storage.setDataInLocalStorage(KEY_PROFILE, profileId, undefined);
@@ -88,7 +96,7 @@ function saveLotameCache(
         value,
         expirationDate,
         'Lax',
-        undefined,
+        cookieDomain,
         undefined
       );
     }
@@ -115,7 +123,7 @@ function getLotameLocalCache() {
   try {
     const rawExpiry = getFromStorage(KEY_EXPIRY);
     if (utils.isStr(rawExpiry)) {
-      cache.expiryTimestampMs = parseInt(rawExpiry, 0);
+      cache.expiryTimestampMs = parseInt(rawExpiry, 10);
     }
   } catch (error) {
     utils.logError(error);
@@ -132,7 +140,14 @@ function clearLotameCache(key) {
   if (key) {
     if (storage.cookiesAreEnabled()) {
       let expirationDate = new Date(0).toUTCString();
-      storage.setCookie(key, '', expirationDate, 'Lax', undefined, undefined);
+      storage.setCookie(
+        key,
+        '',
+        expirationDate,
+        'Lax',
+        cookieDomain,
+        undefined
+      );
     }
     if (storage.hasLocalStorage()) {
       storage.removeDataFromLocalStorage(key, undefined);
@@ -168,6 +183,7 @@ export const lotamePanoramaIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
+    cookieDomain = lotamePanoramaIdSubmodule.findRootDomain();
     let localCache = getLotameLocalCache();
 
     let refreshNeeded = Date.now() > localCache.expiryTimestampMs;
