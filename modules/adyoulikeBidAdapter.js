@@ -277,7 +277,7 @@ function getNativeAssets(response) {
   if (typeof response.Native === 'object') {
     return response.Native;
   } else {
-    const adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//));
+    const adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
     const textsJson = adJson.Content.Preview.Text;
 
     const width = response.Width || 300;
@@ -290,26 +290,30 @@ function getNativeAssets(response) {
       impressionUrl += '&campaign=' + adJson.Campaign;
     }
 
-    return {
+    const native = {
       title: textsJson.TITLE,
       body: textsJson.DESCRIPTION,
       cta: textsJson.CALLTOACTION,
-      sponsoredBy: textsJson.SPONSOR,
+      sponsoredBy: adJson.Content.Preview.Sponsor.Name,
       image: {
-        url: getImageUrl(adJson, adJson.Thumbnail.Image, width, height),
+        url: getImageUrl(adJson, adJson.Content.Preview.Thumbnail.Image, width, height),
         height: height,
         width: width,
-      },
-      icon: {
-        url: adJson.HasSponsorImage && getImageUrl(adJson, adJson.Content.Preview.Sponsor.Logo.Resource, 50, 50),
-        height: 50,
-        width: 50,
       },
       clickUrl: adJson.Content.Landing.Url,
       impressionTrackers: [
         impressionUrl
       ],
     };
+
+    if (adJson.HasSponsorImage) {
+      native.icon = {
+        url: getImageUrl(adJson, adJson.Content.Preview.Sponsor.Logo.Resource, 50, 50),
+        height: 50,
+        width: 50,
+      };
+    }
+    return native;
   }
 }
 
