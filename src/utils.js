@@ -3,7 +3,6 @@ import { config } from './config.js';
 import clone from 'just-clone';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
-import { getCoreStorageManager } from './storageManager.js';
 
 const CONSTANTS = require('./constants.json');
 
@@ -23,7 +22,6 @@ let consoleInfoExists = Boolean(consoleExists && window.console.info);
 let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
 var events = require('./events.js');
-export const coreStorage = getCoreStorageManager('util');
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
