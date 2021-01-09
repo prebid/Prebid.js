@@ -2,25 +2,25 @@
  * This module adds MASS support to Prebid.js.
  */
 
-import { config } from '../src/config';
-import { getHook } from '../src/hook';
-import { logInfo } from '../src/utils';
+// import { config } from '../src/config';
+import { getHook } from '../src/hook.js';
+// import { logInfo } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
 let listenerAdded = false;
 const massBids = {};
 
-//config.getConfig('mass', config => init(config.mass));
+// config.getConfig('mass', config => init(config.mass));
 init();
 
 /**
  * Module init.
  */
 function init(cfg = {}) {
-  /*if (cfg.enabled === false) {
+  /* if (cfg.enabled === false) {
     logInfo('MASS module is disabled');
     return;
-  }*/
+  } */
 
   getHook('addBidResponse').before(addBidResponseHook);
 }
@@ -71,7 +71,7 @@ function addListenerOnce() {
         render(getRenderPayload(e));
       }
     });
-    
+
     listenerAdded = true;
   }
 }
