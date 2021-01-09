@@ -28,7 +28,7 @@ function init(cfg = {}) {
 /**
  * Before hook for 'addBidResponse'.
  */
-function addBidResponseHook(next, adUnitCode, bid) {
+export function addBidResponseHook(next, adUnitCode, bid) {
   if (!isMassBid(bid)) {
     return next(adUnitCode, bid);
   }
