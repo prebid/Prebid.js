@@ -16,6 +16,7 @@ const MODULE_NAME = 'id5Id';
 const GVLID = 131;
 const NB_EXP_DAYS = 30;
 export const ID5_STORAGE_NAME = 'id5id';
+export const ID5_PRIVACY_STORAGE_NAME = `${ID5_STORAGE_NAME}_privacy`;
 const LOCAL_STORAGE = 'html5';
 
 // order the legacy cookie names in reverse priority order so the last
@@ -137,6 +138,9 @@ export const id5IdSubmodule = {
             try {
               responseObj = JSON.parse(response);
               resetNb(config.params.partner);
+              if (responseObj.privacy) {
+                storeInLocalStorage(ID5_PRIVACY_STORAGE_NAME, JSON.stringify(responseObj.privacy), NB_EXP_DAYS);
+              }
 
               // TODO: remove after requiring publishers to use localstorage and
               // all publishers have upgraded

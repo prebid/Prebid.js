@@ -1089,6 +1089,34 @@ describe('rubicon analytics adapter', function () {
         expect(message).to.deep.equal(expectedMessage);
       });
 
+      it('should convert kvs to strings before sending', function () {
+        config.setConfig({rubicon: {
+          fpkvs: {
+            number: 24,
+            boolean: false,
+            string: 'hello',
+            array: ['one', 2, 'three'],
+            object: {one: 'two'}
+          }
+        }});
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
+        expectedMessage.fpkvs = [
+          {key: 'number', value: '24'},
+          {key: 'boolean', value: 'false'},
+          {key: 'string', value: 'hello'},
+          {key: 'array', value: 'one,2,three'},
+          {key: 'object', value: '[object Object]'}
+        ]
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
       it('should use the query utm param rubicon kv value and pass updated kv and pvid when defined', function () {
         sandbox.stub(utils, 'getWindowLocation').returns({'search': '?utm_source=other', 'pbjs_debug': 'true'});
 

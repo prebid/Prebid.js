@@ -384,8 +384,12 @@ function getUtmParams() {
 function getFpkvs() {
   rubiConf.fpkvs = Object.assign((rubiConf.fpkvs || {}), getUtmParams());
 
-  const isValid = rubiConf.fpkvs && typeof rubiConf.fpkvs === 'object' && Object.keys(rubiConf.fpkvs).every(key => typeof rubiConf.fpkvs[key] === 'string');
-  return isValid ? rubiConf.fpkvs : {};
+  // convert all values to strings
+  Object.keys(rubiConf.fpkvs).forEach(key => {
+    rubiConf.fpkvs[key] = rubiConf.fpkvs[key] + '';
+  });
+
+  return rubiConf.fpkvs;
 }
 
 let samplingFactor = 1;
