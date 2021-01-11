@@ -654,12 +654,12 @@ const OPEN_RTB_PROTOCOL = {
     if (utils.isArray(eidPermissions) && eidPermissions.length > 0) {
       if (requestedBidders && utils.isArray(requestedBidders)) {
         eidPermissions.forEach(i => {
-          if (i.pbjsBidders) {
-            i.pbjsBidders = i.pbjsBidders.filter(bidder => requestedBidders.includes(bidder))
+          if (i.bidders) {
+            i.bidders = i.bidders.filter(bidder => requestedBidders.includes(bidder))
           }
         });
       }
-      utils.deepSetValue(request, 'ext.prebid.data.eidPermissions', eidPermissions);
+      utils.deepSetValue(request, 'ext.prebid.data.eidpermissions', eidPermissions);
     }
 
     if (bidRequests) {
