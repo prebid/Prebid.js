@@ -13,22 +13,16 @@ import { targeting, newTargeting, filters } from 'src/targeting.js';
 import { config as configObj } from 'src/config.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
-import { newBidder, registerBidder } from 'src/adapters/bidderFactory.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { _sendAdToCreative } from 'src/secureCreatives.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
-var urlParse = require('url-parse');
-
-var prebid = require('src/prebid');
 var utils = require('src/utils');
-var bidfactory = require('src/bidfactory');
-var adloader = require('test/mocks/adloaderStub');
 var adapterManager = require('src/adapterManager').default;
 var events = require('src/events');
-var adserver = require('src/adserver');
 var CONSTANTS = require('src/constants.json');
 
 // These bid adapters are required to be loaded for the following tests to work
@@ -965,12 +959,12 @@ describe('Unit: Prebid Module', function () {
         adUnitCode: config.adUnitCodes[0],
       };
 
-      const remoteDomain = '*';
-      const source = {
-        postMessage: sinon.stub()
+      const event = {
+        source: { postMessage: sinon.stub() },
+        origin: 'origin.sf.com'
       };
 
-      _sendAdToCreative(mockAdObject, remoteDomain, source);
+      _sendAdToCreative(mockAdObject, event);
 
       expect(slots[0].spyGetSlotElementId.called).to.equal(false);
       expect(slots[1].spyGetSlotElementId.called).to.equal(true);
@@ -1203,6 +1197,14 @@ describe('Unit: Prebid Module', function () {
       assert.deepEqual($$PREBID_GLOBAL$$.getAllWinningBids()[0], adResponse);
     });
 
+    it('should replace ${CLICKTHROUGH} macro in winning bids response', function () {
+      pushBidResponseToAuction({
+        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js?clickthrough=${CLICKTHROUGH}'></script>"
+      });
+      $$PREBID_GLOBAL$$.renderAd(doc, bidId, {clickThrough: 'https://someadserverclickurl.com'});
+      expect(adResponse).to.have.property('ad').and.to.match(/https:\/\/someadserverclickurl\.com/i);
+    });
+
     it('fires billing url if present on s2s bid', function () {
       const burl = 'http://www.example.com/burl';
       pushBidResponseToAuction({
@@ -1223,6 +1225,12 @@ describe('Unit: Prebid Module', function () {
     let makeRequestsStub;
     let adUnits;
     let clock;
+    before(function () {
+      clock = sinon.useFakeTimers();
+    });
+    after(function () {
+      clock.restore();
+    });
     let bidsBackHandlerStub = sinon.stub();
 
     const BIDDER_CODE = 'sampleBidder';
@@ -1309,7 +1317,6 @@ describe('Unit: Prebid Module', function () {
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
 
-      clock = sinon.useFakeTimers();
       let requestObj = {
         bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
         timeout: 2000,
@@ -1363,7 +1370,6 @@ describe('Unit: Prebid Module', function () {
       auction.getBidsReceived = function() { return [adResponse]; }
       auction.getAuctionId = () => auctionId;
 
-      clock = sinon.useFakeTimers();
       let requestObj = {
         bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
         timeout: 2000,
@@ -1767,13 +1773,37 @@ describe('Unit: Prebid Module', function () {
             expect(auctionArgs.adUnits[0].mediaTypes.native.icon).to.exist;
             assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.'));
           });
+
+          it('should throw error message and remove adUnit if adUnit.bids is not defined correctly', function () {
+            const adUnits = [{
+              code: 'ad-unit-1',
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 400]
+                }
+              },
+              bids: [{code: 'appnexus', params: 1234}]
+            }, {
+              code: 'bad-ad-unit-2',
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 400]
+                }
+              }
+            }];
+
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: adUnits
+            });
+            expect(auctionArgs.adUnits.length).to.equal(1);
+            expect(auctionArgs.adUnits[1]).to.not.exist;
+            assert.ok(logErrorSpy.calledWith("Detected adUnit.code 'bad-ad-unit-2' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction."));
+          });
         });
       });
     });
 
     describe('multiformat requests', function () {
-      let spyCallBids;
-      let createAuctionStub;
       let adUnits;
 
       beforeEach(function () {
@@ -1793,14 +1823,10 @@ describe('Unit: Prebid Module', function () {
         }];
         adUnitCodes = ['adUnit-code'];
         configObj.setConfig({maxRequestsPerOrigin: Number.MAX_SAFE_INTEGER || 99999999});
-        let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-        spyCallBids = sinon.spy(adapterManager, 'callBids');
-        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-        createAuctionStub.returns(auction);
+        sinon.spy(adapterManager, 'callBids');
       })
 
       afterEach(function () {
-        auctionModule.newAuction.restore();
         adapterManager.callBids.restore();
       });
 
@@ -1823,7 +1849,6 @@ describe('Unit: Prebid Module', function () {
 
         const spyArgs = adapterManager.callBids.getCall(0);
         const biddersCalled = spyArgs.args[0][0].bids;
-
         // only appnexus supports native
         expect(biddersCalled.length).to.equal(1);
       });

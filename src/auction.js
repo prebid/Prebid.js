@@ -57,8 +57,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue} from './utils.js';
-import { parse as parseURL } from './url.js';
+import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, parseUrl} from './utils.js';
 import { getPriceBucketString } from './cpmBucketManager.js';
 import { getNativeTargeting } from './native.js';
 import { getCacheUrl, store } from './videoCache.js';
@@ -66,7 +65,8 @@ import { Renderer } from './Renderer.js';
 import { config } from './config.js';
 import { userSync } from './userSync.js';
 import { hook } from './hook.js';
-import find from 'core-js/library/fn/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { OUTSTREAM } from './video.js';
 import { VIDEO } from './mediaTypes.js';
 
@@ -398,10 +398,19 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
 
   function adapterDone() {
     let bidderRequest = this;
+    let bidderRequests = auctionInstance.getBidRequests();
+    const auctionOptionsConfig = config.getConfig('auctionOptions');
 
     bidderRequestsDone.add(bidderRequest);
-    allAdapterCalledDone = auctionInstance.getBidRequests()
-      .every(bidderRequest => bidderRequestsDone.has(bidderRequest));
+
+    if (auctionOptionsConfig && !utils.isEmpty(auctionOptionsConfig)) {
+      const secondaryBidders = auctionOptionsConfig.secondaryBidders;
+      if (secondaryBidders && !bidderRequests.every(bidder => includes(secondaryBidders, bidder.bidderCode))) {
+        bidderRequests = bidderRequests.filter(request => !includes(secondaryBidders, request.bidderCode));
+      }
+    }
+
+    allAdapterCalledDone = bidderRequests.every(bidderRequest => bidderRequestsDone.has(bidderRequest));
 
     bidderRequest.bids.forEach(bid => {
       if (!bidResponseMap[bid.bidId]) {
@@ -484,7 +493,7 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
         afterBidAdded();
       }
     }
-  });
+  }, bidderRequest);
 }, 'callPrebidCache');
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
@@ -513,9 +522,26 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   const bidReq = bidderRequest.bids && find(bidderRequest.bids, bid => bid.adUnitCode == adUnitCode);
   const adUnitRenderer = bidReq && bidReq.renderer;
 
-  if (adUnitRenderer && adUnitRenderer.url) {
-    bidObject.renderer = Renderer.install({ url: adUnitRenderer.url });
-    bidObject.renderer.setRender(adUnitRenderer.render);
+  // a publisher can also define a renderer for a mediaType
+  const bidObjectMediaType = bidObject.mediaType;
+  const bidMediaType = bidReq &&
+        bidReq.mediaTypes &&
+        bidReq.mediaTypes[bidObjectMediaType];
+
+  var mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
+
+  var renderer = null;
+
+  // the renderer for the mediaType takes precendence
+  if (mediaTypeRenderer && mediaTypeRenderer.url && !(mediaTypeRenderer.backupOnly === true && mediaTypeRenderer.render)) {
+    renderer = mediaTypeRenderer;
+  } else if (adUnitRenderer && adUnitRenderer.url && !(adUnitRenderer.backupOnly === true && bid.renderer)) {
+    renderer = adUnitRenderer;
+  }
+
+  if (renderer) {
+    bidObject.renderer = Renderer.install({ url: renderer.url });
+    bidObject.renderer.setRender(renderer.render);
   }
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
@@ -651,7 +677,7 @@ export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
 
     // Adding hb_cache_host
     if (config.getConfig('cache.url') && (!bidderCode || utils.deepAccess(bidderSettings, `${bidderCode}.sendStandardTargeting`) !== false)) {
-      const urlInfo = parseURL(config.getConfig('cache.url'));
+      const urlInfo = parseUrl(config.getConfig('cache.url'));
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {

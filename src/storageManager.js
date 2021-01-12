@@ -1,6 +1,6 @@
 import { hook } from './hook.js';
 import * as utils from './utils.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
 
@@ -64,7 +64,9 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
       if (result && result.valid) {
         const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
         const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
-        document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}`;
+        const isNone = (sameSite != null && sameSite.toLowerCase() == 'none')
+        const secure = (isNone) ? '; Secure' : '';
+        document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
       }
     }
     if (done && typeof done === 'function') {
@@ -152,7 +154,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    */
   const setDataInLocalStorage = function (key, value, done) {
     let cb = function (result) {
-      if (result && result.valid) {
+      if (result && result.valid && hasLocalStorage()) {
         window.localStorage.setItem(key, value);
       }
     }
@@ -172,7 +174,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    */
   const getDataFromLocalStorage = function (key, done) {
     let cb = function (result) {
-      if (result && result.valid) {
+      if (result && result.valid && hasLocalStorage()) {
         return window.localStorage.getItem(key);
       }
       return null;
@@ -192,7 +194,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    */
   const removeDataFromLocalStorage = function (key, done) {
     let cb = function (result) {
-      if (result && result.valid) {
+      if (result && result.valid && hasLocalStorage()) {
         window.localStorage.removeItem(key);
       }
     }

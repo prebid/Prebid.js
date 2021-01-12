@@ -423,7 +423,7 @@ describe('GamoshiAdapter', () => {
     it('build request with ID5 Id', () => {
       const bidRequestClone = utils.deepClone(bidRequest);
       bidRequestClone.userId = {};
-      bidRequestClone.userId.id5id = 'id5-user-id';
+      bidRequestClone.userId.id5id = { uid: 'id5-user-id' };
       let request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
       expect(request.data.user.ext.eids).to.deep.equal([{
         'source': 'id5-sync.com',

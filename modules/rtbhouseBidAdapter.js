@@ -1,7 +1,7 @@
 import * as utils from '../src/utils.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import includes from 'core-js/library/fn/array/includes.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
@@ -46,9 +46,7 @@ export const spec = {
       site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,
       test: validBidRequests[0].params.test || 0,
-      source: {
-        tid: validBidRequests[0].transactionId
-      }
+      source: mapSource(validBidRequests[0]),
     };
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
@@ -143,6 +141,52 @@ function mapSite(slot, bidderRequest) {
     page: bidderRequest.refererInfo.referer,
     name: utils.getOrigin()
   }
+}
+
+/**
+ * @param {object} slot Ad Unit Params by Prebid
+ * @returns {object} Source by OpenRTB 2.5 §3.2.2
+ */
+function mapSource(slot) {
+  const source = {
+    tid: slot.transactionId,
+  };
+  const schain = mapSchain(slot.schain);
+  if (schain) {
+    source.ext = {
+      schain: schain
+    }
+  }
+  return source;
+}
+
+/**
+ * @param {object} schain object set by Publisher
+ * @returns {object} OpenRTB SupplyChain object
+ */
+function mapSchain(schain) {
+  if (!schain) {
+    return null;
+  }
+  if (!validateSchain(schain)) {
+    utils.logError('RTB House: required schain params missing');
+    return null;
+  }
+  return schain;
+}
+
+/**
+ * @param {object} schain object set by Publisher
+ * @returns {object} bool
+ */
+function validateSchain(schain) {
+  if (!schain.nodes) {
+    return false;
+  }
+  const requiredFields = ['asi', 'sid', 'hp'];
+  return schain.nodes.every(node => {
+    return requiredFields.every(field => node[field]);
+  });
 }
 
 /**

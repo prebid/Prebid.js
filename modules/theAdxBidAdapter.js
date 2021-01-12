@@ -7,9 +7,6 @@ import {
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
-import {
-  parse as parseUrl
-} from '../src/url.js';
 
 const BIDDER_CODE = 'theadx';
 const ENDPOINT_URL = 'https://ssp.theadx.com/request';
@@ -317,7 +314,7 @@ export const spec = {
 }
 
 let buildSiteComponent = (bidRequest, bidderRequest) => {
-  let loc = parseUrl(bidderRequest.refererInfo.referer, {
+  let loc = utils.parseUrl(bidderRequest.refererInfo.referer, {
     decodeSearchAsString: true
   });
 

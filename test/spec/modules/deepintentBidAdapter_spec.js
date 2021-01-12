@@ -162,6 +162,23 @@ describe('Deepintent adapter', function () {
       let data2 = JSON.parse(bRequest2.data);
       expect(data2.regs).to.equal(undefined);
     });
+    it('bid Request check: GDPR Check', function () {
+      let bidRequest = {
+        gdprConsent: {
+          consentString: 'kjfdnidasd123sadsd',
+          gdprApplies: true
+        }
+      };
+      let bRequest = spec.buildRequests(request, bidRequest);
+      let data = JSON.parse(bRequest.data);
+      expect(data.user.ext.consent).to.equal('kjfdnidasd123sadsd');
+      expect(data.regs.ext.gdpr).to.equal(1);
+      let bidRequest2 = {};
+      let bRequest2 = spec.buildRequests(request, bidRequest2);
+      let data2 = JSON.parse(bRequest2.data);
+      expect(data2.regs).to.equal(undefined);
+      expect(data2.user.ext).to.equal(undefined);
+    });
   });
   describe('user sync check', function () {
     it('user sync url check', function () {

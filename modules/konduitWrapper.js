@@ -1,10 +1,47 @@
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { targeting } from '../src/targeting.js';
-import { format as buildUrl } from '../src/url.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
+import { ajaxBuilder } from '../src/ajax.js';
+import { getPriceBucketString } from '../src/cpmBucketManager.js';
+import { getPriceByGranularity } from '../src/auction.js';
+import { auctionManager } from '../src/auctionManager.js';
 
+const SERVER_PROTOCOL = 'https';
+const SERVER_HOST = 'p.konduit.me';
+
+const KONDUIT_PREBID_MODULE_VERSION = '1.0.0';
 const MODULE_NAME = 'Konduit';
+
+const KONDUIT_ID_CONFIG = 'konduit.konduitId';
+const SEND_ALL_BIDS_CONFIG = 'enableSendAllBids';
+
+export const errorMessages = {
+  NO_KONDUIT_ID: 'A konduitId param is required to be in configs',
+  NO_BIDS: 'No bids received in the auction',
+  NO_BID: 'A bid was not found',
+  CACHE_FAILURE: 'A bid was not cached',
+};
+
+// This function is copy from prebid core
+function formatQS(query) {
+  return Object
+    .keys(query)
+    .map(k => Array.isArray(query[k])
+      ? query[k].map(v => `${k}[]=${v}`).join('&')
+      : `${k}=${query[k]}`)
+    .join('&');
+}
+
+// This function is copy from prebid core
+function buildUrl(obj) {
+  return (obj.protocol || 'http') + '://' +
+    (obj.host ||
+      obj.hostname + (obj.port ? `:${obj.port}` : '')) +
+    (obj.pathname || '') +
+    (obj.search ? `?${formatQS(obj.search || '')}` : '') +
+    (obj.hash ? `#${obj.hash}` : '');
+}
 
 function addLogLabel(args) {
   args = [].slice.call(args);
@@ -12,78 +49,208 @@ function addLogLabel(args) {
   return args;
 }
 
-export function logInfo() {
+function logInfo() {
   utils.logInfo(...addLogLabel(arguments));
 }
 
-export function logError() {
+function logError() {
   utils.logError(...addLogLabel(arguments));
 }
 
-export function buildVastUrl(options) {
-  if (!options.params || !options.params.konduit_id) {
-    logError(`'konduit_id' parameter is required for $$PREBID_GLOBAL$$.adServers.konduit.buildVastUrl function`);
-
-    return null;
+function sendRequest ({ host = SERVER_HOST, protocol = SERVER_PROTOCOL, method = 'GET', path, payload, callbacks, timeout }) {
+  const formattedUrlOptions = {
+    protocol: protocol,
+    hostname: host,
+    pathname: path,
+  };
+  if (method === 'GET') {
+    formattedUrlOptions.search = payload;
   }
 
-  const bid = options.bid || targeting.getWinningBids()[0];
+  let konduitAnalyticsRequestUrl = buildUrl(formattedUrlOptions);
+  const ajax = ajaxBuilder(timeout);
 
-  if (!bid) {
-    logError('Bid is not provided or not found');
-
-    return null;
-  }
-
-  logInfo('The following bid will be wrapped: ', bid);
-
-  const queryParams = {};
-
-  const vastUrl = obtainVastUrl(bid);
-
-  if (vastUrl) {
-    queryParams.konduit_id = options.params.konduit_id;
-    queryParams.konduit_header_bidding = 1;
-    queryParams.konduit_url = vastUrl;
-  } else {
-    logError('No VAST url found in the bid');
-  }
-
-  let resultingUrl = null;
-
-  if (queryParams.konduit_url) {
-    resultingUrl = buildUrl({
-      protocol: 'https',
-      host: 'p.konduit.me',
-      pathname: '/api/vastProxy',
-      search: queryParams
-    });
-
-    logInfo(`Konduit wrapped VAST url: ${resultingUrl}`);
-  }
-
-  return resultingUrl;
+  ajax(
+    konduitAnalyticsRequestUrl,
+    callbacks,
+    method === 'POST' ? JSON.stringify(payload) : null,
+    {
+      contentType: 'application/json',
+      method,
+      withCredentials: true
+    }
+  );
 }
 
-function obtainVastUrl(bid) {
-  const vastUrl = bid && bid.vastUrl;
+function composeBidsProcessorRequestPayload(bid) {
+  return {
+    auctionId: bid.auctionId,
+    vastUrl: bid.vastUrl,
+    bidderCode: bid.bidderCode,
+    creativeId: bid.creativeId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+  };
+}
 
-  if (vastUrl) {
-    logInfo(`VAST url found in the bid - ${vastUrl}`);
+function setDefaultKCpmToBid(bid, winnerBid, priceGranularity) {
+  bid.kCpm = bid.cpm;
 
-    return encodeURIComponent(vastUrl);
+  if (!bid.adserverTargeting) {
+    bid.adserverTargeting = {};
   }
 
-  const cacheUrl = config.getConfig('cache.url');
-  if (cacheUrl) {
-    const composedCacheUrl = `${cacheUrl}?uuid=${bid.videoCacheKey}`;
+  const kCpm = getPriceByGranularity(priceGranularity)(bid);
 
-    logInfo(`VAST url is taken from cache.url: ${composedCacheUrl}`);
-
-    return encodeURIComponent(composedCacheUrl);
+  if (config.getConfig(SEND_ALL_BIDS_CONFIG)) {
+    bid.adserverTargeting[`k_cpm_${bid.bidderCode}`] = kCpm;
   }
+
+  if ((winnerBid.bidderCode === bid.bidderCode) && (winnerBid.creativeId === bid.creativeId)) {
+    bid.adserverTargeting.k_cpm = kCpm;
+  }
+}
+
+function addKCpmToBid(kCpm, bid, winnerBid, priceGranularity) {
+  if (utils.isNumber(kCpm)) {
+    bid.kCpm = kCpm;
+    const priceStringsObj = getPriceBucketString(
+      kCpm,
+      config.getConfig('customPriceBucket'),
+      config.getConfig('currency.granularityMultiplier')
+    );
+
+    const calculatedKCpm = priceStringsObj.custom || priceStringsObj[priceGranularity] || priceStringsObj.med;
+
+    if (config.getConfig(SEND_ALL_BIDS_CONFIG)) {
+      bid.adserverTargeting[`k_cpm_${bid.bidderCode}`] = calculatedKCpm;
+    }
+
+    if ((winnerBid.bidderCode === bid.bidderCode) && (winnerBid.creativeId === bid.creativeId)) {
+      bid.adserverTargeting.k_cpm = calculatedKCpm;
+    }
+  }
+}
+
+function addKonduitCacheKeyToBid(cacheKey, bid, winnerBid) {
+  if (utils.isStr(cacheKey)) {
+    bid.konduitCacheKey = cacheKey;
+
+    if (config.getConfig(SEND_ALL_BIDS_CONFIG)) {
+      bid.adserverTargeting[`k_cache_key_${bid.bidderCode}`] = cacheKey;
+    }
+
+    if ((winnerBid.bidderCode === bid.bidderCode) && (winnerBid.creativeId === bid.creativeId)) {
+      bid.adserverTargeting.k_cache_key = cacheKey;
+      bid.adserverTargeting.konduit_cache_key = cacheKey;
+    }
+  }
+}
+
+/**
+ * This function accepts an object with bid and tries to cache it while generating k_cache_key for it.
+ * In addition, it returns a list with updated bid objects where k_cpm key is added
+ * @param {Object} options
+ * @param {Object} [options.bid] - a winner bid provided by a client
+ * @param {Object} [options.bids] - bids array provided by a client for "Send All Bids" scenario
+ * @param {string} [options.adUnitCode] - ad unit code that is used to get winning bids
+ * @param {string} [options.timeout] - timeout for Konduit bids processor HTTP request
+ * @param {function} [options.callback] - callback function to be executed on HTTP request end; the function is invoked with two parameters - error and bids
+ */
+export function processBids(options = {}) {
+  const konduitId = config.getConfig(KONDUIT_ID_CONFIG);
+  options = options || {};
+
+  if (!konduitId) {
+    logError(errorMessages.NO_KONDUIT_ID);
+
+    if (options.callback) {
+      options.callback(new Error(errorMessages.NO_KONDUIT_ID), []);
+    }
+
+    return null;
+  }
+
+  const publisherBids = options.bids || auctionManager.getBidsReceived();
+
+  const winnerBid = options.bid || targeting.getWinningBids(options.adUnitCode, publisherBids)[0];
+  const bids = [];
+
+  if (config.getConfig(SEND_ALL_BIDS_CONFIG)) {
+    bids.push(...publisherBids);
+  } else if (winnerBid) {
+    bids.push(winnerBid);
+  }
+
+  if (!bids.length) {
+    logError(errorMessages.NO_BIDS);
+
+    if (options.callback) {
+      options.callback(new Error(errorMessages.NO_BIDS), []);
+    }
+
+    return null;
+  }
+
+  const priceGranularity = config.getConfig('priceGranularity');
+
+  const bidsToProcess = [];
+
+  bids.forEach((bid) => {
+    setDefaultKCpmToBid(bid, winnerBid, priceGranularity);
+    bidsToProcess.push(composeBidsProcessorRequestPayload(bid));
+  });
+
+  sendRequest({
+    method: 'POST',
+    path: '/api/bidsProcessor',
+    timeout: options.timeout || 1000,
+    payload: {
+      clientId: konduitId,
+      konduitPrebidModuleVersion: KONDUIT_PREBID_MODULE_VERSION,
+      enableSendAllBids: config.getConfig(SEND_ALL_BIDS_CONFIG),
+      bids: bidsToProcess,
+      bidResponsesCount: auctionManager.getBidsReceived().length,
+    },
+    callbacks: {
+      success: (data) => {
+        let error = null;
+        logInfo('Bids processed successfully ', data);
+        try {
+          const { kCpmData, cacheData } = JSON.parse(data);
+
+          if (utils.isEmpty(cacheData)) {
+            throw new Error(errorMessages.CACHE_FAILURE);
+          }
+
+          winnerBid.adserverTargeting.konduit_id = konduitId;
+          winnerBid.adserverTargeting.k_id = konduitId;
+
+          bids.forEach((bid) => {
+            const processedBidKey = `${bid.bidderCode}:${bid.creativeId}`;
+            addKCpmToBid(kCpmData[processedBidKey], bid, winnerBid, priceGranularity);
+            addKonduitCacheKeyToBid(cacheData[processedBidKey], bid, winnerBid);
+          })
+        } catch (err) {
+          error = err;
+          logError('Error parsing JSON response for bidsProcessor data: ', err)
+        }
+
+        if (options.callback) {
+          options.callback(error, bids);
+        }
+      },
+      error: (error) => {
+        logError('Bids were not processed successfully ', error);
+        if (options.callback) {
+          options.callback(utils.isStr(error) ? new Error(error) : error, bids);
+        }
+      }
+    }
+  });
 }
 
 registerVideoSupport('konduit', {
-  buildVastUrl: buildVastUrl,
+  processBids: processBids,
 });

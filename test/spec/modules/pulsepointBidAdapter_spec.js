@@ -19,6 +19,11 @@ describe('PulsePoint Adapter Tests', function () {
     }
   }, {
     placementCode: '/DfpAccount2/slot2',
+    mediaTypes: {
+      banner: {
+        sizes: [[728, 90]]
+      }
+    },
     bidId: 'bid23456',
     params: {
       cp: 'p10000',
@@ -72,6 +77,11 @@ describe('PulsePoint Adapter Tests', function () {
   }];
   const additionalParamsConfig = [{
     placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      banner: {
+        sizes: [[1, 1]]
+      }
+    },
     bidId: 'bid12345',
     params: {
       cp: 'p10000',
@@ -89,6 +99,11 @@ describe('PulsePoint Adapter Tests', function () {
 
   const ortbParamsSlotConfig = [{
     placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      banner: {
+        sizes: [[1, 1]]
+      }
+    },
     bidId: 'bid12345',
     params: {
       cp: 'p10000',
@@ -146,6 +161,11 @@ describe('PulsePoint Adapter Tests', function () {
 
   const schainParamsSlotConfig = [{
     placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      banner: {
+        sizes: [[1, 1]]
+      }
+    },
     bidId: 'bid12345',
     params: {
       cp: 'p10000',
@@ -630,8 +650,8 @@ describe('PulsePoint Adapter Tests', function () {
       britepoolid: 'britepool_id123',
       criteoId: 'criteo_id234',
       idl_env: 'idl_id123',
-      id5id: 'id5id_234',
-      parrableid: 'parrable_id234',
+      id5id: { uid: 'id5id_234' },
+      parrableId: { eid: 'parrable_id234' },
       lipb: {
         lipbid: 'liveintent_id123'
       }
@@ -681,7 +701,10 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[1].banner).to.not.be.null;
     expect(ortbRequest.imp[1].banner.w).to.equal(728);
     expect(ortbRequest.imp[1].banner.h).to.equal(90);
-    expect(ortbRequest.imp[1].banner.format).to.be.null;
+    expect(ortbRequest.imp[1].banner.format).to.not.be.null;
+    expect(ortbRequest.imp[1].banner.format).to.have.lengthOf(1);
+    expect(ortbRequest.imp[1].banner.format[0].w).to.equal(728);
+    expect(ortbRequest.imp[1].banner.format[0].h).to.equal(90);
     // adsize on response
     const ortbResponse = {
       seatbid: [{
@@ -700,5 +723,59 @@ describe('PulsePoint Adapter Tests', function () {
     const bid = bids[0];
     expect(bid.width).to.equal(728);
     expect(bid.height).to.equal(90);
+  });
+  it('Verify multi-format response', function () {
+    const bidRequests = deepClone(slotConfigs);
+    bidRequests[0].mediaTypes['native'] = {
+      title: {
+        required: true
+      },
+      image: {
+        required: true
+      },
+      sponsoredBy: {
+        required: true
+      }
+    };
+    bidRequests[1].params.video = {
+      w: 400,
+      h: 300,
+      minduration: 5,
+      maxduration: 10,
+    };
+    const request = spec.buildRequests(bidRequests, bidderRequest);
+    expect(request).to.be.not.null;
+    expect(request.data).to.be.not.null;
+    const ortbRequest = request.data;
+    expect(ortbRequest.imp).to.have.lengthOf(2);
+    // adsize on response
+    const ortbResponse = {
+      seatbid: [{
+        bid: [{
+          impid: ortbRequest.imp[0].id,
+          price: 1.25,
+          adm: 'This is an Ad',
+          crid: 'Creative#123',
+          w: 728,
+          h: 90
+        }, {
+          impid: ortbRequest.imp[1].id,
+          price: 2.5,
+          adm: '<vast url="http://ad.com/video"></vast>',
+          crid: 'Creative#234',
+          w: 728,
+          h: 90
+        }]
+      }]
+    };
+    // request has both types - banner and native, response is parsed as banner.
+    // for impression#2, response is parsed as video
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
+    expect(bids).to.have.lengthOf(2);
+    const bid = bids[0];
+    expect(bid.width).to.equal(728);
+    expect(bid.height).to.equal(90);
+    const secondBid = bids[1];
+    expect(secondBid.vastXml).to.equal('<vast url="http://ad.com/video"></vast>');
   });
 });

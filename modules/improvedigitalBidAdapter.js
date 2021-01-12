@@ -2,12 +2,18 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import { createEidsArray } from './userId/eids.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const BIDDER_CODE = 'improvedigital';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const VIDEO_TARGETING = ['skip', 'skipmin', 'skipafter'];
 
 export const spec = {
-  version: '6.1.0',
+  version: '7.2.0',
   code: BIDDER_CODE,
+  gvlid: 253,
   aliases: ['id'],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
@@ -53,6 +59,13 @@ export const spec = {
 
     requestParameters.schain = bidRequests[0].schain;
 
+    if (bidRequests[0].userId) {
+      const eids = createEidsArray(bidRequests[0].userId);
+      if (eids.length) {
+        utils.deepSetValue(requestParameters, 'user.ext.eids', eids);
+      }
+    }
+
     let requestObj = idClient.createRequest(
       normalizedBids, // requestObject
       requestParameters
@@ -61,7 +74,7 @@ export const spec = {
     if (requestObj.errors && requestObj.errors.length > 0) {
       utils.logError('ID WARNING 0x01');
     }
-
+    requestObj.requests.forEach(request => request.bidderRequest = bidderRequest);
     return requestObj.requests;
   },
 
@@ -71,7 +84,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, {bidderRequest}) {
     const bids = [];
     utils._each(serverResponse.body.bid, function (bidObject) {
       if (!bidObject.price || bidObject.price === null ||
@@ -79,7 +92,7 @@ export const spec = {
         (!bidObject.adm && !bidObject.native)) {
         return;
       }
-
+      const bidRequest = utils.getBidRequest(bidObject.id, [bidderRequest]);
       const bid = {};
 
       if (bidObject.native) {
@@ -94,6 +107,14 @@ export const spec = {
       } else if (bidObject.ad_type && bidObject.ad_type === 'video') {
         bid.vastXml = bidObject.adm;
         bid.mediaType = VIDEO;
+        if (isOutstreamVideo(bidRequest)) {
+          bid.adResponse = {
+            content: bid.vastXml,
+            height: bidObject.h,
+            width: bidObject.w
+          };
+          bid.renderer = createRenderer(bidRequest);
+        }
       } else {
         // Banner
         let nurl = '';
@@ -112,7 +133,7 @@ export const spec = {
 
       // Deal ID. Composite ads can have multiple line items and the ID of the first
       // dealID line item will be used.
-      if (utils.isNumber(bidObject.lid) && bidObject.buying_type === 'deal_id') {
+      if (utils.isNumber(bidObject.lid) && bidObject.buying_type && bidObject.buying_type !== 'rtb') {
         bid.dealId = bidObject.lid;
       } else if (Array.isArray(bidObject.lid) &&
         Array.isArray(bidObject.buying_type) &&
@@ -120,7 +141,7 @@ export const spec = {
         let isDeal = false;
         bidObject.buying_type.forEach((bt, i) => {
           if (isDeal) return;
-          if (bt === 'deal_id') {
+          if (bt && bt !== 'rtb') {
             isDeal = true;
             bid.dealId = bidObject.lid[i];
           }
@@ -136,10 +157,6 @@ export const spec = {
       if (!bid.width || !bid.height) {
         bid.width = 1;
         bid.height = 1;
-        if (bidRequest.sizes) {
-          bid.width = bidRequest.sizes[0][0];
-          bid.height = bidRequest.sizes[0][1];
-        }
       }
 
       bids.push(bid);
@@ -175,9 +192,62 @@ export const spec = {
 };
 
 function isInstreamVideo(bid) {
+  const mediaTypes = Object.keys(utils.deepAccess(bid, 'mediaTypes', {}));
   const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-  return bid.mediaType === 'video' || (videoMediaType && context !== 'outstream');
+  return bid.mediaType === 'video' || (mediaTypes.length === 1 && videoMediaType && context !== 'outstream');
+}
+
+function isOutstreamVideo(bid) {
+  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+  return videoMediaType && context === 'outstream';
+}
+
+function getVideoTargetingParams(bid) {
+  const result = {};
+  Object.keys(Object(bid.mediaTypes.video))
+    .filter(key => includes(VIDEO_TARGETING, key))
+    .forEach(key => {
+      result[ key ] = bid.mediaTypes.video[ key ];
+    });
+  Object.keys(Object(bid.params.video))
+    .filter(key => includes(VIDEO_TARGETING, key))
+    .forEach(key => {
+      result[ key ] = bid.params.video[ key ];
+    });
+  return result;
+}
+
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      sizes: [bid.width, bid.height],
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse,
+      rendererOptions: bid.renderer.getConfig()
+    }, handleOutstreamRendererEvents.bind(null, bid));
+  });
+}
+
+function handleOutstreamRendererEvents(bid, id, eventName) {
+  bid.renderer.handleVideoEvent({ id, eventName });
+}
+
+function createRenderer(bidRequest) {
+  const renderer = Renderer.install({
+    id: bidRequest.adUnitCode,
+    url: RENDERER_URL,
+    loaded: false,
+    config: utils.deepAccess(bidRequest, 'renderer.options'),
+    adUnitCode: bidRequest.adUnitCode
+  });
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+  return renderer;
 }
 
 function getNormalizedBidRequest(bid) {
@@ -202,6 +272,9 @@ function getNormalizedBidRequest(bid) {
   if (isInstreamVideo(bid)) {
     normalizedBidRequest.adTypes = [ VIDEO ];
   }
+  if (isInstreamVideo(bid) || isOutstreamVideo(bid)) {
+    normalizedBidRequest.video = getVideoTargetingParams(bid);
+  }
   if (placementId) {
     normalizedBidRequest.placementId = placementId;
   } else {
@@ -217,7 +290,7 @@ function getNormalizedBidRequest(bid) {
     normalizedBidRequest.keyValues = keyValues;
   }
 
-  if (config.getConfig('improvedigital.usePrebidSizes') === true && !isInstreamVideo(bid) && bid.sizes && bid.sizes.length > 0) {
+  if (config.getConfig('improvedigital.usePrebidSizes') === true && !isInstreamVideo(bid) && !isOutstreamVideo(bid) && bid.sizes && bid.sizes.length > 0) {
     normalizedBidRequest.format = bid.sizes;
   } else if (singleSizeFilter && singleSizeFilter.w && singleSizeFilter.h) {
     normalizedBidRequest.size = {};
@@ -347,7 +420,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     AD_SERVER_BASE_URL: 'ice.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-6.3.0',
+    CLIENT_VERSION: 'JS-6.4.0',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
       MISSING_PLACEMENT_PARAMS: 2,
@@ -507,6 +580,9 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     if (requestParameters.schain) {
       impressionBidRequestObject.schain = requestParameters.schain;
     }
+    if (requestParameters.user) {
+      impressionBidRequestObject.user = requestParameters.user;
+    }
     if (extraRequestParameters) {
       for (let prop in extraRequestParameters) {
         impressionBidRequestObject[prop] = extraRequestParameters[prop];
@@ -552,6 +628,21 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
     if (placementObject.transactionId) {
       impressionObject.tid = placementObject.transactionId;
+    }
+    if (!utils.isEmpty(placementObject.video)) {
+      const video = Object.assign({}, placementObject.video);
+      // skip must be 0 or 1
+      if (video.skip !== 1) {
+        delete video.skipmin;
+        delete video.skipafter;
+        if (video.skip !== 0) {
+          utils.logWarn(`video.skip: invalid value '${video.skip}'. Expected 0 or 1`);
+          delete video.skip;
+        }
+      }
+      if (!utils.isEmpty(video)) {
+        impressionObject.video = video;
+      }
     }
     if (placementObject.keyValues) {
       for (let key in placementObject.keyValues) {

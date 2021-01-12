@@ -24,7 +24,8 @@ var adUnits = [
     bids: [{
       bidder: 'pubmatic',
       params: {
-        publisherId: '156209',               // required
+        publisherId: '156209',               // required, must be wrapped in quotes
+        oustreamAU: 'renderer_test_pubmatic',   // required if mediaTypes-> video-> context is 'outstream'. This value can be get by BlueBillyWig Team.
         adSlot: 'pubmatic_test2',            // optional
         pmzoneid: 'zone1, zone11',           // optional
         lat: '40.712775',                    // optional
@@ -202,5 +203,7 @@ pbjs.setConfig({
 ```
 Note: Combine the above the configuration with any other UserSync configuration.  Multiple setConfig() calls overwrite each other and only last call for a given attribute will take effect. 
 
-Note: PubMatic will return a test-bid if "pubmaticTest=true" is present in page URL
+# Notes: 
+- PubMatic will return a test-bid if "pubmaticTest=true" is present in page URL
+- PubMatic will set bid.adserverTargeting.hb_buyid_pubmatic targeting key while submitting a bid into Prebid
 

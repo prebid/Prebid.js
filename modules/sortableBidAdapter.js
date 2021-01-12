@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { parse } from '../src/url.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'sortable';
@@ -157,7 +156,7 @@ export const spec = {
   buildRequests: function(validBidReqs, bidderRequest) {
     const sortableConfig = config.getConfig('sortable') || {};
     const globalSiteId = sortableConfig.siteId;
-    let loc = parse(bidderRequest.refererInfo.referer);
+    let loc = utils.parseUrl(bidderRequest.refererInfo.referer);
 
     const sortableImps = utils._map(validBidReqs, bid => {
       const rv = {

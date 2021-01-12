@@ -100,6 +100,24 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
     });
 
+    it('should add publisher_id in request', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            publisherId: '1231234'
+          }
+        });
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].publisher_id).to.exist;
+      expect(payload.tags[0].publisher_id).to.deep.equal(1231234);
+      expect(payload.publisher_id).to.exist;
+      expect(payload.publisher_id).to.deep.equal(1231234);
+    })
+
     it('should add source and verison to the tag', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
@@ -230,12 +248,12 @@ describe('AppNexusAdapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].video).to.deep.equal({
         skippable: true,
-        playback_method: ['auto_play_sound_off'],
+        playback_method: 2,
         custom_renderer_present: true
       });
       expect(payload.tags[1].video).to.deep.equal({
         skippable: true,
-        playback_method: ['auto_play_sound_off']
+        playback_method: 2
       });
     });
 
@@ -247,6 +265,7 @@ describe('AppNexusAdapter', function () {
             placementId: '10433394',
             user: {
               externalUid: '123',
+              segments: [123, { id: 987, value: 876 }],
               foobar: 'invalid'
             }
           }
@@ -258,7 +277,8 @@ describe('AppNexusAdapter', function () {
 
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
-        externalUid: '123',
+        external_uid: '123',
+        segments: [{id: 123}, {id: 987, value: 876}]
       });
     });
 
@@ -720,18 +740,6 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should populate tpids array when userId is available', function () {
-      const bidRequest = Object.assign({}, bidRequests[0], {
-        userId: {
-          criteoId: 'sample-userid'
-        }
-      });
-
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-      expect(payload.tpuids).to.deep.equal([{provider: 'criteo', user_id: 'sample-userid'}]);
-    });
-
     it('should populate schain if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         schain: {
@@ -776,6 +784,18 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
+    it('should set the X-Is-Test customHeader if test flag is enabled', function () {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon.stub(config, 'getConfig')
+        .withArgs('apn_test')
+        .returns(true);
+
+      const request = spec.buildRequests([bidRequest]);
+      expect(request.options.customHeaders).to.deep.equal({'X-Is-Test': 1});
+
+      config.getConfig.restore();
+    });
+
     it('should set withCredentials to false if purpose 1 consent is not given', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
@@ -800,6 +820,80 @@ describe('AppNexusAdapter', function () {
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.options).to.deep.equal({withCredentials: false});
+    });
+
+    it('should populate eids when supported userIds are available', function () {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        userId: {
+          tdid: 'sample-userid',
+          criteoId: 'sample-criteo-userid',
+          netId: 'sample-netId-userid'
+        }
+      });
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.eids).to.deep.include({
+        source: 'adserver.org',
+        id: 'sample-userid',
+        rti_partner: 'TDID'
+      });
+
+      expect(payload.eids).to.deep.include({
+        source: 'criteo.com',
+        id: 'sample-criteo-userid',
+      });
+
+      expect(payload.eids).to.deep.include({
+        source: 'netid.de',
+        id: 'sample-netId-userid',
+      });
+    });
+
+    it('should populate iab_support object at the root level if omid support is detected', function () {
+      // with bid.params.frameworks
+      let bidRequest_A = Object.assign({}, bidRequests[0], {
+        params: {
+          frameworks: [1, 2, 5, 6],
+          video: {
+            frameworks: [1, 2, 5, 6]
+          }
+        }
+      });
+      let request = spec.buildRequests([bidRequest_A]);
+      let payload = JSON.parse(request.data);
+      expect(payload.iab_support).to.be.an('object');
+      expect(payload.iab_support).to.deep.equal({
+        omidpn: 'Appnexus',
+        omidpv: '$prebid.version$'
+      });
+      expect(payload.tags[0].banner_frameworks).to.be.an('array');
+      expect(payload.tags[0].banner_frameworks).to.deep.equal([1, 2, 5, 6]);
+      expect(payload.tags[0].video_frameworks).to.be.an('array');
+      expect(payload.tags[0].video_frameworks).to.deep.equal([1, 2, 5, 6]);
+      expect(payload.tags[0].video.frameworks).to.not.exist;
+
+      // without bid.params.frameworks
+      const bidRequest_B = Object.assign({}, bidRequests[0]);
+      request = spec.buildRequests([bidRequest_B]);
+      payload = JSON.parse(request.data);
+      expect(payload.iab_support).to.not.exist;
+      expect(payload.tags[0].banner_frameworks).to.not.exist;
+      expect(payload.tags[0].video_frameworks).to.not.exist;
+
+      // with video.frameworks but it is not an array
+      const bidRequest_C = Object.assign({}, bidRequests[0], {
+        params: {
+          video: {
+            frameworks: "'1', '2', '3', '6'"
+          }
+        }
+      });
+      request = spec.buildRequests([bidRequest_C]);
+      payload = JSON.parse(request.data);
+      expect(payload.iab_support).to.not.exist;
+      expect(payload.tags[0].banner_frameworks).to.not.exist;
+      expect(payload.tags[0].video_frameworks).to.not.exist;
     });
   })
 
