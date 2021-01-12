@@ -1,5 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+
 const BIDDER_CODE = 'between';
 
 export const spec = {
@@ -24,6 +26,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     let requests = [];
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+    const refInfo = getRefererInfo();
 
     validBidRequests.forEach(i => {
       let params = {
@@ -55,6 +58,12 @@ export const spec = {
           params['pubside_macro[' + key + ']'] = encodeURIComponent(i.params.pubdata[key]);
         }
       }
+
+      if (i.schain) {
+        params.schain = encodeToBase64WebSafe(JSON.stringify(i.schain));
+      }
+
+      if (refInfo && refInfo.referer) params.ref = refInfo.referer;
 
       if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies !== 'undefined') {
@@ -159,6 +168,10 @@ function getFl() {
 
 function getTz() {
   return new Date().getTimezoneOffset();
+}
+
+function encodeToBase64WebSafe(string) {
+  return btoa(string).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 /*
