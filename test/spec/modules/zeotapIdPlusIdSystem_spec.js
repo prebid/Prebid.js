@@ -34,26 +34,23 @@ function getAdUnitMock(code = 'adUnit-code') {
   };
 }
 
+function unsetCookie() {
+  storage.setCookie(ZEOTAP_COOKIE_NAME, '');
+}
+
+function unsetLocalStorage() {
+  storage.setDataInLocalStorage(ZEOTAP_COOKIE_NAME, '');
+}
+
 describe('Zeotap ID System', function() {
-  let getDataFromLocalStorageStub, localStorageIsEnabledStub;
-  let getCookieStub, cookiesAreEnabledStub;
-  beforeEach(function () {
-    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-    localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
-    getCookieStub = sinon.stub(storage, 'getCookie');
-    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
-  });
-
-  afterEach(function () {
-    getDataFromLocalStorageStub.restore();
-    localStorageIsEnabledStub.restore();
-    getCookieStub.restore();
-    cookiesAreEnabledStub.restore();
-  });
-
   describe('test method: getId', function() {
+    afterEach(() => {
+      unsetCookie();
+      unsetLocalStorage();
+    });
+
     it('provides the stored Zeotap id if a cookie exists', function() {
-      getCookieStub.withArgs(ZEOTAP_COOKIE_NAME).returns(ENCODED_ZEOTAP_COOKIE);
+      storage.setCookie(ZEOTAP_COOKIE_NAME, ENCODED_ZEOTAP_COOKIE);
       let id = zeotapIdPlusSubmodule.getId();
       expect(id).to.deep.equal({
         id: ENCODED_ZEOTAP_COOKIE
@@ -61,7 +58,7 @@ describe('Zeotap ID System', function() {
     });
 
     it('provides the stored Zeotap id if cookie is absent but present in local storage', function() {
-      getDataFromLocalStorageStub.withArgs(ZEOTAP_COOKIE_NAME).returns(ENCODED_ZEOTAP_COOKIE);
+      storage.setDataInLocalStorage(ZEOTAP_COOKIE_NAME, ENCODED_ZEOTAP_COOKIE);
       let id = zeotapIdPlusSubmodule.getId();
       expect(id).to.deep.equal({
         id: ENCODED_ZEOTAP_COOKIE
@@ -99,10 +96,18 @@ describe('Zeotap ID System', function() {
 
     beforeEach(function() {
       adUnits = [getAdUnitMock()];
+      storage.setCookie(
+        ZEOTAP_COOKIE_NAME,
+        ENCODED_ZEOTAP_COOKIE
+      );
       setSubmoduleRegistry([zeotapIdPlusSubmodule]);
       init(config);
       config.setConfig(getConfigMock());
-      getCookieStub.withArgs(ZEOTAP_COOKIE_NAME).returns(ENCODED_ZEOTAP_COOKIE);
+    });
+
+    afterEach(function() {
+      unsetCookie();
+      unsetLocalStorage();
     });
 
     it('when a stored Zeotap ID exists it is added to bids', function(done) {

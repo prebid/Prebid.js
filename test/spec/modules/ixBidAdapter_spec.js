@@ -18,7 +18,6 @@ describe('IndexexchangeAdapter', function () {
         'sid': '00001',
         'hp': 1
       },
-
       {
         'asi': 'indirectseller-2.com',
         'sid': '00002',
@@ -26,7 +25,74 @@ describe('IndexexchangeAdapter', function () {
       }
     ]
   };
-
+  var div_many_sizes = [
+    [300, 250],
+    [600, 410],
+    [336, 280],
+    [400, 300],
+    [320, 50],
+    [360, 360],
+    [250, 250],
+    [320, 250],
+    [400, 250],
+    [387, 359],
+    [300, 50],
+    [372, 250],
+    [320, 320],
+    [412, 412],
+    [327, 272],
+    [312, 260],
+    [384, 320],
+    [335, 250],
+    [366, 305],
+    [374, 250],
+    [375, 375],
+    [272, 391],
+    [364, 303],
+    [414, 414],
+    [366, 375],
+    [272, 360],
+    [364, 373],
+    [366, 359],
+    [320, 100],
+    [360, 250],
+    [468, 60],
+    [480, 300],
+    [600, 400],
+    [600, 300],
+    [33, 28],
+    [40, 30],
+    [32, 5],
+    [36, 36],
+    [25, 25],
+    [320, 25],
+    [400, 25],
+    [387, 35],
+    [300, 5],
+    [372, 20],
+    [320, 32],
+    [412, 41],
+    [327, 27],
+    [312, 26],
+    [384, 32],
+    [335, 25],
+    [366, 30],
+    [374, 25],
+    [375, 37],
+    [272, 31],
+    [364, 303],
+    [414, 41],
+    [366, 35],
+    [272, 60],
+    [364, 73],
+    [366, 59],
+    [320, 10],
+    [360, 25],
+    [468, 6],
+    [480, 30],
+    [600, 40],
+    [600, 30]
+  ];
   const DEFAULT_BANNER_VALID_BID = [
     {
       bidder: 'ix',
@@ -587,7 +653,6 @@ describe('IndexexchangeAdapter', function () {
     it('IX adapter reads LiveRamp IDL envelope from Prebid and adds it to Video', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
       cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
-
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
@@ -972,6 +1037,97 @@ describe('IndexexchangeAdapter', function () {
       expect(videoImp.video.h).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[1]);
     });
 
+    it('single request under 8k size limit for large ad unit', function () {
+      const options = {};
+      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid1.mediaTypes.banner.sizes = div_many_sizes;
+      const requests = spec.buildRequests([bid1], options);
+
+      const reqSize = new Blob([`${requests[0].url}?${utils.parseQueryStringParameters(requests[0].data)}`]).size;
+      expect(requests).to.be.an('array');
+      expect(requests).to.have.lengthOf(1);
+      expect(reqSize).to.be.lessThan(8000);
+    });
+
+    it('2 requests due to 2 ad units, one larger than url size', function () {
+      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid1.mediaTypes.banner.sizes = div_many_sizes;
+      bid1.params.siteId = '124';
+      bid1.adUnitCode = 'div-gpt-1'
+      bid1.transactionId = '152e36d1-1241-4242-t35e-y1dv34d12315';
+      bid1.bidId = '2f6g5s5e';
+
+      const requests = spec.buildRequests([bid1, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
+      expect(requests).to.be.an('array');
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[0].data.sn).to.be.equal(0);
+      expect(requests[1].data.sn).to.be.equal(1);
+    });
+
+    it('6 ad units should generate only 4 requests', function () {
+      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid1.mediaTypes.banner.sizes = div_many_sizes;
+      bid1.params.siteId = '121';
+      bid1.adUnitCode = 'div-gpt-1'
+      bid1.transactionId = 'tr1';
+      bid1.bidId = '2f6g5s5e';
+
+      const bid2 = utils.deepClone(bid1);
+      bid2.transactionId = 'tr2';
+
+      const bid3 = utils.deepClone(bid1);
+      bid3.transactionId = 'tr3';
+
+      const bid4 = utils.deepClone(bid1);
+      bid4.transactionId = 'tr4';
+
+      const bid5 = utils.deepClone(bid1);
+      bid5.transactionId = 'tr5';
+
+      const bid6 = utils.deepClone(bid1);
+      bid6.transactionId = 'tr6';
+
+      const requests = spec.buildRequests([bid1, bid2, bid3, bid4, bid5, bid6], DEFAULT_OPTION);
+
+      expect(requests).to.be.an('array');
+      expect(requests).to.have.lengthOf(4);
+
+      // check if seq number increases
+      for (var i = 0; i < requests.length; i++) {
+        const reqSize = new Blob([`${requests[i].url}?${utils.parseQueryStringParameters(requests[i].data)}`]).size;
+        expect(reqSize).to.be.lessThan(8000);
+        let payload = JSON.parse(requests[i].data.r);
+        if (requests.length > 1) {
+          expect(requests[i].data.sn).to.equal(i);
+        }
+        expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
+      }
+    });
+
+    it('multiple ad units in one request', function () {
+      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid1.mediaTypes.banner.sizes = [[300, 250], [300, 600], [100, 200]];
+      bid1.params.siteId = '121';
+      bid1.adUnitCode = 'div-gpt-1'
+      bid1.transactionId = 'tr1';
+      bid1.bidId = '2f6g5s5e';
+
+      const bid2 = utils.deepClone(bid1);
+      bid2.transactionId = 'tr2';
+      bid2.mediaTypes.banner.sizes = [[220, 221], [222, 223], [300, 250]];
+      const bid3 = utils.deepClone(bid1);
+      bid3.transactionId = 'tr3';
+      bid3.mediaTypes.banner.sizes = [[330, 331], [332, 333], [300, 250]];
+
+      const requests = spec.buildRequests([bid1, bid2, bid3], DEFAULT_OPTION);
+      expect(requests).to.be.an('array');
+      expect(requests).to.have.lengthOf(1);
+
+      const impressions = JSON.parse(requests[0].data.r).imp;
+      expect(impressions).to.be.an('array');
+      expect(impressions).to.have.lengthOf(9);
+    });
+
     it('request should contain the extra banner ad sizes that IX is not configured for using the first site id in the ad unit', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.sizes.push([336, 280], [970, 90]);
@@ -1017,23 +1173,26 @@ describe('IndexexchangeAdapter', function () {
       const impressions = JSON.parse(request.data.r).imp;
       expect(impressions).to.be.an('array');
       expect(impressions).to.have.lengthOf(4);
-
-      expect(impressions[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
-      expect(impressions[1].ext.siteID).to.equal(bid.params.siteId)
-      expect(impressions[2].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString())
-      expect(impressions[3].ext.siteID).to.equal(bid.params.siteId)
+      expect(impressions[0].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+      expect(impressions[1].ext.siteID).to.equal(bid.params.siteId);
+      expect(impressions[2].ext.siteID).to.equal(DEFAULT_BANNER_VALID_BID[0].params.siteId.toString());
+      expect(impressions[3].ext.siteID).to.equal(bid.params.siteId);
 
       expect(impressions[0].banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[0]);
       expect(impressions[0].banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].params.size[1]);
+
       expect(impressions[1].banner.w).to.equal(bid.params.size[0]);
       expect(impressions[1].banner.h).to.equal(bid.params.size[1]);
+
       expect(impressions[2].banner.w).to.equal(DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][0]);
       expect(impressions[2].banner.h).to.equal(DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][1]);
+
       expect(impressions[3].banner.w).to.equal(bid.mediaTypes.banner.sizes[1][0]);
       expect(impressions[3].banner.h).to.equal(bid.mediaTypes.banner.sizes[1][1]);
 
       expect(impressions[0].ext.sid).to.equal(`${DEFAULT_BANNER_VALID_BID[0].params.size[0].toString()}x${DEFAULT_BANNER_VALID_BID[0].params.size[1].toString()}`);
       expect(impressions[1].ext.sid).to.equal(`${bid.params.size[0].toString()}x${bid.params.size[1].toString()}`);
+
       expect(impressions[2].ext.sid).to.equal(`${DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][0].toString()}x${DEFAULT_BANNER_VALID_BID[0].mediaTypes.banner.sizes[1][1].toString()}`);
       expect(impressions[3].ext.sid).to.equal(`${bid.mediaTypes.banner.sizes[1][0].toString()}x${bid.mediaTypes.banner.sizes[1][1].toString()}`);
     });
@@ -1044,6 +1203,28 @@ describe('IndexexchangeAdapter', function () {
 
       expect(impressions).to.be.an('array');
       expect(impressions).to.have.lengthOf(1);
+    });
+
+    describe('detect missing sizes', function () {
+      beforeEach(function () {
+        config.setConfig({
+          ix: {
+            detectMissingSizes: false
+          }
+        });
+      })
+
+      it('request should not contain missing sizes if detectMissingSizes = false', function () {
+        const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+        bid1.mediaTypes.banner.sizes = div_many_sizes;
+
+        const requests = spec.buildRequests([bid1, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
+
+        const impressions = JSON.parse(requests[0].data.r).imp;
+
+        expect(impressions).to.be.an('array');
+        expect(impressions).to.have.lengthOf(2);
+      });
     });
   });
 

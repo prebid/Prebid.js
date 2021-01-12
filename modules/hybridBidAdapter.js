@@ -10,12 +10,14 @@ const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb';
 const TRAFFIC_TYPE_WEB = 1;
 const PLACEMENT_TYPE_BANNER = 1;
 const PLACEMENT_TYPE_VIDEO = 2;
+const PLACEMENT_TYPE_IN_IMAGE = 3;
 const TTL = 60;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const placementTypes = {
   'banner': PLACEMENT_TYPE_BANNER,
-  'video': PLACEMENT_TYPE_VIDEO
+  'video': PLACEMENT_TYPE_VIDEO,
+  'inImage': PLACEMENT_TYPE_IN_IMAGE
 };
 
 function buildBidRequests(validBidRequests) {
@@ -26,7 +28,8 @@ function buildBidRequests(validBidRequests) {
       transactionId: validBidRequest.transactionId,
       sizes: validBidRequest.sizes,
       placement: placementTypes[params.placement],
-      placeId: params.placeId
+      placeId: params.placeId,
+      imageUrl: params.imageUrl || ''
     };
 
     return bidRequest;
@@ -94,6 +97,33 @@ function buildBid(bidData) {
         bid.renderer = createRenderer(bid);
       }
     }
+  } else if (bidData.placement === PLACEMENT_TYPE_IN_IMAGE) {
+    bid.mediaType = BANNER;
+    bid.inImageContent = {
+      content: {
+        content: bidData.content,
+        actionUrls: {}
+      }
+    };
+    let actionUrls = bid.inImageContent.content.actionUrls;
+    actionUrls.loadUrls = bidData.inImage.loadtrackers || [];
+    actionUrls.impressionUrls = bidData.inImage.imptrackers || [];
+    actionUrls.scrollActUrls = bidData.inImage.startvisibilitytrackers || [];
+    actionUrls.viewUrls = bidData.inImage.viewtrackers || [];
+    actionUrls.stopAnimationUrls = bidData.inImage.stopanimationtrackers || [];
+    actionUrls.closeBannerUrls = bidData.inImage.closebannertrackers || [];
+
+    if (bidData.inImage.but) {
+      let inImageOptions = bid.inImageContent.content.inImageOptions = {};
+      inImageOptions.hasButton = true;
+      inImageOptions.buttonLogoUrl = bidData.inImage.but_logo;
+      inImageOptions.buttonProductUrl = bidData.inImage.but_prod;
+      inImageOptions.buttonHead = bidData.inImage.but_head;
+      inImageOptions.buttonHeadColor = bidData.inImage.but_head_colour;
+      inImageOptions.dynparams = bidData.inImage.dynparams || {};
+    }
+
+    bid.ad = wrapAd(bid, bidData);
   } else {
     bid.ad = bidData.content;
     bid.mediaType = BANNER;
@@ -116,6 +146,30 @@ function hasVideoMandatoryParams(mediaTypes) {
   return isHasVideoContext && isPlayerSize;
 }
 
+function wrapAd(bid, bidData) {
+  return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+        <script src="https://st.hybrid.ai/prebidrenderer.js"></script>
+        <style>html, body {width: 100%; height: 100%; margin: 0;}</style>
+    </head>
+    <body>
+        <div data-hyb-ssp-in-image-overlay="${bidData.placeId}" style="width: 100%; height: 100%;"></div>
+        <script>
+            if (parent.window.frames[window.name]) {
+                var parentDocument = window.parent.document.getElementById(parent.window.frames[window.name].name);
+                parentDocument.style.height = "100%";
+                parentDocument.style.width = "100%";
+            }
+            var _content = "${encodeURIComponent(JSON.stringify(bid.inImageContent))}";
+            window._ao_ssp.registerInImage(JSON.parse(decodeURIComponent(_content)));
+        </script>
+    </body>
+  </html>`;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -133,6 +187,7 @@ export const spec = {
       !!bid.params.placement &&
       (
         (getMediaTypeFromBid(bid) === BANNER && bid.params.placement === 'banner') ||
+        (getMediaTypeFromBid(bid) === BANNER && bid.params.placement === 'inImage' && !!bid.params.imageUrl) ||
         (getMediaTypeFromBid(bid) === VIDEO && bid.params.placement === 'video' && hasVideoMandatoryParams(bid.mediaTypes))
       )
     );

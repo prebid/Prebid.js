@@ -23,7 +23,7 @@ export const spec = {
     const eids = getEncodedEIDs(utils.deepAccess(validBidRequests, '0.userIdAsEids'));
 
     var request = [];
-    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
+    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ], [ 'eids', eids ] ];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     var bidder = (bids[0] && bids[0].bidder) || BIDDER_CODE;
     for (i = 0, l = bids.length; i < l; i++) {
@@ -65,10 +65,6 @@ export const spec = {
       request.push('us_privacy=' + bidderRequest.uspConsent);
     }
 
-    if (eids) {
-      request.push('eids=' + eids);
-    }
-
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];
       _value = globalParams[i][1];
@@ -100,7 +96,7 @@ export const spec = {
     function getEncodedEIDs(eids) {
       if (utils.isArray(eids) && eids.length > 0) {
         const parsed = parseEIDs(eids);
-        return encodeURIComponent(btoa(JSON.stringify(parsed)));
+        return btoa(JSON.stringify(parsed));
       }
     }
 

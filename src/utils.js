@@ -718,8 +718,21 @@ export function replaceAuctionPrice(str, cpm) {
   return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
 }
 
+export function replaceClickThrough(str, clicktag) {
+  if (!str || !clicktag || typeof clicktag !== 'string') return;
+  return str.replace(/\${CLICKTHROUGH}/g, clicktag);
+}
+
 export function timestamp() {
   return new Date().getTime();
+}
+
+/**
+ * The returned value represents the time elapsed since the time origin. @see https://developer.mozilla.org/en-US/docs/Web/API/Performance/now
+ * @returns {number}
+ */
+export function getPerformanceNow() {
+  return (window.performance && window.performance.now && window.performance.now()) || 0;
 }
 
 /**
