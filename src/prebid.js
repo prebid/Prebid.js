@@ -149,7 +149,14 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
 
   adUnits.forEach(adUnit => {
     const mediaTypes = adUnit.mediaTypes;
+    const bids = adUnit.bids;
     let validatedBanner, validatedVideo, validatedNative;
+
+    if (!bids || !utils.isArray(bids)) {
+      utils.logError(`Detected adUnit.code '${adUnit.code}' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction.`);
+      return;
+    }
+
     if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
       utils.logError(`Detected adUnit.code '${adUnit.code}' did not have a 'mediaTypes' object defined.  This is a required field for the auction, so this adUnit has been removed.`);
       return;
@@ -252,6 +259,18 @@ $$PREBID_GLOBAL$$.getNoBids = function () {
 };
 
 /**
+ * This function returns the bids requests involved in an auction but not bid on or the specified adUnitCode
+ * @param  {string} adUnitCode adUnitCode
+ * @alias module:pbjs.getNoBidsForAdUnitCode
+ * @return {Object}           bidResponse object
+ */
+
+$$PREBID_GLOBAL$$.getNoBidsForAdUnitCode = function (adUnitCode) {
+  const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
+  return { bids };
+};
+
+/**
  * This function returns the bid responses at the given moment.
  * @alias module:pbjs.getBidResponses
  * @return {Object}            map | object that contains the bidResponses
@@ -342,7 +361,7 @@ function emitAdRenderFail({ reason, message, bid, id }) {
  * @param  {string} id bid id to locate the ad
  * @alias module:pbjs.renderAd
  */
-$$PREBID_GLOBAL$$.renderAd = function (doc, id) {
+$$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
 
@@ -354,6 +373,14 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
+
+        // replacing clickthrough if submitted
+        if (options && options.clickThrough) {
+          const { clickThrough } = options;
+          bid.ad = utils.replaceClickThrough(bid.ad, clickThrough);
+          bid.adUrl = utils.replaceClickThrough(bid.adUrl, clickThrough);
+        }
+
         // save winning bids
         auctionManager.addWinningBid(bid);
 

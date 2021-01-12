@@ -21,6 +21,7 @@ const TIME_MAX = Math.pow(2, 48) - 1;
 const TIME_LEN = 10;
 const RANDOM_LEN = 16;
 const id = factory();
+const GVLID = 887;
 /**
  * Constructs cookie value
  * @param value
@@ -283,6 +284,11 @@ export const sharedIdSubmodule = {
    */
   name: MODULE_NAME,
 
+  /**
+   * Vendor id of Prebid
+   * @type {Number}
+   */
+  gvlid: GVLID,
   /**
    * decode the stored id value for passing to bid requests
    * @function

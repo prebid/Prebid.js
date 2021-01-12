@@ -5,14 +5,14 @@
 
 import events from './events.js';
 import { fireNativeTrackers, getAssetMessage } from './native.js';
-import { EVENTS } from './constants.json';
+import constants from './constants.json';
 import { logWarn, replaceAuctionPrice } from './utils.js';
 import { auctionManager } from './auctionManager.js';
 import find from 'core-js-pure/features/array/find.js';
 import { isRendererRequired, executeRenderer } from './Renderer.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const BID_WON = EVENTS.BID_WON;
+const BID_WON = constants.EVENTS.BID_WON;
 
 export function listenMessagesFromCreative() {
   window.addEventListener('message', receiveMessage, false);

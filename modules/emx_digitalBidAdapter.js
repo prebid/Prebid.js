@@ -157,6 +157,17 @@ export const emxAdapter = {
     }
 
     return emxData;
+  },
+  getSupplyChain: (bidRequests, emxData) => {
+    if (bidRequests.schain) {
+      emxData.source = {
+        ext: {
+          schain: bidRequests.schain
+        }
+      };
+    }
+
+    return emxData;
   }
 };
 
@@ -237,6 +248,7 @@ export const spec = {
     };
 
     emxData = emxAdapter.getGdpr(bidderRequest, Object.assign({}, emxData));
+    emxData = emxAdapter.getSupplyChain(bidderRequest, Object.assign({}, emxData));
     if (bidderRequest && bidderRequest.uspConsent) {
       emxData.us_privacy = bidderRequest.uspConsent
     }

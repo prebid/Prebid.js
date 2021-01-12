@@ -246,7 +246,7 @@ describe('the rubicon adapter', function () {
           id: '4444444'
         }]
       }],
-      criteoId: '1111'
+      criteoId: '1111',
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
@@ -396,7 +396,10 @@ describe('the rubicon adapter', function () {
       describe('to fastlane', function () {
         it('should make a well-formed request object', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let duplicate = Object.assign(bidderRequest);
+          duplicate.bids[0].params.floor = 0.01;
+
+          let [request] = spec.buildRequests(duplicate.bids, duplicate);
           let data = parseQuery(request.data);
 
           expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
@@ -551,7 +554,7 @@ describe('the rubicon adapter', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_floor', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
@@ -566,7 +569,6 @@ describe('the rubicon adapter', function () {
             'size_id': '15',
             'alt_size_ids': '43',
             'p_pos': 'atf',
-            'rp_floor': '0.01',
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
@@ -883,7 +885,6 @@ describe('the rubicon adapter', function () {
               'size_id': '15',
               'alt_size_ids': '43',
               'p_pos': 'atf',
-              'rp_floor': '0.01',
               'rp_secure': /[01]/,
               'rand': '0.1',
               'tk_flint': INTEGRATION,
@@ -1097,6 +1098,7 @@ describe('the rubicon adapter', function () {
             let data = parseQuery(request.data);
 
             expect(data['tpid_tdid']).to.equal('abcd-efgh-ijkl-mnop-1234');
+            expect(data['eid_adserver.org']).to.equal('abcd-efgh-ijkl-mnop-1234');
           });
 
           describe('LiveIntent support', function () {
@@ -1104,7 +1106,8 @@ describe('the rubicon adapter', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 lipb: {
-                  lipbid: '0000-1111-2222-3333'
+                  lipbid: '0000-1111-2222-3333',
+                  segments: ['segA', 'segB']
                 }
               };
               clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
@@ -1112,6 +1115,8 @@ describe('the rubicon adapter', function () {
               let data = parseQuery(request.data);
 
               expect(data['tpid_liveintent.com']).to.equal('0000-1111-2222-3333');
+              expect(data['eid_liveintent.com']).to.equal('0000-1111-2222-3333');
+              expect(data['tg_v.LIseg']).to.equal('segA,segB');
             });
 
             it('should send tg_v.LIseg when userIdAsEids contains liveintentId with ext.segments as array', function () {
@@ -1214,6 +1219,43 @@ describe('the rubicon adapter', function () {
               let data = parseQuery(request.data);
 
               expect(data['ppuid']).to.equal('11111');
+            });
+          });
+
+          describe('ID5 support', function () {
+            it('should send ID5 id when userIdAsEids contains ID5', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                id5id: {
+                  uid: '11111',
+                  ext: {
+                    linkType: '22222'
+                  }
+                }
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_id5-sync.com']).to.equal('11111^1^22222');
+            });
+          });
+
+          describe('UserID catchall support', function () {
+            it('should send user id with generic format', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
+              clonedBid.userIdAsEids = [{
+                source: 'catchall',
+                uids: [{
+                  id: '11111',
+                  atype: 2
+                }]
+              }]
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_catchall']).to.equal('11111^2');
             });
           });
 
@@ -1429,20 +1471,10 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
           expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
           expect(post.user.ext.eids[0].ext.segments[1]).to.equal('segB');
-          // Non-EID properties set using liveintent EID values
-          expect(post.user.ext).to.have.property('tpid').that.is.an('object');
-          expect(post.user.ext.tpid.source).to.equal('liveintent.com');
-          expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
-          expect(post).to.have.property('rp').that.is.an('object');
-          expect(post.rp).to.have.property('target').that.is.an('object');
-          expect(post.rp.target).to.have.property('LIseg').that.is.an('array');
-          expect(post.rp.target.LIseg[0]).to.equal('segA');
-          expect(post.rp.target.LIseg[1]).to.equal('segB');
           // LiveRamp should exist
           expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.user.ext.eids[1].uids[0].atype).to.equal(1);
-
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
@@ -2016,7 +2048,6 @@ describe('the rubicon adapter', function () {
             'size_id': 15,
             'alt_size_ids': '43',
             'p_pos': 'atf',
-            'rp_floor': 0.01,
             'rp_secure': /[01]/,
             'tk_flint': INTEGRATION,
             'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
@@ -2127,6 +2158,7 @@ describe('the rubicon adapter', function () {
                 'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
                 'size_id': '15',
                 'ad_id': '6',
+                'adomain': ['test.com'],
                 'advertiser': 7,
                 'network': 8,
                 'creative_id': 'crid-9',
@@ -2148,6 +2180,7 @@ describe('the rubicon adapter', function () {
                 'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
                 'size_id': '43',
                 'ad_id': '7',
+                'adomain': ['test.com'],
                 'advertiser': 7,
                 'network': 8,
                 'creative_id': 'crid-9',
@@ -2182,6 +2215,8 @@ describe('the rubicon adapter', function () {
           expect(bids[0].rubicon.networkId).to.equal(8);
           expect(bids[0].creativeId).to.equal('crid-9');
           expect(bids[0].currency).to.equal('USD');
+          expect(bids[0].meta.mediaType).to.equal('banner');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
           expect(bids[0].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`);
@@ -2715,13 +2750,15 @@ describe('the rubicon adapter', function () {
               bid: [{
                 id: '0',
                 impid: 'instream_video1',
+                adomain: ['test.com'],
                 price: 2,
                 crid: '4259970',
                 ext: {
                   bidder: {
                     rp: {
                       mime: 'application/javascript',
-                      size_id: 201
+                      size_id: 201,
+                      advid: 12345
                     }
                   },
                   prebid: {
@@ -2750,6 +2787,9 @@ describe('the rubicon adapter', function () {
           expect(bids[0].netRevenue).to.equal(true);
           expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
           expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].meta.mediaType).to.equal('video');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
+          expect(bids[0].meta.advertiserId).to.equal(12345);
           expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].currency).to.equal('USD');
           expect(bids[0].width).to.equal(640);

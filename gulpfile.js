@@ -86,13 +86,27 @@ function viewCoverage(done) {
   connect.server({
     port: coveragePort,
     root: 'build/coverage/lcov-report',
-    livereload: false
+    livereload: false,
+    debug: true
   });
   opens('http://' + mylocalhost + ':' + coveragePort);
   done();
 };
 
 viewCoverage.displayName = 'view-coverage';
+
+// View the reviewer tools page
+function viewReview(done) {
+  var mylocalhost = (argv.host) ? argv.host : 'localhost';
+  var reviewUrl = 'http://' + mylocalhost + ':' + port + '/integrationExamples/reviewerTools/index.html'; // reuse the main port from 9999
+
+  // console.log(`stdout: opening` + reviewUrl);
+
+  opens(reviewUrl);
+  done();
+};
+
+viewReview.displayName = 'view-review';
 
 // Watch Task with Live Reload
 function watch(done) {
@@ -382,5 +396,9 @@ gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-p
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+
+// build task for reviewers, runs test-coverage, serves, without watching
+gulp.task(viewReview);
+gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
 module.exports = nodeBundle;
