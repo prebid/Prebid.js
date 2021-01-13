@@ -4,7 +4,7 @@ import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
 const SUPPORTED_AD_TYPES = [VIDEO];
-const BIDDER_CODE = 'ironsource';
+const BIDDER_CODE = 'rise';
 const BIDDER_VERSION = '4.0.0';
 const TTL = 360;
 const SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
@@ -22,7 +22,7 @@ export const spec = {
   version: BIDDER_VERSION,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bidRequest) {
-    return !!(bidRequest.params.isOrg);
+    return !!(bidRequest.params.org);
   },
   buildRequests: function (bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
@@ -193,7 +193,7 @@ function getEndpoint(testMode) {
  */
 function generateParameters(bid, bidderRequest) {
   const timeout = config.getConfig('bidderTimeout');
-  const { syncEnabled, filterSettings } = config.getConfig('userSync');
+  const { syncEnabled, filterSettings } = config.getConfig('userSync') || {};
   const [ width, height ] = getSizes(bid);
   const { params } = bid;
   const { bidderCode } = bidderRequest;
@@ -205,7 +205,7 @@ function generateParameters(bid, bidderRequest) {
     tmax: timeout,
     width: width,
     height: height,
-    publisher_id: params.isOrg,
+    publisher_id: params.org,
     floor_price: params.floorPrice,
     ua: navigator.userAgent,
     bid_id: utils.getBidIdParameter('bidId', bid),
