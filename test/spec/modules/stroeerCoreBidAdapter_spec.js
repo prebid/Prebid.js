@@ -2,6 +2,7 @@ import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import find from 'core-js-pure/features/array/find.js';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
@@ -123,7 +124,7 @@ describe('stroeerCore bid adapter', function () {
           }
         },
         referrer,
-        getElementById: id => placementElements.find(el => el.id === id)
+        getElementById: id => find(placementElements, el => el.id === id)
       }
     };
 
