@@ -23,6 +23,7 @@ import {
   setConsentConfig
 } from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
+import find from 'core-js-pure/features/array/find.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
 import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem.js';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
@@ -87,7 +88,7 @@ describe('User ID', function () {
   }
 
   function findEid(eids, source) {
-    return eids.find((eid) => {
+    return find(eids, (eid) => {
       if (eid.source === source) { return true; }
     });
   }
