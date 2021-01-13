@@ -5,6 +5,7 @@
     "rubiconBidAdapter",
     "rabiconBidAdapter",
     "ixBidAdapter",
+    "ixClientBidAdapter",
     "pulsepointBidAdapter",
     "sovrnBidAdapter",
     "openxBidAdapter",
