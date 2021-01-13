@@ -14,7 +14,7 @@ export const spec = {
    * @return boolean for whether or not a bid is valid
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.tagid && !isNaN(parseFloat(bid.params.tagid)) && isFinite(bid.params.tagid));
+    return !!(bid.params.tagid && !isNaN(parseFloat(bid.params.tagid)) && isFinite(bid.params.tagid))
   },
 
   /**
