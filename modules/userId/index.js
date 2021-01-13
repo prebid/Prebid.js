@@ -49,6 +49,20 @@
  */
 
 /**
+ * @property
+ * @summary use a predefined domain override for cookies or provide your own
+ * @name Submodule#domainOverride
+ * @type {(undefined|function)}
+ */
+
+/**
+ * @function
+ * @summary Returns the root domain
+ * @name Submodule#findRootDomain
+ * @returns {string}
+ */
+
+/**
  * @typedef {Object} SubmoduleConfig
  * @property {string} name - the User ID submodule name (used to link submodule with config)
  * @property {(SubmoduleStorage|undefined)} storage - browser storage config
@@ -313,6 +327,60 @@ function hasGDPRConsent(consentData) {
     }
   }
   return true;
+}
+
+/**
+   * Find the root domain
+   * @param {string|undefined} fullDomain
+   * @return {string}
+   */
+export function findRootDomain(fullDomain = window.location.hostname) {
+  if (!coreStorage.cookiesAreEnabled()) {
+    return fullDomain;
+  }
+
+  const domainParts = fullDomain.split('.');
+  if (domainParts.length == 2) {
+    return fullDomain;
+  }
+  let rootDomain;
+  let continueSearching;
+  let startIndex = -2;
+  const TEST_COOKIE_NAME = `_rdc${Date.now()}`;
+  const TEST_COOKIE_VALUE = 'writeable';
+  do {
+    rootDomain = domainParts.slice(startIndex).join('.');
+    let expirationDate = new Date(utils.timestamp() + 10 * 1000).toUTCString();
+
+    // Write a test cookie
+    coreStorage.setCookie(
+      TEST_COOKIE_NAME,
+      TEST_COOKIE_VALUE,
+      expirationDate,
+      'Lax',
+      rootDomain,
+      undefined
+    );
+
+    // See if the write was successful
+    const value = coreStorage.getCookie(TEST_COOKIE_NAME, undefined);
+    if (value === TEST_COOKIE_VALUE) {
+      continueSearching = false;
+      // Delete our test cookie
+      coreStorage.setCookie(
+        TEST_COOKIE_NAME,
+        '',
+        'Thu, 01 Jan 1970 00:00:01 GMT',
+        undefined,
+        rootDomain,
+        undefined
+      );
+    } else {
+      startIndex += -1;
+      continueSearching = Math.abs(startIndex) <= domainParts.length;
+    }
+  } while (continueSearching);
+  return rootDomain;
 }
 
 /**
@@ -657,6 +725,7 @@ function updateSubmodules() {
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   submodules = addedSubmodules.map(i => {
     const submoduleConfig = find(configs, j => j.name === i.name);
+    i.findRootDomain = findRootDomain;
     return submoduleConfig ? {
       submodule: i,
       config: submoduleConfig,
