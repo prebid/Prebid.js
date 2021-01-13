@@ -1,7 +1,7 @@
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'mediasquare';
 const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
@@ -13,7 +13,7 @@ const BIDDER_ENDPOINT_WINNING = 'winning';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['msq'], // short code
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   /**
          * Determines whether or not the given bid request is valid.
          *
@@ -21,7 +21,7 @@ export const spec = {
          * @return boolean True if this is a valid bid, and false otherwise.
          */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.owner || bid.params.code);
+    return !!(bid.params.owner && bid.params.code);
   },
   /**
          * Make a server request from the list of BidRequests.
@@ -49,13 +49,17 @@ export const spec = {
     const payload = {
       codes: codes,
       referer: encodeURIComponent(bidderRequest.refererInfo.referer)
-      // schain: validBidRequests.schain,
     };
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr = {
-        consent_string: bidderRequest.gdprConsent.consentString,
-        consent_required: bidderRequest.gdprConsent.gdprApplies
-      };
+    if (bidderRequest) { // modules informations (gdpr, ccpa, schain, userId)
+      if (bidderRequest.gdprConsent) {
+        payload.gdpr = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          consent_required: bidderRequest.gdprConsent.gdprApplies
+        };
+      }
+      if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
+      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
+      if (bidderRequest.userId) { payload.userId = bidderRequest.userId; }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -95,6 +99,14 @@ export const spec = {
             'code': value['code']
           }
         };
+        if ('native' in value) {
+          bidResponse['native'] = value['native'];
+          bidResponse['mediaType'] = 'native';
+        } else if ('video' in value) {
+          if ('url' in value['video']) { bidResponse['vastUrl'] = value['video']['url'] }
+          if ('xml' in value['video']) { bidResponse['vastXml'] = value['video']['xml'] }
+          bidResponse['mediaType'] = 'video';
+        }
         if (value.hasOwnProperty('deal_id')) { bidResponse['dealId'] = value['deal_id']; }
         bidResponses.push(bidResponse);
       });
@@ -109,25 +121,19 @@ export const spec = {
      * @param {ServerResponse[]} serverResponses List of server's responses.
      * @return {UserSync[]} The user syncs which should be dropped.
      */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     let params = '';
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      if (typeof gdprConsent.gdprApplies === 'boolean') { params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`; } else { params += `&gdpr_consent=${gdprConsent.consentString}`; }
-    }
-    if (syncOptions.iframeEnabled) {
+    if (serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
+      return serverResponses[0].body.cookies;
+    } else {
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') { params += typeof gdprConsent.gdprApplies === 'boolean' ? `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}` : `&gdpr_consent=${gdprConsent.consentString}`; }
+      if (uspConsent && typeof uspConsent === 'string') { params += '&uspConsent=' + uspConsent }
       return {
         type: 'iframe',
         url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=iframe' + params
       };
     }
-    if (syncOptions.pixelEnabled) {
-      return {
-        type: 'image',
-        url: endpoint + BIDDER_ENDPOINT_SYNC + '?type=pixel' + params
-      };
-    }
-    return false;
   },
 
   /**

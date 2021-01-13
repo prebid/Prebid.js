@@ -1,3 +1,5 @@
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
@@ -33,7 +35,11 @@ describe('gumgumAdapter', function () {
     };
 
     it('should return true when required params found', function () {
+      const zoneBid = { ...bid, params: { 'zone': '123' } };
+      const pubIdBid = { ...bid, params: { 'pubId': 123 } };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(zoneBid)).to.equal(true);
+      expect(spec.isBidRequestValid(pubIdBid)).to.equal(true);
     });
 
     it('should return true when required params found', function () {
@@ -41,6 +47,17 @@ describe('gumgumAdapter', function () {
       delete bid.params;
       bid.params = {
         'inSlot': '789'
+      };
+
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true when inslot sends sizes and trackingid', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'inSlot': '789',
+        'sizes': [[0, 1], [2, 3], [4, 5], [6, 7]]
       };
 
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -81,6 +98,7 @@ describe('gumgumAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    let sizesArray = [[300, 250], [300, 600]];
     let bidRequests = [
       {
         'bidder': 'gumgum',
@@ -88,7 +106,7 @@ describe('gumgumAdapter', function () {
           'inSlot': '9'
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250], [300, 600]],
+        'sizes': sizesArray,
         'bidId': '30b31c1838de1e',
         'schain': {
           'ver': '1.0',
@@ -114,6 +132,133 @@ describe('gumgumAdapter', function () {
         }
       }
     ];
+    const vidMediaTypes = {
+      video: {
+        playerSize: [640, 480],
+        context: 'instream',
+        minduration: 1,
+        maxduration: 2,
+        linearity: 1,
+        startdelay: 1,
+        placement: 123456,
+        protocols: [1, 2]
+      }
+    };
+    const zoneParam = { 'zone': '123a' };
+    const pubIdParam = { 'pubId': 123 };
+
+    it('should set pubId param if found', function () {
+      const request = { ...bidRequests[0], params: pubIdParam };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.pubId).to.equal(pubIdParam.pubId);
+    });
+
+    it('should set t param when zone param is found', function () {
+      const request = { ...bidRequests[0], params: zoneParam };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.t).to.equal(zoneParam.zone);
+    });
+
+    it('should set the iriscat param when found', function () {
+      const request = { ...bidRequests[0], params: { iriscat: 'abc123' } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.have.property('iriscat');
+    });
+
+    it('should not set the iriscat param when not found', function () {
+      const request = { ...bidRequests[0] }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('iriscat');
+    });
+
+    it('should set the irisid param when found', function () {
+      const request = { ...bidRequests[0], params: { irisid: 'abc123' } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.have.property('irisid');
+    });
+
+    it('should not set the irisid param when not found', function () {
+      const request = { ...bidRequests[0] }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('irisid');
+    });
+
+    it('should not set the irisid param when not of type string', function () {
+      const request = { ...bidRequests[0], params: { irisid: 123456 } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('irisid');
+    });
+
+    describe('product id', function () {
+      it('should set the correct pi param if native param is found', function () {
+        const request = { ...bidRequests[0], params: { ...zoneParam, native: 2 } };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pi).to.equal(5);
+      });
+      it('should set the correct pi param for video', function () {
+        const request = { ...bidRequests[0], params: zoneParam, mediaTypes: vidMediaTypes };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pi).to.equal(7);
+      });
+      it('should set the correct pi param for invideo', function () {
+        const invideo = { video: { ...vidMediaTypes.video, linearity: 2 } };
+        const request = { ...bidRequests[0], params: zoneParam, mediaTypes: invideo };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pi).to.equal(6);
+      });
+      it('should set the correct pi param if slot param is found', function () {
+        const request = { ...bidRequests[0], params: { ...zoneParam, slot: '123s' } };
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.pi).to.equal(3);
+      });
+      it('should default the pi param to 2 if only zone or pubId param is found', function () {
+        const zoneRequest = { ...bidRequests[0], params: zoneParam };
+        const pubIdRequest = { ...bidRequests[0], params: pubIdParam };
+        const zoneBidRequest = spec.buildRequests([zoneRequest])[0];
+        const pubIdBidRequest = spec.buildRequests([pubIdRequest])[0];
+        expect(zoneBidRequest.data.pi).to.equal(2);
+        expect(pubIdBidRequest.data.pi).to.equal(2);
+      });
+    });
+
+    it('should return a defined sizes field for video', function () {
+      const request = { ...bidRequests[0], mediaTypes: vidMediaTypes, params: { 'videoPubID': 123 } };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.sizes).to.equal(vidMediaTypes.video.playerSize);
+    });
+    it('should handle multiple sizes for inslot', function () {
+      const mediaTypes = { banner: { sizes: [[300, 250], [300, 600]] } }
+      const request = { ...bidRequests[0], mediaTypes };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.bf).to.equal('300x250,300x600');
+    });
+    describe('floorModule', function () {
+      const floorTestData = {
+        'currency': 'USD',
+        'floor': 1.50
+      };
+      bidRequests[0].getFloor = _ => {
+        return floorTestData;
+      };
+      it('should return the value from getFloor if present', function () {
+        const request = spec.buildRequests(bidRequests)[0];
+        expect(request.data.fp).to.equal(floorTestData.floor);
+      });
+      it('should return the getFloor.floor value if it is greater than bidfloor', function () {
+        const bidfloor = 0.80;
+        const request = { ...bidRequests[0] };
+        request.params.bidfloor = bidfloor;
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.fp).to.equal(floorTestData.floor);
+      });
+      it('should return the bidfloor value if it is greater than getFloor.floor', function () {
+        const bidfloor = 1.80;
+        const request = { ...bidRequests[0] };
+        request.params.bidfloor = bidfloor;
+        const bidRequest = spec.buildRequests([request])[0];
+        expect(bidRequest.data.fp).to.equal(bidfloor);
+      });
+    });
 
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests)[0];
@@ -133,6 +278,25 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.include.any.keys('t');
       expect(bidRequest.data).to.include.any.keys('fp');
     });
+    it('should set iriscat parameter if iriscat param is found and is of type string', function () {
+      const iriscat = 'segment';
+      const request = { ...bidRequests[0] };
+      request.params = { ...request.params, iriscat };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.iriscat).to.equal(iriscat);
+    });
+    it('should not send iriscat parameter if iriscat param is not found', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.iriscat).to.be.undefined;
+    });
+    it('should not send iriscat parameter if iriscat param is not of type string', function () {
+      const iriscat = 123;
+      const request = { ...bidRequests[0] };
+      request.params = { ...request.params, iriscat };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.iriscat).to.be.undefined;
+    });
     it('should send pubId if inScreenPubID param is specified', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
@@ -145,21 +309,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.not.include.any.keys('t');
     });
     it('should send pubId if videoPubID param is specified', function () {
-      const mediaTypes = {
-        video: {
-          playerSize: [640, 480],
-          context: 'instream',
-          minduration: 1,
-          maxduration: 2,
-          linearity: 1,
-          startdelay: 1,
-          placement: 123456,
-          protocols: [1, 2]
-        }
-      };
-      const request = Object.assign({}, bidRequests[0]);
-      request.mediaTypes = mediaTypes
-      request.params = { 'videoPubID': 123 };
+      const request = { ...bidRequests[0], mediaTypes: vidMediaTypes, params: { 'videoPubID': 123 } };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.include.any.keys('pubId');
       expect(bidRequest.data.pubId).to.equal(request.params.videoPubID);
@@ -338,16 +488,15 @@ describe('gumgumAdapter', function () {
       pi: 3
     }
     let expectedResponse = {
-      'ad': '<html><h3>I am an ad</h3></html>',
-      'cpm': 0,
-      'creativeId': 29593,
-      'currency': 'USD',
-      'height': '250',
-      'netRevenue': true,
-      'requestId': 12345,
-      'width': '300',
-      // dealId: DEAL_ID,
-      // referrer: REFERER,
+      ad: '<html><h3>I am an ad</h3></html>',
+      cpm: 0,
+      creativeId: 29593,
+      currency: 'USD',
+      height: '250',
+      netRevenue: true,
+      requestId: 12345,
+      width: '300',
+      mediaType: BANNER,
       ttl: 60
     };
 
@@ -423,10 +572,24 @@ describe('gumgumAdapter', function () {
     });
 
     it('updates jcsi object when the server response jcsi prop is found', function () {
-      const response = Object.assign({cw: 'AD_JSON'}, serverResponse);
+      const response = Object.assign({ cw: 'AD_JSON' }, serverResponse);
       const bidResponse = spec.interpretResponse({ body: response }, bidRequest)[0].ad;
       const decodedResponse = JSON.parse(atob(bidResponse));
       expect(decodedResponse.jcsi).to.eql(JCSI);
+    });
+
+    it('sets the correct mediaType depending on product', function () {
+      const bannerBidResponse = spec.interpretResponse({ body: serverResponse }, bidRequest)[0];
+      const invideoBidResponse = spec.interpretResponse({ body: serverResponse }, { ...bidRequest, data: { pi: 6 } })[0];
+      const videoBidResponse = spec.interpretResponse({ body: serverResponse }, { ...bidRequest, data: { pi: 7 } })[0];
+      expect(bannerBidResponse.mediaType).to.equal(BANNER);
+      expect(invideoBidResponse.mediaType).to.equal(VIDEO);
+      expect(videoBidResponse.mediaType).to.equal(VIDEO);
+    });
+
+    it('sets a vastXml property if mediaType is video', function () {
+      const videoBidResponse = spec.interpretResponse({ body: serverResponse }, { ...bidRequest, data: { pi: 7 } })[0];
+      expect(videoBidResponse.vastXml).to.exist;
     });
   })
   describe('getUserSyncs', function () {

@@ -24,12 +24,48 @@ const invalidBidReq = {
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
 };
 
+const videoBidReq = [{
+  adUnitCode: 'div-gpt-ad-1460505748561-0',
+  bidder: BIDDER_CODE,
+  params: {
+    placementId: '10433394',
+    publisherId: 12345,
+    video: {
+      id: 123,
+      skippable: true,
+      playbackMethod: 2,
+      maxDuration: 30
+    }
+  },
+  mediaTypes: {video: {
+    context: 'outstream',
+    playerSize: [640, 480]
+  }},
+  sizes: [[300, 250], [300, 600]],
+  bidId: '263be71e91dd9d',
+  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
+},
+{
+  adUnitCode: 'div-gpt-ad-1460505748561-1',
+  bidder: BIDDER_CODE,
+  params: {
+    placementId: '10433395',
+    publisherId: 12345
+  },
+  mediaTypes: {video: {
+    context: 'outstream',
+    playerSize: [640, 480]
+  }},
+  sizes: [[300, 250], [300, 600]],
+  bidId: '263be71e91dd9d',
+  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
+}];
 const bidReq = [{
   adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,
   params: {
     placementId: '10433394',
-    publisherId: 12345
+    publisherId: 12345,
   },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
@@ -58,7 +94,8 @@ const bidReqUserIds = [{
   userId: {
     idl_env: '1111',
     tdid: '123456',
-    digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}}
+    digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}},
+    id5id: { uid: '1111' }
   }
 },
 {
@@ -141,6 +178,20 @@ const bidResArray = [
     cpm: 0,
     adId: '123abc',
     currency: 'USD',
+    netRevenue: true,
+    width: 300,
+    height: 250,
+    ttl: 360
+  }
+];
+const bidVideoResponse = [
+  {
+    ad: '<xml />',
+    bidRequestId: '263be71e91dd9d',
+    cpm: 100,
+    adId: '123abc',
+    currency: 'USD',
+    mediaType: 'video',
     netRevenue: true,
     width: 300,
     height: 250,
@@ -241,6 +292,23 @@ describe('Undertone Adapter', () => {
       expect(bid2.publisherId).to.equal(12345);
       expect(bid2.params).to.be.an('object');
     });
+    it('should send video fields correctly', function () {
+      const request = spec.buildRequests(videoBidReq, bidderReq);
+      const bidVideo = JSON.parse(request.data)['x-ut-hb-params'][0];
+      const bidVideo2 = JSON.parse(request.data)['x-ut-hb-params'][1];
+
+      expect(bidVideo.mediaType).to.equal('video');
+      expect(bidVideo.video).to.be.an('object');
+      expect(bidVideo.video.playerSize).to.be.an('array');
+      expect(bidVideo.video.streamType).to.equal('outstream');
+      expect(bidVideo.video.playbackMethod).to.equal(2);
+      expect(bidVideo.video.maxDuration).to.equal(30);
+      expect(bidVideo.video.skippable).to.equal(true);
+
+      expect(bidVideo2.video.skippable).to.equal(null);
+      expect(bidVideo2.video.maxDuration).to.equal(null);
+      expect(bidVideo2.video.playbackMethod).to.equal(null);
+    });
     it('should send all userIds data to server', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);
       const bidCommons = JSON.parse(request.data)['commons'];
@@ -249,6 +317,7 @@ describe('Undertone Adapter', () => {
       expect(bidCommons.uids.tdid).to.equal('123456');
       expect(bidCommons.uids.idl_env).to.equal('1111');
       expect(bidCommons.uids.digitrustid.data.id).to.equal('DTID');
+      expect(bidCommons.uids.id5id.uid).to.equal('1111');
     });
     it('should send page sizes sizes correctly', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);
@@ -302,6 +371,13 @@ describe('Undertone Adapter', () => {
 
     it('should only use valid bid responses', () => {
       expect(spec.interpretResponse({ body: bidResArray }).length).to.equal(1);
+    });
+
+    it('should detect video response', () => {
+      const videoResult = spec.interpretResponse({body: bidVideoResponse});
+      const vbid = videoResult[0];
+
+      expect(vbid.mediaType).to.equal('video');
     });
   });
 

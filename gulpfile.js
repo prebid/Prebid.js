@@ -86,13 +86,27 @@ function viewCoverage(done) {
   connect.server({
     port: coveragePort,
     root: 'build/coverage/lcov-report',
-    livereload: false
+    livereload: false,
+    debug: true
   });
   opens('http://' + mylocalhost + ':' + coveragePort);
   done();
 };
 
 viewCoverage.displayName = 'view-coverage';
+
+// View the reviewer tools page
+function viewReview(done) {
+  var mylocalhost = (argv.host) ? argv.host : 'localhost';
+  var reviewUrl = 'http://' + mylocalhost + ':' + port + '/integrationExamples/reviewerTools/index.html'; // reuse the main port from 9999
+
+  // console.log(`stdout: opening` + reviewUrl);
+
+  opens(reviewUrl);
+  done();
+};
+
+viewReview.displayName = 'view-review';
 
 // Watch Task with Live Reload
 function watch(done) {
@@ -110,6 +124,7 @@ function watch(done) {
   connect.server({
     https: argv.https,
     port: port,
+    host: FAKE_SERVER_HOST,
     root: './',
     livereload: true
   });
@@ -341,12 +356,12 @@ function injectFakeServerEndpointDev() {
 
 function startFakeServer() {
   const fakeServer = spawn('node', ['./test/fake-server/index.js', `--port=${FAKE_SERVER_PORT}`]);
-    fakeServer.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
-    });
-    fakeServer.stderr.on('data', (data) => {
-      console.log(`stderr: ${data}`);
-    });
+  fakeServer.stdout.on('data', (data) => {
+    console.log(`stdout: ${data}`);
+  });
+  fakeServer.stderr.on('data', (data) => {
+    console.log(`stderr: ${data}`);
+  });
 }
 
 // support tasks
@@ -372,6 +387,7 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
+gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watch)));
 gulp.task('serve-fake', gulp.series(clean, gulp.parallel('build-bundle-dev', watch), injectFakeServerEndpointDev, test, startFakeServer));
 
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
@@ -380,5 +396,9 @@ gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-p
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+
+// build task for reviewers, runs test-coverage, serves, without watching
+gulp.task(viewReview);
+gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
 module.exports = nodeBundle;

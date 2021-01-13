@@ -28,6 +28,12 @@ describe('Improve Digital Adapter Tests', function () {
     sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
   };
 
+  const videoParams = {
+    skip: 1,
+    skipmin: 5,
+    skipafter: 30
+  }
+
   const instreamBidRequest = utils.deepClone(simpleBidRequest);
   instreamBidRequest.mediaTypes = {
     video: {
@@ -154,6 +160,8 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.version).to.equal(`${spec.version}-${idClient.CONSTANTS.CLIENT_VERSION}`);
       expect(params.bid_request.gdpr).to.not.exist;
       expect(params.bid_request.us_privacy).to.not.exist;
+      expect(params.bid_request.schain).to.not.exist;
+      expect(params.bid_request.user).to.not.exist;
       expect(params.bid_request.imp).to.deep.equal([
         {
           id: '33e9500b21129f',
@@ -278,14 +286,23 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.referrer).to.equal('https://blah.com/test.html');
     });
 
+    it('should not add video params for banner', function () {
+      const bidRequest = JSON.parse(JSON.stringify(simpleBidRequest));
+      bidRequest.params.video = videoParams;
+      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.not.exist;
+    });
+
     it('should add ad type for instream video', function () {
-      let bidRequest = Object.assign({}, simpleBidRequest);
+      let bidRequest = JSON.parse(JSON.stringify(simpleBidRequest));
       bidRequest.mediaType = 'video';
       let request = spec.buildRequests([bidRequest], bidderRequest)[0];
       let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
+      expect(params.bid_request.imp[0].video).to.not.exist;
 
-      bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest = JSON.parse(JSON.stringify(simpleBidRequest));
       bidRequest.mediaTypes = {
         video: {
           context: 'instream',
@@ -295,18 +312,89 @@ describe('Improve Digital Adapter Tests', function () {
       request = spec.buildRequests([bidRequest], bidderRequest)[0];
       params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
+      expect(params.bid_request.imp[0].video).to.not.exist;
     });
 
     it('should not set ad type for outstream video', function() {
       const request = spec.buildRequests([outstreamBidRequest])[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].ad_types).to.not.exist;
+      expect(params.bid_request.imp[0].video).to.not.exist;
     });
 
     it('should not set ad type for multi-format bids', function() {
       const request = spec.buildRequests([multiFormatBidRequest], bidderRequest)[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].ad_types).to.not.exist;
+      expect(params.bid_request.imp[0].video).to.not.exist;
+    });
+
+    it('should set video params for instream', function() {
+      const bidRequest = JSON.parse(JSON.stringify(instreamBidRequest));
+      bidRequest.params.video = videoParams;
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal(videoParams);
+    });
+
+    it('should set skip params only if skip=1', function() {
+      const bidRequest = JSON.parse(JSON.stringify(instreamBidRequest));
+      // 1
+      const videoTest = {
+        skip: 1,
+        skipmin: 5,
+        skipafter: 30
+      }
+      bidRequest.params.video = videoTest;
+      let request = spec.buildRequests([bidRequest])[0];
+      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal(videoTest);
+
+      // 0 - leave out skipmin and skipafter
+      videoTest.skip = 0;
+      bidRequest.params.video = videoTest;
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal({ skip: 0 });
+
+      // other
+      videoTest.skip = 'blah';
+      bidRequest.params.video = videoTest;
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.not.exist;
+    });
+
+    it('should ignore invalid/unexpected video params', function() {
+      const bidRequest = JSON.parse(JSON.stringify(instreamBidRequest));
+      // 1
+      const videoTest = {
+        skip: 1,
+        skipmin: 5,
+        skipafter: 30
+      }
+      const videoTestInvParam = Object.assign({}, videoTest);
+      videoTestInvParam.blah = 1;
+      bidRequest.params.video = videoTestInvParam;
+      let request = spec.buildRequests([bidRequest])[0];
+      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal(videoTest);
+    });
+
+    it('should set video params for outstream', function() {
+      const bidRequest = JSON.parse(JSON.stringify(outstreamBidRequest));
+      bidRequest.params.video = videoParams;
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal(videoParams);
+    });
+
+    it('should set video params for multi-format', function() {
+      const bidRequest = JSON.parse(JSON.stringify(multiFormatBidRequest));
+      bidRequest.params.video = videoParams;
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].video).to.deep.equal(videoParams);
     });
 
     it('should not set Prebid sizes in bid request for instream video', function () {
@@ -343,6 +431,22 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.schain).to.equal(schain);
+    });
+
+    it('should add eids', function () {
+      const userId = { id5id:	{ uid: '1111' } };
+      const expectedUserObject = { ext: { eids: [{
+        source: 'id5-sync.com',
+        uids: [{
+          atype: 1,
+          id: '1111'
+        }]
+      }]}};
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.userId = userId;
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.user).to.deep.equal(expectedUserObject);
     });
 
     it('should return 2 requests', function () {
@@ -778,9 +882,14 @@ describe('Improve Digital Adapter Tests', function () {
       expect(bids[0].dealId).to.not.exist;
 
       response.body.bid[0].lid = 268515;
-      response.body.bid[0].buying_type = 'classic';
+      response.body.bid[0].buying_type = 'rtb';
       bids = spec.interpretResponse(response, {bidderRequest});
       expect(bids[0].dealId).to.not.exist;
+
+      response.body.bid[0].lid = 268515;
+      response.body.bid[0].buying_type = 'classic';
+      bids = spec.interpretResponse(response, {bidderRequest});
+      expect(bids[0].dealId).to.equal(268515);
 
       response.body.bid[0].lid = 268515;
       response.body.bid[0].buying_type = 'deal_id';
@@ -798,7 +907,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(bids[0].dealId).to.not.exist;
 
       response.body.bid[0].lid = [ 268515, 12456, 34567 ];
-      response.body.bid[0].buying_type = [ 'classic', 'deal_id', 'deal_id' ];
+      response.body.bid[0].buying_type = [ 'rtb', 'deal_id', 'deal_id' ];
       bids = spec.interpretResponse(response, {bidderRequest});
       expect(bids[0].dealId).to.equal(12456);
     });

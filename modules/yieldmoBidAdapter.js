@@ -1,109 +1,135 @@
 import * as utils from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import includes from 'core-js-pure/features/array/includes';
+import find from 'core-js-pure/features/array/find.js';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
-const SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
+const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
+const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
+const OPENRTB_VIDEO_BIDPARAMS = ['placement', 'startdelay', 'skipafter',
+  'protocols', 'api', 'playbackmethod', 'maxduration', 'minduration', 'pos'];
+const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
 const localWindow = utils.getWindowTop();
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['banner'],
+  supportedMediaTypes: [BANNER, VIDEO],
+
   /**
    * Determines whether or not the given bid request is valid.
    * @param {object} bid, bid to validate
    * @return boolean, true if valid, otherwise false
    */
-  isBidRequestValid: function(bid) {
-    return !!(bid && bid.adUnitCode && bid.bidId);
+  isBidRequestValid: function (bid) {
+    return !!(bid && bid.adUnitCode && bid.bidId && (hasBannerMediaType(bid) || hasVideoMediaType(bid)) &&
+      validateVideoParams(bid));
   },
+
   /**
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param {BidderRequest} bidderRequest bidder request object.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, bidderRequest) {
-    let serverRequest = {
-      p: [],
-      page_url: bidderRequest.refererInfo.referer,
-      bust: new Date().getTime().toString(),
-      pr: bidderRequest.refererInfo.referer,
-      scrd: localWindow.devicePixelRatio || 0,
-      dnt: getDNT(),
-      e: getEnvironment(),
-      description: getPageDescription(),
-      title: localWindow.document.title || '',
-      w: localWindow.innerWidth,
-      h: localWindow.innerHeight,
-      userConsent:
-        JSON.stringify({
-          // case of undefined, stringify will remove param
-          gdprApplies:
-            bidderRequest && bidderRequest.gdprConsent
-              ? bidderRequest.gdprConsent.gdprApplies
-              : '',
-          cmp:
-            bidderRequest && bidderRequest.gdprConsent
-              ? bidderRequest.gdprConsent.consentString
-              : '',
-        }),
-      us_privacy:
-        bidderRequest && bidderRequest.uspConsent
-          ? bidderRequest.uspConsent
-          : '',
-    };
+  buildRequests: function (bidRequests, bidderRequest) {
+    const bannerBidRequests = bidRequests.filter(request => hasBannerMediaType(request));
+    const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
 
-    bidRequests.forEach(request => {
-      serverRequest.p.push(addPlacement(request));
-      const pubcid = getId(request, 'pubcid');
-      if (pubcid) {
-        serverRequest.pubcid = pubcid;
-      } else if (request.crumbs) {
-        if (request.crumbs.pubcid) {
+    let serverRequests = [];
+    if (bannerBidRequests.length > 0) {
+      let serverRequest = {
+        pbav: '$prebid.version$',
+        p: [],
+        page_url: bidderRequest.refererInfo.referer,
+        bust: new Date().getTime().toString(),
+        pr: bidderRequest.refererInfo.referer,
+        scrd: localWindow.devicePixelRatio || 0,
+        dnt: getDNT(),
+        description: getPageDescription(),
+        title: localWindow.document.title || '',
+        w: localWindow.innerWidth,
+        h: localWindow.innerHeight,
+        userConsent: JSON.stringify({
+          // case of undefined, stringify will remove param
+          gdprApplies: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
+          cmp: utils.deepAccess(bidderRequest, 'gdprConsent.consentString') || ''
+        }),
+        us_privacy: utils.deepAccess(bidderRequest, 'uspConsent') || ''
+      };
+
+      const mtp = window.navigator.maxTouchPoints;
+      if (mtp) {
+        serverRequest.mtp = mtp;
+      }
+
+      bannerBidRequests.forEach(request => {
+        serverRequest.p.push(addPlacement(request));
+        const pubcid = getId(request, 'pubcid');
+        if (pubcid) {
+          serverRequest.pubcid = pubcid;
+        } else if (request.crumbs && request.crumbs.pubcid) {
           serverRequest.pubcid = request.crumbs.pubcid;
         }
-      }
-      const tdid = getId(request, 'tdid');
-      if (tdid) {
-        serverRequest.tdid = tdid;
-      }
-      const criteoId = getId(request, 'criteoId');
-      if (criteoId) {
-        serverRequest.cri_prebid = criteoId;
-      }
-      if (request.schain) {
-        serverRequest.schain =
-          JSON.stringify(request.schain);
-      }
-    });
-    serverRequest.p = '[' + serverRequest.p.toString() + ']';
-    return {
-      method: 'GET',
-      url: SERVER_ENDPOINT,
-      data: serverRequest
-    };
+        const tdid = getId(request, 'tdid');
+        if (tdid) {
+          serverRequest.tdid = tdid;
+        }
+        const criteoId = getId(request, 'criteoId');
+        if (criteoId) {
+          serverRequest.cri_prebid = criteoId;
+        }
+        if (request.schain) {
+          serverRequest.schain = JSON.stringify(request.schain);
+        }
+      });
+      serverRequest.p = '[' + serverRequest.p.toString() + ']';
+      serverRequests.push({
+        method: 'GET',
+        url: BANNER_SERVER_ENDPOINT,
+        data: serverRequest
+      });
+    }
+
+    if (videoBidRequests.length > 0) {
+      const serverRequest = openRtbRequest(videoBidRequests, bidderRequest);
+      serverRequests.push({
+        method: 'POST',
+        url: VIDEO_SERVER_ENDPOINT,
+        data: serverRequest
+      });
+    }
+    return serverRequests;
   },
+
   /**
    * Makes Yieldmo Ad Server response compatible to Prebid specs
-   * @param serverResponse successful response from Ad Server
+   * @param {ServerResponse} serverResponse successful response from Ad Server
+   * @param {ServerRequest} bidRequest
    * @return {Bid[]} an array of bids
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse, bidRequest) {
     let bids = [];
-    let data = serverResponse.body;
+    const data = serverResponse.body;
     if (data.length > 0) {
       data.forEach(response => {
-        if (response.cpm && response.cpm > 0) {
-          bids.push(createNewBid(response));
+        if (response.cpm > 0) {
+          bids.push(createNewBannerBid(response));
         }
       });
     }
+    if (data.seatbid) {
+      const seatbids = data.seatbid.reduce((acc, seatBid) => acc.concat(seatBid.bid), []);
+      seatbids.forEach(bid => bids.push(createNewVideoBid(bid, bidRequest)));
+    }
     return bids;
   },
-  getUserSyncs: function() {
+
+  getUserSyncs: function () {
     return [];
   }
 };
@@ -112,6 +138,20 @@ registerBidder(spec);
 /***************************************
  * Helper Functions
  ***************************************/
+
+/**
+ * @param {BidRequest} bidRequest bid request
+ */
+function hasBannerMediaType(bidRequest) {
+  return !!utils.deepAccess(bidRequest, 'mediaTypes.banner');
+}
+
+/**
+ * @param {BidRequest} bidRequest bid request
+ */
+function hasVideoMediaType(bidRequest) {
+  return !!utils.deepAccess(bidRequest, 'mediaTypes.video');
+}
 
 /**
  * Adds placement information to array
@@ -135,10 +175,10 @@ function addPlacement(request) {
 }
 
 /**
- * creates a new bid with response information
+ * creates a new banner bid with response information
  * @param response server response
  */
-function createNewBid(response) {
+function createNewBannerBid(response) {
   return {
     requestId: response['callback_id'],
     cpm: response.cpm,
@@ -149,6 +189,27 @@ function createNewBid(response) {
     netRevenue: NET_REVENUE,
     ttl: TIME_TO_LIVE,
     ad: response.ad,
+  };
+}
+
+/**
+ * creates a new video bid with response information
+ * @param response openRTB server response
+ * @param bidRequest server request
+ */
+function createNewVideoBid(response, bidRequest) {
+  const imp = find((utils.deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
+  return {
+    requestId: imp.id,
+    cpm: response.price,
+    width: imp.video.w,
+    height: imp.video.h,
+    creativeId: response.crid || response.adid,
+    currency: CURRENCY,
+    netRevenue: NET_REVENUE,
+    mediaType: VIDEO,
+    ttl: TIME_TO_LIVE,
+    vastXml: response.adm
   };
 }
 
@@ -175,154 +236,6 @@ function getPageDescription() {
   }
 }
 
-/***************************************
- * Detect Environment Helper Functions
- ***************************************/
-
-/**
- * Represents a method for loading Yieldmo ads.  Environments affect
- * which formats can be loaded into the page
- * Environments:
- *    CodeOnPage: 0, // div directly on publisher's page
- *    Amp: 1, // google Accelerate Mobile Pages ampproject.org
- *    Mraid = 2, // native loaded through the MRAID spec, without Yieldmo's SDK https://www.iab.net/media/file/IAB_MRAID_v2_FINAL.pdf
- *    Dfp: 4, // google doubleclick for publishers https://www.doubleclickbygoogle.com/
- *    DfpInAmp: 5, // AMP page containing a DFP iframe
- *    SafeFrame: 10,
- *    DfpSafeFrame: 11,Sandboxed: 16, // An iframe that can't get to the top window.
- *    SuperSandboxed: 89, // An iframe without allow-same-origin
- *    Unknown: 90, // A default sandboxed implementation delivered by EnvironmentDispatch when all positive environment checks fail
- */
-
-/**
- * Detects what environment we're in
- * @returns Environment kind
- */
-function getEnvironment() {
-  if (isSuperSandboxedIframe()) {
-    return 89;
-  } else if (isDfpInAmp()) {
-    return 5;
-  } else if (isDfp()) {
-    return 4;
-  } else if (isAmp()) {
-    return 1;
-  } else if (isDFPSafeFrame()) {
-    return 11;
-  } else if (isSafeFrame()) {
-    return 10;
-  } else if (isMraid()) {
-    return 2;
-  } else if (isCodeOnPage()) {
-    return 0;
-  } else if (isSandboxedIframe()) {
-    return 16;
-  } else {
-    return 90;
-  }
-}
-
-/**
- * @returns true if we are running on the top window at dispatch time
- */
-function isCodeOnPage() {
-  return window === window.parent;
-}
-
-/**
- * @returns true if the environment is both DFP and AMP
- */
-function isDfpInAmp() {
-  return isDfp() && isAmp();
-}
-
-/**
- * @returns true if the window is in an iframe whose id and parent element id match DFP
- */
-function isDfp() {
-  try {
-    const frameElement = window.frameElement;
-    const parentElement = window.frameElement.parentNode;
-    if (frameElement && parentElement) {
-      return (
-        frameElement.id.indexOf('google_ads_iframe') > -1 &&
-        parentElement.id.indexOf('google_ads_iframe') > -1
-      );
-    }
-    return false;
-  } catch (e) {
-    return false;
-  }
-}
-
-/**
- * @returns true if there is an AMP context object
- */
-function isAmp() {
-  try {
-    const ampContext = window.context || window.parent.context;
-    if (ampContext && ampContext.pageViewId) {
-      return ampContext;
-    }
-    return false;
-  } catch (e) {
-    return false;
-  }
-}
-
-/**
- * @returns true if the environment is a SafeFrame.
- */
-function isSafeFrame() {
-  return window.$sf && window.$sf.ext;
-}
-
-/**
- * @returns true if the environment is a dfp safe frame.
- */
-function isDFPSafeFrame() {
-  if (window.location && window.location.href) {
-    const href = window.location.href;
-    return (
-      isSafeFrame() &&
-      href.indexOf('google') !== -1 &&
-      href.indexOf('safeframe') !== -1
-    );
-  }
-  return false;
-}
-
-/**
- * Return true if we are in an iframe and can't access the top window.
- */
-function isSandboxedIframe() {
-  return window.top !== window && !window.frameElement;
-}
-
-/**
- * Return true if we cannot document.write to a child iframe (this implies no allow-same-origin)
- */
-function isSuperSandboxedIframe() {
-  const sacrificialIframe = window.document.createElement('iframe');
-  try {
-    sacrificialIframe.setAttribute('style', 'display:none');
-    window.document.body.appendChild(sacrificialIframe);
-    sacrificialIframe.contentWindow._testVar = true;
-    window.document.body.removeChild(sacrificialIframe);
-    return false;
-  } catch (e) {
-    window.document.body.removeChild(sacrificialIframe);
-    return true;
-  }
-}
-
-/**
- * @returns true if the window has the attribute identifying MRAID
- */
-function isMraid() {
-  return !!window.mraid;
-}
-
 /**
  * Gets an id from the userId object if it exists
  * @param {*} request
@@ -330,14 +243,217 @@ function isMraid() {
  * @returns an id if there is one, or undefined
  */
 function getId(request, idType) {
-  let id;
-  if (
-    request &&
-    request.userId &&
-    request.userId[idType] &&
-    typeof request.userId === 'object'
-  ) {
-    id = request.userId[idType];
+  return (typeof utils.deepAccess(request, 'userId') === 'object') ? request.userId[idType] : undefined;
+}
+
+/**
+ * @param {BidRequest[]} bidRequests bid request object
+ * @param {BidderRequest} bidderRequest bidder request object
+ * @return Object OpenRTB request object
+ */
+function openRtbRequest(bidRequests, bidderRequest) {
+  let openRtbRequest = {
+    id: bidRequests[0].bidderRequestId,
+    at: 1,
+    imp: bidRequests.map(bidRequest => openRtbImpression(bidRequest)),
+    site: openRtbSite(bidRequests[0], bidderRequest),
+    device: openRtbDevice(),
+    badv: bidRequests[0].params.badv || [],
+    bcat: bidRequests[0].params.bcat || [],
+    ext: {
+      prebid: '$prebid.version$',
+    }
+  };
+
+  populateOpenRtbGdpr(openRtbRequest, bidderRequest);
+
+  return openRtbRequest;
+}
+
+/**
+ * @param {BidRequest} bidRequest bidder request object.
+ * @return Object OpenRTB's 'imp' (impression) object
+ */
+function openRtbImpression(bidRequest) {
+  const videoReq = utils.deepAccess(bidRequest, 'mediaTypes.video');
+  const size = extractPlayerSize(bidRequest);
+  const imp = {
+    id: bidRequest.bidId,
+    tagid: bidRequest.adUnitCode,
+    bidfloor: bidRequest.params.bidfloor || 0,
+    ext: {
+      placement_id: bidRequest.params.placementId
+    },
+    video: {
+      w: size[0],
+      h: size[1],
+      mimes: videoReq.mimes,
+      linearity: 1
+    }
+  };
+
+  const videoParams = utils.deepAccess(bidRequest, 'params.video');
+  Object.keys(videoParams)
+    .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
+    .forEach(param => imp.video[param] = videoParams[param]);
+
+  if (videoParams.skippable) {
+    imp.video.skip = 1;
   }
-  return id;
+
+  return imp;
+}
+
+/**
+ * @param {BidRequest} bidRequest bidder request object.
+ * @return [number, number] || null Player's width and height, or undefined otherwise.
+ */
+function extractPlayerSize(bidRequest) {
+  const sizeArr = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+  if (utils.isArrayOfNums(sizeArr, 2)) {
+    return sizeArr;
+  } else if (utils.isArray(sizeArr) && utils.isArrayOfNums(sizeArr[0], 2)) {
+    return sizeArr[0];
+  }
+  return null;
+}
+
+/**
+ * @param {BidRequest} bidRequest bid request object
+ * @param {BidderRequest} bidderRequest bidder request object
+ * @return Object OpenRTB's 'site' object
+ */
+function openRtbSite(bidRequest, bidderRequest) {
+  let result = {};
+
+  const loc = utils.parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
+  if (!utils.isEmpty(loc)) {
+    result.page = `${loc.protocol}://${loc.hostname}${loc.pathname}`;
+  }
+
+  if (self === top && document.referrer) {
+    result.ref = document.referrer;
+  }
+
+  const keywords = document.getElementsByTagName('meta')['keywords'];
+  if (keywords && keywords.content) {
+    result.keywords = keywords.content;
+  }
+
+  const siteParams = utils.deepAccess(bidRequest, 'params.site');
+  if (siteParams) {
+    Object.keys(siteParams)
+      .filter(param => includes(OPENRTB_VIDEO_SITEPARAMS, param))
+      .forEach(param => result[param] = siteParams[param]);
+  }
+  return result;
+}
+
+/**
+ * @return Object OpenRTB's 'device' object
+ */
+function openRtbDevice() {
+  return {
+    ua: navigator.userAgent,
+    language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
+  };
+}
+
+/**
+ * Updates openRtbRequest with GDPR info from bidderRequest, if present.
+ * @param {Object} openRtbRequest OpenRTB's request to update.
+ * @param {BidderRequest} bidderRequest bidder request object.
+ */
+function populateOpenRtbGdpr(openRtbRequest, bidderRequest) {
+  const gdpr = bidderRequest.gdprConsent;
+  if (gdpr && 'gdprApplies' in gdpr) {
+    utils.deepSetValue(openRtbRequest, 'regs.ext.gdpr', gdpr.gdprApplies ? 1 : 0);
+    utils.deepSetValue(openRtbRequest, 'user.ext.consent', gdpr.consentString);
+  }
+  const uspConsent = utils.deepAccess(bidderRequest, 'uspConsent');
+  if (uspConsent) {
+    utils.deepSetValue(openRtbRequest, 'regs.ext.us_privacy', uspConsent);
+  }
+}
+
+/**
+ * Determines whether or not the given video bid request is valid. If it's not a video bid, returns true.
+ * @param {object} bid, bid to validate
+ * @return boolean, true if valid, otherwise false
+ */
+function validateVideoParams(bid) {
+  if (!hasVideoMediaType(bid)) {
+    return true;
+  }
+
+  const paramRequired = (paramStr, value, conditionStr) => {
+    let error = `"${paramStr}" is required`;
+    if (conditionStr) {
+      error += ' when ' + conditionStr;
+    }
+    throw new Error(error);
+  }
+
+  const paramInvalid = (paramStr, value, expectedStr) => {
+    expectedStr = expectedStr ? ', expected: ' + expectedStr : '';
+    value = JSON.stringify(value);
+    throw new Error(`"${paramStr}"=${value} is invalid${expectedStr}`);
+  }
+
+  const isDefined = val => typeof val !== 'undefined';
+  const validate = (fieldPath, validateCb, errorCb, errorCbParam) => {
+    const value = utils.deepAccess(bid, fieldPath);
+    if (!validateCb(value)) {
+      errorCb(fieldPath, value, errorCbParam);
+    }
+    return value;
+  }
+
+  try {
+    validate('params.placementId', val => !utils.isEmpty(val), paramRequired);
+
+    validate('mediaTypes.video.playerSize', val => utils.isArrayOfNums(val, 2) ||
+      (utils.isArray(val) && val.every(v => utils.isArrayOfNums(v, 2))),
+    paramInvalid, 'array of 2 integers, ex: [640,480] or [[640,480]]');
+
+    validate('mediaTypes.video.mimes', val => isDefined(val), paramRequired);
+    validate('mediaTypes.video.mimes', val => utils.isArray(val) && val.every(v => utils.isStr(v)), paramInvalid,
+      'array of strings, ex: ["video/mp4"]');
+
+    validate('params.video', val => !utils.isEmpty(val), paramRequired);
+
+    const placement = validate('params.video.placement', val => isDefined(val), paramRequired);
+    validate('params.video.placement', val => val >= 1 && val <= 5, paramInvalid);
+    if (placement === 1) {
+      validate('params.video.startdelay', val => isDefined(val),
+        (field, v) => paramRequired(field, v, 'placement == 1'));
+      validate('params.video.startdelay', val => utils.isNumber(val), paramInvalid, 'number, ex: 5');
+    }
+
+    validate('params.video.protocols', val => isDefined(val), paramRequired);
+    validate('params.video.protocols', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+      paramInvalid, 'array of numbers, ex: [2,3]');
+
+    validate('params.video.api', val => isDefined(val), paramRequired);
+    validate('params.video.api', val => utils.isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+      paramInvalid, 'array of numbers, ex: [2,3]');
+
+    validate('params.video.playbackmethod', val => !isDefined(val) || utils.isArrayOfNums(val), paramInvalid,
+      'array of integers, ex: [2,6]');
+
+    validate('params.video.maxduration', val => isDefined(val), paramRequired);
+    validate('params.video.maxduration', val => utils.isInteger(val), paramInvalid);
+    validate('params.video.minduration', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validate('params.video.skippable', val => !isDefined(val) || utils.isBoolean(val), paramInvalid);
+    validate('params.video.skipafter', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validate('params.video.pos', val => !isDefined(val) || utils.isNumber(val), paramInvalid);
+    validate('params.badv', val => !isDefined(val) || utils.isArray(val), paramInvalid,
+      'array of strings, ex: ["ford.com","pepsi.com"]');
+    validate('params.bcat', val => !isDefined(val) || utils.isArray(val), paramInvalid,
+      'array of strings, ex: ["IAB1-5","IAB1-6"]');
+    return true;
+  } catch (e) {
+    utils.logError(e.message);
+    return false;
+  }
 }

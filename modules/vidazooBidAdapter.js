@@ -1,40 +1,81 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 
-export const URL = 'https://prebid.cootlogix.com';
+const GVLID = 744;
+const DEFAULT_SUB_DOMAIN = 'prebid';
 const BIDDER_CODE = 'vidazoo';
+const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
-const INTERNAL_SYNC_TYPE = {
-  IFRAME: 'iframe',
-  IMAGE: 'img'
+const DEAL_ID_EXPIRY = 1000 * 60 * 15;
+const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 15;
+const SESSION_ID_KEY = 'vidSid';
+export const SUPPORTED_ID_SYSTEMS = {
+  'britepoolid': 1,
+  'criteoId': 1,
+  'digitrustid': 1,
+  'id5id': 1,
+  'idl_env': 1,
+  'lipb': 1,
+  'netId': 1,
+  'parrableId': 1,
+  'pubcid': 1,
+  'tdid': 1,
 };
-const EXTERNAL_SYNC_TYPE = {
-  IFRAME: 'iframe',
-  IMAGE: 'image'
-};
+const storage = getStorageManager(GVLID);
+
+export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
+  return `https://${subDomain}.cootlogix.com`;
+}
+
+export function extractCID(params) {
+  return params.cId || params.CID || params.cID || params.CId || params.cid || params.ciD || params.Cid || params.CiD;
+}
+
+export function extractPID(params) {
+  return params.pId || params.PID || params.pID || params.PId || params.pid || params.piD || params.Pid || params.PiD;
+}
+
+export function extractSubDomain(params) {
+  return params.subDomain || params.SubDomain || params.Subdomain || params.subdomain || params.SUBDOMAIN || params.subDOMAIN;
+}
 
 function isBidRequestValid(bid) {
   const params = bid.params || {};
-  return !!(params.cId && params.pId);
+  return !!(extractCID(params) && extractPID(params));
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const { params, bidId } = bid;
-  const { bidFloor, cId, pId, ext } = params;
+  const { params, bidId, userId, adUnitCode } = bid;
+  const { bidFloor, ext } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
+  const uniqueDealId = getUniqueDealId(hashUrl);
+  const sId = getVidazooSessionId();
+  const cId = extractCID(params);
+  const pId = extractPID(params);
+  const subDomain = extractSubDomain(params);
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
     cb: Date.now(),
     bidFloor: bidFloor,
     bidId: bidId,
+    adUnitCode: adUnitCode,
     publisherId: pId,
+    sessionId: sId,
     sizes: sizes,
     dealId: dealId,
+    uniqueDealId: uniqueDealId,
+    bidderVersion: BIDDER_VERSION,
+    prebidVersion: '$prebid.version$',
+    res: `${screen.width}x${screen.height}`
   };
+
+  appendUserIdsToRequestPayload(data, userId);
+
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.consentString) {
       data.gdprConsent = bidderRequest.gdprConsent.consentString;
@@ -46,9 +87,10 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   if (bidderRequest.uspConsent) {
     data.usPrivacy = bidderRequest.uspConsent
   }
+
   const dto = {
     method: 'POST',
-    url: `${URL}/prebid/multi/${cId}`,
+    url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
     data: data
   };
 
@@ -57,6 +99,32 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   });
 
   return dto;
+}
+
+function appendUserIdsToRequestPayload(payloadRef, userIds) {
+  let key;
+  utils._each(userIds, (userId, idSystemProviderName) => {
+    if (SUPPORTED_ID_SYSTEMS[idSystemProviderName]) {
+      key = `uid.${idSystemProviderName}`;
+
+      switch (idSystemProviderName) {
+        case 'digitrustid':
+          payloadRef[key] = utils.deepAccess(userId, 'data.id');
+          break;
+        case 'lipb':
+          payloadRef[key] = userId.lipbid;
+          break;
+        case 'parrableId':
+          payloadRef[key] = userId.eid;
+          break;
+        case 'id5id':
+          payloadRef[key] = userId.uid;
+          break;
+        default:
+          payloadRef[key] = userId;
+      }
+    }
+  });
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
@@ -103,42 +171,27 @@ function interpretResponse(serverResponse, request) {
   }
 }
 
-function getUserSyncs(syncOptions, responses) {
+function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
+  let syncs = [];
   const { iframeEnabled, pixelEnabled } = syncOptions;
-
+  const { gdprApplies, consentString = '' } = gdprConsent;
+  const params = `?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
   if (iframeEnabled) {
-    return [{
+    syncs.push({
       type: 'iframe',
-      url: 'https://static.cootlogix.com/basev/sync/user_sync.html'
-    }];
-  }
-
-  if (pixelEnabled) {
-    const lookup = {};
-    const syncs = [];
-    responses.forEach(response => {
-      const { body } = response;
-      const results = body ? body.results || [] : [];
-      results.forEach(result => {
-        (result.cookies || []).forEach(cookie => {
-          if (cookie.type === INTERNAL_SYNC_TYPE.IMAGE) {
-            if (pixelEnabled && !lookup[cookie.src]) {
-              syncs.push({
-                type: EXTERNAL_SYNC_TYPE.IMAGE,
-                url: cookie.src
-              });
-            }
-          }
-        });
-      });
+      url: `https://prebid.cootlogix.com/api/sync/iframe/${params}`
     });
-    return syncs;
   }
-
-  return [];
+  if (pixelEnabled) {
+    syncs.push({
+      type: 'image',
+      url: `https://prebid.cootlogix.com/api/sync/image/${params}`
+    });
+  }
+  return syncs;
 }
 
-function hashCode(s, prefix = '_') {
+export function hashCode(s, prefix = '_') {
   const l = s.length;
   let h = 0
   let i = 0;
@@ -148,37 +201,73 @@ function hashCode(s, prefix = '_') {
   return prefix + h;
 }
 
-function getNextDealId(key) {
+export function getNextDealId(key, expiry = DEAL_ID_EXPIRY) {
   try {
-    const currentValue = Number(getStorageItem(key) || 0);
+    const data = getStorageItem(key);
+    let currentValue = 0;
+    let timestamp;
+
+    if (data && data.value && Date.now() - data.created < expiry) {
+      currentValue = data.value;
+      timestamp = data.created;
+    }
+
     const nextValue = currentValue + 1;
-    setStorageItem(key, nextValue);
+    setStorageItem(key, nextValue, timestamp);
     return nextValue;
   } catch (e) {
     return 0;
   }
 }
 
-function getStorage() {
-  return window['sessionStorage'];
-}
+export function getUniqueDealId(key, expiry = UNIQUE_DEAL_ID_EXPIRY) {
+  const storageKey = `u_${key}`;
+  const now = Date.now();
+  const data = getStorageItem(storageKey);
+  let uniqueId;
 
-function getStorageItem(key) {
-  try {
-    return getStorage().getItem(key);
-  } catch (e) {
-    return null;
+  if (!data || !data.value || now - data.created > expiry) {
+    uniqueId = `${key}_${now.toString()}`;
+    setStorageItem(storageKey, uniqueId);
+  } else {
+    uniqueId = data.value;
   }
+
+  return uniqueId;
 }
 
-function setStorageItem(key, value) {
+export function getVidazooSessionId() {
+  return getStorageItem(SESSION_ID_KEY) || '';
+}
+
+export function getStorageItem(key) {
   try {
-    getStorage().setItem(key, String(value));
+    return tryParseJSON(storage.getDataFromLocalStorage(key));
   } catch (e) { }
+
+  return null;
+}
+
+export function setStorageItem(key, value, timestamp) {
+  try {
+    const created = timestamp || Date.now();
+    const data = JSON.stringify({ value, created });
+    storage.setDataInLocalStorage(key, data);
+  } catch (e) { }
+}
+
+export function tryParseJSON(value) {
+  try {
+    return JSON.parse(value);
+  } catch (e) {
+    return value;
+  }
 }
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
+  version: BIDDER_VERSION,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
