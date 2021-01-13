@@ -8,7 +8,8 @@ import {
   setStoredValue,
   setSubmoduleRegistry,
   syncDelay,
-  PBJS_USER_ID_OPTOUT_NAME
+  PBJS_USER_ID_OPTOUT_NAME,
+  findRootDomain,
 } from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
@@ -22,6 +23,7 @@ import {
   setConsentConfig
 } from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
+import find from 'core-js-pure/features/array/find.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
 import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem.js';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
@@ -86,7 +88,7 @@ describe('User ID', function () {
   }
 
   function findEid(eids, source) {
-    return eids.find((eid) => {
+    return find(eids, (eid) => {
       if (eid.source === source) { return true; }
     });
   }
@@ -2145,6 +2147,8 @@ describe('User ID', function () {
     let coreStorageSpy;
     beforeEach(function () {
       coreStorageSpy = sinon.spy(coreStorage, 'setCookie');
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
     });
     afterEach(function () {
       coreStorageSpy.restore();
@@ -2358,6 +2362,47 @@ describe('User ID', function () {
         sinon.assert.notCalled(mockGetId);
         sinon.assert.calledOnce(mockDecode);
         sinon.assert.calledOnce(mockExtendId);
+      });
+    });
+
+    describe('findRootDomain', function () {
+      let sandbox;
+
+      beforeEach(function () {
+        setSubmoduleRegistry([pubCommonIdSubmodule]);
+        init(config);
+        config.setConfig({
+          userSync: {
+            syncDelay: 0,
+            userIds: [
+              {
+                name: 'pubCommonId',
+                value: { pubcid: '11111' },
+              },
+            ],
+          },
+        });
+        sandbox = sinon.createSandbox();
+        sandbox
+          .stub(coreStorage, 'getCookie')
+          .onFirstCall()
+          .returns(null) // .co.uk
+          .onSecondCall()
+          .returns('writeable'); // realdomain.co.uk;
+      });
+
+      afterEach(function () {
+        sandbox.restore();
+      });
+
+      it('should just find the root domain', function () {
+        var domain = findRootDomain('sub.realdomain.co.uk');
+        expect(domain).to.be.eq('realdomain.co.uk');
+      });
+
+      it('should find the full domain when no subdomain is present', function () {
+        var domain = findRootDomain('realdomain.co.uk');
+        expect(domain).to.be.eq('realdomain.co.uk');
       });
     });
   });
