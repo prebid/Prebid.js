@@ -53,7 +53,7 @@ export const spec = {
         bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
         bidSizes = bidSizes.filter(size => utils.isArray(size))
         const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
-        const floorInfo = bid.getFloor ? bid.getFloor({
+        const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
           currency: 'USD',
           mediaType: 'banner',
           size: '*'
