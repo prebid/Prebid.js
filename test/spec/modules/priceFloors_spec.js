@@ -1350,7 +1350,7 @@ describe('the price floors module', function () {
           floor: 1.3334 // 1.3334 * 0.75 = 1.000005 which is the floor (we cut off getFloor at 4 decimal points)
         });
       });
-      
+
       it('should work when cpmAdjust function uses bid object', function () {
         getGlobal().bidderSettings = {
           rubicon: {
