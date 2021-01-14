@@ -1,9 +1,11 @@
 import {expect} from 'chai';
 import {spec} from 'modules/admixerBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import {config} from '../../../src/config.js';
 
 const BIDDER_CODE = 'admixer';
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.1.aspx';
+const ENDPOINT_URL_CUSTOM = 'https://custom.admixer.net/prebid.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
 
 describe('AdmixerAdapter', function () {
@@ -57,6 +59,7 @@ describe('AdmixerAdapter', function () {
       }
     ];
     let bidderRequest = {
+      bidderCode: BIDDER_CODE,
       refererInfo: {
         referer: 'https://example.com'
       }
@@ -72,6 +75,16 @@ describe('AdmixerAdapter', function () {
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(validRequest, bidderRequest);
       expect(request.url).to.equal(ENDPOINT_URL);
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to CUSTOM_ENDPOINT via GET', function () {
+      config.setBidderConfig({
+        bidders: [BIDDER_CODE], // one or more bidders
+        config: {[BIDDER_CODE]: {endpoint_url: ENDPOINT_URL_CUSTOM}}
+      });
+      const request = config.runWithBidder(BIDDER_CODE, () => spec.buildRequests(validRequest, bidderRequest));
+      expect(request.url).to.equal(ENDPOINT_URL_CUSTOM);
       expect(request.method).to.equal('GET');
     });
   });
