@@ -454,24 +454,45 @@ function updateRpaCookie() {
   return decodedRpaCookie;
 }
 
+const gamEventFunctions = {
+  'slotOnload': (auctionId, bid) => {
+    cache.auctions[auctionId].gamHasRendered[bid.adUnit.adUnitCode] = true;
+  },
+  'slotRenderEnded': (auctionId, bid, event) => {
+    if (event.isEmpty) {
+      cache.auctions[auctionId].gamHasRendered[bid.adUnit.adUnitCode] = true;
+    }
+    bid.adUnit.gam = utils.pick(event, [
+      // these come in as `null` from Gpt, which when stringified does not get removed
+      // so set explicitly to undefined when not a number
+      'advertiserId', advertiserId => utils.isNumber(advertiserId) ? advertiserId : undefined,
+      'creativeId', creativeId => utils.isNumber(creativeId) ? creativeId : undefined,
+      'lineItemId', lineItemId => utils.isNumber(lineItemId) ? lineItemId : undefined,
+      'adSlot', () => event.slot.getAdUnitPath(),
+      'isSlotEmpty', () => event.isEmpty || undefined
+    ]);
+  }
+}
+
 function subscribeToGamSlots() {
-  window.googletag.pubads().addEventListener('slotRenderEnded', event => {
-    const isMatchingAdSlot = utils.isAdUnitCodeMatchingSlot(event.slot);
-    // loop through auctions and adUnits and mark the info
-    Object.keys(cache.auctions).forEach(auctionId => {
-      (Object.keys(cache.auctions[auctionId].bids) || []).forEach(bidId => {
-        let bid = cache.auctions[auctionId].bids[bidId];
-        // if this slot matches this bids adUnit, add the adUnit info
-        if (isMatchingAdSlot(bid.adUnit.adUnitCode)) {
-          bid.adUnit.gam = utils.pick(event, [
-            // these come in as `null` from Gpt, which when stringified does not get removed
-            // so set explicitly to undefined when not a number
-            'advertiserId', advertiserId => utils.isNumber(advertiserId) ? advertiserId : undefined,
-            'creativeId', creativeId => utils.isNumber(creativeId) ? creativeId : undefined,
-            'lineItemId', lineItemId => utils.isNumber(lineItemId) ? lineItemId : undefined,
-            'adSlot', () => event.slot.getAdUnitPath(),
-            'isSlotEmpty', () => event.isEmpty || undefined
-          ]);
+  ['slotOnload', 'slotRenderEnded'].forEach(eventName => {
+    window.googletag.pubads().addEventListener(eventName, event => {
+      const isMatchingAdSlot = utils.isAdUnitCodeMatchingSlot(event.slot);
+      // loop through auctions and adUnits and mark the info
+      Object.keys(cache.auctions).forEach(auctionId => {
+        (Object.keys(cache.auctions[auctionId].bids) || []).forEach(bidId => {
+          let bid = cache.auctions[auctionId].bids[bidId];
+          // if this slot matches this bids adUnit, add the adUnit info
+          if (isMatchingAdSlot(bid.adUnit.adUnitCode)) {
+            // mark this adUnit as having been rendered by gam
+            gamEventFunctions[eventName](auctionId, bid, event);
+          }
+        });
+        // Now if all adUnits have gam rendered, send the payload
+        if (rubiConf.waitForGamSlots && !cache.auctions[auctionId].sent && Object.keys(cache.auctions[auctionId].gamHasRendered).every(adUnitCode => cache.auctions[auctionId].gamHasRendered[adUnitCode])) {
+          clearTimeout(cache.timeouts[auctionId]);
+          delete cache.timeouts[auctionId];
+          sendMessage.call(rubiconAdapter, auctionId);
         }
       });
     });
@@ -538,6 +559,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         ]);
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
+        cacheEntry.gamHasRendered = {};
         cacheEntry.referrer = utils.deepAccess(args, 'bidderRequests.0.refererInfo.referer');
         const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (floorData) {
@@ -556,6 +578,10 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         Object.assign(cache.auctions[args.auctionId].bids, args.bids.reduce((memo, bid) => {
           // mark adUnits we expect bidWon events for
           cache.auctions[args.auctionId].bidsWon[bid.adUnitCode] = false;
+
+          if (rubiConf.waitForGamSlots) {
+            cache.auctions[args.auctionId].gamHasRendered[bid.adUnitCode] = false;
+          }
 
           memo[bid.bidId] = utils.pick(bid, [
             'bidder', bidder => bidder.toLowerCase(),
@@ -702,7 +728,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         // check if this BID_WON missed the boat, if so send by itself
         if (auctionCache.sent === true) {
           sendMessage.call(this, args.auctionId, args.requestId);
-        } else if (Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
+        } else if (!rubiConf.waitForGamSlots && Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
           // only send if we've received bidWon events for all adUnits in auction
           memo = memo && auctionCache.bidsWon[adUnitCode];
           return memo;
@@ -717,7 +743,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         // start timer to send batched payload just in case we don't hear any BID_WON events
         cache.timeouts[args.auctionId] = setTimeout(() => {
           sendMessage.call(this, args.auctionId);
-        }, SEND_TIMEOUT);
+        }, rubiConf.analyticsBatchTimeout || SEND_TIMEOUT);
         break;
       case BID_TIMEOUT:
         args.forEach(badBid => {
