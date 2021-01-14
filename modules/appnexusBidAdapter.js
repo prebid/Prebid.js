@@ -249,6 +249,14 @@ export const spec = {
       });
     }
 
+    const netidId = utils.deepAccess(bidRequests[0], `userId.netId`);
+    if (netidId) {
+      eids.push({
+        source: 'netid.de',
+        id: netidId
+      });
+    }
+
     const tdid = utils.deepAccess(bidRequests[0], `userId.tdid`);
     if (tdid) {
       eids.push({
@@ -495,6 +503,12 @@ function formatRequest(payload, bidderRequest) {
   if (!hasPurpose1Consent(bidderRequest)) {
     options = {
       withCredentials: false
+    }
+  }
+
+  if (utils.getParameterByName('apn_test').toUpperCase() === 'TRUE' || config.getConfig('apn_test') === true) {
+    options.customHeaders = {
+      'X-Is-Test': 1
     }
   }
 

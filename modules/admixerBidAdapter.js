@@ -1,8 +1,9 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'admixer';
-const ALIASES = ['go2net'];
+const ALIASES = ['go2net', 'adblender'];
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.1.aspx';
 export const spec = {
   code: BIDDER_CODE,
@@ -20,8 +21,12 @@ export const spec = {
   buildRequests: function (validRequest, bidderRequest) {
     const payload = {
       imps: [],
+      fpd: config.getConfig('fpd')
     };
+    let endpointUrl;
     if (bidderRequest) {
+      const {bidderCode} = bidderRequest;
+      endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
       }
@@ -42,7 +47,7 @@ export const spec = {
     const payloadString = JSON.stringify(payload);
     return {
       method: 'GET',
-      url: ENDPOINT_URL,
+      url: endpointUrl || ENDPOINT_URL,
       data: `data=${payloadString}`,
     };
   },

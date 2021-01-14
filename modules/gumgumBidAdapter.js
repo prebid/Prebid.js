@@ -273,8 +273,13 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.iriscat = params.iriscat;
     }
 
-    if (params.zone) {
-      data.t = params.zone;
+    if (params.irisid && typeof params.irisid === 'string') {
+      data.irisid = params.irisid;
+    }
+
+    if (params.zone || params.pubId) {
+      params.zone ? (data.t = params.zone) : (data.pubId = params.pubId);
+
       data.pi = 2; // inscreen
       // override pi if the following is found
       if (params.slot) {
@@ -285,11 +290,8 @@ function buildRequests (validBidRequests, bidderRequest) {
         data.ni = parseInt(params.native, 10);
         data.pi = 5;
       } else if (mediaTypes.video) {
-        data.pi = mediaTypes.video.linearity === 1 ? 7 : 6; // video : invideo
+        data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
       }
-    } else if (params.pubId) {
-      data.pubId = params.pubId
-      data.pi = mediaTypes.video ? 7 : 2; // video : inscreen
     } else { // legacy params
       data = { ...data, ...handleLegacyParams(params, sizes) }
     }
