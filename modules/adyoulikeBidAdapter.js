@@ -43,7 +43,7 @@ export const spec = {
         accumulator[bid.bidId].Width = size.width;
         accumulator[bid.bidId].Height = size.height;
         accumulator[bid.bidId].AvailableSizes = sizesArray.join(',');
-        accumulator[bid.bidId].Native = !!bid.mediaTypes.native;
+        if (bid.mediaTypes.native) accumulator[bid.bidId].Native = bid.mediaTypes.native;
         return accumulator;
       }, {}),
       PageRefreshed: getPageRefreshed()
@@ -206,115 +206,135 @@ function getSize(sizesArray) {
   return parsed;
 }
 
+function getInternalImgUrl(uid) {
+  if (!uid) return '';
+  return 'https://blobs.omnitagjs.com/blobs/' + uid.substr(16, 2) + '/' + uid.substr(16) + '/' + uid;
+}
+
 function getImageUrl(config, resource, width, height) {
-  // use default cropping
-  var auto = resource.ZoneHeight === 0 || resource.ZoneWidth === 0;
-
   let url = '';
-  const crop = 1 / 3;
-
-  const dynPrefix = config.DynamicPrefix;
 
   switch (resource.Kind) {
     case 'INTERNAL':
-      url = dynPrefix + '/native/preview/image?key=' + resource.Data.Internal.BlobReference.Uid;
-      url += '&kind=INTERNAL';
-      if (!auto) {
-        url += '&ztop=' + resource.ZoneTop;
-        url += '&zleft=' + resource.ZoneLeft;
-        url += '&zwidth=' + resource.ZoneWidth;
-        url += '&zheight=' + resource.ZoneHeight;
-      } else {
-        url += '&ztop=' + crop;
-        url += '&zleft=' + crop;
-        url += '&zwidth=' + crop;
-        url += '&zheight=' + crop;
-      }
-      url += '&width=' + width;
-      url += '&height=' + height;
+      url = getInternalImgUrl(resource.Data.Internal.BlobReference.Uid);
 
       break;
 
     case 'EXTERNAL':
+      const dynPrefix = config.DynamicPrefix;
       let extUrl = resource.Data.External.Url;
       extUrl = extUrl.replace(/\[height\]/i, '' + height);
       extUrl = extUrl.replace(/\[width\]/i, '' + width);
+
       if (extUrl.indexOf(dynPrefix) >= 0) {
-        url = extUrl;
-      } else {
-        url = dynPrefix + '/native/preview/image?url=' + extUrl;
-        url += '&kind=' + resource.Kind;
-        if (!auto) {
-          url += '&ztop=' + resource.ZoneTop;
-          url += '&zleft=' + resource.ZoneLeft;
-          url += '&zwidth=' + resource.ZoneWidth;
-          url += '&zheight=' + resource.ZoneHeight;
-        } else {
-          url += '&ztop=' + crop;
-          url += '&zleft=' + crop;
-          url += '&zwidth=' + crop;
-          url += '&zheight=' + crop;
+        const urlParams = new URLSearchParams(extUrl.split('?')[1]);
+        url = urlParams.get('url');
+        if (!url) {
+          url = getInternalImgUrl(urlParams.get('key'));
         }
-        url += '&width=' + width;
-        url += '&height=' + height;
+      } else {
+        url = extUrl;
       }
 
-      if (resource.Smart) { // resource.Smart could have the string value 'false'
-        url += '&smart=' + (resource.Smart);
-      }
-
-      if (resource.NoTransform) {
-        url += '&notransform=' + resource.NoTransform;
-      }
-
-      break
+      break;
   }
 
   return url;
 }
 
-function getNativeAssets(response) {
-  if (typeof response.Native === 'object') {
-    return response.Native;
-  } else {
-    const adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
-    const textsJson = adJson.Content.Preview.Text;
+function getTrackers(eventsArray, jsTrackers) {
+  const result = [];
 
-    const width = response.Width || 300;
-    const height = response.Height || 250;
+  if (!eventsArray) return result;
 
-    var impressionUrl = adJson.TrackingPrefix +
-            '/pixel?event_kind=IMPRESSION&attempt=' + adJson.Attempt;
-
-    if (adJson.Campaign) {
-      impressionUrl += '&campaign=' + adJson.Campaign;
+  eventsArray.map((item, index) => {
+    if ((jsTrackers && item.Kind === 'JAVASCRIPT_URL') ||
+        (!jsTrackers && item.Kind === 'PIXEL_URL')) {
+      result.push(item.Url);
     }
+  });
+  return result;
+}
 
-    const native = {
-      title: textsJson.TITLE,
-      body: textsJson.DESCRIPTION,
-      cta: textsJson.CALLTOACTION,
-      sponsoredBy: adJson.Content.Preview.Sponsor.Name,
-      image: {
-        url: getImageUrl(adJson, adJson.Content.Preview.Thumbnail.Image, width, height),
-        height: height,
-        width: width,
-      },
-      clickUrl: adJson.Content.Landing.Url,
-      impressionTrackers: [
-        impressionUrl
-      ],
-    };
+function getNativeAssets(response, nativeConfig) {
+  const adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
+  const textsJson = adJson.Content.Preview.Text;
 
-    if (adJson.HasSponsorImage) {
-      native.icon = {
-        url: getImageUrl(adJson, adJson.Content.Preview.Sponsor.Logo.Resource, 50, 50),
-        height: 50,
-        width: 50,
-      };
-    }
-    return native;
+  var impressionUrl = adJson.TrackingPrefix +
+          '/pixel?event_kind=IMPRESSION&attempt=' + adJson.Attempt;
+
+  if (adJson.Campaign) {
+    impressionUrl += '&campaign=' + adJson.Campaign;
   }
+
+  const native = {};
+
+  native.clickUrl = adJson.TrackingPrefix + '/ar?event_kind=CLICK&attempt=' + adJson.Attempt +
+    '&campaign=' + adJson.Campaign + '&url=' + encodeURIComponent(adJson.Content.Landing.Url);
+
+  native.clickTrackers = getTrackers(adJson.OnEvents['CLICK']);
+  native.impressionTrackers = getTrackers(adJson.OnEvents['IMPRESSION']);
+  native.impressionTrackers.push(impressionUrl);
+  native.javascriptTrackers = getTrackers(adJson.OnEvents['IMPRESSION'], true);
+
+  Object.keys(nativeConfig).map(function(key, index) {
+    if (typeof response.Native === 'object') {
+      native[key] = response.Native[key];
+    } else {
+      switch (key) {
+        case 'title':
+          native[key] = textsJson.TITLE;
+          break;
+        case 'body':
+          native[key] = textsJson.DESCRIPTION;
+          break;
+        case 'cta':
+          native[key] = textsJson.CALLTOACTION;
+          break;
+        case 'sponsoredBy':
+          native[key] = adJson.Content.Preview.Sponsor.Name;
+          break;
+        case 'image':
+          // main image requested size
+          const imgSize = nativeConfig.image.sizes || [];
+          if (!imgSize.length) {
+            imgSize[0] = response.Width || 300;
+            imgSize[1] = response.Height || 250;
+          }
+
+          native[key] = {
+            url: getImageUrl(adJson, adJson.Content.Preview.Thumbnail.Image, imgSize[0], imgSize[1]),
+            width: imgSize[0],
+            height: imgSize[1]
+          };
+          break;
+        case 'icon':
+          if (adJson.HasSponsorImage) {
+            // icon requested size
+            const iconSize = nativeConfig.icon.sizes || [];
+            if (!iconSize.length) {
+              iconSize[0] = 50;
+              iconSize[1] = 50;
+            }
+
+            native[key] = {
+              url: getImageUrl(adJson, adJson.Content.Preview.Sponsor.Logo.Resource, iconSize[0], iconSize[1]),
+              width: iconSize[0],
+              height: iconSize[1]
+            };
+          }
+          break;
+        case 'privacyIcon':
+          native[key] = getImageUrl(adJson, adJson.Content.Preview.Credit.Logo.Resource, 25, 25);
+          break;
+        case 'privacyLink':
+          native[key] = adJson.Content.Preview.Credit.Url;
+          break;
+      }
+    }
+  });
+
+  return native;
 }
 
 /* Create bid from response */
@@ -338,8 +358,6 @@ function createBid(response, bidRequests) {
 
   const bid = {
     requestId: response.BidID,
-    width: response.Width,
-    height: response.Height,
     ttl: 3600,
     creativeId: response.CreativeID,
     cpm: response.Price,
@@ -348,7 +366,7 @@ function createBid(response, bidRequests) {
   };
 
   if (request && request.Native) {
-    bid.native = getNativeAssets(response);
+    bid.native = getNativeAssets(response, request.Native);
     bid.mediaType = 'native';
   } else {
     bid.width = response.Width;
