@@ -230,7 +230,7 @@ export const lotamePanoramaIdSubmodule = {
               let responseObj = JSON.parse(response);
               const shouldUpdateProfileId = !(
                 utils.isArray(responseObj.errors) &&
-                responseObj.errors.includes(MISSING_CORE_CONSENT)
+                responseObj.errors.indexOf(MISSING_CORE_CONSENT) !== -1
               );
 
               saveLotameCache(KEY_EXPIRY, responseObj.expiry_ts, responseObj.expiry_ts);
