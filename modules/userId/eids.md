@@ -141,6 +141,13 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
+    },
+    {
+        source: 'tapad.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
     }
 ]
 ```

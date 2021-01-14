@@ -1,55 +1,65 @@
-import { tapadIdSubmodule, graphUrl, storage, tapadCookieKey, pastDateString, defaultExpirationString } from 'modules/tapadIdSystem.js';
+import { tapadIdSubmodule, graphUrl } from 'modules/tapadIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
 
 describe('TapadIdSystem', function () {
   describe('getId', function() {
-    let setCookieSpy;
-    beforeEach(() => {
-      setCookieSpy = sinon.spy(storage, 'setCookie');
-    })
-    afterEach(() => {
-      setCookieSpy.restore()
-    })
-
+    const config = { params: { companyId: 12345 } };
     it('should call to real time graph endpoint and handle valid response', function() {
-      const callbackSpy = sinon.spy()
-      const callback = tapadIdSubmodule.getId({
-        params: { companyId: 12345 }
-      }).callback
+      const callbackSpy = sinon.spy();
+      const callback = tapadIdSubmodule.getId(config).callback;
       callback(callbackSpy);
 
-      const request = server.requests[0]
-      expect(request.url).to.eq(`${graphUrl}?company_id=12345&tapad_id_type=TAPAD_ID`)
+      const request = server.requests[0];
+      expect(request.url).to.eq(`${graphUrl}?company_id=12345&tapad_id_type=TAPAD_ID`);
 
-      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ tapadId: 'your-tapad-id' }))
+      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ tapadId: 'your-tapad-id' }));
       expect(callbackSpy.lastCall.lastArg).to.eq('your-tapad-id');
-      expect(setCookieSpy.lastCall.calledWith(tapadCookieKey, 'your-tapad-id', defaultExpirationString)).to.be.true
-    })
+    });
 
     it('should remove stored tapadId if not found', function() {
-      const callbackSpy = sinon.spy()
-      const callback = tapadIdSubmodule.getId({}).callback
+      const callbackSpy = sinon.spy();
+      const callback = tapadIdSubmodule.getId(config).callback;
       callback(callbackSpy);
 
-      const request = server.requests[0]
+      const request = server.requests[0];
 
-      request.respond(404)
+      request.respond(404);
       expect(callbackSpy.lastCall.lastArg).to.be.undefined;
-      expect(setCookieSpy.lastCall.calledWith(tapadCookieKey, undefined, pastDateString)).to.be.true
-    })
+    });
+
     it('should log message with invalid company id', function() {
       const logMessageSpy = sinon.spy(utils, 'logMessage');
-      const callbackSpy = sinon.spy()
-      const callback = tapadIdSubmodule.getId({}).callback
+      const callbackSpy = sinon.spy();
+      const callback = tapadIdSubmodule.getId(config).callback;
       callback(callbackSpy);
 
-      const request = server.requests[0]
+      const request = server.requests[0];
 
-      request.respond(403)
-      expect(logMessageSpy.lastCall.lastArg).to.eq('Invalid Company Id. Contact prebid@tapad.com for assistance.')
-      logMessageSpy.restore()
-    })
-  })
+      request.respond(403);
+      expect(logMessageSpy.lastCall.lastArg).to.eq('Invalid Company Id. Contact prebid@tapad.com for assistance.');
+      logMessageSpy.restore();
+    });
+
+    it('should log message if company id not given', function() {
+      const logMessageSpy = sinon.spy(utils, 'logMessage');
+      const callbackSpy = sinon.spy();
+      const callback = tapadIdSubmodule.getId({}).callback;
+      callback(callbackSpy);
+
+      expect(logMessageSpy.lastCall.lastArg).to.eq('Please provide a valid Company Id. Contact prebid@tapad.com for assistance.');
+      logMessageSpy.restore();
+    });
+
+    it('should log message if company id is incorrect format', function() {
+      const logMessageSpy = sinon.spy(utils, 'logMessage');
+      const callbackSpy = sinon.spy();
+      const callback = tapadIdSubmodule.getId({ params: { companyId: 'notANumber' } }).callback;
+      callback(callbackSpy);
+
+      expect(logMessageSpy.lastCall.lastArg).to.eq('Please provide a valid Company Id. Contact prebid@tapad.com for assistance.');
+      logMessageSpy.restore();
+    });
+  });
 })
