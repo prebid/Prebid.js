@@ -249,6 +249,14 @@ export const spec = {
       });
     }
 
+    const netidId = utils.deepAccess(bidRequests[0], `userId.netId`);
+    if (netidId) {
+      eids.push({
+        source: 'netid.de',
+        id: netidId
+      });
+    }
+
     const tdid = utils.deepAccess(bidRequests[0], `userId.tdid`);
     if (tdid) {
       eids.push({
