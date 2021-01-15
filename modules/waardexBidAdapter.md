@@ -21,41 +21,27 @@ var sizes = [
 var PREBID_TIMEOUT = 5000;
 var FAILSAFE_TIMEOUT = 5000;
 
-var adUnits = [{
-  code: '/19968336/header-bid-tag-0',
-  mediaTypes: {
-    banner: {
-        sizes: sizes,
-    },
-  },
-  bids: [{
-    bidder: 'waardex',
-    params: {
-        placementId: 13144370,
-        position: 1,  // add position openrtb
-        bidfloor: 0.5,
-        instl: 0,     // 1 - full screen
-        pubId: 1,
-    }
-  }]
-},{
-    code: '/19968336/header-bid-tag-1',
-    mediaTypes: {
-        banner: {
-            sizes: sizes,
+var adUnits = [
+    {
+        code: '/19968336/header-bid-tag-0',
+        mediaTypes: {
+            banner: {
+                sizes: sizes
+            }
         },
-    },
-    bids: [{
-        bidder: 'waardex',
-        params: {
-            placementId: 333333333333,
-            position: 1,  // add position openrtb
-            bidfloor: 0.5,
-            instl: 0,     // 1 - full screen
-            pubId: 1,
-        }
-    }]
-}];
+        bids: [
+            {
+                bidder: 'waardex',
+                params: {
+                    bidfloor: 1.5,
+                    position: 1,
+                    instl: 1,
+                    zoneId: 1
+                }
+            }
+        ]
+    }
+];
 ```
 
 ## Video
@@ -70,38 +56,38 @@ const sizes = [
 
 const adUnits = [
     {
-                code: 'video1',
-                mediaTypes: {
-                    video: {
-                        context: 'instream',
-                        playerSize: sizes[0]
-                    }
-                },
-                bids: [
-                    {
-                        bidder: 'waardex',
-                        params: {
-                            bidfloor: 1.5,
-                            position: 1,
-                            instl: 1,
-                            zoneId: 1,
-                            mimes: ['video/x-ms-wmv', 'video/mp4'],
-                            minduration: 2,
-                            maxduration: 10,
-                            protocols: ['VAST 1.0', 'VAST 2.0'],
-                            startdelay: -1,
-                            placement: 1,
-                            skip: 1,
-                            skipafter: 2,
-                            minbitrate: 0,
-                            maxbitrate: 0,
-                            delivery: [1, 2, 3],
-                            playbackmethod: [1, 2],
-                            api: [1, 2, 3, 4, 5, 6],
-                            linearity: 1,
-                        }
-                    }
-                ]
+        code: 'video1',
+        mediaTypes: {
+            video: {
+                context: 'instream',
+                playerSize: sizes[0]
             }
+        },
+        bids: [
+            {
+                bidder: 'waardex',
+                params: {
+                    bidfloor: 1.5,
+                    position: 1,
+                    instl: 1,
+                    zoneId: 1,
+                    mimes: ['video/x-ms-wmv', 'video/mp4'],
+                    minduration: 2,
+                    maxduration: 10,
+                    protocols: ['VAST 1.0', 'VAST 2.0'],
+                    startdelay: -1,
+                    placement: 1,
+                    skip: 1,
+                    skipafter: 2,
+                    minbitrate: 0,
+                    maxbitrate: 0,
+                    delivery: [1, 2, 3],
+                    playbackmethod: [1, 2],
+                    api: [1, 2, 3, 4, 5, 6],
+                    linearity: 1,
+                }
+            }
+        ]
+    }
 ]
 ```
