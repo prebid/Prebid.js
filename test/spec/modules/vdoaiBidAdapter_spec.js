@@ -8,7 +8,7 @@ describe('vdoaiBidAdapter', function () {
   const adapter = newBidder(spec);
   describe('isBidRequestValid', function () {
     let bid = {
-      'bidder': 'vdo.ai',
+      'bidder': 'vdoai',
       'params': {
         placementId: 'testPlacementId'
       },
@@ -27,7 +27,7 @@ describe('vdoaiBidAdapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [
       {
-        'bidder': 'vdo.ai',
+        'bidder': 'vdoai',
         'params': {
           placementId: 'testPlacementId'
         },

@@ -18,10 +18,10 @@ const HOST_GETTERS = {
   appaloosa: function () {
     return 'ghb.hb.appaloosa.media';
   },
-  onefiftytwomedia: function() {
+  onefiftytwomedia: function () {
     return 'ghb.ads.152media.com';
   },
-  mediafuse: function() {
+  mediafuse: function () {
     return 'ghb.hbmp.mediafuse.com';
   }
 
@@ -40,7 +40,12 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'mediafuse'],
+  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa',
+    {
+      code: 'mediafuse',
+      skipPbsAliasing: true
+    }
+  ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
     return !!utils.deepAccess(bid, 'params.aid');
@@ -203,6 +208,11 @@ function prepareBidRequests(bidReq) {
     'AdType': mediaType,
     'Sizes': utils.parseSizesInput(sizes).join(',')
   };
+
+  bidReqParams.PlacementId = bidReq.adUnitCode;
+  if (bidReq.params.vpb_placement_id) {
+    bidReqParams.PlacementId = bidReq.params.vpb_placement_id;
+  }
   if (mediaType === VIDEO) {
     const context = utils.deepAccess(bidReq, 'mediaTypes.video.context');
     if (context === ADPOD) {
