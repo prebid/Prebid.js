@@ -96,7 +96,7 @@ export const spec = {
         traffic: traff,
         eids: []
       };
-      if (!isNan(bid.params.bidfloor) {
+      if (!isNan(bid.params.bidfloor)) {
         placement.bidfloor = Number(bid.params.bidfloor);
       }
       if (bid.schain) {
