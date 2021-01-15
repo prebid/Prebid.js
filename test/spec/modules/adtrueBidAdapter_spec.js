@@ -344,7 +344,6 @@ describe('AdTrueBidAdapter', function () {
       expect(response[0].ttl).to.equal(300);
       expect(response[0].meta.clickUrl).to.equal('adtrue.com');
       expect(response[0].meta.advertiserDomains[0]).to.equal('adtrue.com');
-      // expect(response[0].referrer).to.include(data.site.page);
       expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
       expect(response[0].partnerImpId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
     });
