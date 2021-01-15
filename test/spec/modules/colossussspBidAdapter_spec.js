@@ -126,7 +126,6 @@ describe('ColossussspAdapter', function () {
           expect(v.uids).to.be.an('array');
           expect(v.uids.length).to.be.equal(1)
           expect(v.uids[0]).to.have.property('id')
-          expect(v.uids[0].id).to.be.oneOf(['britepoolid123', 'idl_env123', 'tdid123', 'id5id123'])
         }
       }
     });
