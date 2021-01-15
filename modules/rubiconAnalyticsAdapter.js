@@ -237,6 +237,8 @@ function sendMessage(auctionId, bidWonId) {
         auction.floors = utils.pick(auctionCache.floorData, [
           'location',
           'modelVersion as modelName',
+          'modelWeight',
+          'modelTimestamp',
           'skipped',
           'enforcement', () => utils.deepAccess(auctionCache.floorData, 'enforcements.enforceJS'),
           'dealsEnforced', () => utils.deepAccess(auctionCache.floorData, 'enforcements.floorDeals'),
@@ -359,9 +361,35 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
   ]);
 }
 
+/*
+  Filters and converts URL Params into an object and returns only KVs that match the 'utm_KEY' format
+*/
+function getUtmParams() {
+  let search;
+
+  try {
+    search = utils.parseQS(utils.getWindowLocation().search);
+  } catch (e) {
+    search = {};
+  }
+
+  return Object.keys(search).reduce((accum, param) => {
+    if (param.match(/utm_/)) {
+      accum[param.replace(/utm_/, '')] = search[param];
+    }
+    return accum;
+  }, {});
+}
+
 function getFpkvs() {
-  const isValid = rubiConf.fpkvs && typeof rubiConf.fpkvs === 'object' && Object.keys(rubiConf.fpkvs).every(key => typeof rubiConf.fpkvs[key] === 'string');
-  return isValid ? rubiConf.fpkvs : {};
+  rubiConf.fpkvs = Object.assign((rubiConf.fpkvs || {}), getUtmParams());
+
+  // convert all values to strings
+  Object.keys(rubiConf.fpkvs).forEach(key => {
+    rubiConf.fpkvs[key] = rubiConf.fpkvs[key] + '';
+  });
+
+  return rubiConf.fpkvs;
 }
 
 let samplingFactor = 1;
