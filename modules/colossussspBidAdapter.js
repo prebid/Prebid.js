@@ -91,7 +91,7 @@ export const spec = {
       let traff = bid.params.traffic || BANNER
       let placement = {
         placementId: bid.params.placement_id,
-        bidfloor: bid.params.bidfloor
+        bidfloor: isNan(bid.params.bidfloor) ? 0 : Number(bid.params.bidfloor)
         bidId: bid.bidId,
         sizes: bid.mediaTypes[traff].sizes,
         traffic: traff,
