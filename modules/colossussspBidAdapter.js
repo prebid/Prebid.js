@@ -91,6 +91,7 @@ export const spec = {
       let traff = bid.params.traffic || BANNER
       let placement = {
         placementId: bid.params.placement_id,
+        bidfloor: bid.params.bidfloor
         bidId: bid.bidId,
         sizes: bid.mediaTypes[traff].sizes,
         traffic: traff,
