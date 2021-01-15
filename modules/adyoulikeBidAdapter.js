@@ -20,10 +20,11 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     const sizes = getSize(getSizeArray(bid));
+    const sizeValid = sizes.width > 0 && sizes.height > 0;
 
     // allows no size fornative only
-    return bid.params && bid.params.placement &&
-    (bid.mediaTypes.native || (sizes.width && sizes.height));
+    return (bid.params && bid.params.placement &&
+            (sizeValid || (bid.mediaTypes && bid.mediaTypes.native)));
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -43,7 +44,7 @@ export const spec = {
         accumulator[bid.bidId].Width = size.width;
         accumulator[bid.bidId].Height = size.height;
         accumulator[bid.bidId].AvailableSizes = sizesArray.join(',');
-        if (bid.mediaTypes.native) accumulator[bid.bidId].Native = bid.mediaTypes.native;
+        if (bid.mediaTypes && bid.mediaTypes.native) accumulator[bid.bidId].Native = bid.mediaTypes.native;
         return accumulator;
       }, {}),
       PageRefreshed: getPageRefreshed()
@@ -174,9 +175,9 @@ function createEndpointQS(bidderRequest) {
 }
 
 function getSizeArray(bid) {
-  let inputSize = bid.sizes;
+  let inputSize = bid.sizes || [];
   if (bid.mediaTypes && bid.mediaTypes.banner) {
-    inputSize = bid.mediaTypes.banner.sizes;
+    inputSize = bid.mediaTypes.banner.sizes || [];
   }
 
   return utils.parseSizesInput(inputSize);
