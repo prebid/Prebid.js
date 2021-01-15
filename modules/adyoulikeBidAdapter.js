@@ -228,10 +228,10 @@ function getImageUrl(config, resource, width, height) {
       extUrl = extUrl.replace(/\[width\]/i, '' + width);
 
       if (extUrl.indexOf(dynPrefix) >= 0) {
-        const urlParams = new URLSearchParams(extUrl.split('?')[1]);
-        url = urlParams.get('url');
+        const urlmatch = (/.*url=([^&]*)/gm).exec(extUrl);
+        url = urlmatch ? urlmatch[1] : '';
         if (!url) {
-          url = getInternalImgUrl(urlParams.get('key'));
+          url = getInternalImgUrl((/.*key=([^&]*)/gm).exec(extUrl)[1]);
         }
       } else {
         url = extUrl;
