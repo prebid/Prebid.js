@@ -44,6 +44,11 @@ export const spec = {
       utils.deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      utils.deepSetValue(openRtbBidRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+    }
+
     return {
       method: 'POST',
       url: BIDDER_ENDPOINT,

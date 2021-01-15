@@ -4,7 +4,6 @@ import {ajax} from '../src/ajax.js';
 import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'project-limelight';
-const URL = 'https://ads.project-limelight.com/hb';
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -23,19 +22,6 @@ function isBidResponseValid(bid) {
       return Boolean(bid.vastXml || bid.vastUrl);
   }
   return false;
-}
-
-function extractBidSizes(bid) {
-  const bidSizes = [];
-
-  bid.sizes.forEach(size => {
-    bidSizes.push({
-      width: size[0],
-      height: size[1]
-    });
-  });
-
-  return bidSizes;
 }
 
 export const spec = {
@@ -65,30 +51,10 @@ export const spec = {
     } catch (e) {
       utils.logMessage(e);
       winTop = window;
-    };
-    const placements = [];
-    const request = {
-      'secure': (location.protocol === 'https:'),
-      'deviceWidth': winTop.screen.width,
-      'deviceHeight': winTop.screen.height,
-      'adUnits': placements
-    };
-    for (let i = 0; i < validBidRequests.length; i++) {
-      const bid = validBidRequests[i];
-      const params = bid.params;
-      placements.push({
-        id: params.adUnitId,
-        bidId: bid.bidId,
-        transactionId: bid.transactionId,
-        sizes: extractBidSizes(bid),
-        type: params.adUnitType.toUpperCase()
-      });
     }
-    return {
-      method: 'POST',
-      url: URL,
-      data: request
-    };
+    const placements = utils.groupBy(validBidRequests.map(bidRequest => buildPlacement(bidRequest)), 'host')
+    return Object.keys(placements)
+      .map(host => buildRequest(winTop, host, placements[host].map(placement => placement.adUnit)));
   },
 
   onBidWon: (bid) => {
@@ -123,3 +89,34 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+function buildRequest(winTop, host, adUnits) {
+  return {
+    method: 'POST',
+    url: `https://${host}/hb`,
+    data: {
+      secure: (location.protocol === 'https:'),
+      deviceWidth: winTop.screen.width,
+      deviceHeight: winTop.screen.height,
+      adUnits: adUnits
+    }
+  }
+}
+
+function buildPlacement(bidRequest) {
+  return {
+    host: bidRequest.params.host,
+    adUnit: {
+      id: bidRequest.params.adUnitId,
+      bidId: bidRequest.bidId,
+      transactionId: bidRequest.transactionId,
+      sizes: bidRequest.sizes.map(size => {
+        return {
+          width: size[0],
+          height: size[1]
+        }
+      }),
+      type: bidRequest.params.adUnitType.toUpperCase()
+    }
+  }
+}

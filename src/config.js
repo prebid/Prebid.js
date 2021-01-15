@@ -13,11 +13,12 @@
  */
 
 import { isValidPriceConfig } from './cpmBucketManager.js';
-import find from 'core-js/library/fn/array/find.js';
-import includes from 'core-js/library/fn/array/includes.js';
-import Set from 'core-js/library/fn/set.js';
+import find from 'core-js-pure/features/array/find.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import Set from 'core-js-pure/features/set';
+import { mergeDeep } from './utils.js';
 
-const from = require('core-js/library/fn/array/from.js');
+const from = require('core-js-pure/features/array/from.js');
 const utils = require('./utils.js');
 const CONSTANTS = require('./constants.json');
 
@@ -198,6 +199,16 @@ export function newConfig() {
       set disableAjaxTimeout(val) {
         this._disableAjaxTimeout = val;
       },
+
+      _auctionOptions: {},
+      get auctionOptions() {
+        return this._auctionOptions;
+      },
+      set auctionOptions(val) {
+        if (validateauctionOptions(val)) {
+          this._auctionOptions = val;
+        }
+      },
     };
 
     if (config) {
@@ -236,6 +247,30 @@ export function newConfig() {
       }
       return true;
     }
+
+    function validateauctionOptions(val) {
+      if (!utils.isPlainObject(val)) {
+        utils.logWarn('Auction Options must be an object')
+        return false
+      }
+
+      for (let k of Object.keys(val)) {
+        if (k !== 'secondaryBidders') {
+          utils.logWarn(`Auction Options given an incorrect param: ${k}`)
+          return false
+        }
+        if (k === 'secondaryBidders') {
+          if (!utils.isArray(val[k])) {
+            utils.logWarn(`Auction Options ${k} must be of type Array`);
+            return false
+          } else if (!val[k].every(utils.isStr)) {
+            utils.logWarn(`Auction Options ${k} must be only string`);
+            return false
+          }
+        }
+      }
+      return true;
+    }
   }
 
   /**
@@ -254,7 +289,7 @@ export function newConfig() {
           memo[topic] = currBidderConfig[topic];
         } else {
           if (utils.isPlainObject(currBidderConfig[topic])) {
-            memo[topic] = Object.assign({}, config[topic], currBidderConfig[topic]);
+            memo[topic] = mergeDeep({}, config[topic], currBidderConfig[topic]);
           } else {
             memo[topic] = currBidderConfig[topic];
           }

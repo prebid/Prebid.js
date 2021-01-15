@@ -63,12 +63,12 @@ describe('Utils', function () {
   describe('parseQueryStringParameters', function () {
     it('should append query string to existing using the input obj', function () {
       var obj = {
-        a: '1',
-        b: '2'
+        a: 'http://example.com/?foo=bar&bar=foo',
+        b: 'abc["def"]'
       };
 
       var output = utils.parseQueryStringParameters(obj);
-      var expectedResult = 'a=' + encodeURIComponent('1') + '&b=' + encodeURIComponent('2');
+      var expectedResult = 'a=' + encodeURIComponent('http://example.com/?foo=bar&bar=foo') + '&b=' + encodeURIComponent('abc["def"]');
       assert.equal(output, expectedResult);
     });
 
@@ -1016,6 +1016,186 @@ describe('Utils', function () {
     it('does not flag Windows Edge', function () {
       userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43';
       expect(utils.isSafariBrowser()).to.equal(false);
+    });
+  });
+
+  describe('mergeDeep', function() {
+    it('properly merge objects that share same property names', function() {
+      const object1 = {
+        propA: {
+          subPropA: 'abc'
+        }
+      };
+      const object2 = {
+        propA: {
+          subPropB: 'def'
+        }
+      };
+
+      const resultWithoutMergeDeep = Object.assign({}, object1, object2);
+      expect(resultWithoutMergeDeep).to.deep.equal({
+        propA: {
+          subPropB: 'def'
+        }
+      });
+
+      const resultWithMergeDeep = utils.mergeDeep({}, object1, object2);
+      expect(resultWithMergeDeep).to.deep.equal({
+        propA: {
+          subPropA: 'abc',
+          subPropB: 'def'
+        }
+      });
+    });
+
+    it('properly merge objects that have different depths', function() {
+      const object1 = {
+        depth0_A: {
+          depth1_A: {
+            depth2_A: 123
+          }
+        }
+      };
+      const object2 = {
+        depth0_A: {
+          depth1_A: {
+            depth2_B: {
+              depth3_A: {
+                depth4_A: 'def'
+              }
+            }
+          },
+          depth1_B: 'abc'
+        }
+      };
+      const object3 = {
+        depth0_B: 456
+      };
+
+      const result = utils.mergeDeep({}, object1, object2, object3);
+      expect(result).to.deep.equal({
+        depth0_A: {
+          depth1_A: {
+            depth2_A: 123,
+            depth2_B: {
+              depth3_A: {
+                depth4_A: 'def'
+              }
+            }
+          },
+          depth1_B: 'abc'
+        },
+        depth0_B: 456
+      });
+    });
+
+    it('properly merge objects with various property types', function() {
+      const object1 = {
+        depth0_A: {
+          depth1_A: ['a', 'b', 'c'],
+          depth1_B: 'abc',
+          depth1_C: 123
+        }
+      };
+      const object2 = {
+        depth0_A: {
+          depth1_A: ['d', 'e', 'f'],
+          depth1_D: true,
+        }
+      };
+
+      const result = utils.mergeDeep({}, object1, object2);
+      expect(result).to.deep.equal({
+        depth0_A: {
+          depth1_A: ['a', 'b', 'c', 'd', 'e', 'f'],
+          depth1_B: 'abc',
+          depth1_C: 123,
+          depth1_D: true,
+        }
+      });
+    });
+  });
+
+  describe('deepEqual', function() {
+    it('should return "true" if comparing the same object', function() {
+      const obj1 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      const obj2 = obj1;
+      expect(utils.deepEqual(obj1, obj2)).to.equal(true);
+    });
+    it('should return "true" if two deeply nested objects are equal', function() {
+      const obj1 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      const obj2 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      expect(utils.deepEqual(obj1, obj2)).to.equal(true);
+    });
+    it('should return "true" if comparting the same primitive values', function() {
+      const primitive1 = 'Prebid.js';
+      const primitive2 = 'Prebid.js';
+      expect(utils.deepEqual(primitive1, primitive2)).to.equal(true);
+    });
+    it('should return "false" if comparing two different primitive values', function() {
+      const primitive1 = 12;
+      const primitive2 = 123;
+      expect(utils.deepEqual(primitive1, primitive2)).to.equal(false);
+    });
+    it('should return "false" if comparing two different deeply nested objects', function() {
+      const obj1 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [1000, 90], [970, 250], [970, 90], [728, 90]] },
+          ],
+        },
+      };
+      const obj2 = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [1000, 0], sizes: [[1000, 300], [728, 90]] },
+          ],
+        },
+      }
+      expect(utils.deepEqual(obj1, obj2)).to.equal(false);
+    });
+
+    describe('cyrb53Hash', function() {
+      it('should return the same hash for the same string', function() {
+        const stringOne = 'string1';
+        expect(utils.cyrb53Hash(stringOne)).to.equal(utils.cyrb53Hash(stringOne));
+      });
+      it('should return a different hash for the same string with different seeds', function() {
+        const stringOne = 'string1';
+        expect(utils.cyrb53Hash(stringOne, 1)).to.not.equal(utils.cyrb53Hash(stringOne, 2));
+      });
+      it('should return a different hash for different strings with the same seed', function() {
+        const stringOne = 'string1';
+        const stringTwo = 'string2';
+        expect(utils.cyrb53Hash(stringOne)).to.not.equal(utils.cyrb53Hash(stringTwo));
+      });
+      it('should return a string value, not a number', function() {
+        const stringOne = 'string1';
+        expect(typeof utils.cyrb53Hash(stringOne)).to.equal('string');
+      });
     });
   });
 });

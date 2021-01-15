@@ -1,8 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/orbidderBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import openxAdapter from '../../../modules/openxAnalyticsAdapter.js';
-import {detectReferer} from 'src/refererDetection.js';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -93,7 +91,7 @@ describe('orbidderBidAdapter', () => {
     it('sends bid request to endpoint via https using post', () => {
       expect(request.method).to.equal('POST');
       expect(request.url.indexOf('https://')).to.equal(0);
-      expect(request.url).to.equal(`${spec.orbidderHost}/bid`);
+      expect(request.url).to.equal(`${spec.hostname}/bid`);
     });
 
     it('contains prebid version parameter', () => {
@@ -150,40 +148,6 @@ describe('orbidderBidAdapter', () => {
       const gdprConsent = request.data.gdprConsent;
       expect(gdprConsent.consentRequired).to.be.equal(false);
       expect(gdprConsent.consentString).to.be.equal(consentString);
-    });
-  });
-
-  describe('onCallbackHandler', () => {
-    let ajaxStub;
-    const bidObj = {
-      adId: 'testId',
-      test: 1,
-      pageUrl: 'www.someurl.de',
-      referrer: 'www.somereferrer.de',
-      requestId: '123req456'
-    };
-
-    spec.bidParams['123req456'] = {'accountId': '123acc456'};
-
-    let bidObjClone = deepClone(bidObj);
-    bidObjClone.v = $$PREBID_GLOBAL$$.version;
-    bidObjClone.pageUrl = detectReferer(window)().referer;
-    bidObjClone.params = [{'accountId': '123acc456'}];
-
-    beforeEach(() => {
-      ajaxStub = sinon.stub(spec, 'ajaxCall');
-    });
-
-    afterEach(() => {
-      ajaxStub.restore();
-    });
-
-    it('calls orbidder\'s callback endpoint', () => {
-      spec.onBidWon(bidObj);
-      expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
-      expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/win`);
-      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObjClone));
     });
   });
 

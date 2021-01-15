@@ -37,7 +37,7 @@ adUnits = [{
                             siteId: '4204204201', /* An ID used to identify a site within a publisher account - required */
                             placementId: '0420420421', /* an ID used to identify the piece of inventory - required - for appnexus test use 13144370. */
 							customData: [{"settings": {}, "targeting": {"key": "value", "key2": ["value1", "value2"]}}],/* optional array with 'targeting' placeholder for passing publisher specific key-values for targeting. */                            
-                            lotameData: {"key1": "value1", "key2": "value2"} /* optional JSON placeholder for passing Lotame DMP data */
+                            lotameData: {"Profile": {"tpid":"value","pid":"value","Audiences": {"Audience":[{"id":"value"},{"id":"value2"}]}}}, /* optional JSON placeholder for passing Lotame DMP data */
                         }
                     }]
                 }];
@@ -64,8 +64,7 @@ adUnits = [{
                             siteId: '4204204201', /* An ID used to identify a site within a publisher account - required */
 							customData: [{"settings": {}, "targeting": { "key": "value", "key2": ["value1", "value2"]}}]
                             placementId: '0440440442', /* an ID used to identify the piece of inventory - required - for unruly test use 0440440442. */
-							customData: [{"settings": {}, "targeting": {"key": "value", "key2": ["value1", "value2"]}}],/* optional array with 'targeting' placeholder for passing publisher specific key-values for targeting. */                            
-                            lotameData: {"key1": "value1", "key2": "value2"}, /* optional JSON placeholder for passing Lotame DMP data */
+                            lotameData: {"Profile": {"tpid":"value","pid":"value","Audiences": {"Audience":[{"id":"value"},{"id":"value2"}]}}}, /* optional JSON placeholder for passing Lotame DMP data */
 							video: {
                                 skippable: true, /* optional */
                                 playback_method: ['auto_play_sound_off'], /* optional */

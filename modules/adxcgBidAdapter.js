@@ -2,7 +2,7 @@ import { config } from '../src/config.js'
 import * as utils from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
-import includes from 'core-js/library/fn/array/includes.js'
+import includes from 'core-js-pure/features/array/includes.js'
 
 /**
  * Adapter for requesting bids from adxcg.net
@@ -170,8 +170,8 @@ export const spec = {
       beaconParams.tdid = validBidRequests[0].userId.tdid;
     }
 
-    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.id5id'))) {
-      beaconParams.id5id = validBidRequests[0].userId.id5id;
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.id5id.uid'))) {
+      beaconParams.id5id = validBidRequests[0].userId.id5id.uid;
     }
 
     if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.idl_env'))) {

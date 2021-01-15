@@ -5,7 +5,7 @@ import {BANNER} from '../src/mediaTypes.js';
 var CONSTANTS = require('../src/constants.json');
 
 const BIDDER_CODE = 'tribeos';
-const ENDPOINT_URL = 'https://bidder-api-us-east.tribeos.io/prebid/';
+const ENDPOINT_URL = 'https://bidder.tribeos.tech/prebid/';
 const LOG_PREFIX = 'TRIBEOS: ';
 export const spec = {
   code: BIDDER_CODE,

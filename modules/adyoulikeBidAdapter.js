@@ -1,6 +1,7 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import find from 'core-js/library/fn/array/find.js';
+import { config } from '../src/config.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
@@ -48,7 +49,7 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentString: bidderRequest.gdprConsent.consentString,
-        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : null
       };
     }
 
@@ -80,7 +81,7 @@ export const spec = {
 
     try {
       bidRequests = JSON.parse(request.data).Bids;
-    } catch (e) {
+    } catch (err) {
       // json error initial request can't be read
     }
 
@@ -102,15 +103,6 @@ function getHostname(bidderRequest) {
     return ('-' + dcHostname.params.DC);
   }
   return '';
-}
-
-/* Get current page referrer url */
-function getReferrerUrl(bidderRequest) {
-  let referer = '';
-  if (bidderRequest && bidderRequest.refererInfo) {
-    referer = bidderRequest.refererInfo.referer;
-  }
-  return referer;
 }
 
 /* Get current page canonical url */
@@ -155,14 +147,24 @@ function createEndpoint(bidRequests, bidderRequest) {
 function createEndpointQS(bidderRequest) {
   const qs = {};
 
-  const ref = getReferrerUrl(bidderRequest);
-  if (ref) {
-    qs.RefererUrl = encodeURIComponent(ref);
+  if (bidderRequest) {
+    const ref = bidderRequest.refererInfo;
+    if (ref) {
+      qs.RefererUrl = encodeURIComponent(ref.referer);
+      if (ref.numIframes > 0) {
+        qs.SafeFrame = true;
+      }
+    }
   }
 
   const can = getCanonicalUrl();
   if (can) {
     qs.CanonicalUrl = encodeURIComponent(can);
+  }
+
+  const domain = config.getConfig('publisherDomain');
+  if (domain) {
+    qs.PublisherDomain = encodeURIComponent(domain);
   }
 
   return qs;
