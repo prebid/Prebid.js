@@ -224,7 +224,7 @@ describe('AdTrueBidAdapter', function () {
           auctionId: 'new-auction-id'
         });
         let data = JSON.parse(request.data);
-        expect(data.at).to.equal(1); // auction type
+        expect(data.at).to.equal(1); // auction  type
         expect(data.cur[0]).to.equal('USD'); // currency
         expect(data.site.domain).to.be.a('string'); // domain should be set
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
