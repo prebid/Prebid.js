@@ -258,25 +258,29 @@ function getTrackers(eventsArray, jsTrackers) {
 }
 
 function getNativeAssets(response, nativeConfig) {
-  const adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
-  const textsJson = adJson.Content.Preview.Text;
-
-  var impressionUrl = adJson.TrackingPrefix +
-          '/pixel?event_kind=IMPRESSION&attempt=' + adJson.Attempt;
-
-  if (adJson.Campaign) {
-    impressionUrl += '&campaign=' + adJson.Campaign;
-  }
-
   const native = {};
 
-  native.clickUrl = adJson.TrackingPrefix + '/ar?event_kind=CLICK&attempt=' + adJson.Attempt +
-    '&campaign=' + adJson.Campaign + '&url=' + encodeURIComponent(adJson.Content.Landing.Url);
+  var adJson = {};
+  var textsJson = {};
+  if (typeof response.Ad === 'string') {
+    adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
+    textsJson = adJson.Content.Preview.Text;
 
-  native.clickTrackers = getTrackers(adJson.OnEvents['CLICK']);
-  native.impressionTrackers = getTrackers(adJson.OnEvents['IMPRESSION']);
-  native.impressionTrackers.push(impressionUrl);
-  native.javascriptTrackers = getTrackers(adJson.OnEvents['IMPRESSION'], true);
+    var impressionUrl = adJson.TrackingPrefix +
+            '/pixel?event_kind=IMPRESSION&attempt=' + adJson.Attempt;
+
+    if (adJson.Campaign) {
+      impressionUrl += '&campaign=' + adJson.Campaign;
+    }
+
+    native.clickUrl = adJson.TrackingPrefix + '/ar?event_kind=CLICK&attempt=' + adJson.Attempt +
+      '&campaign=' + adJson.Campaign + '&url=' + encodeURIComponent(adJson.Content.Landing.Url);
+
+    native.clickTrackers = getTrackers(adJson.OnEvents['CLICK']);
+    native.impressionTrackers = getTrackers(adJson.OnEvents['IMPRESSION']);
+    native.impressionTrackers.push(impressionUrl);
+    native.javascriptTrackers = getTrackers(adJson.OnEvents['IMPRESSION'], true);
+  }
 
   Object.keys(nativeConfig).map(function(key, index) {
     if (typeof response.Native === 'object') {
@@ -340,7 +344,7 @@ function getNativeAssets(response, nativeConfig) {
 
 /* Create bid from response */
 function createBid(response, bidRequests) {
-  if (!response || !response.Ad) {
+  if (!response || (!response.Ad && !response.Native)) {
     return
   }
 
