@@ -57,10 +57,13 @@ describe('eids array generation for known sub-modules', function() {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'id5-sync.com',
-        uids: [{ id: 'some-random-id-value', atype: 1 }],
-        ext: {
-          linkType: 0
-        }
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1,
+          ext: {
+            linkType: 0
+          }
+        }]
       });
     });
   });

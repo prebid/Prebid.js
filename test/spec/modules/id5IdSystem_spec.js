@@ -297,10 +297,13 @@ describe('ID5 ID System', function() {
             expect(bid.userId.id5id.uid).to.equal(ID5_STORED_ID);
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: ID5_SOURCE,
-              uids: [{ id: ID5_STORED_ID, atype: 1 }],
-              ext: {
-                linkType: ID5_STORED_LINK_TYPE
-              }
+              uids: [{
+                id: ID5_STORED_ID,
+                atype: 1,
+                ext: {
+                  linkType: ID5_STORED_LINK_TYPE
+                }
+              }]
             });
           });
         });
