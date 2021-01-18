@@ -9,7 +9,7 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.6.0';
+const SUBLIME_VERSION = '0.7.0';
 
 /**
  * Debug log message
@@ -50,7 +50,7 @@ export function sendEvent(eventName) {
     src: 'pa',
     puid: state.transactionId || state.notifyId,
     trId: state.transactionId || state.notifyId,
-    ver: SUBLIME_VERSION,
+    pbav: SUBLIME_VERSION,
   };
 
   log('Sending pixel for event: ' + eventName, eventObject);
@@ -128,10 +128,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     return {
       method: 'POST',
       url: protocol + '://' + bidHost + '/bid',
-      data: payload,
+      data: JSON.stringify(payload),
       options: {
-        contentType: 'application/json',
-        withCredentials: true
+        contentType: 'text/plain',
+        withCredentials: false
       },
     }
   });
@@ -210,6 +210,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: BIDDER_GVLID,
   aliases: [],
+  sendEvent: sendEvent,
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,

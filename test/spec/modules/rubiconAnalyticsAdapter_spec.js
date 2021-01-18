@@ -852,6 +852,8 @@ describe('rubicon analytics adapter', function () {
       auctionInit.bidderRequests[0].bids[0].floorData = {
         skipped: false,
         modelVersion: 'someModelName',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         location: 'setConfig',
         skipRate: 15,
         fetchStatus: 'error',
@@ -953,6 +955,8 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].floors).to.deep.equal({
         location: 'setConfig',
         modelName: 'someModelName',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         skipped: false,
         enforcement: true,
         dealsEnforced: false,
@@ -998,6 +1002,8 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].floors).to.deep.equal({
         location: 'setConfig',
         modelName: 'someModelName',
+        modelWeight: 10,
+        modelTimestamp: 1606772895,
         skipped: false,
         enforcement: true,
         dealsEnforced: false,
@@ -1079,6 +1085,34 @@ describe('rubicon analytics adapter', function () {
         expectedMessage.fpkvs = [
           {key: 'source', value: 'fb'},
           {key: 'link', value: 'email'}
+        ]
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should convert kvs to strings before sending', function () {
+        config.setConfig({rubicon: {
+          fpkvs: {
+            number: 24,
+            boolean: false,
+            string: 'hello',
+            array: ['one', 2, 'three'],
+            object: {one: 'two'}
+          }
+        }});
+        performStandardAuction();
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.session.pvid = STUBBED_UUID.slice(0, 8);
+        expectedMessage.fpkvs = [
+          {key: 'number', value: '24'},
+          {key: 'boolean', value: 'false'},
+          {key: 'string', value: 'hello'},
+          {key: 'array', value: 'one,2,three'},
+          {key: 'object', value: '[object Object]'}
         ]
         expect(message).to.deep.equal(expectedMessage);
       });

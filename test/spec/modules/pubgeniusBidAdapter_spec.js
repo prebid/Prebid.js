@@ -472,7 +472,6 @@ describe('pubGENIUS adapter', () => {
         ...expectedBidResponse,
         vastUrl: 'http://vasturl/cache?id=x',
         vastXml: 'fake_creative',
-        videoCacheKey: 'x',
         mediaType: VIDEO,
       };
 

@@ -49,6 +49,8 @@ export const spec = {
         adUnitId: adUnitId,
         placementId: placementId,
         bidid: bidRequest.bidId,
+        count: bidRequest.params.count,
+        skipTime: bidRequest.params.skipTime
       };
     });
 

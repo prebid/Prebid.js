@@ -495,6 +495,12 @@ function autoDetectEnvironment() {
   return environment;
 };
 
+function supportIObs() {
+  const currentWindow = internal.getCurrentWindow();
+  return !!(currentWindow && currentWindow.IntersectionObserver && currentWindow.IntersectionObserverEntry &&
+    currentWindow.IntersectionObserverEntry.prototype && 'intersectionRatio' in currentWindow.IntersectionObserverEntry.prototype);
+}
+
 function getFeatures(bidRequest, bidderRequest) {
   const { adUnitCode, params } = bidRequest;
   const { adUnitElementId } = params;
@@ -569,6 +575,7 @@ export const internal = {
   getRefererInfo,
   adagioScriptFromLocalStorageCb,
   getCurrentWindow,
+  supportIObs,
   canAccessTopWindow,
   isRendererPreferredFromPublisher
 };
@@ -692,15 +699,21 @@ export const spec = {
       return false;
     }
 
-    const { organizationId, site, placement } = params;
-    const adUnitElementId = params.adUnitElementId || internal.autoDetectAdUnitElementId(adUnitCode);
+    const { organizationId, site } = params;
+    const adUnitElementId = (params.useAdUnitCodeAsAdUnitElementId === true)
+      ? adUnitCode
+      : params.adUnitElementId || internal.autoDetectAdUnitElementId(adUnitCode);
+    const placement = (params.useAdUnitCodeAsPlacement === true) ? adUnitCode : params.placement;
     const environment = params.environment || internal.autoDetectEnvironment();
+    const supportIObs = internal.supportIObs();
 
     // insure auto-detected params are kept in `bid` object.
     bid.params = {
       ...params,
       adUnitElementId,
-      environment
+      environment,
+      placement,
+      supportIObs
     };
 
     const debugData = () => ({
