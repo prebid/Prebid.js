@@ -168,6 +168,10 @@ const USER_IDS_CONFIG = {
   'fabrickId': {
     source: 'neustar.biz',
     atype: 1
+  },
+  'tapadId': {
+    source: 'tapad.com',
+    atype: 1
   }
 };
 
