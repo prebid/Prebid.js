@@ -1015,6 +1015,67 @@ describe('S2S Adapter', function () {
       });
     });
 
+    it('skips pbs alias when skipPbsAliasing is enabled in adapter', function() {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({ s2sConfig: s2sConfig });
+
+      const aliasBidder = {
+        bidder: 'mediafuse',
+        params: { aid: 123 }
+      };
+
+      const request = utils.deepClone(REQUEST);
+      request.ad_units[0].bids = [aliasBidder];
+
+      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext).to.deep.equal({
+        prebid: {
+          auctiontimestamp: 1510852447530,
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
+          }
+        }
+      });
+    });
+
+    it('skips dynamic aliases to request when skipPbsAliasing enabled', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({ s2sConfig: s2sConfig });
+
+      const alias = 'foobar_1';
+      const aliasBidder = {
+        bidder: alias,
+        params: { aid: 123456 }
+      };
+
+      const request = utils.deepClone(REQUEST);
+      request.ad_units[0].bids = [aliasBidder];
+
+      // TODO: stub this
+      $$PREBID_GLOBAL$$.aliasBidder('appnexus', alias, { skipPbsAliasing: true });
+      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext).to.deep.equal({
+        prebid: {
+          auctiontimestamp: 1510852447530,
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
+          }
+        }
+      });
+    });
+
     it('converts appnexus params to expected format for PBS', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
@@ -1207,7 +1268,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[1]).is.equal('segB');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].uids[0].id).is.equal('11111');
-      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].ext.linkType).is.equal('some-link-type');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].uids[0].ext.linkType).is.equal('some-link-type');
       // LiveRamp should exist
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveramp.com')[0].uids[0].id).is.equal('0000-1111-2222-3333');
     });

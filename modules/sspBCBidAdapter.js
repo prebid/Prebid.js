@@ -2,16 +2,64 @@ import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import strIncludes from 'core-js-pure/features/string/includes.js';
 
 const BIDDER_CODE = 'sspBC';
 const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TMAX = 450;
-const BIDDER_VERSION = '4.6';
+const BIDDER_VERSION = '4.7';
 const W = window;
 const { navigator } = W;
+const oneCodeDetection = {};
 var consentApiVersion;
+
+/**
+ * Get bid parameters for notification
+ * @param {*} bidData - bid (bidWon), or array of bids (timeout)
+ */
+const getNotificationPayload = bidData => {
+  if (bidData) {
+    const bids = utils.isArray(bidData) ? bidData : [bidData];
+    if (bids.length > 0) {
+      const result = {
+        requestId: undefined,
+        siteId: [],
+        adUnit: [],
+        slotId: [],
+      }
+      bids.forEach(bid => {
+        let params = utils.isArray(bid.params) ? bid.params[0] : bid.params;
+        params = params || {};
+
+        // check for stored detection
+        if (oneCodeDetection[bid.requestId]) {
+          params.siteId = oneCodeDetection[bid.requestId][0];
+          params.id = oneCodeDetection[bid.requestId][1];
+        }
+
+        if (params.siteId) {
+          result.siteId.push(params.siteId);
+        }
+        if (params.id) {
+          result.slotId.push(params.id);
+        }
+        if (bid.cpm) {
+          const meta = bid.meta || {};
+          result.cpm = bid.cpm;
+          result.creativeId = bid.creativeId;
+          result.adomain = meta.advertiserDomains && meta.advertiserDomains[0];
+          result.networkName = meta.networkName;
+        }
+        result.adUnit.push(bid.adUnitCode)
+        result.requestId = bid.auctionId || result.requestId;
+        result.timeout = bid.timeout || result.timeout;
+      })
+      return result;
+    }
+  }
+}
 
 const cookieSupport = () => {
   const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
@@ -104,13 +152,13 @@ function mapBanner(slot) {
 
 function mapImpression(slot) {
   const imp = {
-    id: slot.params.id,
+    id: (slot.params && slot.params.id) ? slot.params.id : 'bidid-' + slot.bidId,
     banner: mapBanner(slot),
     /* native: mapNative(slot), */
-    tagid: slot.params.id,
+    tagid: slot.adUnitCode,
   };
 
-  const bidfloor = parseFloat(slot.params.bidfloor);
+  const bidfloor = (slot.params && slot.params.bidFloor) ? parseFloat(slot.params.bidFloor) : undefined;
 
   if (bidfloor) {
     imp.bidfloor = bidfloor;
@@ -170,6 +218,7 @@ function renderCreative(site, auctionId, bid, seat, request) {
 </style>
   <script>
   window.rekid = ${site.id};
+  window.slot = ${parseInt(site.slot, 10)};
   window.wp_sn = "${site.sn}";
   window.mcad = JSON.parse(decodeURI(atob("${mcbase}")));
   window.gdpr = ${JSON.stringify(request.gdprConsent)};
@@ -197,11 +246,8 @@ const spec = {
   aliases: [],
   supportedMediaTypes: [BANNER],
   isBidRequestValid(bid) {
-    if (bid.params && bid.params.siteId && bid.params.id) {
-      return true;
-    }
-
-    return false;
+    // as per OneCode integration, bids without params are valid
+    return true;
   },
   buildRequests(validBidRequests, bidderRequest) {
     if ((!validBidRequests) || (validBidRequests.length < 1)) {
@@ -246,7 +292,7 @@ const spec = {
   interpretResponse(serverResponse, request) {
     const response = serverResponse.body;
     const bids = [];
-    let site = JSON.parse(request.data).site; // get page and referer data from request
+    const site = JSON.parse(request.data).site; // get page and referer data from request
     site.sn = response.sn || 'mc_adapter'; // WPM site name (wp_sn)
     let seat;
 
@@ -254,34 +300,31 @@ const spec = {
       response.seatbid.forEach(seatbid => {
         seat = seatbid.seat;
         seatbid.bid.forEach(serverBid => {
-          const bidRequest = request.bidderRequest.bids.filter(b => b.params.id === serverBid.impid)[0];
+          const bidRequest = request.bidderRequest.bids.filter(b => {
+            const bidId = b.params ? b.params.id : 'bidid-' + b.bidId;
+            return bidId === serverBid.impid;
+          })[0];
+          site.slot = bidRequest && bidRequest.params ? bidRequest.params.slotid : undefined;
 
-          if (bidRequest) {
-            const bidFloor = bidRequest.params.bidFloor || 0;
-            const bidCpm = bidRequest.params.flatCpm;
+          if (serverBid.ext) {
+            /*
+              bid response might include ext object containing siteId / slotId, as detected by OneCode
+              update site / slot data in this case
+            */
+            site.id = serverBid.ext.siteid || site.id;
+            site.slot = serverBid.ext.slotid || site.slot;
+          }
 
-            if (!serverBid.gam && bidRequest.params.gam) {
-              // build GAM config
-              serverBid.gam = JSON.stringify({
-                placement: bidRequest.params.gam,
-                multiplier: 1,
-                floor: bidRequest.params.gamFloor,
-                ceil: 100,
-                namedSizes: ['fluid'],
-                div: 'div-gpt-ad-x01',
-                targeting: {
-                  OAS_retarg: '0',
-                  PREBID_ON: '1',
-                  DFPHASH: '',
-                  emptygaf: '0',
-                },
-              });
-            }
+          if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
+            // store site data for future notification
+            oneCodeDetection[bidRequest.bidId] = [site.id, site.slot];
+
+            const bidFloor = (bidRequest.params && bidRequest.params.bidFloor) ? bidRequest.params.bidFloor : 0;
 
             const bid = {
               requestId: bidRequest.bidId,
               creativeId: serverBid.crid || 'mcad_' + request.bidderRequest.auctionId + '_' + request.bidderRequest.params.id,
-              cpm: bidCpm || serverBid.price,
+              cpm: serverBid.price,
               currency: response.cur,
               ttl: serverBid.exp || 300,
               width: serverBid.w,
@@ -304,7 +347,7 @@ const spec = {
               }
             }
           } else {
-            utils.logWarn('Discarding response - no matching request', serverBid.impid);
+            utils.logWarn('Discarding response - no matching request / site id', serverBid.impid);
           }
         });
       });
@@ -323,34 +366,18 @@ const spec = {
   },
 
   onTimeout(timeoutData) {
-    var adSlots = [];
-    const bid = timeoutData && timeoutData[0];
-    if (bid) {
-      timeoutData.forEach(bid => { adSlots.push(bid.params[0] && bid.params[0].id) })
-      const payload = {
-        event: 'timeout',
-        requestId: bid.auctionId,
-        siteId: bid.params ? [bid.params[0].siteId] : [],
-        slotId: adSlots,
-        timeout: bid.timeout,
-      }
+    const payload = getNotificationPayload(timeoutData);
+    if (payload) {
+      payload.event = 'timeout';
       sendNotification(payload);
       return payload;
     }
   },
 
   onBidWon(bid) {
-    if (bid && bid.auctionId) {
-      const payload = {
-        event: 'bidWon',
-        requestId: bid.auctionId,
-        siteId: bid.params ? [bid.params[0].siteId] : [],
-        slotId: bid.params ? [bid.params[0].id] : [],
-        cpm: bid.cpm,
-        creativeId: bid.creativeId,
-        adomain: (bid.meta && bid.meta.advertiserDomains) ? bid.meta.advertiserDomains[0] : '',
-        networkName: (bid.meta && bid.meta.networkName) ? bid.meta.networkName : '',
-      }
+    const payload = getNotificationPayload(bid);
+    if (payload) {
+      payload.event = 'bidWon';
       sendNotification(payload);
       return payload;
     }
