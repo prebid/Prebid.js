@@ -16,8 +16,9 @@ const MODULE_NAME = 'lotamePanoramaId';
 const NINE_MONTHS_MS = 23328000 * 1000;
 const DAYS_TO_CACHE = 7;
 const DAY_MS = 60 * 60 * 24 * 1000;
+const GVLID = 95;
 
-export const storage = getStorageManager(null, MODULE_NAME);
+export const storage = getStorageManager(GVLID, MODULE_NAME);
 
 /**
  * Set the Lotame First Party Profile ID in the first party namespace
@@ -141,12 +142,17 @@ function clearLotameCache(key) {
 }
 /** @type {Submodule} */
 export const lotamePanoramaIdSubmodule = {
-
   /**
    * used to link submodule with config
    * @type {string}
    */
   name: MODULE_NAME,
+
+  /**
+   * Vendor id of Lotame
+   * @type {Number}
+   */
+  gvlid: GVLID,
 
   /**
    * Decode the stored id value for passing to bid requests
@@ -156,7 +162,7 @@ export const lotamePanoramaIdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
-    return utils.isStr(value) ? { 'lotamePanoramaId': value } : undefined;
+    return utils.isStr(value) ? { lotamePanoramaId: value } : undefined;
   },
 
   /**
@@ -174,7 +180,7 @@ export const lotamePanoramaIdSubmodule = {
 
     if (!refreshNeeded) {
       return {
-        id: localCache.data
+        id: localCache.data,
       };
     }
 
@@ -183,7 +189,7 @@ export const lotamePanoramaIdSubmodule = {
     const resolveIdFunction = function (callback) {
       let queryParams = {};
       if (storedUserId) {
-        queryParams.fp = storedUserId
+        queryParams.fp = storedUserId;
       }
 
       if (consentData && utils.isBoolean(consentData.gdprApplies)) {
@@ -233,7 +239,7 @@ export const lotamePanoramaIdSubmodule = {
         undefined,
         {
           method: 'GET',
-          withCredentials: true
+          withCredentials: true,
         }
       );
     };

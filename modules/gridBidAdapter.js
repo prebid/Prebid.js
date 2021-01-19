@@ -51,6 +51,7 @@ export const spec = {
     let content = null;
     let schain = null;
     let userId = null;
+    let userIdAsEids = null;
     let user = null;
     let userExt = null;
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
@@ -71,6 +72,9 @@ export const spec = {
       }
       if (!userId) {
         userId = bid.userId;
+      }
+      if (!userIdAsEids) {
+        userIdAsEids = bid.userIdAsEids;
       }
       const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd} = bid;
       bidsMap[bidId] = bid;
@@ -161,66 +165,9 @@ export const spec = {
       userExt = {consent: gdprConsent.consentString};
     }
 
-    if (userId) {
-      if (userId.tdid) {
-        userExt = userExt || {};
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push({
-          source: 'adserver.org', // Unified ID
-          uids: [{
-            id: userId.tdid,
-            ext: {
-              rtiPartner: 'TDID'
-            }
-          }]
-        });
-      }
-      if (userId.id5id && userId.id5id.uid) {
-        userExt = userExt || {};
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push({
-          source: 'id5-sync.com',
-          uids: [{
-            id: userId.id5id.uid
-          }],
-          ext: userId.id5id.ext
-        });
-      }
-      if (userId.lipb && userId.lipb.lipbid) {
-        userExt = userExt || {};
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push({
-          source: 'liveintent.com',
-          uids: [{
-            id: userId.lipb.lipbid
-          }]
-        });
-      }
-      if (userId.idl_env) {
-        userExt = userExt || {};
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push({
-          source: 'identityLink',
-          uids: [{
-            id: userId.idl_env
-          }]
-        });
-      }
-      if (userId.criteoId) {
-        userExt = userExt || {};
-        userExt.eids = userExt.eids || [];
-        userExt.eids.push({
-          source: 'criteo.com',
-          uids: [{
-            id: userId.criteoId
-          }]
-        });
-      }
-
-      if (userId.digitrustid && userId.digitrustid.data && userId.digitrustid.data.id) {
-        userExt = userExt || {};
-        userExt.digitrust = Object.assign({}, userId.digitrustid.data);
-      }
+    if (userIdAsEids && userIdAsEids.length) {
+      userExt = userExt || {};
+      userExt.eids = [...userIdAsEids];
     }
 
     if (userExt && Object.keys(userExt).length) {

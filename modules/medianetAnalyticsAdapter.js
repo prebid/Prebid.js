@@ -4,7 +4,8 @@ import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import { AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity } from '../src/auction.js'
+import { AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity } from '../src/auction.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';
@@ -125,7 +126,7 @@ class Configure {
       this.setDataFromResponse(response);
       this.overrideDomainLevelData(response);
       this.overrideToDebug(this.mnetDebugConfig);
-      this.urlToConsume = VALID_URL_KEY.includes(response.urlKey) ? response.urlKey : this.urlToConsume;
+      this.urlToConsume = includes(VALID_URL_KEY, response.urlKey) ? response.urlKey : this.urlToConsume;
       this.ajaxState = CONFIG_PASS;
     } catch (e) {
       this.ajaxState = CONFIG_ERROR;
