@@ -1,0 +1,88 @@
+<!-- This is a Test Page for a Banner End-to-End test  -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Prebid.js Banner Example</title>
+
+	<!-- Prebid.js -->
+	<script async src="../../build/dev/prebid.js"></script>
+
+	<!-- Google Publisher Tag -->
+	<!-- <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script> -->
+
+	<script>
+		var pbjs = pbjs || {};
+		pbjs.que = pbjs.que || [];
+
+		// Prebid Banner Ad Unit
+		const adUnits = [
+			{
+				code: 'desktop',
+				mediaTypes: {
+					video: {
+						// sizes: [[640, 360]], // banner only
+						playerSize: [640, 360]
+					}
+				},
+				bids: [
+					{
+						bidder: 'glomex',
+						params: {
+							placementId: 1234
+						}
+					}
+				]
+			},
+			{
+				code: 'mobile',
+				mediaTypes: {
+					video: {
+						playerSize: [400, 225]
+					}
+				},
+				bids: [
+					{
+						bidder: 'glomex',
+						params: {
+							placementId: 5678
+						}
+					}
+				]
+			},
+		];
+	</script>
+
+	<script>
+		pbjs.que.push(function () {
+			pbjs.addAdUnits(adUnits);
+			// pbjs.requestBids({ bidsBackHandler: sendAdServerRequest });
+			pbjs.requestBids({
+				bidsBackHandler : function(bids) {
+					console.log(bids);
+				}
+			});
+		});
+
+		// function sendAdServerRequest() {
+		// 	googletag.cmd.push(function () {
+		// 		pbjs.que.push(function () {
+		// 			pbjs.setTargetingForGPTAsync('div-gpt-ad-1460505748561-0');
+		// 			googletag.pubads().refresh();
+		// 		});
+		// 	});
+		// }
+	</script>
+
+</head>
+
+<body>
+	<h2>Prebid.js Banner Ad Unit Test</h2>
+	<div id='foo'>
+
+	</div>
+	<div id="targeting-keys"></div>
+</body>
+
+</html>
