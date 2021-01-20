@@ -250,7 +250,8 @@ export function newTargeting(auctionManager) {
       });
     });
 
-    const allowedKeys = config.getConfig('targetingControls.allowTargetingKeys');
+    const defaultKeys = Object.keys(Object.assign({}, CONSTANTS.DEFAULT_TARGETING_KEYS, CONSTANTS.NATIVE_KEYS));
+    const allowedKeys = config.getConfig('targetingControls.allowTargetingKeys') || defaultKeys;
     if (Array.isArray(allowedKeys) && allowedKeys.length > 0) {
       targeting = getAllowedTargetingKeyValues(targeting, allowedKeys);
     }

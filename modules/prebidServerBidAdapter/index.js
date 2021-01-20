@@ -492,7 +492,12 @@ const OPEN_RTB_PROTOCOL = {
 
         // check for and store valid aliases to add to the request
         if (adapterManager.aliasRegistry[bid.bidder]) {
-          aliases[bid.bidder] = adapterManager.aliasRegistry[bid.bidder];
+          const bidder = adapterManager.bidderRegistry[bid.bidder];
+          // adding alias only if alias source bidder exists and alias isn't configured to be standalone
+          // pbs adapter
+          if (bidder && !bidder.getSpec().skipPbsAliasing) {
+            aliases[bid.bidder] = adapterManager.aliasRegistry[bid.bidder];
+          }
         }
       });
 

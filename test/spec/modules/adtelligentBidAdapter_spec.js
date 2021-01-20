@@ -294,7 +294,8 @@ describe('adtelligentBidAdapter', () => {
         CallbackId: '84ab500420319d',
         AdType: 'video',
         Aid: 12345,
-        Sizes: '480x360,640x480'
+        Sizes: '480x360,640x480',
+        PlacementId: 'adunit-code'
       };
       expect(data.BidRequests[0]).to.deep.equal(eq);
     });
@@ -306,7 +307,8 @@ describe('adtelligentBidAdapter', () => {
         CallbackId: '84ab500420319d',
         AdType: 'display',
         Aid: 12345,
-        Sizes: '300x250'
+        Sizes: '300x250',
+        PlacementId: 'adunit-code'
       };
 
       expect(data.BidRequests[0]).to.deep.equal(eq);
@@ -318,12 +320,14 @@ describe('adtelligentBidAdapter', () => {
         CallbackId: '84ab500420319d',
         AdType: 'display',
         Aid: 12345,
-        Sizes: '300x250'
+        Sizes: '300x250',
+        PlacementId: 'adunit-code'
       }, {
         CallbackId: '84ab500420319d',
         AdType: 'video',
         Aid: 12345,
-        Sizes: '480x360,640x480'
+        Sizes: '480x360,640x480',
+        PlacementId: 'adunit-code'
       }]
 
       expect(bidRequests.BidRequests).to.deep.equal(expectedBidReqs);
