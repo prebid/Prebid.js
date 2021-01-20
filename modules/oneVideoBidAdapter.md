@@ -40,6 +40,11 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
                   inventoryid: 123,
                   minduration: 10,
                   maxduration: 30,
+                  ttl: 300,
+                  custom: {
+                    key1: "value1",
+                    key2: 123345
+                  }
                 },
                 site: {
                     id: 1,
@@ -85,6 +90,7 @@ Connects to Verizon Media's Video SSP (AKA ONE Video / Adap.tv) demand source to
                   inventoryid: 123,
                   minduration: 10,
                   maxduration: 30,
+                  ttl: 250
                 },
                 site: {
                     id: 1,
@@ -294,3 +300,89 @@ var adUnits = [
       }
   ]
 ```
+# Content Object Support
+The oneVideoBidAdapter supports passing of OpenRTB V2.5 Content Object.
+
+```
+const adUnits = [{
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480]
+                }
+            },
+            bids: [{
+                bidder: 'oneVideo',
+                params: {
+                    video: {
+                        playerWidth: 640,
+                        playerHeight: 480,
+                        mimes: ['video/mp4', 'application/javascript'],
+                        protocols: [2, 5],
+                        api: [1, 2],
+                        ttl: 300,
+                        content: {
+                            id: "1234",
+                            title: "Title",
+                            series: "Series",
+                            season: "Season",
+                            episode: 1
+                            cat: [
+                                "IAB1",
+                                "IAB1-1",
+                                "IAB1-2",
+                                "IAB2",
+                                "IAB2-1"
+                            ],
+                            genre: "Genre",
+                            contentrating: "C-Rating",
+                            language: "EN",
+                            prodq: 1,
+                            context: 1,
+                            livestream: 0,
+                            len: 360,
+                            ext: {
+                                network: "ext-network",
+                                channel: "ext-channel"
+                            }
+                        }
+                      },
+                      pubId: 'HBExchange'
+                    }
+                }
+            }]
+        }]
+```
+
+
+# TTL Support
+The oneVideoBidAdapter supports passing of "Time To Live" (ttl)  that indicates to prebid chache for how long to keep the chaced winning bid alive.
+Value is Number in seconds
+You can enter any number between 1 - 3600 (seconds)
+```
+const adUnits = [{
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480]
+                }
+            },
+            bids: [{
+                bidder: 'oneVideo',
+                params: {
+                    video: {
+                        playerWidth: 640,
+                        playerHeight: 480,
+                        mimes: ['video/mp4', 'application/javascript'],
+                        protocols: [2, 5],
+                        api: [1, 2],
+                        ttl: 300
+                    },
+                    pubId: 'HBExchange'
+                }
+            }]
+        }]
+```
+

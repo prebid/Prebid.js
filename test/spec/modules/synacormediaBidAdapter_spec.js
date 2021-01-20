@@ -11,12 +11,19 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [300, 250],
         params: {
           seatId: 'prebid',
-          placementId: '1234'
+          tagId: '1234'
         }
       };
     });
 
     it('should return true when params placementId and seatId are truthy', function () {
+      bid.params.placementId = bid.params.tagId;
+      delete bid.params.tagId;
+      assert(spec.isBidRequestValid(bid));
+    });
+
+    it('should return true when params tagId and seatId are truthy', function () {
+      delete bid.params.placementId;
       assert(spec.isBidRequestValid(bid));
     });
 
@@ -35,8 +42,9 @@ describe('synacormediaBidAdapter ', function () {
       assert.isFalse(spec.isBidRequestValid(bid));
     });
 
-    it('should return false when placementId param is missing', function () {
+    it('should return false when both placementId param and tagId param are missing', function () {
       delete bid.params.placementId;
+      delete bid.params.tagId;
       assert.isFalse(spec.isBidRequestValid(bid));
     });
 
@@ -53,7 +61,7 @@ describe('synacormediaBidAdapter ', function () {
       sizes: [[300, 250], [300, 600]],
       params: {
         seatId: 'prebid',
-        placementId: '1234',
+        tagId: '1234',
         bidfloor: '0.50'
       }
     };
@@ -63,7 +71,7 @@ describe('synacormediaBidAdapter ', function () {
       sizes: [[300, 250], [300, 600]],
       params: {
         seatId: 'prebid',
-        placementId: '1234',
+        tagId: '1234',
         bidfloor: '0.50'
       },
       mediaTypes: {
@@ -84,7 +92,7 @@ describe('synacormediaBidAdapter ', function () {
       sizes: [[640, 480]],
       params: {
         seatId: 'prebid',
-        placementId: '1234',
+        tagId: '1234',
         bidfloor: '0.50'
       },
       mediaTypes: {
@@ -110,7 +118,7 @@ describe('synacormediaBidAdapter ', function () {
       bidder: 'synacormedia',
       params: {
         seatId: 'prebid',
-        placementId: '1234',
+        tagId: '1234',
         video: {
           minduration: 30
         }
@@ -163,7 +171,7 @@ describe('synacormediaBidAdapter ', function () {
       sizes: [[300, 250], [300, 600]],
       params: {
         seatId: 'prebid',
-        placementId: '1234',
+        tagId: '1234',
         bidfloor: '0.50'
       }
     };
@@ -230,7 +238,7 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [[300, 600]],
         params: {
           seatId: validBidRequest.params.seatId,
-          placementId: '5678',
+          tagId: '5678',
           bidfloor: '0.50'
         }
       };
@@ -262,7 +270,7 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [[300, 250]],
         params: {
           seatId: 'somethingelse',
-          placementId: '5678',
+          tagId: '5678',
           bidfloor: '0.50'
         }
       };
@@ -295,7 +303,7 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [[300, 250]],
         params: {
           seatId: 'prebid',
-          placementId: '1234',
+          tagId: '1234',
           bidfloor: 'abcd'
         }
       };
@@ -327,7 +335,7 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [[300, 250]],
         params: {
           seatId: 'prebid',
-          placementId: '1234'
+          tagId: '1234'
         }
       };
       let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
@@ -358,7 +366,7 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [[300, 250]],
         params: {
           seatId: 'prebid',
-          placementId: '1234',
+          tagId: '1234',
           pos: 1
         }
       };
@@ -390,7 +398,7 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [[300, 250]],
         params: {
           seatId: 'prebid',
-          placementId: '1234',
+          tagId: '1234',
         }
       };
       let req = spec.buildRequests([newPosBidRequest], bidderRequest);
@@ -425,7 +433,7 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [],
         params: {
           seatId: 'prebid',
-          placementId: '1234',
+          tagId: '1234',
           bidfloor: '0.50'
         }
       };
@@ -435,7 +443,7 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [[300]],
         params: {
           seatId: 'prebid',
-          placementId: '1234',
+          tagId: '1234',
           bidfloor: '0.50'
         }
       };
@@ -457,7 +465,7 @@ describe('synacormediaBidAdapter ', function () {
         bidder: 'synacormedia',
         params: {
           seatId: 'prebid',
-          placementId: '1234',
+          tagId: '1234',
           video: {
             minduration: 30,
             maxduration: 45,
@@ -515,7 +523,7 @@ describe('synacormediaBidAdapter ', function () {
         bidder: 'synacormedia',
         params: {
           seatId: 'prebid',
-          placementId: '1234',
+          tagId: '1234',
           video: {
             minduration: 30,
             maxduration: 45,
@@ -582,12 +590,74 @@ describe('synacormediaBidAdapter ', function () {
     })
   });
 
+  describe('Bid Requests with placementId should be backward compatible ', function () {
+    let validVideoBidReq = {
+      bidder: 'synacormedia',
+      params: {
+        seatId: 'prebid',
+        placementId: 'demo1',
+        pos: 1,
+        video: {}
+      },
+      renderer: {
+        url: '../syncOutstreamPlayer.js'
+      },
+      mediaTypes: {
+        video: {
+          playerSize: [[300, 250]],
+          context: 'outstream'
+        }
+      },
+      adUnitCode: 'div-1',
+      transactionId: '0869f34e-090b-4b20-84ee-46ff41405a39',
+      sizes: [[300, 250]],
+      bidId: '22b3a2268d9f0e',
+      bidderRequestId: '1d195910597e13',
+      auctionId: '3375d336-2aea-4ee7-804c-6d26b621ad20',
+      src: 'client',
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0
+    };
+
+    let validBannerBidRequest = {
+      bidId: '9876abcd',
+      sizes: [[300, 250]],
+      params: {
+        seatId: 'prebid',
+        placementId: '1234',
+      }
+    };
+
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'http://localhost:9999/'
+      },
+      bidderCode: 'synacormedia',
+      auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110'
+    };
+
+    it('should return valid bid request for banner impression', function () {
+      let req = spec.buildRequests([validBannerBidRequest], bidderRequest);
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+    });
+
+    it('should return valid bid request for video impression', function () {
+      let req = spec.buildRequests([validVideoBidReq], bidderRequest);
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+    });
+  });
+
   describe('Bid Requests with schain object ', function() {
     let validBidReq = {
       bidder: 'synacormedia',
       params: {
         seatId: 'prebid',
-        placementId: 'demo1',
+        tagId: 'demo1',
         pos: 1,
         video: {}
       },
@@ -634,7 +704,7 @@ describe('synacormediaBidAdapter ', function () {
           bidder: 'synacormedia',
           params: {
             seatId: 'prebid',
-            placementId: 'demo1',
+            tagId: 'demo1',
             pos: 1,
             video: {}
           },
@@ -914,8 +984,8 @@ describe('synacormediaBidAdapter ', function () {
       });
 
       let resp = spec.interpretResponse(serverRespVideo, bidRequest);
-	  sandbox.restore();
-	  expect(resp[0].videoCacheKey).to.not.exist;
+	    sandbox.restore();
+	    expect(resp[0].videoCacheKey).to.not.exist;
     });
 
     it('should use video bid request height and width if not present in response', function () {

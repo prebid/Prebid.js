@@ -22,13 +22,22 @@ userIdAsEids = [
     },
 
     {
-        source: 'id5-sync.com',
+        source: 'neustar.biz',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
-        },
-        ext: {
-            linkType: 2
+        }]
+    },
+
+    {
+        source: 'id5-sync.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1,
+            ext: {
+                linkType: 2,
+                abTestingControlGroup: false
+            }
         }]
     },
 
@@ -128,6 +137,13 @@ userIdAsEids = [
 
     {
         source: 'verizonmedia.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'tapad.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
