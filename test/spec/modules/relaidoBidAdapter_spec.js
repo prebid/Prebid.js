@@ -15,7 +15,6 @@ const storage = getStorageManager();
 storage.setCookie(UUID_KEY, relaido_uuid);
 
 describe('RelaidoAdapter', function () {
-  window.document.cookie = `${UUID_KEY}=${relaido_uuid}`
   let bidRequest;
   let bidderRequest;
   let serverResponse;

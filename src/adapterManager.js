@@ -453,7 +453,8 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
         } else {
           let spec = bidAdaptor.getSpec();
           let gvlid = options && options.gvlid;
-          newAdapter = newBidder(Object.assign({}, spec, { code: alias, gvlid }));
+          let skipPbsAliasing = options && options.skipPbsAliasing;
+          newAdapter = newBidder(Object.assign({}, spec, { code: alias, gvlid, skipPbsAliasing }));
           _aliasRegistry[alias] = bidderCode;
         }
         adapterManager.registerBidAdapter(newAdapter, alias, {
