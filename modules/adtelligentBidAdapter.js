@@ -6,12 +6,31 @@ import { Renderer } from '../src/Renderer.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const subdomainSuffixes = ['', 1, 2];
-const getUri = (function () {
-  let num = 0;
-  return function () {
-    return 'https://ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com/v2/auction/'
+const AUCTION_PATH = '/v2/auction/';
+const PROTOCOL = 'https://';
+const HOST_GETTERS = {
+  default: (function () {
+    let num = 0;
+    return function () {
+      return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com';
+    }
+  }()),
+  appaloosa: function () {
+    return 'ghb.hb.appaloosa.media';
+  },
+  onefiftytwomedia: function () {
+    return 'ghb.ads.152media.com';
+  },
+  mediafuse: function () {
+    return 'ghb.hbmp.mediafuse.com';
   }
-}())
+
+}
+const getUri = function (bidderCode) {
+  let bidderWithoutSuffix = bidderCode.split('_')[0];
+  let getter = HOST_GETTERS[bidderWithoutSuffix] || HOST_GETTERS['default'];
+  return PROTOCOL + getter() + AUCTION_PATH
+}
 const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
 const BIDDER_CODE = 'adtelligent';
 const OUTSTREAM = 'outstream';
@@ -21,7 +40,12 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia'],
+  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa',
+    {
+      code: 'mediafuse',
+      skipPbsAliasing: true
+    }
+  ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
     return !!utils.deepAccess(bid, 'params.aid');
@@ -82,7 +106,7 @@ export const spec = {
         data: Object.assign({}, tag, { BidRequests: bids }),
         adapterRequest,
         method: 'POST',
-        url: getUri()
+        url: getUri(adapterRequest.bidderCode)
       };
     })
   },
@@ -184,6 +208,11 @@ function prepareBidRequests(bidReq) {
     'AdType': mediaType,
     'Sizes': utils.parseSizesInput(sizes).join(',')
   };
+
+  bidReqParams.PlacementId = bidReq.adUnitCode;
+  if (bidReq.params.vpb_placement_id) {
+    bidReqParams.PlacementId = bidReq.params.vpb_placement_id;
+  }
   if (mediaType === VIDEO) {
     const context = utils.deepAccess(bidReq, 'mediaTypes.video.context');
     if (context === ADPOD) {
