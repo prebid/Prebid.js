@@ -142,7 +142,7 @@ describe('mediaforce bid adapter', function () {
 
     const requestUrl = `${baseUrl}/header_bid`;
     const dnt = utils.getDNT() ? 1 : 0;
-    const secure = window.location.protocol === 'https' ? 1 : 0;
+    const secure = window.location.protocol === 'https:' ? 1 : 0;
     const pageUrl = window.location.href;
     const timeout = 1500;
 
