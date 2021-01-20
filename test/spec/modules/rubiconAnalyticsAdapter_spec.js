@@ -532,7 +532,9 @@ const ANALYTICS_MESSAGE = {
       'bidwonStatus': 'success'
     }
   ],
-  'wrapperName': '10000_fakewrapper_test'
+  'wrapper': {
+    'name': '10000_fakewrapper_test'
+  }
 };
 
 function performStandardAuction(gptEvents) {
@@ -1673,6 +1675,34 @@ describe('rubicon analytics adapter', function () {
       const request = server.requests[0];
       const message = JSON.parse(request.requestBody);
       expect(message.integration).to.equal('testType');
+
+      rubiconAnalyticsAdapter.disableAnalytics();
+    });
+  });
+
+  describe('wrapper details passed in', () => {
+    it('should correctly pass in the wrapper details if provided', () => {
+      config.setConfig({rubicon: {
+        wrapperName: '1001_wrapperName',
+        rule_name: 'na-mobile'
+      }});
+
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+
+      performStandardAuction();
+
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.wrapper).to.deep.equal({
+        name: '1001_wrapperName',
+        rule: 'na-mobile'
+      });
 
       rubiconAnalyticsAdapter.disableAnalytics();
     });

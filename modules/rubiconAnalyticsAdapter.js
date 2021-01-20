@@ -162,13 +162,17 @@ function sendMessage(auctionId, bidWonId) {
   let message = {
     eventTimeMillis: Date.now(),
     integration: rubiConf.int_type || DEFAULT_INTEGRATION,
-    ruleId: rubiConf.rule_name,
     version: '$prebid.version$',
     referrerUri: referrer,
     referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer),
     channel: 'web',
-    wrapperName: rubiConf.wrapperName
   };
+  if (rubiConf.wrapperName || rubiConf.rule_name) {
+    message.wrapper = {
+      name: rubiConf.wrapperName,
+      rule: rubiConf.rule_name
+    }
+  }
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
       let bid = auctionCache.bids[bidId];
