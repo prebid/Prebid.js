@@ -255,11 +255,11 @@ export const spec = {
       }
 
       const bidFpd = {
-        user: bidRequest.params.visitor || {},
-        context: bidRequest.params.inventory || {}
+        user: {...bidRequest.params.visitor} || {},
+        context: {...bidRequest.params.inventory} || {}
       };
 
-      if (bidRequest.params.keywords) bidFpd.context.keywords = bidRequest.params.keywords;
+      if (bidRequest.params.keywords) bidFpd.context.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
       applyFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), VIDEO, data);
 
@@ -516,11 +516,11 @@ export const spec = {
     }
 
     const bidFpd = {
-      user: bidRequest.params.visitor || {},
-      context: bidRequest.params.inventory || {}
+      user: {...bidRequest.params.visitor} || {},
+      context: {...bidRequest.params.inventory} || {}
     };
 
-    if (bidRequest.params.keywords) bidFpd.context.keywords = bidRequest.params.keywords;
+    if (bidRequest.params.keywords) bidFpd.context.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
     applyFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), BANNER, data);
 
@@ -885,21 +885,22 @@ function addVideoParameters(data, bidRequest) {
 function applyFPD(fpd, mediaType, data) {
   const map = {user: {banner: 'tg_v.', code: 'user'}, context: {banner: 'tg_i.', code: 'site'}, adserver: 'dfp_ad_unit_code'};
   let obj = {};
+  let impData = {};
   let keywords = [];
-  const validate = function(e, t) {
-    if (typeof e === 'object' && !Array.isArray(e)) {
-      utils.logWarn('Rubicon: Filtered FPD key: ', t, ': Expected value to be string, integer, or an array of strings/ints');
-    } else if (e) {
-      return (Array.isArray(e)) ? e.filter(value => {
-        if (typeof value !== 'object' && value) return value;
+  const validate = function(prop, key) {
+    if (typeof prop === 'object' && !Array.isArray(prop)) {
+      utils.logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
+    } else if (utils.isNumber(prop) || prop) {
+      return (Array.isArray(prop)) ? prop.filter(value => {
+        if (typeof value !== 'object' && (utils.isNumber(value) || value)) return value.toString();
 
-        utils.logWarn('Rubicon: Filtered value: ', value, 'for key', t, ': Expected value to be string, integer, or an array of strings/ints');
-      }).toString() : e.toString();
+        utils.logWarn('Rubicon: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
+      }).toString() : prop.toString();
     }
   };
 
   Object.keys(fpd).filter(value => fpd[value] && map[value] && typeof fpd[value] === 'object').forEach((type) => {
-    obj[map[type].code] = Object.keys(fpd[type]).filter(value => fpd[type][value]).reduce((result, key) => {
+    obj[map[type].code] = Object.keys(fpd[type]).filter(value => utils.isNumber(fpd[type][value]) || fpd[type][value]).reduce((result, key) => {
       if (key === 'keywords') {
         if (!Array.isArray(fpd[type][key]) && mediaType === BANNER) fpd[type][key] = [fpd[type][key]]
 
@@ -911,9 +912,8 @@ function applyFPD(fpd, mediaType, data) {
       } else if (key === 'adServer' || key === 'pbAdSlot') {
         (key === 'adServer') ? ['name', 'adSlot'].forEach(name => {
           const value = validate(fpd[type][key][name]);
-
-          if (value) utils.mergeDeep(result, {ext: {data: {adserver: {[name.toLowerCase()]: value.replace(/^\/+/, '')}}}});
-        }) : utils.mergeDeep(result, {ext: {data: {[key.toLowerCase()]: fpd[type][key].replace(/^\/+/, '')}}});
+          if (value) utils.deepSetValue(impData, `adserver.${name.toLowerCase()}`, value.replace(/^\/+/, ''))
+        }) : impData[key.toLowerCase()] = fpd[type][key].replace(/^\/+/, '')
       } else {
         utils.mergeDeep(result, {ext: {data: {[key]: fpd[type][key]}}});
       }
@@ -923,11 +923,20 @@ function applyFPD(fpd, mediaType, data) {
 
     if (mediaType === BANNER) {
       let duplicate = (typeof obj[map[type].code].ext === 'object' && obj[map[type].code].ext.data) || {};
+
       Object.keys(duplicate).forEach((key) => {
         const val = (key === 'adserver') ? duplicate.adserver.adslot : validate(duplicate[key], key);
 
         if (val) data[(map[key]) ? `${map[type][BANNER]}${map[key]}` : `${map[type][BANNER]}${key}`] = val;
       });
+    }
+  });
+
+  Object.keys(impData).forEach((key) => {
+    if (mediaType === BANNER) {
+      (map[key]) ? data[`tg_i.${map[key]}`] = impData[key].adslot : data[`tg_i.${key.toLowerCase()}`] = impData[key];
+    } else {
+      utils.mergeDeep(data.imp[0], {ext: {context: {data: {[key]: impData[key]}}}});
     }
   });
 

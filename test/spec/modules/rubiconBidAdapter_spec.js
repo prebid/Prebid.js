@@ -828,7 +828,7 @@ describe('the rubicon adapter', function () {
 
           it('should merge first party data from getConfig with the bid params, if present', () => {
             const context = {
-              keywords: ['e', 'f'],
+              keywords: 'e,f',
               rating: '4-star',
               data: {
                 page: 'home'
@@ -838,7 +838,7 @@ describe('the rubicon adapter', function () {
               gender: 'M',
               yob: '1984',
               geo: {country: 'ca'},
-              keywords: ['d'],
+              keywords: 'd',
               data: {
                 age: 40
               }
@@ -855,7 +855,7 @@ describe('the rubicon adapter', function () {
             });
 
             const expectedQuery = {
-              'kw': 'e,f,a,b,c,d',
+              'kw': 'a,b,c,d',
               'tg_v.ucat': 'new',
               'tg_v.lastsearch': 'iphone',
               'tg_v.likes': 'sports,video games',
@@ -1875,14 +1875,14 @@ describe('the rubicon adapter', function () {
             data: {
               page: 'home'
             },
-            keywords: ['e', 'f'],
+            keywords: 'e,f',
             rating: '4-star'
           };
           const user = {
             data: {
               age: 31
             },
-            keywords: ['d'],
+            keywords: 'd',
             gender: 'M',
             yob: '1984',
             geo: {country: 'ca'}
@@ -1910,8 +1910,8 @@ describe('the rubicon adapter', function () {
           delete expected.site.keywords;
           delete expected.user.keywords;
 
-          expect(request.data.site.keywords).to.deep.equal(['e', 'f', 'a', 'b', 'c']);
-          expect(request.data.user.keywords).to.deep.equal(['d']);
+          expect(request.data.site.keywords).to.deep.equal('a,b,c');
+          expect(request.data.user.keywords).to.deep.equal('d');
           expect(request.data.site.ext.data).to.deep.equal(expected.site);
           expect(request.data.user.ext.data).to.deep.equal(expected.user);
         });
@@ -1945,7 +1945,7 @@ describe('the rubicon adapter', function () {
           );
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.site.ext.data.pbadslot).to.equal('1234567890');
+          expect(request.data.imp[0].ext.context.data.pbadslot).to.equal('1234567890');
         });
 
         it('should include GAM ad unit in bid request', function () {
@@ -1964,8 +1964,8 @@ describe('the rubicon adapter', function () {
           );
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.site.ext.data.adserver.adslot).to.equal('1234567890');
-          expect(request.data.site.ext.data.adserver.name).to.equal('adServerName1');
+          expect(request.data.imp[0].ext.context.data.adserver.adslot).to.equal('1234567890');
+          expect(request.data.imp[0].ext.context.data.adserver.name).to.equal('adServerName1');
         });
 
         it('should use the integration type provided in the config instead of the default', () => {
