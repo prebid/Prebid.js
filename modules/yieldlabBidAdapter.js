@@ -8,7 +8,7 @@ const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
 const BID_RESPONSE_TTL_SEC = 300
 const CURRENCY_CODE = 'EUR'
-const OUTSTREAMPLAYER_URL = 'https://ad2.movad.net/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event'
+const OUTSTREAMPLAYER_URL = 'https://ad.adition.com/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event'
 
 export const spec = {
   code: BIDDER_CODE,
