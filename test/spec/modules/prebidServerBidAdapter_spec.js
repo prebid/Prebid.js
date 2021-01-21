@@ -2433,5 +2433,36 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
     });
+
+    it('should add cooperative sync flag to cookie_sync request if property is present', function () {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.coopSync = false;
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      let consentConfig = { s2sConfig: cookieSyncConfig };
+      config.setConfig(consentConfig);
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.coopSync).to.equal(false);
+    });
+
+    it('should not add cooperative sync flag to cookie_sync request if property is not present', function () {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      let consentConfig = { s2sConfig: cookieSyncConfig };
+      config.setConfig(consentConfig);
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.coopSync).to.be.undefined;
+    });
   });
 });

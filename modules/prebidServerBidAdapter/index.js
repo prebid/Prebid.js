@@ -155,6 +155,10 @@ function queueSync(bidderCodes, gdprConsent, uspConsent) {
     payload.us_privacy = uspConsent;
   }
 
+  if (typeof _s2sConfig.coopSync === 'boolean') {
+    payload.coopSync = _s2sConfig.coopSync;
+  }
+
   const jsonPayload = JSON.stringify(payload);
   ajax(_s2sConfig.syncEndpoint,
     (response) => {
