@@ -255,8 +255,8 @@ export const spec = {
       }
 
       const bidFpd = {
-        user: {...bidRequest.params.visitor} || {},
-        context: {...bidRequest.params.inventory} || {}
+        user: {...bidRequest.params.visitor},
+        context: {...bidRequest.params.inventory}
       };
 
       if (bidRequest.params.keywords) bidFpd.context.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
@@ -516,8 +516,8 @@ export const spec = {
     }
 
     const bidFpd = {
-      user: {...bidRequest.params.visitor} || {},
-      context: {...bidRequest.params.inventory} || {}
+      user: {...bidRequest.params.visitor},
+      context: {...bidRequest.params.inventory}
     };
 
     if (bidRequest.params.keywords) bidFpd.context.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
