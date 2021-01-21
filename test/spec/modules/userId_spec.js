@@ -1258,9 +1258,7 @@ describe('User ID', function () {
       requestBidsHook(function () {
         const eidPermissions = getEidPermissions();
         expect(eidPermissions).to.deep.equal(
-          [
-            {source: 'sharedid.org'}
-          ]
+          []
         );
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {

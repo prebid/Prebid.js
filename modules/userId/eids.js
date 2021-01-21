@@ -229,12 +229,14 @@ export function buildEidPermissions(submodules) {
   submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .forEach(i => {
       Object.keys(i.idObj).forEach(key => {
-        if (utils.deepAccess(USER_IDS_CONFIG, key + '.source')) {
-          let eidPermission = { source: USER_IDS_CONFIG[key].source };
-          if (utils.deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders)) {
-            eidPermission.bidders = i.config.bidders;
-          }
-          eidPermissions.push(eidPermission);
+        if (utils.deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
+          utils.deepAccess(USER_IDS_CONFIG, key + '.source')) {
+          eidPermissions.push(
+            {
+              source: USER_IDS_CONFIG[key].source,
+              bidders: i.config.bidders
+            }
+          );
         }
       });
     });
