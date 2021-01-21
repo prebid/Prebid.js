@@ -174,7 +174,7 @@ function _getFloor (bid) {
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: 'USD',
-      mediaType: 'banner',
+      mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
       size: _sizes(bid.sizes)
     });
     if (typeof floorInfo === 'object' &&
