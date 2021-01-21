@@ -204,9 +204,9 @@ describe('the spotx adapter', function () {
         eids: [{
           source: 'id5-sync.com',
           uids: [{
-            id: 'id5id_1'
-          }],
-          ext: {}
+            id: 'id5id_1',
+            ext: {}
+          }]
         },
         {
           source: 'adserver.org',
