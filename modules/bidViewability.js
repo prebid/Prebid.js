@@ -6,6 +6,7 @@ import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
 import { logWarn, isFn } from '../src/utils.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_FIRE_PIXELS = 'firePixels';
@@ -13,40 +14,39 @@ const CONFIG_CUSTOM_MATCH = 'customMatchFunction';
 const BID_VURL_ARRAY = 'vurls';
 
 export function init() {
+  let isBidAdUnitCodeMatchingSlot = (bid, slot) => (slot.getAdUnitPath() === bid.adUnitCode || slot.getSlotElementId() === bid.adUnitCode);
 
-	let isBidAdUnitCodeMatchingSlot = (bid, slot) => (slot.getAdUnitPath() === bid.adUnitCode || slot.getSlotElementId() === bid.adUnitCode);
-	
-	events.on(EVENTS.AUCTION_INIT, function(){
-		// add the GPT event listener
-	  	window.googletag = window.googletag || {};
-	    googletag.cmd = googletag.cmd || [];
-	  	googletag.cmd.push(function(){
-	        googletag.pubads().addEventListener('impressionViewable', function(event) {
-				let slot = event.slot;
+  events.on(EVENTS.AUCTION_INIT, function() {
+    // add the GPT event listener
+    window.googletag = window.googletag || {};
+    window.googletag.cmd = window.googletag.cmd || [];
+    window.googletag.cmd.push(function() {
+      window.googletag.pubads().addEventListener('impressionViewable', function(event) {
+        let slot = event.slot;
 
-				// read the config for the module
-				const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
+        // read the config for the module
+        const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
 
-				// supports custom match function from config
-				let respectiveBid = pbjs.getAllWinningBids().find(
-					bid => isFn(globalModuleConfig[CONFIG_CUSTOM_MATCH]) ? globalModuleConfig[CONFIG_CUSTOM_MATCH](bid, slot) : isBidAdUnitCodeMatchingSlot(bid, slot)
-				);
+        // supports custom match function from config
+        let respectiveBid = getGlobal().getAllWinningBids().find(
+          bid => isFn(globalModuleConfig[CONFIG_CUSTOM_MATCH]) ? globalModuleConfig[CONFIG_CUSTOM_MATCH](bid, slot) : isBidAdUnitCodeMatchingSlot(bid, slot)
+        );
 
-				if(respectiveBid === undefined){
-					logWarn(`bid details could not be found for ${slot.getSlotElementId()}, probable reasons: a non-prebid bid is served OR check the prebid.AdUnit.code to GPT.AdSlot relation.`);
-					return;
-				}				
+        if (respectiveBid === undefined) {
+          logWarn(`bid details could not be found for ${slot.getSlotElementId()}, probable reasons: a non-prebid bid is served OR check the prebid.AdUnit.code to GPT.AdSlot relation.`);
+          return;
+        }
 
-				// if config is enabled AND VURL array is present then execute each pixel
-				if(globalModuleConfig[CONFIG_FIRE_PIXELS] === true && respectiveBid.hasOwnProperty(BID_VURL_ARRAY)){
-					respectiveBid[BID_VURL_ARRAY].forEach(url => (new Image()).src = url );
-				}
-				
-				// emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
-				events.emit(EVENTS.BID_VIEWABLE, respectiveBid);
-	        });
-	    });
-	});
+        // if config is enabled AND VURL array is present then execute each pixel
+        if (globalModuleConfig[CONFIG_FIRE_PIXELS] === true && respectiveBid.hasOwnProperty(BID_VURL_ARRAY)) {
+          respectiveBid[BID_VURL_ARRAY].forEach(url => (new Image()).src = url);
+        }
+
+        // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
+        events.emit(EVENTS.BID_VIEWABLE, respectiveBid);
+      });
+    });
+  });
 }
 
 init()
