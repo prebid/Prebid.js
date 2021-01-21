@@ -890,9 +890,9 @@ function applyFPD(fpd, mediaType, data) {
   const validate = function(prop, key) {
     if (typeof prop === 'object' && !Array.isArray(prop)) {
       utils.logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
-    } else if (utils.isNumber(prop) || prop) {
+    } else if (typeof prop !== 'undefined') {
       return (Array.isArray(prop)) ? prop.filter(value => {
-        if (typeof value !== 'object' && (utils.isNumber(value) || value)) return value.toString();
+        if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
 
         utils.logWarn('Rubicon: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
       }).toString() : prop.toString();
@@ -900,7 +900,7 @@ function applyFPD(fpd, mediaType, data) {
   };
 
   Object.keys(fpd).filter(value => fpd[value] && map[value] && typeof fpd[value] === 'object').forEach((type) => {
-    obj[map[type].code] = Object.keys(fpd[type]).filter(value => utils.isNumber(fpd[type][value]) || fpd[type][value]).reduce((result, key) => {
+    obj[map[type].code] = Object.keys(fpd[type]).filter(value => typeof fpd[type][value] !== 'undefined').reduce((result, key) => {
       if (key === 'keywords') {
         if (!Array.isArray(fpd[type][key]) && mediaType === BANNER) fpd[type][key] = [fpd[type][key]]
 
