@@ -30,7 +30,7 @@ export const spec = {
 
     validBidRequests.forEach(i => {
       let params = {
-        sizes: parseSizesInput(getAdUnitSizes(i)).join('%2C'),
+        sizes: parseSizesInput(getAdUnitSizes(i)),
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
@@ -74,9 +74,14 @@ export const spec = {
         }
       }
 
-      requests.push({method: 'GET', url: 'https://ads.betweendigital.com/adjson', data: params})
+      requests.push({data: params})
     })
-    return requests;
+    return {
+      method: 'POST',
+      url: 'https://ads.betweendigital.com/adjson?t=prebid',
+      data: JSON.stringify(requests)
+    }
+    // return requests;
   },
   /**
    * Unpack the response from the server into a list of bids.
