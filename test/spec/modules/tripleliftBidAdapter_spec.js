@@ -605,6 +605,42 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].floor).to.equal(1.99);
     });
+    it('should call getFloor with the correct parameters based on mediaType', function() {
+      bidRequests.forEach(request => {
+        request.getFloor = () => {};
+        sinon.spy(request, 'getFloor')
+      });
+
+      tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+
+      // banner
+      expect(bidRequests[0].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'banner',
+        size: '*'
+      })).to.be.true;
+
+      // instream
+      expect(bidRequests[1].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'video',
+        size: '*'
+      })).to.be.true;
+
+      // banner and incomplete video (POST will only include banner)
+      expect(bidRequests[3].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'banner',
+        size: '*'
+      })).to.be.true;
+
+      // banner and instream (POST will only include video)
+      expect(bidRequests[5].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'video',
+        size: '*'
+      })).to.be.true;
+    });
     it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];

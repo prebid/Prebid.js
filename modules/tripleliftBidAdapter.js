@@ -175,7 +175,7 @@ function _getFloor (bid) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
-      size: _sizes(bid.sizes)
+      size: '*'
     });
     if (typeof floorInfo === 'object' &&
     floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
