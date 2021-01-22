@@ -687,17 +687,16 @@ describe('DistrictM Adaptor', function () {
 
   describe(`isBidRequestValid test response`, function () {
     let params = {
-      dmxid: 10001,
+      dmxid: 10001, // optional
       memberid: 10003,
     };
     it(`function should return true`, function () {
       expect(districtm.isBidRequestValid({ params })).to.be.equal(true);
     });
     it(`function should return false`, function () {
-      expect(districtm.isBidRequestValid({ params: { memberid: 12345 } })).to.be.equal(false);
+      expect(districtm.isBidRequestValid({ params: {} })).to.be.equal(false);
     });
-    it(`expect to have two property available dmxid and memberid`, function () {
-      expect(params).to.have.property('dmxid');
+    it(`expect to have memberid`, function () {
       expect(params).to.have.property('memberid');
     });
   });

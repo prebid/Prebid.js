@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import * as utils from '../src/utils.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const ENDPOINT = `https://hb.justbidit.xyz:8843/prebid`;
 const BIDDER_CODE = 'waardex';
@@ -182,7 +183,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
 };
 
 const getHbRequestBid = (openRtbBid, bidRequest) => {
-  return bidRequest.bidRequests.find(x => x.bidId === openRtbBid.impid);
+  return find(bidRequest.bidRequests, x => x.bidId === openRtbBid.impid);
 };
 
 const getHbRequestMediaType = hbRequestBid => {

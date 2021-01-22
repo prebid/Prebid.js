@@ -141,7 +141,7 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
  * @summary If a the input bidder has a registered cpmadjustment it returns the input CPM after being adjusted
  */
 export function getBiddersCpmAdjustment(bidderName, inputCpm, bid = {}) {
-  const adjustmentFunction = utils.deepAccess(getGlobal(), `bidderSettings.${bidderName}.bidCpmAdjustment`);
+  const adjustmentFunction = utils.deepAccess(getGlobal(), `bidderSettings.${bidderName}.bidCpmAdjustment`) || utils.deepAccess(getGlobal(), 'bidderSettings.standard.bidCpmAdjustment');
   if (adjustmentFunction) {
     return parseFloat(adjustmentFunction(inputCpm, {...bid, cpm: inputCpm}));
   }
