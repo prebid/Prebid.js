@@ -4,7 +4,6 @@ import {
   spec
 } from 'modules/richaudienceBidAdapter.js';
 import {config} from 'src/config.js';
-import * as utils from 'src/utils.js';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS_NEW_SIZES = [{
@@ -241,8 +240,8 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
     expect(requestContent).to.have.property('timeout').and.to.equal(3000);
     expect(requestContent).to.have.property('numIframes').and.to.equal(0);
-    expect(requestContent).to.have.property('scr_rsl').and.to.equal('1440x900');
-    expect(requestContent).to.have.property('cpuc').and.to.equal(4);
+    expect(typeof requestContent.scr_rsl === "string")
+    expect(typeof requestContent.cpuc === "number")
     expect(requestContent).to.have.property('kws').and.to.equal('coche=mercedes;coche=audi');
   })
 
