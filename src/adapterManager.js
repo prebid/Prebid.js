@@ -399,18 +399,18 @@ function isTestingServerOnly() {
 };
 
 function getSupportedMediaTypes(bidderCode) {
-  let result = [];
-  if (includes(adapterManager.videoAdapters, bidderCode)) result.push('video');
-  if (includes(nativeAdapters, bidderCode)) result.push('native');
-  return result;
+  let supportedMediaTypes = [];
+  if (includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
+  if (includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
+  return supportedMediaTypes;
 }
 
 adapterManager.videoAdapters = []; // added by adapterLoader for now
 
-adapterManager.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
-  if (bidAdaptor && bidderCode) {
-    if (typeof bidAdaptor.callBids === 'function') {
-      _bidderRegistry[bidderCode] = bidAdaptor;
+adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supportedMediaTypes = []} = {}) {
+  if (bidAdapter && bidderCode) {
+    if (typeof bidAdapter.callBids === 'function') {
+      _bidderRegistry[bidderCode] = bidAdapter;
 
       if (includes(supportedMediaTypes, 'video')) {
         adapterManager.videoAdapters.push(bidderCode);
@@ -422,7 +422,7 @@ adapterManager.registerBidAdapter = function (bidAdaptor, bidderCode, {supported
       utils.logError('Bidder adaptor error for bidder code: ' + bidderCode + 'bidder must implement a callBids() function');
     }
   } else {
-    utils.logError('bidAdaptor or bidderCode not specified');
+    utils.logError('bidAdapter or bidderCode not specified');
   }
 };
 
@@ -430,8 +430,8 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
   let existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === 'undefined') {
-    let bidAdaptor = _bidderRegistry[bidderCode];
-    if (typeof bidAdaptor === 'undefined') {
+    let bidAdapter = _bidderRegistry[bidderCode];
+    if (typeof bidAdapter === 'undefined') {
       // check if alias is part of s2sConfig and allow them to register if so (as base bidder may be s2s-only)
       const s2sConfig = config.getConfig('s2sConfig');
       const s2sBidders = s2sConfig && s2sConfig.bidders;
@@ -447,11 +447,11 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
         let supportedMediaTypes = getSupportedMediaTypes(bidderCode);
         // Have kept old code to support backward compatibilitiy.
         // Remove this if loop when all adapters are supporting bidderFactory. i.e When Prebid.js is 1.0
-        if (bidAdaptor.constructor.prototype != Object.prototype) {
-          newAdapter = new bidAdaptor.constructor();
+        if (bidAdapter.constructor.prototype != Object.prototype) {
+          newAdapter = new bidAdapter.constructor();
           newAdapter.setBidderCode(alias);
         } else {
-          let spec = bidAdaptor.getSpec();
+          let spec = bidAdapter.getSpec();
           let gvlid = options && options.gvlid;
           let skipPbsAliasing = options && options.skipPbsAliasing;
           newAdapter = newBidder(Object.assign({}, spec, { code: alias, gvlid, skipPbsAliasing }));
