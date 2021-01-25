@@ -8,6 +8,7 @@ import { EVENTS } from '../src/constants.json';
 import { logWarn, isFn, triggerPixel } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_FIRE_PIXELS = 'firePixels';
@@ -20,7 +21,7 @@ export let isBidAdUnitCodeMatchingSlot = (bid, slot) => {
 }
 
 export let getMatchingWinnigBidForGPTSlot = (globalModuleConfig, slot) => {
-  return getGlobal().getAllWinningBids().find(
+  return find(getGlobal().getAllWinningBids(),
     // supports custom match function from config
     bid => isFn(globalModuleConfig[CONFIG_CUSTOM_MATCH])
       ? globalModuleConfig[CONFIG_CUSTOM_MATCH](bid, slot)
