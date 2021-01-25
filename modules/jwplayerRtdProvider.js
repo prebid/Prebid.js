@@ -159,11 +159,21 @@ export function enrichAdUnits(adUnits) {
   });
 }
 
+function supportsInstreamVideo(mediaTypes) {
+  const video = mediaTypes && mediaTypes.video;
+  return video && video.context === 'instream';
+}
+
 export function extractPublisherParams(adUnit, fallback) {
   let adUnitTargeting;
   try {
     adUnitTargeting = adUnit.fpd.context.data.jwTargeting;
   } catch (e) {}
+
+  if (!adUnitTargeting && !supportsInstreamVideo(adUnit.mediaTypes)) {
+    return;
+  }
+
   return Object.assign({}, fallback, adUnitTargeting);
 }
 
