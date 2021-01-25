@@ -23,7 +23,7 @@ export let getMatchingWinnigBidForGPTSlot = (globalModuleConfig, slot) => {
     bid => isFn(globalModuleConfig[CONFIG_CUSTOM_MATCH])
       ? globalModuleConfig[CONFIG_CUSTOM_MATCH](bid, slot)
       : isBidAdUnitCodeMatchingSlot(bid, slot)
-  );
+  ) || null;
 };
 
 export let fireViewabilityPixels = (globalModuleConfig, bid) => {
@@ -42,14 +42,14 @@ export let gptImpressionViewableListener = (event) => {
   const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
   // supports custom match function from config
   let respectiveBid = getMatchingWinnigBidForGPTSlot(globalModuleConfig, slot)
-  if (respectiveBid === undefined) {
+  if (respectiveBid === null) {
     logWinningBidNotFound(slot);
-    return;
+  } else {
+    // if config is enabled AND VURL array is present then execute each pixel
+    fireViewabilityPixels(globalModuleConfig, respectiveBid);
+    // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
+    events.emit(EVENTS.BID_VIEWABLE, respectiveBid);  
   }
-  // if config is enabled AND VURL array is present then execute each pixel
-  fireViewabilityPixels(globalModuleConfig, respectiveBid);
-  // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
-  events.emit(EVENTS.BID_VIEWABLE, respectiveBid);
 };
 
 export let init = () => {
