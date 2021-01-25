@@ -3,7 +3,9 @@ import { config } from 'src/config.js';
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
-import {expect} from 'chai';
+import {expect, spy} from 'chai';
+import * as prebidGlobal from 'src/prebidGlobal.js';
+import { EVENTS } from 'src/constants.json';
 
 const GPT_SLOT = {
   getAdUnitPath() {
@@ -29,7 +31,8 @@ const PBJS_WINNING_BID = {
   'ttl': 180,
   'creativeId': 'id',
   'netRevenue': true,
-  'currency': 'USD'
+  'currency': 'USD',
+  'vurls': ['URL-1', 'URL-2', 'URL-3']
 };
 
 describe('#bidViewability', function() {
@@ -54,6 +57,147 @@ describe('#bidViewability', function() {
     it('match not found', function() {
       pbjsWinningBid.adUnitCode = 'DIV-10';
       expect(bidViewability.isBidAdUnitCodeMatchingSlot(pbjsWinningBid, gptSlot)).to.equal(false);
+    });
+  });
+
+  describe('getMatchingWinnigBidForGPTSlot', function() {
+    let winningBidsArray;
+    let sandbox
+    beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+      // mocking winningBidsArray
+      winningBidsArray = [];
+      sandbox.stub(prebidGlobal, 'getGlobal').returns({
+        getAllWinningBids: function (number) {
+          return winningBidsArray;
+        }
+      });
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    })
+
+    it('should find a match by using customMatchFunction provided in config', function() {
+      // Needs config to be passed with customMatchFunction
+      let bidViewabilityConfig = {
+        customMatchFunction(bid, slot) {
+          return ('AD-' + slot.getAdUnitPath()) === bid.adUnitCode;
+        }
+      };
+      let newWinningBid = Object.assign({}, PBJS_WINNING_BID, {adUnitCode: 'AD-' + PBJS_WINNING_BID.adUnitCode});
+      // Needs pbjs.getWinningBids to be implemented with match
+      winningBidsArray.push(newWinningBid);
+      let wb = bidViewability.getMatchingWinnigBidForGPTSlot(bidViewabilityConfig, gptSlot);
+      expect(wb).to.deep.equal(newWinningBid);
+    });
+
+    it('should NOT find a match by using customMatchFunction provided in config', function() {
+      // Needs config to be passed with customMatchFunction
+      let bidViewabilityConfig = {
+        customMatchFunction(bid, slot) {
+          return ('AD-' + slot.getAdUnitPath()) === bid.adUnitCode;
+        }
+      };
+      // Needs pbjs.getWinningBids to be implemented without match; winningBidsArray is set to empty in beforeEach
+      let wb = bidViewability.getMatchingWinnigBidForGPTSlot(bidViewabilityConfig, gptSlot);
+      expect(wb).to.equal(null);
+    });
+
+    it('should find a match by using default matching function', function() {
+      // Needs config to be passed without customMatchFunction
+      // Needs pbjs.getWinningBids to be implemented with match
+      winningBidsArray.push(PBJS_WINNING_BID);
+      let wb = bidViewability.getMatchingWinnigBidForGPTSlot({}, gptSlot);
+      expect(wb).to.deep.equal(PBJS_WINNING_BID);
+    });
+
+    it('should NOT find a match by using default matching function', function() {
+      // Needs config to be passed without customMatchFunction
+      // Needs pbjs.getWinningBids to be implemented without match; winningBidsArray is set to empty in beforeEach
+      let wb = bidViewability.getMatchingWinnigBidForGPTSlot({}, gptSlot);
+      expect(wb).to.equal(null);
+    });
+  });
+
+  describe('fireViewabilityPixels', function() {
+    let sandbox;
+    let triggerPixelSpy;
+
+    beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+      triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it('fire pixels if mentioned in module config', function() {
+      let moduleConfig = {firePixels: true};
+      bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
+      PBJS_WINNING_BID.vurls.forEach((url, i) => {
+        let call = triggerPixelSpy.getCall(i);
+        expect(call.args[0]).to.equal(url);
+      });
+    });
+
+    it('DO NOT fire pixels if NOT mentioned in module config', function() {
+      let moduleConfig = {};
+      bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
+      expect(triggerPixelSpy.callCount).to.equal(0);
+    });
+  });
+
+  describe('impressionViewableHandler', function() {
+    let sandbox;
+    let triggerPixelSpy;
+    let eventsEmitSpy;
+    let logWinningBidNotFoundSpy;
+    let winningBidsArray;
+
+    beforeEach(function() {
+      sandbox = sinon.sandbox.create();
+      triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
+      eventsEmitSpy = sandbox.spy(events, ['emit']);
+      bidViewability.logWinningBidNotFound(GPT_SLOT);
+      /* eslint-disable no-console */
+      console.log(bidViewability);
+      // mocking winningBidsArray
+      winningBidsArray = [];
+      sandbox.stub(prebidGlobal, 'getGlobal').returns({
+        getAllWinningBids: function (number) {
+          return winningBidsArray;
+        }
+      });
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    })
+
+    it('matching winning bid is found', function() {
+      let moduleConfig = {
+        firePixels: true
+      };
+      winningBidsArray.push(PBJS_WINNING_BID);
+      bidViewability.impressionViewableHandler(moduleConfig, GPT_SLOT, null);
+      // fire pixels should be called
+      PBJS_WINNING_BID.vurls.forEach((url, i) => {
+        let call = triggerPixelSpy.getCall(i);
+        expect(call.args[0]).to.equal(url);
+      });
+      // EVENTS.BID_VIEWABLE is triggered
+      let call = eventsEmitSpy.getCall(0);
+      expect(call.args[0]).to.equal(EVENTS.BID_VIEWABLE);
+      expect(call.args[1]).to.deep.equal(PBJS_WINNING_BID);
+    });
+
+    it('matching winning bid is NOT found', function() {
+      // fire pixels should NOT be called
+      expect(triggerPixelSpy.callCount).to.equal(0);
+      // EVENTS.BID_VIEWABLE is NOT triggered
+      expect(eventsEmitSpy.callCount).to.equal(0);      
     });
   });
 });
