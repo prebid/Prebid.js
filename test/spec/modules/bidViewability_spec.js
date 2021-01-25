@@ -248,9 +248,6 @@ describe('#bidViewability', function() {
       sandbox = sinon.sandbox.create();
       triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
       eventsEmitSpy = sandbox.spy(events, ['emit']);
-      bidViewability.logWinningBidNotFound(GPT_SLOT);
-      /* eslint-disable no-console */
-      console.log(bidViewability);
       // mocking winningBidsArray
       winningBidsArray = [];
       sandbox.stub(prebidGlobal, 'getGlobal').returns({
