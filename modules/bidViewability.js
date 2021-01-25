@@ -5,7 +5,7 @@
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
-import { logWarn, isFn } from '../src/utils.js';
+import { logWarn, isFn, triggerPixel } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 const MODULE_NAME = 'bidViewability';
@@ -39,7 +39,7 @@ export function init() {
 
         // if config is enabled AND VURL array is present then execute each pixel
         if (globalModuleConfig[CONFIG_FIRE_PIXELS] === true && respectiveBid.hasOwnProperty(BID_VURL_ARRAY)) {
-          respectiveBid[BID_VURL_ARRAY].forEach(url => (new Image()).src = url);
+          respectiveBid[BID_VURL_ARRAY].forEach(url => triggerPixel(url));
         }
 
         // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
