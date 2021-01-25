@@ -8,7 +8,7 @@ import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 91;
-export const ADAPTER_VERSION = 33;
+export const ADAPTER_VERSION = 34;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
