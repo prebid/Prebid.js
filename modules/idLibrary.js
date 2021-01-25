@@ -203,7 +203,7 @@ function postData() {
   logInfo('Users' + JSON.stringify(userIds));
   const syncPayload = {};
   syncPayload.hid = MD5(email).toString();
-  syncPayload.uids = JSON.stringify(userIds);
+  syncPayload.uids = userIds; // JSON.stringify(userIds);
   const payloadString = JSON.stringify(syncPayload);
   logInfo(payloadString);
   ajax(conf.url, syncCallback(), payloadString, {method: 'POST', withCredentials: true});
