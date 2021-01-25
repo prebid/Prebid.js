@@ -48,7 +48,7 @@ export let gptImpressionViewableListener = (event) => {
     // if config is enabled AND VURL array is present then execute each pixel
     fireViewabilityPixels(globalModuleConfig, respectiveBid);
     // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
-    events.emit(EVENTS.BID_VIEWABLE, respectiveBid);  
+    events.emit(EVENTS.BID_VIEWABLE, respectiveBid);
   }
 };
 
