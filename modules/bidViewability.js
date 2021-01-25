@@ -20,6 +20,7 @@ export let isBidAdUnitCodeMatchingSlot = (bid, slot) => {
 
 export let getMatchingWinnigBidForGPTSlot = (globalModuleConfig, slot) => {
   return getGlobal().getAllWinningBids().find(
+    // supports custom match function from config
     bid => isFn(globalModuleConfig[CONFIG_CUSTOM_MATCH])
       ? globalModuleConfig[CONFIG_CUSTOM_MATCH](bid, slot)
       : isBidAdUnitCodeMatchingSlot(bid, slot)
@@ -36,12 +37,8 @@ export let logWinningBidNotFound = (slot) => {
   logWarn(`bid details could not be found for ${slot.getSlotElementId()}, probable reasons: a non-prebid bid is served OR check the prebid.AdUnit.code to GPT.AdSlot relation.`);
 };
 
-export let gptImpressionViewableListener = (event) => {
-  let slot = event.slot;
-  // read the config for the module
-  const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
-  // supports custom match function from config
-  let respectiveBid = getMatchingWinnigBidForGPTSlot(globalModuleConfig, slot)
+export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
+  let respectiveBid = getMatchingWinnigBidForGPTSlot(globalModuleConfig, slot);
   if (respectiveBid === null) {
     logWinningBidNotFound(slot);
   } else {
@@ -54,11 +51,15 @@ export let gptImpressionViewableListener = (event) => {
 
 export let init = () => {
   events.on(EVENTS.AUCTION_INIT, () => {
+    // read the config for the module
+    const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
     // add the GPT event listener
     window.googletag = window.googletag || {};
     window.googletag.cmd = window.googletag.cmd || [];
     window.googletag.cmd.push(() => {
-      window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, gptImpressionViewableListener);
+      window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
+        impressionViewableHandler(globalModuleConfig, event.slot, event);
+      });
     });
   });
 }
