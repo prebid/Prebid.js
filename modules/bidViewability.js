@@ -7,6 +7,7 @@ import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
 import { logWarn, isFn, triggerPixel } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_FIRE_PIXELS = 'firePixels';
@@ -29,7 +30,24 @@ export let getMatchingWinnigBidForGPTSlot = (globalModuleConfig, slot) => {
 
 export let fireViewabilityPixels = (globalModuleConfig, bid) => {
   if (globalModuleConfig[CONFIG_FIRE_PIXELS] === true && bid.hasOwnProperty(BID_VURL_ARRAY)) {
-    bid[BID_VURL_ARRAY].forEach(url => triggerPixel(url));
+    let queryParams = {};
+
+    const gdprConsent = gdprDataHandler.getConsentData();
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
+      if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
+      if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
+    }
+
+    const uspConsent = uspDataHandler.getConsentData();
+    if (uspConsent) { queryParams.us_privacy = uspConsent; }
+
+    bid[BID_VURL_ARRAY].forEach(url => {
+      // we are assuming that "?" will be already present in the url
+      // append all query params, `&key=urlEncoded(value)`
+      url += Object.keys(queryParams).reduce((prev, key) => prev += `&${key}=${encodeURIComponent(queryParams[key])}`, '');
+      triggerPixel(url)
+    });
   }
 };
 

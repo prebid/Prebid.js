@@ -6,6 +6,8 @@ import * as sinon from 'sinon';
 import {expect, spy} from 'chai';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import { EVENTS } from 'src/constants.json';
+import { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
+import parse from 'url-parse';
 
 const GPT_SLOT = {
   getAdUnitPath() {
@@ -32,7 +34,11 @@ const PBJS_WINNING_BID = {
   'creativeId': 'id',
   'netRevenue': true,
   'currency': 'USD',
-  'vurls': ['URL-1', 'URL-2', 'URL-3']
+  'vurls': [
+    'https://domain-1.com/end-point?a=1',
+    'https://domain-1.com/end-point?a=1',
+    'https://domain-1.com/end-point?a=1'
+  ]
 };
 
 describe('#bidViewability', function() {
@@ -133,6 +139,12 @@ describe('#bidViewability', function() {
       sandbox.restore();
     });
 
+    it('DO NOT fire pixels if NOT mentioned in module config', function() {
+      let moduleConfig = {};
+      bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
+      expect(triggerPixelSpy.callCount).to.equal(0);
+    });
+
     it('fire pixels if mentioned in module config', function() {
       let moduleConfig = {firePixels: true};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
@@ -142,11 +154,87 @@ describe('#bidViewability', function() {
       });
     });
 
-    it('DO NOT fire pixels if NOT mentioned in module config', function() {
-      let moduleConfig = {};
+    it('USP: should include the us_privacy key when USP Consent is available', function () {
+      let uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
+      uspDataHandlerStub.returns('1YYY');
+      let moduleConfig = {firePixels: true};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
-      expect(triggerPixelSpy.callCount).to.equal(0);
+      PBJS_WINNING_BID.vurls.forEach((url, i) => {
+        let call = triggerPixelSpy.getCall(i);
+        expect(call.args[0].indexOf(url)).to.equal(0);
+        const testurl = parse(call.args[0]);
+        const queryObject = utils.parseQS(testurl.query);
+        expect(queryObject.us_privacy).to.equal('1YYY');
+      });
+      uspDataHandlerStub.restore();
     });
+
+    it('USP: should not include the us_privacy key when USP Consent is not available', function () {
+      let moduleConfig = {firePixels: true};
+      bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
+      PBJS_WINNING_BID.vurls.forEach((url, i) => {
+        let call = triggerPixelSpy.getCall(i);
+        expect(call.args[0].indexOf(url)).to.equal(0);
+        const testurl = parse(call.args[0]);
+        const queryObject = utils.parseQS(testurl.query);
+        expect(queryObject.us_privacy).to.equal(undefined);
+      });
+    });
+
+    it('GDPR: should include the GDPR keys when GDPR Consent is available', function() {
+      let gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
+      gdprDataHandlerStub.returns({
+        gdprApplies: true,
+        consentString: 'consent',
+        addtlConsent: 'moreConsent'
+      });
+      let moduleConfig = {firePixels: true};
+      bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
+      PBJS_WINNING_BID.vurls.forEach((url, i) => {
+        let call = triggerPixelSpy.getCall(i);
+        expect(call.args[0].indexOf(url)).to.equal(0);
+        const testurl = parse(call.args[0]);
+        const queryObject = utils.parseQS(testurl.query);
+        expect(queryObject.gdpr).to.equal('1');
+        expect(queryObject.gdpr_consent).to.equal('consent');
+        expect(queryObject.addtl_consent).to.equal('moreConsent');
+      });
+      gdprDataHandlerStub.restore();
+    });
+
+    it('GDPR: should not include the GDPR keys when GDPR Consent is not available', function () {
+      let moduleConfig = {firePixels: true};
+      bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
+      PBJS_WINNING_BID.vurls.forEach((url, i) => {
+        let call = triggerPixelSpy.getCall(i);
+        expect(call.args[0].indexOf(url)).to.equal(0);
+        const testurl = parse(call.args[0]);
+        const queryObject = utils.parseQS(testurl.query);
+        expect(queryObject.gdpr).to.equal(undefined);
+        expect(queryObject.gdpr_consent).to.equal(undefined);
+        expect(queryObject.addtl_consent).to.equal(undefined);
+      });
+    });
+
+    it('GDPR: should only include the GDPR keys for GDPR Consent fields with values', function () {
+      let gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
+      gdprDataHandlerStub.returns({
+        gdprApplies: true,
+        consentString: 'consent'
+      });
+      let moduleConfig = {firePixels: true};
+      bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
+      PBJS_WINNING_BID.vurls.forEach((url, i) => {
+        let call = triggerPixelSpy.getCall(i);
+        expect(call.args[0].indexOf(url)).to.equal(0);
+        const testurl = parse(call.args[0]);
+        const queryObject = utils.parseQS(testurl.query);
+        expect(queryObject.gdpr).to.equal('1');
+        expect(queryObject.gdpr_consent).to.equal('consent');
+        expect(queryObject.addtl_consent).to.equal(undefined);
+      });
+      gdprDataHandlerStub.restore();
+    })
   });
 
   describe('impressionViewableHandler', function() {
@@ -197,7 +285,7 @@ describe('#bidViewability', function() {
       // fire pixels should NOT be called
       expect(triggerPixelSpy.callCount).to.equal(0);
       // EVENTS.BID_VIEWABLE is NOT triggered
-      expect(eventsEmitSpy.callCount).to.equal(0);      
+      expect(eventsEmitSpy.callCount).to.equal(0);
     });
   });
 });
