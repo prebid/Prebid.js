@@ -146,6 +146,11 @@ function enrichBidRequest(bidReqConfig, onDone) {
 export function enrichAdUnits(adUnits) {
   const fpdFallback = config.getConfig('fpd.context.data.jwTargeting');
   adUnits.forEach(adUnit => {
+    const jwTargeting = extractPublisherParams(adUnit, fpdFallback);
+    if (!jwTargeting || !Object.keys(jwTargeting).length) {
+      return;
+    }
+
     const onVatResponse = function (vat) {
       if (!vat) {
         return;
@@ -153,8 +158,6 @@ export function enrichAdUnits(adUnits) {
       const targeting = formatTargetingResponse(vat);
       addTargetingToBids(adUnit.bids, targeting);
     };
-
-    const jwTargeting = extractPublisherParams(adUnit, fpdFallback);
     loadVat(jwTargeting, onVatResponse);
   });
 }
@@ -178,10 +181,6 @@ export function extractPublisherParams(adUnit, fallback) {
 }
 
 function loadVat(params, onCompletion) {
-  if (!params || !Object.keys(params).length) {
-    return;
-  }
-
   const { playerID, mediaID } = params;
   if (pendingRequests[mediaID] !== undefined) {
     loadVatForPendingRequest(playerID, mediaID, onCompletion);
