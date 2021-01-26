@@ -415,12 +415,6 @@ describe('jwplayerRtdProvider', function() {
   describe(' Extract Publisher Params', function () {
     const config = { mediaID: 'test' };
 
-    it('should fallback to config when media type is video and is instream', function () {
-      const adUnit = { mediaTypes: { video: { context: 'instream' } } };
-      const targeting = extractPublisherParams(adUnit, config);
-      expect(targeting).to.deep.equal(config);
-    });
-
     it('should exclude adUnits that do not support instream video and do not specify jwTargeting', function () {
       const oustreamAdUnit = { mediaTypes: { video: { context: 'outstream' } } };
       const oustreamTargeting = extractPublisherParams(oustreamAdUnit, config);
@@ -434,7 +428,25 @@ describe('jwplayerRtdProvider', function() {
       expect(targeting).to.be.undefined;
     });
 
-    it('should fallback to config when jwTargeting is defined in ad unit', function () {
+    it('should include ad unit when media type is video and is instream', function () {
+      const adUnit = { mediaTypes: { video: { context: 'instream' } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
+    });
+
+    it('should include banner ad units that specify jwTargeting', function() {
+      const adUnit = { mediaTypes: { banner: {} }, fpd: { context: { data: { jwTargeting: {} } } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
+    });
+
+    it('should include outstream ad units that specify jwTargeting', function() {
+      const adUnit = { mediaTypes: { video: { context: 'outstream' } }, fpd: { context: { data: { jwTargeting: {} } } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
+    });
+
+    it('should fallback to config when empty jwTargeting is defined in ad unit', function () {
       const adUnit = { fpd: { context: { data: { jwTargeting: {} } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.deep.equal(config);
