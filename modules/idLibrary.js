@@ -200,7 +200,7 @@ function postData() {
     logInfo('No user ids');
     return;
   }
-  logInfo('Users' + JSON.stringify(userIds));
+  logInfo('Users' + userIds);
   const syncPayload = {};
   syncPayload.hid = MD5(email).toString();
   syncPayload.uids = userIds;
