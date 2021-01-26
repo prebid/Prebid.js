@@ -23,9 +23,9 @@ var adUnits = [
         bids: [{
             bidder: 'gjirafa',
             params: {
-                propertyId: '105227',
-                placementId: '846841',
-                data: {
+                propertyId: '105227',   //Required
+                placementId: '846841',  //Required
+                data: {                 //Optional
                     catalogs: [{
                         catalogId: 9,
                         items: ["193", "4", "1"]
@@ -48,9 +48,9 @@ var adUnits = [
         bids: [{
             bidder: 'gjirafa',
             params: {
-                propertyId: '105227',
-                placementId: '846836',
-                data: {
+                propertyId: '105227',  //Required
+                placementId: '846836', //Required
+                data: {                //Optional
                     catalogs: [{
                         catalogId: 9,
                         items: ["193", "4", "1"]

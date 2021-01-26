@@ -24,9 +24,9 @@ var adUnits = [
         bids: [{
             bidder: 'malltv',
             params: {
-                propertyId: '105134',
-                placementId: '846832',
-                data: {
+                propertyId: '105134',  //Required
+                placementId: '846832', //Required
+                data: {                //Optional
                     catalogs: [{
                         catalogId: 9,
                         items: ["193", "4", "1"]
@@ -49,9 +49,9 @@ var adUnits = [
         bids: [{
             bidder: 'malltv',
             params: {
-                propertyId: '105134',
-                placementId: '846832',
-                data: {
+                propertyId: '105134',  //Required
+                placementId: '846832', //Required
+                data: {                //Optional
                     catalogs: [{
                         catalogId: 9,
                         items: ["193", "4", "1"]
