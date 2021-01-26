@@ -44,6 +44,6 @@ As both params are optional, you do not need to set config if you do not want to
 ```
 
 # Please Note:
-- Doesn't seems to work with Instream Video, https://docs.prebid.org/dev-docs/examples/instream-banner-mix.html , GPT's impressionViewable event is not triggered for instream-video-creative
+- Doesn't seems to work with Instream Video, https://docs.prebid.org/dev-docs/examples/instream-banner-mix.html as GPT's impressionViewable event is not triggered for instream-video-creative
 - Works with Banner, Outsteam, Native creatives
 
