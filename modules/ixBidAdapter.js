@@ -269,6 +269,28 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (userId.idl_env) {
       addUserEids(userEids, seenIdPartners, userId.idl_env, 'liveramp.com', 'LiveRampIp', 'idl');
     }
+
+    if (userId.tdid) {
+       addUserEids(userEids, seenIdPartners, userId.tdid, 'adserver.org', 'AdserverOrgIp', 'TDID');
+    }
+
+    if (userId.lipb) {
+      if ( userId.lipb.lipbid ) {
+        addUserEids(userEids, seenIdPartners, userId.lipb.lipbid, 'liveintent.com', 'LiveIntentIp', 'liveintent');
+      }
+    }
+
+    if (userId.netId) {
+      addUserEids(userEids, seenIdPartners, userId.netId, 'netid.de', 'NetIdIp', 'NETID');
+    }
+
+    if (userId.fabrickId) {
+      addUserEids(userEids, seenIdPartners, userId.fabrickId, 'neustar.com', 'NeustarIp', 'fabrickId');
+    }
+
+    if (userId.IDP) {
+       addUserEids(userEids, seenIdPartners, userId.IDP, 'zeotap.com', 'ZeotapIp', 'zeotapIdPlus');
+    }
   }
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
