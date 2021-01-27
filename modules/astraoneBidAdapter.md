@@ -113,7 +113,7 @@ var adUnits = [{
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Prebid.js Banner gbt Example</title>
+  <title>Prebid.js Banner gpt Example</title>
   <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
   <script async src="../../../build/dev/prebid.js"></script>
   <style>
@@ -186,7 +186,7 @@ var adUnits = [{
   </script>
 </head>
 <body>
-<h2>Prebid.js InImage Banner gbt Test</h2>
+<h2>Prebid.js InImage Banner gpt Test</h2>
 
 <div style="width: 600px; position: relative">
   <img src="https://creative.astraone.io/files/default_image-1-600x400.jpg" />
