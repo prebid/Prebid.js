@@ -245,9 +245,9 @@ export const spec = {
           {
             source: 'id5-sync.com',
             uids: [{
-              id: bid.userId.id5id.uid
-            }],
-            ext: bid.userId.id5id.ext || {}
+              id: bid.userId.id5id.uid,
+              ext: bid.userId.id5id.ext || {}
+            }]
           }
         )
       }
