@@ -3,6 +3,7 @@ import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'between';
+const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -78,7 +79,7 @@ export const spec = {
     })
     return {
       method: 'POST',
-      url: 'https://ads.betweendigital.com/adjson?t=prebid',
+      url: ENDPOINT,
       data: JSON.stringify(requests)
     }
     // return requests;
