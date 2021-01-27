@@ -70,7 +70,7 @@ function isValidConfig(configParams) {
   return true;
 }
 
-function encodeBase64Safe(base64) {
+function encodeBase64UrlSafe(base64) {
   const ENC = {
     '+': '-',
     '/': '_',
@@ -191,7 +191,7 @@ function fetchId(configParams) {
   };
 
   const searchParams = {
-    data: encodeBase64Safe(btoa(JSON.stringify(data))),
+    data: encodeBase64UrlSafe(btoa(JSON.stringify(data))),
     _rand: Math.random()
   };
 
