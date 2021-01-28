@@ -120,11 +120,11 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    let fpdcfg = config.getConfig('fpd')
-    if (fpdcfg && fpdcfg.context) {
+    let fpdcfg = config.getConfig('ortb2')
+    if (fpdcfg && fpdcfg.site) {
       let fdata = {
-        keywords: fpdcfg.context.keywords,
-        category: fpdcfg.context.data.category
+        keywords: fpdcfg.site.keywords || '',
+        category: utils.deepAccess(fpdcfg, 'site.ext.data.category') || ''
       }
       payload.fpd = fdata;
     }
