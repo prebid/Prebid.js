@@ -84,7 +84,7 @@ export const spec = {
       h = bannerMediaType.sizes[0][1];
       banner.w = w;
       banner.h = h;
-      if ((bannerMediaType.sizes[0]).includes(480) && (bannerMediaType.sizes[0]).includes(320)) {
+      if ((bannerMediaType.sizes[0].indexOf(480) >= 0) && (bannerMediaType.sizes[0].indexOf(320) >= 0)) {
         banner.pos = 7
       } else {
         banner.pos = 4
