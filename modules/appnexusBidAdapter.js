@@ -999,9 +999,22 @@ function hidedfpContainer(elementId) {
   }
 }
 
+function hideSASIframe(elementId) {
+  try {
+    // find script tag with id 'sas_script'. This ensures it only works if you're using Smart Ad Server.
+    const el = document.getElementById(elementId).querySelectorAll("script[id^='sas_script']");
+    if (el[0].nextSibling && el[0].nextSibling.localName === 'iframe') {
+      el[0].nextSibling.style.setProperty('display', 'none');
+    }
+  } catch (e) {
+    // element not found!
+  }
+}
+
 function outstreamRender(bid) {
-  // push to render queue because ANOutstreamVideo may not be loaded yet
   hidedfpContainer(bid.adUnitCode);
+  hideSASIframe(bid.adUnitCode);
+  // push to render queue because ANOutstreamVideo may not be loaded yet
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,

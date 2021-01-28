@@ -22,7 +22,7 @@ export const spec = {
   supportedFormat: [BANNER, VIDEO],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid(bid) {
-    return !!(bid.params.dmxid && bid.params.memberid);
+    return !!(bid.params.memberid);
   },
   interpretResponse(response, bidRequest) {
     response = response.body || {};
@@ -39,7 +39,7 @@ export const spec = {
               nBid.requestId = nBid.impid;
               nBid.width = nBid.w || width;
               nBid.height = nBid.h || height;
-              nBid.ttl = 360;
+              nBid.ttl = 300;
               nBid.mediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner';
               if (nBid.mediaType) {
                 nBid.vastXml = cleanVast(nBid.adm, nBid.nurl);
@@ -152,7 +152,7 @@ export const spec = {
     let tosendtags = bidRequest.map(dmx => {
       var obj = {};
       obj.id = dmx.bidId;
-      obj.tagid = String(dmx.params.dmxid);
+      obj.tagid = String(dmx.params.dmxid || dmx.adUnitCode);
       obj.secure = 1;
       obj.bidfloor = getFloor(dmx);
       if (dmx.mediaTypes && dmx.mediaTypes.video) {
