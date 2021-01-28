@@ -180,15 +180,14 @@ export const spec = {
         type: 'iframe',
         url: serverResponses[0].body.cSyncUrl
       });
-    } else if (syncOptions.pixelEnabled && serverResponses.length > 0 && serverResponses[0].body.dspPixels !== undefined)
-      {
-        serverResponses[0].body.dspPixels.forEach(function(pixel) {
-          syncs.push({
-            type: 'image',
-            url: pixel
-          });
+    } else if (syncOptions.pixelEnabled && serverResponses.length > 0 && serverResponses[0].body.dspPixels !== undefined) {
+      serverResponses[0].body.dspPixels.forEach(function(pixel) {
+        syncs.push({
+          type: 'image',
+          url: pixel
         });
-      }
+      });
+    }
     return syncs;
   }
 };
