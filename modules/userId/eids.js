@@ -168,6 +168,12 @@ const USER_IDS_CONFIG = {
   'fabrickId': {
     source: 'neustar.biz',
     atype: 1
+  },
+
+  // Admixer Id
+  '__adm__admixer': {
+    source: 'admixer.net',
+    atype: 1
   }
 };
 
