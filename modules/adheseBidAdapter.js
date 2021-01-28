@@ -22,15 +22,18 @@ export const spec = {
     }
     const { gdprConsent, refererInfo } = bidderRequest;
 
-    const targets = validBidRequests.map(bid => bid.params.data).reduce(mergeTargets, {});
     const gdprParams = (gdprConsent && gdprConsent.consentString) ? { xt: [gdprConsent.consentString] } : {};
     const refererParams = (refererInfo && refererInfo.referer) ? { xf: [base64urlEncode(refererInfo.referer)] } : {};
     const id5Params = (getId5Id(validBidRequests)) ? { x5: [getId5Id(validBidRequests)] } : {};
-    const slots = validBidRequests.map(bid => ({ slotname: bidToSlotName(bid) }));
+    const commonParams = { ...gdprParams, ...refererParams, ...id5Params };
+
+    const slots = validBidRequests.map(bid => ({
+      slotname: bidToSlotName(bid),
+      parameters: mergeTargets(commonParams, bid.params.data)
+    }));
 
     const payload = {
-      slots: slots,
-      parameters: { ...targets, ...gdprParams, ...refererParams, ...id5Params }
+      slots: slots
     }
 
     const account = getAccount(validBidRequests);
@@ -111,22 +114,23 @@ function adResponse(bid, ad) {
 }
 
 function mergeTargets(targets, target) {
+  const targetsCopy = { ...targets };
   if (target) {
     Object.keys(target).forEach(function (key) {
       const val = target[key];
       const dirtyValues = Array.isArray(val) ? val : [val];
       const values = dirtyValues.filter(v => v === 0 || v);
       if (values.length > 0) {
-        if (targets[key]) {
-          const distinctValues = values.filter(v => targets[key].indexOf(v) < 0);
-          targets[key].push.apply(targets[key], distinctValues);
+        if (targetsCopy[key]) {
+          const distinctValues = values.filter(v => targetsCopy[key].indexOf(v) < 0);
+          targetsCopy[key].push.apply(targetsCopy[key], distinctValues);
         } else {
-          targets[key] = values;
+          targetsCopy[key] = values;
         }
       }
     });
   }
-  return targets;
+  return targetsCopy;
 }
 
 function bidToSlotName(bid) {
