@@ -49,6 +49,20 @@
  */
 
 /**
+ * @property
+ * @summary use a predefined domain override for cookies or provide your own
+ * @name Submodule#domainOverride
+ * @type {(undefined|function)}
+ */
+
+/**
+ * @function
+ * @summary Returns the root domain
+ * @name Submodule#findRootDomain
+ * @returns {string}
+ */
+
+/**
  * @typedef {Object} SubmoduleConfig
  * @property {string} name - the User ID submodule name (used to link submodule with config)
  * @property {(SubmoduleStorage|undefined)} storage - browser storage config
@@ -134,6 +148,7 @@ const CONSENT_DATA_COOKIE_STORAGE_CONFIG = {
   name: '_pbjs_userid_consent_data',
   expires: 30 // 30 days expiration, which should match how often consent is refreshed by CMPs
 };
+export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userid');
 
 /** @type {string[]} */
@@ -315,11 +330,71 @@ function hasGDPRConsent(consentData) {
 }
 
 /**
+   * Find the root domain
+   * @param {string|undefined} fullDomain
+   * @return {string}
+   */
+export function findRootDomain(fullDomain = window.location.hostname) {
+  if (!coreStorage.cookiesAreEnabled()) {
+    return fullDomain;
+  }
+
+  const domainParts = fullDomain.split('.');
+  if (domainParts.length == 2) {
+    return fullDomain;
+  }
+  let rootDomain;
+  let continueSearching;
+  let startIndex = -2;
+  const TEST_COOKIE_NAME = `_rdc${Date.now()}`;
+  const TEST_COOKIE_VALUE = 'writeable';
+  do {
+    rootDomain = domainParts.slice(startIndex).join('.');
+    let expirationDate = new Date(utils.timestamp() + 10 * 1000).toUTCString();
+
+    // Write a test cookie
+    coreStorage.setCookie(
+      TEST_COOKIE_NAME,
+      TEST_COOKIE_VALUE,
+      expirationDate,
+      'Lax',
+      rootDomain,
+      undefined
+    );
+
+    // See if the write was successful
+    const value = coreStorage.getCookie(TEST_COOKIE_NAME, undefined);
+    if (value === TEST_COOKIE_VALUE) {
+      continueSearching = false;
+      // Delete our test cookie
+      coreStorage.setCookie(
+        TEST_COOKIE_NAME,
+        '',
+        'Thu, 01 Jan 1970 00:00:01 GMT',
+        undefined,
+        rootDomain,
+        undefined
+      );
+    } else {
+      startIndex += -1;
+      continueSearching = Math.abs(startIndex) <= domainParts.length;
+    }
+  } while (continueSearching);
+  return rootDomain;
+}
+
+/**
  * @param {SubmoduleContainer[]} submodules
  * @param {function} cb - callback for after processing is done.
  */
 function processSubmoduleCallbacks(submodules, cb) {
-  const done = cb ? utils.delayExecution(cb, submodules.length) : function () { };
+  let done = () => {};
+  if (cb) {
+    done = utils.delayExecution(() => {
+      clearTimeout(timeoutID);
+      cb();
+    }, submodules.length);
+  }
   submodules.forEach(function (submodule) {
     submodule.callback(function callbackCompleted(idObj) {
       // if valid, id data should be saved to cookie/html storage
@@ -338,7 +413,6 @@ function processSubmoduleCallbacks(submodules, cb) {
     // clear callback, this prop is used to test if all submodule callbacks are complete below
     submodule.callback = undefined;
   });
-  clearTimeout(timeoutID);
 }
 
 /**
@@ -651,6 +725,7 @@ function updateSubmodules() {
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   submodules = addedSubmodules.map(i => {
     const submoduleConfig = find(configs, j => j.name === i.name);
+    i.findRootDomain = findRootDomain;
     return submoduleConfig ? {
       submodule: i,
       config: submoduleConfig,
@@ -662,7 +737,7 @@ function updateSubmodules() {
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50
     getGlobal().requestBids.before(requestBidsHook, 40);
-    utils.logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules`);
+    utils.logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
     addedUserIdHook = true;
   }
 }
@@ -696,15 +771,15 @@ export function init(config) {
   ].filter(i => i !== null);
 
   // exit immediately if opt out cookie or local storage keys exists.
-  if (validStorageTypes.indexOf(COOKIE) !== -1 && (coreStorage.getCookie('_pbjs_id_optout') || coreStorage.getCookie('_pubcid_optout'))) {
+  if (validStorageTypes.indexOf(COOKIE) !== -1 && coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
     utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
     return;
   }
-  // _pubcid_optout is checked for compatibility with pubCommonId
-  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (coreStorage.getDataFromLocalStorage('_pbjs_id_optout') || coreStorage.getDataFromLocalStorage('_pubcid_optout'))) {
+  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
     utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
     return;
   }
+
   // listen for config userSyncs to be set
   config.getConfig(conf => {
     // Note: support for 'usersync' was dropped as part of Prebid.js 4.0

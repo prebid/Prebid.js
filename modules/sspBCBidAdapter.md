@@ -10,9 +10,16 @@ Module that connects to Wirtualna Polska Media header bidding endpoint to fetch 
 Only banner format is supported.
 Supported currencies: USD, EUR, PLN
 
-
 Required parameters:
+- none
 
+Optional parameters:
+- site id 
+- adslot id
+- domain
+- page
+- tmax
+- bidFloor
 
 # Test Parameters
 ```
@@ -28,11 +35,12 @@ var adUnits = [
       bids: [{
          bidder: 'sspBC',
          params: {
-            id: '006',                          // required
-            siteId: '235911',                   // required
+            id: '006',                          // optional
+            siteId: '235911',                   // optional
             domain: 'somesite.pl',              // optional
             page: 'somesite.pl/somepage.html',  // optional
-            tmax: 250                           // optional
+            tmax: 250,                          // optional
+            bidFloor: 0.1                       // optional
          }
        }]
    }

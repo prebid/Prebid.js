@@ -243,7 +243,7 @@ function generateParameters(bid, bidderRequest) {
 
   if (bidderRequest && bidderRequest.refererInfo) {
     requestParams.referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-    requestParams.page_url = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
+    requestParams.page_url = config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
   }
 
   return requestParams;
