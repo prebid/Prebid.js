@@ -1,7 +1,7 @@
 /**
- * This module adds IdentityLink to the User ID module
+ * This module adds AdmixerId to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/identityLinkSubmodule
+ * @module modules/admixerIdSubmodule
  * @requires module:modules/userId
  */
 
