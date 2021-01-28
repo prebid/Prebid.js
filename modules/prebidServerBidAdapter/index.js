@@ -279,18 +279,18 @@ function addBidderFirstPartyDataToRequest(request) {
   const bidderConfig = config.getBidderConfig();
   const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
     const currBidderConfig = bidderConfig[bidder];
-    if (currBidderConfig.fpd) {
-      const fpd = {};
-      if (currBidderConfig.fpd.context) {
-        fpd.site = currBidderConfig.fpd.context;
+    if (currBidderConfig.ortb2) {
+      const ortb2 = {};
+      if (currBidderConfig.ortb2.site) {
+        ortb2.site = currBidderConfig.ortb2.site;
       }
-      if (currBidderConfig.fpd.user) {
-        fpd.user = currBidderConfig.fpd.user;
+      if (currBidderConfig.ortb2.user) {
+        ortb2.user = currBidderConfig.ortb2.user;
       }
 
       acc.push({
         bidders: [ bidder ],
-        config: { fpd }
+        config: { ortb2 }
       });
     }
     return acc;
@@ -565,9 +565,9 @@ const OPEN_RTB_PROTOCOL = {
        * Prebid AdSlot
        * @type {(string|undefined)}
        */
-      const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
+      const pbAdSlot = utils.deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.context.data.pbadslot', pbAdSlot);
+        utils.deepSetValue(imp, 'ext.data.pbadslot', pbAdSlot);
       }
 
       /**
@@ -575,11 +575,21 @@ const OPEN_RTB_PROTOCOL = {
        */
       ['name', 'adSlot'].forEach(name => {
         /** @type {(string|undefined)} */
-        const value = utils.deepAccess(adUnit, `fpd.context.adserver.${name}`);
+        const value = utils.deepAccess(adUnit, `ortb2Imp.ext.data.adserver.${name}`);
         if (typeof value === 'string' && value) {
-          utils.deepSetValue(imp, `ext.context.data.adserver.${name.toLowerCase()}`, value);
+          utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
         }
       });
+
+      const site = utils.deepAccess(adUnit, 'ortb2Imp.site');
+      if (typeof site === 'object' && pbAdSlot) {
+        utils.deepSetValue(imp, 'ext.site', site);
+      }
+
+      const user = utils.deepAccess(adUnit, 'ortb2Imp.user');
+      if (typeof user === 'object' && pbAdSlot) {
+        utils.deepSetValue(imp, 'ext.user', user);
+      }
 
       Object.assign(imp, mediaTypes);
 
@@ -678,12 +688,12 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'regs.coppa', 1);
     }
 
-    const commonFpd = getConfig('fpd') || {};
-    if (commonFpd.context) {
-      utils.deepSetValue(request, 'site.ext.data', commonFpd.context);
+    const commonFpd = getConfig('ortb2') || {};
+    if (commonFpd.site) {
+      utils.deepSetValue(request, 'site', commonFpd.site);
     }
     if (commonFpd.user) {
-      utils.deepSetValue(request, 'user.ext.data', commonFpd.user);
+      utils.deepSetValue(request, 'user', commonFpd.user);
     }
     addBidderFirstPartyDataToRequest(request);
 

@@ -324,6 +324,60 @@ export function newConfig() {
     return bidderConfig;
   }
 
+  /**
+   * Copy FPD over to OpenRTB standard format in config
+   */
+  function convertFpd(opt) {
+    let duplicate = {};
+    let extension = {};
+
+    Object.keys(opt).forEach((type) => {
+      let prop = (type === 'context') ? 'site' : type;
+      duplicate[prop] = (prop === 'site' || prop === 'user') ? Object.keys(opt[type]).reduce((result, key) => {
+        if (key === 'data') {
+          utils.mergeDeep(result, {ext: {data: opt[type][key]}});
+        } else if (key === 'pbAdSlot' || key === 'adServer') {
+          utils.mergeDeep(extension, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
+        } else {
+          utils.mergeDeep(result, {[key]: opt[type][key]});
+        }
+
+        return result;
+      }, {}) : opt[type];
+    });
+
+    if (Object.keys(extension).length > 0) {
+      utils.mergeDeep(duplicate, extension);
+    }
+
+    return duplicate;
+  }
+
+  /**
+   * Copy FPD over to OpenRTB standard format in each adunit
+   */
+  function convertAdUnitFpd(arr, bool) {
+    let convert = [];
+
+    if (bool) {
+      arr.forEach((adunit) => {
+        if (adunit.fpd) {
+          (adunit['ortb2Imp']) ? utils.mergeDeep(adunit['ortb2Imp'], convertFpd(adunit.fpd)) : adunit['ortb2Imp'] = convertFpd(adunit.fpd);
+          convert.push((({ fpd, ...duplicate }) => duplicate)(adunit));
+        } else {
+          convert.push(adunit);
+        }
+      });
+
+      return convert;
+    } else if (arr.fpd) {
+      (arr['ortb2Imp']) ? utils.mergeDeep(arr['ortb2Imp'], convertFpd(arr.fpd)) : arr['ortb2Imp'] = convertFpd(arr.fpd);
+      return (({ fpd, ...duplicate }) => duplicate)(arr)
+    } else {
+      return arr;
+    }
+  }
+
   /*
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
@@ -338,13 +392,14 @@ export function newConfig() {
     let topicalConfig = {};
 
     topics.forEach(topic => {
-      let option = options[topic];
+      let prop = (topic === 'fpd') ? 'ortb2' : topic;
+      let option = (topic === 'fpd') ? convertFpd(options[topic]) : options[topic];
 
-      if (utils.isPlainObject(defaults[topic]) && utils.isPlainObject(option)) {
-        option = Object.assign({}, defaults[topic], option);
+      if (utils.isPlainObject(defaults[prop]) && utils.isPlainObject(option)) {
+        option = Object.assign({}, defaults[prop], option);
       }
 
-      topicalConfig[topic] = config[topic] = option;
+      topicalConfig[prop] = config[prop] = option;
     });
 
     callSubscribers(topicalConfig);
@@ -437,11 +492,13 @@ export function newConfig() {
           bidderConfig[bidder] = {};
         }
         Object.keys(config.config).forEach(topic => {
-          let option = config.config[topic];
+          let prop = (topic === 'fpd') ? 'ortb2' : topic;
+          let option = (topic === 'fpd') ? convertFpd(config.config[topic]) : config.config[topic];
+
           if (utils.isPlainObject(option)) {
-            bidderConfig[bidder][topic] = Object.assign({}, bidderConfig[bidder][topic] || {}, option);
+            bidderConfig[bidder][prop] = Object.assign({}, bidderConfig[bidder][prop] || {}, option);
           } else {
-            bidderConfig[bidder][topic] = option;
+            bidderConfig[bidder][prop] = option;
           }
         });
       });
@@ -499,7 +556,8 @@ export function newConfig() {
     runWithBidder,
     callbackWithBidder,
     setBidderConfig,
-    getBidderConfig
+    getBidderConfig,
+    convertAdUnitFpd
   };
 }
 

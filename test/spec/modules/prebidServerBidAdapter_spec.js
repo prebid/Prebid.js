@@ -1515,7 +1515,29 @@ describe('S2S Adapter', function () {
 
       const expected = allowedBidders.map(bidder => ({
         bidders: [ bidder ],
-        config: { fpd: { site: context, user } }
+        config: {
+          ortb2: {
+            site: {
+              content: { userrating: 4 },
+              ext: {
+                data: {
+                  pageType: 'article',
+                  category: 'tools'
+                }
+              }
+            },
+            user: {
+              yob: '1984',
+              geo: { country: 'ca' },
+              ext: {
+                data: {
+                  registered: true,
+                  interests: ['cars']
+                }
+              }
+            }
+          }
+        }
       }));
 
       config.setConfig({ fpd: { context: commonContext, user: commonUser } });
@@ -1523,12 +1545,12 @@ describe('S2S Adapter', function () {
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
-      expect(parsedRequestBody.site.ext.data).to.deep.equal(commonContext);
-      expect(parsedRequestBody.user.ext.data).to.deep.equal(commonUser);
+      expect(parsedRequestBody.site).to.deep.equal(commonContext);
+      expect(parsedRequestBody.user).to.deep.equal(commonUser);
     });
 
     describe('pbAdSlot config', function () {
-      it('should not send \"imp.ext.context.data.pbadslot\" if \"fpd.context\" is undefined', function () {
+      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext\" is undefined', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
@@ -1540,34 +1562,36 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.pbadslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
       });
 
-      it('should not send \"imp.ext.context.data.pbadslot\" if \"fpd.context.pbAdSlot\" is undefined', function () {
+      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" is undefined', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {};
+        bidRequest.ad_units[0].ortb2Imp = {};
 
         adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
         const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.pbadslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
       });
 
-      it('should not send \"imp.ext.context.data.pbadslot\" if \"fpd.context.pbAdSlot\" is empty string', function () {
+      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" is empty string', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            pbAdSlot: ''
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              pbadslot: ''
+            }
           }
         };
 
@@ -1576,18 +1600,20 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.pbadslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
       });
 
-      it('should send \"imp.ext.context.data.pbadslot\" if \"fpd.context.pbAdSlot\" value is a non-empty string', function () {
+      it('should send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" value is a non-empty string', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            pbAdSlot: '/a/b/c'
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              pbadslot: '/a/b/c'
+            }
           }
         };
 
@@ -1596,13 +1622,13 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.pbadslot');
-        expect(parsedRequestBody.imp[0].ext.context.data.pbadslot).to.equal('/a/b/c');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.data.pbadslot');
+        expect(parsedRequestBody.imp[0].ext.data.pbadslot).to.equal('/a/b/c');
       });
     });
 
     describe('GAM ad unit config', function () {
-      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context\" is undefined', function () {
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext\" is undefined', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
@@ -1614,35 +1640,37 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context.adserver.adSlot\" is undefined', function () {
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext.data.adserver.adSlot\" is undefined', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {};
+        bidRequest.ad_units[0].ortb2Imp = {};
 
         adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
         const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context.adserver.adSlot\" is empty string', function () {
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext.data.adserver.adSlot\" is empty string', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            adServer: {
-              adSlot: ''
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              adserver: {
+                adSlot: ''
+              }
             }
           }
         };
@@ -1652,20 +1680,22 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should send both \"adslot\" and \"name\" from \"imp.ext.context.data.adserver\" if \"fpd.context.adserver.adSlot\" and \"fpd.context.adserver.name\" values are non-empty strings', function () {
+      it('should send both \"adslot\" and \"name\" from \"imp.ext.data.adserver\" if \"ortb2Imp.ext.data.adserver.adSlot\" and \"ortb2Imp.ext.data.adserver.name\" values are non-empty strings', function () {
         const ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         const consentConfig = { s2sConfig: ortb2Config };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            adserver: {
-              adSlot: '/a/b/c',
-              name: 'adserverName1'
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              adserver: {
+                adSlot: '/a/b/c',
+                name: 'adserverName1'
+              }
             }
           }
         };
@@ -1675,10 +1705,10 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.adserver.adslot');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.adserver.name');
-        expect(parsedRequestBody.imp[0].ext.context.data.adserver.adslot).to.equal('/a/b/c');
-        expect(parsedRequestBody.imp[0].ext.context.data.adserver.name).to.equal('adserverName1');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.data.adserver.adslot');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.data.adserver.name');
+        expect(parsedRequestBody.imp[0].ext.data.adserver.adslot).to.equal('/a/b/c');
+        expect(parsedRequestBody.imp[0].ext.data.adserver.name).to.equal('adserverName1');
       });
     });
   });

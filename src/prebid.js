@@ -588,9 +588,9 @@ $$PREBID_GLOBAL$$.requestBids.before(executeCallbacks, 49);
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
   if (utils.isArray(adUnitArr)) {
-    $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
+    $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, config.convertAdUnitFpd(adUnitArr, true));
   } else if (typeof adUnitArr === 'object') {
-    $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
+    $$PREBID_GLOBAL$$.adUnits.push(config.convertAdUnitFpd(adUnitArr, false));
   }
   // emit event
   events.emit(ADD_AD_UNITS);
@@ -832,7 +832,7 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
  */
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
 
-/**
+/**ƒ
  * Set Prebid config options.
  * (Added in version 0.27.0).
  *
