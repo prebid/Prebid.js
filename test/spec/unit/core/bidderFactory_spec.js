@@ -673,6 +673,28 @@ describe('registerBidder', function () {
     expect(registerBidAdapterStub.getCall(2).args[0].getSpec().gvlid).to.equal(2);
     expect(registerBidAdapterStub.getCall(3).args[0].getSpec().gvlid).to.equal(undefined);
   })
+
+  it('should register alias with skipPbsAliasing', function() {
+    const aliases = [
+      {
+        code: 'foo',
+        skipPbsAliasing: true
+      },
+      {
+        code: 'bar',
+        skipPbsAliasing: false
+      },
+      {
+        code: 'baz'
+      }
+    ]
+    const thisSpec = Object.assign(newEmptySpec(), { aliases: aliases });
+    registerBidder(thisSpec);
+
+    expect(registerBidAdapterStub.getCall(1).args[0].getSpec().skipPbsAliasing).to.equal(true);
+    expect(registerBidAdapterStub.getCall(2).args[0].getSpec().skipPbsAliasing).to.equal(false);
+    expect(registerBidAdapterStub.getCall(3).args[0].getSpec().skipPbsAliasing).to.equal(undefined);
+  })
 })
 
 describe('validate bid response: ', function () {
