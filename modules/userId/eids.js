@@ -35,7 +35,7 @@ const USER_IDS_CONFIG = {
     },
     source: 'id5-sync.com',
     atype: 1,
-    getEidExt: function(data) {
+    getUidExt: function(data) {
       if (data.ext) {
         return data.ext;
       }
@@ -167,6 +167,10 @@ const USER_IDS_CONFIG = {
   // Neustar Fabrick
   'fabrickId': {
     source: 'neustar.biz',
+    atype: 1
+  },
+  'tapadId': {
+    source: 'tapad.com',
     atype: 1
   }
 };

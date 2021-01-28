@@ -43,7 +43,7 @@ export const identityLinkSubmodule = {
   getId(config, consentData) {
     const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.pid !== 'string') {
-      utils.logError('identityLink submodule requires partner id to be defined');
+      utils.logError('identityLink: requires partner id to be defined');
       return;
     }
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
@@ -51,7 +51,7 @@ export const identityLinkSubmodule = {
     const tcfPolicyV2 = utils.deepAccess(consentData, 'vendorData.tcfPolicyVersion') === 2;
     // use protocol relative urls for http or https
     if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
-      utils.logInfo('Consent string is required to call envelope API.');
+      utils.logInfo('identityLink: Consent string is required to call envelope API.');
       return;
     }
     const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}${hasGdpr ? (tcfPolicyV2 ? '&ct=4&cv=' : '&ct=1&cv=') + gdprConsentString : ''}`;
@@ -60,10 +60,11 @@ export const identityLinkSubmodule = {
       // Check ats during callback so it has a chance to initialise.
       // If ats library is available, use it to retrieve envelope. If not use standard third party endpoint
       if (window.ats) {
-        utils.logInfo('ATS exists!');
+        utils.logInfo('identityLink: ATS exists!');
         window.ats.retrieveEnvelope(function (envelope) {
           if (envelope) {
-            utils.logInfo('An envelope can be retrieved from ATS!');
+            utils.logInfo('identityLink: An envelope can be retrieved from ATS!');
+            setEnvelopeSource(true);
             callback(JSON.parse(envelope).envelope);
           } else {
             getEnvelope(url, callback);
@@ -92,14 +93,15 @@ function getEnvelope(url, callback) {
       callback((responseObj && responseObj.envelope) ? responseObj.envelope : '');
     },
     error: error => {
-      utils.logInfo(`identityLink: ID fetch encountered an error`, error);
+      utils.logInfo(`identityLink: identityLink: ID fetch encountered an error`, error);
       callback();
     }
   };
 
   if (!storage.getCookie('_lr_retry_request')) {
     setRetryCookie();
-    utils.logInfo('A 3P retrieval is attempted!');
+    utils.logInfo('identityLink: A 3P retrieval is attempted!');
+    setEnvelopeSource(false);
     ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
   }
 }
@@ -108,6 +110,12 @@ function setRetryCookie() {
   let now = new Date();
   now.setTime(now.getTime() + 3600000);
   storage.setCookie('_lr_retry_request', 'true', now.toUTCString());
+}
+
+function setEnvelopeSource(src) {
+  let now = new Date();
+  now.setTime(now.getTime() + 2592000000);
+  storage.setCookie('_lr_env_src_ats', src, now.toUTCString());
 }
 
 submodule('userId', identityLinkSubmodule);

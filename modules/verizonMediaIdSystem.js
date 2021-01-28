@@ -8,6 +8,7 @@
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const MODULE_NAME = 'verizonMediaId';
 const VENDOR_ID = 25;
@@ -55,7 +56,7 @@ export const verizonMediaIdSubmodule = {
     }
 
     const data = {
-      '1p': [1, '1', true].includes(params['1p']) ? '1' : '0',
+      '1p': includes([1, '1', true], params['1p']) ? '1' : '0',
       he: params.he,
       gdpr: isEUConsentRequired(consentData) ? '1' : '0',
       euconsent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
