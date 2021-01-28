@@ -39,7 +39,7 @@ export const spec = {
               nBid.requestId = nBid.impid;
               nBid.width = nBid.w || width;
               nBid.height = nBid.h || height;
-              nBid.ttl = 360;
+              nBid.ttl = 300;
               nBid.mediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner';
               if (nBid.mediaType) {
                 nBid.vastXml = cleanVast(nBid.adm, nBid.nurl);
