@@ -10,7 +10,6 @@ Maintainer: harshad.mane@pubmatic.com
 - This module, when included, will trigger a BID_VIEWABLE event which can be consumed by Bidders and Analytics adapters
 - GPT API is used to find when a bid is viewable, https://developers.google.com/publisher-tag/reference#googletag.events.impressionviewableevent . This event is fired when an impression becomes viewable, according to the Active View criteria.
 Refer: https://support.google.com/admanager/answer/4524488
-
 - The module does not work with adserver other than GAM with GPT integration
 - Logic used to find a matching pbjs-bid for a GPT slot is ``` (slot.getAdUnitPath() === bid.adUnitCode || slot.getSlotElementId() === bid.adUnitCode) ``` this logic can be changed by using param ```customMatchFunction```
 - When a rendered PBJS bid is viewable the module will trigger BID_VIEWABLE event, which can be consumed by bidders and analytics adapters
@@ -18,7 +17,7 @@ Refer: https://support.google.com/admanager/answer/4524488
 
 # Params
 - firePixels [optional] [type: boolean], when set to true, will fire the urls mentioned in bid.vurls which should be array of urls
-- customMatchFunction [optional] [type: function(bid, slot)], when passed 
+- customMatchFunction [optional] [type: function(bid, slot)], when passed this function will be used to `find` the matching winning bid for the GPT slot. Default value is ` (bid, slot) => (slot.getAdUnitPath() === bid.adUnitCode || slot.getSlotElementId() === bid.adUnitCode) `
 
 As both params are optional, you do not need to set config if you do not want to set value for any param
 

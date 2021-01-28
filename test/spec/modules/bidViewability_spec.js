@@ -66,7 +66,7 @@ describe('#bidViewability', function() {
     });
   });
 
-  describe('getMatchingWinnigBidForGPTSlot', function() {
+  describe('getMatchingWinningBidForGPTSlot', function() {
     let winningBidsArray;
     let sandbox
     beforeEach(function() {
@@ -94,7 +94,7 @@ describe('#bidViewability', function() {
       let newWinningBid = Object.assign({}, PBJS_WINNING_BID, {adUnitCode: 'AD-' + PBJS_WINNING_BID.adUnitCode});
       // Needs pbjs.getWinningBids to be implemented with match
       winningBidsArray.push(newWinningBid);
-      let wb = bidViewability.getMatchingWinnigBidForGPTSlot(bidViewabilityConfig, gptSlot);
+      let wb = bidViewability.getMatchingWinningBidForGPTSlot(bidViewabilityConfig, gptSlot);
       expect(wb).to.deep.equal(newWinningBid);
     });
 
@@ -106,7 +106,7 @@ describe('#bidViewability', function() {
         }
       };
       // Needs pbjs.getWinningBids to be implemented without match; winningBidsArray is set to empty in beforeEach
-      let wb = bidViewability.getMatchingWinnigBidForGPTSlot(bidViewabilityConfig, gptSlot);
+      let wb = bidViewability.getMatchingWinningBidForGPTSlot(bidViewabilityConfig, gptSlot);
       expect(wb).to.equal(null);
     });
 
@@ -114,14 +114,14 @@ describe('#bidViewability', function() {
       // Needs config to be passed without customMatchFunction
       // Needs pbjs.getWinningBids to be implemented with match
       winningBidsArray.push(PBJS_WINNING_BID);
-      let wb = bidViewability.getMatchingWinnigBidForGPTSlot({}, gptSlot);
+      let wb = bidViewability.getMatchingWinningBidForGPTSlot({}, gptSlot);
       expect(wb).to.deep.equal(PBJS_WINNING_BID);
     });
 
     it('should NOT find a match by using default matching function', function() {
       // Needs config to be passed without customMatchFunction
       // Needs pbjs.getWinningBids to be implemented without match; winningBidsArray is set to empty in beforeEach
-      let wb = bidViewability.getMatchingWinnigBidForGPTSlot({}, gptSlot);
+      let wb = bidViewability.getMatchingWinningBidForGPTSlot({}, gptSlot);
       expect(wb).to.equal(null);
     });
   });

@@ -20,7 +20,7 @@ export let isBidAdUnitCodeMatchingSlot = (bid, slot) => {
   return (slot.getAdUnitPath() === bid.adUnitCode || slot.getSlotElementId() === bid.adUnitCode);
 }
 
-export let getMatchingWinnigBidForGPTSlot = (globalModuleConfig, slot) => {
+export let getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
   return find(getGlobal().getAllWinningBids(),
     // supports custom match function from config
     bid => isFn(globalModuleConfig[CONFIG_CUSTOM_MATCH])
@@ -57,7 +57,7 @@ export let logWinningBidNotFound = (slot) => {
 };
 
 export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
-  let respectiveBid = getMatchingWinnigBidForGPTSlot(globalModuleConfig, slot);
+  let respectiveBid = getMatchingWinningBidForGPTSlot(globalModuleConfig, slot);
   if (respectiveBid === null) {
     logWinningBidNotFound(slot);
   } else {
