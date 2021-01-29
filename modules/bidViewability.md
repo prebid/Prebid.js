@@ -7,7 +7,7 @@ Purpose: Track when a bid is viewable
 Maintainer: harshad.mane@pubmatic.com
 
 # Description
-- This module, when included, will trigger a BID_VIEWABLE event which can be consumed by Bidders and Analytics adapters
+- This module, when included, will trigger a BID_VIEWABLE event which can be consumed by Analytics adapters, bidders will need to implement `onBidViewable` method to capture this event
 - GPT API is used to find when a bid is viewable, https://developers.google.com/publisher-tag/reference#googletag.events.impressionviewableevent . This event is fired when an impression becomes viewable, according to the Active View criteria.
 Refer: https://support.google.com/admanager/answer/4524488
 - The module does not work with adserver other than GAM with GPT integration
