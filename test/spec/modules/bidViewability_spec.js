@@ -6,7 +6,7 @@ import * as sinon from 'sinon';
 import {expect, spy} from 'chai';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import { EVENTS } from 'src/constants.json';
-import { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
+import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import parse from 'url-parse';
 
 const GPT_SLOT = {
@@ -242,12 +242,14 @@ describe('#bidViewability', function() {
     let triggerPixelSpy;
     let eventsEmitSpy;
     let logWinningBidNotFoundSpy;
+    let callBidViewableBidderSpy;
     let winningBidsArray;
 
     beforeEach(function() {
       sandbox = sinon.sandbox.create();
       triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
       eventsEmitSpy = sandbox.spy(events, ['emit']);
+      callBidViewableBidderSpy = sandbox.spy(adapterManager, ['callBidViewableBidder']);
       // mocking winningBidsArray
       winningBidsArray = [];
       sandbox.stub(prebidGlobal, 'getGlobal').returns({
@@ -272,8 +274,12 @@ describe('#bidViewability', function() {
         let call = triggerPixelSpy.getCall(i);
         expect(call.args[0]).to.equal(url);
       });
+      // adapterManager.callBidViewableBidder is called with required args
+      let call = callBidViewableBidderSpy.getCall(0);
+      expect(call.args[0]).to.equal(PBJS_WINNING_BID.bidderCode);
+      expect(call.args[1]).to.deep.equal(PBJS_WINNING_BID);
       // EVENTS.BID_VIEWABLE is triggered
-      let call = eventsEmitSpy.getCall(0);
+      call = eventsEmitSpy.getCall(0);
       expect(call.args[0]).to.equal(EVENTS.BID_VIEWABLE);
       expect(call.args[1]).to.deep.equal(PBJS_WINNING_BID);
     });
@@ -281,6 +287,8 @@ describe('#bidViewability', function() {
     it('matching winning bid is NOT found', function() {
       // fire pixels should NOT be called
       expect(triggerPixelSpy.callCount).to.equal(0);
+      // adapterManager.callBidViewableBidder is NOT called
+      expect(callBidViewableBidderSpy.callCount).to.equal(0);
       // EVENTS.BID_VIEWABLE is NOT triggered
       expect(eventsEmitSpy.callCount).to.equal(0);
     });

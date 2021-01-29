@@ -7,7 +7,7 @@ import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
 import { logWarn, isFn, triggerPixel } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import adapterManager, { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import find from 'core-js-pure/features/array/find.js';
 
 const MODULE_NAME = 'bidViewability';
@@ -63,6 +63,8 @@ export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
   } else {
     // if config is enabled AND VURL array is present then execute each pixel
     fireViewabilityPixels(globalModuleConfig, respectiveBid);
+    // trigger respective bidder's onBidViewable handler
+    adapterManager.callBidViewableBidder(respectiveBid.bidderCode, respectiveBid);
     // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
     events.emit(EVENTS.BID_VIEWABLE, respectiveBid);
   }
