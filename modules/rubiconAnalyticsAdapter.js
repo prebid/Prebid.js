@@ -564,6 +564,13 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         if (!cache.gpt.registered && utils.isGptPubadsDefined()) {
           subscribeToGamSlots();
           cache.gpt.registered = true;
+        } else if (!cache.gpt.registered) {
+          cache.gpt.registered = true;
+          let googletag = window.googletag || {};
+          googletag.cmd = googletag.cmd || [];
+          googletag.cmd.push(function() {
+            subscribeToGamSlots();
+          });
         }
         break;
       case BID_REQUESTED:
