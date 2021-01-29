@@ -29,11 +29,12 @@ export const spec = {
 
     const slots = validBidRequests.map(bid => ({
       slotname: bidToSlotName(bid),
-      parameters: mergeTargets(commonParams, bid.params.data)
+      parameters: cleanTargets(bid.params.data)
     }));
 
     const payload = {
-      slots: slots
+      slots: slots,
+      parameters: commonParams
     }
 
     const account = getAccount(validBidRequests);
@@ -113,24 +114,24 @@ function adResponse(bid, ad) {
   return bidResponse;
 }
 
-function mergeTargets(targets, target) {
-  const targetsCopy = { ...targets };
+function cleanTargets(target) {
+  const targets = {};
   if (target) {
     Object.keys(target).forEach(function (key) {
       const val = target[key];
       const dirtyValues = Array.isArray(val) ? val : [val];
       const values = dirtyValues.filter(v => v === 0 || v);
       if (values.length > 0) {
-        if (targetsCopy[key]) {
-          const distinctValues = values.filter(v => targetsCopy[key].indexOf(v) < 0);
-          targetsCopy[key].push.apply(targetsCopy[key], distinctValues);
+        if (targets[key]) {
+          const distinctValues = values.filter(v => targets[key].indexOf(v) < 0);
+          targets[key].push.apply(targets[key], distinctValues);
         } else {
-          targetsCopy[key] = values;
+          targets[key] = values;
         }
       }
     });
   }
-  return targetsCopy;
+  return targets;
 }
 
 function bidToSlotName(bid) {

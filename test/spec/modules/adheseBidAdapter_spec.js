@@ -108,19 +108,19 @@ describe('AdheseAdapter', function () {
     it('should include gdpr consent param', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
-      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'xt': [ 'CONSENT_STRING' ] });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': [ 'CONSENT_STRING' ] });
     });
 
     it('should include referer param in base64url format', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
-      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'xf': [ 'aHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ' ] });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xf': [ 'aHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ' ] });
     });
 
     it('should include id5 id as /x5 param', function () {
       let req = spec.buildRequests([ bidWithParams({}, { 'id5id': { 'uid': 'ID5-1234567890' } }) ], bidderRequest);
 
-      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'x5': [ 'ID5-1234567890' ] });
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'x5': [ 'ID5-1234567890' ] });
     });
 
     it('should include bids', function () {
