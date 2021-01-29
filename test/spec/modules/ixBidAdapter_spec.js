@@ -1,5 +1,7 @@
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
+import { getStorageManager } from 'src/storageManager.js';
+import { Renderer } from 'src/Renderer.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/ixBidAdapter.js';
@@ -1467,6 +1469,7 @@ describe('IndexexchangeAdapter', function () {
       expect(videoImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
       expect(videoImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
     });
+
     describe('both banner and video bidder params set', function () {
       const request = spec.buildRequests([DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]]);
 
@@ -1771,6 +1774,185 @@ describe('IndexexchangeAdapter', function () {
       const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
       expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
       expect(requestWithConsent.regs.ext.us_privacy).to.equal('1YYN');
+    });
+  });
+
+  describe.only('LocalStorage ixdiag', function () {
+    let TODAY;
+    let storage;
+
+    before(function () {
+      TODAY = new Date().toISOString().slice(0, 10);
+      storage = getStorageManager(10, 'ix');
+      storage.removeDataFromLocalStorage('ixdiag');
+    });
+
+    it('should not log error in LocalStorage when there is no logError called.', function() {
+      const request = DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0];
+      expect(spec.isBidRequestValid(request)).to.be.true;
+    });
+
+    describe('error codes', function () {
+      beforeEach(function () {
+        storage.removeDataFromLocalStorage('ixdiag');
+      });
+
+      it('should log error code 1 in LocalStorage when there is logError called.', function() {
+        const request = {
+          ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
+          params: {
+            ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
+            size: ['400', 100]
+          }
+        };
+
+        expect(spec.isBidRequestValid(request)).to.be.false;
+        const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+        expect(currentStorage).to.deep.equal({ [TODAY]: { "1": 1 }})
+      });
+
+      it('should log error code 2 in LocalStorage when there is logError called.', function() {
+        const request = {
+          ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
+          params: {
+            ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
+            size: [410, 100]
+          }
+        };
+
+        expect(spec.isBidRequestValid(request)).to.be.false;
+        const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+        expect(currentStorage).to.deep.equal({ [TODAY]: { "2": 1 }})
+      });
+
+      it('should log error code 3 in LocalStorage when there is logError called.', function() {
+        const request = {
+          ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
+          params: {
+            ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
+            video: {} 
+          }
+        };
+
+        expect(spec.isBidRequestValid(request)).to.be.false;
+        const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+        expect(currentStorage).to.deep.equal({ [TODAY]: { "3": 4 }})
+      });
+
+      it('should log error code 4 in LocalStorage when there is logError called.', function() {
+        const request = {
+          ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
+          params: {
+            ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
+            siteId: false
+          }
+        };
+
+        expect(spec.isBidRequestValid(request)).to.be.false;
+        const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+        expect(currentStorage).to.deep.equal({ [TODAY]: { "4": 1 }})
+      });
+
+      it('should log error code 5 in LocalStorage when there is logError called.', function() {
+        const request = {
+          ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
+          params: {
+            ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
+            bidFloor: false,
+            bidFloorCur: true
+          }
+        };
+
+        expect(spec.isBidRequestValid(request)).to.be.false;
+        const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+        expect(currentStorage).to.deep.equal({ [TODAY]: { "5": 1 }})
+      });
+    });
+
+    describe('perserve state', function () {
+      before(function () {
+        storage.removeDataFromLocalStorage('ixdiag');
+      });
+
+      it('should increment errors for errorCode', function() {
+        const request = {
+          ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
+          params: {
+            ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
+            video: {} 
+          }
+        };
+  
+        expect(spec.isBidRequestValid(request)).to.be.false;
+        const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+        expect(currentStorage).to.deep.equal({ [TODAY]: { "3": 4 }});
+  
+        expect(spec.isBidRequestValid(request)).to.be.false;
+        expect(JSON.parse(storage.getDataFromLocalStorage('ixdiag'))).to.deep.equal({ [TODAY]: { "3": 8 }});
+      });
+
+      it('should add new errorCode to ixdiag.', function() {
+        const request = {
+          ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
+          params: {
+            ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
+            size: ['400', 100]
+          }
+        };
+  
+        expect(spec.isBidRequestValid(request)).to.be.false;
+        const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+        expect(currentStorage).to.deep.equal({ [TODAY]: { "1": 1, "3": 8 }})
+      });
+
+      it('should add new errorCode to ixdiag.', function() {
+        const request = {
+          ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
+          params: {
+            ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
+            siteId: false,
+          }
+        };
+  
+        expect(spec.isBidRequestValid(request)).to.be.false;
+        const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+        expect(currentStorage).to.deep.equal({ [TODAY]: { "1": 1, "3": 8, "4": 1 }});
+      });
+    });
+
+    it('should clear errors with successful response', function() {
+      const ixdiag = { [TODAY]: { "1": 1, "3": 8, "4": 1 }};
+      storage.setDataInLocalStorage('ixdiag', JSON.stringify(ixdiag));
+
+      let currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+      expect(currentStorage).to.deep.equal(ixdiag);
+
+      const request = DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0];
+      expect(spec.isBidRequestValid(request)).to.be.true;
+
+      spec.interpretResponse({ body: DEFAULT_VIDEO_BIDDER_REQUEST_DATA }, request)[0];
+      
+      currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+      expect(currentStorage).to.be.undefined;
+    });
+
+    it('should clear errors after 7 day expiry errorCode', function() {
+      const EXPIRED_DATE = '2019-12-12';
+
+      const ixdiag = { [EXPIRED_DATE]: { "1": 1, "3": 8, "4": 1 }, [TODAY]: { "3": 8, "4": 1 }};
+      storage.setDataInLocalStorage('ixdiag', JSON.stringify(ixdiag));
+      
+      const request = {
+        ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
+        params: {
+          ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
+          size: ['400', 100]
+        }
+      };
+
+      expect(spec.isBidRequestValid(request)).to.be.false;
+      const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
+      expect(currentStorage).to.deep.equal({ [TODAY]: { "1": 1, "3": 8, "4": 1 }})
     });
   });
 });

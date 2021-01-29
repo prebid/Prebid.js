@@ -1,11 +1,16 @@
 import * as utils from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { EVENTS } from '../src/constants.json';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { getStorageManager } from '../src/storageManager.js';
+import events from '../src/events.js';
 import find from 'core-js-pure/features/array/find.js';
 import isInteger from 'core-js-pure/features/number/is-integer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'ix';
+const GVLID = 10;
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BANNER_ENDPOINT_VERSION = 7.2;
@@ -18,10 +23,13 @@ const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
+const RENDERER_URL = 'https://js-sec.indexww.com/htv/video-player.js';
+let hasRegisteredHandler = false;
+const storage = getStorageManager(GVLID, BIDDER_CODE);
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
- *
+
  * @param  {object} bid A valid bid request config object.
  * @return {object}     A impression object that will be sent to ad server.
  */
@@ -303,6 +311,13 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   let ixdiag = buildIXDiag(validBidRequests);
   for (var key in ixdiag) {
     r.ext.ixdiag[key] = ixdiag[key];
+  }
+
+  // Get cached errors stored in LocalStorage
+  const cachedErrors = getCachedErrors();
+
+  if (cachedErrors) {
+    r.ext.ixdiag.err = cachedErrors;
   }
 
   // if an schain is provided, send it along
@@ -615,6 +630,46 @@ function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
 }
 
 /**
+ * Initialize Outstream Renderer
+ * @param {Object} bid
+ */
+function outstreamRenderer(bid) {
+  bid.renderer.push(() => {
+    var config = {
+      width: bid.width,
+      height: bid.height,
+      timeout: 3000
+    };
+
+    try {
+      window.IXOutstreamPlayer(bid.vastUrl, bid.adUnitCode, config);
+    } catch (err) {
+      utils.logError('ix outstream player failed to render', { bidder: BIDDER_CODE, code: 6 });
+    }
+  });
+}
+
+/**
+ * Create Outstream Renderer
+ * @param {string} id
+ */
+function createRenderer(id) {
+  const renderer = Renderer.install({
+    id: id,
+    url: RENDERER_URL,
+    loaded: false
+  });
+
+  try {
+    renderer.setRender(outstreamRenderer);
+  } catch (err) {
+    utils.logError('ix error when calling setRender on renderer', { bidder: BIDDER_CODE, code: 7 });
+  }
+
+  return renderer;
+}
+
+/**
  *
  * @param  {object} imp      Impression object to be modified
  * @param  {array}  newSize  The new size to be applied
@@ -628,10 +683,87 @@ function createMissingBannerImp(imp, newSize) {
   return newImp;
 }
 
+/**
+ * Error Event handler that receives type and arguments in a data object.
+ * @param {Object} data
+ */
+function errorEventsHandler(data) {
+  if (storage.localStorageIsEnabled()) {
+    let currentStorage;
+
+    try {
+      currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag')) || {};
+    } catch (e) {
+      utils.logWarn('ix can not read ixdiag from localStorage.');
+    }
+
+    Object.keys(currentStorage).map(function (errorDate) {
+      var date = new Date(errorDate);
+
+      if (date.setDate(date.getDate() + 7) - new Date() < 0) {
+        delete currentStorage[errorDate]
+      }
+    });
+
+    if (data.type === 'ERROR' && utils.deepAccess(data.arguments[1], 'bidder') === BIDDER_CODE) {
+      const today = new Date().toISOString().slice(0, 10);
+
+      try {
+        const errorCode = data.arguments[1].code;
+
+        if (errorCode) {
+          if (!currentStorage.hasOwnProperty(today)) {
+            currentStorage[today] = {};
+          }
+
+          if (!currentStorage[today].hasOwnProperty(errorCode) || typeof currentStorage[today][errorCode] !== 'number') {
+            currentStorage[today][errorCode] = 0;
+          }
+
+          currentStorage[today][errorCode]++;
+
+          storage.setDataInLocalStorage('ixdiag', JSON.stringify(currentStorage));
+        };
+      } catch (e) {
+        utils.logWarn('ix can not save ixdiag in localStorage.');
+      }
+    }
+  }
+}
+
+/**
+ * Get ixdiag stored in LocalStorage and format to be added to request payload
+ * @returns {Object} Object with error codes and counts
+ */
+function getCachedErrors() {
+  if (storage.localStorageIsEnabled()) {
+    const errors = {};
+
+    try {
+      let currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag')) || {};
+      Object.keys(currentStorage).forEach((date) => {
+        Object.keys(currentStorage[date]).forEach((code) => {
+          if (typeof currentStorage[date][code] === 'number') {
+            errors[code] = (errors[code] && typeof errors[code] === 'number')
+              ? errors[code] + currentStorage[date][code]
+              : currentStorage[date][code];
+          }
+        });
+      });
+
+      return errors;
+    } catch (e) {
+      utils.logError('ix can not read ixdiag from localStorage.');
+    }
+  }
+
+  return null;
+}
+
 export const spec = {
 
   code: BIDDER_CODE,
-  gvlid: 10,
+  gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
@@ -641,6 +773,13 @@ export const spec = {
    * @return {boolean}     True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
+    // This will push a handler for each time this function is called
+    if (!hasRegisteredHandler) {
+      events.on(EVENTS.AUCTION_DEBUG, errorEventsHandler);
+      events.on(EVENTS.AD_RENDER_FAILED, errorEventsHandler);
+      hasRegisteredHandler = true;
+    }
+
     const paramsVideoRef = utils.deepAccess(bid, 'params.video');
     const paramsSize = utils.deepAccess(bid, 'params.size');
     const mediaTypeBannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
@@ -650,21 +789,23 @@ export const spec = {
     const hasBidFloorCur = bid.params.hasOwnProperty('bidFloorCur');
 
     if (!isValidSize(bid.params.size)) {
-      utils.logError('ix bidder params: bid size has invalid format.');
+      utils.logError('ix bidder params: bid size has invalid format.', { bidder: BIDDER_CODE, code: 1 });
       return false;
     }
 
     if (bid.hasOwnProperty('mediaType') && !(utils.contains(SUPPORTED_AD_TYPES, bid.mediaType))) {
+      utils.logWarn('ix bidder params: media type is not supported.');
       return false;
     }
 
     if (bid.hasOwnProperty('mediaTypes') && !(mediaTypeBannerSizes || mediaTypeVideoPlayerSize)) {
+      utils.logWarn('ix bidder params: mediaTypes is missing sizes.');
       return false;
     }
 
     if (!includesSize(bid.sizes, paramsSize) && !((mediaTypeVideoPlayerSize && includesSize(mediaTypeVideoPlayerSize, paramsSize)) ||
      (mediaTypeBannerSizes && includesSize(mediaTypeBannerSizes, paramsSize)))) {
-      utils.logError('ix bidder params: bid size is not included in ad unit sizes or player size.');
+      utils.logError('ix bidder params: bid size is not included in ad unit sizes or player size.', { bidder: BIDDER_CODE, code: 2 });
       return false;
     }
 
@@ -677,7 +818,7 @@ export const spec = {
           if (isProtocolsValid) {
             continue;
           }
-          utils.logError('ix bidder params: ' + property + ' is not included in either the adunit or params level');
+          utils.logError('ix bidder params: ' + property + ' is not included in either the adunit or params level', { bidder: BIDDER_CODE, code: 3 });
           isParamsLevelValid = false;
         }
       }
@@ -688,13 +829,13 @@ export const spec = {
     }
 
     if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
-      utils.logError('ix bidder params: siteId must be string or number value.');
+      utils.logError('ix bidder params: siteId must be string or number value.', { bidder: BIDDER_CODE, code: 4 });
       return false;
     }
 
     if (hasBidFloor || hasBidFloorCur) {
       if (!(hasBidFloor && hasBidFloorCur && isValidBidFloorParams(bid.params.bidFloor, bid.params.bidFloorCur))) {
-        utils.logError('ix bidder params: bidFloor / bidFloorCur parameter has invalid format.');
+        utils.logError('ix bidder params: bidFloor / bidFloorCur parameter has invalid format.', { bidder: BIDDER_CODE, code: 5 });
         return false;
       }
     }
@@ -740,8 +881,8 @@ export const spec = {
         }
       }
       if (validBidRequest.mediaType === BANNER ||
-          (utils.deepAccess(validBidRequest, 'mediaTypes.banner') && includesSize(utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), validBidRequest.params.size)) ||
-          (!validBidRequest.mediaType && !validBidRequest.mediaTypes)) {
+        (utils.deepAccess(validBidRequest, 'mediaTypes.banner') && includesSize(utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), validBidRequest.params.size)) ||
+        (!validBidRequest.mediaType && !validBidRequest.mediaTypes)) {
         let imp = bidToBannerImp(validBidRequest);
 
         if (!bannerImps.hasOwnProperty(validBidRequest.transactionId)) {
@@ -819,6 +960,16 @@ export const spec = {
         const bidRequest = getBidRequest(innerBids[j].impid, requestBid.imp);
         bid = parseBid(innerBids[j], responseBody.cur, bidRequest);
         bids.push(bid);
+      }
+
+      if (requestBid.ext.ixdiag.hasOwnProperty('err')) {
+        if (storage.localStorageIsEnabled()) {
+          try {
+            storage.removeDataFromLocalStorage('ixdiag');
+          } catch (e) {
+            utils.logError('ix can not clear ixdiag from localStorage.');
+          }
+        }
       }
     }
 
