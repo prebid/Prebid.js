@@ -64,7 +64,7 @@ export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
     // if config is enabled AND VURL array is present then execute each pixel
     fireViewabilityPixels(globalModuleConfig, respectiveBid);
     // trigger respective bidder's onBidViewable handler
-    adapterManager.callBidViewableBidder(respectiveBid.bidderCode, respectiveBid);
+    adapterManager.callBidViewableBidder(respectiveBid.bidder, respectiveBid);
     // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
     events.emit(EVENTS.BID_VIEWABLE, respectiveBid);
   }

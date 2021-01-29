@@ -22,6 +22,7 @@ const GPT_SLOT = {
 const PBJS_WINNING_BID = {
   'adUnitCode': '/harshad/Jan/2021/',
   'bidderCode': 'pubmatic',
+  'bidder': 'pubmatic',
   'width': 300,
   'height': 250,
   'statusMessage': 'Bid available',
@@ -276,7 +277,7 @@ describe('#bidViewability', function() {
       });
       // adapterManager.callBidViewableBidder is called with required args
       let call = callBidViewableBidderSpy.getCall(0);
-      expect(call.args[0]).to.equal(PBJS_WINNING_BID.bidderCode);
+      expect(call.args[0]).to.equal(PBJS_WINNING_BID.bidder);
       expect(call.args[1]).to.deep.equal(PBJS_WINNING_BID);
       // EVENTS.BID_VIEWABLE is triggered
       call = eventsEmitSpy.getCall(0);
