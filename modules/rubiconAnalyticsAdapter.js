@@ -458,47 +458,35 @@ function updateRpaCookie() {
   return decodedRpaCookie;
 }
 
-const gamEventFunctions = {
-  'slotOnload': (auctionId, bid) => {
-    cache.auctions[auctionId].gamHasRendered[bid.adUnit.adUnitCode] = true;
-  },
-  'slotRenderEnded': (auctionId, bid, event) => {
-    if (event.isEmpty) {
-      cache.auctions[auctionId].gamHasRendered[bid.adUnit.adUnitCode] = true;
-    }
-    bid.adUnit.gam = utils.pick(event, [
-      // these come in as `null` from Gpt, which when stringified does not get removed
-      // so set explicitly to undefined when not a number
-      'advertiserId', advertiserId => utils.isNumber(advertiserId) ? advertiserId : undefined,
-      'creativeId', creativeId => utils.isNumber(creativeId) ? creativeId : undefined,
-      'lineItemId', lineItemId => utils.isNumber(lineItemId) ? lineItemId : undefined,
-      'adSlot', () => event.slot.getAdUnitPath(),
-      'isSlotEmpty', () => event.isEmpty || undefined
-    ]);
-  }
-}
-
 function subscribeToGamSlots() {
-  ['slotOnload', 'slotRenderEnded'].forEach(eventName => {
-    window.googletag.pubads().addEventListener(eventName, event => {
-      const isMatchingAdSlot = utils.isAdUnitCodeMatchingSlot(event.slot);
-      // loop through auctions and adUnits and mark the info
-      Object.keys(cache.auctions).forEach(auctionId => {
-        (Object.keys(cache.auctions[auctionId].bids) || []).forEach(bidId => {
-          let bid = cache.auctions[auctionId].bids[bidId];
-          // if this slot matches this bids adUnit, add the adUnit info
-          if (isMatchingAdSlot(bid.adUnit.adUnitCode)) {
-            // mark this adUnit as having been rendered by gam
-            gamEventFunctions[eventName](auctionId, bid, event);
-          }
-        });
-        // Now if all adUnits have gam rendered, send the payload
-        if (rubiConf.waitForGamSlots && !cache.auctions[auctionId].sent && Object.keys(cache.auctions[auctionId].gamHasRendered).every(adUnitCode => cache.auctions[auctionId].gamHasRendered[adUnitCode])) {
-          clearTimeout(cache.timeouts[auctionId]);
-          delete cache.timeouts[auctionId];
-          sendMessage.call(rubiconAdapter, auctionId);
+  window.googletag.pubads().addEventListener('slotRenderEnded', event => {
+    const isMatchingAdSlot = utils.isAdUnitCodeMatchingSlot(event.slot);
+    // loop through auctions and adUnits and mark the info
+    Object.keys(cache.auctions).forEach(auctionId => {
+      (Object.keys(cache.auctions[auctionId].bids) || []).forEach(bidId => {
+        let bid = cache.auctions[auctionId].bids[bidId];
+        // if this slot matches this bids adUnit, add the adUnit info
+        if (isMatchingAdSlot(bid.adUnit.adUnitCode)) {
+          // mark this adUnit as having been rendered by gam
+          cache.auctions[auctionId].gamHasRendered[bid.adUnit.adUnitCode] = true;
+
+          bid.adUnit.gam = utils.pick(event, [
+            // these come in as `null` from Gpt, which when stringified does not get removed
+            // so set explicitly to undefined when not a number
+            'advertiserId', advertiserId => utils.isNumber(advertiserId) ? advertiserId : undefined,
+            'creativeId', creativeId => utils.isNumber(creativeId) ? creativeId : undefined,
+            'lineItemId', lineItemId => utils.isNumber(lineItemId) ? lineItemId : undefined,
+            'adSlot', () => event.slot.getAdUnitPath(),
+            'isSlotEmpty', () => event.isEmpty || undefined
+          ]);
         }
       });
+      // Now if all adUnits have gam rendered, send the payload
+      if (rubiConf.waitForGamSlots && !cache.auctions[auctionId].sent && Object.keys(cache.auctions[auctionId].gamHasRendered).every(adUnitCode => cache.auctions[auctionId].gamHasRendered[adUnitCode])) {
+        clearTimeout(cache.timeouts[auctionId]);
+        delete cache.timeouts[auctionId];
+        sendMessage.call(rubiconAdapter, auctionId);
+      }
     });
   });
 }
