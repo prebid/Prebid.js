@@ -329,7 +329,7 @@ export const spec = {
 
 function createOutstreamScript(bid) {
   // for SmartPlay 4.12
-  function sc_prebidClose(ele, completeCollapsed) {
+  function scPrebidClose(ele, completeCollapsed) {
     if (completeCollapsed) {
       document.getElementById(ele.id).style.display = 'none';
     }
@@ -384,7 +384,7 @@ function createOutstreamScript(bid) {
     },
     onEndCallback: function (m, n) {
       try {
-        sc_prebidClose(n, completeCollapsed); // for SmartPlay 4.12
+        scPrebidClose(n, completeCollapsed); // for SmartPlay 4.12
         window.sc_smartIntxtEnd(n);
       } catch (f) {}
     },
