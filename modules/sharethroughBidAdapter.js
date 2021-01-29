@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 
-const VERSION = '3.3.0';
+const VERSION = '3.3.1';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
@@ -31,6 +31,8 @@ export const sharethroughAdapterSpec = {
         strVersion: VERSION
       };
 
+      Object.assign(query, handleUniversalIds(bidRequest));
+
       const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
       query.secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
 
@@ -44,20 +46,6 @@ export const sharethroughAdapterSpec = {
 
       if (bidderRequest && bidderRequest.uspConsent) {
         query.us_privacy = bidderRequest.uspConsent
-      }
-
-      if (bidRequest.userId && bidRequest.userId.tdid) {
-        query.ttduid = bidRequest.userId.tdid;
-      }
-
-      if (bidRequest.userId && bidRequest.userId.pubcid) {
-        query.pubcid = bidRequest.userId.pubcid;
-      } else if (bidRequest.crumbs && bidRequest.crumbs.pubcid) {
-        query.pubcid = bidRequest.crumbs.pubcid;
-      }
-
-      if (bidRequest.userId && bidRequest.userId.idl_env) {
-        query.idluid = bidRequest.userId.idl_env;
       }
 
       if (bidRequest.schain) {
@@ -146,6 +134,47 @@ export const sharethroughAdapterSpec = {
   // Empty implementation for prebid core to be able to find it
   onSetTargeting: (bid) => {}
 };
+
+function handleUniversalIds(bidRequest) {
+  const universalIds = {};
+
+  if (!bidRequest.userId) {
+    return {};
+  }
+
+  if (bidRequest.userId.tdid) {
+    universalIds.ttduid = bidRequest.userId.tdid;
+  }
+
+  if (bidRequest.userId.pubcid) {
+    universalIds.pubcid = bidRequest.userId.pubcid;
+  } else if (bidRequest.crumbs && bidRequest.crumbs.pubcid) {
+    universalIds.pubcid = bidRequest.crumbs.pubcid;
+  }
+
+  if (bidRequest.userId.idl_env) {
+    universalIds.idluid = bidRequest.userId.idl_env;
+  }
+
+  if (bidRequest.userId.id5id) {
+    universalIds.id5uid = bidRequest.userId.id5id;
+  }
+
+  if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+    universalIds.liuid = bidRequest.userId.lipb.lipbid;
+  }
+
+  if (bidRequest.userId.sharedid) {
+    if (bidRequest.userId.sharedid.id) {
+      universalIds.shduid = bidRequest.userId.sharedid.id;
+    }
+    if (bidRequest.userId.sharedid.third) {
+      universalIds.shd3id = bidRequest.userId.sharedid.third;
+    }
+  }
+
+  return universalIds;
+}
 
 function getLargestSize(sizes) {
   function area(size) {

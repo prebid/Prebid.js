@@ -15,7 +15,12 @@ const bidRequests = [
     userId: {
       tdid: 'fake-tdid',
       pubcid: 'fake-pubcid',
-      idl_env: 'fake-identity-link'
+      idl_env: 'fake-identity-link',
+      id5id: 'fake-id5id',
+      sharedid: {id: 'fake-sharedid', third: 'fake-sharedthird'},
+      lipb: {
+        lipbid: 'fake-lipbid'
+      }
     },
     crumbs: {
       pubcid: 'fake-pubcid-in-crumbs-obj'
@@ -339,6 +344,22 @@ describe('sharethrough adapter spec', function() {
     it('should add the idluid parameter if a bid request contains a value for Identity Link from Live Ramp', function() {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       expect(bidRequest.data.idluid).to.eq('fake-identity-link');
+    });
+
+    it('should add the id5uid parameter if a bid request contains a value for ID5', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.id5uid).to.eq('fake-id5id');
+    });
+
+    it('should add the shduid parameter if a bid request contains a value for Shared ID', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.shduid).to.eq('fake-sharedid');
+      expect(bidRequest.data.shd3id).to.eq('fake-sharedthird');
+    });
+
+    it('should add the liuid parameter if a bid request contains a value for LiveIntent ID', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.liuid).to.eq('fake-lipbid');
     });
 
     it('should add Sharethrough specific parameters', function() {
