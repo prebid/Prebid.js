@@ -17,10 +17,12 @@ const embeddedTrackingPixel = `https://1x1.a-mo.net/hbx/g_impression?A=sample&B=
 const sampleNurl = 'https://example.exchange/nurl';
 
 const sampleFPD = {
-  context: {
+  site: {
     keywords: 'sample keywords',
-    data: {
-      pageType: 'article'
+    ext: {
+      data: {
+        pageType: 'article'
+      }
     }
   },
   user: {
@@ -31,7 +33,7 @@ const sampleFPD = {
 
 const stubConfig = (withStub) => {
   const stub = sinon.stub(config, 'getConfig').callsFake(
-    (arg) => arg === 'fpd' ? sampleFPD : null
+    (arg) => arg === 'ortb2' ? sampleFPD : null
   )
 
   withStub();
