@@ -148,6 +148,13 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
+    },
+    {
+        source: 'admixer.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
     }
 ]
 ```

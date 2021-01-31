@@ -77,6 +77,18 @@ pbjs.setConfig({
                  name: '_criteoId',
                  expires: 1
               }
+        }, {
+              name: 'admixerId',
+              params: {
+                  pid: "4D393FAC-B6BB-4E19-8396-0A4813607316", // example id
+                  e: "3d400b57e069c993babea0bd9efa79e5dc698e16c042686569faae20391fd7ea", // example hashed email (sha256)
+                  p: "05de6c07eb3ea4bce45adca4e0182e771d80fbb99e12401416ca84ddf94c3eb9" //example hashed phone (sha256)
+              },
+              storage: {
+                  type: 'cookie',
+                  name: '__adm__admixer',
+                  expires: 30
+              }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -154,6 +166,18 @@ pbjs.setConfig({
                  type: 'html5',
                  name: '_criteoId',
                  expires: 1
+              }
+        }, {
+              name: 'admixerId',
+              params: {
+                  pid: "4D393FAC-B6BB-4E19-8396-0A4813607316", // example id
+                  e: "3d400b57e069c993babea0bd9efa79e5dc698e16c042686569faae20391fd7ea", // example hashed email (sha256)
+                  p: "05de6c07eb3ea4bce45adca4e0182e771d80fbb99e12401416ca84ddf94c3eb9" //example hashed phone (sha256)
+              },
+              storage: {
+                  type: 'html5',
+                  name: '__adm__admixer',
+                  expires: 30
               }
         }],
         syncDelay: 5000
