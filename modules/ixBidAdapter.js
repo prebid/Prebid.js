@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.json';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import events from '../src/events.js';
 import find from 'core-js-pure/features/array/find.js';
@@ -23,7 +22,7 @@ const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
-const RENDERER_URL = 'https://js-sec.indexww.com/htv/video-player.js';
+
 let hasRegisteredHandler = false;
 const storage = getStorageManager(GVLID, BIDDER_CODE);
 
@@ -627,46 +626,6 @@ function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
       missingBannerSizes[transactionID] = newAdUnitEntry;
     }
   }
-}
-
-/**
- * Initialize Outstream Renderer
- * @param {Object} bid
- */
-function outstreamRenderer(bid) {
-  bid.renderer.push(() => {
-    var config = {
-      width: bid.width,
-      height: bid.height,
-      timeout: 3000
-    };
-
-    try {
-      window.IXOutstreamPlayer(bid.vastUrl, bid.adUnitCode, config);
-    } catch (err) {
-      utils.logError('ix outstream player failed to render', { bidder: BIDDER_CODE, code: 6 });
-    }
-  });
-}
-
-/**
- * Create Outstream Renderer
- * @param {string} id
- */
-function createRenderer(id) {
-  const renderer = Renderer.install({
-    id: id,
-    url: RENDERER_URL,
-    loaded: false
-  });
-
-  try {
-    renderer.setRender(outstreamRenderer);
-  } catch (err) {
-    utils.logError('ix error when calling setRender on renderer', { bidder: BIDDER_CODE, code: 7 });
-  }
-
-  return renderer;
 }
 
 /**

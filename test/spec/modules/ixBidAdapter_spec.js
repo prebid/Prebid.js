@@ -1808,7 +1808,7 @@ describe('IndexexchangeAdapter', function () {
 
         expect(spec.isBidRequestValid(request)).to.be.false;
         const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
-        expect(currentStorage).to.deep.equal({ [TODAY]: { "1": 1 }})
+        expect(currentStorage).to.deep.equal({[TODAY]: { '1': 1 }})
       });
 
       it('should log error code 2 in LocalStorage when there is logError called.', function() {
@@ -1822,7 +1822,7 @@ describe('IndexexchangeAdapter', function () {
 
         expect(spec.isBidRequestValid(request)).to.be.false;
         const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
-        expect(currentStorage).to.deep.equal({ [TODAY]: { "2": 1 }})
+        expect(currentStorage).to.deep.equal({[TODAY]: { '2': 1 }})
       });
 
       it('should log error code 3 in LocalStorage when there is logError called.', function() {
@@ -1830,13 +1830,13 @@ describe('IndexexchangeAdapter', function () {
           ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
           params: {
             ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
-            video: {} 
+            video: {}
           }
         };
 
         expect(spec.isBidRequestValid(request)).to.be.false;
         const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
-        expect(currentStorage).to.deep.equal({ [TODAY]: { "3": 4 }})
+        expect(currentStorage).to.deep.equal({[TODAY]: { '3': 4 }})
       });
 
       it('should log error code 4 in LocalStorage when there is logError called.', function() {
@@ -1850,7 +1850,7 @@ describe('IndexexchangeAdapter', function () {
 
         expect(spec.isBidRequestValid(request)).to.be.false;
         const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
-        expect(currentStorage).to.deep.equal({ [TODAY]: { "4": 1 }})
+        expect(currentStorage).to.deep.equal({[TODAY]: { '4': 1 }})
       });
 
       it('should log error code 5 in LocalStorage when there is logError called.', function() {
@@ -1865,7 +1865,7 @@ describe('IndexexchangeAdapter', function () {
 
         expect(spec.isBidRequestValid(request)).to.be.false;
         const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
-        expect(currentStorage).to.deep.equal({ [TODAY]: { "5": 1 }})
+        expect(currentStorage).to.deep.equal({[TODAY]: { '5': 1 }})
       });
     });
 
@@ -1879,16 +1879,16 @@ describe('IndexexchangeAdapter', function () {
           ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
           params: {
             ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params,
-            video: {} 
+            video: {}
           }
         };
-  
+
         expect(spec.isBidRequestValid(request)).to.be.false;
         const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
-        expect(currentStorage).to.deep.equal({ [TODAY]: { "3": 4 }});
-  
+        expect(currentStorage).to.deep.equal({[TODAY]: { '3': 4 }});
+
         expect(spec.isBidRequestValid(request)).to.be.false;
-        expect(JSON.parse(storage.getDataFromLocalStorage('ixdiag'))).to.deep.equal({ [TODAY]: { "3": 8 }});
+        expect(JSON.parse(storage.getDataFromLocalStorage('ixdiag'))).to.deep.equal({[TODAY]: { '3': 8 }});
       });
 
       it('should add new errorCode to ixdiag.', function() {
@@ -1899,10 +1899,10 @@ describe('IndexexchangeAdapter', function () {
             size: ['400', 100]
           }
         };
-  
+
         expect(spec.isBidRequestValid(request)).to.be.false;
         const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
-        expect(currentStorage).to.deep.equal({ [TODAY]: { "1": 1, "3": 8 }})
+        expect(currentStorage).to.deep.equal({[TODAY]: { '1': 1, '3': 8 }})
       });
 
       it('should add new errorCode to ixdiag.', function() {
@@ -1913,15 +1913,15 @@ describe('IndexexchangeAdapter', function () {
             siteId: false,
           }
         };
-  
+
         expect(spec.isBidRequestValid(request)).to.be.false;
         const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
-        expect(currentStorage).to.deep.equal({ [TODAY]: { "1": 1, "3": 8, "4": 1 }});
+        expect(currentStorage).to.deep.equal({[TODAY]: { '1': 1, '3': 8, '4': 1 }});
       });
     });
 
     it('should clear errors with successful response', function() {
-      const ixdiag = { [TODAY]: { "1": 1, "3": 8, "4": 1 }};
+      const ixdiag = {[TODAY]: { '1': 1, '3': 8, '4': 1 }};
       storage.setDataInLocalStorage('ixdiag', JSON.stringify(ixdiag));
 
       let currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
@@ -1931,7 +1931,7 @@ describe('IndexexchangeAdapter', function () {
       expect(spec.isBidRequestValid(request)).to.be.true;
 
       spec.interpretResponse({ body: DEFAULT_VIDEO_BIDDER_REQUEST_DATA }, request)[0];
-      
+
       currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
       expect(currentStorage).to.be.undefined;
     });
@@ -1939,9 +1939,9 @@ describe('IndexexchangeAdapter', function () {
     it('should clear errors after 7 day expiry errorCode', function() {
       const EXPIRED_DATE = '2019-12-12';
 
-      const ixdiag = { [EXPIRED_DATE]: { "1": 1, "3": 8, "4": 1 }, [TODAY]: { "3": 8, "4": 1 }};
+      const ixdiag = {[EXPIRED_DATE]: {'1': 1, '3': 8, '4': 1}, [TODAY]: {'3': 8, '4': 1}};
       storage.setDataInLocalStorage('ixdiag', JSON.stringify(ixdiag));
-      
+
       const request = {
         ...DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0],
         params: {
@@ -1952,7 +1952,7 @@ describe('IndexexchangeAdapter', function () {
 
       expect(spec.isBidRequestValid(request)).to.be.false;
       const currentStorage = JSON.parse(storage.getDataFromLocalStorage('ixdiag'));
-      expect(currentStorage).to.deep.equal({ [TODAY]: { "1": 1, "3": 8, "4": 1 }})
+      expect(currentStorage).to.deep.equal({[TODAY]: { '1': 1, '3': 8, '4': 1 }})
     });
   });
 });
