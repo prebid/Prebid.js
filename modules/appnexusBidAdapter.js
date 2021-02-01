@@ -107,7 +107,19 @@ export const spec = {
         .filter(param => includes(USER_PARAMS, param))
         .forEach((param) => {
           let uparam = utils.convertCamelToUnderscore(param);
-          userObj[uparam] = userObjBid.params.user[param]
+          if (param === 'segments' && utils.isArray(userObjBid.params.user[param])) {
+            let segs = [];
+            userObjBid.params.user[param].forEach(val => {
+              if (utils.isNumber(val)) {
+                segs.push({'id': val});
+              } else if (utils.isPlainObject(val)) {
+                segs.push(val);
+              }
+            });
+            userObj[uparam] = segs;
+          } else if (param !== 'segments') {
+            userObj[uparam] = userObjBid.params.user[param];
+          }
         });
     }
 
@@ -229,16 +241,22 @@ export const spec = {
     }
 
     const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
+    let eids = [];
     if (criteoId) {
-      let tpuids = [];
-      tpuids.push({
-        'provider': 'criteo',
-        'user_id': criteoId
+      eids.push({
+        source: 'criteo.com',
+        id: criteoId
       });
-      payload.tpuids = tpuids;
     }
 
-    let eids = [];
+    const netidId = utils.deepAccess(bidRequests[0], `userId.netId`);
+    if (netidId) {
+      eids.push({
+        source: 'netid.de',
+        id: netidId
+      });
+    }
+
     const tdid = utils.deepAccess(bidRequests[0], `userId.tdid`);
     if (tdid) {
       eids.push({
@@ -485,6 +503,12 @@ function formatRequest(payload, bidderRequest) {
   if (!hasPurpose1Consent(bidderRequest)) {
     options = {
       withCredentials: false
+    }
+  }
+
+  if (utils.getParameterByName('apn_test').toUpperCase() === 'TRUE' || config.getConfig('apn_test') === true) {
+    options.customHeaders = {
+      'X-Is-Test': 1
     }
   }
 
@@ -975,9 +999,22 @@ function hidedfpContainer(elementId) {
   }
 }
 
+function hideSASIframe(elementId) {
+  try {
+    // find script tag with id 'sas_script'. This ensures it only works if you're using Smart Ad Server.
+    const el = document.getElementById(elementId).querySelectorAll("script[id^='sas_script']");
+    if (el[0].nextSibling && el[0].nextSibling.localName === 'iframe') {
+      el[0].nextSibling.style.setProperty('display', 'none');
+    }
+  } catch (e) {
+    // element not found!
+  }
+}
+
 function outstreamRender(bid) {
-  // push to render queue because ANOutstreamVideo may not be loaded yet
   hidedfpContainer(bid.adUnitCode);
+  hideSASIframe(bid.adUnitCode);
+  // push to render queue because ANOutstreamVideo may not be loaded yet
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,

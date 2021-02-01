@@ -143,6 +143,14 @@ describe('triplelift adapter', function () {
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
+          fpd: {
+            context: {
+              pbAdSlot: 'homepage-top-rect',
+              data: {
+                adUnitSpecificAttribute: 123
+              }
+            }
+          }
         },
         {
           bidder: 'triplelift',
@@ -589,25 +597,68 @@ describe('triplelift adapter', function () {
       expect(payload.ext).to.deep.equal(undefined);
     });
     it('should get floor from floors module if available', function() {
-      const floorInfo = {
-        currency: 'USD',
-        floor: 1.99
-      };
+      let floorInfo;
       bidRequests[0].getFloor = () => floorInfo;
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+
+      // standard float response; expected functionality of floors module
+      floorInfo = { currency: 'USD', floor: 1.99 };
+      let request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[0].floor).to.equal(1.99);
+
+      // if string response, convert to float
+      floorInfo = { currency: 'USD', floor: '1.99' };
+      request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].floor).to.equal(1.99);
     });
-    it('should send fpd on root level ext if kvps are available', function() {
+    it('should call getFloor with the correct parameters based on mediaType', function() {
+      bidRequests.forEach(request => {
+        request.getFloor = () => {};
+        sinon.spy(request, 'getFloor')
+      });
+
+      tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+
+      // banner
+      expect(bidRequests[0].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'banner',
+        size: '*'
+      })).to.be.true;
+
+      // instream
+      expect(bidRequests[1].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'video',
+        size: '*'
+      })).to.be.true;
+
+      // banner and incomplete video (POST will only include banner)
+      expect(bidRequests[3].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'banner',
+        size: '*'
+      })).to.be.true;
+
+      // banner and instream (POST will only include video)
+      expect(bidRequests[5].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'video',
+        size: '*'
+      })).to.be.true;
+    });
+    it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
       const pmp_elig = 'true';
       const fpd = {
         context: {
-          pmp_elig,
-          category,
+          pmp_elig: pmp_elig,
+          data: {
+            category: category
+          }
         },
         user: {
-          sens,
+          sens: sens,
         }
       }
       sandbox.stub(config, 'getConfig').callsFake(key => {
@@ -618,9 +669,16 @@ describe('triplelift adapter', function () {
       });
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
-      expect(payload.ext.fpd).to.not.haveOwnProperty('sens');
-      expect(payload.ext.fpd).to.haveOwnProperty('category');
-      expect(payload.ext.fpd).to.haveOwnProperty('pmp_elig');
+      expect(payload.ext.fpd.user).to.not.exist;
+      expect(payload.ext.fpd.context.data).to.haveOwnProperty('category');
+      expect(payload.ext.fpd.context).to.haveOwnProperty('pmp_elig');
+    });
+    it('should send ad unit fpd if kvps are available', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[0].fpd.context).to.haveOwnProperty('pbAdSlot');
+      expect(request.data.imp[0].fpd.context).to.haveOwnProperty('data');
+      expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('adUnitSpecificAttribute');
+      expect(request.data.imp[1].fpd).to.not.exist;
     });
   });
 
@@ -638,7 +696,8 @@ describe('triplelift adapter', function () {
               ad: 'ad-markup',
               iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
               tl_source: 'tlx',
-              advertiser_name: 'fake advertiser name'
+              advertiser_name: 'fake advertiser name',
+              adomain: ['basspro.com', 'internetalerts.org']
             },
             {
               imp_id: 1,
@@ -746,6 +805,13 @@ describe('triplelift adapter', function () {
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
       expect(result[0].meta.advertiserName).to.equal('fake advertiser name');
       expect(result[1].meta).to.not.have.key('advertiserName');
+    });
+
+    it('should include the advertiser domain array in the meta field if available', function () {
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      expect(result[0].meta.advertiserDomains[0]).to.equal('basspro.com');
+      expect(result[0].meta.advertiserDomains[1]).to.equal('internetalerts.org');
+      expect(result[1].meta).to.not.have.key('advertiserDomains');
     });
   });
 
