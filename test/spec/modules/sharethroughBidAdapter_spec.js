@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from '../../../src/utils.js';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 const bidRequests = [
@@ -332,6 +333,15 @@ describe('sharethrough adapter spec', function() {
       ' userId object of the bidrequest', function() {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       expect(bidRequest.data.pubcid).to.eq('fake-pubcid');
+    });
+
+    it('should add the pubcid parameter if a bid request contains a value for the Publisher Common ID Module in the' +
+      ' crumbs object of the bidrequest', function() {
+      const bidData = utils.deepClone(bidRequests);
+      delete bidData[0].userId.pubcid;
+
+      const bidRequest = spec.buildRequests(bidData)[0];
+      expect(bidRequest.data.pubcid).to.eq('fake-pubcid-in-crumbs-obj');
     });
 
     it('should add the pubcid parameter if a bid request contains a value for the Publisher Common ID Module in the' +

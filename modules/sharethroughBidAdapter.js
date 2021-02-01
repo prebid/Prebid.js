@@ -142,36 +142,25 @@ function handleUniversalIds(bidRequest) {
     return {};
   }
 
-  if (bidRequest.userId.tdid) {
-    universalIds.ttduid = bidRequest.userId.tdid;
-  }
+  const ttd = utils.deepAccess(bidRequest, 'userId.tdid');
+  if (ttd) universalIds.ttduid = ttd;
 
-  if (bidRequest.userId.pubcid) {
-    universalIds.pubcid = bidRequest.userId.pubcid;
-  } else if (bidRequest.crumbs && bidRequest.crumbs.pubcid) {
-    universalIds.pubcid = bidRequest.crumbs.pubcid;
-  }
+  const pubc = utils.deepAccess(bidRequest, 'userId.pubcid') || utils.deepAccess(bidRequest, 'crumbs.pubcid');
+  if (pubc) universalIds.pubcid = pubc;
 
-  if (bidRequest.userId.idl_env) {
-    universalIds.idluid = bidRequest.userId.idl_env;
-  }
+  const idl = utils.deepAccess(bidRequest, 'userId.idl_env');
+  if (idl) universalIds.idluid = idl;
 
-  if (bidRequest.userId.id5id) {
-    universalIds.id5uid = bidRequest.userId.id5id;
-  }
+  const id5 = utils.deepAccess(bidRequest, 'userId.id5id');
+  if (id5) universalIds.id5uid = id5;
 
-  if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-    universalIds.liuid = bidRequest.userId.lipb.lipbid;
-  }
+  const lipb = utils.deepAccess(bidRequest, 'userId.lipb.lipbid');
+  if (lipb) universalIds.liuid = lipb;
 
-  if (bidRequest.userId.sharedid) {
-    if (bidRequest.userId.sharedid.id) {
-      universalIds.shduid = bidRequest.userId.sharedid.id;
-    }
-    if (bidRequest.userId.sharedid.third) {
-      universalIds.shd3id = bidRequest.userId.sharedid.third;
-    }
-  }
+  const shd = utils.deepAccess(bidRequest, 'userId.sharedid.id');
+  if (shd) universalIds.shduid = shd;
+  const shd3 = utils.deepAccess(bidRequest, 'userId.sharedid.third');
+  if (shd3) universalIds.shd3id = shd3;
 
   return universalIds;
 }
