@@ -136,11 +136,9 @@ export const sharethroughAdapterSpec = {
 };
 
 function handleUniversalIds(bidRequest) {
-  const universalIds = {};
+  if (!bidRequest.userId) return {};
 
-  if (!bidRequest.userId) {
-    return {};
-  }
+  const universalIds = {};
 
   const ttd = utils.deepAccess(bidRequest, 'userId.tdid');
   if (ttd) universalIds.ttduid = ttd;
