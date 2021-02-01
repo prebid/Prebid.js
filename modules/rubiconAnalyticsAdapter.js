@@ -185,7 +185,8 @@ function sendMessage(auctionId, bidWonId) {
           'dimensions',
           'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
           'gam',
-          'pbAdSlot'
+          'pbAdSlot',
+          'pattern'
         ]);
         adUnit.bids = [];
         adUnit.status = 'no-bid'; // default it to be no bid
@@ -656,7 +657,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                   return {adSlot: bid.fpd.context.adServer.adSlot}
                 }
               },
-              'pbAdSlot', () => utils.deepAccess(bid, 'fpd.context.pbAdSlot')
+              'pbAdSlot', () => utils.deepAccess(bid, 'fpd.context.pbAdSlot'),
+              'pattern', () => utils.deepAccess(bid, 'fpd.context.aupName')
             ])
           ]);
           return memo;

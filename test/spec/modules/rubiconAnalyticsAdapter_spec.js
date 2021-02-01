@@ -1696,6 +1696,35 @@ describe('rubicon analytics adapter', function () {
       expect(timedOutBid).to.not.have.property('bidResponse');
     });
 
+    it('should pass aupName as pattern', function () {
+      let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequest.bids[0].fpd = {
+        context: {
+          aupName: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile'
+        }
+      };
+      bidRequest.bids[1].fpd = {
+        context: {
+          aupName: '1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile'
+        }
+      };
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, bidRequest);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].pattern).to.equal('1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile');
+      expect(message.auctions[0].adUnits[1].pattern).to.equal('1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile');
+    });
+
     it('should successfully convert bid price to USD in parseBidResponse', function () {
       // Set the rates
       setConfig({
