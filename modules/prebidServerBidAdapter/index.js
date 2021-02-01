@@ -201,6 +201,10 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
     payload.us_privacy = uspConsent;
   }
 
+  if (typeof _s2sConfig.coopSync === 'boolean') {
+    payload.coopSync = _s2sConfig.coopSync;
+  }
+
   const jsonPayload = JSON.stringify(payload);
   ajax(s2sConfig.syncEndpoint,
     (response) => {
