@@ -270,16 +270,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       addUserEids(userEids, seenIdPartners, userId.idl_env, 'liveramp.com', 'LiveRampIp', 'idl');
     }
 
-    if (userId.tdid) {
-       addUserEids(userEids, seenIdPartners, userId.tdid, 'adserver.org', 'AdserverOrgIp', 'TDID');
-    }
-
-    if (userId.lipb) {
-      if ( userId.lipb.lipbid ) {
-        addUserEids(userEids, seenIdPartners, userId.lipb.lipbid, 'liveintent.com', 'LiveIntentIp', 'liveintent');
-      }
-    }
-
     if (userId.netId) {
       addUserEids(userEids, seenIdPartners, userId.netId, 'netid.de', 'NetIdIp', 'NETID');
     }
