@@ -41,7 +41,7 @@ export const spec = {
               nBid.height = nBid.h || height;
               nBid.ttl = 300;
               nBid.mediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner';
-              if (nBid.mediaType) {
+              if (nBid.mediaType && nBid.mediaType === 'video') {
                 nBid.vastXml = cleanVast(nBid.adm, nBid.nurl);
                 nBid.ttl = 3600;
               }
