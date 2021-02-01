@@ -199,6 +199,16 @@ export function newConfig() {
       set disableAjaxTimeout(val) {
         this._disableAjaxTimeout = val;
       },
+
+      _auctionOptions: {},
+      get auctionOptions() {
+        return this._auctionOptions;
+      },
+      set auctionOptions(val) {
+        if (validateauctionOptions(val)) {
+          this._auctionOptions = val;
+        }
+      },
     };
 
     if (config) {
@@ -233,6 +243,30 @@ export function newConfig() {
         if (!isValidPriceConfig(val)) {
           utils.logError('Invalid custom price value passed to `setPriceGranularity()`');
           return false;
+        }
+      }
+      return true;
+    }
+
+    function validateauctionOptions(val) {
+      if (!utils.isPlainObject(val)) {
+        utils.logWarn('Auction Options must be an object')
+        return false
+      }
+
+      for (let k of Object.keys(val)) {
+        if (k !== 'secondaryBidders') {
+          utils.logWarn(`Auction Options given an incorrect param: ${k}`)
+          return false
+        }
+        if (k === 'secondaryBidders') {
+          if (!utils.isArray(val[k])) {
+            utils.logWarn(`Auction Options ${k} must be of type Array`);
+            return false
+          } else if (!val[k].every(utils.isStr)) {
+            utils.logWarn(`Auction Options ${k} must be only string`);
+            return false
+          }
         }
       }
       return true;

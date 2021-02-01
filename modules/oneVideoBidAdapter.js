@@ -4,12 +4,11 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  VERSION: '3.0.3',
+  VERSION: '3.0.5',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   E2ETESTENDPOINT: 'https://ads-wc.v.ssp.yahoo.com/rtb/openrtb?ext_id=',
-  SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
-  SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
-  SYNC_ENDPOINT3: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
+  SYNC_ENDPOINT1: 'https://pixel.advertising.com/ups/57304/sync?gdpr=&gdpr_consent=&_origin=0&redir=true',
+  SYNC_ENDPOINT2: 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=adaptv&ttd_tpi=1',
   supportedMediaTypes: ['video', 'banner'],
   /**
    * Determines whether or not the given bid request is valid.
@@ -76,7 +75,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(response, { bidRequest }) {
+  interpretResponse: function(response, {bidRequest}) {
     let bid;
     let size;
     let bidResponse;
@@ -100,7 +99,7 @@ export const spec = {
       width: size.width,
       height: size.height,
       currency: response.cur,
-      ttl: 100,
+      ttl: (bidRequest.params.video.ttl > 0 && bidRequest.params.video.ttl <= 3600) ? bidRequest.params.video.ttl : 300,
       netRevenue: true,
       adUnitCode: bidRequest.adUnitCode
     };
@@ -114,7 +113,6 @@ export const spec = {
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
-
     if (bidRequest.mediaTypes.video) {
       bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
     }
@@ -129,7 +127,10 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, responses, consentData = {}) {
-    let { gdprApplies, consentString = '' } = consentData;
+    let {
+      gdprApplies,
+      consentString = ''
+    } = consentData;
 
     if (syncOptions.pixelEnabled) {
       return [{
@@ -138,15 +139,11 @@ export const spec = {
       },
       {
         type: 'image',
-        url: spec.SYNC_ENDPOINT2
-      },
-      {
-        type: 'image',
         url: `https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0` + encodeURI(`&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}`)
       },
       {
         type: 'image',
-        url: spec.SYNC_ENDPOINT3
+        url: spec.SYNC_ENDPOINT2
       }];
     }
   }
@@ -307,6 +304,33 @@ function getRequestData(bid, consentData, bidRequest) {
     bidData.site.ref = 'https://verizonmedia.com';
     bidData.tmax = 1000;
   }
+  if (bid.params.video.custom && utils.isPlainObject(bid.params.video.custom)) {
+    bidData.imp[0].ext.custom = {};
+    for (const key in bid.params.video.custom) {
+      if (utils.isStr(bid.params.video.custom[key]) || utils.isNumber(bid.params.video.custom[key])) {
+        bidData.imp[0].ext.custom[key] = bid.params.video.custom[key];
+      }
+    }
+  }
+  if (bid.params.video.content && utils.isPlainObject(bid.params.video.content)) {
+    bidData.imp[0].content = {};
+    const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
+    const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
+    const contentArrayKeys = ['cat'];
+    const contentObjectKeys = ['ext'];
+    for (const contentKey in bid.params.video.content) {
+      if (
+        (contentStringKeys.indexOf(contentKey) > -1 && utils.isStr(bid.params.video.content[contentKey])) ||
+        (contentNumberkeys.indexOf(contentKey) > -1 && utils.isNumber(bid.params.video.content[contentKey])) ||
+        (contentObjectKeys.indexOf(contentKey) > -1 && utils.isPlainObject(bid.params.video.content[contentKey])) ||
+        (contentArrayKeys.indexOf(contentKey) > -1 && utils.isArray(bid.params.video.content[contentKey]) &&
+        bid.params.video.content[contentKey].every(catStr => utils.isStr(catStr)))) {
+        bidData.imp[0].content[contentKey] = bid.params.video.content[contentKey];
+      } else {
+        utils.logMessage('oneVideo bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
+      }
+    }
+  }
   return bidData;
 }
 
@@ -322,7 +346,7 @@ function newRenderer(bidRequest, bid) {
     bidRequest.renderer = {};
     bidRequest.renderer.url = 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js';
     bidRequest.renderer.render = function(bid) {
-      setTimeout(function () {
+      setTimeout(function() {
         // eslint-disable-next-line no-undef
         o2PlayerRender(bid);
       }, 700)

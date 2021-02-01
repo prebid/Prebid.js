@@ -152,6 +152,7 @@ function parseBidResponse(bid) {
     'mediaType',
     'params',
     'mi',
+    'regexPattern', () => bid.regexPattern || undefined,
     'partnerImpId', // partner impression ID
     'dimensions', () => utils.pick(bid, [
       'width',
@@ -166,6 +167,35 @@ function getDomainFromUrl(url) {
   return a.hostname;
 }
 
+function getDevicePlatform() {
+  var deviceType = 3;
+  try {
+    var ua = navigator.userAgent;
+    if (ua && utils.isStr(ua) && ua.trim() != '') {
+      ua = ua.toLowerCase().trim();
+      var isMobileRegExp = new RegExp('(mobi|tablet|ios).*');
+      if (ua.match(isMobileRegExp)) {
+        deviceType = 2;
+      } else {
+        deviceType = 1;
+      }
+    }
+  } catch (ex) {}
+  return deviceType;
+}
+
+function getValueForKgpv(bid, adUnitId) {
+  if (bid.params.regexPattern) {
+    return bid.params.regexPattern;
+  } else if (bid.bidResponse && bid.bidResponse.regexPattern) {
+    return bid.bidResponse.regexPattern;
+  } else if (bid.params.kgpv) {
+    return bid.params.kgpv;
+  } else {
+    return adUnitId;
+  }
+}
+
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
@@ -174,7 +204,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'pn': bid.bidder,
       'bidid': bid.bidId,
       'db': bid.bidResponse ? 0 : 1,
-      'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
+      'kgpv': getValueForKgpv(bid, adUnitId),
       'kgpsv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
       'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
       'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
@@ -220,6 +250,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
+  outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = (function() {
     var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
     if (testGroupId <= 15 && testGroupId >= 0) {
@@ -227,13 +258,6 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     }
     return 0;
   })();
-
-  // GDPR support
-  if (auctionCache.gdprConsent) {
-    outputObj['cns'] = auctionCache.gdprConsent.consentString || '';
-    outputObj['gdpr'] = auctionCache.gdprConsent.gdprApplies === true ? 1 : 0;
-    pixelURL += '&gdEn=1';
-  }
 
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
@@ -275,7 +299,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&pn=' + enc(winningBid.bidder);
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
-  pixelURL += '&kgpv=' + enc(winningBid.params.kgpv || adUnitId);
+  pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
   ajax(
     pixelURL,
@@ -307,7 +331,6 @@ function auctionInitHandler(args) {
 }
 
 function bidRequestedHandler(args) {
-  cache.auctions[args.auctionId].gdprConsent = args.gdprConsent || undefined;
   args.bids.forEach(function(bid) {
     if (!cache.auctions[args.auctionId].adUnitCodes.hasOwnProperty(bid.adUnitCode)) {
       cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode] = {

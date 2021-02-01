@@ -7,16 +7,30 @@
     "britepoolIdSystem",
     "liveIntentIdSystem",
     "lotamePanoramaId",
+    "merkleIdSystem",
     "criteoIdSystem",
     "netIdSystem",
     "identityLinkIdSystem",
-    "sharedIdSystem"
+    "sharedIdSystem",
+    "intentIqIdSystem",
+    "zeotapIdPlusIdSystem",
+    "haloIdSystem",
+    "quantcastIdSystem",
+    "idxIdSystem",
+    "fabrickIdSystem",
+    "verizonMediaIdSystem",
+    "pubProvidedIdSystem",
+    "tapadIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
     "dfpAdServerVideo"
   ],
   "rtdModule": [
-    "browsiRtdProvider"
+    "browsiRtdProvider",
+    "haloRtdProvider",
+    "jwplayerRtdProvider",
+    "reconciliationRtdProvider",
+    "geoedgeRtdProvider"
   ]
 }

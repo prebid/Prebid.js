@@ -4,10 +4,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adhese';
+const GVLID = 553;
 const USER_SYNC_BASE_URL = 'https://user-sync.adhese.com/iframe/user_sync.html';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
@@ -112,12 +114,15 @@ function mergeTargets(targets, target) {
   if (target) {
     Object.keys(target).forEach(function (key) {
       const val = target[key];
-      const values = Array.isArray(val) ? val : [val];
-      if (targets[key]) {
-        const distinctValues = values.filter(v => targets[key].indexOf(v) < 0);
-        targets[key].push.apply(targets[key], distinctValues);
-      } else {
-        targets[key] = values;
+      const dirtyValues = Array.isArray(val) ? val : [val];
+      const values = dirtyValues.filter(v => v === 0 || v);
+      if (values.length > 0) {
+        if (targets[key]) {
+          const distinctValues = values.filter(v => targets[key].indexOf(v) < 0);
+          targets[key].push.apply(targets[key], distinctValues);
+        } else {
+          targets[key] = values;
+        }
       }
     });
   }
@@ -145,8 +150,8 @@ function getAccount(validBidRequests) {
 }
 
 function getId5Id(validBidRequests) {
-  if (validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.id5id) {
-    return validBidRequests[0].userId.id5id;
+  if (validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.id5id && validBidRequests[0].userId.id5id.uid) {
+    return validBidRequests[0].userId.id5id.uid;
   }
 }
 

@@ -1,19 +1,20 @@
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 
+const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 let gdprApplies = true;
 let consentString = null;
 
 export const tripleliftAdapterSpec = {
-
+  gvlid: GVLID,
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
-  isBidRequestValid: function(bid) {
-    return (typeof bid.params.inventoryCode !== 'undefined');
+  supportedMediaTypes: [BANNER, VIDEO],
+  isBidRequestValid: function (bid) {
+    return typeof bid.params.inventoryCode !== 'undefined';
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
@@ -107,15 +108,24 @@ function _getSyncType(syncOptions) {
 function _buildPostBody(bidRequests) {
   let data = {};
   let { schain } = bidRequests[0];
-  data.imp = bidRequests.map(function(bid, index) {
-    return {
+  const globalFpd = _getGlobalFpd();
+
+  data.imp = bidRequests.map(function(bidRequest, index) {
+    let imp = {
       id: index,
-      tagid: bid.params.inventoryCode,
-      floor: _getFloor(bid),
-      banner: {
-        format: _sizes(bid.sizes)
-      }
+      tagid: bidRequest.params.inventoryCode,
+      floor: _getFloor(bidRequest)
     };
+    // remove the else to support multi-imp
+    if (_isInstreamBidRequest(bidRequest)) {
+      imp.video = _getORTBVideo(bidRequest);
+    } else if (bidRequest.mediaTypes.banner) {
+      imp.banner = { format: _sizes(bidRequest.sizes) };
+    };
+    if (!utils.isEmpty(bidRequest.fpd)) {
+      imp.fpd = _getAdUnitFpd(bidRequest.fpd);
+    }
+    return imp;
   });
 
   let eids = [
@@ -130,12 +140,33 @@ function _buildPostBody(bidRequests) {
     };
   }
 
-  if (schain) {
-    data.ext = {
-      schain
-    }
+  let ext = _getExt(schain, globalFpd);
+
+  if (!utils.isEmpty(ext)) {
+    data.ext = ext;
   }
   return data;
+}
+
+function _isInstreamBidRequest(bidRequest) {
+  if (!bidRequest.mediaTypes.video) return false;
+  if (!bidRequest.mediaTypes.video.context) return false;
+  if (bidRequest.mediaTypes.video.context.toLowerCase() === 'instream') {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function _getORTBVideo(bidRequest) {
+  // give precedent to mediaTypes.video
+  let video = { ...bidRequest.params.video, ...bidRequest.mediaTypes.video };
+  if (!video.w) video.w = video.playerSize[0][0];
+  if (!video.h) video.h = video.playerSize[0][1];
+  if (video.context === 'instream') video.placement = 1;
+  // clean up oRTB object
+  delete video.playerSize;
+  return video;
 }
 
 function _getFloor (bid) {
@@ -143,8 +174,8 @@ function _getFloor (bid) {
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: 'USD',
-      mediaType: 'banner',
-      size: _sizes(bid.sizes)
+      mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
+      size: '*'
     });
     if (typeof floorInfo === 'object' &&
     floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
@@ -152,6 +183,60 @@ function _getFloor (bid) {
     }
   }
   return floor !== null ? floor : bid.params.floor;
+}
+
+function _getGlobalFpd() {
+  const fpd = {};
+  const context = {}
+  const user = {};
+
+  const fpdContext = Object.assign({}, config.getConfig('fpd.context'));
+  const fpdUser = Object.assign({}, config.getConfig('fpd.user'));
+
+  _addEntries(context, fpdContext);
+  _addEntries(user, fpdUser);
+
+  if (!utils.isEmpty(context)) {
+    fpd.context = context;
+  }
+  if (!utils.isEmpty(user)) {
+    fpd.user = user;
+  }
+  return fpd;
+}
+
+function _getAdUnitFpd(adUnitFpd) {
+  const fpd = {};
+  const context = {};
+
+  _addEntries(context, adUnitFpd.context);
+
+  if (!utils.isEmpty(context)) {
+    fpd.context = context;
+  }
+
+  return fpd;
+}
+
+function _addEntries(target, source) {
+  if (!utils.isEmpty(source)) {
+    Object.keys(source).forEach(key => {
+      if (source[key] != null) {
+        target[key] = source[key];
+      }
+    });
+  }
+}
+
+function _getExt(schain, fpd) {
+  let ext = {};
+  if (!utils.isEmpty(schain)) {
+    ext.schain = { ...schain };
+  }
+  if (!utils.isEmpty(fpd)) {
+    ext.fpd = { ...fpd };
+  }
+  return ext;
 }
 
 function getUnifiedIdEids(bidRequests) {
@@ -207,10 +292,11 @@ function _buildResponseObject(bidderRequest, bid) {
   let height = bid.height || 1;
   let dealId = bid.deal_id || '';
   let creativeId = bid.crid || '';
+  let breq = bidderRequest.bids[bid.imp_id];
 
   if (bid.cpm != 0 && bid.ad) {
     bidResponse = {
-      requestId: bidderRequest.bids[bid.imp_id].bidId,
+      requestId: breq.bidId,
       cpm: bid.cpm,
       width: width,
       height: height,
@@ -221,7 +307,21 @@ function _buildResponseObject(bidderRequest, bid) {
       currency: 'USD',
       ttl: 300,
       tl_source: bid.tl_source,
+      meta: {}
     };
+
+    if (_isInstreamBidRequest(breq)) {
+      bidResponse.vastXml = bid.ad;
+      bidResponse.mediaType = 'video';
+    };
+
+    if (bid.advertiser_name) {
+      bidResponse.meta.advertiserName = bid.advertiser_name;
+    }
+
+    if (bid.adomain && bid.adomain.length) {
+      bidResponse.meta.advertiserDomains = bid.adomain;
+    }
   };
   return bidResponse;
 }

@@ -1,7 +1,7 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal.js';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, isArrayOfNums } from './utils.js';
+import { adUnitsFilter, flatten, isArrayOfNums, isGptPubadsDefined, uniques } from './utils.js';
 import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
 import { config } from './config.js';
@@ -11,7 +11,7 @@ import { hook } from './hook.js';
 import { sessionLoader } from './debugging.js';
 import includes from 'core-js-pure/features/array/includes.js';
 import { adunitCounter } from './adUnits.js';
-import { isRendererRequired, executeRenderer } from './Renderer.js';
+import { executeRenderer, isRendererRequired } from './Renderer.js';
 import { createBid } from './bidfactory.js';
 import { storageCallbacks } from './storageManager.js';
 
@@ -149,7 +149,14 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
 
   adUnits.forEach(adUnit => {
     const mediaTypes = adUnit.mediaTypes;
+    const bids = adUnit.bids;
     let validatedBanner, validatedVideo, validatedNative;
+
+    if (!bids || !utils.isArray(bids)) {
+      utils.logError(`Detected adUnit.code '${adUnit.code}' did not have 'adUnit.bids' defined or 'adUnit.bids' is not an array. Removing adUnit from auction.`);
+      return;
+    }
+
     if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
       utils.logError(`Detected adUnit.code '${adUnit.code}' did not have a 'mediaTypes' object defined.  This is a required field for the auction, so this adUnit has been removed.`);
       return;
@@ -252,6 +259,18 @@ $$PREBID_GLOBAL$$.getNoBids = function () {
 };
 
 /**
+ * This function returns the bids requests involved in an auction but not bid on or the specified adUnitCode
+ * @param  {string} adUnitCode adUnitCode
+ * @alias module:pbjs.getNoBidsForAdUnitCode
+ * @return {Object}           bidResponse object
+ */
+
+$$PREBID_GLOBAL$$.getNoBidsForAdUnitCode = function (adUnitCode) {
+  const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
+  return { bids };
+};
+
+/**
  * This function returns the bid responses at the given moment.
  * @alias module:pbjs.getBidResponses
  * @return {Object}            map | object that contains the bidResponses
@@ -342,7 +361,7 @@ function emitAdRenderFail({ reason, message, bid, id }) {
  * @param  {string} id bid id to locate the ad
  * @alias module:pbjs.renderAd
  */
-$$PREBID_GLOBAL$$.renderAd = function (doc, id) {
+$$PREBID_GLOBAL$$.renderAd = function (doc, id, options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   utils.logMessage('Calling renderAd with adId :' + id);
 
@@ -354,6 +373,14 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
+
+        // replacing clickthrough if submitted
+        if (options && options.clickThrough) {
+          const { clickThrough } = options;
+          bid.ad = utils.replaceClickThrough(bid.ad, clickThrough);
+          bid.adUrl = utils.replaceClickThrough(bid.adUrl, clickThrough);
+        }
+
         // save winning bids
         auctionManager.addWinningBid(bid);
 
@@ -461,6 +488,18 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
+  let _s2sConfigs = [];
+  const s2sBidders = [];
+  config.getConfig('s2sConfig', config => {
+    if (config && config.s2sConfig) {
+      _s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
+    }
+  });
+
+  _s2sConfigs.forEach(s2sConfig => {
+    s2sBidders.push(...s2sConfig.bidders);
+  });
+
   adUnits = checkAdUnitSetup(adUnits);
 
   if (adUnitCodes && adUnitCodes.length) {
@@ -485,11 +524,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     const allBidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adapterManager.bidderRegistry;
 
-    const s2sConfig = config.getConfig('s2sConfig');
-    const s2sBidders = s2sConfig && s2sConfig.bidders;
-    const bidders = (s2sBidders) ? allBidders.filter(bidder => {
-      return !includes(s2sBidders, bidder);
-    }) : allBidders;
+    const bidders = (s2sBidders) ? allBidders.filter(bidder => !includes(s2sBidders, bidder)) : allBidders;
 
     adUnit.transactionId = utils.generateUUID();
 
@@ -536,9 +571,11 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
   auction.callBids();
 });
 
-export function executeStorageCallbacks(fn, reqBidsConfigObj) {
+export function executeCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);
+  runAll(enableAnalyticsCallbacks);
   fn.call(this, reqBidsConfigObj);
+
   function runAll(queue) {
     var queued;
     while ((queued = queue.shift())) {
@@ -548,7 +585,7 @@ export function executeStorageCallbacks(fn, reqBidsConfigObj) {
 }
 
 // This hook will execute all storage callbacks which were registered before gdpr enforcement hook was added. Some bidders, user id modules use storage functions when module is parsed but gdpr enforcement hook is not added at that stage as setConfig callbacks are yet to be called. Hence for such calls we execute all the stored callbacks just before requestBids. At this hook point we will know for sure that gdprEnforcement module is added or not
-$$PREBID_GLOBAL$$.requestBids.before(executeStorageCallbacks, 49);
+$$PREBID_GLOBAL$$.requestBids.before(executeCallbacks, 49);
 
 /**
  *
@@ -613,6 +650,16 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
   events.off(event, handler, id);
 };
 
+/**
+ * Return a copy of all events emitted
+ *
+ * @alias module:pbjs.getEvents
+ */
+$$PREBID_GLOBAL$$.getEvents = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getEvents');
+  return events.getEvents();
+};
+
 /*
  * Wrapper to register bidderAdapter externally (adapterManager.registerBidAdapter())
  * @param  {Function} bidderAdaptor [description]
@@ -667,13 +714,21 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
  * @param {Object} config.options The options for this particular analytics adapter.  This will likely vary between adapters.
  * @alias module:pbjs.enableAnalytics
  */
-$$PREBID_GLOBAL$$.enableAnalytics = function (config) {
+
+// Stores 'enableAnalytics' callbacks for later execution.
+const enableAnalyticsCallbacks = [];
+
+const enableAnalyticsCb = hook('async', function (config) {
   if (config && !utils.isEmpty(config)) {
     utils.logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics for: ', config);
     adapterManager.enableAnalytics(config);
   } else {
     utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }
+}, 'enableAnalyticsCb');
+
+$$PREBID_GLOBAL$$.enableAnalytics = function (config) {
+  enableAnalyticsCallbacks.push(enableAnalyticsCb.bind(this, config));
 };
 
 /**
@@ -721,12 +776,12 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias, options) {
  * @property {string} adserverTargeting.hb_adid The ad ID of the creative, as understood by the ad server.
  * @property {string} adserverTargeting.hb_pb The price paid to show the creative, as logged in the ad server.
  * @property {string} adserverTargeting.hb_bidder The winning bidder whose ad creative will be served by the ad server.
-*/
+ */
 
 /**
  * Get all of the bids that have been rendered.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
  * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
-*/
+ */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return auctionManager.getAllWinningBids();
 };
@@ -758,7 +813,7 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
  * @property {string} adId The id representing the ad we want to mark
  *
  * @alias module:pbjs.markWinningBidAsUsed
-*/
+ */
 $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
   let bids = [];
 
@@ -770,7 +825,7 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
   } else if (markBidRequest.adId) {
     bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
   } else {
-    utils.logWarn('Inproper usage of markWinningBidAsUsed. It\'ll need an adUnitCode and/or adId to function.');
+    utils.logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
   }
 
   if (bids.length > 0) {

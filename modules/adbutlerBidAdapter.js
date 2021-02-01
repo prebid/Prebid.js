@@ -9,7 +9,7 @@ const BIDDER_CODE = 'adbutler';
 export const spec = {
   code: BIDDER_CODE,
   pageID: Math.floor(Math.random() * 10e6),
-  aliases: ['divreach'],
+  aliases: ['divreach', 'doceree'],
 
   isBidRequestValid: function (bid) {
     return !!(bid.params.accountID && bid.params.zoneID);
