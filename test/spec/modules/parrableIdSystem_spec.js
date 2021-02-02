@@ -249,6 +249,20 @@ describe('Parrable ID System', function() {
       expect(resolvedOptions.called).to.equal(true);
     });
 
+    it('permits an impression from a lower cased allowed timezone', function() {
+      const allowedZone = 'america/new_york';
+      const resolvedOptions = sinon.stub().returns({ timeZone: allowedZone });
+      Intl.DateTimeFormat.returns({ resolvedOptions });
+
+      expect(parrableIdSubmodule.getId({ params: {
+        partner: 'prebid-test',
+        timezoneFilter: {
+          allowedZones: [ allowedZone ]
+        }
+      } })).to.have.property('callback');
+      expect(resolvedOptions.called).to.equal(true);
+    });
+
     it('permits an impression from a timezone that is not blocked', function() {
       const blockedZone = 'America/New_York';
       const resolvedOptions = sinon.stub().returns({ timeZone: 'Iceland' });

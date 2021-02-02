@@ -132,7 +132,8 @@ function shouldFilterImpression(configParams, parrableId) {
       utils.isEmpty(config.allowedOffsets)) {
       return true;
     }
-    if (utils.contains(config.allowedZones, zone)) {
+    const lowerCasedAllowedZones = config.allowedZones && config.allowedZones.map(zone => zone.toLowerCase());
+    if (lowerCasedAllowedZones && utils.contains(lowerCasedAllowedZones, zone.toLowerCase())) {
       return true;
     }
     if (utils.contains(config.allowedOffsets, offset)) {
