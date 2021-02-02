@@ -186,6 +186,38 @@ describe('Parrable ID System', function() {
         removeParrableCookie();
       });
     });
+
+    describe.only('GDPR consent', () => {
+      let callbackSpy = sinon.spy();
+
+      const config = {
+        params: {
+          partner: 'partner'
+        }
+      };
+
+      const gdprConsentTestCases = [
+        { consentData: { gdprApplies: true, consentString: 'expectedConsentString' }, expected: { gdpr: 1, gdpr_consent: 'expectedConsentString' } },
+        { consentData: { gdprApplies: false, consentString: 'expectedConsentString' }, expected: { gdpr: 0 } },
+        { consentData: { gdprApplies: true, consentString: undefined }, expected: { gdpr: 1, gdpr_consent: '' } },
+        { consentData: { gdprApplies: 'yes', consentString: 'expectedConsentString' }, expected: { gdpr: 0 } },
+        { consentData: undefined, expected: { gdpr: 0 } }
+      ];
+
+      gdprConsentTestCases.forEach((testCase, index) => {
+        it(`should call user sync url with the gdprConsent - case ${index}`, () => {
+          parrableIdSubmodule.getId(config, testCase.consentData).callback(callbackSpy);
+
+          if (testCase.expected.gdpr === 1) {
+            expect(server.requests[0].url).to.contain('gdpr=' + testCase.expected.gdpr);
+            expect(server.requests[0].url).to.contain('gdpr_consent=' + testCase.expected.gdpr_consent);
+          } else {
+            expect(server.requests[0].url).to.contain('gdpr=' + testCase.expected.gdpr);
+            expect(server.requests[0].url).to.not.contain('gdpr_consent');
+          }
+        })
+      });
+    });
   });
 
   describe('parrableIdSystem.decode()', function() {

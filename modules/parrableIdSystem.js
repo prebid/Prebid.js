@@ -14,12 +14,13 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
 const PARRABLE_COOKIE_NAME = '_parrable_id';
+const PARRABLE_GVLID = 928;
 const LEGACY_ID_COOKIE_NAME = '_parrable_eid';
 const LEGACY_OPTOUT_COOKIE_NAME = '_parrable_optout';
 const ONE_YEAR_MS = 364 * 24 * 60 * 60 * 1000;
 const EXPIRE_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
 
-const storage = getStorageManager();
+const storage = getStorageManager(PARRABLE_GVLID);
 
 function getExpirationDate() {
   const oneYearFromNow = new Date(utils.timestamp() + ONE_YEAR_MS);
@@ -158,7 +159,7 @@ function shouldFilterImpression(configParams, parrableId) {
   return !isAllowed() || isBlocked();
 }
 
-function fetchId(configParams) {
+function fetchId(configParams, gdprConsentData) {
   if (!isValidConfig(configParams)) return;
 
   let parrableId = readCookie();
@@ -174,6 +175,8 @@ function fetchId(configParams) {
   const eid = (parrableId) ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
   const uspString = uspDataHandler.getConsentData();
+  const gdprApplies = (gdprConsentData && typeof gdprConsentData.gdprApplies === 'boolean' && gdprConsentData.gdprApplies);
+  const gdprConsentString = (gdprConsentData && gdprApplies && gdprConsentData.consentString) || '';
 
   const data = {
     eid,
@@ -183,11 +186,16 @@ function fetchId(configParams) {
 
   const searchParams = {
     data: btoa(JSON.stringify(data)),
-    _rand: Math.random()
+    _rand: Math.random(),
+    gdpr: gdprApplies ? 1 : 0
   };
 
   if (uspString) {
     searchParams.us_privacy = uspString;
+  }
+
+  if (gdprApplies) {
+    searchParams.gdpr_consent = gdprConsentString;
   }
 
   const options = {
@@ -236,7 +244,7 @@ function fetchId(configParams) {
     callback,
     id: parrableId
   };
-};
+}
 
 /** @type {Submodule} */
 export const parrableIdSubmodule = {
@@ -245,6 +253,12 @@ export const parrableIdSubmodule = {
    * @type {string}
    */
   name: 'parrableId',
+  /**
+   * Global Vendor List ID
+   * @type {number}
+   */
+  gvlid: PARRABLE_GVLID,
+
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -267,7 +281,7 @@ export const parrableIdSubmodule = {
    */
   getId(config, gdprConsentData, currentStoredId) {
     const configParams = (config && config.params) || {};
-    return fetchId(configParams);
+    return fetchId(configParams, gdprConsentData);
   }
 };
 
