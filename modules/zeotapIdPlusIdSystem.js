@@ -10,7 +10,8 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_VENDOR_ID = 301;
-export const storage = getStorageManager();
+const ZEOTAP_MODULE_NAME = 'zeotapIdPlus';
+export const storage = getStorageManager(ZEOTAP_VENDOR_ID, ZEOTAP_MODULE_NAME);
 
 function readCookie() {
   return storage.cookiesAreEnabled() ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null;
@@ -26,7 +27,7 @@ export const zeotapIdPlusSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'zeotapIdPlus',
+  name: ZEOTAP_MODULE_NAME,
   /**
    * Vendor ID of Zeotap
    * @type {Number}
