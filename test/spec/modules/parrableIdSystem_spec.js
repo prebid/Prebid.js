@@ -187,7 +187,7 @@ describe('Parrable ID System', function() {
       });
     });
 
-    describe.only('GDPR consent', () => {
+    describe('GDPR consent', () => {
       let callbackSpy = sinon.spy();
 
       const config = {
