@@ -9,14 +9,15 @@ import {submodule} from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
+const ZEOTAP_VENDOR_ID = 301;
 export const storage = getStorageManager();
 
 function readCookie() {
-  return storage.cookiesAreEnabled ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null;
+  return storage.cookiesAreEnabled() ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null;
 }
 
 function readFromLocalStorage() {
-  return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage(ZEOTAP_COOKIE_NAME) : null;
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(ZEOTAP_COOKIE_NAME) : null;
 }
 
 /** @type {Submodule} */
@@ -26,6 +27,11 @@ export const zeotapIdPlusSubmodule = {
    * @type {string}
    */
   name: 'zeotapIdPlus',
+  /**
+   * Vendor ID of Zeotap
+   * @type {Number}
+   */
+  gvlid: ZEOTAP_VENDOR_ID,
   /**
    * decode the stored id value for passing to bid requests
    * @function
