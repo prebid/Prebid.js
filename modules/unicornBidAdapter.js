@@ -53,6 +53,8 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
       banner: {
         format: makeFormat(br.sizes)
       },
+      w: br.sizes[0][0],
+      h: br.sizes[0][1],
       tagid: utils.deepAccess(br, 'params.placementId') || br.adUnitCode,
       secure: 1,
       bidfloor: parseFloat(utils.deepAccess(br, 'params.bidfloorCpm') || 0)
