@@ -179,7 +179,7 @@ function fetchId(configParams) {
     eid,
     trackers: configParams.partner.split(','),
     url: refererInfo.referer,
-    prebid: '$prebid.version$'
+    prebidVersion: '$prebid.version$'
   };
 
   const searchParams = {

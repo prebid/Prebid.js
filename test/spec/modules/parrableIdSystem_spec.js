@@ -74,7 +74,7 @@ function removeParrableCookie() {
   storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
 }
 
-describe.only('Parrable ID System', function() {
+describe('Parrable ID System', function() {
   describe('parrableIdSystem.getId()', function() {
     describe('response callback function', function() {
       let logErrorStub;
@@ -108,7 +108,7 @@ describe.only('Parrable ID System', function() {
           eid: P_COOKIE_EID,
           trackers: P_CONFIG_MOCK.params.partner.split(','),
           url: getRefererInfo().referer,
-          prebid: '$prebid.version$',
+          prebidVersion: '$prebid.version$',
         });
 
         server.requests[0].respond(200,
