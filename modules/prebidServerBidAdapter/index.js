@@ -223,10 +223,14 @@ function doAllSyncs(bidders, s2sConfig) {
     return;
   }
 
-  const thisSync = bidders.pop();
+  // pull the syncs off the list in the order that prebid server sends them
+  const thisSync = bidders.shift();
+
+  // if PBS reports this bidder doesn't have an ID, then call the sync and recurse to the next sync entry
   if (thisSync.no_cookie) {
     doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, utils.bind.call(doAllSyncs, null, bidders, s2sConfig), s2sConfig);
   } else {
+    // bidder already has an ID, so just recurse to the next sync entry
     doAllSyncs(bidders, s2sConfig);
   }
 }
