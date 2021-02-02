@@ -74,7 +74,7 @@ function removeParrableCookie() {
   storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
 }
 
-describe.only('Parrable ID System', function() {
+describe('Parrable ID System', function() {
   describe('parrableIdSystem.getId()', function() {
     describe('response callback function', function() {
       let logErrorStub;
