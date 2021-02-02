@@ -820,14 +820,18 @@ describe('The Criteo bidding adapter', function () {
     it('should properly build a request with first party data', function () {
       const contextData = {
         keywords: ['power tools'],
-        data: {
-          pageType: 'article'
+        ext: {
+          data: {
+            pageType: 'article'
+          }
         }
       };
       const userData = {
         gender: 'M',
-        data: {
-          registered: true
+        ext: {
+          data: {
+            registered: true
+          }
         }
       };
       const bidRequests = [
@@ -842,8 +846,8 @@ describe('The Criteo bidding adapter', function () {
               bidfloor: 0.75
             }
           },
-          fpd: {
-            context: {
+          ortb2Imp: {
+            ext: {
               data: {
                 someContextAttribute: 'abc'
               }
@@ -854,8 +858,8 @@ describe('The Criteo bidding adapter', function () {
 
       sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
-          fpd: {
-            context: contextData,
+          ortb2: {
+            site: contextData,
             user: userData
           }
         };
