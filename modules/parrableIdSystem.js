@@ -147,7 +147,8 @@ function shouldFilterImpression(configParams, parrableId) {
       utils.isEmpty(config.blockedOffsets)) {
       return false;
     }
-    if (utils.contains(config.blockedZones, zone)) {
+    const lowerCasedBlockedZones = config.blockedZones && config.blockedZones.map(zone => zone.toLowerCase());
+    if (utils.contains(lowerCasedBlockedZones, zone.toLowerCase())) {
       return true;
     }
     if (utils.contains(config.blockedOffsets, offset)) {
@@ -156,7 +157,7 @@ function shouldFilterImpression(configParams, parrableId) {
     return false;
   }
 
-  return !isAllowed() || isBlocked();
+  return isBlocked() || !isAllowed();
 }
 
 function fetchId(configParams) {
