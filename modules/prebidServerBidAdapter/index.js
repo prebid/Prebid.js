@@ -223,10 +223,14 @@ function doAllSyncs(bidders, s2sConfig) {
     return;
   }
 
-  const thisSync = bidders.pop();
+  // pull the syncs off the list in the order that prebid server sends them
+  const thisSync = bidders.shift();
+
+  // if PBS reports this bidder doesn't have an ID, then call the sync and recurse to the next sync entry
   if (thisSync.no_cookie) {
     doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, utils.bind.call(doAllSyncs, null, bidders, s2sConfig), s2sConfig);
   } else {
+    // bidder already has an ID, so just recurse to the next sync entry
     doAllSyncs(bidders, s2sConfig);
   }
 }
@@ -608,35 +612,29 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: adUnit.code, ext, secure: s2sConfig.secure };
 
-      /**
-       * Prebid AdSlot
-       * @type {(string|undefined)}
-       */
-      const pbAdSlot = utils.deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
-      if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.data.pbadslot', pbAdSlot);
-      }
-
-      /**
-       * Copy GAM AdUnit and Name to imp
-       */
-      ['name', 'adSlot'].forEach(name => {
-        /** @type {(string|undefined)} */
-        const value = utils.deepAccess(adUnit, `ortb2Imp.ext.data.adserver.${name}`);
-        if (typeof value === 'string' && value) {
-          utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
+      const ortb2 = {...utils.deepAccess(adUnit, 'ortb2Imp.ext.data')};
+      Object.keys(ortb2).forEach(prop => {
+        /**
+          * Prebid AdSlot
+          * @type {(string|undefined)}
+        */
+        if (prop === 'pbadslot') {
+          if (typeof ortb2[prop] === 'string' && ortb2[prop]) utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+        } else if (prop === 'adserver') {
+          /**
+           * Copy GAM AdUnit and Name to imp
+           */
+          ['name', 'adSlot'].forEach(name => {
+            /** @type {(string|undefined)} */
+            const value = utils.deepAccess(ortb2, `adserver.${name}`);
+            if (typeof value === 'string' && value) {
+              utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
+            }
+          });
+        } else {
+          utils.deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
         }
       });
-
-      const site = utils.deepAccess(adUnit, 'ortb2Imp.site');
-      if (typeof site === 'object' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.site', site);
-      }
-
-      const user = utils.deepAccess(adUnit, 'ortb2Imp.user');
-      if (typeof user === 'object' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.user', user);
-      }
 
       Object.assign(imp, mediaTypes);
 

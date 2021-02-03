@@ -70,6 +70,15 @@ function isValidConfig(configParams) {
   return true;
 }
 
+function encodeBase64UrlSafe(base64) {
+  const ENC = {
+    '+': '-',
+    '/': '_',
+    '=': '.'
+  };
+  return base64.replace(/[+/=]/g, (m) => ENC[m]);
+}
+
 function readCookie() {
   const parrableIdStr = storage.getCookie(PARRABLE_COOKIE_NAME);
   if (parrableIdStr) {
@@ -182,7 +191,7 @@ function fetchId(configParams) {
   };
 
   const searchParams = {
-    data: btoa(JSON.stringify(data)),
+    data: encodeBase64UrlSafe(btoa(JSON.stringify(data))),
     _rand: Math.random()
   };
 
