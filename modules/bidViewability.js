@@ -44,7 +44,10 @@ export let fireViewabilityPixels = (globalModuleConfig, bid) => {
     if (uspConsent) { queryParams.us_privacy = uspConsent; }
 
     bid[BID_VURL_ARRAY].forEach(url => {
-      // we are assuming that "?" will be already present in the url
+      // add '?' if not present in URL
+      if (Object.keys(queryParams).length > 0 && url.indexOf('?') === -1) {
+        url += '?';
+      }
       // append all query params, `&key=urlEncoded(value)`
       url += Object.keys(queryParams).reduce((prev, key) => prev += `&${key}=${encodeURIComponent(queryParams[key])}`, '');
       triggerPixel(url)

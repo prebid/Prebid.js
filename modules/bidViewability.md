@@ -13,7 +13,7 @@ Refer: https://support.google.com/admanager/answer/4524488
 - The module does not work with adserver other than GAM with GPT integration
 - Logic used to find a matching pbjs-bid for a GPT slot is ``` (slot.getAdUnitPath() === bid.adUnitCode || slot.getSlotElementId() === bid.adUnitCode) ``` this logic can be changed by using param ```customMatchFunction```
 - When a rendered PBJS bid is viewable the module will trigger BID_VIEWABLE event, which can be consumed by bidders and analytics adapters
-- For the viewable bid if ```bid.vurls type array``` param is and module config ``` firePixels: true ``` is set then the URLs mentioned in bid.vurls will be executed. Please note that GDPR and USP related parameters will be added to the given URLs, here we have assumed that URLs will always have "?" symbol included.
+- For the viewable bid if ```bid.vurls type array``` param is and module config ``` firePixels: true ``` is set then the URLs mentioned in bid.vurls will be executed. Please note that GDPR and USP related parameters will be added to the given URLs
 
 # Params
 - firePixels [optional] [type: boolean], when set to true, will fire the urls mentioned in bid.vurls which should be array of urls

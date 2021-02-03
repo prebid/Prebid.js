@@ -37,8 +37,8 @@ const PBJS_WINNING_BID = {
   'currency': 'USD',
   'vurls': [
     'https://domain-1.com/end-point?a=1',
-    'https://domain-1.com/end-point?a=1',
-    'https://domain-1.com/end-point?a=1'
+    'https://domain-2.com/end-point/',
+    'https://domain-3.com/end-point?a=1'
   ]
 };
 
