@@ -273,8 +273,13 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.iriscat = params.iriscat;
     }
 
-    if (params.zone) {
-      data.t = params.zone;
+    if (params.irisid && typeof params.irisid === 'string') {
+      data.irisid = params.irisid;
+    }
+
+    if (params.zone || params.pubId) {
+      params.zone ? (data.t = params.zone) : (data.pubId = params.pubId);
+
       data.pi = 2; // inscreen
       // override pi if the following is found
       if (params.slot) {
@@ -285,11 +290,8 @@ function buildRequests (validBidRequests, bidderRequest) {
         data.ni = parseInt(params.native, 10);
         data.pi = 5;
       } else if (mediaTypes.video) {
-        data.pi = mediaTypes.video.linearity === 1 ? 7 : 6; // video : invideo
+        data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
       }
-    } else if (params.pubId) {
-      data.pubId = params.pubId
-      data.pi = mediaTypes.video ? 7 : 2; // video : inscreen
     } else { // legacy params
       data = { ...data, ...handleLegacyParams(params, sizes) }
     }
@@ -403,6 +405,7 @@ function interpretResponse (serverResponse, bidRequest) {
   } = Object.assign(defaultResponse, serverResponseBody)
   let data = bidRequest.data || {}
   let product = data.pi
+  let mediaType = (product === 6 || product === 7) ? VIDEO : BANNER
   let isTestUnit = (product === 3 && data.si === 9)
   let sizes = utils.parseSizesInput(bidRequest.sizes)
   let [width, height] = sizes[0].split('x')
@@ -424,9 +427,9 @@ function interpretResponse (serverResponse, bidRequest) {
     bidResponses.push({
       // dealId: DEAL_ID,
       // referrer: REFERER,
-      ...(product === 7 && { vastXml: markup, mediaType: VIDEO }),
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
-      ...(product === 6 && {ad: markup}),
+      ...(mediaType === VIDEO && {ad: markup, vastXml: markup}),
+      mediaType,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
       currency: cur || 'USD',

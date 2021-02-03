@@ -265,6 +265,7 @@ describe('AppNexusAdapter', function () {
             placementId: '10433394',
             user: {
               externalUid: '123',
+              segments: [123, { id: 987, value: 876 }],
               foobar: 'invalid'
             }
           }
@@ -277,6 +278,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
         external_uid: '123',
+        segments: [{id: 123}, {id: 987, value: 876}]
       });
     });
 
@@ -782,6 +784,18 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
+    it('should set the X-Is-Test customHeader if test flag is enabled', function () {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon.stub(config, 'getConfig')
+        .withArgs('apn_test')
+        .returns(true);
+
+      const request = spec.buildRequests([bidRequest]);
+      expect(request.options.customHeaders).to.deep.equal({'X-Is-Test': 1});
+
+      config.getConfig.restore();
+    });
+
     it('should set withCredentials to false if purpose 1 consent is not given', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
@@ -808,11 +822,13 @@ describe('AppNexusAdapter', function () {
       expect(request.options).to.deep.equal({withCredentials: false});
     });
 
-    it('should populate eids and tpuids when ttd id and criteo is available', function () {
+    it('should populate eids when supported userIds are available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
           tdid: 'sample-userid',
-          criteoId: 'sample-criteo-userid'
+          criteoId: 'sample-criteo-userid',
+          netId: 'sample-netId-userid',
+          idl_env: 'sample-idl-userid'
         }
       });
 
@@ -829,10 +845,15 @@ describe('AppNexusAdapter', function () {
         id: 'sample-criteo-userid',
       });
 
-      expect(payload.tpuids).to.deep.include({
-        provider: 'criteo',
-        user_id: 'sample-criteo-userid',
+      expect(payload.eids).to.deep.include({
+        source: 'netid.de',
+        id: 'sample-netId-userid',
       });
+
+      expect(payload.eids).to.deep.include({
+        source: 'liveramp.com',
+        id: 'sample-idl-userid'
+      })
     });
 
     it('should populate iab_support object at the root level if omid support is detected', function () {

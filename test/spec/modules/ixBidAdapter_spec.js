@@ -126,7 +126,9 @@ describe('IndexexchangeAdapter', function () {
             'video/mp4',
             'video/webm'
           ],
-          minduration: 0
+          minduration: 0,
+          maxduration: 60,
+          protocols: [2]
         },
         size: [400, 100]
       },
@@ -135,6 +137,68 @@ describe('IndexexchangeAdapter', function () {
         video: {
           context: 'instream',
           playerSize: [[400, 100], [200, 400]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
+  const DEFAULT_MULTIFORMAT_BANNER_VALID_BID = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '123',
+        size: [300, 250]
+      },
+      sizes: [[300, 250], [300, 600]],
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          playerSize: [[400, 100]]
+        },
+        banner: {
+          sizes: [[300, 250], [300, 600]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
+  const DEFAULT_MULTIFORMAT_VIDEO_VALID_BID = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '456',
+        video: {
+          skippable: false,
+          mimes: [
+            'video/mp4',
+            'video/webm'
+          ],
+          minduration: 0,
+          maxduration: 60,
+          protocols: [1]
+        },
+        size: [400, 100]
+      },
+      sizes: [[300, 250], [300, 600]],
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          playerSize: [[400, 100]]
+        },
+        banner: {
+          sizes: [[300, 250], [300, 600]]
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748562-0',
@@ -436,6 +500,16 @@ describe('IndexexchangeAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
+    it('should return true for banner bid when there are multiple mediaTypes (banner, outstream)', function () {
+      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true for video bid when there are multiple mediaTypes (banner, outstream)', function () {
+      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
     it('should return false when there is only bidFloor', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
@@ -459,6 +533,43 @@ describe('IndexexchangeAdapter', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.params.bidFloor = 50;
       bid.params.bidFloorCur = 70;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when required video properties are missing on both adunit & param levels', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      delete bid.params.video.mimes;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return true when required video properties are at the adunit level', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      delete bid.params.video.mimes;
+      bid.mediaTypes.video.mimes = ['video/mp4'];
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true if protocols exists but protocol doesn\'t', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      delete bid.params.video.protocols;
+      bid.mediaTypes.video.protocols = 1;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return true if protocol exists but protocols doesn\'t', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      delete bid.params.video.protocols;
+      bid.params.video.protocol = 1;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      delete bid.params.video.protocol;
+      bid.mediaTypes.video.protocol = 1;
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return false if both protocol/protocols are missing', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      delete bid.params.video.protocols;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -1291,6 +1402,101 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.video).to.exist;
       expect(impression.video.placement).to.exist;
       expect(impression.video.placement).to.equal(4);
+    });
+
+    it('should not override video properties if they are already configured at the params video level', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.protocols = [1];
+      bid.mediaTypes.video.mimes = ['video/override'];
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.video.protocols[0]).to.equal(2);
+      expect(impression.video.mimes[0]).to.not.equal('video/override');
+    });
+
+    it('should not add video adunit level properties in imp object if they are not whitelisted', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.random = true;
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.video.random).to.not.exist;
+    });
+
+    it('should add whitelisted adunit level video properties in imp object if they are not configured at params level', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      delete bid.params.video.protocols;
+      delete bid.params.video.mimes;
+      bid.mediaTypes.video.protocols = [6];
+      bid.mediaTypes.video.mimes = ['video/mp4'];
+      bid.mediaTypes.video.api = 2;
+      const request = spec.buildRequests([bid])[0];
+      const impression = JSON.parse(request.data.r).imp[0];
+
+      expect(impression.video.protocols[0]).to.equal(6);
+      expect(impression.video.api).to.equal(2);
+      expect(impression.video.mimes[0]).to.equal('video/mp4');
+    });
+  });
+
+  describe('buildRequestMultiFormat', function () {
+    describe('only banner bidder params set', function () {
+      const request = spec.buildRequests(DEFAULT_MULTIFORMAT_BANNER_VALID_BID)
+
+      const bannerImp = JSON.parse(request[0].data.r).imp[0];
+      expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(2);
+      expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
+      expect(bannerImp.id).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].bidId);
+      expect(bannerImp.banner).to.exist;
+      expect(bannerImp.banner.w).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[0]);
+      expect(bannerImp.banner.h).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[1]);
+    });
+
+    describe('only video bidder params set', function () {
+      const request = spec.buildRequests(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID);
+
+      const videoImp = JSON.parse(request[0].data.r).imp[0];
+      expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(1);
+      expect(JSON.parse(request[0].data.v)).to.equal(VIDEO_ENDPOINT_VERSION);
+      expect(videoImp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
+      expect(videoImp.video).to.exist;
+      expect(videoImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
+      expect(videoImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
+    });
+    describe('both banner and video bidder params set', function () {
+      const request = spec.buildRequests([DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]]);
+
+      it('should return valid banner and video requests', function () {
+        const bannerImp = JSON.parse(request[0].data.r).imp[0];
+        expect(JSON.parse(request[0].data.r).imp).to.have.lengthOf(2);
+        expect(JSON.parse(request[0].data.v)).to.equal(BANNER_ENDPOINT_VERSION);
+        expect(bannerImp.id).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].bidId);
+        expect(bannerImp.banner).to.exist;
+        expect(bannerImp.banner.w).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[0]);
+        expect(bannerImp.banner.h).to.equal(DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0].params.size[1]);
+
+        const videoImp = JSON.parse(request[1].data.r).imp[0];
+        expect(JSON.parse(request[1].data.r).imp).to.have.lengthOf(1);
+        expect(JSON.parse(request[1].data.v)).to.equal(VIDEO_ENDPOINT_VERSION);
+        expect(videoImp.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
+        expect(videoImp.video).to.exist;
+        expect(videoImp.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[0]);
+        expect(videoImp.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.size[1]);
+      });
+
+      it('should contain all correct IXdiag properties', function () {
+        const diagObj = JSON.parse(request[0].data.r).ext.ixdiag;
+        expect(diagObj.iu).to.equal(0);
+        expect(diagObj.nu).to.equal(0);
+        expect(diagObj.ou).to.equal(1);
+        expect(diagObj.ren).to.equal(false);
+        expect(diagObj.mfu).to.equal(1);
+        expect(diagObj.allU).to.equal(1);
+      });
     });
   });
 

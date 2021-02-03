@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
   deepSetValue,
@@ -12,15 +12,16 @@ import {
   isStr,
   logError,
   parseQueryStringParameters,
+  pick,
 } from '../src/utils.js';
 
-const BIDDER_VERSION = '1.0.0';
+const BIDDER_VERSION = '1.1.0';
 const BASE_URL = 'https://ortb.adpearl.io';
 
 export const spec = {
   code: 'pubgenius',
 
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [ BANNER, VIDEO ],
 
   isBidRequestValid(bid) {
     const adUnitId = bid.params.adUnitId;
@@ -29,8 +30,13 @@ export const spec = {
       return false;
     }
 
-    const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-    return !!(sizes && sizes.length) && sizes.every(size => isArrayOfNums(size, 2));
+    const { mediaTypes } = bid;
+
+    if (mediaTypes.banner) {
+      return isValidBanner(mediaTypes.banner);
+    }
+
+    return isValidVideo(mediaTypes.video, bid.params.video);
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
@@ -141,15 +147,43 @@ export const spec = {
   },
 };
 
+function buildVideoParams(videoMediaType, videoParams) {
+  videoMediaType = videoMediaType || {};
+  const params = pick(videoMediaType, ['api', 'mimes', 'protocols', 'playbackmethod']);
+
+  switch (videoMediaType.context) {
+    case 'instream':
+      params.placement = 1;
+      break;
+    case 'outstream':
+      params.placement = 2;
+      break;
+    default:
+      break;
+  }
+
+  if (videoMediaType.playerSize) {
+    params.w = videoMediaType.playerSize[0][0];
+    params.h = videoMediaType.playerSize[0][1];
+  }
+
+  return Object.assign(params, videoParams);
+}
+
 function buildImp(bid) {
   const imp = {
     id: bid.bidId,
-    banner: {
-      format: deepAccess(bid, 'mediaTypes.banner.sizes').map(size => ({ w: size[0], h: size[1] })),
-      topframe: numericBoolean(!inIframe()),
-    },
     tagid: String(bid.params.adUnitId),
   };
+
+  if (bid.mediaTypes.banner) {
+    imp.banner = {
+      format: bid.mediaTypes.banner.sizes.map(size => ({ w: size[0], h: size[1] })),
+      topframe: numericBoolean(!inIframe()),
+    };
+  } else {
+    imp.video = buildVideoParams(bid.mediaTypes.video, bid.params.video);
+  }
 
   const bidFloor = bid.params.bidFloor;
   if (isNumber(bidFloor)) {
@@ -197,7 +231,6 @@ function interpretBid(bid) {
     cpm: bid.price,
     width: bid.w,
     height: bid.h,
-    ad: bid.adm,
     ttl: bid.exp,
     creativeId: bid.crid,
     netRevenue: true,
@@ -207,6 +240,24 @@ function interpretBid(bid) {
     bidResponse.meta = {
       advertiserDomains: bid.adomain,
     };
+  }
+
+  const pbadapter = deepAccess(bid, 'ext.pbadapter') || {};
+  switch (pbadapter.mediaType) {
+    case 'video':
+      if (bid.nurl) {
+        bidResponse.vastUrl = bid.nurl;
+      }
+
+      if (bid.adm) {
+        bidResponse.vastXml = bid.adm;
+      }
+
+      bidResponse.mediaType = VIDEO;
+      break;
+    default: // banner by default
+      bidResponse.ad = bid.adm;
+      break;
   }
 
   return bidResponse;
@@ -219,6 +270,24 @@ function numericBoolean(value) {
 function getBaseUrl() {
   const pubg = config.getConfig('pubgenius');
   return (pubg && pubg.endpoint) || BASE_URL;
+}
+
+function isValidSize(size) {
+  return isArrayOfNums(size, 2) && size[0] > 0 && size[1] > 0;
+}
+
+function isValidBanner(banner) {
+  const sizes = banner.sizes;
+  return !!(sizes && sizes.length) && sizes.every(isValidSize);
+}
+
+function isValidVideo(videoMediaType, videoParams) {
+  const params = buildVideoParams(videoMediaType, videoParams);
+
+  return !!(params.placement &&
+    isValidSize([params.w, params.h]) &&
+    params.mimes && params.mimes.length &&
+    isArrayOfNums(params.protocols) && params.protocols.length);
 }
 
 registerBidder(spec);
