@@ -34,9 +34,7 @@ describe('malltvAdapterTest', () => {
     it('bidRequest without propertyId or placementId', () => {
       expect(spec.isBidRequestValid({
         bidder: 'malltv',
-        params: {
-          propertyId: '{propertyId}',
-        }
+        params: {}
       })).to.equal(false);
     });
   });
@@ -46,7 +44,17 @@ describe('malltvAdapterTest', () => {
       'bidder': 'malltv',
       'params': {
         'propertyId': '{propertyId}',
-        'placementId': '{placementId}'
+        'placementId': '{placementId}',
+        'data': {
+          'catalogs': [{
+            'catalogId': 1,
+            'items': ['1', '2', '3']
+          }],
+          'inventory': {
+            'category': ['category1', 'category2'],
+            'query': ['query']
+          }
+        }
       },
       'adUnitCode': 'hb-leaderboard',
       'transactionId': 'b6b889bb-776c-48fd-bc7b-d11a1cf0425e',
@@ -84,6 +92,20 @@ describe('malltvAdapterTest', () => {
         expect(requestItem.data.placements).to.exist;
         expect(requestItem.data.placements.length).to.equal(1);
         expect(requestItem.data.placements[0].sizes).to.equal('300x250');
+      });
+    });
+
+    it('bidRequest data param', () => {
+      const requests = spec.buildRequests(bidRequests);
+      requests.forEach((requestItem) => {
+        expect(requestItem.data.data).to.exist;
+        expect(requestItem.data.data.catalogs).to.exist;
+        expect(requestItem.data.data.inventory).to.exist;
+        expect(requestItem.data.data.catalogs.length).to.equal(1);
+        expect(requestItem.data.data.catalogs[0].items.length).to.equal(3);
+        expect(Object.keys(requestItem.data.data.inventory).length).to.equal(2);
+        expect(requestItem.data.data.inventory.category.length).to.equal(2);
+        expect(requestItem.data.data.inventory.query.length).to.equal(1);
       });
     });
   });

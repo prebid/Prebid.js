@@ -240,34 +240,17 @@ export const spec = {
       });
     }
 
-    const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
-    let eids = [];
-    if (criteoId) {
-      eids.push({
-        source: 'criteo.com',
-        id: criteoId
-      });
-    }
+    if (bidRequests[0].userId) {
+      let eids = [];
 
-    const netidId = utils.deepAccess(bidRequests[0], `userId.netId`);
-    if (netidId) {
-      eids.push({
-        source: 'netid.de',
-        id: netidId
-      });
-    }
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
+      addUserId(eids, utils.deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
 
-    const tdid = utils.deepAccess(bidRequests[0], `userId.tdid`);
-    if (tdid) {
-      eids.push({
-        source: 'adserver.org',
-        id: tdid,
-        rti_partner: 'TDID'
-      });
-    }
-
-    if (eids.length) {
-      payload.eids = eids;
+      if (eids.length) {
+        payload.eids = eids;
+      }
     }
 
     if (tags[0].publisher_id) {
@@ -1040,6 +1023,17 @@ function parseMediaType(rtbBid) {
   } else {
     return BANNER;
   }
+}
+
+function addUserId(eids, id, source, rti) {
+  if (id) {
+    if (rti) {
+      eids.push({ source, id, rti_partner: rti });
+    } else {
+      eids.push({ source, id });
+    }
+  }
+  return eids;
 }
 
 registerBidder(spec);

@@ -4,7 +4,7 @@ BritePool User ID Module. For assistance setting up your module please contact u
 
 ### Prebid Params
 
-Individual params may be set for the BritePool User ID Submodule. At least one identifier must be set in the params.
+Individual params may be set for the BritePool User ID Submodule. 
 ```
 pbjs.setConfig({
     userSync: {
