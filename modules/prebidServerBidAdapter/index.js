@@ -612,7 +612,7 @@ const OPEN_RTB_PROTOCOL = {
        * Prebid AdSlot
        * @type {(string|undefined)}
        */
-      const pbAdSlot = utils.deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
+      /* const pbAdSlot = utils.deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
         utils.deepSetValue(imp, 'ext.data.pbadslot', pbAdSlot);
       }
@@ -620,23 +620,34 @@ const OPEN_RTB_PROTOCOL = {
       /**
        * Copy GAM AdUnit and Name to imp
        */
-      ['name', 'adSlot'].forEach(name => {
+      /* ['name', 'adSlot'].forEach(name => {
         /** @type {(string|undefined)} */
-        const value = utils.deepAccess(adUnit, `ortb2Imp.ext.data.adserver.${name}`);
+      /* const value = utils.deepAccess(adUnit, `ortb2Imp.ext.data.adserver.${name}`);
         if (typeof value === 'string' && value) {
           utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
         }
+      }); */
+
+      const ortb2 = utils.deepAccess(adUnit, 'ortb2Imp.ext.data');
+      Object.keys(ortb2).forEach(prop => {
+        /**
+          * Prebid AdSlot
+          * @type {(string|undefined)}
+        */
+        if (prop === 'pbadslot' && typeof ortb2[prop] === 'string' && ortb2[prop]) {
+          utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+        } else if (prop === 'adserver') {
+          ['name', 'adSlot'].forEach(name => {
+            /** @type {(string|undefined)} */
+            const value = utils.deepAccess(ortb2, `adserver.${name}`);
+            if (typeof value === 'string' && value) {
+              utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
+            }
+          });
+        } else {
+          utils.deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
+        }
       });
-
-      const site = utils.deepAccess(adUnit, 'ortb2Imp.site');
-      if (typeof site === 'object' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.site', site);
-      }
-
-      const user = utils.deepAccess(adUnit, 'ortb2Imp.user');
-      if (typeof user === 'object' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.user', user);
-      }
 
       Object.assign(imp, mediaTypes);
 
