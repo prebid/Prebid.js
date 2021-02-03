@@ -31,6 +31,7 @@ export const spec = {
     let bidderRequestId = '';
     let url = '';
     let contents = [];
+    let data = {};
 
     let placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
@@ -38,7 +39,8 @@ export const spec = {
       if (!storageId && bidRequest.params) { storageId = bidRequest.params.storageId || ''; }
       if (!bidderRequestId) { bidderRequestId = bidRequest.bidderRequestId; }
       if (!url && bidderRequest) { url = bidderRequest.refererInfo.referer; }
-      if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents }
+      if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
+      if (Object.keys(data).length === 0 && bidRequest.params.data && Object.keys(bidRequest.params.data).length !== 0) { data = bidRequest.params.data; }
 
       let adUnitId = bidRequest.adUnitCode;
       let placementId = bidRequest.params.placementId;
@@ -61,7 +63,8 @@ export const spec = {
       url: url,
       requestid: bidderRequestId,
       placements: placements,
-      contents: contents
+      contents: contents,
+      data: data
     }
 
     return [{

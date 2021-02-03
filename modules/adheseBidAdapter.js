@@ -22,15 +22,19 @@ export const spec = {
     }
     const { gdprConsent, refererInfo } = bidderRequest;
 
-    const targets = validBidRequests.map(bid => bid.params.data).reduce(mergeTargets, {});
     const gdprParams = (gdprConsent && gdprConsent.consentString) ? { xt: [gdprConsent.consentString] } : {};
     const refererParams = (refererInfo && refererInfo.referer) ? { xf: [base64urlEncode(refererInfo.referer)] } : {};
     const id5Params = (getId5Id(validBidRequests)) ? { x5: [getId5Id(validBidRequests)] } : {};
-    const slots = validBidRequests.map(bid => ({ slotname: bidToSlotName(bid) }));
+    const commonParams = { ...gdprParams, ...refererParams, ...id5Params };
+
+    const slots = validBidRequests.map(bid => ({
+      slotname: bidToSlotName(bid),
+      parameters: cleanTargets(bid.params.data)
+    }));
 
     const payload = {
       slots: slots,
-      parameters: { ...targets, ...gdprParams, ...refererParams, ...id5Params }
+      parameters: commonParams
     }
 
     const account = getAccount(validBidRequests);
@@ -110,7 +114,8 @@ function adResponse(bid, ad) {
   return bidResponse;
 }
 
-function mergeTargets(targets, target) {
+function cleanTargets(target) {
+  const targets = {};
   if (target) {
     Object.keys(target).forEach(function (key) {
       const val = target[key];
