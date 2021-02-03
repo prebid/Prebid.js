@@ -80,7 +80,7 @@ export let init = () => {
     const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
     // do nothing if module-config.enabled is not set to true
     // this way we are adding a way for bidders to know (using pbjs.getConfig('bidViewability').enabled === true) whether this module is added in build and is enabled
-    if(globalModuleConfig[CONFIG_ENABLED] !== true){
+    if (globalModuleConfig[CONFIG_ENABLED] !== true) {
       return;
     }
     // add the GPT event listener
