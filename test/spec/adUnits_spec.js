@@ -26,14 +26,11 @@ describe('Publisher API _ AdUnits', function () {
       fpd: {
         context: {
           pbAdSlot: 'adSlotTest',
-          keywords: 'foo,bar',
-          visitor: [1, 2, 3],
           data: {
-            inventory: [4]
+            inventory: [4],
+            keywords: 'foo,bar',
+            visitor: [1, 2, 3],
           }
-        },
-        user: {
-          keywords: 'testing'
         }
       },
       code: '/1996833/slot-2',
@@ -98,7 +95,7 @@ describe('Publisher API _ AdUnits', function () {
     it('the second adUnits value should be same with the adUnits that is added by $$PREBID_GLOBAL$$.addAdUnits();', function () {
       assert.strictEqual(adUnit2.code, '/1996833/slot-2', 'adUnit2 code');
       assert.deepEqual(adUnit2.sizes, [[468, 60]], 'adUnit2 sizes');
-      assert.deepEqual(adUnit2['ortb2Imp'], {'site': {'keywords': 'foo,bar', 'visitor': [1, 2, 3], 'ext': {'data': {'inventory': [4]}}}, 'user': {'keywords': 'testing'}, 'ext': {'data': {'pbadslot': 'adSlotTest'}}}, 'adUnit2 ortb2Imp');
+      assert.deepEqual(adUnit2['ortb2Imp'], {'ext': {'data': {'pbadslot': 'adSlotTest', 'inventory': [4], 'keywords': 'foo,bar', 'visitor': [1, 2, 3]}}}, 'adUnit2 ortb2Imp');
       assert.strictEqual(bids2[0].bidder, 'rubicon', 'adUnit2 bids1 bidder');
       assert.strictEqual(bids2[0].params.rp_account, '4934', 'adUnit2 bids1 params.rp_account');
       assert.strictEqual(bids2[0].params.rp_zonesize, '23948-15', 'adUnit2 bids1 params.rp_zonesize');

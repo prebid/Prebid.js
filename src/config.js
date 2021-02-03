@@ -336,8 +336,6 @@ export function newConfig() {
       duplicate[prop] = (prop === 'site' || prop === 'user') ? Object.keys(opt[type]).reduce((result, key) => {
         if (key === 'data') {
           utils.mergeDeep(result, {ext: {data: opt[type][key]}});
-        } else if (key === 'pbAdSlot' || key === 'adServer') {
-          utils.mergeDeep(extension, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
         } else {
           utils.mergeDeep(result, {[key]: opt[type][key]});
         }
@@ -354,15 +352,40 @@ export function newConfig() {
   }
 
   /**
+   * Copy Impression FPD over to OpenRTB standard format in config
+   * Only accepts bid level context.data values with pbAdSlot and adServer exceptions
+   */
+  function convertImpFpd(opt) {
+    let duplicate = {};
+    let extension = {};
+
+    Object.keys(opt).filter(prop => prop === 'context').forEach((type) => {
+      Object.keys(opt[type]).forEach((key) => {
+        if (key === 'data') {
+          utils.mergeDeep(extension, {ext: {data: opt[type][key]}}); ;
+        } else if (key === 'pbAdSlot' || key === 'adServer') {
+          utils.mergeDeep(extension, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
+        }
+      });
+    });
+
+    if (Object.keys(extension).length > 0) {
+      utils.mergeDeep(duplicate, extension);
+    }
+
+    return duplicate;
+  }
+
+  /**
    * Copy FPD over to OpenRTB standard format in each adunit
    */
-  function convertAdUnitFpd(arr, bool) {
+  function checkAdUnitFpd(arr, bool) {
     let convert = [];
 
     if (bool) {
       arr.forEach((adunit) => {
         if (adunit.fpd) {
-          (adunit['ortb2Imp']) ? utils.mergeDeep(adunit['ortb2Imp'], convertFpd(adunit.fpd)) : adunit['ortb2Imp'] = convertFpd(adunit.fpd);
+          (adunit['ortb2Imp']) ? utils.mergeDeep(adunit['ortb2Imp'], convertImpFpd(adunit.fpd)) : adunit['ortb2Imp'] = convertImpFpd(adunit.fpd);
           convert.push((({ fpd, ...duplicate }) => duplicate)(adunit));
         } else {
           convert.push(adunit);
@@ -371,7 +394,7 @@ export function newConfig() {
 
       return convert;
     } else if (arr.fpd) {
-      (arr['ortb2Imp']) ? utils.mergeDeep(arr['ortb2Imp'], convertFpd(arr.fpd)) : arr['ortb2Imp'] = convertFpd(arr.fpd);
+      (arr['ortb2Imp']) ? utils.mergeDeep(arr['ortb2Imp'], convertImpFpd(arr.fpd)) : arr['ortb2Imp'] = convertImpFpd(arr.fpd);
       return (({ fpd, ...duplicate }) => duplicate)(arr)
     } else {
       return arr;
@@ -557,7 +580,7 @@ export function newConfig() {
     callbackWithBidder,
     setBidderConfig,
     getBidderConfig,
-    convertAdUnitFpd
+    checkAdUnitFpd
   };
 }
 
