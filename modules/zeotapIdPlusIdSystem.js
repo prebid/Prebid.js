@@ -26,12 +26,10 @@ export const zeotapIdPlusSubmodule = {
    * @type {string}
    */
   name: 'zeotapIdPlus',
-  
   /**
    * required for the gdpr enforcement module
    */
   gvlid: 301,
-  
   /**
    * decode the stored id value for passing to bid requests
    * @function
