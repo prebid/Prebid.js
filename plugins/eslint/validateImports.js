@@ -26,7 +26,8 @@ function flagErrors(context, node, importPath) {
     if (
       path.dirname(absImportPath) === absModulePath || (
         absImportPath.startsWith(absModulePath) &&
-        path.basename(absImportPath) === 'index.js'
+        path.basename(absImportPath) === 'index.js' &&
+        path.basename(absFileDir) !== 'prebidServerBidAdapter'
       )
     ) {
       context.report(node, `import "${importPath}" cannot require module entry point`);

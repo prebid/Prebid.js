@@ -21,6 +21,7 @@ export const spec = {
   buildRequests: function (validRequest, bidderRequest) {
     const payload = {
       imps: [],
+      fpd: config.getConfig('fpd')
     };
     let endpointUrl;
     if (bidderRequest) {

@@ -136,6 +136,19 @@ describe('Parrable ID System', function() {
         expect(server.requests[0].url).to.contain('us_privacy=' + uspString);
       });
 
+      it('xhr base64 safely encodes url data object', function() {
+        const urlSafeBase64EncodedData = '-_.';
+        const btoaStub = sinon.stub(window, 'btoa').returns('+/=');
+        let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+
+        getIdResult.callback(callbackSpy);
+
+        let request = server.requests[0];
+        let queryParams = utils.parseQS(request.url.split('?')[1]);
+        expect(queryParams.data).to.equal(urlSafeBase64EncodedData);
+        btoaStub.restore();
+      });
+
       it('should log an error and continue to callback if ajax request errors', function () {
         let callBackSpy = sinon.spy();
         let submoduleCallback = parrableIdSubmodule.getId({ params: {partner: 'prebid'} }).callback;
