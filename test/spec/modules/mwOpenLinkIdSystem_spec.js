@@ -43,14 +43,14 @@ describe('mwOpenLinkId module', function () {
     writeMwOpenLinkIdCookie('mwol', '');
   });
 
-  it('getId() should return a MediaWallah openLink id when the MediaWallah openLink first party cookie exists', function () {
+  it('getId() should return a MediaWallah openLink Id when the MediaWallah openLink first party cookie exists', function () {
     writeMwOpenLinkIdCookie('mwol', {eid: 'XX-YY-ZZ-123'});
 
     const id = mwOpenLinkSubModule.getId(P_CONFIG_MOCK.params, null, null);
     expect(id).to.be.deep.equal({id: {eid: 'XX-YY-ZZ-123'}});
   });
 
-  it('getId() should return an empty id when the MediaWallah openLink first party cookie is missing', function () {
+  it('getId() should return an empty Id when the MediaWallah openLink first party cookie is missing', function () {
     const id = mwOpenLinkSubModule.getId();
     expect(id).to.be.deep.equal({id: undefined});
   });
