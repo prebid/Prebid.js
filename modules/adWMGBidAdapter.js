@@ -121,6 +121,10 @@ export const spec = {
       SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'gdpr_consent', gdprConsent.consentString);
     }
 
+    if (SYNC_ENDPOINT.slice(-1) === '&') {
+      SYNC_ENDPOINT = SYNC_ENDPOINT.slice(0, -1);
+  }
+
     /*     if (uspConsent) {
       SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'us_privacy', uspConsent);
     } */
