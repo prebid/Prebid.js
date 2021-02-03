@@ -612,35 +612,18 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: adUnit.code, ext, secure: s2sConfig.secure };
 
-      /**
-       * Prebid AdSlot
-       * @type {(string|undefined)}
-       */
-      /* const pbAdSlot = utils.deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
-      if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.data.pbadslot', pbAdSlot);
-      }
-
-      /**
-       * Copy GAM AdUnit and Name to imp
-       */
-      /* ['name', 'adSlot'].forEach(name => {
-        /** @type {(string|undefined)} */
-      /* const value = utils.deepAccess(adUnit, `ortb2Imp.ext.data.adserver.${name}`);
-        if (typeof value === 'string' && value) {
-          utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
-        }
-      }); */
-
-      const ortb2 = utils.deepAccess(adUnit, 'ortb2Imp.ext.data');
+      const ortb2 = {...utils.deepAccess(adUnit, 'ortb2Imp.ext.data')};
       Object.keys(ortb2).forEach(prop => {
         /**
           * Prebid AdSlot
           * @type {(string|undefined)}
         */
-        if (prop === 'pbadslot' && typeof ortb2[prop] === 'string' && ortb2[prop]) {
-          utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+        if (prop === 'pbadslot') {
+          if (typeof ortb2[prop] === 'string' && ortb2[prop]) utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
         } else if (prop === 'adserver') {
+          /**
+           * Copy GAM AdUnit and Name to imp
+           */
           ['name', 'adSlot'].forEach(name => {
             /** @type {(string|undefined)} */
             const value = utils.deepAccess(ortb2, `adserver.${name}`);
