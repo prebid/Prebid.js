@@ -280,8 +280,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.zoneId) {
         slot.zoneid = bidRequest.params.zoneId;
       }
-      if (utils.deepAccess(bidRequest, 'ortb2Imp.ext.data')) {
-        slot.ext = bidRequest.ortb2Imp.ext.data;
+      if (utils.deepAccess(bidRequest, 'ortb2Imp.ext')) {
+        slot.ext = bidRequest.ortb2Imp.ext;
       }
       if (bidRequest.params.ext) {
         slot.ext = Object.assign({}, slot.ext, bidRequest.params.ext);
