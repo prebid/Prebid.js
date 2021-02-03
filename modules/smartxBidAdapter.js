@@ -335,13 +335,13 @@ function createOutstreamScript(bid) {
     }
   }
 
-  const confMinAdWidth = bid.getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
-  const confMaxAdWidth = bid.getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
-  const confStartOpen = bid.getBidIdParameter('startOpen', bid.renderer.config.outstream_options) || 'false';
-  const confEndingScreen = bid.getBidIdParameter('endingScreen', bid.renderer.config.outstream_options) || 'true';
-  const confHeaderText = bid.getBidIdParameter('headerText', bid.renderer.config.outstream_options) || '';
-  const confSkipOffset = bid.getBidIdParameter('skipOffset', bid.renderer.config.outstream_options) || 0;
-  const confDesiredBitrate = bid.getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options) || 1600;
+  const confMinAdWidth = utils.getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
+  const confMaxAdWidth = utils.getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
+  const confStartOpen = utils.getBidIdParameter('startOpen', bid.renderer.config.outstream_options) || 'false';
+  const confEndingScreen = utils.getBidIdParameter('endingScreen', bid.renderer.config.outstream_options) || 'true';
+  const confHeaderText = utils.getBidIdParameter('headerText', bid.renderer.config.outstream_options) || '';
+  const confSkipOffset = utils.getBidIdParameter('skipOffset', bid.renderer.config.outstream_options) || 0;
+  const confDesiredBitrate = utils.getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options) || 1600;
   const elementId = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options) || bid.adUnitCode;
 
   // for SmartPlay 4.12
