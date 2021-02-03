@@ -11,7 +11,6 @@ import { getStorageManager } from '../src/storageManager.js';
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_VENDOR_ID = 301;
 const ZEOTAP_MODULE_NAME = 'zeotapIdPlus';
-export const storage = getStorageManager(ZEOTAP_VENDOR_ID, ZEOTAP_MODULE_NAME);
 
 function readCookie() {
   return storage.cookiesAreEnabled() ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null;
@@ -20,6 +19,12 @@ function readCookie() {
 function readFromLocalStorage() {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(ZEOTAP_COOKIE_NAME) : null;
 }
+
+export function getStorage() {
+  return getStorageManager(ZEOTAP_VENDOR_ID, ZEOTAP_MODULE_NAME);
+}
+
+export const storage = getStorage();
 
 /** @type {Submodule} */
 export const zeotapIdPlusSubmodule = {
