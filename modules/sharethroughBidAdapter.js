@@ -149,8 +149,12 @@ function handleUniversalIds(bidRequest) {
   const idl = utils.deepAccess(bidRequest, 'userId.idl_env');
   if (idl) universalIds.idluid = idl;
 
-  const id5 = utils.deepAccess(bidRequest, 'userId.id5id');
-  if (id5) universalIds.id5uid = id5;
+  const id5 = utils.deepAccess(bidRequest, 'userId.id5id.uid');
+  if (id5) {
+    universalIds.id5uid = { uid: id5 };
+    const id5link = utils.deepAccess(bidRequest, 'userId.id5id.ext.linkType');
+    if (id5link) universalIds.id5uid.linkType = id5link;
+  }
 
   const lipb = utils.deepAccess(bidRequest, 'userId.lipb.lipbid');
   if (lipb) universalIds.liuid = lipb;
