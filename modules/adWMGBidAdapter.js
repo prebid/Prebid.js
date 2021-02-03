@@ -117,7 +117,7 @@ export const spec = {
       SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
     }
 
-    if (gdprConsent && typeof gdprConsent.consentString === 'string' && !SYNC_ENDPOINT.includes('gdpr_consent') ) {
+    if (gdprConsent && typeof gdprConsent.consentString === 'string' && !SYNC_ENDPOINT.includes('gdpr_consent')) {
       SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'gdpr_consent', gdprConsent.consentString);
     }
 
