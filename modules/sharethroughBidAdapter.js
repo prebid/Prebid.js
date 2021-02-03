@@ -151,7 +151,7 @@ function handleUniversalIds(bidRequest) {
 
   const id5 = utils.deepAccess(bidRequest, 'userId.id5id.uid');
   if (id5) {
-    universalIds.id5uid = { uid: id5 };
+    universalIds.id5uid = { id: id5 };
     const id5link = utils.deepAccess(bidRequest, 'userId.id5id.ext.linkType');
     if (id5link) universalIds.id5uid.linkType = id5link;
   }
@@ -159,10 +159,8 @@ function handleUniversalIds(bidRequest) {
   const lipb = utils.deepAccess(bidRequest, 'userId.lipb.lipbid');
   if (lipb) universalIds.liuid = lipb;
 
-  const shd = utils.deepAccess(bidRequest, 'userId.sharedid.id');
-  if (shd) universalIds.shduid = shd;
-  const shd3 = utils.deepAccess(bidRequest, 'userId.sharedid.third');
-  if (shd3) universalIds.shd3id = shd3;
+  const shd = utils.deepAccess(bidRequest, 'userId.sharedid');
+  if (shd) universalIds.shduid = shd; // object with keys: id & third
 
   return universalIds;
 }
