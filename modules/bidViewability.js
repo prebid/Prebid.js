@@ -11,6 +11,7 @@ import adapterManager, { gdprDataHandler, uspDataHandler } from '../src/adapterM
 import find from 'core-js-pure/features/array/find.js';
 
 const MODULE_NAME = 'bidViewability';
+const CONFIG_ENABLED = 'enabled';
 const CONFIG_FIRE_PIXELS = 'firePixels';
 const CONFIG_CUSTOM_MATCH = 'customMatchFunction';
 const BID_VURL_ARRAY = 'vurls';
@@ -77,6 +78,11 @@ export let init = () => {
   events.on(EVENTS.AUCTION_INIT, () => {
     // read the config for the module
     const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
+    // do nothing if module-config.enabled is not set to true
+    // this way we are adding a way for bidders to know (using pbjs.getConfig('bidViewability').enabled === true) whether this module is added in build and is enabled
+    if(globalModuleConfig[CONFIG_ENABLED] !== true){
+      return;
+    }
     // add the GPT event listener
     window.googletag = window.googletag || {};
     window.googletag.cmd = window.googletag.cmd || [];
