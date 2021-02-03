@@ -254,14 +254,7 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
-      const bidFpd = {
-        user: {...bidRequest.params.visitor},
-        context: {...bidRequest.params.inventory}
-      };
-
-      if (bidRequest.params.keywords) bidFpd.context.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
-
-      applyFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), VIDEO, data);
+      applyFPD(bidRequest, VIDEO, data);
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
@@ -515,14 +508,7 @@ export const spec = {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
-    const bidFpd = {
-      user: {...bidRequest.params.visitor},
-      context: {...bidRequest.params.inventory}
-    };
-
-    if (bidRequest.params.keywords) bidFpd.context.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
-
-    applyFPD(utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd), BANNER, data);
+    applyFPD(bidRequest, BANNER, data);
 
     if (config.getConfig('coppa') === true) {
       data['coppa'] = 1;
@@ -882,7 +868,16 @@ function addVideoParameters(data, bidRequest) {
   data.imp[0].video.h = size[1]
 }
 
-function applyFPD(fpd, mediaType, data) {
+function applyFPD(bidRequest, mediaType, data) {
+  const bidFpd = {
+    user: {...bidRequest.params.visitor},
+    context: {...bidRequest.params.inventory}
+  };
+
+  if (bidRequest.params.keywords) bidFpd.context.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
+
+  let fpd = utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd);
+
   const map = {user: {banner: 'tg_v.', code: 'user'}, context: {banner: 'tg_i.', code: 'site'}, adserver: 'dfp_ad_unit_code'};
   let obj = {};
   let impData = {};
