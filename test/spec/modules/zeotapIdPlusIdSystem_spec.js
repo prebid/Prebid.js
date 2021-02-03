@@ -43,14 +43,13 @@ function unsetLocalStorage() {
   storage.setDataInLocalStorage(ZEOTAP_COOKIE_NAME, '');
 }
 
-describe.only('Zeotap ID System', function() {
+describe('Zeotap ID System', function() {
   describe('Zeotap Module invokes StorageManager with appropriate arguments', function() {
     let getStorageManagerSpy;
 
     beforeEach(function() {
       getStorageManagerSpy = sinon.spy(storageManager, 'getStorageManager');
     });
-
 
     it('when a stored Zeotap ID exists it is added to bids', function() {
       let store = getStorage();
@@ -60,7 +59,6 @@ describe.only('Zeotap ID System', function() {
   });
 
   describe('test method: getId calls storage methods to fetch ID', function() {
-
     let cookiesAreEnabledStub;
     let getCookieStub;
     let localStorageIsEnabledStub;
@@ -108,7 +106,6 @@ describe.only('Zeotap ID System', function() {
   });
 
   describe('test method: getId', function() {
-
     afterEach(() => {
       unsetCookie();
       unsetLocalStorage();
