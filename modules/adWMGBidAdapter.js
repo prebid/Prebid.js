@@ -113,11 +113,11 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    if (gdprConsent && !SYNC_ENDPOINT.includes('gdpr')) {
+    if (gdprConsent && SYNC_ENDPOINT.indexOf('gdpr') === -1) {
       SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'gdpr', (gdprConsent.gdprApplies ? 1 : 0));
     }
 
-    if (gdprConsent && typeof gdprConsent.consentString === 'string' && !SYNC_ENDPOINT.includes('gdpr_consent')) {
+    if (gdprConsent && typeof gdprConsent.consentString === 'string' && SYNC_ENDPOINT.indexOf('gdpr_consent') === -1) {
       SYNC_ENDPOINT = utils.tryAppendQueryString(SYNC_ENDPOINT, 'gdpr_consent', gdprConsent.consentString);
     }
 
