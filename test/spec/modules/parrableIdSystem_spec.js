@@ -18,7 +18,7 @@ const P_XHR_EID = '01.1588030911.test-new-eid'
 const P_CONFIG_MOCK = {
   name: 'parrableId',
   params: {
-    partner: 'parrable_test_partner_123,parrable_test_partner_456'
+    partners: 'parrable_test_partner_123,parrable_test_partner_456'
   }
 };
 
@@ -106,7 +106,7 @@ describe('Parrable ID System', function() {
         expect(queryParams).to.not.have.property('us_privacy');
         expect(data).to.deep.equal({
           eid: P_COOKIE_EID,
-          trackers: P_CONFIG_MOCK.params.partner.split(','),
+          trackers: P_CONFIG_MOCK.params.partners.split(','),
           url: getRefererInfo().referer
         });
 
@@ -138,7 +138,7 @@ describe('Parrable ID System', function() {
 
       it('should log an error and continue to callback if ajax request errors', function () {
         let callBackSpy = sinon.spy();
-        let submoduleCallback = parrableIdSubmodule.getId({ params: {partner: 'prebid'} }).callback;
+        let submoduleCallback = parrableIdSubmodule.getId({ params: {partners: 'prebid'} }).callback;
         submoduleCallback(callBackSpy);
         let request = server.requests[0];
         expect(request.url).to.contain('h.parrable.com');
@@ -213,7 +213,7 @@ describe('Parrable ID System', function() {
 
     it('permits an impression when no timezoneFilter is configured', function() {
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partners: 'prebid-test',
       } })).to.have.property('callback');
     });
 
@@ -225,7 +225,7 @@ describe('Parrable ID System', function() {
       writeParrableCookie({ eid: P_COOKIE_EID });
 
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partnerss: 'prebid-test',
         timezoneFilter: {
           blockedZones: [ blockedZone ]
         }
@@ -241,7 +241,7 @@ describe('Parrable ID System', function() {
       Intl.DateTimeFormat.returns({ resolvedOptions });
 
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partners: 'prebid-test',
         timezoneFilter: {
           allowedZones: [ allowedZone ]
         }
@@ -255,7 +255,7 @@ describe('Parrable ID System', function() {
       Intl.DateTimeFormat.returns({ resolvedOptions });
 
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partners: 'prebid-test',
         timezoneFilter: {
           blockedZones: [ blockedZone ]
         }
@@ -269,7 +269,7 @@ describe('Parrable ID System', function() {
       Intl.DateTimeFormat.returns({ resolvedOptions });
 
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partners: 'prebid-test',
         timezoneFilter: {
           blockedZones: [ blockedZone ]
         }
@@ -283,7 +283,7 @@ describe('Parrable ID System', function() {
       Intl.DateTimeFormat.returns({ resolvedOptions });
 
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partners: 'prebid-test',
         timezoneFilter: {
           allowedZones: [ timezone ],
           blockedZones: [ timezone ]
@@ -313,7 +313,7 @@ describe('Parrable ID System', function() {
       writeParrableCookie({ eid: P_COOKIE_EID });
 
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partners: 'prebid-test',
         timezoneFilter: {
           blockedOffsets: [ blockedOffset ]
         }
@@ -327,7 +327,7 @@ describe('Parrable ID System', function() {
       Date.prototype.getTimezoneOffset.returns(allowedOffset * 60);
 
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partners: 'prebid-test',
         timezoneFilter: {
           allowedOffsets: [ allowedOffset ]
         }
@@ -341,7 +341,7 @@ describe('Parrable ID System', function() {
       Date.prototype.getTimezoneOffset.returns(allowedOffset * 60);
 
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partners: 'prebid-test',
         timezoneFilter: {
           blockedOffsets: [ blockedOffset ]
         }
@@ -354,7 +354,7 @@ describe('Parrable ID System', function() {
       Date.prototype.getTimezoneOffset.returns(blockedOffset * 60);
 
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partners: 'prebid-test',
         timezoneFilter: {
           blockedOffsets: [ blockedOffset ]
         }
@@ -367,7 +367,7 @@ describe('Parrable ID System', function() {
       Date.prototype.getTimezoneOffset.returns(offset * 60);
 
       expect(parrableIdSubmodule.getId({ params: {
-        partner: 'prebid-test',
+        partners: 'prebid-test',
         timezoneFilter: {
           allowedOffset: [ offset ],
           blockedOffsets: [ offset ]
@@ -442,6 +442,49 @@ describe('Parrable ID System', function() {
         });
         done();
       }, { adUnits });
+    });
+  });
+
+  describe('partners parsing', () => {
+    let callbackSpy = sinon.spy();
+
+    const partnersTestCase = [
+      {
+        name: '"partners" as an array',
+        config: { params: { partners: ['parrable_test_partner_123', 'parrable_test_partner_456'] } },
+        expected: ['parrable_test_partner_123', 'parrable_test_partner_456']
+      },
+      {
+        name: '"partners" as a string list',
+        config: { params: { partners: 'parrable_test_partner_123,parrable_test_partner_456' } },
+        expected: ['parrable_test_partner_123', 'parrable_test_partner_456']
+      },
+      {
+        name: '"partners" as a string',
+        config: { params: { partners: 'parrable_test_partner_123' } },
+        expected: ['parrable_test_partner_123']
+      },
+      {
+        name: '"partner" as a string list',
+        config: { params: { partner: 'parrable_test_partner_123,parrable_test_partner_456' } },
+        expected: ['parrable_test_partner_123', 'parrable_test_partner_456']
+      },
+      {
+        name: '"partner" as string',
+        config: { params: { partner: 'parrable_test_partner_123' } },
+        expected: ['parrable_test_partner_123']
+      },
+    ];
+    partnersTestCase.forEach(testCase => {
+      it(`accepts config property ${testCase.name}`, () => {
+        parrableIdSubmodule.getId(testCase.config).callback(callbackSpy);
+
+        let request = server.requests[0];
+        let queryParams = utils.parseQS(request.url.split('?')[1]);
+        let data = JSON.parse(atob(queryParams.data));
+
+        expect(data.trackers).to.deep.equal(testCase.expected);
+      });
     });
   });
 });
