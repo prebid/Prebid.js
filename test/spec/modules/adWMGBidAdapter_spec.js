@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adWMGBidAdapter.js';
 import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
 
 describe('adWMGBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -310,7 +309,6 @@ describe('adWMGBidAdapter', function () {
       const serverResponse = {};
       let syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent);
       syncs = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent2);
-      utils.logInfo(syncs);
       expect(syncs[0].url.match(/gdpr/g).length).to.equal(2); // gdpr + gdpr_consent
       expect(syncs[0].url.match(/gdpr_consent/g).length).to.equal(1);
     });
