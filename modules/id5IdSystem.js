@@ -174,10 +174,11 @@ export const id5IdSubmodule = {
    *  It's permissible to return neither, one, or both fields.
    * @function extendId
    * @param {SubmoduleConfig} config
+   * @param {ConsentData|undefined} consentData
    * @param {Object} cacheIdObj - existing id, if any
    * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */
-  extendId(config, cacheIdObj) {
+  extendId(config, consentData, cacheIdObj) {
     const partnerId = (config && config.params && config.params.partner) || 0;
     incrementNb(partnerId);
     return cacheIdObj;
