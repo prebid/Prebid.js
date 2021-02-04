@@ -1754,7 +1754,8 @@ describe('rubicon analytics adapter', function () {
   describe('wrapper details passed in', () => {
     it('should correctly pass in the wrapper details if provided', () => {
       config.setConfig({rubicon: {
-        wrapperName: '1001_wrapperName',
+        wrapperName: '1001_wrapperName_exp.4',
+        wrapperFamily: '1001_wrapperName',
         rule_name: 'na-mobile'
       }});
 
@@ -1771,7 +1772,8 @@ describe('rubicon analytics adapter', function () {
       const request = server.requests[0];
       const message = JSON.parse(request.requestBody);
       expect(message.wrapper).to.deep.equal({
-        name: '1001_wrapperName',
+        name: '1001_wrapperName_exp.4',
+        family: '1001_wrapperName',
         rule: 'na-mobile'
       });
 

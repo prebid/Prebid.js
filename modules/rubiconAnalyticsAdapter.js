@@ -167,9 +167,10 @@ function sendMessage(auctionId, bidWonId) {
     referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer),
     channel: 'web',
   };
-  if (rubiConf.wrapperName || rubiConf.rule_name) {
+  if (rubiConf.wrapperName) {
     message.wrapper = {
       name: rubiConf.wrapperName,
+      family: rubiConf.wrapperFamily,
       rule: rubiConf.rule_name
     }
   }
