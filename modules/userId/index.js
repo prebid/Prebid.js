@@ -215,7 +215,10 @@ export function setStoredValue(submodule, value) {
 }
 
 export function getEidPermissions() {
-  return buildEidPermissions(initializedSubmodules);
+  if (initializedSubmodules && utils.isArray(initializedSubmodules)) {
+    return buildEidPermissions(initializedSubmodules);
+  }
+  return [];
 }
 
 /**
