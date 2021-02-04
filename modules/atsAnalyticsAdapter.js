@@ -7,6 +7,11 @@ import {getStorageManager} from '../src/storageManager.js';
 
 export const storage = getStorageManager();
 
+/**
+ * Analytics adapter for - https://liveramp.com
+ * Maintainer - prebid@liveramp.com
+ */
+
 const analyticsType = 'endpoint';
 // dev endpoints
 // const preflightUrl = 'https://analytics-check.publishersite.xyz/check/';
