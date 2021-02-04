@@ -413,19 +413,43 @@ describe('jwplayerRtdProvider', function() {
   });
 
   describe(' Extract Publisher Params', function () {
-    it('should default to config', function () {
-      const config = { mediaID: 'test' };
+    const config = { mediaID: 'test' };
 
-      const adUnit1 = { fpd: { context: {} } };
-      const targeting1 = extractPublisherParams(adUnit1, config);
-      expect(targeting1).to.deep.equal(config);
+    it('should exclude adUnits that do not support instream video and do not specify jwTargeting', function () {
+      const oustreamAdUnit = { mediaTypes: { video: { context: 'outstream' } } };
+      const oustreamTargeting = extractPublisherParams(oustreamAdUnit, config);
+      expect(oustreamTargeting).to.be.undefined;
 
-      const adUnit2 = { fpd: { context: { data: { jwTargeting: {} } } } };
-      const targeting2 = extractPublisherParams(adUnit2, config);
-      expect(targeting2).to.deep.equal(config);
+      const bannerAdUnit = { mediaTypes: { banner: {} } };
+      const bannerTargeting = extractPublisherParams(bannerAdUnit, config);
+      expect(bannerTargeting).to.be.undefined;
 
-      const targeting3 = extractPublisherParams(null, config);
-      expect(targeting3).to.deep.equal(config);
+      const targeting = extractPublisherParams({}, config);
+      expect(targeting).to.be.undefined;
+    });
+
+    it('should include ad unit when media type is video and is instream', function () {
+      const adUnit = { mediaTypes: { video: { context: 'instream' } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
+    });
+
+    it('should include banner ad units that specify jwTargeting', function() {
+      const adUnit = { mediaTypes: { banner: {} }, fpd: { context: { data: { jwTargeting: {} } } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
+    });
+
+    it('should include outstream ad units that specify jwTargeting', function() {
+      const adUnit = { mediaTypes: { video: { context: 'outstream' } }, fpd: { context: { data: { jwTargeting: {} } } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
+    });
+
+    it('should fallback to config when empty jwTargeting is defined in ad unit', function () {
+      const adUnit = { fpd: { context: { data: { jwTargeting: {} } } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
     });
 
     it('should prioritize adUnit properties ', function () {
@@ -450,9 +474,9 @@ describe('jwplayerRtdProvider', function() {
       expect(targeting).to.have.property('playerID', expectedPlayerID);
     });
 
-    it('should return empty object when Publisher Params are absent', function () {
-      const targeting = extractPublisherParams(null, null);
-      expect(targeting).to.deep.equal({});
+    it('should return undefined when Publisher Params are absent', function () {
+      const targeting = extractPublisherParams({}, null);
+      expect(targeting).to.be.undefined;
     })
   });
 
