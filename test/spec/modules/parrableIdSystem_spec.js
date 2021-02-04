@@ -74,20 +74,20 @@ function removeParrableCookie() {
   storage.setCookie(P_COOKIE_NAME, '', EXPIRED_COOKIE_DATE);
 }
 
+function decodeBase64UrlSafe(encBase64) {
+  const DEC = {
+    '-': '+',
+    '_': '/',
+    '.': '='
+  };
+  return encBase64.replace(/[-_.]/g, (m) => DEC[m]);
+}
+
 describe('Parrable ID System', function() {
   describe('parrableIdSystem.getId()', function() {
     describe('response callback function', function() {
       let logErrorStub;
       let callbackSpy = sinon.spy();
-
-      let decodeBase64UrlSafe = function (encBase64) {
-        const DEC = {
-          '-': '+',
-          '_': '/',
-          '.': '='
-        };
-        return encBase64.replace(/[-_.]/g, (m) => DEC[m]);
-      }
 
       beforeEach(function() {
         logErrorStub = sinon.stub(utils, 'logError');
@@ -503,7 +503,7 @@ describe('Parrable ID System', function() {
 
         let request = server.requests[0];
         let queryParams = utils.parseQS(request.url.split('?')[1]);
-        let data = JSON.parse(atob(queryParams.data));
+        let data = JSON.parse(atob(decodeBase64UrlSafe(queryParams.data)));
 
         expect(data.trackers).to.deep.equal(testCase.expected);
       });
