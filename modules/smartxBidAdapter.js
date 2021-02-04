@@ -328,16 +328,49 @@ export const spec = {
 }
 
 function createOutstreamScript(bid) {
-  // const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
+  // for SmartPlay 4.12
+  function scPrebidClose(ele, completeCollapsed) {
+    if (completeCollapsed) {
+      document.getElementById(ele.id).style.display = 'none';
+    }
+  }
+
+  const confMinAdWidth = utils.getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
+  const confMaxAdWidth = utils.getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
+  const confStartOpen = utils.getBidIdParameter('startOpen', bid.renderer.config.outstream_options) || 'false';
+  const confEndingScreen = utils.getBidIdParameter('endingScreen', bid.renderer.config.outstream_options) || 'true';
+  const confHeaderText = utils.getBidIdParameter('headerText', bid.renderer.config.outstream_options) || '';
+  const confSkipOffset = utils.getBidIdParameter('skipOffset', bid.renderer.config.outstream_options) || 0;
+  const confDesiredBitrate = utils.getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options) || 1600;
+  const elementId = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options) || bid.adUnitCode;
+
+  // for SmartPlay 4.12
+  let initCollapsed = true;
+  let completeCollapsed = true;
+  if (confStartOpen === 'true') {
+    initCollapsed = false;
+  }
+  if (confEndingScreen === 'true') {
+    completeCollapsed = false;
+  }
+
   utils.logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
-  const elementId = bid.adUnitCode;
+
   let smartPlayObj = {
-    minAdWidth: 290,
-    maxAdWidth: 900,
-    elementLocator: {
-      allowInViewport: false,
-      minimumElementWidth: 290,
-      scanPixelsBelowViewport: 800
+    minAdWidth: confMinAdWidth,
+    maxAdWidth: confMaxAdWidth,
+    headerText: confHeaderText,
+    skipOffset: confSkipOffset,
+    behaviourMatrix: {
+      init: {
+        'collapsed': initCollapsed
+      },
+      complete: {
+        'collapsed': completeCollapsed
+      }
+    },
+    environmentVars: {
+      desiredBitrate: confDesiredBitrate,
     },
     onStartCallback: function (m, n) {
       try {
@@ -351,6 +384,7 @@ function createOutstreamScript(bid) {
     },
     onEndCallback: function (m, n) {
       try {
+        scPrebidClose(n, completeCollapsed); // for SmartPlay 4.12
         window.sc_smartIntxtEnd(n);
       } catch (f) {}
     },

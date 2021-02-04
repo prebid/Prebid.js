@@ -597,13 +597,54 @@ describe('triplelift adapter', function () {
       expect(payload.ext).to.deep.equal(undefined);
     });
     it('should get floor from floors module if available', function() {
-      const floorInfo = {
-        currency: 'USD',
-        floor: 1.99
-      };
+      let floorInfo;
       bidRequests[0].getFloor = () => floorInfo;
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+
+      // standard float response; expected functionality of floors module
+      floorInfo = { currency: 'USD', floor: 1.99 };
+      let request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].floor).to.equal(1.99);
+
+      // if string response, convert to float
+      floorInfo = { currency: 'USD', floor: '1.99' };
+      request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[0].floor).to.equal(1.99);
+    });
+    it('should call getFloor with the correct parameters based on mediaType', function() {
+      bidRequests.forEach(request => {
+        request.getFloor = () => {};
+        sinon.spy(request, 'getFloor')
+      });
+
+      tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+
+      // banner
+      expect(bidRequests[0].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'banner',
+        size: '*'
+      })).to.be.true;
+
+      // instream
+      expect(bidRequests[1].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'video',
+        size: '*'
+      })).to.be.true;
+
+      // banner and incomplete video (POST will only include banner)
+      expect(bidRequests[3].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'banner',
+        size: '*'
+      })).to.be.true;
+
+      // banner and instream (POST will only include video)
+      expect(bidRequests[5].getFloor.calledWith({
+        currency: 'USD',
+        mediaType: 'video',
+        size: '*'
+      })).to.be.true;
     });
     it('should send global config fpd if kvps are available', function() {
       const sens = null;

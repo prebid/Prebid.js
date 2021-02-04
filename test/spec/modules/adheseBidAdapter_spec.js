@@ -74,31 +74,33 @@ describe('AdheseAdapter', function () {
     it('should include requested slots', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
-      expect(JSON.parse(req.data).slots).to.deep.include({ 'slotname': '_main_page_-leaderboard' });
+      expect(JSON.parse(req.data).slots[0].slotname).to.equal('_main_page_-leaderboard');
     });
 
     it('should include all extra bid params', function () {
       let req = spec.buildRequests([ bidWithParams({ 'ag': '25' }) ], bidderRequest);
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'ag': [ '25' ] });
+      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ag': [ '25' ] });
     });
 
-    it('should include duplicate bid params once', function () {
+    it('should assign bid params per slot', function () {
       let req = spec.buildRequests([ bidWithParams({ 'ag': '25' }), bidWithParams({ 'ag': '25', 'ci': 'gent' }) ], bidderRequest);
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({'ag': ['25']}).and.to.deep.include({ 'ci': [ 'gent' ] });
+      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ag': [ '25' ] }).and.not.to.deep.include({ 'ci': [ 'gent' ] });
+      expect(JSON.parse(req.data).slots[1].parameters).to.deep.include({ 'ag': [ '25' ] }).and.to.deep.include({ 'ci': [ 'gent' ] });
     });
 
     it('should split multiple target values', function () {
       let req = spec.buildRequests([ bidWithParams({ 'ci': 'london' }), bidWithParams({ 'ci': 'gent' }) ], bidderRequest);
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'ci': [ 'london', 'gent' ] });
+      expect(JSON.parse(req.data).slots[0].parameters).to.deep.include({ 'ci': [ 'london' ] });
+      expect(JSON.parse(req.data).slots[1].parameters).to.deep.include({ 'ci': [ 'gent' ] });
     });
 
     it('should filter out empty params', function () {
       let req = spec.buildRequests([ bidWithParams({ 'aa': [], 'bb': null, 'cc': '', 'dd': [ '', '' ], 'ee': [ 0, 1, null ], 'ff': 0, 'gg': [ 'x', 'y', '' ] }) ], bidderRequest);
 
-      let params = JSON.parse(req.data).parameters;
+      let params = JSON.parse(req.data).slots[0].parameters;
       expect(params).to.not.have.any.keys('aa', 'bb', 'cc', 'dd');
       expect(params).to.deep.include({ 'ee': [ 0, 1 ], 'ff': [ 0 ], 'gg': [ 'x', 'y' ] });
     });
