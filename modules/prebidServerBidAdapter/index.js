@@ -195,7 +195,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
     }
   }
 
-  // US Privace (CCPA) support
+  // US Privacy (CCPA) support
   if (uspConsent) {
     payload.us_privacy = uspConsent;
   }
@@ -322,6 +322,30 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   }
   if (!request.device.h) {
     request.device.h = window.innerHeight;
+  }
+}
+
+function _getFloor(bid) {
+  let floor = null;
+  if (typeof bid.getFloor === 'function') {
+    floor = 0;
+    const floorInfo = bid.getFloor({
+      currency: DEFAULT_S2S_CURRENCY
+    });
+    if (typeof floorInfo === 'object' &&
+    floorInfo.currency === DEFAULT_S2S_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
+    }
+  }
+  return floor;
+}
+
+function _appendFloor(bid, imp) {
+  if (!imp.bidfloor) {
+    imp.bidfloor = _getFloor(bid);
+  }
+  if (imp.bidfloor) {
+    imp.bidfloorcur = DEFAULT_S2S_CURRENCY;
   }
 }
 
@@ -637,6 +661,12 @@ const OPEN_RTB_PROTOCOL = {
       const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
       if (storedAuctionResponseBid) {
         utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
+      }
+
+      // add floors from floor module to imp.bidfloor and imp.bidfloorcur
+      let matchedBid = find(firstBidRequest.bids, bid => bid.adUnitCode === adUnit.code);
+      if (matchedBid) {
+        _appendFloor(matchedBid, imp);
       }
 
       if (imp.banner || imp.video || imp.native) {
