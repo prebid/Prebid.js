@@ -80,6 +80,15 @@ describe('Parrable ID System', function() {
       let logErrorStub;
       let callbackSpy = sinon.spy();
 
+      let decodeBase64UrlSafe = function (encBase64) {
+        const DEC = {
+          '-': '+',
+          '_': '/',
+          '.': '='
+        };
+        return encBase64.replace(/[-_.]/g, (m) => DEC[m]);
+      }
+
       beforeEach(function() {
         logErrorStub = sinon.stub(utils, 'logError');
         callbackSpy.resetHistory();
@@ -98,7 +107,7 @@ describe('Parrable ID System', function() {
 
         let request = server.requests[0];
         let queryParams = utils.parseQS(request.url.split('?')[1]);
-        let data = JSON.parse(atob(queryParams.data));
+        let data = JSON.parse(atob(decodeBase64UrlSafe(queryParams.data)));
 
         expect(getIdResult.callback).to.be.a('function');
         expect(request.url).to.contain('h.parrable.com');
@@ -134,6 +143,19 @@ describe('Parrable ID System', function() {
         ).callback(callbackSpy);
         uspDataHandler.setConsentData(null);
         expect(server.requests[0].url).to.contain('us_privacy=' + uspString);
+      });
+
+      it('xhr base64 safely encodes url data object', function() {
+        const urlSafeBase64EncodedData = '-_.';
+        const btoaStub = sinon.stub(window, 'btoa').returns('+/=');
+        let getIdResult = parrableIdSubmodule.getId(P_CONFIG_MOCK);
+
+        getIdResult.callback(callbackSpy);
+
+        let request = server.requests[0];
+        let queryParams = utils.parseQS(request.url.split('?')[1]);
+        expect(queryParams.data).to.equal(urlSafeBase64EncodedData);
+        btoaStub.restore();
       });
 
       it('should log an error and continue to callback if ajax request errors', function () {

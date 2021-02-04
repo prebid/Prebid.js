@@ -29,11 +29,18 @@ This adapter requires setup and approval from the smartclip team.
                 publisherId: '11986',
                 siteId: '22860',
                 bidfloor: 0.3,
-                bidfloorcur: "EUR",
+                bidfloorcur: 'EUR',
                 at: 2,
-                cur: ["EUR"],
+                cur: ['EUR'],
                 outstream_options: {
-                    slot: 'video1'
+                    slot: 'video1',
+                    minAdWidth: 290,
+                    maxAdWidth: 900,
+                    headerText: '',
+                    skipOffset: 0,
+                    startOpen: 'true',
+                    endingScreen: 'true',
+                    desiredBitrate: 1600,
                 },
             }
         }],
@@ -57,11 +64,18 @@ This adapter requires setup and approval from the smartclip team.
                 publisherId: '11986',
                 siteId: '22860',
                 bidfloor: 0.3,
-                bidfloorcur: "EUR",
+                bidfloorcur: 'EUR',
                 at: 2,
-                cur: ["EUR"],
+                cur: ['EUR'],
                 outstream_options: {
-                    slot: 'video1'
+                    slot: 'video1',
+                    minAdWidth: 290,
+                    maxAdWidth: 900,
+                    headerText: '',
+                    skipOffset: 0,
+                    startOpen: 'true',
+                    endingScreen: 'true',
+                    desiredBitrate: 1600,
                 },
                 user: {
                     data: [{
@@ -104,9 +118,9 @@ This adapter requires setup and approval from the smartclip team.
                 publisherId: '11986',
                 siteId: '22860',
                 bidfloor: 0.3,
-                bidfloorcur: "EUR",
+                bidfloorcur: 'EUR',
                 at: 2,
-                cur: ["EUR"]
+                cur: ['EUR']
             }
         }],
     }];
@@ -129,9 +143,9 @@ This adapter requires setup and approval from the smartclip team.
                 publisherId: '11986',
                 siteId: '22860',
                 bidfloor: 0.3,
-                bidfloorcur: "EUR",
+                bidfloorcur: 'EUR',
                 at: 2,
-                cur: ["EUR"],
+                cur: ['EUR'],
                 user: {
                     data: [{
                             id: 'emq',
