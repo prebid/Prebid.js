@@ -1,4 +1,4 @@
-# ID Library
+# ID Import Library
 
 ## Configuration Options
 
@@ -13,7 +13,7 @@
 
 ```javascript
 pbjs.setConfig({
-    idLibrary: {
+    idImportLibrary: {
         target: 'username',
         url: 'https://example.com',
         debounce: 250,
