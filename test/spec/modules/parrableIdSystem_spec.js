@@ -80,6 +80,15 @@ describe('Parrable ID System', function() {
       let logErrorStub;
       let callbackSpy = sinon.spy();
 
+      let decodeBase64UrlSafe = function (encBase64) {
+        const DEC = {
+          '-': '+',
+          '_': '/',
+          '.': '='
+        };
+        return encBase64.replace(/[-_.]/g, (m) => DEC[m]);
+      }
+
       beforeEach(function() {
         logErrorStub = sinon.stub(utils, 'logError');
         callbackSpy.resetHistory();
@@ -98,7 +107,7 @@ describe('Parrable ID System', function() {
 
         let request = server.requests[0];
         let queryParams = utils.parseQS(request.url.split('?')[1]);
-        let data = JSON.parse(atob(queryParams.data));
+        let data = JSON.parse(atob(decodeBase64UrlSafe(queryParams.data)));
 
         expect(getIdResult.callback).to.be.a('function');
         expect(request.url).to.contain('h.parrable.com');
