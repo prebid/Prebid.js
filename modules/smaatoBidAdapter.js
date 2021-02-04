@@ -98,8 +98,8 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     }
   };
 
-  Object.assign(request.user, config.getConfig('fpd.user'));
-  Object.assign(request.site, config.getConfig('fpd.context'));
+  Object.assign(request.user, config.getConfig('ortb2.user'));
+  Object.assign(request.site, config.getConfig('ortb2.site'));
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
