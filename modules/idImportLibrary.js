@@ -240,4 +240,4 @@ export function setConfig(config) {
   associateIds();
 }
 
-config.getConfig('idLibrary', config => setConfig(config.idLibrary));
+config.getConfig('idImportLibrary', config => setConfig(config.idImportLibrary));
