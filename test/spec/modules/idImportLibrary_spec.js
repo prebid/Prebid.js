@@ -1,5 +1,5 @@
 import * as utils from 'src/utils.js';
-import * as idlibrary from 'modules/idLibrary.js';
+import * as idImportlibrary from 'modules/idImportLibrary.js';
 
 var expect = require('chai').expect;
 
@@ -20,7 +20,7 @@ describe('currency', function () {
     utils.logInfo.restore();
     utils.logError.restore();
     fakeCurrencyFileServer.restore();
-    idlibrary.setConfig({});
+    idImportlibrary.setConfig({});
   });
 
   describe('setConfig', function () {
@@ -35,26 +35,26 @@ describe('currency', function () {
     });
 
     it('results when no config available', function () {
-      idlibrary.setConfig({});
+      idImportlibrary.setConfig({});
       sinon.assert.called(utils.logError);
     });
     it('results with config available', function () {
-      idlibrary.setConfig({ 'url': 'URL' });
+      idImportlibrary.setConfig({ 'url': 'URL' });
       sinon.assert.called(utils.logInfo);
     });
     it('results with config default debounce ', function () {
       let config = { 'url': 'URL' }
-      idlibrary.setConfig(config);
+      idImportlibrary.setConfig(config);
       expect(config.debounce).to.be.equal(250);
     });
     it('results with config default fullscan ', function () {
       let config = { 'url': 'URL' }
-      idlibrary.setConfig(config);
+      idImportlibrary.setConfig(config);
       expect(config.fullscan).to.be.equal(false);
     });
     it('results with config fullscan ', function () {
       let config = { 'url': 'URL', 'fullscan': true }
-      idlibrary.setConfig(config);
+      idImportlibrary.setConfig(config);
       expect(config.fullscan).to.be.equal(true);
     });
   });

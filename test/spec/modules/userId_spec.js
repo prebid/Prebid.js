@@ -2,7 +2,6 @@ import {
   attachIdSystem,
   auctionDelay,
   coreStorage,
-  getEidPermissions,
   init,
   requestBidsHook,
   setStoredConsentData,
@@ -71,7 +70,7 @@ describe('User ID', function () {
       code,
       mediaTypes: {banner: {}, native: {}},
       sizes: [[300, 200], [300, 600]],
-      bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}, {bidder: 'anotherSampleBidder', params: {placementId: 'banner-only-bidder'}}]
+      bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}]
     };
   }
 
@@ -1189,120 +1188,6 @@ describe('User ID', function () {
                 id: 'test_sharedId',
                 atype: 1
               }]
-            });
-          });
-        });
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
-        done();
-      }, {adUnits});
-    });
-
-    it('eidPermissions fun with bidders', function (done) {
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': 'test222',
-        'ts': 1590525289611
-      }), (new Date(Date.now() + 5000).toUTCString()));
-
-      setSubmoduleRegistry([sharedIdSubmodule]);
-      init(config);
-      config.setConfig({
-        userSync: {
-          syncDelay: 0,
-          userIds: [
-            {
-              name: 'sharedId',
-              bidders: [
-                'sampleBidder'
-              ],
-              storage: {
-                type: 'cookie',
-                name: 'sharedid',
-                expires: 28
-              }
-            }
-          ]
-        }
-      });
-
-      requestBidsHook(function () {
-        const eidPermissions = getEidPermissions();
-        expect(eidPermissions).to.deep.equal(
-          [
-            {source: 'sharedid.org', bidders: ['sampleBidder']}
-          ]
-        );
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            if (bid.bidder === 'sampleBidder') {
-              expect(bid).to.have.deep.nested.property('userId.sharedid');
-              expect(bid.userId.sharedid.id).to.equal('test222');
-              expect(bid.userIdAsEids[0]).to.deep.equal({
-                source: 'sharedid.org',
-                uids: [
-                  {
-                    id: 'test222',
-                    atype: 1,
-                    ext: {
-                      third: 'test222'
-                    }
-                  }
-                ]
-              });
-            }
-            if (bid.bidder === 'anotherSampleBidder') {
-              expect(bid).to.not.have.deep.nested.property('userId.sharedid');
-              expect(bid).to.not.have.property('userIdAsEids');
-            }
-          });
-        });
-        coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
-        done();
-      }, {adUnits});
-    });
-
-    it('eidPermissions fun without bidders', function (done) {
-      coreStorage.setCookie('sharedid', JSON.stringify({
-        'id': 'test222',
-        'ts': 1590525289611
-      }), (new Date(Date.now() + 5000).toUTCString()));
-
-      setSubmoduleRegistry([sharedIdSubmodule]);
-      init(config);
-      config.setConfig({
-        userSync: {
-          syncDelay: 0,
-          userIds: [
-            {
-              name: 'sharedId',
-              storage: {
-                type: 'cookie',
-                name: 'sharedid',
-                expires: 28
-              }
-            }
-          ]
-        }
-      });
-
-      requestBidsHook(function () {
-        const eidPermissions = getEidPermissions();
-        expect(eidPermissions).to.deep.equal(
-          []
-        );
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.sharedid');
-            expect(bid.userId.sharedid.id).to.equal('test222');
-            expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'sharedid.org',
-              uids: [
-                {
-                  id: 'test222',
-                  atype: 1,
-                  ext: {
-                    third: 'test222'
-                  }
-                }]
             });
           });
         });
