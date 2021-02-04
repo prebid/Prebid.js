@@ -6,8 +6,9 @@ const BIDDER_CODE = 'missena';
 const ENDPOINT_URL = 'https://bid.missena.io/';
 
 export const spec = {
-  code: BIDDER_CODE,
   aliases: [BIDDER_CODE],
+  code: BIDDER_CODE,
+  gvlid: 687,
   supportedMediaTypes: [BANNER],
 
   /**
