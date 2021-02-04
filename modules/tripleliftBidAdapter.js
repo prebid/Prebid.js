@@ -111,6 +111,7 @@ function _buildPostBody(bidRequests) {
   const globalFpd = _getGlobalFpd();
 
   data.imp = bidRequests.map(function(bidRequest, index) {
+    console.log(bidRequest);
     let imp = {
       id: index,
       tagid: bidRequest.params.inventoryCode,
@@ -122,8 +123,8 @@ function _buildPostBody(bidRequests) {
     } else if (bidRequest.mediaTypes.banner) {
       imp.banner = { format: _sizes(bidRequest.sizes) };
     };
-    if (!utils.isEmpty(bidRequest.fpd)) {
-      imp.fpd = _getAdUnitFpd(bidRequest.fpd);
+    if (!utils.isEmpty(bidRequest.ortb2Imp)) {
+      imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
     }
     return imp;
   });
@@ -190,8 +191,8 @@ function _getGlobalFpd() {
   const context = {}
   const user = {};
 
-  const fpdContext = Object.assign({}, config.getConfig('fpd.context'));
-  const fpdUser = Object.assign({}, config.getConfig('fpd.user'));
+  const fpdContext = Object.assign({}, config.getConfig('ortb2.site'));
+  const fpdUser = Object.assign({}, config.getConfig('ortb2.user'));
 
   _addEntries(context, fpdContext);
   _addEntries(user, fpdUser);
@@ -206,6 +207,7 @@ function _getGlobalFpd() {
 }
 
 function _getAdUnitFpd(adUnitFpd) {
+  console.log(adUnitFpd);
   const fpd = {};
   const context = {};
 
