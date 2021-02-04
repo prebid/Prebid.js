@@ -12,7 +12,7 @@ describe('Missena Adapter', function () {
     bidId: bidId,
     sizes: [[1, 1]],
     params: {
-      apiKey: 'PA-41477778',
+      apiKey: 'PA-34745704',
     },
   };
 
