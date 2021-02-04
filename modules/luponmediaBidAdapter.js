@@ -279,8 +279,8 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
   }
 
-  const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
-  const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
+  const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('ortb2.site'));
+  const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('ortb2.user'));
 
   if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
     const bidderData = {
@@ -301,7 +301,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
   }
 
-  const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+  const pbAdSlot = utils.deepAccess(bidRequest, 'ortb2Imp.ext.data.pbAdSlot');
   if (typeof pbAdSlot === 'string' && pbAdSlot) {
     utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
   }
