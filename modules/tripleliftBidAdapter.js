@@ -111,7 +111,6 @@ function _buildPostBody(bidRequests) {
   const globalFpd = _getGlobalFpd();
 
   data.imp = bidRequests.map(function(bidRequest, index) {
-    console.log(bidRequest);
     let imp = {
       id: index,
       tagid: bidRequest.params.inventoryCode,
@@ -207,11 +206,10 @@ function _getGlobalFpd() {
 }
 
 function _getAdUnitFpd(adUnitFpd) {
-  console.log(adUnitFpd);
   const fpd = {};
   const context = {};
 
-  _addEntries(context, adUnitFpd.context);
+  _addEntries(context, adUnitFpd.ext);
 
   if (!utils.isEmpty(context)) {
     fpd.context = context;
