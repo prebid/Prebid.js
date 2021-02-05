@@ -34,6 +34,11 @@ export const spec = {
         timeout: bidderRequest.timeout,
       };
 
+      if (bidderRequest && bidderRequest.refererInfo) {
+        payload.referer = bidderRequest.refererInfo.referer;
+        payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
+      }
+
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;

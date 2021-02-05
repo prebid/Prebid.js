@@ -48,6 +48,10 @@ describe('Missena Adapter', function () {
         consentString: consentString,
         gdprApplies: true,
       },
+      refererInfo: {
+        referer: 'https://referer',
+        canonicalUrl: 'https://canonical',
+      },
     };
 
     const requests = spec.buildRequests([bid, bid], bidderRequest);
@@ -64,6 +68,11 @@ describe('Missena Adapter', function () {
 
     it('should send the bidder id', function () {
       expect(payload.request_id).to.equal(bidId);
+    });
+
+    it('should send referer information to the request', function () {
+      expect(payload.referer).to.equal('https://referer');
+      expect(payload.referer_canonical).to.equal('https://canonical');
     });
 
     it('should send gdpr consent information to the request', function () {
