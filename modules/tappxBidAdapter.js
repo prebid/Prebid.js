@@ -43,6 +43,7 @@ export const spec = {
     const TAPPXKEY = getParameters(validBidRequests, 'params.tappxkey');
     const BIDFLOOR = getParameters(validBidRequests, 'params.bidfloor');
     const bannerMediaType = getParameters(validBidRequests, 'mediaTypes.banner');
+    const { refererInfo } = bidderRequest;
 
     let requests = [];
     let payload = {};
@@ -63,11 +64,11 @@ export const spec = {
       api[0] = getParameters(validBidRequests, 'params.api') ? getParameters(validBidRequests, 'params.api') : [3, 5];
     } else {
       let site = {};
-      site.name = window.location.hostname;
-      site.bundle = window.location.hostname;
-      site.domain = window.location.hostname;
-      publisher.name = window.location.hostname;
-      publisher.domain = window.location.hostname;
+      site.name = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
+      site.bundle = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
+      site.domain = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
+      publisher.name = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
+      publisher.domain = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
       tagid = `${site.name}_typeAdBanVid_${getOs()}`;
       payload.site = site;
     }
