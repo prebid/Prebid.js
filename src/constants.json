@@ -38,7 +38,8 @@
     "ADD_AD_UNITS": "addAdUnits",
     "AD_RENDER_FAILED": "adRenderFailed",
     "TCF2_ENFORCEMENT": "tcf2Enforcement",
-    "AUCTION_DEBUG": "auctionDebug"
+    "AUCTION_DEBUG": "auctionDebug",
+    "BID_VIEWABLE": "bidViewable"
   },
   "AD_RENDER_FAILED_REASON" : {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocument",
