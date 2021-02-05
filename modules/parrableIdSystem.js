@@ -61,7 +61,7 @@ function isValidConfig(configParams) {
     utils.logError('User ID - parrableId submodule requires configParams');
     return false;
   }
-  if (!configParams.partner) {
+  if (!configParams.partners && !configParams.partner) {
     utils.logError('User ID - parrableId submodule requires partner list');
     return false;
   }
@@ -69,6 +69,15 @@ function isValidConfig(configParams) {
     utils.logWarn('User ID - parrableId submodule does not require a storage config');
   }
   return true;
+}
+
+function encodeBase64UrlSafe(base64) {
+  const ENC = {
+    '+': '-',
+    '/': '_',
+    '=': '.'
+  };
+  return base64.replace(/[+/=]/g, (m) => ENC[m]);
 }
 
 function readCookie() {
@@ -177,17 +186,23 @@ function fetchId(configParams, gdprConsentData) {
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = (gdprConsentData && typeof gdprConsentData.gdprApplies === 'boolean' && gdprConsentData.gdprApplies);
   const gdprConsentString = (gdprConsentData && gdprApplies && gdprConsentData.consentString) || '';
+  const partners = configParams.partners || configParams.partner
+  const trackers = typeof partners === 'string'
+    ? partners.split(',')
+    : partners;
 
   const data = {
     eid,
-    trackers: configParams.partner.split(','),
-    url: refererInfo.referer
+    trackers,
+    url: refererInfo.referer,
+    prebidVersion: '$prebid.version$',
+    isIframe: utils.inIframe()
   };
 
   const searchParams = {
-    data: btoa(JSON.stringify(data)),
-    _rand: Math.random(),
-    gdpr: gdprApplies ? 1 : 0
+    data: encodeBase64UrlSafe(btoa(JSON.stringify(data))),
+    gdpr: gdprApplies ? 1 : 0,
+    _rand: Math.random()
   };
 
   if (uspString) {

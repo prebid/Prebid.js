@@ -556,7 +556,7 @@ describe('Adkernel adapter', function () {
 
   describe('adapter configuration', () => {
     it('should have aliases', () => {
-      expect(spec.aliases).to.have.lengthOf(10);
+      expect(spec.aliases).to.have.lengthOf(11);
     });
   });
 
