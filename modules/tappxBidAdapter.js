@@ -156,7 +156,7 @@ export const spec = {
     // < GDPR
 
     // > Payload
-    payload.id = (getParameters(validBidRequests, 'auctionId'));
+    payload.id = validBidRequests[0].auctionId;
     payload.test = 1;
     payload.at = 1;
     payload.tmax = 500;
