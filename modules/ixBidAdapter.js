@@ -275,7 +275,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     }
 
     if (userId.fabrickId) {
-      addUserEids(userEids, seenIdPartners, userId.fabrickId, 'neustar.com', 'NeustarIp', 'fabrickId');
+      addUserEids(userEids, seenIdPartners, userId.fabrickid, 'neustar.biz', 'NeustarIp', 'fabrickId');
     }
 
     if (userId.IDP) {
