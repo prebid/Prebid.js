@@ -189,6 +189,7 @@ function fetchId(configParams) {
     trackers: configParams.partner.split(','),
     url: refererInfo.referer,
     prebidVersion: '$prebid.version$'
+    isIframe: utils.inIframe(),
   };
 
   const searchParams = {

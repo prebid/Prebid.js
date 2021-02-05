@@ -118,6 +118,7 @@ describe('Parrable ID System', function() {
           trackers: P_CONFIG_MOCK.params.partner.split(','),
           url: getRefererInfo().referer,
           prebidVersion: '$prebid.version$',
+          isIframe: true
         });
 
         server.requests[0].respond(200,
