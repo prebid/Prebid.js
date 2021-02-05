@@ -2,7 +2,6 @@ import {
   attachIdSystem,
   auctionDelay,
   coreStorage,
-  getEidPermissions,
   init,
   requestBidsHook,
   setStoredConsentData,
@@ -1204,6 +1203,10 @@ describe('User ID', function () {
       }), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([sharedIdSubmodule]);
+      let eidPermissions;
+      getGlobal().setEidPermissions = function (newEidPermissions) {
+        eidPermissions = newEidPermissions;
+      }
       init(config);
       config.setConfig({
         userSync: {
@@ -1225,10 +1228,14 @@ describe('User ID', function () {
       });
 
       requestBidsHook(function () {
-        const eidPermissions = getEidPermissions();
         expect(eidPermissions).to.deep.equal(
           [
-            {source: 'sharedid.org', bidders: ['sampleBidder']}
+            {
+              bidders: [
+                'sampleBidder'
+              ],
+              source: 'sharedid.org'
+            }
           ]
         );
         adUnits.forEach(unit => {
@@ -1256,6 +1263,7 @@ describe('User ID', function () {
           });
         });
         coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
+        getGlobal().setEidPermissions = undefined;
         done();
       }, {adUnits});
     });
@@ -1267,6 +1275,10 @@ describe('User ID', function () {
       }), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([sharedIdSubmodule]);
+      let eidPermissions;
+      getGlobal().setEidPermissions = function (newEidPermissions) {
+        eidPermissions = newEidPermissions;
+      }
       init(config);
       config.setConfig({
         userSync: {
@@ -1285,7 +1297,6 @@ describe('User ID', function () {
       });
 
       requestBidsHook(function () {
-        const eidPermissions = getEidPermissions();
         expect(eidPermissions).to.deep.equal(
           []
         );
@@ -1306,6 +1317,7 @@ describe('User ID', function () {
             });
           });
         });
+        getGlobal().setEidPermissions = undefined;
         coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});

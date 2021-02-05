@@ -214,11 +214,11 @@ export function setStoredValue(submodule, value) {
   }
 }
 
-export function getEidPermissions() {
-  if (initializedSubmodules && utils.isArray(initializedSubmodules)) {
-    return buildEidPermissions(initializedSubmodules);
+function setPrebidServerEidPermissions(initializedSubmodules) {
+  let setEidPermissions = (getGlobal()).setEidPermissions;
+  if (typeof setEidPermissions === 'function' && utils.isArray(initializedSubmodules)) {
+    setEidPermissions(buildEidPermissions(initializedSubmodules));
   }
-  return [];
 }
 
 /**
@@ -492,6 +492,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
   if (typeof initializedSubmodules === 'undefined') {
     initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
     if (initializedSubmodules.length) {
+      setPrebidServerEidPermissions(initializedSubmodules);
       // list of submodules that have callbacks that need to be executed
       const submodulesWithCallbacks = initializedSubmodules.filter(item => utils.isFn(item.callback));
 

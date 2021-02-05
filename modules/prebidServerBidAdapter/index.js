@@ -12,7 +12,7 @@ import includes from 'core-js-pure/features/array/includes.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import find from 'core-js-pure/features/array/find.js';
-import { getEidPermissions } from '../userId/index.js';
+import { getGlobal } from '../../src/prebidGlobal.js';
 
 const getConfig = config.getConfig;
 
@@ -23,6 +23,8 @@ const DEFAULT_S2S_CURRENCY = 'USD';
 const DEFAULT_S2S_NETREVENUE = true;
 
 let _s2sConfigs;
+
+let eidPermissions;
 
 /**
  * @typedef {Object} AdapterOptions
@@ -701,7 +703,6 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'user.ext.eids', bidUserIdAsEids);
     }
 
-    const eidPermissions = getEidPermissions();
     if (utils.isArray(eidPermissions) && eidPermissions.length > 0) {
       if (requestedBidders && utils.isArray(requestedBidders)) {
         eidPermissions.forEach(i => {
@@ -1029,5 +1030,16 @@ export function PrebidServer() {
     type: TYPE
   });
 }
+
+/**
+ * Global setter that sets eids permissions for bidders
+ * This setter is to be used by userId module when included
+ * @param {array} newEidPermissions
+ */
+function setEidPermissions(newEidPermissions) {
+  eidPermissions = newEidPermissions;
+}
+
+getGlobal().setEidPermissions = setEidPermissions;
 
 adapterManager.registerBidAdapter(new PrebidServer(), 'prebidServer');
