@@ -953,15 +953,17 @@ describe('S2S Adapter', function () {
       adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.include({
-        aliases: {
-          brealtime: 'appnexus'
-        },
-        auctiontimestamp: 1510852447530,
-        targeting: {
-          includebidderkeys: false,
-          includewinners: true
+
+      expect(requestBid.ext).to.deep.equal({
+        prebid: {
+          aliases: {
+            brealtime: 'appnexus'
+          },
+          auctiontimestamp: 1510852447530,
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
+          }
         }
       });
     });
@@ -983,15 +985,17 @@ describe('S2S Adapter', function () {
       adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.include({
-        aliases: {
-          [alias]: 'appnexus'
-        },
-        auctiontimestamp: 1510852447530,
-        targeting: {
-          includebidderkeys: false,
-          includewinners: true
+
+      expect(requestBid.ext).to.deep.equal({
+        prebid: {
+          aliases: {
+            [alias]: 'appnexus'
+          },
+          auctiontimestamp: 1510852447530,
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
+          }
         }
       });
     });
@@ -1372,7 +1376,7 @@ describe('S2S Adapter', function () {
 
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.include({
+      expect(requestBid.ext.prebid).to.deep.equal({
         auctiontimestamp: 1510852447530,
         foo: 'bar',
         targeting: {
@@ -1406,7 +1410,7 @@ describe('S2S Adapter', function () {
 
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.include({
+      expect(requestBid.ext.prebid).to.deep.equal({
         auctiontimestamp: 1510852447530,
         targeting: {
           includewinners: false,
@@ -1442,7 +1446,7 @@ describe('S2S Adapter', function () {
 
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.include({
+      expect(requestBid.ext.prebid).to.deep.equal({
         auctiontimestamp: 1510852447530,
         cache: {
           vastxml: 'vastxml-set-though-extPrebid.cache.vastXml'
@@ -2433,37 +2437,6 @@ describe('S2S Adapter', function () {
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
-    });
-
-    it('should add cooperative sync flag to cookie_sync request if property is present', function () {
-      let cookieSyncConfig = utils.deepClone(CONFIG);
-      cookieSyncConfig.coopSync = false;
-      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
-
-      let consentConfig = { s2sConfig: cookieSyncConfig };
-      config.setConfig(consentConfig);
-
-      let bidRequest = utils.deepClone(BID_REQUESTS);
-
-      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(server.requests[0].requestBody);
-
-      expect(requestBid.coopSync).to.equal(false);
-    });
-
-    it('should not add cooperative sync flag to cookie_sync request if property is not present', function () {
-      let cookieSyncConfig = utils.deepClone(CONFIG);
-      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
-
-      let consentConfig = { s2sConfig: cookieSyncConfig };
-      config.setConfig(consentConfig);
-
-      let bidRequest = utils.deepClone(BID_REQUESTS);
-
-      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(server.requests[0].requestBody);
-
-      expect(requestBid.coopSync).to.be.undefined;
     });
   });
 });

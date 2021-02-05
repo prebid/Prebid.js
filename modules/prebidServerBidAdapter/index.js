@@ -12,7 +12,6 @@ import includes from 'core-js-pure/features/array/includes.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import find from 'core-js-pure/features/array/find.js';
-import { getEidPermissions } from '../userId/index.js';
 
 const getConfig = config.getConfig;
 
@@ -201,10 +200,6 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
     payload.us_privacy = uspConsent;
   }
 
-  if (typeof _s2sConfig.coopSync === 'boolean') {
-    payload.coopSync = _s2sConfig.coopSync;
-  }
-
   const jsonPayload = JSON.stringify(payload);
   ajax(s2sConfig.syncEndpoint,
     (response) => {
@@ -227,10 +222,14 @@ function doAllSyncs(bidders, s2sConfig) {
     return;
   }
 
-  const thisSync = bidders.pop();
+  // pull the syncs off the list in the order that prebid server sends them
+  const thisSync = bidders.shift();
+
+  // if PBS reports this bidder doesn't have an ID, then call the sync and recurse to the next sync entry
   if (thisSync.no_cookie) {
     doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, utils.bind.call(doAllSyncs, null, bidders, s2sConfig), s2sConfig);
   } else {
+    // bidder already has an ID, so just recurse to the next sync entry
     doAllSyncs(bidders, s2sConfig);
   }
 }
@@ -460,7 +459,7 @@ export function resetWurlMap() {
 }
 
 const OPEN_RTB_PROTOCOL = {
-  buildRequest(s2sBidRequest, bidRequests, adUnits, s2sConfig, requestedBidders) {
+  buildRequest(s2sBidRequest, bidRequests, adUnits, s2sConfig) {
     let imps = [];
     let aliases = {};
     const firstBidRequest = bidRequests[0];
@@ -703,18 +702,6 @@ const OPEN_RTB_PROTOCOL = {
     const bidUserIdAsEids = utils.deepAccess(bidRequests, '0.bids.0.userIdAsEids');
     if (utils.isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
       utils.deepSetValue(request, 'user.ext.eids', bidUserIdAsEids);
-    }
-
-    const eidPermissions = getEidPermissions();
-    if (utils.isArray(eidPermissions) && eidPermissions.length > 0) {
-      if (requestedBidders && utils.isArray(requestedBidders)) {
-        eidPermissions.forEach(i => {
-          if (i.bidders) {
-            i.bidders = i.bidders.filter(bidder => requestedBidders.includes(bidder))
-          }
-        });
-      }
-      utils.deepSetValue(request, 'ext.prebid.data.eidpermissions', eidPermissions);
     }
 
     if (bidRequests) {
@@ -975,7 +962,7 @@ export function PrebidServer() {
         queueSync(syncBidders, gdprConsent, uspConsent, s2sBidRequest.s2sConfig);
       }
 
-      const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits, s2sBidRequest.s2sConfig, requestedBidders);
+      const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits, s2sBidRequest.s2sConfig);
       const requestJson = request && JSON.stringify(request);
       if (request && requestJson) {
         ajax(
