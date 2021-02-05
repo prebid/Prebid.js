@@ -1039,7 +1039,6 @@ export function PrebidServer() {
 function setEidPermissions(newEidPermissions) {
   eidPermissions = newEidPermissions;
 }
-
 getGlobal().setEidPermissions = setEidPermissions;
 
 adapterManager.registerBidAdapter(new PrebidServer(), 'prebidServer');
