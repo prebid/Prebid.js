@@ -60,7 +60,7 @@ function isValidConfig(configParams) {
     utils.logError('User ID - parrableId submodule requires configParams');
     return false;
   }
-  if (!configParams.partner) {
+  if (!configParams.partners && !configParams.partner) {
     utils.logError('User ID - parrableId submodule requires partner list');
     return false;
   }
@@ -183,10 +183,14 @@ function fetchId(configParams) {
   const eid = (parrableId) ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
   const uspString = uspDataHandler.getConsentData();
+  const partners = configParams.partners || configParams.partner
+  const trackers = typeof partners === 'string'
+    ? partners.split(',')
+    : partners;
 
   const data = {
     eid,
-    trackers: configParams.partner.split(','),
+    trackers,
     url: refererInfo.referer,
     prebidVersion: '$prebid.version$',
     isIframe: utils.inIframe()
