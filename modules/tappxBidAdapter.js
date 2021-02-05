@@ -161,7 +161,7 @@ export const spec = {
     payload.id = validBidRequests[0].auctionId;
     payload.test = 1;
     payload.at = 1;
-    payload.tmax = 500;
+    payload.tmax = bidderRequest.timeout ? bidderRequest.timeout : 600;
     payload.bidder = BIDDER_CODE;
     payload.imp = [imp];
 
