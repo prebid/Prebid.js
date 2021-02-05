@@ -136,13 +136,20 @@ function shouldFilterImpression(configParams, parrableId) {
   const offset = (new Date()).getTimezoneOffset() / 60;
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+  function isZoneListed(list, zone) {
+    // IE does not provide a timeZone in IANA format so zone will be empty
+    const listLowered = list && list.map(zone => zone.toLowerCase());
+    if (list && zone) {
+      return utils.contains(listLowered, zone.toLowerCase());
+    }
+  }
+
   function isAllowed() {
     if (utils.isEmpty(config.allowedZones) &&
       utils.isEmpty(config.allowedOffsets)) {
       return true;
     }
-    const lowerCasedAllowedZones = config.allowedZones && config.allowedZones.map(zone => zone.toLowerCase());
-    if (lowerCasedAllowedZones && utils.contains(lowerCasedAllowedZones, zone.toLowerCase())) {
+    if (isZoneListed(config.allowedZones, zone)) {
       return true;
     }
     if (utils.contains(config.allowedOffsets, offset)) {
@@ -156,8 +163,7 @@ function shouldFilterImpression(configParams, parrableId) {
       utils.isEmpty(config.blockedOffsets)) {
       return false;
     }
-    const lowerCasedBlockedZones = config.blockedZones && config.blockedZones.map(zone => zone.toLowerCase());
-    if (utils.contains(lowerCasedBlockedZones, zone.toLowerCase())) {
+    if (isZoneListed(config.blockedZones, zone)) {
       return true;
     }
     if (utils.contains(config.blockedOffsets, offset)) {
