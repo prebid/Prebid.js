@@ -16,6 +16,7 @@ const MODULE_NAME = 'id5Id';
 const GVLID = 131;
 const NB_EXP_DAYS = 30;
 export const ID5_STORAGE_NAME = 'id5id';
+export const ID5_PRIVACY_STORAGE_NAME = `${ID5_STORAGE_NAME}_privacy`;
 const LOCAL_STORAGE = 'html5';
 
 // order the legacy cookie names in reverse priority order so the last
@@ -57,7 +58,7 @@ export const id5IdSubmodule = {
     }
 
     // check for A/B testing configuration and hide ID if in Control Group
-    let abConfig = (config && config.params && config.params.abTesting) || { enabled: false };
+    let abConfig = getAbTestingConfig(config);
     let controlGroup = false;
     if (
       abConfig.enabled === true &&
@@ -129,6 +130,10 @@ export const id5IdSubmodule = {
       'v': '$prebid.version$'
     };
 
+    if (getAbTestingConfig(config).enabled === true) {
+      utils.deepSetValue(data, 'features.ab', 1);
+    }
+
     const resp = function (callback) {
       const callbacks = {
         success: response => {
@@ -137,6 +142,9 @@ export const id5IdSubmodule = {
             try {
               responseObj = JSON.parse(response);
               resetNb(config.params.partner);
+              if (responseObj.privacy) {
+                storeInLocalStorage(ID5_PRIVACY_STORAGE_NAME, JSON.stringify(responseObj.privacy), NB_EXP_DAYS);
+              }
 
               // TODO: remove after requiring publishers to use localstorage and
               // all publishers have upgraded
@@ -276,6 +284,16 @@ export function getFromLocalStorage(key) {
 export function storeInLocalStorage(key, value, expDays) {
   storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
   storage.setDataInLocalStorage(`${key}`, value);
+}
+
+/**
+ * gets the existing abTesting config or generates a default config with abTesting off
+ *
+ * @param {SubmoduleConfig|undefined} config
+ * @returns {(Object|undefined)}
+ */
+function getAbTestingConfig(config) {
+  return (config && config.params && config.params.abTesting) || { enabled: false };
 }
 
 submodule('userId', id5IdSubmodule);

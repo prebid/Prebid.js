@@ -19,7 +19,8 @@
     "idxIdSystem",
     "fabrickIdSystem",
     "verizonMediaIdSystem",
-    "pubProvidedIdSystem"
+    "pubProvidedIdSystem",
+    "tapadIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",

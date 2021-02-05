@@ -1,6 +1,7 @@
 import {
   id5IdSubmodule,
   ID5_STORAGE_NAME,
+  ID5_PRIVACY_STORAGE_NAME,
   getFromLocalStorage,
   storeInLocalStorage,
   expDaysStr,
@@ -180,10 +181,10 @@ describe('ID5 ID System', function() {
     it('should call the ID5 server with pd field when pd config is set', function () {
       const pubData = 'b50ca08271795a8e7e4012813f23d505193d75c0f2e2bb99baa63aa822f66ed3';
 
-      let config = getId5FetchConfig();
-      config.params.pd = pubData;
+      let id5Config = getId5FetchConfig();
+      id5Config.params.pd = pubData;
 
-      let submoduleCallback = id5IdSubmodule.getId(config, undefined, ID5_STORED_OBJ).callback;
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -194,10 +195,10 @@ describe('ID5 ID System', function() {
     });
 
     it('should call the ID5 server with empty pd field when pd config is not set', function () {
-      let config = getId5FetchConfig();
-      config.params.pd = undefined;
+      let id5Config = getId5FetchConfig();
+      id5Config.params.pd = undefined;
 
-      let submoduleCallback = id5IdSubmodule.getId(config, undefined, ID5_STORED_OBJ).callback;
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -236,6 +237,74 @@ describe('ID5 ID System', function() {
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(0);
     });
+
+    it('should call the ID5 server with ab feature = 1 when abTesting is turned on', function () {
+      let id5Config = getId5FetchConfig();
+      id5Config.params.abTesting = { enabled: true, controlGroupPct: 10 }
+
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+      let requestBody = JSON.parse(request.requestBody);
+      expect(requestBody.features.ab).to.eq(1);
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+    });
+
+    it('should call the ID5 server without ab feature when abTesting is turned off', function () {
+      let id5Config = getId5FetchConfig();
+      id5Config.params.abTesting = { enabled: false, controlGroupPct: 10 }
+
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+      let requestBody = JSON.parse(request.requestBody);
+      expect(requestBody.features).to.be.undefined;
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+    });
+
+    it('should call the ID5 server without ab feature when when abTesting is not set', function () {
+      let id5Config = getId5FetchConfig();
+
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+      let requestBody = JSON.parse(request.requestBody);
+      expect(requestBody.features).to.be.undefined;
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+    });
+
+    it('should store the privacy object from the ID5 server response', function () {
+      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+
+      let responseObject = utils.deepClone(ID5_JSON_RESPONSE);
+      responseObject.privacy = {
+        jurisdiction: 'gdpr',
+        id5_consent: true
+      };
+      request.respond(200, responseHeader, JSON.stringify(responseObject));
+      expect(getFromLocalStorage(ID5_PRIVACY_STORAGE_NAME)).to.be.eq(JSON.stringify(responseObject.privacy));
+      coreStorage.removeDataFromLocalStorage(ID5_PRIVACY_STORAGE_NAME);
+    });
+
+    it('should not store a privacy object if not part of ID5 server response', function () {
+      coreStorage.removeDataFromLocalStorage(ID5_PRIVACY_STORAGE_NAME);
+      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      expect(getFromLocalStorage(ID5_PRIVACY_STORAGE_NAME)).to.be.null;
+    });
   });
 
   describe('Request Bids Hook', function() {
@@ -269,10 +338,13 @@ describe('ID5 ID System', function() {
             expect(bid.userId.id5id.uid).to.equal(ID5_STORED_ID);
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: ID5_SOURCE,
-              uids: [{ id: ID5_STORED_ID, atype: 1 }],
-              ext: {
-                linkType: ID5_STORED_LINK_TYPE
-              }
+              uids: [{
+                id: ID5_STORED_ID,
+                atype: 1,
+                ext: {
+                  linkType: ID5_STORED_LINK_TYPE
+                }
+              }]
             });
           });
         });
@@ -309,7 +381,7 @@ describe('ID5 ID System', function() {
       config.setConfig(getFetchLocalStorageConfig());
 
       let innerAdUnits;
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(1);
     });
@@ -323,7 +395,7 @@ describe('ID5 ID System', function() {
       config.setConfig(getFetchLocalStorageConfig());
 
       let innerAdUnits;
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(2);
     });
@@ -341,7 +413,7 @@ describe('ID5 ID System', function() {
       config.setConfig(id5Config);
 
       let innerAdUnits;
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(2);
 

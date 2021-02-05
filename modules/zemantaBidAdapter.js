@@ -23,10 +23,11 @@ const NATIVE_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['outbrain'],
   supportedMediaTypes: [ NATIVE, BANNER ],
   isBidRequestValid: (bid) => {
     return (
-      !!config.getConfig('zemanta.bidderUrl') &&
+      (!!config.getConfig('zemanta.bidderUrl') || !!config.getConfig('outbrain.bidderUrl')) &&
       !!utils.deepAccess(bid, 'params.publisher.id') &&
       !!(bid.nativeParams || bid.sizes)
     );
@@ -37,7 +38,7 @@ export const spec = {
     const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const cur = CURRENCY;
-    const endpointUrl = config.getConfig('zemanta.bidderUrl');
+    const endpointUrl = config.getConfig('zemanta.bidderUrl') || config.getConfig('outbrain.bidderUrl');
     const timeout = bidderRequest.timeout;
 
     const imps = validBidRequests.map((bid, id) => {
@@ -136,7 +137,7 @@ export const spec = {
   },
   getUserSyncs: (syncOptions) => {
     const syncs = [];
-    const syncUrl = config.getConfig('zemanta.usersyncUrl');
+    const syncUrl = config.getConfig('zemanta.usersyncUrl') || config.getConfig('outbrain.usersyncUrl');
     if (syncOptions.pixelEnabled && syncUrl) {
       syncs.push({
         type: 'image',
