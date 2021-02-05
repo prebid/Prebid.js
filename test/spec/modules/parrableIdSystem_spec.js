@@ -115,8 +115,9 @@ describe('Parrable ID System', function() {
         expect(queryParams).to.not.have.property('us_privacy');
         expect(data).to.deep.equal({
           eid: P_COOKIE_EID,
-          trackers: P_CONFIG_MOCK.params.partners.split(','),
-          url: getRefererInfo().referer
+          trackers: P_CONFIG_MOCK.params.partner.split(','),
+          url: getRefererInfo().referer,
+          isIframe: true
         });
 
         server.requests[0].respond(200,

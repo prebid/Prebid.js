@@ -191,7 +191,8 @@ function fetchId(configParams) {
   const data = {
     eid,
     trackers,
-    url: refererInfo.referer
+    url: refererInfo.referer,
+    isIframe: utils.inIframe(),
   };
 
   const searchParams = {
