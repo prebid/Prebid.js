@@ -301,7 +301,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
   }
 
-  const pbAdSlot = utils.deepAccess(bidRequest, 'ortb2Imp.ext.data.pbAdSlot');
+  const pbAdSlot = utils.deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   if (typeof pbAdSlot === 'string' && pbAdSlot) {
     utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
   }
