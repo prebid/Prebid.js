@@ -117,6 +117,7 @@ describe('Parrable ID System', function() {
           eid: P_COOKIE_EID,
           trackers: P_CONFIG_MOCK.params.partner.split(','),
           url: getRefererInfo().referer,
+          prebidVersion: '$prebid.version$',
           isIframe: true
         });
 
