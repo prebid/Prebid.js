@@ -21,7 +21,7 @@ export const spec = {
   buildRequests: function (validRequest, bidderRequest) {
     const payload = {
       imps: [],
-      fpd: config.getConfig('fpd')
+      fpd: config.getConfig('ortb2')
     };
     let endpointUrl;
     if (bidderRequest) {
