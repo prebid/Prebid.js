@@ -28,9 +28,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const req = validBidRequests[0];
-    const apiKey = req.params.apiKey;
-
     return validBidRequests.map((bidRequest) => {
       const payload = {
         request_id: bidRequest.bidId,
@@ -44,7 +41,12 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: ENDPOINT_URL + '?' + utils.formatQS({ t: apiKey }),
+        url:
+          ENDPOINT_URL +
+          '?' +
+          utils.formatQS({
+            t: bidRequest.params.apiKey,
+          }),
         data: JSON.stringify(payload),
       };
     });
