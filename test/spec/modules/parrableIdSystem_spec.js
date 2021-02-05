@@ -247,7 +247,7 @@ describe('Parrable ID System', function() {
       writeParrableCookie({ eid: P_COOKIE_EID });
 
       expect(parrableIdSubmodule.getId({ params: {
-        partnerss: 'prebid-test',
+        partners: 'prebid-test',
         timezoneFilter: {
           blockedZones: [ blockedZone ]
         }
