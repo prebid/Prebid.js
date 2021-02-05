@@ -188,8 +188,8 @@ function fetchId(configParams) {
     eid,
     trackers: configParams.partner.split(','),
     url: refererInfo.referer,
-    prebidVersion: '$prebid.version$'
-    isIframe: utils.inIframe(),
+    prebidVersion: '$prebid.version$',
+    isIframe: utils.inIframe()
   };
 
   const searchParams = {
