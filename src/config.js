@@ -363,7 +363,7 @@ export function newConfig() {
       Object.keys(opt[type]).forEach((key) => {
         if (key === 'data') {
           utils.mergeDeep(extension, {ext: {data: opt[type][key]}}); ;
-        } else if (key === 'pbAdSlot' || key === 'adServer') {
+        } else {
           utils.mergeDeep(extension, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
         }
       });
@@ -380,6 +380,7 @@ export function newConfig() {
    * Copy FPD over to OpenRTB standard format in each adunit
    */
   function checkAdUnitFpd(arr, bool) {
+    console.log(arr);
     let convert = [];
 
     if (bool) {
