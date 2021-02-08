@@ -350,10 +350,10 @@ describe('IndexexchangeAdapter', function () {
   };
 
   const DEFAULT_USERID_DATA = {
-    idl_env:   '1234-5678-9012-3456', // Liveramp
-    netId:     'testnetid123',        // NetId
-    IDP:       'userIDP000',          // IDP
-    fabrickId: 'fabrickId9000',       // FabrickId
+    idl_env: '1234-5678-9012-3456', // Liveramp
+    netId: 'testnetid123', // NetId
+    IDP: 'userIDP000', // IDP
+    fabrickId: 'fabrickId9000', // FabrickId
   };
 
   const DEFAULT_USERID_PAYLOAD = [
@@ -365,7 +365,7 @@ describe('IndexexchangeAdapter', function () {
           rtiPartner: 'idl'
         }
       }]
-    },{
+    }, {
       source: 'netid.de',
       uids: [{
         id: DEFAULT_USERID_DATA.netId,
@@ -373,7 +373,7 @@ describe('IndexexchangeAdapter', function () {
           rtiPartner: 'NETID'
         }
       }]
-    },{
+    }, {
       source: 'neustar.biz',
       uids: [{
         id: DEFAULT_USERID_DATA.fabrickId,
@@ -381,12 +381,12 @@ describe('IndexexchangeAdapter', function () {
           rtiPartner: 'fabrickId'
         }
       }]
-    },{
+    }, {
       source: 'zeotap.com',
       uids: [{
         id: DEFAULT_USERID_DATA.IDP,
         ext: {
-          rtiPartner: 'zeotap.com'
+          rtiPartner: 'zeotapIdPlus'
         }
       }]
     }
@@ -788,13 +788,13 @@ describe('IndexexchangeAdapter', function () {
       delete window.headertag;
     });
 
-    it('IX adapter reads LiveRamp IDL envelope from Prebid and adds it to Video', function () {
+    it('IX adapter reads supported user modules from Prebid and adds it to Video', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
       cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
-      expect(payload.user.eids).to.have.lengthOf(1);
+      expect(payload.user.eids).to.have.lengthOf(4);
       expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
     });
 
@@ -849,6 +849,39 @@ describe('IndexexchangeAdapter', function () {
               }
             }
           ]
+        },
+        NetIdIp: {
+          source: 'netid.de',
+          uids: [
+            {
+              id: 'testnetid',
+              ext: {
+                rtiPartner: 'NETID'
+              }
+            }
+          ]
+        },
+        NeustarIp: {
+          source: 'neustar.biz',
+          uids: [
+            {
+              id: 'testfabrick',
+              ext: {
+                rtiPartner: 'fabrickId'
+              }
+            }
+          ]
+        },
+        ZeotapIp: {
+          source: 'zeotap.com',
+          uids: [
+            {
+              id: 'testzeotap',
+              ext: {
+                rtiPartner: 'zeotapIdPlus'
+              }
+            }
+          ]
         }
       };
 
@@ -894,10 +927,14 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(3);
+      expect(payload.user.eids).to.have.lengthOf(6);
+
       expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[3]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[4]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[5]);
     });
 
     it('IXL and Prebid are mutually exclusive', function () {
@@ -937,7 +974,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = JSON.parse(request.data.r);
-      expect(payload.user.eids).to.have.lengthOf(2);
+      expect(payload.user.eids).to.have.lengthOf(5);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
     });

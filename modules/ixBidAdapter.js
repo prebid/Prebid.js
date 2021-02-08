@@ -279,7 +279,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     }
 
     if (userId.IDP) {
-       addUserEids(userEids, seenIdPartners, userId.IDP, 'zeotap.com', 'ZeotapIp', 'zeotapIdPlus');
+      addUserEids(userEids, seenIdPartners, userId.IDP, 'zeotap.com', 'ZeotapIp', 'zeotapIdPlus');
     }
   }
 
