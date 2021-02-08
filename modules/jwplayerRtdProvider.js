@@ -144,7 +144,7 @@ function enrichBidRequest(bidReqConfig, onDone) {
  * @param {function} onDone
  */
 export function enrichAdUnits(adUnits) {
-  const fpdFallback = config.getConfig('fpd.context.data.jwTargeting');
+  const fpdFallback = config.getConfig('ortb2.site.ext.data.jwTargeting');
   adUnits.forEach(adUnit => {
     const jwTargeting = extractPublisherParams(adUnit, fpdFallback);
     if (!jwTargeting || !Object.keys(jwTargeting).length) {
@@ -170,7 +170,7 @@ function supportsInstreamVideo(mediaTypes) {
 export function extractPublisherParams(adUnit, fallback) {
   let adUnitTargeting;
   try {
-    adUnitTargeting = adUnit.fpd.context.data.jwTargeting;
+    adUnitTargeting = adUnit.ortb2Imp.ext.data.jwTargeting;
   } catch (e) {}
 
   if (!adUnitTargeting && !supportsInstreamVideo(adUnit.mediaTypes)) {
