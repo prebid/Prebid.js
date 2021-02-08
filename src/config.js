@@ -325,11 +325,57 @@ export function newConfig() {
   }
 
   /**
+   * Returns backwards compatible FPD data for modules
+   */
+  function getLegacyFpd(obj) {
+    if (typeof obj !== 'object') return;
+
+    let duplicate = {};
+
+    Object.keys(obj).forEach((type) => {
+      let prop = (type === 'site') ? 'context' : type;
+      duplicate[prop] = (prop === 'context' || prop === 'user') ? Object.keys(obj[type]).reduce((result, key) => {
+        if (key === 'ext') {
+          utils.mergeDeep(result, obj[type][key]);
+        } else {
+          utils.mergeDeep(result, {[key]: obj[type][key]});
+        }
+
+        return result;
+      }, {}) : obj[type];
+    });
+
+    return duplicate;
+  }
+
+  /**
+   * Returns backwards compatible FPD data for modules
+   */
+  function getLegacyImpFpd(obj) {
+    if (typeof obj !== 'object') return;
+
+    let duplicate = {};
+
+    if (utils.deepAccess(obj, 'ext.data')) {
+      Object.keys(obj.ext.data).forEach((key) => {
+        if (key === 'pbadslot') {
+          utils.mergeDeep(duplicate, {context: {pbAdSlot: obj.ext.data[key]}});
+        } else if (key === 'adserver') {
+          utils.mergeDeep(duplicate, {context: {adServer: obj.ext.data[key]}});
+        } else {
+          utils.mergeDeep(duplicate, {context: {data: {[key]: obj.ext.data[key]}}});
+        }
+      });
+    }
+
+    return duplicate;
+  }
+
+  /**
    * Copy FPD over to OpenRTB standard format in config
    */
   function convertFpd(opt) {
     let duplicate = {};
-    let extension = {};
 
     Object.keys(opt).forEach((type) => {
       let prop = (type === 'context') ? 'site' : type;
@@ -344,10 +390,6 @@ export function newConfig() {
       }, {}) : opt[type];
     });
 
-    if (Object.keys(extension).length > 0) {
-      utils.mergeDeep(duplicate, extension);
-    }
-
     return duplicate;
   }
 
@@ -357,21 +399,16 @@ export function newConfig() {
    */
   function convertImpFpd(opt) {
     let duplicate = {};
-    let extension = {};
 
     Object.keys(opt).filter(prop => prop === 'context').forEach((type) => {
       Object.keys(opt[type]).forEach((key) => {
         if (key === 'data') {
-          utils.mergeDeep(extension, {ext: {data: opt[type][key]}}); ;
+          utils.mergeDeep(duplicate, {ext: {data: opt[type][key]}});
         } else {
-          utils.mergeDeep(extension, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
+          utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
         }
       });
     });
-
-    if (Object.keys(extension).length > 0) {
-      utils.mergeDeep(duplicate, extension);
-    }
 
     return duplicate;
   }
@@ -380,7 +417,6 @@ export function newConfig() {
    * Copy FPD over to OpenRTB standard format in each adunit
    */
   function checkAdUnitFpd(arr, bool) {
-    console.log(arr);
     let convert = [];
 
     if (bool) {
@@ -581,7 +617,9 @@ export function newConfig() {
     callbackWithBidder,
     setBidderConfig,
     getBidderConfig,
-    checkAdUnitFpd
+    checkAdUnitFpd,
+    getLegacyFpd,
+    getLegacyImpFpd
   };
 }
 
