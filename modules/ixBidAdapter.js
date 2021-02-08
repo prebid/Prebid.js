@@ -274,8 +274,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       addUserEids(userEids, seenIdPartners, userId.netId, 'netid.de', 'NetIdIp', 'NETID');
     }
 
-    if (userId.fabrickid) {
-      addUserEids(userEids, seenIdPartners, userId.fabrickid, 'neustar.biz', 'NeustarIp', 'fabrickId');
+    if (userId.fabrickId) {
+      addUserEids(userEids, seenIdPartners, userId.fabrickId, 'neustar.biz', 'NeustarIp', 'fabrickId');
     }
 
     if (userId.IDP) {
