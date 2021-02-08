@@ -869,19 +869,17 @@ function addVideoParameters(data, bidRequest) {
 }
 
 function applyFPD(bidRequest, mediaType, data) {
-  const bidFpd = {
+  const BID_FPD = {
     user: {...bidRequest.params.visitor},
-    context: {...bidRequest.params.inventory}
+    site: {...bidRequest.params.inventory}
   };
 
-  if (bidRequest.params.keywords) bidFpd.context.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
+  if (bidRequest.params.keywords) BID_FPD.site.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
-  let fpd = utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd);
-
-  const map = {user: {banner: 'tg_v.', code: 'user'}, context: {banner: 'tg_i.', code: 'site'}, adserver: 'dfp_ad_unit_code'};
-  let obj = {};
-  let impData = {};
-  let keywords = [];
+  let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
+  let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
+  let revisedImpData = {};
+  const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key) {
     if (typeof prop === 'object' && !Array.isArray(prop)) {
       utils.logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
@@ -893,53 +891,53 @@ function applyFPD(bidRequest, mediaType, data) {
       }).toString() : prop.toString();
     }
   };
-
-  Object.keys(fpd).filter(value => fpd[value] && map[value] && typeof fpd[value] === 'object').forEach((type) => {
-    obj[map[type].code] = Object.keys(fpd[type]).filter(value => typeof fpd[type][value] !== 'undefined').reduce((result, key) => {
-      if (key === 'keywords') {
-        if (!Array.isArray(fpd[type][key]) && mediaType === BANNER) fpd[type][key] = [fpd[type][key]]
-
-        result[key] = fpd[type][key];
-
-        if (mediaType === BANNER) keywords = keywords.concat(fpd[type][key]);
-      } else if (key === 'data') {
-        utils.mergeDeep(result, {ext: {data: fpd[type][key]}});
-      } else if (key === 'adServer' || key === 'pbAdSlot') {
-        (key === 'adServer') ? ['name', 'adSlot'].forEach(name => {
-          const value = validate(fpd[type][key][name]);
-          if (value) utils.deepSetValue(impData, `adserver.${name.toLowerCase()}`, value.replace(/^\/+/, ''))
-        }) : impData[key.toLowerCase()] = fpd[type][key].replace(/^\/+/, '')
-      } else {
-        utils.mergeDeep(result, {ext: {data: {[key]: fpd[type][key]}}});
-      }
-
-      return result;
-    }, {});
-
-    if (mediaType === BANNER) {
-      let duplicate = (typeof obj[map[type].code].ext === 'object' && obj[map[type].code].ext.data) || {};
-
-      Object.keys(duplicate).forEach((key) => {
-        const val = (key === 'adserver') ? duplicate.adserver.adslot : validate(duplicate[key], key);
-
-        if (val) data[(map[key]) ? `${map[type][BANNER]}${map[key]}` : `${map[type][BANNER]}${key}`] = val;
-      });
-    }
-  });
+  const addBannerData = function(obj, name, key) {
+    let val = validate(obj, key);
+    let loc = (MAP[key]) ? `${MAP[key]}` : `${MAP[name]}${key}`;
+    data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
+  }
 
   Object.keys(impData).forEach((key) => {
-    if (mediaType === BANNER) {
-      (map[key]) ? data[`tg_i.${map[key]}`] = impData[key].adslot : data[`tg_i.${key.toLowerCase()}`] = impData[key];
+    if (key === 'adserver') {
+      ['name', 'adSlot'].forEach(prop => {
+        if (impData[key][prop]) utils.deepSetValue(revisedImpData, `${key}.${prop.toLowerCase()}`, impData[key][prop].replace(/^\/+/, ''));
+      });
+    } else if (key === 'pbadslot') {
+      revisedImpData[key] = impData[key].replace(/^\/+/, '');
     } else {
-      utils.mergeDeep(data.imp[0], {ext: {context: {data: {[key]: impData[key]}}}});
+      revisedImpData[key] = impData[key];
     }
   });
 
   if (mediaType === BANNER) {
-    let kw = validate(keywords, 'keywords');
-    if (kw) data.kw = kw;
+    ['site', 'user'].forEach(name => {
+      Object.keys(fpd[name]).forEach((key) => {
+        if (key !== 'ext') {
+          addBannerData(fpd[name][key], name, key);
+        } else if (fpd[name][key].data) {
+          Object.keys(fpd[name].ext.data).forEach((key) => {
+            addBannerData(fpd[name].ext.data[key], name, key);
+          });
+        }
+      });
+    });
+    Object.keys(revisedImpData).forEach((key) => {
+      (key === 'adserver') ? addBannerData(revisedImpData[key].adslot, name, key) : addBannerData(revisedImpData[key], 'site', key);
+    });
   } else {
-    utils.mergeDeep(data, obj);
+    if (Object.keys(revisedImpData).length) {
+      utils.mergeDeep(data.imp[0].ext, {data: revisedImpData});
+    }
+
+    ['site', 'user'].forEach(name => {
+      Object.keys(fpd[name]).forEach((key) => {
+        if (key === 'ext' || key === 'keywords') {
+          utils.mergeDeep(data, {[name]: {[key]: fpd[name][key]}});
+        } else {
+          utils.mergeDeep(data, {[name]: {ext: {data: {[key]: fpd[name][key]}}}});
+        }
+      });
+    });
   }
 }
 
