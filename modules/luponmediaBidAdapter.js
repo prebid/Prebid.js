@@ -280,7 +280,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   }
 
   const fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
-  const siteData = Object.assign({}, bidRequest.params.inventory, fpd.site);
+  const siteData = Object.assign({}, bidRequest.params.inventory, fpd.context);
   const userData = Object.assign({}, bidRequest.params.visitor, fpd.user);
 
   if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
