@@ -341,6 +341,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         r.user.ext = {
           consent: gdprConsent.consentString || ''
         };
+
+        if (gdprConsent.hasOwnProperty('addtlConsent') && gdprConsent.addtlConsent) {
+          r.user.ext.consented_providers_settings = {
+            consented_providers: gdprConsent.addtlConsent
+          }
+        }
       }
     }
 
