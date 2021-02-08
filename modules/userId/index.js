@@ -138,6 +138,7 @@ import CONSTANTS from '../../src/constants.json';
 import { module, hook } from '../../src/hook.js';
 import { createEidsArray, buildEidPermissions } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
+import {getPrebidInternal} from '../../src/utils.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -215,12 +216,13 @@ export function setStoredValue(submodule, value) {
 }
 
 function setPrebidServerEidPermissions(initializedSubmodules) {
-  let setEidPermissions = (getGlobal()).setEidPermissions;
+  let setEidPermissions = getPrebidInternal().setEidPermissions;
   if (typeof setEidPermissions === 'function' && utils.isArray(initializedSubmodules)) {
     setEidPermissions(buildEidPermissions(initializedSubmodules));
   }
 }
 
+/**
 /**
  * @param {SubmoduleStorage} storage
  * @param {String|undefined} key optional key of the value

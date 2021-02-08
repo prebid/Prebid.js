@@ -12,7 +12,7 @@ import includes from 'core-js-pure/features/array/includes.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
 import find from 'core-js-pure/features/array/find.js';
-import { getGlobal } from '../../src/prebidGlobal.js';
+import { getPrebidInternal } from '../../src/utils.js';
 
 const getConfig = config.getConfig;
 
@@ -974,6 +974,7 @@ export function PrebidServer() {
 
       const request = OPEN_RTB_PROTOCOL.buildRequest(s2sBidRequest, bidRequests, validAdUnits, s2sBidRequest.s2sConfig, requestedBidders);
       const requestJson = request && JSON.stringify(request);
+      utils.logInfo('BidRequest: ' + requestJson);
       if (request && requestJson) {
         ajax(
           s2sBidRequest.s2sConfig.endpoint,
@@ -1039,6 +1040,6 @@ export function PrebidServer() {
 function setEidPermissions(newEidPermissions) {
   eidPermissions = newEidPermissions;
 }
-getGlobal().setEidPermissions = setEidPermissions;
+getPrebidInternal().setEidPermissions = setEidPermissions;
 
 adapterManager.registerBidAdapter(new PrebidServer(), 'prebidServer');

@@ -39,6 +39,7 @@ import {haloIdSubmodule} from 'modules/haloIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import {criteoIdSubmodule} from 'modules/criteoIdSystem.js';
 import {tapadIdSubmodule} from 'modules/tapadIdSystem.js';
+import {getPrebidInternal} from 'src/utils.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -1204,7 +1205,7 @@ describe('User ID', function () {
 
       setSubmoduleRegistry([sharedIdSubmodule]);
       let eidPermissions;
-      getGlobal().setEidPermissions = function (newEidPermissions) {
+      getPrebidInternal().setEidPermissions = function (newEidPermissions) {
         eidPermissions = newEidPermissions;
       }
       init(config);
@@ -1263,7 +1264,7 @@ describe('User ID', function () {
           });
         });
         coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
-        getGlobal().setEidPermissions = undefined;
+        getPrebidInternal().setEidPermissions = undefined;
         done();
       }, {adUnits});
     });
@@ -1276,7 +1277,7 @@ describe('User ID', function () {
 
       setSubmoduleRegistry([sharedIdSubmodule]);
       let eidPermissions;
-      getGlobal().setEidPermissions = function (newEidPermissions) {
+      getPrebidInternal().setEidPermissions = function (newEidPermissions) {
         eidPermissions = newEidPermissions;
       }
       init(config);
@@ -1317,7 +1318,7 @@ describe('User ID', function () {
             });
           });
         });
-        getGlobal().setEidPermissions = undefined;
+        getPrebidInternal().setEidPermissions = undefined;
         coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
