@@ -39,15 +39,6 @@ export const deepintentDpesSubmodule = {
    * @return { Object | string | undefined }
    */
   decode(value) {
-    console.log("isString: ", utils.isStr(value));
-    console.log("isPlainObject: ", utils.isPlainObject(value));
-    // const id = value
-    //   ? utils.isStr(value)
-    //     ? value
-    //     : utils.isPlainObject(value)
-    //     ? value.id
-    //     : undefined
-    //   : undefined;
     return value ? value : undefined;
   },
   /**
@@ -70,7 +61,6 @@ export const deepintentDpesSubmodule = {
     if (configParams && configParams.type === "html5") {
       id = readFromLocalStorage();
     }
-    console.log("getId: ", id);
     return id ? { id } : undefined;
   },
 };
