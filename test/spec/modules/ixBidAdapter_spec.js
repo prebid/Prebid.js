@@ -977,6 +977,9 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.user.eids).to.have.lengthOf(5);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[0]);
       expect(payload.user.eids).to.deep.include(validUserIdPayload[1]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[2]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[3]);
+      expect(payload.user.eids).to.deep.include(validUserIdPayload[4]);
     });
   });
 
