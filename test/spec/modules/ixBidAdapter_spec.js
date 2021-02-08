@@ -350,7 +350,10 @@ describe('IndexexchangeAdapter', function () {
   };
 
   const DEFAULT_USERID_DATA = {
-    idl_env: '1234-5678-9012-3456', // Liveramp
+    idl_env:   '1234-5678-9012-3456', // Liveramp
+    netId:     'testnetid123',        // NetId
+    IDP:       'userIDP000',          // IDP
+    fabrickId: 'fabrickId9000',       // FabrickId
   };
 
   const DEFAULT_USERID_PAYLOAD = [
@@ -360,6 +363,30 @@ describe('IndexexchangeAdapter', function () {
         id: DEFAULT_USERID_DATA.idl_env,
         ext: {
           rtiPartner: 'idl'
+        }
+      }]
+    },{
+      source: 'netid.de',
+      uids: [{
+        id: DEFAULT_USERID_DATA.netId,
+        ext: {
+          rtiPartner: 'NETID'
+        }
+      }]
+    },{
+      source: 'neustar.biz',
+      uids: [{
+        id: DEFAULT_USERID_DATA.fabrickId,
+        ext: {
+          rtiPartner: 'fabrickId'
+        }
+      }]
+    },{
+      source: 'zeotap.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA.IDP,
+        ext: {
+          rtiPartner: 'zeotap.com'
         }
       }]
     }
