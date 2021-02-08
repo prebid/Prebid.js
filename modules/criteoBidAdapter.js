@@ -56,10 +56,11 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
     let data;
+    let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
 
     Object.assign(bidderRequest, {
-      publisherExt: config.getConfig('ortb2.site'),
-      userExt: config.getConfig('ortb2.user'),
+      publisherExt: fpd.context,
+      userExt: fpd.user,
       ceh: config.getConfig('criteo.ceh')
     });
 

@@ -867,8 +867,8 @@ describe('The Criteo bidding adapter', function () {
       });
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.publisher.ext).to.deep.equal(contextData);
-      expect(request.data.user.ext).to.deep.equal(userData);
+      expect(request.data.publisher.ext).to.deep.equal({keywords: ['power tools'], data: {pageType: 'article'}});
+      expect(request.data.user.ext).to.deep.equal({gender: 'M', data: {registered: true}});
       expect(request.data.slots[0].ext).to.deep.equal({
         bidfloor: 0.75,
         data: {
