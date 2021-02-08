@@ -279,8 +279,9 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
   }
 
-  const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('ortb2.site'));
-  const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('ortb2.user'));
+  const fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+  const siteData = Object.assign({}, bidRequest.params.inventory, fpd.site);
+  const userData = Object.assign({}, bidRequest.params.visitor, fpd.user);
 
   if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
     const bidderData = {
