@@ -796,6 +796,9 @@ describe('IndexexchangeAdapter', function () {
 
       expect(payload.user.eids).to.have.lengthOf(4);
       expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[1]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[2]);
+      expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[3]);
     });
 
     it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {
