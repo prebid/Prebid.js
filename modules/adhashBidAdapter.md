@@ -16,7 +16,7 @@ Here is what you need for Prebid integration with AdHash:
 Please note that a number of AdHash functionalities are not supported in the Prebid.js integration:
 * Cookie-less frequency and recency capping;
 * Audience segments;
-* Price floors and passback tags, as they are not needed in the Preebid.js setup;
+* Price floors and passback tags, as they are not needed in the Prebid.js setup;
 * Reservation for direct deals only, as bids are evaluated based on their price.
 
 # Test Parameters

@@ -9,6 +9,11 @@ describe('adhashBidAdapter', function () {
         publisherId: '0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb',
         platformURL: 'https://adhash.org/p/struma/'
       },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      },
       adUnitCode: 'adunit-code',
       sizes: [[300, 250]],
       bidId: '12345678901234',
@@ -23,6 +28,12 @@ describe('adhashBidAdapter', function () {
     it('should return false when there are no params', function () {
       const bid = { ...validBid };
       delete bid.params;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when unsupported media type is requested', function () {
+      const bid = { ...validBid };
+      bid.mediaTypes = { native: { sizes: [[300, 250]] } };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
@@ -52,21 +63,39 @@ describe('adhashBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    const bidRequest = {
+      params: {
+        publisherId: '0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb'
+      },
+      sizes: [[300, 250]],
+      adUnitCode: 'adUnitCode'
+    };
     it('should build the request correctly', function () {
-      const bidRequest = {
-        params: {
-          publisherId: '0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb'
-        },
-        sizes: [[300, 250]],
-        adUnitCode: 'adUnitCode'
-      };
-      const result = spec.buildRequests([ bidRequest ]);
+      const result = spec.buildRequests(
+        [ bidRequest ],
+        { gdprConsent: true, refererInfo: { referer: 'http://example.com/' } }
+      );
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
       expect(result[0].url).to.equal('https://bidder.adhash.org/rtb?version=1.0&prebid=true');
       expect(result[0].bidRequest).to.equal(bidRequest);
       expect(result[0].data).to.have.property('timezone');
-      expect(result[0].data).to.have.property('referrer');
+      expect(result[0].data).to.have.property('location');
+      expect(result[0].data).to.have.property('publisherId');
+      expect(result[0].data).to.have.property('size');
+      expect(result[0].data).to.have.property('navigator');
+      expect(result[0].data).to.have.property('creatives');
+      expect(result[0].data).to.have.property('blockedCreatives');
+      expect(result[0].data).to.have.property('currentTimestamp');
+      expect(result[0].data).to.have.property('recentAds');
+    });
+    it('should build the request correctly without referer', function () {
+      const result = spec.buildRequests([ bidRequest ], { gdprConsent: true });
+      expect(result.length).to.equal(1);
+      expect(result[0].method).to.equal('POST');
+      expect(result[0].url).to.equal('https://bidder.adhash.org/rtb?version=1.0&prebid=true');
+      expect(result[0].bidRequest).to.equal(bidRequest);
+      expect(result[0].data).to.have.property('timezone');
       expect(result[0].data).to.have.property('location');
       expect(result[0].data).to.have.property('publisherId');
       expect(result[0].data).to.have.property('size');
@@ -109,6 +138,14 @@ describe('adhashBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(true);
       expect(result[0].currency).to.equal('EUR');
       expect(result[0].ttl).to.equal(60);
+    });
+
+    it('should return empty array when there are no creatives returned', function () {
+      expect(spec.interpretResponse({body: {creatives: []}}, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there is no creatives key in the response', function () {
+      expect(spec.interpretResponse({body: {}}, request).length).to.equal(0);
     });
 
     it('should return empty array when something is not right', function () {

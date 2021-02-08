@@ -1,15 +1,19 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import includes from 'core-js-pure/features/array/includes.js';
 import { BANNER } from '../src/mediaTypes.js';
+
+const VERSION = '1.0';
 
 export const spec = {
   code: 'adhash',
-  url: 'https://bidder.adhash.org/rtb?version=1.0&prebid=true',
+  url: 'https://bidder.adhash.org/rtb?version=' + VERSION + '&prebid=true',
   supportedMediaTypes: [ BANNER ],
 
   isBidRequestValid: (bid) => {
     try {
       const { publisherId, platformURL } = bid.params;
       return (
+        includes(Object.keys(bid.mediaTypes), BANNER) &&
         typeof publisherId === 'string' &&
         publisherId.length === 42 &&
         typeof platformURL === 'string' &&
@@ -20,18 +24,24 @@ export const spec = {
     }
   },
 
-  buildRequests: (validBidRequests, _bidderRequest) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
+    const { gdprConsent } = bidderRequest;
     const { url } = spec;
     const bidRequests = [];
+    let referrer = '';
+    if (bidderRequest && bidderRequest.refererInfo) {
+      referrer = bidderRequest.refererInfo.referer;
+    }
     for (var i = 0; i < validBidRequests.length; i++) {
+      var index = Math.floor(Math.random() * validBidRequests[i].sizes.length);
+      var size = validBidRequests[i].sizes[index].join('x');
       bidRequests.push({
         method: 'POST',
         url: url,
         bidRequest: validBidRequests[i],
         data: {
           timezone: new Date().getTimezoneOffset() / 60,
-          referrer: document.referrer,
-          location: window.location.href,
+          location: referrer,
           publisherId: validBidRequests[i].params.publisherId,
           size: {
             screenWidth: window.screen.width,
@@ -43,12 +53,13 @@ export const spec = {
             userAgent: window.navigator.userAgent
           },
           creatives: [{
-            size: validBidRequests[i].sizes[0].join('x'),
+            size: size,
             position: validBidRequests[i].adUnitCode
           }],
           blockedCreatives: [],
           currentTimestamp: new Date().getTime(),
-          recentAds: []
+          recentAds: [],
+          GDPR: gdprConsent
         },
         options: {
           withCredentials: false,
@@ -61,14 +72,15 @@ export const spec = {
 
   interpretResponse: (serverResponse, request) => {
     const responseBody = serverResponse ? serverResponse.body : {};
-    const publisherURL = JSON.stringify(request.bidRequest.params.platformURL);
-    const oneTimeId = request.bidRequest.adUnitCode + Math.random().toFixed(16).replace('0.', '.');
-    const bidderResponse = JSON.stringify({ responseText: JSON.stringify(responseBody) });
-    const requestData = JSON.stringify(request.data);
 
     if (!responseBody.creatives || responseBody.creatives.length === 0) {
       return [];
     }
+
+    const publisherURL = JSON.stringify(request.bidRequest.params.platformURL);
+    const oneTimeId = request.bidRequest.adUnitCode + Math.random().toFixed(16).replace('0.', '.');
+    const bidderResponse = JSON.stringify({ responseText: JSON.stringify(responseBody) });
+    const requestData = JSON.stringify(request.data);
 
     return [{
       requestId: request.bidRequest.bidId,
