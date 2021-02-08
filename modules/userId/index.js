@@ -28,6 +28,7 @@
  *  It's permissible to return neither, one, or both fields.
  * @name Submodule#extendId
  * @param {SubmoduleConfig} config
+ * @param {ConsentData|undefined} consentData
  * @param {Object} storedId - existing id, if any
  * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
  */
@@ -621,7 +622,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
       response = submodule.submodule.getId(submodule.config, consentData, storedId);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-      response = submodule.submodule.extendId(submodule.config, storedId);
+      response = submodule.submodule.extendId(submodule.config, consentData, storedId);
     }
 
     if (utils.isPlainObject(response)) {
