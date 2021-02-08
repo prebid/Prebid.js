@@ -44,6 +44,9 @@ export const internal = {
 };
 
 let prebidInternal = {}
+/**
+ * Returns object that is used as internal prebid namespace
+ */
 export function getPrebidInternal() {
   return prebidInternal;
 }
