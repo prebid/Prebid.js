@@ -878,6 +878,7 @@ function applyFPD(bidRequest, mediaType, data) {
 
   let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
   let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
+  let revisedImpData = {};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key) {
     if (typeof prop === 'object' && !Array.isArray(prop)) {
@@ -893,11 +894,23 @@ function applyFPD(bidRequest, mediaType, data) {
   const addBannerData = function(obj, name, key) {
     let val = validate(obj, key);
     let loc = (MAP[key]) ? `${MAP[key]}` : `${MAP[name]}${key}`;
-    data[loc] = (data[loc]) ? data[loc].concat(',',val) : val;
+    data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
   }
 
+  Object.keys(impData).forEach((key) => {
+    if (key === 'adserver') {
+      ['name', 'adSlot'].forEach(prop => {
+        if (impData[key][prop]) utils.deepSetValue(revisedImpData, `${key}.${prop.toLowerCase()}`, impData[key][prop].replace(/^\/+/, ''));
+      });
+    } else if (key === 'pbadslot') {
+      revisedImpData[key] = impData[key].replace(/^\/+/, '');
+    } else {
+      revisedImpData[key] = impData[key];
+    }
+  });
+
   if (mediaType === BANNER) {
-    ['site','user'].forEach(name => {
+    ['site', 'user'].forEach(name => {
       Object.keys(fpd[name]).forEach((key) => {
         if (key !== 'ext') {
           addBannerData(fpd[name][key], name, key);
@@ -907,16 +920,24 @@ function applyFPD(bidRequest, mediaType, data) {
           });
         }
       });
-      
     });
-    Object.keys(impData).forEach((key) => {
-      (key === 'adserver') ? addBannerData(impData[key].adSlot, name, key) : addBannerData(impData[key], 'site', key);
+    Object.keys(revisedImpData).forEach((key) => {
+      (key === 'adserver') ? addBannerData(revisedImpData[key].adslot, name, key) : addBannerData(revisedImpData[key], 'site', key);
     });
   } else {
-    if (Object.keys(impData).length) {
-      utils.mergeDeep(data.imp[0].ext, {data: impData});
+    if (Object.keys(revisedImpData).length) {
+      utils.mergeDeep(data.imp[0].ext, {data: revisedImpData});
     }
-    utils.mergeDeep(data, fpd);
+
+    ['site', 'user'].forEach(name => {
+      Object.keys(fpd[name]).forEach((key) => {
+        if (key === 'ext' || key === 'keywords') {
+          utils.mergeDeep(data, {[name]: {[key]: fpd[name][key]}});
+        } else {
+          utils.mergeDeep(data, {[name]: {ext: {data: {[key]: fpd[name][key]}}}});
+        }
+      });
+    });
   }
 }
 
