@@ -189,9 +189,10 @@ function _getGlobalFpd() {
   const fpd = {};
   const context = {}
   const user = {};
+  const ortbData = config.getLegacyFpd(config.getConfig('ortb2')) || {};
 
-  const fpdContext = Object.assign({}, config.getConfig('ortb2.site'));
-  const fpdUser = Object.assign({}, config.getConfig('ortb2.user'));
+  const fpdContext = Object.assign({}, ortbData.context);
+  const fpdUser = Object.assign({}, ortbData.user);
 
   _addEntries(context, fpdContext);
   _addEntries(user, fpdUser);
