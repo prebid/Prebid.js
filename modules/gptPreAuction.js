@@ -33,7 +33,7 @@ export const appendGptSlots = adUnits => {
       const context = adUnit.ortb2Imp.ext.data;
       context.adserver = context.adserver || {};
       context.adserver.name = 'gam';
-      context.adserver.adSlot = slot.getAdUnitPath();
+      context.adserver.adslot = slot.getAdUnitPath();
     }
   });
 };
@@ -46,7 +46,7 @@ export const appendPbAdSlot = adUnit => {
   const { customPbAdSlot } = _currentConfig;
 
   if (customPbAdSlot) {
-    context.pbadslot = customPbAdSlot(adUnit.code, utils.deepAccess(context, 'adserver.adSlot'));
+    context.pbadslot = customPbAdSlot(adUnit.code, utils.deepAccess(context, 'adserver.adslot'));
     return;
   }
 
@@ -63,8 +63,8 @@ export const appendPbAdSlot = adUnit => {
     }
   } catch (e) {}
   // banner adUnit, use GPT adunit if defined
-  if (utils.deepAccess(context, 'adserver.adSlot')) {
-    context.pbadslot = context.adserver.adSlot;
+  if (utils.deepAccess(context, 'adserver.adslot')) {
+    context.pbadslot = context.adserver.adslot;
     return;
   }
   context.pbadslot = adUnit.code;

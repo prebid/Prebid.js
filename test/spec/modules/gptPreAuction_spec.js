@@ -42,7 +42,7 @@ describe('GPT pre-auction module', () => {
     });
 
     it('should use the gptSlot.adUnitPath if the adUnit.code matches a div id but does not have a data-adslotid', () => {
-      const adUnit = { code: 'foo3', mediaTypes: { banner: { sizes: [[250, 250]] } }, ortb2Imp: { ext: { data: { adserver: { name: 'gam', adSlot: '/baz' } } } } };
+      const adUnit = { code: 'foo3', mediaTypes: { banner: { sizes: [[250, 250]] } }, ortb2Imp: { ext: { data: { adserver: { name: 'gam', adslot: '/baz' } } } } };
       appendPbAdSlot(adUnit);
       expect(adUnit.ortb2Imp.ext.data.pbadslot).to.equal('/baz');
     });
@@ -92,7 +92,7 @@ describe('GPT pre-auction module', () => {
       const adUnit = { code: 'slotCode2', ortb2Imp: { ext: { data: {} } } };
       appendGptSlots([adUnit]);
       expect(adUnit.ortb2Imp.ext.data.adserver).to.be.an('object');
-      expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adSlot: 'slotCode2' });
+      expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: 'slotCode2' });
     });
 
     it('should use the customGptSlotMatching function if one is given', () => {
@@ -107,7 +107,7 @@ describe('GPT pre-auction module', () => {
       const adUnit = { code: 'SlOtCoDe1', ortb2Imp: { ext: { data: {} } } };
       appendGptSlots([adUnit]);
       expect(adUnit.ortb2Imp.ext.data.adserver).to.be.an('object');
-      expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adSlot: 'slotCode1' });
+      expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: 'slotCode1' });
     });
   });
 
@@ -177,10 +177,10 @@ describe('GPT pre-auction module', () => {
         ortb2Imp: { ext: { data: { pbadslot: '12345' } } }
       }, {
         code: 'slotCode1',
-        ortb2Imp: { ext: { data: { pbadslot: '67890', adserver: { name: 'gam', adSlot: 'slotCode1' } } } }
+        ortb2Imp: { ext: { data: { pbadslot: '67890', adserver: { name: 'gam', adslot: 'slotCode1' } } } }
       }, {
         code: 'slotCode3',
-        ortb2Imp: { ext: { data: { pbadslot: 'slotCode3', adserver: { name: 'gam', adSlot: 'slotCode3' } } } }
+        ortb2Imp: { ext: { data: { pbadslot: 'slotCode3', adserver: { name: 'gam', adslot: 'slotCode3' } } } }
       }];
 
       window.googletag.pubads().setSlots(testSlots);

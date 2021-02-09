@@ -405,7 +405,14 @@ export function newConfig() {
         if (key === 'data') {
           utils.mergeDeep(duplicate, {ext: {data: opt[type][key]}});
         } else {
-          utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
+          if (typeof opt[type][key] === 'object' && !Array.isArray(opt[type][key])) {
+            Object.keys(opt[type][key]).forEach(data => {
+              utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: {[data.toLowerCase()]: opt[type][key][data]}}}});
+            });
+          } else {
+            utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
+          }
+          // utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
         }
       });
     });

@@ -1633,7 +1633,7 @@ describe('S2S Adapter', function () {
         expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext.data.adserver.adSlot\" is undefined', function () {
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext.data.adserver.adslot\" is undefined', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
@@ -1647,7 +1647,7 @@ describe('S2S Adapter', function () {
         expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext.data.adserver.adSlot\" is empty string', function () {
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext.data.adserver.adslot\" is empty string', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
@@ -1655,7 +1655,7 @@ describe('S2S Adapter', function () {
           ext: {
             data: {
               adserver: {
-                adSlot: ''
+                adslot: ''
               }
             }
           }
@@ -1669,7 +1669,7 @@ describe('S2S Adapter', function () {
         expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should send both \"adslot\" and \"name\" from \"imp.ext.data.adserver\" if \"ortb2Imp.ext.data.adserver.adSlot\" and \"ortb2Imp.ext.data.adserver.name\" values are non-empty strings', function () {
+      it('should send both \"adslot\" and \"name\" from \"imp.ext.data.adserver\" if \"ortb2Imp.ext.data.adserver.adslot\" and \"ortb2Imp.ext.data.adserver.name\" values are non-empty strings', function () {
         const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
@@ -1677,7 +1677,7 @@ describe('S2S Adapter', function () {
           ext: {
             data: {
               adserver: {
-                adSlot: '/a/b/c',
+                adslot: '/a/b/c',
                 name: 'adserverName1'
               }
             }

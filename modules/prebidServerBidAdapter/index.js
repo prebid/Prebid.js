@@ -623,7 +623,7 @@ const OPEN_RTB_PROTOCOL = {
           /**
            * Copy GAM AdUnit and Name to imp
            */
-          ['name', 'adSlot'].forEach(name => {
+          ['name', 'adslot'].forEach(name => {
             /** @type {(string|undefined)} */
             const value = utils.deepAccess(ortb2, `adserver.${name}`);
             if (typeof value === 'string' && value) {

@@ -870,15 +870,14 @@ function addVideoParameters(data, bidRequest) {
 
 function applyFPD(bidRequest, mediaType, data) {
   const BID_FPD = {
-    user: {...bidRequest.params.visitor},
-    site: {...bidRequest.params.inventory}
+    user: {ext: {data: {...bidRequest.params.visitor}}},
+    site: {ext: {data: {...bidRequest.params.inventory}}}
   };
 
   if (bidRequest.params.keywords) BID_FPD.site.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
   let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
   let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
-  let revisedImpData = {};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key) {
     if (typeof prop === 'object' && !Array.isArray(prop)) {
@@ -899,13 +898,11 @@ function applyFPD(bidRequest, mediaType, data) {
 
   Object.keys(impData).forEach((key) => {
     if (key === 'adserver') {
-      ['name', 'adSlot'].forEach(prop => {
-        if (impData[key][prop]) utils.deepSetValue(revisedImpData, `${key}.${prop.toLowerCase()}`, impData[key][prop].replace(/^\/+/, ''));
+      ['name', 'adslot'].forEach(prop => {
+        if (impData[key][prop]) impData[key][prop] = impData[key][prop].replace(/^\/+/, '');
       });
     } else if (key === 'pbadslot') {
-      revisedImpData[key] = impData[key].replace(/^\/+/, '');
-    } else {
-      revisedImpData[key] = impData[key];
+      impData[key] = impData[key].replace(/^\/+/, '');
     }
   });
 
@@ -921,23 +918,15 @@ function applyFPD(bidRequest, mediaType, data) {
         }
       });
     });
-    Object.keys(revisedImpData).forEach((key) => {
-      (key === 'adserver') ? addBannerData(revisedImpData[key].adslot, name, key) : addBannerData(revisedImpData[key], 'site', key);
+    Object.keys(impData).forEach((key) => {
+      (key === 'adserver') ? addBannerData(impData[key].adslot, name, key) : addBannerData(impData[key], 'site', key);
     });
   } else {
-    if (Object.keys(revisedImpData).length) {
-      utils.mergeDeep(data.imp[0].ext, {data: revisedImpData});
+    if (Object.keys(impData).length) {
+      utils.mergeDeep(data.imp[0].ext, {data: impData});
     }
 
-    ['site', 'user'].forEach(name => {
-      Object.keys(fpd[name]).forEach((key) => {
-        if (key === 'ext' || key === 'keywords') {
-          utils.mergeDeep(data, {[name]: {[key]: fpd[name][key]}});
-        } else {
-          utils.mergeDeep(data, {[name]: {ext: {data: {[key]: fpd[name][key]}}}});
-        }
-      });
-    });
+    utils.mergeDeep(data, fpd);
   }
 }
 
