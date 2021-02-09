@@ -18,6 +18,7 @@ const NB_EXP_DAYS = 30;
 export const ID5_STORAGE_NAME = 'id5id';
 export const ID5_PRIVACY_STORAGE_NAME = `${ID5_STORAGE_NAME}_privacy`;
 const LOCAL_STORAGE = 'html5';
+const ABTEST_RESOLUTION = 10000;
 
 // order the legacy cookie names in reverse priority order so the last
 // cookie in the array is the most preferred to use
@@ -58,27 +59,18 @@ export const id5IdSubmodule = {
     }
 
     // check for A/B testing configuration and hide ID if in Control Group
-    let abConfig = (config && config.params && config.params.abTesting) || { enabled: false };
-    let controlGroup = false;
-    if (
-      abConfig.enabled === true &&
-      (!utils.isNumber(abConfig.controlGroupPct) ||
-        abConfig.controlGroupPct < 0 ||
-        abConfig.controlGroupPct > 1)
-    ) {
+    const abConfig = getAbTestingConfig(config);
+    const controlGroup = isInControlGroup(universalUid, abConfig.controlGroupPct);
+    if (abConfig.enabled === true && typeof controlGroup === 'undefined') {
       // A/B Testing is enabled, but configured improperly, so skip A/B testing
       utils.logError('User ID - ID5 submodule: A/B Testing controlGroupPct must be a number >= 0 and <= 1! Skipping A/B Testing');
-    } else if (
-      abConfig.enabled === true &&
-      Math.random() < abConfig.controlGroupPct
-    ) {
+    } else if (abConfig.enabled === true && controlGroup === true) {
       // A/B Testing is enabled and user is in the Control Group, so do not share the ID5 ID
-      utils.logInfo('User ID - ID5 submodule: A/B Testing Enabled - request is in the Control Group, so the ID5 ID is NOT exposed');
+      utils.logInfo('User ID - ID5 submodule: A/B Testing Enabled - user is in the Control Group, so the ID5 ID is NOT exposed');
       universalUid = linkType = 0;
-      controlGroup = true;
     } else if (abConfig.enabled === true) {
       // A/B Testing is enabled but user is not in the Control Group, so ID5 ID is shared
-      utils.logInfo('User ID - ID5 submodule: A/B Testing Enabled - request is NOT in the Control Group, so the ID5 ID is exposed');
+      utils.logInfo('User ID - ID5 submodule: A/B Testing Enabled - user is NOT in the Control Group, so the ID5 ID is exposed');
     }
 
     let responseObj = {
@@ -91,7 +83,7 @@ export const id5IdSubmodule = {
     };
 
     if (abConfig.enabled === true) {
-      utils.deepSetValue(responseObj, 'id5id.ext.abTestingControlGroup', controlGroup);
+      utils.deepSetValue(responseObj, 'id5id.ext.abTestingControlGroup', (typeof controlGroup === 'undefined' ? false : controlGroup));
     }
 
     return responseObj;
@@ -129,6 +121,10 @@ export const id5IdSubmodule = {
       'us_privacy': uspDataHandler.getConsentData() || '',
       'v': '$prebid.version$'
     };
+
+    if (getAbTestingConfig(config).enabled === true) {
+      utils.deepSetValue(data, 'features.ab', 1);
+    }
 
     const resp = function (callback) {
       const callbacks = {
@@ -170,10 +166,11 @@ export const id5IdSubmodule = {
    *  It's permissible to return neither, one, or both fields.
    * @function extendId
    * @param {SubmoduleConfig} config
+   * @param {ConsentData|undefined} consentData
    * @param {Object} cacheIdObj - existing id, if any
    * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */
-  extendId(config, cacheIdObj) {
+  extendId(config, consentData, cacheIdObj) {
     const partnerId = (config && config.params && config.params.partner) || 0;
     incrementNb(partnerId);
     return cacheIdObj;
@@ -280,6 +277,43 @@ export function getFromLocalStorage(key) {
 export function storeInLocalStorage(key, value, expDays) {
   storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
   storage.setDataInLocalStorage(`${key}`, value);
+}
+
+/**
+ * gets the existing abTesting config or generates a default config with abTesting off
+ *
+ * @param {SubmoduleConfig|undefined} config
+ * @returns {(Object|undefined)}
+ */
+function getAbTestingConfig(config) {
+  return (config && config.params && config.params.abTesting) || { enabled: false };
+}
+
+/**
+ * Return a consistant random number between 0 and ABTEST_RESOLUTION-1 for this user
+ * Falls back to plain random if no user provided
+ * @param {string} userId
+ * @returns {number}
+ */
+function abTestBucket(userId) {
+  if (userId) {
+    return ((utils.cyrb53Hash(userId) % ABTEST_RESOLUTION) + ABTEST_RESOLUTION) % ABTEST_RESOLUTION;
+  } else {
+    return Math.floor(Math.random() * ABTEST_RESOLUTION);
+  }
+}
+
+/**
+ * Return a consistant boolean if this user is within the control group ratio provided
+ * @param {string} userId
+ * @param {number} controlGroupPct - Ratio [0,1] of users expected to be in the control group
+ * @returns {boolean}
+ */
+export function isInControlGroup(userId, controlGroupPct) {
+  if (!utils.isNumber(controlGroupPct) || controlGroupPct < 0 || controlGroupPct > 1) {
+    return undefined;
+  }
+  return abTestBucket(userId) < controlGroupPct * ABTEST_RESOLUTION;
 }
 
 submodule('userId', id5IdSubmodule);
