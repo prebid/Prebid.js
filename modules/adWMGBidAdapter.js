@@ -51,14 +51,14 @@ export const spec = {
         code: bidRequest.adUnitCode,
         bids: {
           bidder: bidRequest.bidder,
-          params: bidRequest.params
+          params: {
+            publisherId: bidRequest.params.publisherId,
+            IABCategories: bidRequest.params.IABCategories || [],
+            floorCPM: bidRequest.params.floorCPM ? checkFloorValue(bidRequest.params.floorCPM) : 0
+          }
         },
         mediaTypes: bidRequest.mediaTypes
       };
-
-      if (adUnit.bids.params.floorCPM) {
-        adUnit.bids.params.floorCPM = checkFloorValue(adUnit.bids.params.floorCPM);
-      }
 
       if (bidRequest.hasOwnProperty('sizes') && bidRequest.sizes.length > 0) {
         adUnit.sizes = bidRequest.sizes;
