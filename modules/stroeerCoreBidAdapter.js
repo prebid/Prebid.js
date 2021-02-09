@@ -209,7 +209,8 @@ export const spec = {
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
-      ab: win['yieldlove_ab']
+      ab: win['yieldlove_ab'],
+      kvg: getGlobalKeyValues()
     };
 
     const userIds = anyBid.userId;
@@ -220,7 +221,6 @@ export const spec = {
     }
 
     const gdprConsent = bidderRequest.gdprConsent;
-
     if (gdprConsent && gdprConsent.consentString != null && gdprConsent.gdprApplies != null) {
       commonPayload.gdpr = {
         consent: gdprConsent.consentString, applies: gdprConsent.gdprApplies
@@ -243,7 +243,8 @@ export const spec = {
         viz: elementInView(bidRequest.adUnitCode),
         vid: createVideoObject(bidRequest),
         ban: createBannerObject(bidRequest),
-        ctx: getContextFromSDG(bidRequest)
+        ctx: getContextFromSDG(bidRequest),
+        kvl: getLocalKeyValues(bidRequest.adUnitCode),
       }));
 
       return payload;
@@ -324,6 +325,22 @@ export const spec = {
     function getAdUnits(position) {
       try {
         return win.SDG.getCN().getSlotByPosition(position).getAdUnits()
+      } catch (e) {
+        return undefined;
+      }
+    }
+
+    function getGlobalKeyValues() {
+      try {
+        return win.SDG.Publisher.getConfig().getFilteredKeyValues();
+      } catch (e) {
+        return undefined;
+      }
+    }
+
+    function getLocalKeyValues(position) {
+      try {
+        return win.SDG.getCN().getSlotByPosition(position).getFilteredKeyValues();
       } catch (e) {
         return undefined;
       }

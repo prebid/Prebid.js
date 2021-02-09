@@ -1,7 +1,7 @@
-import { assert } from 'chai'
-import { spec } from 'modules/stroeerCoreBidAdapter.js'
-import * as utils from 'src/utils.js'
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js'
+import {assert} from 'chai';
+import {spec} from 'modules/stroeerCoreBidAdapter.js';
+import * as utils from 'src/utils.js';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
@@ -347,7 +347,7 @@ describe('stroeerCore bid adapter', function () {
     assert.deepEqual(spec.supportedMediaTypes, [BANNER, VIDEO]);
   });
 
-  it('should have GDPR vendor list id (gvlid) set on the spec', function() {
+  it('should have GDPR vendor list id (gvlid) set on the spec', function () {
     assert.equal(spec.gvlid, 136);
   });
 
@@ -594,8 +594,82 @@ describe('stroeerCore bid adapter', function () {
         assert.deepEqual(actualJsonPayload, expectedJsonPayload);
       });
 
+      it('should have expected global key values', () => {
+        win.SDG = buildFakeSDGForGlobalKeyValues({
+          adset: ['brsl'],
+          browserapp: ['chrome'],
+        });
+
+        const bidReq = buildBidderRequest();
+
+        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+        assert.deepEqual(serverRequestInfo.data.kvg, {
+          adset: ['brsl'],
+          browserapp: ['chrome'],
+        });
+
+        function buildFakeSDGForGlobalKeyValues(keyValues) {
+          return {
+            Publisher: {
+              getConfig: function() {
+                return {
+                  getFilteredKeyValues: function() {
+                    return keyValues;
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      it('should have expected local key values', () => {
+        win.SDG = buildFakeSDGForLocalKeyValues({
+          'div-1': {
+            as: ['banner'],
+            hb_unit: ['banner'],
+            pc: ['1'],
+          },
+          'div-2': {
+            as: ['bannerer'],
+            hb_unit: ['bannerer'],
+            pc: ['2'],
+          }
+        });
+
+        const bidReq = buildBidderRequest();
+        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+        assert.deepEqual(serverRequestInfo.data.bids[0].kvl, {
+          as: ['banner'],
+          hb_unit: ['banner'],
+          pc: ['1'],
+        });
+
+        assert.deepEqual(serverRequestInfo.data.bids[1].kvl, {
+          as: ['bannerer'],
+          hb_unit: ['bannerer'],
+          pc: ['2'],
+        });
+
+        function buildFakeSDGForLocalKeyValues(localTargeting) {
+          return {
+            getCN: function () {
+              return {
+                getSlotByPosition: function (position) {
+                  return {
+                    getFilteredKeyValues: () => localTargeting[position]
+                  };
+                }
+              };
+            }
+          }
+        }
+      });
+
       it('should have expected context', () => {
-        win.SDG = buildFakeSDG({
+        win.SDG = buildFakeSDGContext({
           'div-1': {
             adUnits: ['adUnit-1', 'adUnit-2'],
             zone: 'zone-1',
@@ -625,7 +699,7 @@ describe('stroeerCore bid adapter', function () {
           'pageType': 'pageType-2'
         });
 
-        function buildFakeSDG(config) {
+        function buildFakeSDGContext(config) {
           return {
             getCN: function () {
               return {
