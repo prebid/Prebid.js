@@ -14,7 +14,7 @@ describe('permutiveRtdProvider', function () {
 
   describe('permutiveSubmodule', function () {
     it('should initalise and return true', function () {
-      expect(permutiveSubmodule.init()).to.equal(true);
+      expect(permutiveSubmodule.init()).to.equal(true)
     })
   })
 
@@ -27,7 +27,7 @@ describe('permutiveRtdProvider', function () {
       const max = 1
       const segments = getSegments(max)
 
-      for (let key in segments) {
+      for (const key in segments) {
         expect(segments[key]).to.have.length(max)
       }
     })
@@ -131,34 +131,34 @@ describe('permutiveRtdProvider', function () {
 
   describe('Permutive on page', function () {
     it('checks if Permutive is on page', function () {
-      expect(isPermutiveOnPage()).to.be.false
+      expect(isPermutiveOnPage()).to.equal(false)
     })
   })
 
   describe('AC is enabled', function () {
     it('checks if AC is enabled for Xandr', function () {
-      expect(isAcEnabled({ params: { acBidders: ['appnexus'] } }, 'appnexus')).to.be.true
-      expect(isAcEnabled({ params: { acBidders: ['kjdbfkvb'] } }, 'appnexus')).to.be.false
+      expect(isAcEnabled({ params: { acBidders: ['appnexus'] } }, 'appnexus')).to.equal(true)
+      expect(isAcEnabled({ params: { acBidders: ['kjdbfkvb'] } }, 'appnexus')).to.equal(false)
     })
     it('checks if AC is enabled for Magnite', function () {
-      expect(isAcEnabled({ params: { acBidders: ['rubicon'] } }, 'rubicon')).to.be.true
-      expect(isAcEnabled({ params: { acBidders: ['kjdbfkb'] } }, 'rubicon')).to.be.false
+      expect(isAcEnabled({ params: { acBidders: ['rubicon'] } }, 'rubicon')).to.equal(true)
+      expect(isAcEnabled({ params: { acBidders: ['kjdbfkb'] } }, 'rubicon')).to.equal(false)
     })
     it('checks if AC is enabled for Ozone', function () {
-      expect(isAcEnabled({ params: { acBidders: ['ozone'] } }, 'ozone')).to.be.true
-      expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ozone')).to.be.false
+      expect(isAcEnabled({ params: { acBidders: ['ozone'] } }, 'ozone')).to.equal(true)
+      expect(isAcEnabled({ params: { acBidders: ['kjdvb'] } }, 'ozone')).to.equal(false)
     })
   })
 })
 
 function setLocalStorage (data) {
-  for (let key in data) {
+  for (const key in data) {
     storage.setDataInLocalStorage(key, JSON.stringify(data[key]))
   }
 }
 
 function removeLocalStorage (data) {
-  for (let key in data) {
+  for (const key in data) {
     storage.removeDataFromLocalStorage(key)
   }
 }

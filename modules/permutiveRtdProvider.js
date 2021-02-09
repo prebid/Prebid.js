@@ -118,7 +118,7 @@ function getDefaultBidderFn (bidder) {
 }
 
 export function isAcEnabled (config, bidder) {
-  const acBidders = deepAccess(config, `params.acBidders`) || []
+  const acBidders = deepAccess(config, 'params.acBidders') || []
   return includes(acBidders, bidder)
 }
 
