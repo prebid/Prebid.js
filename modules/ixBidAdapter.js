@@ -511,7 +511,8 @@ function buildIXDiag(validBidRequests) {
     nu: 0,
     ou: 0,
     allU: 0,
-    ren: false
+    ren: false,
+    version: '$prebid.version$'
   };
 
   // create ad unit map and collect the required diag properties
