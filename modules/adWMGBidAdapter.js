@@ -1,9 +1,15 @@
 'use strict';
 
 import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
+import {
+  registerBidder
+} from '../src/adapters/bidderFactory.js';
+import {
+  config
+} from '../src/config.js';
+import {
+  BANNER
+} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adWMG';
 const ENDPOINT = 'https://rtb.adwmg.com/prebid';
@@ -34,6 +40,13 @@ export const spec = {
     const additional = spec.parseUserAgent(ua);
 
     return validBidRequests.map(bidRequest => {
+
+      const checkFloorValue = (value) => {
+        if (isNaN(parseFloat(value))) {
+          return 0;
+        } else return parseFloat(value);
+      }
+
       const adUnit = {
         code: bidRequest.adUnitCode,
         bids: {
@@ -42,6 +55,10 @@ export const spec = {
         },
         mediaTypes: bidRequest.mediaTypes
       };
+
+      if (adUnit.bids.params.floorCPM) {
+        adUnit.bids.params.floorCPM = checkFloorValue(adUnit.bids.params.floorCPM);
+      }
 
       if (bidRequest.hasOwnProperty('sizes') && bidRequest.sizes.length > 0) {
         adUnit.sizes = bidRequest.sizes;
@@ -159,60 +176,60 @@ export const spec = {
         options: [],
         header: [navigator.platform, ua, navigator.appVersion, navigator.vendor, window.opera],
         dataos: [{
-          name: 'Windows Phone',
-          value: 'Windows Phone',
-          version: 'OS'
-        },
-        {
-          name: 'Windows',
-          value: 'Win',
-          version: 'NT'
-        },
-        {
-          name: 'iOS',
-          value: 'iPhone',
-          version: 'OS'
-        },
-        {
-          name: 'iOS',
-          value: 'iPad',
-          version: 'OS'
-        },
-        {
-          name: 'Kindle',
-          value: 'Silk',
-          version: 'Silk'
-        },
-        {
-          name: 'Android',
-          value: 'Android',
-          version: 'Android'
-        },
-        {
-          name: 'PlayBook',
-          value: 'PlayBook',
-          version: 'OS'
-        },
-        {
-          name: 'BlackBerry',
-          value: 'BlackBerry',
-          version: '/'
-        },
-        {
-          name: 'Macintosh',
-          value: 'Mac',
-          version: 'OS X'
-        },
-        {
-          name: 'Linux',
-          value: 'Linux',
-          version: 'rv'
-        },
-        {
-          name: 'Palm',
-          value: 'Palm',
-          version: 'PalmOS'
-        }
+            name: 'Windows Phone',
+            value: 'Windows Phone',
+            version: 'OS'
+          },
+          {
+            name: 'Windows',
+            value: 'Win',
+            version: 'NT'
+          },
+          {
+            name: 'iOS',
+            value: 'iPhone',
+            version: 'OS'
+          },
+          {
+            name: 'iOS',
+            value: 'iPad',
+            version: 'OS'
+          },
+          {
+            name: 'Kindle',
+            value: 'Silk',
+            version: 'Silk'
+          },
+          {
+            name: 'Android',
+            value: 'Android',
+            version: 'Android'
+          },
+          {
+            name: 'PlayBook',
+            value: 'PlayBook',
+            version: 'OS'
+          },
+          {
+            name: 'BlackBerry',
+            value: 'BlackBerry',
+            version: '/'
+          },
+          {
+            name: 'Macintosh',
+            value: 'Mac',
+            version: 'OS X'
+          },
+          {
+            name: 'Linux',
+            value: 'Linux',
+            version: 'rv'
+          },
+          {
+            name: 'Palm',
+            value: 'Palm',
+            version: 'PalmOS'
+          }
         ],
         init: function () {
           var agent = this.header.join(' ');
@@ -295,7 +312,11 @@ export const spec = {
       }
     }
 
-    return {devicetype: detectDevice(), os: detectOs().os, osv: detectOs().osv}
+    return {
+      devicetype: detectDevice(),
+      os: detectOs().os,
+      osv: detectOs().osv
+    }
   }
 }
 registerBidder(spec);
