@@ -115,7 +115,41 @@ describe('Smart bid adapter tests', function () {
       ttl: 300,
       adUrl: 'http://awesome.fake.url',
       ad: '< --- awesome script --- >',
-      cSyncUrl: 'http://awesome.fake.csync.url'
+      cSyncUrl: 'http://awesome.fake.csync.url',
+      isNoAd: false
+    }
+  };
+
+  var BID_RESPONSE_IS_NO_AD = {
+    body: {
+      cpm: 12,
+      width: 300,
+      height: 250,
+      creativeId: 'zioeufg',
+      currency: 'GBP',
+      isNetCpm: true,
+      ttl: 300,
+      adUrl: 'http://awesome.fake.url',
+      ad: '< --- awesome script --- >',
+      cSyncUrl: 'http://awesome.fake.csync.url',
+      isNoAd: true
+    }
+  };
+
+  var BID_RESPONSE_IMAGE_SYNC = {
+    body: {
+      cpm: 12,
+      width: 300,
+      height: 250,
+      creativeId: 'zioeufg',
+      currency: 'GBP',
+      isNetCpm: true,
+      ttl: 300,
+      adUrl: 'http://awesome.fake.url',
+      ad: '< --- awesome script --- >',
+      cSyncUrl: 'http://awesome.fake.csync.url',
+      isNoAd: false,
+      dspPixels: ['pixelOne', 'pixelTwo', 'pixelThree']
     }
   };
 
@@ -147,6 +181,18 @@ describe('Smart bid adapter tests', function () {
     expect(requestContent).to.have.property('buid').and.to.equal('7569');
     expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
     expect(requestContent).to.have.property('ckid').and.to.equal(42);
+  });
+
+  it('Verify parse response with no ad', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS);
+    const bids = spec.interpretResponse(BID_RESPONSE_IS_NO_AD, request[0]);
+    expect(bids).to.have.lengthOf(0);
+
+    expect(function () {
+      spec.interpretResponse(BID_RESPONSE_IS_NO_AD, {
+        data: 'invalid Json'
+      })
+    }).to.not.throw();
   });
 
   it('Verify parse response', function () {
@@ -254,6 +300,27 @@ describe('Smart bid adapter tests', function () {
 
     syncs = spec.getUserSyncs({
       iframeEnabled: true
+    }, []);
+    expect(syncs).to.have.lengthOf(0);
+  });
+
+  it('Verifies user sync using dspPixels', function () {
+    var syncs = spec.getUserSyncs({
+      iframeEnabled: false,
+      pixelEnabled: true
+    }, [BID_RESPONSE_IMAGE_SYNC]);
+    expect(syncs).to.have.lengthOf(3);
+    expect(syncs[0].type).to.equal('image');
+
+    syncs = spec.getUserSyncs({
+      iframeEnabled: false,
+      pixelEnabled: false
+    }, [BID_RESPONSE_IMAGE_SYNC]);
+    expect(syncs).to.have.lengthOf(0);
+
+    syncs = spec.getUserSyncs({
+      iframeEnabled: false,
+      pixelEnabled: true
     }, []);
     expect(syncs).to.have.lengthOf(0);
   });
