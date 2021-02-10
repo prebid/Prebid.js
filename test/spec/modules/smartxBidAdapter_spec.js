@@ -493,7 +493,7 @@ describe('The smartx adapter', function () {
       };
     });
 
-    it('should attempt to insert the EASI script', function () {
+    it('should attempt to insert the script', function () {
       var scriptTag;
       sinon.stub(window.document, 'getElementById').returns({
         appendChild: sinon.stub().callsFake(function (script) {
