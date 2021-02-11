@@ -476,7 +476,7 @@ function getBidFloor(bidRequest, mediaType) {
   }
   let floor = floorInfo.floor || bidRequest.params.customFloor || 0;
 
-  return Math.round(floor * 1000); // normalize to microCpm
+  return Math.round(floor * 1000); // normalize to micro currency
 }
 
 registerBidder(spec);
