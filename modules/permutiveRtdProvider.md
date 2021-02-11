@@ -12,7 +12,7 @@ You then need to enable the Permutive RTD in your Prebid configuration, using th
 pbjs.setConfig({
   ...,
   realTimeData: {
-    auctionDelay: 700, // optional auction delay
+    auctionDelay: 50, // optional auction delay
     dataProviders: [{
       name: 'permutive',
       waitForIt: true, // should be true if there's an `auctionDelay`
@@ -57,7 +57,7 @@ You can overwrite the default bidder function, for example to include a differen
 pbjs.setConfig({
   ...,
   realTimeData: {
-    auctionDelay: 800,
+    auctionDelay: 50,
     dataProviders: [{
       name: 'permutive',
       waitForIt: true,
