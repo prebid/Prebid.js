@@ -153,7 +153,7 @@ export const spec = {
         test: config.getConfig('debug') ? 1 : 0,
         cur: ['USD'],
         source: {
-          tid: bidRequest.transactionId
+          tid: bidRequest.auctionId
         },
         tmax: bidderRequest.timeout,
         imp: [{
