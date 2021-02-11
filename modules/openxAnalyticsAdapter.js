@@ -46,6 +46,8 @@ const UTM_TO_CAMPAIGN_PROPERTIES = {
  * @property {string} orgId
  * @property {string} publisherPlatformId
  * @property {number} publisherAccountId
+ * @property {string} configId
+ * @property {string} optimizerConfig
  * @property {number} sampling
  * @property {Object} campaign
  * @property {number} payloadWaitTime
@@ -139,6 +141,8 @@ function isValidConfig({options: analyticsOptions}) {
     ['orgId', 'string', hasOrgId],
     ['publisherPlatformId', 'string', !hasOrgId],
     ['publisherAccountId', 'number', !hasOrgId],
+    ['configId', 'string', false],
+    ['optimizerConfig', 'string', false],
     ['sampling', 'number', false],
     ['adIdKey', 'string', false],
     ['payloadWaitTime', 'number', false],
@@ -603,7 +607,7 @@ function getAuctionByGoogleTagSLot(slot) {
 
 function buildAuctionPayload(auction) {
   let {startTime, endTime, state, timeout, auctionOrder, userIds, adUnitCodeToAdUnitMap} = auction;
-  let {orgId, publisherPlatformId, publisherAccountId, campaign} = analyticsConfig;
+  let {orgId, publisherPlatformId, publisherAccountId, campaign, testCode, configId, optimizerConfig} = analyticsConfig;
 
   return {
     adapterVersion: ADAPTER_VERSION,
@@ -611,6 +615,8 @@ function buildAuctionPayload(auction) {
     orgId,
     publisherPlatformId,
     publisherAccountId,
+    configId,
+    optimizerConfig,
     campaign,
     state,
     startTime,
@@ -620,7 +626,7 @@ function buildAuctionPayload(auction) {
     deviceType: detectMob() ? 'Mobile' : 'Desktop',
     deviceOSType: detectOS(),
     browser: detectBrowser(),
-    testCode: analyticsConfig.testCode,
+    testCode: testCode,
     // return an array of module name that have user data
     userIdProviders: buildUserIdProviders(userIds),
     adUnits: buildAdUnitsPayload(adUnitCodeToAdUnitMap),
