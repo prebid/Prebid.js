@@ -64,17 +64,23 @@ describe('Tappx adapter tests', function () {
   });
 
   describe('interpretResponse', function () {
-    const serverResponse = {'body': {'id': '1c54b4f1-645f-44e6-b8ae-5d43c923ef1c', 'bidid': 'bid3811165568213389257', 'seatbid': [{'seat': '1', 'group': 0, 'bid': [{'id': '3811165568213389257', 'impid': 1, 'price': 0.05, 'adm': "<!-- Tappx Test AD :: 320x480 --><a href='http://www.tappx.com' target=\"_blank\">\t<img src='https://testing.ssp.tappx.com/zcdn/creatives/interstitial320x480.gif'></a>", 'w': 320, 'h': 480, 'lurl': 'http://testing.ssp.tappx.com/rtb/RTBv2Loss?id=3811165568213389257&ep=ZZ1234PBJS&au=test&bu=localhost&sz=320x480&pu=0.005&pt=0.01&cid=&crid=&adv=&aid=${AUCTION_ID}&bidid=${AUCTION_BID_ID}&impid=${AUCTION_IMP_ID}&sid=${AUCTION_SEAT_ID}&adid=${AUCTION_AD_ID}&ap=${AUCTION_PRICE}&cur=${AUCTION_CURRENCY}&mbr=${AUCTION_MBR}&l=${AUCTION_LOSS}', 'cid': '01744fbb521e9fb10ffea926190effea', 'crid': 'a13cf884e66e7c660afec059c89d98b6', 'adomain': []}]}], 'cur': 'USD'}, 'headers': {}};
     const bidRequest = {
       data: {},
       bids: [ {'bidder': 'tappx', 'params': {'host': 'testing.ssp.tappx.com', 'tappxkey': 'pub-1234-android-1234', 'endpoint': 'ZZ1234PBJS', 'bidfloor': 0.05, 'api': [3, 5]}, 'crumbs': {'pubcid': 'df2144f7-673f-4440-83f5-cd4a73642d99'}, 'fpd': {'context': {'adServer': {'name': 'gam', 'adSlot': '/19968336/header-bid-tag-0'}, 'pbAdSlot': '/19968336/header-bid-tag-0'}}, 'mediaTypes': {'banner': {'sizes': [[320, 480]]}}, 'adUnitCode': 'div-1', 'transactionId': '47dd44e8-e7db-417c-a8f1-621a2e1a117d', 'sizes': [[320, 480]], 'bidId': '2170932097e505', 'bidderRequestId': '140ba7a1ab7aeb', 'auctionId': '1c54b4f1-645f-44e6-b8ae-5d43c923ef1c', 'src': 'client', 'bidRequestsCount': 1, 'bidderRequestsCount': 1, 'bidderWinsCount': 0} ]
     };
 
+    const serverResponse = {'body': {'id': '1c54b4f1-645f-44e6-b8ae-5d43c923ef1c', 'bidid': 'bid3811165568213389257', 'seatbid': [{'seat': '1', 'group': 0, 'bid': [{'id': '3811165568213389257', 'impid': 1, 'price': 0.05, 'adm': "<!-- Tappx Test AD :: 320x480 --><a href='http://www.tappx.com' target=\"_blank\">\t<img src='https://testing.ssp.tappx.com/zcdn/creatives/interstitial320x480.gif'></a>", 'w': 320, 'h': 480, 'lurl': 'http://testing.ssp.tappx.com/rtb/RTBv2Loss?id=3811165568213389257&ep=ZZ1234PBJS&au=test&bu=localhost&sz=320x480&pu=0.005&pt=0.01&cid=&crid=&adv=&aid=${AUCTION_ID}&bidid=${AUCTION_BID_ID}&impid=${AUCTION_IMP_ID}&sid=${AUCTION_SEAT_ID}&adid=${AUCTION_AD_ID}&ap=${AUCTION_PRICE}&cur=${AUCTION_CURRENCY}&mbr=${AUCTION_MBR}&l=${AUCTION_LOSS}', 'cid': '01744fbb521e9fb10ffea926190effea', 'crid': 'a13cf884e66e7c660afec059c89d98b6', 'adomain': []}]}], 'cur': 'USD'}, 'headers': {}};
     it('receive reponse with single placement', function () {
       const bids = spec.interpretResponse(serverResponse, bidRequest);
       const bid = bids[0];
       expect(bid.cpm).to.exist;
       expect(bid.ad).to.match(/^<!-- Tappx Test AD/);
+    });
+
+    const emptyServerResponse = {'headers': {}};
+    it('receive reponse without ad', function () {
+      const bids = spec.interpretResponse(emptyServerResponse, bidRequest);
+      expect(bids).to.have.lengthOf(0);
     });
   });
 });

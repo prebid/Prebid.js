@@ -8,7 +8,7 @@ Maintainer: prebid@tappx.com
 # Description
 Module that connects to :tappx demand sources.
 Please use ```tappx``` as the bidder code.
-Ads sizes available: [320,50], [320,250], [320,480]
+Ads sizes available: [320,50], [300,250], [320,480], [1024,768], [728,90]
 
 # Banner Test Parameters
 ```
@@ -17,7 +17,7 @@ Ads sizes available: [320,50], [320,250], [320,480]
                 code: 'banner-ad-div',
                 mediaTypes: {
                     banner: {
-                        sizes: [320,50]
+                        sizes: [[320,50]]
                     }
                 },
                 bids: [
