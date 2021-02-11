@@ -47,8 +47,6 @@ const UTM_TO_CAMPAIGN_PROPERTIES = {
  * @property {string} publisherPlatformId
  * @property {number} publisherAccountId
  * @property {number} sampling
- * @property {boolean} enableV2
- * @property {boolean} testPipeline
  * @property {Object} campaign
  * @property {number} payloadWaitTime
  * @property {number} payloadWaitTimePadding
@@ -142,8 +140,6 @@ function isValidConfig({options: analyticsOptions}) {
     ['publisherPlatformId', 'string', !hasOrgId],
     ['publisherAccountId', 'number', !hasOrgId],
     ['sampling', 'number', false],
-    ['enableV2', 'boolean', false],
-    ['testPipeline', 'boolean', false],
     ['adIdKey', 'string', false],
     ['payloadWaitTime', 'number', false],
     ['payloadWaitTimePadding', 'number', false],
@@ -271,7 +267,7 @@ function prebidAnalyticsEventHandler({eventType, args}) {
  * @property {Array<BidResponse>} bidsReceived //: []
  * @property {Array<BidResponse>} winningBids //: []
  * @property {number} timeout //: 3000
- * @property {Object} config //: {publisherPlatformId: "a3aece0c-9e80-4316-8deb-faf804779bd1", publisherAccountId: 537143056, sampling: 1, enableV2: true}/*
+ * @property {Object} config //: {publisherPlatformId: "a3aece0c-9e80-4316-8deb-faf804779bd1", publisherAccountId: 537143056, sampling: 1}/*
  */
 
 function onAuctionInit({auctionId, timestamp: startTime, timeout, adUnitCodes}) {

@@ -63,7 +63,6 @@ describe('openx analytics adapter', function() {
       publisherAccountId: 123,
       publisherPlatformId: 'test-platform-id',
       sample: 1.0,
-      enableV2: true,
       payloadWaitTime: SLOT_LOAD_WAIT_TIME,
       payloadWaitTimePadding: SLOT_LOAD_WAIT_TIME
     };
