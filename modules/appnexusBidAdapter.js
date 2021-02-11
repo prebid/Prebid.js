@@ -1,5 +1,6 @@
 import { Renderer } from '../src/Renderer.js';
 import * as utils from '../src/utils.js';
+import * as tools from '../src/marfeelTools.js';
 import { config } from '../src/config.js';
 import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
@@ -45,7 +46,7 @@ const storage = getStorageManager(GVLID, BIDDER_CODE);
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtmMbid', 'adasta', 'beintoo'],
+  aliases: ['appnexusAst', 'brealtime', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'adasta', 'beintoo', 'appnexus_client'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -171,7 +172,7 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+        rd_ref: encodeURIComponent(tools.getPageUrl(bidRequests[0], bidderRequest)),
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')

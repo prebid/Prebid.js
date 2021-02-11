@@ -818,6 +818,7 @@ function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['pubmatic_client'],
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**

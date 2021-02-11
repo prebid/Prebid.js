@@ -325,8 +325,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 }
 
 export const spec = {
-
   code: BIDDER_CODE,
+  aliases: ['ix_client'],
   gvlid: 10,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 

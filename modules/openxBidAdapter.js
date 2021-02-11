@@ -23,6 +23,7 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['openx_client'],
   gvlid: 69,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
