@@ -341,21 +341,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
     queryParams.tps = customParamsForAllBids.join(',');
   }
 
-  let customFloorsForAllBids = [];
-  let hasCustomFloor = false;
-  bids.forEach(function (bid) {
-    let floor = getBidFloor(bid, BANNER);
-
-    if (floor) {
-      customFloorsForAllBids.push(floor);
-      hasCustomFloor = true;
-    } else {
-      customFloorsForAllBids.push(0);
-    }
-  });
-  if (hasCustomFloor) {
-    queryParams.aumfs = customFloorsForAllBids.join(',');
-  }
+  enrichQueryWithFloors(queryParams, bids);
 
   let url = queryParams.ph
     ? `https://u.openx.net/w/1.0/arj`
@@ -461,6 +447,24 @@ function createVideoBidResponses(response, {bid, startTime}) {
   }
 
   return bidResponses;
+}
+
+function enrichQueryWithFloors(queryParams, bids) {
+  let customFloorsForAllBids = [];
+  let hasCustomFloor = false;
+  bids.forEach(function (bid) {
+    let floor = getBidFloor(bid, BANNER);
+
+    if (floor) {
+      customFloorsForAllBids.push(floor);
+      hasCustomFloor = true;
+    } else {
+      customFloorsForAllBids.push(0);
+    }
+  });
+  if (hasCustomFloor) {
+    queryParams.aumfs = customFloorsForAllBids.join(',');
+  }
 }
 
 function getBidFloor(bidRequest, mediaType) {
