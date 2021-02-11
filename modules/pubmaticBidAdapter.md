@@ -26,7 +26,7 @@ var adUnits = [
       params: {
         publisherId: '156209',               // required, must be wrapped in quotes
         oustreamAU: 'renderer_test_pubmatic',   // required if mediaTypes-> video-> context is 'outstream' and optional if renderer is defined in adUnits or in mediaType video. This value can be get by BlueBillyWig Team.
-        adSlot: 'pubmatic_test2',            // optional
+        adSlot: 'pubmatic_test2',            // optional, must be wrapped in quotes
         pmzoneid: 'zone1, zone11',           // optional
         lat: '40.712775',                    // optional
         lon: '-74.005973',                   // optional
