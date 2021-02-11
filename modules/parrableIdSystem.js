@@ -6,6 +6,7 @@
  */
 
 import * as utils from '../src/utils.js'
+import find from 'core-js-pure/features/array/find.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -138,10 +139,8 @@ function shouldFilterImpression(configParams, parrableId) {
 
   function isZoneListed(list, zone) {
     // IE does not provide a timeZone in IANA format so zone will be empty
-    const listLowered = list && list.map(zone => zone.toLowerCase());
-    if (list && zone) {
-      return utils.contains(listLowered, zone.toLowerCase());
-    }
+    const zoneLowercase = zone && zone.toLowerCase();
+    return !!(list && zone && find(list, zn => zn.toLowerCase() === zoneLowercase));
   }
 
   function isAllowed() {
