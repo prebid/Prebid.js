@@ -21,6 +21,7 @@ const VIDEO_MAPPING = {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
+  aliases: ['dmx'],
   supportedFormat: [BANNER, VIDEO],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid(bid) {
@@ -43,7 +44,7 @@ export const spec = {
               nBid.height = nBid.h || height;
               nBid.ttl = 300;
               nBid.mediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner';
-              if (nBid.mediaType && nBid.mediaType === 'video') {
+              if (nBid.mediaType === 'video') {
                 nBid.vastXml = cleanVast(nBid.adm, nBid.nurl);
                 nBid.ttl = 3600;
               }
