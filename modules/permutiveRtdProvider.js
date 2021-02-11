@@ -1,7 +1,7 @@
 /**
  * This module adds permutive provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
- * The module will add custom targeting to ad units of specific partners
+ * The module will add custom segment targeting to ad units of specific bidders
  * @module modules/permutiveRtdProvider
  * @requires module:modules/realTimeData
  */
@@ -18,10 +18,10 @@ function init (config, userConsent) {
 }
 
 /**
-* Set targeting from cache and then try to wait for Permutive
-* to initialise to get realtime targeting
+* Set segment targeting from cache and then try to wait for Permutive
+* to initialise to get realtime segment targeting
 */
-export function initTargeting (reqBidsConfigObj, callback, customConfig) {
+export function initSegments (reqBidsConfigObj, callback, customConfig) {
   const permutiveOnPage = isPermutiveOnPage()
   const config = mergeDeep({
     waitForIt: false,
@@ -32,11 +32,11 @@ export function initTargeting (reqBidsConfigObj, callback, customConfig) {
     }
   }, customConfig)
 
-  setTargeting(reqBidsConfigObj, config)
+  setSegments(reqBidsConfigObj, config)
 
   if (config.waitForIt && permutiveOnPage) {
     window.permutive.ready(function () {
-      setTargeting(reqBidsConfigObj, config)
+      setSegments(reqBidsConfigObj, config)
       callback()
     }, 'realtime')
   } else {
@@ -44,7 +44,7 @@ export function initTargeting (reqBidsConfigObj, callback, customConfig) {
   }
 }
 
-function setTargeting (reqBidsConfigObj, config) {
+function setSegments (reqBidsConfigObj, config) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits
   const data = getSegments(config.params.maxSegs)
   const utils = { deepSetValue, deepAccess, isFn, mergeDeep }
@@ -79,7 +79,7 @@ function getCustomBidderFn (config, bidder) {
 
 /**
 * Returns a function that receives a `bid` object, a `data` object and a `acEnabled` boolean
-* and which will set the right targeting keys for `bid` based on `data` and `acEnabled`
+* and which will set the right segment targeting keys for `bid` based on `data` and `acEnabled`
 * @param {string} bidder
 * @param {object} data
 */
@@ -164,7 +164,7 @@ function readSegments (key) {
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
   name: 'permutive',
-  getBidRequestData: initTargeting,
+  getBidRequestData: initSegments,
   init: init
 }
 

@@ -1,4 +1,4 @@
-import { permutiveSubmodule, storage, getSegments, initTargeting, isAcEnabled, isPermutiveOnPage } from 'modules/permutiveRtdProvider.js'
+import { permutiveSubmodule, storage, getSegments, initSegments, isAcEnabled, isPermutiveOnPage } from 'modules/permutiveRtdProvider.js'
 import { deepAccess } from '../../../src/utils.js'
 
 describe('permutiveRtdProvider', function () {
@@ -33,13 +33,13 @@ describe('permutiveRtdProvider', function () {
     })
   })
 
-  describe('Default targeting', function () {
-    it('sets targeting for Xandr', function () {
+  describe('Default segment targeting', function () {
+    it('sets segment targeting for Xandr', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
       const config = getConfig()
 
-      initTargeting({ adUnits }, callback, config)
+      initSegments({ adUnits }, callback, config)
 
       function callback () {
         adUnits.forEach(adUnit => {
@@ -54,12 +54,12 @@ describe('permutiveRtdProvider', function () {
         })
       }
     })
-    it('sets targeting for Rubicon', function () {
+    it('sets segment targeting for Rubicon', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
       const config = getConfig()
 
-      initTargeting({ adUnits }, callback, config)
+      initSegments({ adUnits }, callback, config)
 
       function callback () {
         adUnits.forEach(adUnit => {
@@ -74,12 +74,12 @@ describe('permutiveRtdProvider', function () {
         })
       }
     })
-    it('sets targeting for Ozone', function () {
+    it('sets segment targeting for Ozone', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
       const config = getConfig()
 
-      initTargeting({ adUnits }, callback, config)
+      initSegments({ adUnits }, callback, config)
 
       function callback () {
         adUnits.forEach(adUnit => {
@@ -95,8 +95,8 @@ describe('permutiveRtdProvider', function () {
     })
   })
 
-  describe('Custom targeting', function () {
-    it('sets custom targeting for Rubicon', function () {
+  describe('Custom segment targeting', function () {
+    it('sets custom segment targeting for Rubicon', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
       const config = getConfig()
@@ -112,7 +112,7 @@ describe('permutiveRtdProvider', function () {
         }
       }
 
-      initTargeting({ adUnits }, callback, config)
+      initSegments({ adUnits }, callback, config)
 
       function callback () {
         adUnits.forEach(adUnit => {
