@@ -840,7 +840,7 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
  */
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
 
-/** ƒ
+/**ƒ
  * Set Prebid config options.
  * (Added in version 0.27.0).
  *
