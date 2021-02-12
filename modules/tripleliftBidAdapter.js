@@ -322,11 +322,11 @@ function _buildResponseObject(bidderRequest, bid) {
     if (bid.adomain && bid.adomain.length) {
       bidResponse.meta.advertiserDomains = bid.adomain;
     }
-    
+
     if (bid.tl_source && bid.tl_source == 'hdx') {
       bidResponse.meta.mediaType = 'banner';
     }
-    
+
     if (bid.tl_source && bid.tl_source == 'tlx') {
       bidResponse.meta.mediaType = 'native';
     }
