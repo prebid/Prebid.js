@@ -324,11 +324,11 @@ function _buildResponseObject(bidderRequest, bid) {
     }
     
     if (bid.tl_source && bid.tl_source == 'hdx') {
-      bidResponse.meta.mediaType = 'banner'
+      bidResponse.meta.mediaType = 'banner';
     }
     
     if (bid.tl_source && bid.tl_source == 'tlx') {
-      bidResponse.meta.mediaType = 'native'
+      bidResponse.meta.mediaType = 'native';
     }
   };
   return bidResponse;
