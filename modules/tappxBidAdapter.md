@@ -27,7 +27,8 @@ Ads sizes available: [320,50], [300,250], [320,480], [1024,768], [728,90]
                             host: "testing.ssp.tappx.com/rtb/v2/",
                             tappxkey: "pub-1234-android-1234",
                             endpoint: "ZZ1234PBJS",
-                            bidfloor: 0.005
+                            bidfloor: 0.005,
+                            test: true // Optional for testing purposes
                         }
                     }
                 ]

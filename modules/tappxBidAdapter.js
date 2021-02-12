@@ -257,7 +257,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   // > Payload
   payload.id = validBidRequests.auctionId;
-  payload.test = 1;
+  payload.test = utils.deepAccess(validBidRequests, 'params.test') ? 1 : 0;
   payload.at = 1;
   payload.tmax = bidderRequest.timeout ? bidderRequest.timeout : 600;
   payload.bidder = BIDDER_CODE;
