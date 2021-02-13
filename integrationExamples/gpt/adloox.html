@@ -138,6 +138,14 @@
             googletag.cmd.push(function() {
                 pbjs.que.push(function() {
                     pbjs.setConfig({
+                        realTimeData: {
+                            auctionDelay: AUCTION_DELAY,
+                            dataProviders: [
+                                {
+                                    name: 'adloox'
+                                }
+                            ]
+                        },
                         instreamTracking: {
                             enabled: true
                         },
