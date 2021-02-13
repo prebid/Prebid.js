@@ -112,19 +112,21 @@
 
                 var videoBids = bids[videoAdUnit.code];
                 if (videoBids) {
-                    var videoUrl = videoBids.bids[0].vastUrl;
-//                    var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
-//                        adUnit: videoAdUnit,
-//                        params: {
-//                            iu: '/19968336/prebid_cache_video_adunit',
-//                            cust_params: {
-//                                section: 'blog',
-//                                anotherKey: 'anotherValue'
-//                            },
-//                            output: 'vast'
-//                        }
-//                    });
-                    invokeVideoPlayer(videoUrl);
+                    var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                        adUnit: videoAdUnit,
+                        params: {
+                            iu: '/19968336/prebid_cache_video_adunit',
+                            cust_params: {
+                                section: 'blog',
+                                anotherKey: 'anotherValue'
+                            },
+                            output: 'vast'
+                        }
+                    });
+                    pbjs.adServers.adloox.buildVideoUrl({
+                        adUnit: videoAdUnit,
+                        url: videoUrl
+                    }, invokeVideoPlayer);
                 }
             }
 
