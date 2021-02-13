@@ -178,6 +178,30 @@ describe('Adloox Analytics Adapter', function () {
 
         done();
       });
+
+      it('should not inject verification JS on BID_WON when handled via Ad Server module', function (done) {
+        const bidIgnore = utils.deepClone(bid);
+        utils.deepSetValue(bidIgnore, 'ext.adloox.video.adserver', true);
+
+        const parent = document.createElement('div');
+
+        const slot = document.createElement('div');
+        slot.id = bidIgnore.adUnitCode;
+        parent.appendChild(slot);
+
+        const script = document.createElement('script');
+        const createElementStub = sandbox.stub(document, 'createElement');
+        createElementStub.withArgs('script').returns(script);
+
+        const querySelectorStub = sandbox.stub(document, 'querySelector');
+        querySelectorStub.withArgs(`#${bid.adUnitCode}`).returns(slot);
+
+        events.emit(EVENTS.BID_WON, bidIgnore);
+
+        expect(parent.querySelector('script')).is.null;
+
+        done();
+      });
     });
 
     describe('command', function () {
