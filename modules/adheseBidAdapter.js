@@ -24,8 +24,7 @@ export const spec = {
 
     const gdprParams = (gdprConsent && gdprConsent.consentString) ? { xt: [gdprConsent.consentString] } : {};
     const refererParams = (refererInfo && refererInfo.referer) ? { xf: [base64urlEncode(refererInfo.referer)] } : {};
-    const id5Params = (getId5Id(validBidRequests)) ? { x5: [getId5Id(validBidRequests)] } : {};
-    const commonParams = { ...gdprParams, ...refererParams, ...id5Params };
+    const commonParams = { ...gdprParams, ...refererParams };
 
     const slots = validBidRequests.map(bid => ({
       slotname: bidToSlotName(bid),
@@ -34,8 +33,13 @@ export const spec = {
 
     const payload = {
       slots: slots,
-      parameters: commonParams
-    }
+      parameters: commonParams,
+      user: {
+        ext: {
+          eids: getEids(validBidRequests),
+        }
+      }
+    };
 
     const account = getAccount(validBidRequests);
     const uri = 'https://ads-' + account + '.adhese.com/json';
@@ -157,6 +161,12 @@ function getAccount(validBidRequests) {
 function getId5Id(validBidRequests) {
   if (validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.id5id && validBidRequests[0].userId.id5id.uid) {
     return validBidRequests[0].userId.id5id.uid;
+  }
+}
+
+function getEids(validBidRequests) {
+  if (validBidRequests[0] && validBidRequests[0].userIdAsEids) {
+    return validBidRequests[0].userIdAsEids;
   }
 }
 
