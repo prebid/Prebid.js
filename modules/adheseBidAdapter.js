@@ -158,12 +158,6 @@ function getAccount(validBidRequests) {
   return validBidRequests[0].params.account;
 }
 
-function getId5Id(validBidRequests) {
-  if (validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.id5id && validBidRequests[0].userId.id5id.uid) {
-    return validBidRequests[0].userId.id5id.uid;
-  }
-}
-
 function getEids(validBidRequests) {
   if (validBidRequests[0] && validBidRequests[0].userIdAsEids) {
     return validBidRequests[0].userIdAsEids;
