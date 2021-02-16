@@ -3,6 +3,7 @@ import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/ixBidAdapter.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/cygnus';
@@ -355,6 +356,8 @@ describe('IndexexchangeAdapter', function () {
     IDP: 'userIDP000', // IDP
     fabrickId: 'fabrickId9000', // FabrickId
   };
+
+  const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
 
   const DEFAULT_USERID_PAYLOAD = [
     {
@@ -790,7 +793,8 @@ describe('IndexexchangeAdapter', function () {
 
     it('IX adapter reads supported user modules from Prebid and adds it to Video', function () {
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+      // cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
 
@@ -889,7 +893,8 @@ describe('IndexexchangeAdapter', function () {
       };
 
       const cloneValidBid = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA)
+      // cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
 
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = JSON.parse(request.data.r);
@@ -959,7 +964,8 @@ describe('IndexexchangeAdapter', function () {
       };
 
       const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
-      cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+      // cloneValidBid[0].userId = utils.deepClone(DEFAULT_USERID_DATA);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
 
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
 
