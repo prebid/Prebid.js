@@ -154,7 +154,7 @@ export const spec = {
         test: config.getConfig('debug') ? 1 : 0,
         cur: ['USD'],
         source: {
-          tid: bidRequest.auctionId
+          tid: bidRequest.transactionId
         },
         tmax: bidderRequest.timeout,
         imp: [{
@@ -425,7 +425,7 @@ export const spec = {
       'rp_floor': (params.floor = parseFloat(params.floor)) >= 0.01 ? params.floor : undefined,
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
-      'x_source.tid': bidRequest.auctionId,
+      'x_source.tid': bidRequest.transactionId,
       'x_source.pchain': params.pchain,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
