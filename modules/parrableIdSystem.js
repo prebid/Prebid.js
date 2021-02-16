@@ -6,6 +6,7 @@
  */
 
 import * as utils from '../src/utils.js'
+import find from 'core-js-pure/features/array/find.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -137,12 +138,18 @@ function shouldFilterImpression(configParams, parrableId) {
   const offset = (new Date()).getTimezoneOffset() / 60;
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+  function isZoneListed(list, zone) {
+    // IE does not provide a timeZone in IANA format so zone will be empty
+    const zoneLowercase = zone && zone.toLowerCase();
+    return !!(list && zone && find(list, zn => zn.toLowerCase() === zoneLowercase));
+  }
+
   function isAllowed() {
     if (utils.isEmpty(config.allowedZones) &&
       utils.isEmpty(config.allowedOffsets)) {
       return true;
     }
-    if (utils.contains(config.allowedZones, zone)) {
+    if (isZoneListed(config.allowedZones, zone)) {
       return true;
     }
     if (utils.contains(config.allowedOffsets, offset)) {
@@ -156,7 +163,7 @@ function shouldFilterImpression(configParams, parrableId) {
       utils.isEmpty(config.blockedOffsets)) {
       return false;
     }
-    if (utils.contains(config.blockedZones, zone)) {
+    if (isZoneListed(config.blockedZones, zone)) {
       return true;
     }
     if (utils.contains(config.blockedOffsets, offset)) {
@@ -165,7 +172,7 @@ function shouldFilterImpression(configParams, parrableId) {
     return false;
   }
 
-  return !isAllowed() || isBlocked();
+  return isBlocked() || !isAllowed();
 }
 
 function fetchId(configParams, gdprConsentData) {
