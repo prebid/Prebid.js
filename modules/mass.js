@@ -61,11 +61,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
  * Check if a bid is MASS.
  */
 function isMassBid(bid) {
-  if (!(/^MASS/i.test(bid.dealId))) {
-    return false;
-  }
-
-  return /mass:\/\//i.test(bid.ad);
+  return /^MASS/i.test(bid.dealId);
 }
 
 /**
