@@ -1496,6 +1496,7 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.ren).to.equal(false);
         expect(diagObj.mfu).to.equal(1);
         expect(diagObj.allU).to.equal(1);
+        expect(diagObj.version).to.equal('$prebid.version$');
       });
     });
   });
