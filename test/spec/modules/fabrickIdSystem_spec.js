@@ -7,7 +7,8 @@ const defaultConfigParams = {
   apiKey: '123',
   e: 'abc',
   p: ['def', 'hij'],
-  url: 'http://localhost:9999/test/mocks/fabrickId.json?'
+  url: 'http://localhost:9999/test/mocks/fabrickId.json?',
+  f: () => 'ignore this'
 };
 const responseHeader = {'Content-Type': 'application/json'}
 const fabrickIdSubmodule = fabrickIdSystem.fabrickIdSubmodule;
@@ -48,7 +49,7 @@ describe('Fabrick ID System', function() {
 
   it('should truncate the params', function() {
     let r = '';
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < 1500; i++) {
       r += 'r';
     }
     let configParams = Object.assign({}, defaultConfigParams, {
@@ -66,7 +67,7 @@ describe('Fabrick ID System', function() {
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     r = '';
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 1000 - 3; i++) {
       r += 'r';
     }
     expect(request.url).to.match(new RegExp(`r=${r}&r=`));
@@ -102,5 +103,35 @@ describe('Fabrick ID System', function() {
     );
     expect(callBackSpy.calledOnce).to.be.true;
     expect(logErrorStub.calledOnce).to.be.false;
+  });
+
+  it('should truncate 2', function() {
+    let configParams = {
+      maxUrlLen: 10,
+      maxRefLen: 5,
+      maxSpaceAvailable: 2
+    };
+
+    let url = fabrickIdSystem.appendURL('', 'r', '123', configParams);
+    expect(url).to.equal('&r=12');
+
+    url = fabrickIdSystem.appendURL('12345', 'r', '678', configParams);
+    expect(url).to.equal('12345&r=67');
+
+    url = fabrickIdSystem.appendURL('12345678', 'r', '9', configParams);
+    expect(url).to.equal('12345678');
+
+    configParams.maxRefLen = 8;
+    url = fabrickIdSystem.appendURL('', 'r', '1234&', configParams);
+    expect(url).to.equal('&r=1234');
+
+    url = fabrickIdSystem.appendURL('', 'r', '123&', configParams);
+    expect(url).to.equal('&r=123');
+
+    url = fabrickIdSystem.appendURL('', 'r', '12&', configParams);
+    expect(url).to.equal('&r=12%26');
+
+    url = fabrickIdSystem.appendURL('', 'r', '1&&', configParams);
+    expect(url).to.equal('&r=1%26');
   });
 });
