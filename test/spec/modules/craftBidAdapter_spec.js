@@ -81,7 +81,7 @@ describe('craftAdapter', function () {
     it('sends bid request to ENDPOINT via POST', function () {
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://gacraft.jp/prebid-v3');
+      expect(request.url).to.equal('https://gacraft.jp/prebid-v3/craft-prebid-example');
       let data = JSON.parse(request.data);
       expect(data.tags).to.deep.equals([{
         sitekey: 'craft-prebid-example',

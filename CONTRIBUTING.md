@@ -3,8 +3,10 @@ Contributions are always welcome. To contribute, [fork](https://help.github.com/
 commit your changes, and [open a pull request](https://help.github.com/articles/using-pull-requests/) against the
 master branch.
 
-Pull requests must have 80% code coverage before beign considered for merge.
+Pull requests must have 80% code coverage before being considered for merge.
 Additional details about the process can be found [here](./PR_REVIEW.md).
+
+There are more details available if you'd like to contribute a [bid adapter](https://docs.prebid.org/dev-docs/bidder-adaptor.html) or [analytics adapter](https://docs.prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
 
 ## Issues
 [prebid.org](http://prebid.org/) contains documentation that may help answer questions you have about using Prebid.js.
@@ -57,7 +59,7 @@ When you are adding code to Prebid.js, or modifying code that isn't covered by a
 Prebid.js already has many tests. Read them to see how Prebid.js is tested, and for inspiration:
 
 - Look in `test/spec` and its subdirectories
-- Tests for bidder adaptors are located in `test/spec/modules`
+- Tests for bidder adapters are located in `test/spec/modules`
 
 A test module might have the following general structure:
 

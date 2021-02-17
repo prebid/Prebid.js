@@ -1,4 +1,5 @@
 import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
@@ -19,7 +20,7 @@ export const spec = {
    * From Prebid.js: isBidRequestValid - Verify the the AdUnits.bids, respond with true (valid) or false (invalid).
    *
    * @param {object} bid The bid to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
+   * @return {boolean} True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
     if (bid && typeof bid.params !== 'object') {
@@ -50,7 +51,7 @@ export const spec = {
           return false;
         }
         if (!utils.getBidIdParameter('slot', bid.params.outstream_options)) {
-          utils.logError(BIDDER_CODE + ': please define parameters slot outstream_options object in the configuration.');
+          utils.logError(BIDDER_CODE + ': please define parameter slot in outstream_options object in the configuration.');
           return false;
         }
       }
@@ -64,14 +65,24 @@ export const spec = {
    * from Prebid.js: buildRequests - Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
    *
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
-   * @return ServerRequest Info describing the request to the server.
+   * @param {object} bidderRequest - The master bidRequest object.
+   * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    const page = bidderRequest.refererInfo.referer;
-    const isPageSecure = !!page.match(/^https:/)
+    const referer = bidderRequest.refererInfo.referer;
+    const isPageSecure = !!referer.match(/^https:/);
 
     const siteId = '';
     const spotxRequests = bidRequests.map(function(bid) {
+      let page;
+      if (utils.getBidIdParameter('page', bid.params)) {
+        page = utils.getBidIdParameter('page', bid.params);
+      } else if (config.getConfig('pageUrl')) {
+        page = config.getConfig('pageUrl');
+      } else {
+        page = referer;
+      }
+
       const channelId = utils.getBidIdParameter('channel_id', bid.params);
       let pubcid = null;
 
@@ -228,13 +239,14 @@ export const spec = {
       }
 
       // ID5 fied
-      if (bid && bid.userId && bid.userId.id5id) {
+      if (utils.deepAccess(bid, 'userId.id5id.uid')) {
         userExt.eids = userExt.eids || [];
         userExt.eids.push(
           {
             source: 'id5-sync.com',
             uids: [{
-              id: bid.userId.id5id
+              id: bid.userId.id5id.uid,
+              ext: bid.userId.id5id.ext || {}
             }]
           }
         )
@@ -320,6 +332,7 @@ export const spec = {
             currency: serverResponseBody.cur || 'USD',
             cpm: spotxBid.price,
             creativeId: spotxBid.crid || '',
+            dealId: spotxBid.dealid || '',
             ttl: 360,
             netRevenue: true,
             channel_id: serverResponseBody.id,
@@ -330,6 +343,11 @@ export const spec = {
             width: spotxBid.w,
             height: spotxBid.h
           };
+
+          bid.meta = bid.meta || {};
+          if (spotxBid && spotxBid.adomain && spotxBid.adomain.length > 0) {
+            bid.meta.advertiserDomains = spotxBid.adomain;
+          }
 
           const context1 = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
           const context2 = utils.deepAccess(currentBidRequest, 'params.ad_unit');
@@ -364,7 +382,7 @@ export const spec = {
                 }
               });
             } catch (err) {
-              utils.logWarn('Prebid Error calling setRender or setEve,tHandlers on renderer', err);
+              utils.logWarn('Prebid Error calling setRender or setEventHandlers on renderer', err);
             }
             bid.renderer = renderer;
           }
@@ -390,9 +408,9 @@ function createOutstreamScript(bid) {
   dataSpotXParams['data-spotx_content_page_url'] = bid.renderer.config.content_page_url;
   dataSpotXParams['data-spotx_ad_unit'] = 'incontent';
 
-  utils.logMessage('[SPOTX][renderer] Default beahavior');
+  utils.logMessage('[SPOTX][renderer] Default behavior');
   if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
-    dataSpotXParams['data-spotx_ad_mute'] = '0';
+    dataSpotXParams['data-spotx_ad_mute'] = '1';
   }
   dataSpotXParams['data-spotx_collapse'] = '0';
   dataSpotXParams['data-spotx_autoplay'] = '1';
@@ -401,39 +419,35 @@ function createOutstreamScript(bid) {
 
   const playersizeAutoAdapt = utils.getBidIdParameter('playersize_auto_adapt', bid.renderer.config.outstream_options);
   if (playersizeAutoAdapt && utils.isBoolean(playersizeAutoAdapt) && playersizeAutoAdapt === true) {
-    if (bid.width && utils.isNumber(bid.width) && bid.height && utils.isNumber(bid.height)) {
-      const ratio = bid.width / bid.height;
-      const slotClientWidth = window.document.getElementById(slot).clientWidth;
-      let playerWidth = bid.renderer.config.player_width;
-      let playerHeight = bid.renderer.config.player_height;
-      let contentWidth = 0;
-      let contentHeight = 0;
-      if (slotClientWidth < playerWidth) {
-        playerWidth = slotClientWidth;
-        playerHeight = playerWidth / ratio;
-      }
-      if (ratio <= 1) {
-        contentWidth = Math.round(playerHeight * ratio);
-        contentHeight = playerHeight;
-      } else {
-        contentWidth = playerWidth;
-        contentHeight = Math.round(playerWidth / ratio);
-      }
-
-      dataSpotXParams['data-spotx_content_width'] = '' + contentWidth;
-      dataSpotXParams['data-spotx_content_height'] = '' + contentHeight;
-    } else {
-      utils.logWarn('[SPOTX][renderer] PlayerSize auto adapt: bid.width and bid.height are incorrect');
+    const ratio = bid.width && utils.isNumber(bid.width) && bid.height && utils.isNumber(bid.height) ? bid.width / bid.height : 4 / 3;
+    const slotClientWidth = window.document.getElementById(slot).clientWidth;
+    let playerWidth = bid.renderer.config.player_width;
+    let playerHeight = bid.renderer.config.player_height;
+    let contentWidth = 0;
+    let contentHeight = 0;
+    if (slotClientWidth < playerWidth) {
+      playerWidth = slotClientWidth;
+      playerHeight = playerWidth / ratio;
     }
+    if (ratio <= 1) {
+      contentWidth = Math.round(playerHeight * ratio);
+      contentHeight = playerHeight;
+    } else {
+      contentWidth = playerWidth;
+      contentHeight = Math.round(playerWidth / ratio);
+    }
+
+    dataSpotXParams['data-spotx_content_width'] = '' + contentWidth;
+    dataSpotXParams['data-spotx_content_height'] = '' + contentHeight;
   }
 
   const customOverride = utils.getBidIdParameter('custom_override', bid.renderer.config.outstream_options);
   if (customOverride && utils.isPlainObject(customOverride)) {
-    utils.logMessage('[SPOTX][renderer] Custom beahavior.');
+    utils.logMessage('[SPOTX][renderer] Custom behavior.');
     for (let name in customOverride) {
       if (customOverride.hasOwnProperty(name)) {
         if (name === 'channel_id' || name === 'vast_url' || name === 'content_page_url' || name === 'ad_unit') {
-          utils.logWarn('[SPOTX][renderer] Custom beahavior: following option cannot be overrided: ' + name);
+          utils.logWarn('[SPOTX][renderer] Custom behavior: following option cannot be overridden: ' + name);
         } else {
           dataSpotXParams['data-spotx_' + name] = customOverride[name];
         }
