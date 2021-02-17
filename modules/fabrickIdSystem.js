@@ -55,7 +55,7 @@ export const fabrickIdSubmodule = {
         let keysArr = Object.keys(configParams);
         for (let i in keysArr) {
           let k = keysArr[i];
-          if (k === 'url' || k === 'refererInfo' || k.startsWith('max')) {
+          if (k === 'url' || k === 'refererInfo' || (k.length > 3 && k.substring(0, 3) === 'max')) {
             continue;
           }
           let v = configParams[k];
