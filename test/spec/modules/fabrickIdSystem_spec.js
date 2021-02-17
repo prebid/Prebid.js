@@ -1,7 +1,7 @@
 import * as utils from '../../../src/utils.js';
 import {server} from '../../mocks/xhr.js';
 
-import * as fabrickIdSystem from 'modules/fabrickIdSystem.js';
+import {fabrickIdSubmodule, appendUrl} from 'modules/fabrickIdSystem.js';
 
 const defaultConfigParams = {
   apiKey: '123',
@@ -10,7 +10,6 @@ const defaultConfigParams = {
   url: 'http://localhost:9999/test/mocks/fabrickId.json?'
 };
 const responseHeader = {'Content-Type': 'application/json'}
-const fabrickIdSubmodule = fabrickIdSystem.fabrickIdSubmodule;
 
 describe('Fabrick ID System', function() {
   let logErrorStub;
@@ -111,26 +110,26 @@ describe('Fabrick ID System', function() {
       maxSpaceAvailable: 2
     };
 
-    let url = fabrickIdSubmodule.appendUrl('', 'r', '123', configParams);
+    let url = appendUrl('', 'r', '123', configParams);
     expect(url).to.equal('&r=12');
 
-    url = fabrickIdSubmodule.appendUrl('12345', 'r', '678', configParams);
+    url = appendUrl('12345', 'r', '678', configParams);
     expect(url).to.equal('12345&r=67');
 
-    url = fabrickIdSubmodule.appendUrl('12345678', 'r', '9', configParams);
+    url = appendUrl('12345678', 'r', '9', configParams);
     expect(url).to.equal('12345678');
 
     configParams.maxRefLen = 8;
-    url = fabrickIdSubmodule.appendUrl('', 'r', '1234&', configParams);
+    url = appendUrl('', 'r', '1234&', configParams);
     expect(url).to.equal('&r=1234');
 
-    url = fabrickIdSubmodule.appendUrl('', 'r', '123&', configParams);
+    url = appendUrl('', 'r', '123&', configParams);
     expect(url).to.equal('&r=123');
 
-    url = fabrickIdSubmodule.appendUrl('', 'r', '12&', configParams);
+    url = appendUrl('', 'r', '12&', configParams);
     expect(url).to.equal('&r=12%26');
 
-    url = fabrickIdSubmodule.appendUrl('', 'r', '1&&', configParams);
+    url = appendUrl('', 'r', '1&&', configParams);
     expect(url).to.equal('&r=1%26');
   });
 });

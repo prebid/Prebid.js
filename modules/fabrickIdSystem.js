@@ -73,15 +73,15 @@ export const fabrickIdSubmodule = {
         url = url.slice(0, -1)
         const referer = _getRefererInfo(configParams);
         const refs = new Map();
-        setReferrer(refs, referer.referer);
+        _setReferrer(refs, referer.referer);
         if (referer.stack && referer.stack[0]) {
-          setReferrer(refs, referer.stack[0]);
+          _setReferrer(refs, referer.stack[0]);
         }
-        setReferrer(refs, referer.canonicalUrl);
-        setReferrer(refs, window.location.href);
+        _setReferrer(refs, referer.canonicalUrl);
+        _setReferrer(refs, window.location.href);
 
         for (let value of refs.values()) {
-          url = _appendUrl(url, 'r', value, configParams);
+          url = appendUrl(url, 'r', value, configParams);
         }
 
         const resp = function (callback) {
@@ -117,9 +117,6 @@ export const fabrickIdSubmodule = {
     } catch (e) {
       utils.logError(`fabrickIdSystem encountered an error`, e);
     }
-  },
-  appendUrl: (url, paramName, s, configParams) => {
-    return _appendUrl(url, paramName, s, configParams);
   }
 };
 
@@ -139,7 +136,7 @@ function _getBaseUrl(configParams) {
   }
 }
 
-function setReferrer(refs, s) {
+function _setReferrer(refs, s) {
   if (s) {
     // store the longest one for the same URI
     const url = s.split('?')[0];
@@ -156,7 +153,7 @@ function setReferrer(refs, s) {
   }
 }
 
-function _appendUrl(url, paramName, s, configParams) {
+export function appendUrl(url, paramName, s, configParams) {
   const maxUrlLen = (configParams && configParams.maxUrlLen) || 2000;
   const maxRefLen = (configParams && configParams.maxRefLen) || 1000;
   const maxSpaceAvailable = (configParams && configParams.maxSpaceAvailable) || 50;
