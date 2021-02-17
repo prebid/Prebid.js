@@ -1,5 +1,6 @@
 import * as utils from '../../../src/utils.js';
 import {server} from '../../mocks/xhr.js';
+import {config} from '../../../src/config.js';
 
 import {fabrickIdSubmodule, appendUrl} from 'modules/fabrickIdSystem.js';
 
@@ -10,6 +11,7 @@ const defaultConfigParams = {
   url: 'http://localhost:9999/test/mocks/fabrickId.json?'
 };
 const responseHeader = {'Content-Type': 'application/json'}
+config.setConfig({debug: true});
 
 describe('Fabrick ID System', function() {
   let logErrorStub;
