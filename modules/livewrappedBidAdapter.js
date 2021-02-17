@@ -14,6 +14,7 @@ const VERSION = '1.4';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
+  gvlid: 919,
 
   /**
    * Determines whether or not the given bid request is valid.

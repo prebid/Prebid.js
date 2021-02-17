@@ -27,9 +27,13 @@ var pubxaiAnalyticsAdapter = Object.assign(adapter(
       if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT) {
         args.forEach(item => { mapBidResponse(item, 'timeout'); });
       } else if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
-        events.auctionInit = args;
+        events.floorDetail = {};
+        if (typeof args.bidderRequests[0].bids[0] !== 'undefined' && typeof args.bidderRequests[0].bids[0].floorData !== 'undefined') {
+          Object.assign(events.floorDetail, args.bidderRequests[0].bids[0].floorData);
+        }
         auctionTimestamp = args.timestamp;
       } else if (eventType === CONSTANTS.EVENTS.BID_REQUESTED) {
+        events.bids = [];
         mapBidRequests(args).forEach(item => { events.bids.push(item) });
       } else if (eventType === CONSTANTS.EVENTS.BID_RESPONSE) {
         mapBidResponse(args, 'response');
@@ -56,6 +60,8 @@ function mapBidRequests(params) {
         adUnitCode: bid.adUnitCode,
         requestId: bid.bidderRequestId,
         auctionId: bid.auctionId,
+        placementId: bid.params.placementId,
+        floorData: bid.floorData,
         transactionId: bid.transactionId,
         sizes: utils.parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
         renderStatus: 1,
@@ -134,8 +140,9 @@ pubxaiAnalyticsAdapter.shouldFireEventRequest = function (samplingRate = 1) {
 function send(data, status) {
   if (pubxaiAnalyticsAdapter.shouldFireEventRequest(initOptions.samplingRate)) {
     let location = utils.getWindowLocation();
-    if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-      Object.assign(data.auctionInit, { host: location.host, path: location.pathname, search: location.search });
+    if (typeof data !== 'undefined') {
+      data.pageDetail = {};
+      Object.assign(data.pageDetail, { host: location.host, path: location.pathname, search: location.search });
     }
     data.initOptions = initOptions;
 

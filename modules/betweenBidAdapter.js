@@ -3,6 +3,7 @@ import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'between';
+const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -30,7 +31,7 @@ export const spec = {
 
     validBidRequests.forEach(i => {
       let params = {
-        sizes: parseSizesInput(getAdUnitSizes(i)).join('%2C'),
+        sizes: parseSizesInput(getAdUnitSizes(i)),
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
         tz: getTz(),
@@ -74,9 +75,14 @@ export const spec = {
         }
       }
 
-      requests.push({method: 'GET', url: 'https://ads.betweendigital.com/adjson', data: params})
+      requests.push({data: params})
     })
-    return requests;
+    return {
+      method: 'POST',
+      url: ENDPOINT,
+      data: JSON.stringify(requests)
+    }
+    // return requests;
   },
   /**
    * Unpack the response from the server into a list of bids.

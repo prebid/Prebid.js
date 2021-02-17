@@ -17,7 +17,6 @@ Analytics adapter for Authenticated Traffic Solution(ATS), provided by LiveRamp.
   provider: 'atsAnalytics',
   options: {
      pid: '999', // publisher ID
-     host: 'https://example.com' // host is provided to publisher
   }
 }
 ```
