@@ -7,6 +7,7 @@ const BIDDER_CODE = 'districtmDMX';
 
 const DMXURI = 'https://dmx.districtm.io/b/v1';
 
+const GVLID = 144;
 const VIDEO_MAPPING = {
   playback_method: {
     'auto_play_sound_on': 1,
@@ -19,6 +20,8 @@ const VIDEO_MAPPING = {
 };
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
+  aliases: ['dmx'],
   supportedFormat: [BANNER, VIDEO],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid(bid) {
@@ -41,7 +44,7 @@ export const spec = {
               nBid.height = nBid.h || height;
               nBid.ttl = 300;
               nBid.mediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner';
-              if (nBid.mediaType) {
+              if (nBid.mediaType === 'video') {
                 nBid.vastXml = cleanVast(nBid.adm, nBid.nurl);
                 nBid.ttl = 3600;
               }
