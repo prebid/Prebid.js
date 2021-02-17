@@ -7,8 +7,7 @@ const defaultConfigParams = {
   apiKey: '123',
   e: 'abc',
   p: ['def', 'hij'],
-  url: 'http://localhost:9999/test/mocks/fabrickId.json?',
-  f: () => 'ignore this'
+  url: 'http://localhost:9999/test/mocks/fabrickId.json?'
 };
 const responseHeader = {'Content-Type': 'application/json'}
 const fabrickIdSubmodule = fabrickIdSystem.fabrickIdSubmodule;
