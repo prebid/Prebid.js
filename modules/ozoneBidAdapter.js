@@ -606,7 +606,7 @@ export const spec = {
    */
   findAllUserIds(bidRequest) {
     var ret = {};
-    // @todo - what is fabirck called & where to look for it? If it's a simple value then it will automatically be ok
+    // @todo - what is fabrick called & where to look for it? If it's a simple value then it will automatically be ok
     let searchKeysSingle = ['pubcid', 'tdid', 'id5id', 'parrableId', 'idl_env', 'criteoId', 'criteortus',
       'sharedid', 'lotamePanoramaId', 'fabrickId'];
     if (bidRequest.hasOwnProperty('userId')) {
@@ -616,7 +616,7 @@ export const spec = {
           if (typeof (bidRequest.userId[key]) == 'string') {
             ret[key] = bidRequest.userId[key];
           } else if (typeof (bidRequest.userId[key]) == 'object') {
-            ret[key] = Object.values(bidRequest.userId[key])[0];
+            ret[key] = bidRequest.userId[key][Object.keys(bidRequest.userId[key])[0]]; // cannot use Object.values
           } else {
             this.logError(`failed to get string key value for userId : ${key}`);
           }
