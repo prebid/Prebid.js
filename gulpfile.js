@@ -220,6 +220,7 @@ function bundle(dev, moduleArr) {
   return gulp.src(
     entries
   )
+    // Need to uodate the "Modules: ..." section in comment with the current modules list
     .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
     .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
