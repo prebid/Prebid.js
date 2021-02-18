@@ -59,7 +59,11 @@ export const spec = {
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
       if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
-      if (bidderRequest.userId) { payload.userId = bidderRequest.userId; }
+      if (bidderRequest.userId) {
+        payload.userId = bidderRequest.userId;
+      } else if (bidderRequest.hasOwnProperty('bids') && typeof bidderRequest.bids == 'object' && bidderRequest.bids.length > 0 && bidderRequest.bids[0].hasOwnProperty('userId')) {
+        payload.userId = bidderRequest.bids[0].userId;
+      }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
