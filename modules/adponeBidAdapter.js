@@ -4,20 +4,8 @@ import {triggerPixel} from '../src/utils.js';
 
 const ADPONE_CODE = 'adpone';
 const ADPONE_ENDPOINT = 'https://rtb.adpone.com/bid-request';
-const ADPONE_SYNC_ENDPOINT = 'https://eu-ads.adpone.com';
 const ADPONE_REQUEST_METHOD = 'POST';
 const ADPONE_CURRENCY = 'EUR';
-
-function _createSync() {
-  return {
-    type: 'iframe',
-    url: ADPONE_SYNC_ENDPOINT
-  }
-}
-
-function getUserSyncs(syncOptions) {
-  return (syncOptions && syncOptions.iframeEnabled) ? _createSync() : ([]);
-}
 
 export const spec = {
   code: ADPONE_CODE,
@@ -29,9 +17,9 @@ export const spec = {
     return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'adpone'
   },
 
-  buildRequests: bidRequests => {
+  buildRequests: (bidRequests, bidderRequest) => {
     return bidRequests.map(bid => {
-      const url = ADPONE_ENDPOINT + '?pid=' + bid.params.placementId;
+      let url = ADPONE_ENDPOINT + '?pid=' + bid.params.placementId;
       const data = {
         at: 1,
         id: bid.bidId,
@@ -48,6 +36,11 @@ export const spec = {
       const options = {
         withCredentials: true
       };
+
+      if (bidderRequest.gdprConsent) {
+        url += '&gdpr_applies=' + bidderRequest.gdprConsent.gdprApplies;
+        url += '&consentString=' + bidderRequest.gdprConsent.consentString;
+      }
 
       return {
         method: ADPONE_REQUEST_METHOD,
