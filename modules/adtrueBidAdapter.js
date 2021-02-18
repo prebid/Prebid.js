@@ -7,7 +7,7 @@ import {getStorageManager} from '../src/storageManager.js';
 const storage = getStorageManager();
 const BIDDER_CODE = 'adtrue';
 const ADTRUE_CURRENCY = 'USD';
-const ENDPOINT_URL = 'https://hb-dev.adtrue.com/prebid/auction';
+const ENDPOINT_URL = 'https://hb.adtrue.com/prebid/auction';
 const LOG_WARN_PREFIX = 'AdTrue: ';
 const AUCTION_TYPE = 1;
 const UNDEFINED = undefined;
@@ -618,13 +618,14 @@ export const spec = {
       .map(rsp => rsp.body.ext.cookie_sync)
       .reduce((a, b) => a.concat(b), [])
       .map(({url, type}) => ({
-        type: SYNC_TYPES[type], url: url
-          + '&publisherId=' + publisherId
-          + '&zoneId=' + zoneId
-          + '&gdpr=' + (gdprConsent ? (gdprConsent.gdprApplies ? 1 : 0) : 0)
-          + '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : ""))
-          + '&us_privacy=' + encodeURIComponent((uspConsent ? uspConsent : ""))
-          + '&coppa=' + (config.getConfig('coppa') === true ? 1 : 0)
+        type: SYNC_TYPES[type],
+        url: url +
+          '&publisherId=' + publisherId +
+          '&zoneId=' + zoneId +
+          '&gdpr=' + (gdprConsent ? (gdprConsent.gdprApplies ? 1 : 0) : 0) +
+          '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : '')) +
+          '&us_privacy=' + encodeURIComponent((uspConsent || '')) +
+          '&coppa=' + (config.getConfig('coppa') === true ? 1 : 0)
       }));
   }
 };
