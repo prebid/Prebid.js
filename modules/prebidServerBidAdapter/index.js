@@ -642,6 +642,23 @@ const OPEN_RTB_PROTOCOL = {
         utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
       }
 
+      const getFloorBid = find(firstBidRequest.bids, bid => bid.adUnitCode === adUnit.code && typeof bid.getFloor === 'function');
+
+      if (getFloorBid) {
+        let floorInfo;
+        try {
+          floorInfo = getFloorBid.getFloor({
+            currency: config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY,
+          });
+        } catch (e) {
+          utils.logError('PBS: getFloor threw an error: ', e);
+        }
+        if (floorInfo && floorInfo.currency && !isNaN(parseFloat(floorInfo.floor))) {
+          imp.bidfloor = parseFloat(floorInfo.floor);
+          imp.bidfloorcur = floorInfo.currency
+        }
+      }
+
       if (imp.banner || imp.video || imp.native) {
         imps.push(imp);
       }
