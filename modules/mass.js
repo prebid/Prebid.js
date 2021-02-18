@@ -4,7 +4,6 @@
 
 import { config } from '../src/config';
 import { getHook } from '../src/hook.js';
-// import { logInfo } from '../src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
 let listenerAdded = false;
