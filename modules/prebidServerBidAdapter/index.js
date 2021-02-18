@@ -546,16 +546,6 @@ const OPEN_RTB_PROTOCOL = {
         // OpenRTB response contains the adunit code and bidder name. These are
         // combined to create a unique key for each bid since an id isn't returned
         bidIdMap[`${adUnit.code}${bid.bidder}`] = bid.bid_id;
-
-        // check for and store valid aliases to add to the request
-        if (adapterManager.aliasRegistry[bid.bidder]) {
-          const bidder = adapterManager.bidderRegistry[bid.bidder];
-          // adding alias only if alias source bidder exists and alias isn't configured to be standalone
-          // pbs adapter
-          if (bidder && !bidder.getSpec().skipPbsAliasing) {
-            aliases[bid.bidder] = adapterManager.aliasRegistry[bid.bidder];
-          }
-        }
       });
 
       let mediaTypes = {};
@@ -719,8 +709,17 @@ const OPEN_RTB_PROTOCOL = {
       };
     }
 
+    // check for and store valid aliases to add to the requests
+    _s2sConfigs.forEach(s2sConfig => {
+      s2sConfig.bidders.forEach(bidder => {
+        if (adapterManager.aliasRegistry[bidder]) {
+          aliases[bidder] = adapterManager.aliasRegistry[bidder];
+        }
+      })
+    })
+
     if (!utils.isEmpty(aliases)) {
-      request.ext.prebid.aliases = aliases;
+      request.ext.prebid.aliases = { ...request.ext.prebid.aliases, ...aliases };
     }
 
     const bidUserIdAsEids = utils.deepAccess(bidRequests, '0.bids.0.userIdAsEids');
