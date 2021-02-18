@@ -305,6 +305,20 @@ describe('Parrable ID System', function() {
       expect(resolvedOptions.called).to.equal(true);
     });
 
+    it('permits an impression from a lower cased allowed timezone', function() {
+      const allowedZone = 'America/New_York';
+      const resolvedOptions = sinon.stub().returns({ timeZone: allowedZone });
+      Intl.DateTimeFormat.returns({ resolvedOptions });
+
+      expect(parrableIdSubmodule.getId({ params: {
+        partner: 'prebid-test',
+        timezoneFilter: {
+          allowedZones: [ allowedZone.toLowerCase() ]
+        }
+      } })).to.have.property('callback');
+      expect(resolvedOptions.called).to.equal(true);
+    });
+
     it('permits an impression from a timezone that is not blocked', function() {
       const blockedZone = 'America/New_York';
       const resolvedOptions = sinon.stub().returns({ timeZone: 'Iceland' });
@@ -328,6 +342,20 @@ describe('Parrable ID System', function() {
         partners: 'prebid-test',
         timezoneFilter: {
           blockedZones: [ blockedZone ]
+        }
+      } })).to.equal(null);
+      expect(resolvedOptions.called).to.equal(true);
+    });
+
+    it('does not permit an impression from a lower cased blocked timezone', function() {
+      const blockedZone = 'America/New_York';
+      const resolvedOptions = sinon.stub().returns({ timeZone: blockedZone });
+      Intl.DateTimeFormat.returns({ resolvedOptions });
+
+      expect(parrableIdSubmodule.getId({ params: {
+        partner: 'prebid-test',
+        timezoneFilter: {
+          blockedZones: [ blockedZone.toLowerCase() ]
         }
       } })).to.equal(null);
       expect(resolvedOptions.called).to.equal(true);
