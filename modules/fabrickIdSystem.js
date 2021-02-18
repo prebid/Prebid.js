@@ -80,9 +80,9 @@ export const fabrickIdSubmodule = {
         _setReferrer(refs, referer.canonicalUrl);
         _setReferrer(refs, window.location.href);
 
-        for (const key in refs) {
-          url = appendUrl(url, 'r', refs.get(key), configParams);
-        }
+        refs.forEach(v => {
+          url = appendUrl(url, 'r', v, configParams);
+        });
 
         const resp = function (callback) {
           const callbacks = {
