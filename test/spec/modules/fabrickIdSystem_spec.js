@@ -1,6 +1,5 @@
 import * as utils from '../../../src/utils.js';
 import {server} from '../../mocks/xhr.js';
-import {config} from '../../../src/config.js';
 
 import {fabrickIdSubmodule, appendUrl} from 'modules/fabrickIdSystem.js';
 
@@ -11,26 +10,25 @@ const defaultConfigParams = {
   url: 'http://localhost:9999/test/mocks/fabrickId.json?'
 };
 const responseHeader = {'Content-Type': 'application/json'}
-config.setConfig({debug: true});
 
 describe('Fabrick ID System', function() {
   let logErrorStub;
 
   beforeEach(function () {
-    logErrorStub = sinon.stub(utils, 'logError');
   });
 
   afterEach(function () {
-    logErrorStub.restore();
-    fabrickIdSubmodule.getRefererInfoOverride = null;
   });
 
   it('should log an error if no configParams were passed into getId', function () {
+    logErrorStub = sinon.stub(utils, 'logError');
     fabrickIdSubmodule.getId();
     expect(logErrorStub.calledOnce).to.be.true;
+    logErrorStub.restore();
   });
 
   it('should error on json parsing', function() {
+    logErrorStub = sinon.stub(utils, 'logError');
     let submoduleCallback = fabrickIdSubmodule.getId({
       name: 'fabrickId',
       params: defaultConfigParams
@@ -45,6 +43,7 @@ describe('Fabrick ID System', function() {
     );
     expect(callBackSpy.calledOnce).to.be.true;
     expect(logErrorStub.calledOnce).to.be.true;
+    logErrorStub.restore();
   });
 
   it('should truncate the params', function() {
@@ -77,7 +76,6 @@ describe('Fabrick ID System', function() {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(logErrorStub.calledOnce).to.be.false;
   });
 
   it('should complete successfully', function() {
@@ -102,7 +100,6 @@ describe('Fabrick ID System', function() {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(logErrorStub.calledOnce).to.be.false;
   });
 
   it('should truncate 2', function() {

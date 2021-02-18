@@ -46,7 +46,7 @@ export const fabrickIdSubmodule = {
       if (window.fabrickMod1) {
         window.fabrickMod1(configParams, consentData, cacheIdObj);
       }
-      if (!configParams || typeof configParams.apiKey !== 'string') {
+      if (!configParams || !configParams.apiKey || typeof configParams.apiKey !== 'string') {
         utils.logError('fabrick submodule requires an apiKey.');
         return;
       }
@@ -80,8 +80,8 @@ export const fabrickIdSubmodule = {
         _setReferrer(refs, referer.canonicalUrl);
         _setReferrer(refs, window.location.href);
 
-        for (let value of refs.values()) {
-          url = appendUrl(url, 'r', value, configParams);
+        for (const key in refs) {
+          url = appendUrl(url, 'r', refs.get(key), configParams);
         }
 
         const resp = function (callback) {
