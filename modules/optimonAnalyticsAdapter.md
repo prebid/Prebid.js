@@ -1,8 +1,8 @@
 # Overview
 
-Module Name: Optimon Prebid Adapter
-Module Type: Analytics Adapter
-Maintainer: support@pubstack.io
+Module Name: Optimon.io Prebid Analytics Adapter  
+Module Type: Analytics Adapter  
+Maintainer: hello@optimon.io  
 
 # Description
 
