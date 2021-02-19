@@ -60,7 +60,13 @@ export function addBidResponseHook(next, adUnitCode, bid) {
  * Check if a bid is MASS.
  */
 function isMassBid(bid) {
-  return /^MASS/i.test(bid.dealId);
+  // the deal ID must start with MASS:
+  if (!(/^MASS/i.test(bid.dealId))) {
+    return false;
+  }
+
+  // there must be a 'mass://' or 'pcreative?' in the ad markup:
+  return /mass:\/\/|pcreative\?/i.test(bid.ad);
 }
 
 /**
