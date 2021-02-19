@@ -66,7 +66,7 @@ function isMassBid(bid) {
   }
 
   // there must be a 'mass://' or 'pcreative?' in the ad markup:
-  return /mass:\/\/|pcreative\?/i.test(bid.ad);
+  return /mass:\/\/|\/pcreative\?/i.test(bid.ad);
 }
 
 /**
