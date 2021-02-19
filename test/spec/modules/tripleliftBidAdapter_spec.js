@@ -512,9 +512,9 @@ describe('triplelift adapter', function () {
       const criteoId = '53e30ea700424f7bbdd793b02abc5d7';
 
       const bidRequestsMultiple = [
-        { ...bidRequests[0], userId: { tdid: tdidId } },
-        { ...bidRequests[0], userId: { idl_env: idlEnvId } },
-        { ...bidRequests[0], userId: { criteoId: criteoId } }
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId } }
       ];
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
