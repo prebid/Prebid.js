@@ -2,7 +2,7 @@
  * This module adds MASS support to Prebid.js.
  */
 
-import { config } from '../src/config';
+import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
 import find from 'core-js-pure/features/array/find.js';
 
@@ -22,8 +22,7 @@ function init(cfg = {}) {
       massEnabled = false;
       getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
     }
-  }
-  else {
+  } else {
     if (!massEnabled) {
       getHook('addBidResponse').before(addBidResponseHook);
       massEnabled = true;
