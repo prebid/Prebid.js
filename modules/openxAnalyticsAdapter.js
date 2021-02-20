@@ -535,7 +535,7 @@ function delayedSend(auction) {
 
   auction.auctionSendDelayTimer = setTimeout(() => {
     let payload = JSON.stringify([buildAuctionPayload(auction)]);
-    ajax(ENDPOINT, deleteAuctionMap, payload, { contentType: 'application/json' });
+    ajax(analyticsConfig.endpoint || ENDPOINT, deleteAuctionMap, payload, { contentType: 'application/json' });
 
     function deleteAuctionMap() {
       delete auctionMap[auction.id];
