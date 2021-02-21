@@ -4,9 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'inskin';
 
 const CONFIG = {
-  'inskin': {
-    'BASE_URI': 'https://mfad.inskinad.com/api/v2'
-  }
+  BASE_URI: 'https://mfad.inskinad.com/api/v2'
 };
 
 export const spec = {
@@ -97,8 +95,7 @@ export const spec = {
     }
 
     validBidRequests.map(bid => {
-      let config = CONFIG[bid.bidder];
-      ENDPOINT_URL = config.BASE_URI;
+      ENDPOINT_URL = CONFIG.BASE_URI;
 
       const placement = Object.assign({
         divName: bid.bidId,

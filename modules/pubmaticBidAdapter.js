@@ -204,6 +204,9 @@ function _cleanSlot(slotName) {
   if (utils.isStr(slotName)) {
     return slotName.replace(/^\s+/g, '').replace(/\s+$/g, '');
   }
+  if (slotName) {
+    utils.logWarn(BIDDER_CODE + ': adSlot must be a string. Ignoring adSlot');
+  }
   return '';
 }
 

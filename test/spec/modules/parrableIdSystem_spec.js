@@ -210,6 +210,38 @@ describe('Parrable ID System', function() {
         removeParrableCookie();
       });
     });
+
+    describe('GDPR consent', () => {
+      let callbackSpy = sinon.spy();
+
+      const config = {
+        params: {
+          partner: 'partner'
+        }
+      };
+
+      const gdprConsentTestCases = [
+        { consentData: { gdprApplies: true, consentString: 'expectedConsentString' }, expected: { gdpr: 1, gdpr_consent: 'expectedConsentString' } },
+        { consentData: { gdprApplies: false, consentString: 'expectedConsentString' }, expected: { gdpr: 0 } },
+        { consentData: { gdprApplies: true, consentString: undefined }, expected: { gdpr: 1, gdpr_consent: '' } },
+        { consentData: { gdprApplies: 'yes', consentString: 'expectedConsentString' }, expected: { gdpr: 0 } },
+        { consentData: undefined, expected: { gdpr: 0 } }
+      ];
+
+      gdprConsentTestCases.forEach((testCase, index) => {
+        it(`should call user sync url with the gdprConsent - case ${index}`, () => {
+          parrableIdSubmodule.getId(config, testCase.consentData).callback(callbackSpy);
+
+          if (testCase.expected.gdpr === 1) {
+            expect(server.requests[0].url).to.contain('gdpr=' + testCase.expected.gdpr);
+            expect(server.requests[0].url).to.contain('gdpr_consent=' + testCase.expected.gdpr_consent);
+          } else {
+            expect(server.requests[0].url).to.contain('gdpr=' + testCase.expected.gdpr);
+            expect(server.requests[0].url).to.not.contain('gdpr_consent');
+          }
+        })
+      });
+    });
   });
 
   describe('parrableIdSystem.decode()', function() {
@@ -273,6 +305,20 @@ describe('Parrable ID System', function() {
       expect(resolvedOptions.called).to.equal(true);
     });
 
+    it('permits an impression from a lower cased allowed timezone', function() {
+      const allowedZone = 'America/New_York';
+      const resolvedOptions = sinon.stub().returns({ timeZone: allowedZone });
+      Intl.DateTimeFormat.returns({ resolvedOptions });
+
+      expect(parrableIdSubmodule.getId({ params: {
+        partner: 'prebid-test',
+        timezoneFilter: {
+          allowedZones: [ allowedZone.toLowerCase() ]
+        }
+      } })).to.have.property('callback');
+      expect(resolvedOptions.called).to.equal(true);
+    });
+
     it('permits an impression from a timezone that is not blocked', function() {
       const blockedZone = 'America/New_York';
       const resolvedOptions = sinon.stub().returns({ timeZone: 'Iceland' });
@@ -296,6 +342,20 @@ describe('Parrable ID System', function() {
         partners: 'prebid-test',
         timezoneFilter: {
           blockedZones: [ blockedZone ]
+        }
+      } })).to.equal(null);
+      expect(resolvedOptions.called).to.equal(true);
+    });
+
+    it('does not permit an impression from a lower cased blocked timezone', function() {
+      const blockedZone = 'America/New_York';
+      const resolvedOptions = sinon.stub().returns({ timeZone: blockedZone });
+      Intl.DateTimeFormat.returns({ resolvedOptions });
+
+      expect(parrableIdSubmodule.getId({ params: {
+        partner: 'prebid-test',
+        timezoneFilter: {
+          blockedZones: [ blockedZone.toLowerCase() ]
         }
       } })).to.equal(null);
       expect(resolvedOptions.called).to.equal(true);

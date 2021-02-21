@@ -224,3 +224,25 @@ export function createEidsArray(bidRequestUserId) {
   }
   return eids;
 }
+
+/**
+ * @param {SubmoduleContainer[]} submodules
+ */
+export function buildEidPermissions(submodules) {
+  let eidPermissions = [];
+  submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
+    .forEach(i => {
+      Object.keys(i.idObj).forEach(key => {
+        if (utils.deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
+          utils.deepAccess(USER_IDS_CONFIG, key + '.source')) {
+          eidPermissions.push(
+            {
+              source: USER_IDS_CONFIG[key].source,
+              bidders: i.config.bidders
+            }
+          );
+        }
+      });
+    });
+  return eidPermissions;
+}
