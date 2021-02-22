@@ -880,7 +880,15 @@ function applyFPD(bidRequest, mediaType, data) {
   let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key) {
-    if (typeof prop === 'object' && !Array.isArray(prop)) {
+    if (key === 'data' && Array.isArray(prop)) {
+      return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.taxonomyname').match(/iab/i)).map(value => {
+        let segments = value.segment.filter(obj => obj.id).reduce((result, obj) => {
+          result.push(obj.id);
+          return result;
+        }, []);
+        if (segments.length > 0) return segments.toString();
+      }).toString();
+    } else if (typeof prop === 'object' && !Array.isArray(prop)) {
       utils.logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
     } else if (typeof prop !== 'undefined') {
       return (Array.isArray(prop)) ? prop.filter(value => {
@@ -892,7 +900,7 @@ function applyFPD(bidRequest, mediaType, data) {
   };
   const addBannerData = function(obj, name, key) {
     let val = validate(obj, key);
-    let loc = (MAP[key]) ? `${MAP[key]}` : `${MAP[name]}${key}`;
+    let loc = (MAP[key]) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
   }
 

@@ -837,6 +837,14 @@ describe('the rubicon adapter', function () {
               }
             };
             const user = {
+              data: [{
+                'name': 'www.dataprovider1.com',
+                'ext': { 'taxonomyname': 'IAB Audience Taxonomy' },
+                'segment': [
+                  { 'id': '687' },
+                  { 'id': '123' }
+                ]
+              }],
               gender: 'M',
               yob: '1984',
               geo: {country: 'ca'},
@@ -865,6 +873,7 @@ describe('the rubicon adapter', function () {
               'tg_v.likes': 'sports,video games',
               'tg_v.gender': 'M',
               'tg_v.age': '40',
+              'tg_v.iab': '687,123',
               'tg_v.yob': '1984',
               'tg_i.rating': '4-star,5-star',
               'tg_i.page': 'home',
@@ -1897,7 +1906,8 @@ describe('the rubicon adapter', function () {
               data: [{foo: 'bar'}]
             },
             keywords: 'e,f',
-            rating: '4-star'
+            rating: '4-star',
+            data: [{foo: 'bar'}]
           };
           const user = {
             ext: {
