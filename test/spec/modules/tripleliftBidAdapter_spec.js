@@ -506,7 +506,7 @@ describe('triplelift adapter', function () {
       });
     });
 
-    it('should add user ids from multiple bid requests', function () {
+    it('should consolidate user ids from multiple bid requests', function () {
       const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
       const criteoId = '53e30ea700424f7bbdd793b02abc5d7';
@@ -553,6 +553,9 @@ describe('triplelift adapter', function () {
           ]
         }
       });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(3);
     });
 
     it('should return a query string for TL call', function () {
