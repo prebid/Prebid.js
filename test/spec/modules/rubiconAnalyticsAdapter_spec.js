@@ -636,6 +636,7 @@ describe('rubicon analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
+        analyticsEventDelay: 0,
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -654,6 +655,7 @@ describe('rubicon analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
+        analyticsEventDelay: 0,
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -674,6 +676,7 @@ describe('rubicon analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
+        analyticsEventDelay: 0,
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -1500,7 +1503,7 @@ describe('rubicon analytics adapter', function () {
       it('should send request when waitForGamSlots is present but no bidWons are sent', function () {
         config.setConfig({
           rubicon: {
-            waitForGamSlots: true
+            waitForGamSlots: true,
           }
         });
         events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
@@ -1511,7 +1514,7 @@ describe('rubicon analytics adapter', function () {
         events.emit(AUCTION_END, MOCK.AUCTION_END);
         events.emit(SET_TARGETING, MOCK.SET_TARGETING);
 
-        // should not send if just slotRenderEnded is emmitted for both
+        // should send if just slotRenderEnded is emmitted for both
         mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
         mockGpt.emitEvent(gptSlotRenderEnded1.eventName, gptSlotRenderEnded1.params);
 
@@ -1535,6 +1538,51 @@ describe('rubicon analytics adapter', function () {
           adSlot: '/19968336/header-bid-tag1'
         };
         expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should delay the event call depending on analyticsEventDelay config', function () {
+        config.setConfig({
+          rubicon: {
+            waitForGamSlots: true,
+            analyticsEventDelay: 2000
+          }
+        });
+        events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+        events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+        // should send if just slotRenderEnded is emmitted for both
+        mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+        mockGpt.emitEvent(gptSlotRenderEnded1.eventName, gptSlotRenderEnded1.params);
+
+        // Should not be sent until delay
+        expect(server.requests.length).to.equal(0);
+
+        // tick the clock and it should fire
+        clock.tick(2000);
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+        let expectedGam0 = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        let expectedGam1 = {
+          advertiserId: 4444,
+          creativeId: 5555,
+          lineItemId: 6666,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expect(expectedGam0).to.deep.equal(message.auctions[0].adUnits[0].gam);
+        expect(expectedGam1).to.deep.equal(message.auctions[0].adUnits[1].gam);
       });
     });
 
