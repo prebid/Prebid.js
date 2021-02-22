@@ -131,7 +131,8 @@ function _buildPostBody(bidRequests) {
   let eids = [
     ...getUnifiedIdEids([bidRequests[0]]),
     ...getIdentityLinkEids([bidRequests[0]]),
-    ...getCriteoEids([bidRequests[0]])
+    ...getCriteoEids([bidRequests[0]]),
+    ...getPubCommonEids([bidRequests[0]])
   ];
 
   if (eids.length > 0) {
@@ -249,6 +250,10 @@ function getIdentityLinkEids(bidRequest) {
 
 function getCriteoEids(bidRequest) {
   return getEids(bidRequest, 'criteoId', 'criteo.com', 'criteoId');
+}
+
+function getPubCommonEids(bidRequest) {
+  return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid');
 }
 
 function getEids(bidRequest, type, source, rtiPartner) {
