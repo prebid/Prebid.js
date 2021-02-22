@@ -56,7 +56,7 @@ describe('AxonixBidAdapter', function () {
   };
 
   const BIDDER_REQUEST = {
-    bidderCode: 'a4g',
+    bidderCode: 'axonix',
     auctionId: '18fd8b8b0bd757',
     bidderRequestId: '418b37f85e772c',
     timeout: 3000,
@@ -179,7 +179,7 @@ describe('AxonixBidAdapter', function () {
       expect(data.site).to.have.property('page', 'https://www.prebid.org');
 
       expect(data).to.have.property('validBidRequest', BANNER_REQUEST);
-      expect(data).to.have.property('connectiontype', 0);
+      expect(data).to.have.property('connectiontype').to.exist;
       expect(data).to.have.property('devicetype', 2);
       expect(data).to.have.property('bidfloor', 0);
       expect(data).to.have.property('dnt', 0);
@@ -237,7 +237,7 @@ describe('AxonixBidAdapter', function () {
       expect(data.site).to.have.property('page', 'https://www.prebid.org');
 
       expect(data).to.have.property('validBidRequest', VIDEO_REQUEST);
-      expect(data).to.have.property('connectiontype', 0);
+      expect(data).to.have.property('connectiontype').to.exist;
       expect(data).to.have.property('devicetype', 2);
       expect(data).to.have.property('bidfloor', 0);
       expect(data).to.have.property('dnt', 0);

@@ -82,7 +82,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     // device.connectiontype
     let connection = navigator.connection || navigator.webkitConnection;
-    let connectiontype = 0;
+    let connectiontype = 'unknown';
 
     if (connection && connection.effectiveType) {
       connectiontype = connection.effectiveType;
