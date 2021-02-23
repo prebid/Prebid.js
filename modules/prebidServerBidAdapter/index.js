@@ -628,7 +628,7 @@ const OPEN_RTB_PROTOCOL = {
        */
       ['name', 'adSlot'].forEach(name => {
         /** @type {(string|undefined)} */
-        const value = utils.deepAccess(adUnit, `fpd.context.adserver.${name}`);
+        const value = utils.deepAccess(adUnit, `fpd.context.adServer.${name}`);
         if (typeof value === 'string' && value) {
           utils.deepSetValue(imp, `ext.context.data.adserver.${name.toLowerCase()}`, value);
         }
