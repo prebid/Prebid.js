@@ -175,7 +175,7 @@ describe('LoganBidAdapter', function () {
     it('Should interpret video response', function () {
       const video = {
         body: [{
-          vastUrl: 'test.com',
+          vastXml: '<VAST></VAST>',
           mediaType: 'video',
           cpm: 0.5,
           requestId: '23fhj33i987f',
@@ -190,11 +190,11 @@ describe('LoganBidAdapter', function () {
       expect(videoResponses).to.be.an('array').that.is.not.empty;
 
       let dataItem = videoResponses[0];
-      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
+      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastXml', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
-      expect(dataItem.vastUrl).to.equal('test.com');
+      expect(dataItem.vastXml).to.equal('<VAST></VAST>');
       expect(dataItem.ttl).to.equal(120);
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
