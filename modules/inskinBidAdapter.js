@@ -105,8 +105,12 @@ export const spec = {
 
       placement.adTypes.push(5, 9, 163, 2163, 3006);
 
+      placement.properties = placement.properties || {};
+
+      placement.properties.screenWidth = screen.width;
+      placement.properties.screenHeight = screen.height;
+
       if (restrictions.length) {
-        placement.properties = placement.properties || {};
         placement.properties.restrictions = restrictions;
       }
 
