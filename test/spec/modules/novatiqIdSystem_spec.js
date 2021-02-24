@@ -6,32 +6,37 @@ describe('novatiqIdSystem', function () {
   describe('getSrcId', function() {
     it('getSrcId should set srcId value to 000 due to undefined parameter in config section', function() {
       const config = { params: { } };
-      const response = novatiqIdSubmodule.getSrcId(config);
-      expect('000').to.eq(response);
+      const configParams = config.params || {};
+      const response = novatiqIdSubmodule.getSrcId(configParams);
+      expect(response).to.eq('000');
     });
 
     it('getSrcId should set srcId value to 000 due to missing value in config section', function() {
       const config = { params: { sourceid: '' } };
-      const response = novatiqIdSubmodule.getId(config);
-      expect('000').to.eq(response.srcid);
+      const configParams = config.params || {};
+      const response = novatiqIdSubmodule.getSrcId(configParams);
+      expect(response).to.eq('000');
     });
 
     it('getSrcId should set value to 000 due to null value in config section', function() {
       const config = { params: { sourceid: null } };
-      const response = novatiqIdSubmodule.getId(config);
-      expect('000').to.eq(response.srcid);
+      const configParams = config.params || {};
+      const response = novatiqIdSubmodule.getSrcId(configParams);
+      expect(response).to.eq('000');
     });
 
-    it('getSrcId should set value to 001 due to due to wrong length in config section max 3 chars', function() {
+    it('getSrcId should set value to 001 due to wrong length in config section max 3 chars', function() {
       const config = { params: { sourceid: '1234' } };
-      const response = novatiqIdSubmodule.getId(config);
-      expect('001').to.eq(response.srcid);
+      const configParams = config.params || {};
+      const response = novatiqIdSubmodule.getSrcId(configParams);
+      expect(response).to.eq('001');
     });
 
-    it('getSrcId should set value to 002 due to due to wrong format in config section', function() {
+    it('getSrcId should set value to 002 due to wrong format in config section', function() {
       const config = { params: { sourceid: '1xc' } };
-      const response = novatiqIdSubmodule.getId(config);
-      expect('002').to.eq(response.srcid);
+      const configParams = config.params || {};
+      const response = novatiqIdSubmodule.getSrcId(configParams);
+      expect(response).to.eq('002');
     });
   });
 
