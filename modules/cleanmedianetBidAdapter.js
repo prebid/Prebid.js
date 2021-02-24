@@ -186,7 +186,10 @@ export const spec = {
 
     const bids = response.bid;
     let outBids = [];
-    if (!(bids === null)) {
+    if (bids === undefined || bids.length == 0) {
+      	bids=[];
+    } 
+    else {
       bids.forEach(function (bid) {
         let bidResponse = {
           requestId: bid.bidderRequest,
