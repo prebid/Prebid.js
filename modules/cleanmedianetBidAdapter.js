@@ -183,12 +183,12 @@ export const spec = {
       utils.logError('empty response');
       return [];
     }
-    
-	let errBids='';
+
+    let errBids = '';
     const bids = response.bid;
     let outBids = [];
     if (bids === undefined || bids.length == 0) {
-      errBids='1';
+      errBids = '1';
     } else {
       bids.forEach(function (bid) {
         let bidResponse = {
