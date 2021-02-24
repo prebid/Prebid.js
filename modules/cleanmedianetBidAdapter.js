@@ -180,7 +180,7 @@ export const spec = {
         mediaType: bid.mediaType || 'banner'
       };
 
-      if (bidResponse.mediaType === "video") {
+      if (bidResponse.mediaType === 'video') {
         bidResponse.vastUrl = bid.vastUrl;
         bidResponse.ttl = 600;
       } else {
