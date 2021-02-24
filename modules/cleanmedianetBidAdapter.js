@@ -1,7 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
@@ -60,9 +59,8 @@ export const spec = {
       } = bidRequest;
 
  const baseEndpoint = 'https://cleanmediaads.com/bidr/';
-	  const rtbEndpoint =  baseEndpoint +'?sid=' + params.supplyPartnerId + '&width='+ mediaTypes.video.playerSize[0][0]+'&height=' +mediaTypes.video.playerSize[0][1]+ '&bidderRequest=' + bidderRequest.bids[0].bidId+ '&SiteURL=' + escape(top.window.location.href);
-		
-      let url =
+	const rtbEndpoint =  baseEndpoint +'?sid=' + params.supplyPartnerId + '&mt='+ ((mediaTypes && mediaTypes.video) ? 'video' : 'banner') +'&width='+ ((mediaTypes && mediaTypes.video) ? mediaTypes.video.playerSize[0][0] : (mediaTypes && mediaTypes.banner) ? mediaTypes.banner.sizes[0][0] : sizes[0][0])  +'&height=' + ((mediaTypes && mediaTypes.video) ? mediaTypes.video.playerSize[0][1] : (mediaTypes && mediaTypes.banner) ? mediaTypes.banner.sizes[0][1] : sizes[0][1]) + '&bidderRequest=' + bidderRequest.bids[0].bidId+ '&SiteURL=' + escape(top.window.location.href);
+	     let url =
         config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
       const rtbBidRequest = {
@@ -180,12 +178,11 @@ let i = 0;
         currency: 'USD',
         netRevenue: true,
         ttl: 350,
-		mediaType: bid.mediaType
+		mediaType: bid.mediaType || 'banner'
       };
 	 
-	  if (bidResponse.mediaType = "video") {
+	  if (bidResponse.mediaType === "video") {
         bidResponse.vastUrl = bid.vastUrl;
-       // bidResponse.mediaType = 'video';
         bidResponse.ttl = 600;
       } else {
         bidResponse.ad = bid.adm;
