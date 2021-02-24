@@ -259,6 +259,18 @@ $$PREBID_GLOBAL$$.getNoBids = function () {
 };
 
 /**
+ * This function returns the bids requests involved in an auction but not bid on or the specified adUnitCode
+ * @param  {string} adUnitCode adUnitCode
+ * @alias module:pbjs.getNoBidsForAdUnitCode
+ * @return {Object}           bidResponse object
+ */
+
+$$PREBID_GLOBAL$$.getNoBidsForAdUnitCode = function (adUnitCode) {
+  const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
+  return { bids };
+};
+
+/**
  * This function returns the bid responses at the given moment.
  * @alias module:pbjs.getBidResponses
  * @return {Object}            map | object that contains the bidResponses
@@ -476,6 +488,18 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
+  let _s2sConfigs = [];
+  const s2sBidders = [];
+  config.getConfig('s2sConfig', config => {
+    if (config && config.s2sConfig) {
+      _s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
+    }
+  });
+
+  _s2sConfigs.forEach(s2sConfig => {
+    s2sBidders.push(...s2sConfig.bidders);
+  });
+
   adUnits = checkAdUnitSetup(adUnits);
 
   if (adUnitCodes && adUnitCodes.length) {
@@ -500,11 +524,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     const allBidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adapterManager.bidderRegistry;
 
-    const s2sConfig = config.getConfig('s2sConfig');
-    const s2sBidders = s2sConfig && s2sConfig.bidders;
-    const bidders = (s2sBidders) ? allBidders.filter(bidder => {
-      return !includes(s2sBidders, bidder);
-    }) : allBidders;
+    const bidders = (s2sBidders) ? allBidders.filter(bidder => !includes(s2sBidders, bidder)) : allBidders;
 
     adUnit.transactionId = utils.generateUUID();
 
