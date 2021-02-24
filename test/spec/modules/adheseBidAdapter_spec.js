@@ -17,10 +17,9 @@ let minimalBid = function() {
   }
 };
 
-let bidWithParams = function(data, userId) {
+let bidWithParams = function(data) {
   let bid = minimalBid();
   bid.params.data = data;
-  bid.userId = userId;
   return bid;
 };
 
@@ -117,10 +116,19 @@ describe('AdheseAdapter', function () {
       expect(JSON.parse(req.data).parameters).to.deep.include({ 'xf': [ 'aHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ' ] });
     });
 
-    it('should include id5 id as /x5 param', function () {
-      let req = spec.buildRequests([ bidWithParams({}, { 'id5id': { 'uid': 'ID5-1234567890' } }) ], bidderRequest);
+    it('should include eids', function () {
+      let bid = minimalBid();
+      bid.userIdAsEids = [{ source: 'id5-sync.com', uids: [{ id: 'ID5@59sigaS-...' }] }];
 
-      expect(JSON.parse(req.data).parameters).to.deep.include({ 'x5': [ 'ID5-1234567890' ] });
+      let req = spec.buildRequests([ bid ], bidderRequest);
+
+      expect(JSON.parse(req.data).user.ext.eids).to.deep.equal(bid.userIdAsEids);
+    });
+
+    it('should not include eids field when userid module disabled', function () {
+      let req = spec.buildRequests([ minimalBid() ], bidderRequest);
+
+      expect(JSON.parse(req.data)).to.not.have.key('eids');
     });
 
     it('should include bids', function () {
