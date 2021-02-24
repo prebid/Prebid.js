@@ -184,16 +184,16 @@ export const spec = {
       return [];
     }
 
-    let errBids = '';
+    let errBcode = '';
     const bids = response.bid;
     let outBids = [];
     if (bids === undefined || bids.length == 0) {
-      errBids = '1';
+      errBcode = ' ';
     } else {
       bids.forEach(function (bid) {
         let bidResponse = {
           requestId: bid.bidderRequest,
-          bidderCode: '',
+          bidderCode: errBcode,
           cpm: parseFloat(bid.price),
           width: bid.width,
           height: bid.height,
