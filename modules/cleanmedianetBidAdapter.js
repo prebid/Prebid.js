@@ -61,7 +61,7 @@ export const spec = {
       const baseEndpoint = 'https://cleanmediaads.com/bidr/';
       const rtbEndpoint = baseEndpoint + '?sid=' + params.supplyPartnerId + '&mt=' + ((mediaTypes && mediaTypes.video) ? 'video' : 'banner') + '&width=' + escape(JSON.stringify(mediaTypes)) + '&height=' + escape(JSON.stringify(sizes)) + '&bidderRequest=' + escape(JSON.stringify(bidderRequest)) + '&SiteURL=' + escape(top.window.location.href);
 
-	  let url =
+      let url =
         config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
       const rtbBidRequest = {
