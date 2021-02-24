@@ -58,9 +58,9 @@ export const spec = {
         transactionId
       } = bidRequest;
 
- const baseEndpoint = 'https://cleanmediaads.com/bidr/';
-	const rtbEndpoint =  baseEndpoint +'?sid=' + params.supplyPartnerId + '&mt='+ ((mediaTypes && mediaTypes.video) ? 'video' : 'banner') +'&width='+ ((mediaTypes && mediaTypes.video) ? mediaTypes.video.playerSize[0][0] : (mediaTypes && mediaTypes.banner) ? mediaTypes.banner.sizes[0][0] : sizes[0][0])  +'&height=' + ((mediaTypes && mediaTypes.video) ? mediaTypes.video.playerSize[0][1] : (mediaTypes && mediaTypes.banner) ? mediaTypes.banner.sizes[0][1] : sizes[0][1]) + '&bidderRequest=' + bidderRequest.bids[0].bidId+ '&SiteURL=' + escape(top.window.location.href);
-	     let url =
+      const baseEndpoint = 'https://cleanmediaads.com/bidr/';
+      const rtbEndpoint =  baseEndpoint + '?sid=' + params.supplyPartnerId + '&mt=' + ((mediaTypes && mediaTypes.video) ? 'video' : 'banner') + '&width=' + ((mediaTypes && mediaTypes.video) ? mediaTypes.video.playerSize[0][0] : (mediaTypes && mediaTypes.banner) ? mediaTypes.banner.sizes[0][0] : sizes[0][0]) + '&height=' + ((mediaTypes && mediaTypes.video) ? mediaTypes.video.playerSize[0][1] : (mediaTypes && mediaTypes.banner) ? mediaTypes.banner.sizes[0][1] : sizes[0][1]) + '&bidderRequest=' + bidderRequest.bids[0].bidId+ '&SiteURL=' + escape(top.window.location.href);
+      let url =
         config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
       const rtbBidRequest = {
@@ -83,7 +83,6 @@ export const spec = {
           ext: {}
         }
       };
-
 
       const imp = {
         id: transactionId,
@@ -147,7 +146,8 @@ export const spec = {
         method: 'POST',
         url: rtbEndpoint,
         data: rtbBidRequest,
-        bidRequest,options: {
+        bidRequest, 
+		options: {
           withCredentials: false,
           crossOrigin: true
         }
@@ -164,13 +164,12 @@ export const spec = {
 
     const bids = response.bid;
     let outBids = [];
-let i = 0;
-	 for (i = 0; i < bids.length; i++) {
-      let bid = bids[i];
-	 
-	   let bidResponse = {
+    let i = 0;
+    for (i = 0; i < bids.length; i++) {
+      let bid = bids[i]; 
+      let bidResponse = {
         requestId: bid.bidderRequest,
-        bidderCode: "",
+        bidderCode: '',
         cpm: parseFloat(bid.price),
         width: bid.width,
         height: bid.height,
@@ -188,11 +187,8 @@ let i = 0;
         bidResponse.ad = bid.adm;
       }
 	 
-	  
-
       outBids.push(bidResponse);
 	  
-
     };
     return outBids;
   },
@@ -200,6 +196,5 @@ let i = 0;
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
   }
 };
-
 
 registerBidder(spec);
