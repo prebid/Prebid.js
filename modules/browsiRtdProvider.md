@@ -19,9 +19,9 @@ Configuration example for using RTD module with `browsi` provider
                 "name": "browsi",
                 "waitForIt": "true"
                 "params": {
-                    "url": "testUrl.com",
-                    "siteKey": "testKey",
-                    "pubKey": "testPub",
+                    "url": "yield-manager.browsiprod.com",
+                    "siteKey": "browsidemo",
+                    "pubKey": "browsidemo"
                     "keyName":"bv"
                 }  
             }]

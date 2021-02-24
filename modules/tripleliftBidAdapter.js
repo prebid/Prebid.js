@@ -174,8 +174,8 @@ function _getFloor (bid) {
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
       currency: 'USD',
-      mediaType: 'banner',
-      size: _sizes(bid.sizes)
+      mediaType: _isInstreamBidRequest(bid) ? 'video' : 'banner',
+      size: '*'
     });
     if (typeof floorInfo === 'object' &&
     floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
@@ -321,6 +321,14 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.adomain && bid.adomain.length) {
       bidResponse.meta.advertiserDomains = bid.adomain;
+    }
+
+    if (bid.tl_source && bid.tl_source == 'hdx') {
+      bidResponse.meta.mediaType = 'banner';
+    }
+
+    if (bid.tl_source && bid.tl_source == 'tlx') {
+      bidResponse.meta.mediaType = 'native';
     }
   };
   return bidResponse;

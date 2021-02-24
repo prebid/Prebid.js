@@ -105,7 +105,8 @@ describe('TheMediaGrid Adapter', function () {
         'sizes': [[728, 90]],
         'mediaTypes': {
           'video': {
-            'playerSize': [[400, 600]]
+            'playerSize': [[400, 600]],
+            'protocols': [1, 2, 3]
           },
           'banner': {
             'sizes': [[728, 90]]
@@ -281,7 +282,8 @@ describe('TheMediaGrid Adapter', function () {
           },
           'video': {
             'w': 400,
-            'h': 600
+            'h': 600,
+            'protocols': [1, 2, 3]
           }
         }]
       });
