@@ -58,7 +58,7 @@ export const novatiqIdSubmodule = {
     ajax(url, undefined, undefined, { method: 'GET', withCredentials: false });
 
     utils.logInfo('NOVATIQ snowflake: ' + novatiqId);
-    return { 'id': novatiqId, 'srcid': srcId }
+    return { 'id': novatiqId }
   },
 
   getSrcId(configParams) {
