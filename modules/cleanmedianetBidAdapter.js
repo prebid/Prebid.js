@@ -190,7 +190,7 @@ export const spec = {
       outBids.push(bidResponse);
     });
 
-  return outBids;
+    return outBids;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
