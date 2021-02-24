@@ -58,12 +58,10 @@ export const spec = {
         sizes,
         transactionId
       } = bidRequest;
-      const baseEndpoint = 'https://bidder.cleanmediaads.com';
-      const rtbEndpoint =
-        `${baseEndpoint}/r/${
-          params.supplyPartnerId
-        }/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` +
-        (params.query ? '&' + params.query : '');
+
+ const baseEndpoint = 'https://cleanmediaads.com/bidr/';
+	  const rtbEndpoint =  baseEndpoint +'?sid=' + params.supplyPartnerId + '&width='+ mediaTypes.video.playerSize[0][0]+'&height=' +mediaTypes.video.playerSize[0][1]+ '&bidderRequest=' + bidderRequest.bids[0].bidId+ '&SiteURL=' + escape(top.window.location.href);
+		
       let url =
         config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
@@ -88,26 +86,6 @@ export const spec = {
         }
       };
 
-      if (
-        bidderRequest.gdprConsent &&
-        bidderRequest.gdprConsent.consentString &&
-        bidderRequest.gdprConsent.gdprApplies
-      ) {
-        rtbBidRequest.ext.gdpr_consent = {
-          consent_string: bidderRequest.gdprConsent.consentString,
-          consent_required: bidderRequest.gdprConsent.gdprApplies
-        };
-        rtbBidRequest.regs = {
-          ext: {
-            gdpr: bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0
-          }
-        };
-        rtbBidRequest.user = {
-          ext: {
-            consent: bidderRequest.gdprConsent.consentString
-          }
-        }
-      }
 
       const imp = {
         id: transactionId,
@@ -171,7 +149,10 @@ export const spec = {
         method: 'POST',
         url: rtbEndpoint,
         data: rtbBidRequest,
-        bidRequest
+        bidRequest,options: {
+          withCredentials: false,
+          crossOrigin: true
+        }
       };
     });
   },
@@ -183,134 +164,45 @@ export const spec = {
       return [];
     }
 
-    const bids = response.seatbid.reduce(
-      (acc, seatBid) => acc.concat(seatBid.bid),
-      []
-    );
+    const bids = response.bid;
     let outBids = [];
-
-    bids.forEach(bid => {
-      const outBid = {
-        requestId: bidRequest.bidRequest.bidId,
-        cpm: bid.price,
-        width: bid.w,
-        height: bid.h,
-        ttl: 360,
-        creativeId: bid.crid || bid.adid,
+let i = 0;
+	 for (i = 0; i < bids.length; i++) {
+      let bid = bids[i];
+	 
+	   let bidResponse = {
+        requestId: bid.bidderRequest,
+        bidderCode: "",
+        cpm: parseFloat(bid.price),
+        width: bid.width,
+        height: bid.height,
+        creativeId: bid.crid || bid.adId,
+        currency: 'USD',
         netRevenue: true,
-        currency: bid.cur || response.cur,
-        mediaType: helper.getMediaType(bid)
+        ttl: 350,
+		mediaType: bid.mediaType
       };
-
-      if (
-        utils.deepAccess(
-          bidRequest.bidRequest,
-          'mediaTypes.' + outBid.mediaType
-        )
-      ) {
-        if (outBid.mediaType === BANNER) {
-          outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
-        } else if (outBid.mediaType === VIDEO) {
-          const context = utils.deepAccess(
-            bidRequest.bidRequest,
-            'mediaTypes.video.context'
-          );
-          outBids.push(
-            Object.assign({}, outBid, {
-              vastUrl: bid.ext.vast_url,
-              vastXml: bid.adm,
-              renderer:
-                context === 'outstream'
-                  ? newRenderer(bidRequest.bidRequest, bid)
-                  : undefined
-            })
-          );
-        }
+	 
+	  if (bidResponse.mediaType = "video") {
+        bidResponse.vastUrl = bid.vastUrl;
+       // bidResponse.mediaType = 'video';
+        bidResponse.ttl = 600;
+      } else {
+        bidResponse.ad = bid.adm;
       }
-    });
+	 
+	  
+
+      outBids.push(bidResponse);
+	  
+
+    };
     return outBids;
   },
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    const syncs = [];
-    const gdprApplies =
-      gdprConsent && typeof gdprConsent.gdprApplies === 'boolean'
-        ? gdprConsent.gdprApplies
-        : false;
-    const suffix = gdprApplies
-      ? 'gc=' + encodeURIComponent(gdprConsent.consentString)
-      : 'gc=missing';
-    serverResponses.forEach(resp => {
-      if (resp.body) {
-        const bidResponse = resp.body;
-        if (bidResponse.ext && Array.isArray(bidResponse.ext['utrk'])) {
-          bidResponse.ext['utrk'].forEach(pixel => {
-            const url =
-              pixel.url +
-              (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
-            return syncs.push({type: pixel.type, url});
-          });
-        }
-        if (Array.isArray(bidResponse.seatbid)) {
-          bidResponse.seatbid.forEach(seatBid => {
-            if (Array.isArray(seatBid.bid)) {
-              seatBid.bid.forEach(bid => {
-                if (bid.ext && Array.isArray(bid.ext['utrk'])) {
-                  bid.ext['utrk'].forEach(pixel => {
-                    const url =
-                      pixel.url +
-                      (pixel.url.indexOf('?') > 0
-                        ? '&' + suffix
-                        : '?' + suffix);
-                    return syncs.push({type: pixel.type, url});
-                  });
-                }
-              });
-            }
-          });
-        }
-      }
-    });
-    return syncs;
   }
 };
 
-function newRenderer(bidRequest, bid, rendererOptions = {}) {
-  const renderer = Renderer.install({
-    url:
-      (bidRequest.params && bidRequest.params.rendererUrl) ||
-      (bid.ext && bid.ext.renderer_url) ||
-      'https://s.wlplayer.com/video/latest/renderer.js',
-    config: rendererOptions,
-    loaded: false
-  });
-  try {
-    renderer.setRender(renderOutstream);
-  } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
-  }
-  return renderer;
-}
-
-function renderOutstream(bid) {
-  bid.renderer.push(() => {
-    const unitId = bid.adUnitCode + '/' + bid.adId;
-    window['GamoshiPlayer'].renderAd({
-      id: unitId,
-      debug: window.location.href.indexOf('pbjsDebug') >= 0,
-      placement: document.getElementById(bid.adUnitCode),
-      width: bid.width,
-      height: bid.height,
-      events: {
-        ALL_ADS_COMPLETED: () =>
-          window.setTimeout(() => {
-            window['GamoshiPlayer'].removeAd(unitId);
-          }, 300)
-      },
-      vastUrl: bid.vastUrl,
-      vastXml: bid.vastXml
-    });
-  });
-}
 
 registerBidder(spec);
