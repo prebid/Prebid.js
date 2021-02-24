@@ -10,7 +10,7 @@ ex: $ gulp build --modules=userId,mwOpenLinkIdSystem
 
 ##$ MediaWallah openLink ID Example Configuration
 
-When the module is included, it's automatically enabled and saves an id to both cookie and local storage with an expiration time of 1 year.  
+When the module is included, it's automatically enabled and saves an id to both cookie with an expiration time of 1 year.  
 
 ### Prebid Params
 

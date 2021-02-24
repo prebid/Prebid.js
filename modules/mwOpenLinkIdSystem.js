@@ -142,8 +142,7 @@ export const mwOpenLinkSubModule = {
   getId(submoduleConfig) {
     const submoduleConfigParams = (submoduleConfig && submoduleConfig.params) || {};
     if (!isValidConfig(submoduleConfigParams)) return undefined;
-    const newId = setID(submoduleConfigParams);
-    return newId;
+    return setID(submoduleConfigParams);
   }
 };
 

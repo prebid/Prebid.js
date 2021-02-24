@@ -141,6 +141,14 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
+    },
+
+    {
+        source: 'mediawallahscript.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
     }
 ]
 ```
