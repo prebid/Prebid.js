@@ -194,6 +194,44 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
+    const gdprApplies =
+      gdprConsent && typeof gdprConsent.gdprApplies === 'boolean'
+        ? gdprConsent.gdprApplies
+        : false;
+    const suffix = gdprApplies
+      ? 'gc=' + encodeURIComponent(gdprConsent.consentString)
+      : 'gc=missing';
+    serverResponses.forEach(resp => {
+      if (resp.body) {
+        const bidResponse = resp.body;
+        if (bidResponse.ext && Array.isArray(bidResponse.ext['utrk'])) {
+          bidResponse.ext['utrk'].forEach(pixel => {
+            const url =
+              pixel.url +
+              (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
+            return syncs.push({type: pixel.type, url});
+          });
+        }
+        if (Array.isArray(bidResponse.seatbid)) {
+          bidResponse.seatbid.forEach(seatBid => {
+            if (Array.isArray(seatBid.bid)) {
+              seatBid.bid.forEach(bid => {
+                if (bid.ext && Array.isArray(bid.ext['utrk'])) {
+                  bid.ext['utrk'].forEach(pixel => {
+                    const url =
+                      pixel.url +
+                      (pixel.url.indexOf('?') > 0
+                        ? '&' + suffix
+                        : '?' + suffix);
+                    return syncs.push({type: pixel.type, url});
+                  });
+                }
+              });
+            }
+          });
+        }
+      }
+    });
     return syncs;
   }
 };
