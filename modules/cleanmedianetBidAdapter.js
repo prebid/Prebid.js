@@ -85,6 +85,27 @@ export const spec = {
         }
       };
 
+      if (
+        bidderRequest.gdprConsent &&
+        bidderRequest.gdprConsent.consentString &&
+        bidderRequest.gdprConsent.gdprApplies
+      ) {
+        rtbBidRequest.ext.gdpr_consent = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          consent_required: bidderRequest.gdprConsent.gdprApplies
+        };
+        rtbBidRequest.regs = {
+          ext: {
+            gdpr: bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0
+          }
+        };
+        rtbBidRequest.user = {
+          ext: {
+            consent: bidderRequest.gdprConsent.consentString
+          }
+        }
+      }
+
       const imp = {
         id: transactionId,
         instl: params.instl === 1 ? 1 : 0,
@@ -165,30 +186,31 @@ export const spec = {
 
     const bids = response.bid;
     let outBids = [];
+    if(!(bids === null)) {
+      bids.forEach(function (bid) {
+        let bidResponse = {
+          requestId: bid.bidderRequest,
+          bidderCode: '',
+          cpm: parseFloat(bid.price),
+          width: bid.width,
+          height: bid.height,
+          creativeId: bid.crid || bid.adId,
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 350,
+          mediaType: bid.mediaType || 'banner'
+        };
 
-    bids.forEach(function (bid) {
-      let bidResponse = {
-        requestId: bid.bidderRequest,
-        bidderCode: '',
-        cpm: parseFloat(bid.price),
-        width: bid.width,
-        height: bid.height,
-        creativeId: bid.crid || bid.adId,
-        currency: 'USD',
-        netRevenue: true,
-        ttl: 350,
-        mediaType: bid.mediaType || 'banner'
-      };
+        if (bidResponse.mediaType === 'video') {
+          bidResponse.vastUrl = bid.vastUrl;
+          bidResponse.ttl = 600;
+        } else {
+          bidResponse.ad = bid.adm;
+        }
 
-      if (bidResponse.mediaType === 'video') {
-        bidResponse.vastUrl = bid.vastUrl;
-        bidResponse.ttl = 600;
-      } else {
-        bidResponse.ad = bid.adm;
-      }
-
-      outBids.push(bidResponse);
-    });
+        outBids.push(bidResponse);
+      });
+    }
 
     return outBids;
   },
