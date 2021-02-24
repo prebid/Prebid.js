@@ -165,9 +165,8 @@ export const spec = {
 
     const bids = response.bid;
     let outBids = [];
-    let i = 0;
-    for (i = 0; i < bids.length; i++) {
-      let bid = bids[i];
+
+    bids.forEach(function (bid) {
       let bidResponse = {
         requestId: bid.bidderRequest,
         bidderCode: '',
@@ -189,10 +188,13 @@ export const spec = {
       }
 
       outBids.push(bidResponse);
-    };
-    return outBids;
+    });
+
+  return outBids;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+    const syncs = [];
+    return syncs;
   }
 };
 
