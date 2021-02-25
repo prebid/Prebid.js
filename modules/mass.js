@@ -8,6 +8,8 @@ import find from 'core-js-pure/features/array/find.js';
 
 let listenerAdded = false;
 let massEnabled = false;
+let bootloaderUrl = 'https://cdn.massplatform.net/bootloader.js';
+
 const massBids = {};
 
 init();
@@ -27,6 +29,10 @@ function init(cfg = {}) {
       getHook('addBidResponse').before(addBidResponseHook);
       massEnabled = true;
     }
+  }
+
+  if (cfg.bootloaderUrl) {
+    bootloaderUrl = cfg.bootloaderUrl;
   }
 }
 
@@ -60,7 +66,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
  */
 function isMassBid(bid) {
   // the deal ID must start with MASS:
-  if (!(/^MASS/i.test(bid.dealId))) {
+  if (!(/^META_MASS/i.test(bid.dealId))) {
     return false;
   }
 
@@ -111,7 +117,7 @@ function render(payload) {
     const s = document.createElement('script');
     s.type = 'text/javascript';
     s.async = true;
-    s.src = 'https://cdn.massplatform.net/bootloader/v1/bootloader.js';
+    s.src = bootloaderUrl;
 
     const x = document.getElementsByTagName('script')[0];
     x.parentNode.insertBefore(s, x);
