@@ -64,7 +64,7 @@ export const spec = {
         } else {
           bidResponse.ad = resItem.adm;
         }
-         response.push(bidResponse);
+        response.push(bidResponse);
       }
     }
     return response;
