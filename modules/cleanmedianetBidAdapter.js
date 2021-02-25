@@ -56,58 +56,15 @@ export const spec = {
       } = bidRequest;
 
       const baseEndpoint = 'https://cleanmediaads.com/bidr/';
-      const rtbEndpoint = baseEndpoint + '?sid=' + params.supplyPartnerId + '&mt=' + ((mediaTypes && mediaTypes.video) ? 'video' : 'banner') + '&width=' + escape(JSON.stringify(mediaTypes)) + '&height=' + escape(JSON.stringify(sizes)) + '&bidderRequest=' + escape(JSON.stringify(bidderRequest)) + '&SiteURL=' + escape(top.window.location.href);
-
+      const rtbEndpoint = baseEndpoint + 'p.ashx?sid=' + params.supplyPartnerId;
       let url =
         config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
-
-      const rtbBidRequest = {
-        id: auctionId,
-        site: {
-          domain: helper.getTopWindowDomain(url),
-          page: url,
-          ref: bidderRequest.refererInfo.referer
-        },
-        device: {
-          ua: navigator.userAgent,
-          dnt: utils.getDNT() ? 1 : 0,
-          h: screen.height,
-          w: screen.width,
-          language: navigator.language
-        },
-        imp: [],
-        ext: {},
-        user: {
-          ext: {}
-        }
-      };
-
-      if (
-        bidderRequest.gdprConsent &&
-        bidderRequest.gdprConsent.consentString &&
-        bidderRequest.gdprConsent.gdprApplies
-      ) {
-        rtbBidRequest.ext.gdpr_consent = {
-          consent_string: bidderRequest.gdprConsent.consentString,
-          consent_required: bidderRequest.gdprConsent.gdprApplies
-        };
-        rtbBidRequest.regs = {
-          ext: {
-            gdpr: bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0
-          }
-        };
-        rtbBidRequest.user = {
-          ext: {
-            consent: bidderRequest.gdprConsent.consentString
-          }
-        }
-      }
-
+	  
       return {
         method: 'POST',
         url: rtbEndpoint,
-        data: rtbBidRequest,
-        bidRequest,
+        data: bidderRequest,
+        bidderRequest,
         options: {
           withCredentials: false,
           crossOrigin: true
@@ -123,16 +80,17 @@ export const spec = {
       return [];
     }
 
-    let errBcode = '';
+    let errBcode = 'cleanmedianet';
     const bids = response.bid;
     let outBids = [];
     if (bids === undefined || bids.length == 0) {
-      errBcode = ' ';
+      errBcode = 'cleanmedianet';
     } else {
       bids.forEach(function (bid) {
         let bidResponse = {
           requestId: bid.bidderRequest,
           bidderCode: errBcode,
+          bidder: errBcode,
           cpm: parseFloat(bid.price),
           width: bid.width,
           height: bid.height,
