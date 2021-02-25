@@ -158,11 +158,11 @@ export const emxAdapter = {
 
     return emxData;
   },
-  getSupplyChain: (bidRequests, emxData) => {
-    if (bidRequests.schain) {
+  getSupplyChain: (bidderRequest, emxData) => {
+    if (bidderRequest.bids[0] && bidderRequest.bids[0].schain) {
       emxData.source = {
         ext: {
-          schain: bidRequests.schain
+          schain: bidderRequest.bids[0].schain
         }
       };
     }

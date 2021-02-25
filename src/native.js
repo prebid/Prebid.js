@@ -154,22 +154,41 @@ export function fireNativeTrackers(message, adObject) {
 export function getNativeTargeting(bid, bidReq) {
   let keyValues = {};
 
+  if (deepAccess(bidReq, 'nativeParams.rendererUrl')) {
+    bid['native']['rendererUrl'] = getAssetValue(bidReq.nativeParams['rendererUrl']);
+  } else if (deepAccess(bidReq, 'nativeParams.adTemplate')) {
+    bid['native']['adTemplate'] = getAssetValue(bidReq.nativeParams['adTemplate']);
+  }
+
+  const globalSendTargetingKeys = deepAccess(
+    bidReq,
+    `nativeParams.sendTargetingKeys`
+  ) !== false;
+
   Object.keys(bid['native']).forEach(asset => {
-    const key = CONSTANTS.NATIVE_KEYS[asset];
-    let value = getAssetValue(bid['native'][asset]);
+    if (asset !== 'adTemplate') {
+      const key = CONSTANTS.NATIVE_KEYS[asset];
+      let value = getAssetValue(bid['native'][asset]);
 
-    const sendPlaceholder = deepAccess(
-      bidReq,
-      `mediaTypes.native.${asset}.sendId`
-    );
+      const sendPlaceholder = deepAccess(
+        bidReq,
+        `mediaTypes.native.${asset}.sendId`
+      );
 
-    if (sendPlaceholder) {
-      const placeholder = `${key}:${bid.adId}`;
-      value = placeholder;
-    }
+      if (sendPlaceholder) {
+        const placeholder = `${key}:${bid.adId}`;
+        value = placeholder;
+      }
 
-    if (key && value) {
-      keyValues[key] = value;
+      const assetSendTargetingKeys = deepAccess(
+        bidReq,
+        `nativeParams.${asset}.sendTargetingKeys`);
+
+      const sendTargeting = typeof assetSendTargetingKeys === 'boolean' ? assetSendTargetingKeys : globalSendTargetingKeys;
+
+      if (key && value && sendTargeting) {
+        keyValues[key] = value;
+      }
     }
   });
 
@@ -187,11 +206,39 @@ export function getAssetMessage(data, adObject) {
     assets: [],
   };
 
+  if (adObject.native.hasOwnProperty('adTemplate')) {
+    message.adTemplate = getAssetValue(adObject.native['adTemplate']);
+  } if (adObject.native.hasOwnProperty('rendererUrl')) {
+    message.rendererUrl = getAssetValue(adObject.native['rendererUrl']);
+  }
+
   data.assets.forEach(asset => {
     const key = getKeyByValue(CONSTANTS.NATIVE_KEYS, asset);
     const value = getAssetValue(adObject.native[key]);
 
     message.assets.push({ key, value });
+  });
+
+  return message;
+}
+
+export function getAllAssetsMessage(data, adObject) {
+  const message = {
+    message: 'assetResponse',
+    adId: data.adId,
+    assets: []
+  };
+
+  Object.keys(adObject.native).forEach(function(key, index) {
+    if (key === 'adTemplate' && adObject.native[key]) {
+      message.adTemplate = getAssetValue(adObject.native[key]);
+    } else if (key === 'rendererUrl' && adObject.native[key]) {
+      message.rendererUrl = getAssetValue(adObject.native[key]);
+    } else if (adObject.native[key] && CONSTANTS.NATIVE_KEYS.hasOwnProperty(key)) {
+      const value = getAssetValue(adObject.native[key]);
+
+      message.assets.push({ key, value });
+    }
   });
 
   return message;

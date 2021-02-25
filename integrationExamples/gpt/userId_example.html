@@ -109,6 +109,7 @@
         <script src="../../build/dev/prebid.js" async></script>
 
         <script>
+            function getHashedEmail() {}
             var googletag = googletag || {};
             googletag.cmd = googletag.cmd || [];
             googletag.cmd.push(function() {
@@ -157,7 +158,7 @@
                                         }
                                     }]
                                 }],
-                                eidsFunction: getHashedEmail  // any user defined function that exists in the page
+                                eidsFunction: getHashedEmail // any user defined function that exists in the page
                             }
                         },{
                             name: "unifiedId",
@@ -235,6 +236,7 @@
                         },
                         {
                         name: "sharedId",
+                        // bidders: ["rubicon", "sampleBidders"], // to allow this ID for specific bidders
                         params: {
                             syncTime: 60 // in seconds, default is 24 hours
                         },

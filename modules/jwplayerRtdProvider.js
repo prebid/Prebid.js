@@ -146,6 +146,11 @@ function enrichBidRequest(bidReqConfig, onDone) {
 export function enrichAdUnits(adUnits) {
   const fpdFallback = config.getConfig('fpd.context.data.jwTargeting');
   adUnits.forEach(adUnit => {
+    const jwTargeting = extractPublisherParams(adUnit, fpdFallback);
+    if (!jwTargeting || !Object.keys(jwTargeting).length) {
+      return;
+    }
+
     const onVatResponse = function (vat) {
       if (!vat) {
         return;
@@ -153,10 +158,13 @@ export function enrichAdUnits(adUnits) {
       const targeting = formatTargetingResponse(vat);
       addTargetingToBids(adUnit.bids, targeting);
     };
-
-    const jwTargeting = extractPublisherParams(adUnit, fpdFallback);
     loadVat(jwTargeting, onVatResponse);
   });
+}
+
+function supportsInstreamVideo(mediaTypes) {
+  const video = mediaTypes && mediaTypes.video;
+  return video && video.context === 'instream';
 }
 
 export function extractPublisherParams(adUnit, fallback) {
@@ -164,14 +172,15 @@ export function extractPublisherParams(adUnit, fallback) {
   try {
     adUnitTargeting = adUnit.fpd.context.data.jwTargeting;
   } catch (e) {}
+
+  if (!adUnitTargeting && !supportsInstreamVideo(adUnit.mediaTypes)) {
+    return;
+  }
+
   return Object.assign({}, fallback, adUnitTargeting);
 }
 
 function loadVat(params, onCompletion) {
-  if (!params || !Object.keys(params).length) {
-    return;
-  }
-
   const { playerID, mediaID } = params;
   if (pendingRequests[mediaID] !== undefined) {
     loadVatForPendingRequest(playerID, mediaID, onCompletion);
