@@ -106,64 +106,6 @@ export const spec = {
         }
       }
 
-      const imp = {
-        id: transactionId,
-        instl: params.instl === 1 ? 1 : 0,
-        tagid: adUnitCode,
-        bidfloor: params.bidfloor || 0,
-        bidfloorcur: 'USD',
-        secure: 1
-      };
-
-      const hasFavoredMediaType =
-        params.favoredMediaType &&
-        includes(this.supportedMediaTypes, params.favoredMediaType);
-
-      if (!mediaTypes || mediaTypes.banner) {
-        if (!hasFavoredMediaType || params.favoredMediaType === BANNER) {
-          const bannerImp = Object.assign({}, imp, {
-            banner: {
-              w: sizes.length ? sizes[0][0] : 300,
-              h: sizes.length ? sizes[0][1] : 250,
-              pos: params.pos || 0,
-              topframe: utils.inIframe() ? 0 : 1
-            }
-          });
-          rtbBidRequest.imp.push(bannerImp);
-        }
-      }
-
-      if (mediaTypes && mediaTypes.video) {
-        if (!hasFavoredMediaType || params.favoredMediaType === VIDEO) {
-          let videoImp = {
-            video: {
-              protocols: params.protocols || [1, 2, 3, 4, 5, 6],
-              pos: params.pos || 0,
-              ext: {context: mediaTypes.video.context}
-            }
-          };
-
-          let playerSize = mediaTypes.video.playerSize || sizes;
-          if (utils.isArray(playerSize[0])) {
-            videoImp.video.w = playerSize[0][0];
-            videoImp.video.h = playerSize[0][1];
-          } else if (utils.isNumber(playerSize[0])) {
-            videoImp.video.w = playerSize[0];
-            videoImp.video.h = playerSize[1];
-          } else {
-            videoImp.video.w = 300;
-            videoImp.video.h = 250;
-          }
-
-          videoImp = Object.assign({}, imp, videoImp);
-          rtbBidRequest.imp.push(videoImp);
-        }
-      }
-
-      if (rtbBidRequest.imp.length === 0) {
-        return;
-      }
-
       return {
         method: 'POST',
         url: rtbEndpoint,
@@ -207,7 +149,6 @@ export const spec = {
         if (bidResponse.mediaType === 'video') {
           bidResponse.vastUrl = bid.vastUrl;
           bidResponse.ttl = 600;
-          bidResponse.renderer = undefined;
         } else {
           bidResponse.ad = bid.adm;
         }
