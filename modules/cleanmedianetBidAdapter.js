@@ -207,6 +207,7 @@ export const spec = {
         if (bidResponse.mediaType === 'video') {
           bidResponse.vastUrl = bid.vastUrl;
           bidResponse.ttl = 600;
+          bidResponse.renderer = undefined;
         } else {
           bidResponse.ad = bid.adm;
         }
