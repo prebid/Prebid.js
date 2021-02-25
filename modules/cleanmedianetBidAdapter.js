@@ -2,7 +2,6 @@ import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import includes from 'core-js-pure/features/array/includes.js';
 
 export const helper = {
   getTopWindowDomain: function (url) {
@@ -50,12 +49,10 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const {
-        adUnitCode,
         auctionId,
         mediaTypes,
         params,
-        sizes,
-        transactionId
+        sizes
       } = bidRequest;
 
       const baseEndpoint = 'https://cleanmediaads.com/bidr/';
