@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 export const helper = {
@@ -42,7 +41,7 @@ export const spec = {
 
       const baseEndpoint = 'https://cleanmediaads.com/bidr/';
       const rtbEndpoint = baseEndpoint + 'p.ashx?sid=' + params.supplyPartnerId;
-		
+
       return {
         method: 'POST',
         url: rtbEndpoint,
