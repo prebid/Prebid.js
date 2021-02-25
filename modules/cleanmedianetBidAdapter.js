@@ -1,10 +1,8 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'cleanmedianet';
 const AD_URL = 'https://cleanmediaads.com/bidr/p.ashx';
-
 
 function isBidResponseValid(bid) {
   if (!bid.bidderRequest || !bid.price || !bid.adId) {
@@ -29,7 +27,7 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-   return {
+    return {
       method: 'POST',
       url: AD_URL,
       data: bidderRequest,
@@ -46,7 +44,7 @@ export const spec = {
     for (let i = 0; i < serverResponse.length; i++) {
       let resItem = serverResponse[i];
       if (isBidResponseValid(resItem)) {
-         let bidResponse = {
+        let bidResponse = {
           requestId: resItem.bidderRequest,
           bidderCode: BIDDER_CODE,
           bidder: BIDDER_CODE,
@@ -66,7 +64,7 @@ export const spec = {
         } else {
           bidResponse.ad = resItem.adm;
         }
-		response.push(bidResponse);
+         response.push(bidResponse);
       }
     }
     return response;
