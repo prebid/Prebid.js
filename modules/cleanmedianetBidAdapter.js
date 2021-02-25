@@ -10,18 +10,6 @@ export const helper = {
   },
   startsWith: function (str, search) {
     return str.substr(0, search.length) === search;
-  },
-  getMediaType: function (bid) {
-    if (bid.ext) {
-      if (bid.ext.media_type) {
-        return bid.ext.media_type.toLowerCase();
-      } else if (bid.ext.vast_url) {
-        return VIDEO;
-      } else {
-        return BANNER;
-      }
-    }
-    return BANNER;
   }
 };
 
@@ -49,17 +37,12 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const {
-        auctionId,
-        mediaTypes,
-        params,
-        sizes
+        params
       } = bidRequest;
 
       const baseEndpoint = 'https://cleanmediaads.com/bidr/';
       const rtbEndpoint = baseEndpoint + 'p.ashx?sid=' + params.supplyPartnerId;
-      let url =
-        config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
-	  
+		
       return {
         method: 'POST',
         url: rtbEndpoint,
