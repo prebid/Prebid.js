@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from '../../../src/utils.js';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 const bidRequests = [
@@ -14,7 +15,21 @@ const bidRequests = [
     },
     userId: {
       tdid: 'fake-tdid',
-      pubcid: 'fake-pubcid'
+      pubcid: 'fake-pubcid',
+      idl_env: 'fake-identity-link',
+      id5id: {
+        uid: 'fake-id5id',
+        ext: {
+          linkType: 2
+        }
+      },
+      sharedid: {
+        id: 'fake-sharedid',
+        third: 'fake-sharedthird'
+      },
+      lipb: {
+        lipbid: 'fake-lipbid'
+      }
     },
     crumbs: {
       pubcid: 'fake-pubcid-in-crumbs-obj'
@@ -40,12 +55,32 @@ const bidRequests = [
       iframe: true,
       iframeSize: [500, 500]
     }
-  }
+  },
+  {
+    bidder: 'sharethrough',
+    bidId: 'bidId4',
+    sizes: [[700, 400]],
+    placementCode: 'bar',
+    params: {
+      pkey: 'dddd4444',
+      badv: ['domain1.com', 'domain2.com']
+    }
+  },
+  {
+    bidder: 'sharethrough',
+    bidId: 'bidId5',
+    sizes: [[700, 400]],
+    placementCode: 'bar',
+    params: {
+      pkey: 'eeee5555',
+      bcat: ['IAB1-1', 'IAB1-2']
+    }
+  },
 ];
 
 const prebidRequests = [
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -57,7 +92,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -69,7 +104,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -82,7 +117,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -94,7 +129,7 @@ const prebidRequests = [
     }
   },
   {
-    method: 'GET',
+    method: 'POST',
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
@@ -225,7 +260,7 @@ describe('sharethrough adapter spec', function() {
 
       expect(builtBidRequests[0].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
       expect(builtBidRequests[1].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
-      expect(builtBidRequests[0].method).to.eq('GET');
+      expect(builtBidRequests[0].method).to.eq('POST');
     });
 
     it('should set the instant_play_capable parameter correctly based on browser userAgent string', function() {
@@ -310,9 +345,40 @@ describe('sharethrough adapter spec', function() {
 
     it('should add the pubcid parameter if a bid request contains a value for the Publisher Common ID Module in the' +
       ' crumbs object of the bidrequest', function() {
+      const bidData = utils.deepClone(bidRequests);
+      delete bidData[0].userId.pubcid;
+
+      const bidRequest = spec.buildRequests(bidData)[0];
+      expect(bidRequest.data.pubcid).to.eq('fake-pubcid-in-crumbs-obj');
+    });
+
+    it('should add the pubcid parameter if a bid request contains a value for the Publisher Common ID Module in the' +
+      ' crumbs object of the bidrequest', function() {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       delete bidRequest.userId;
       expect(bidRequest.data.pubcid).to.eq('fake-pubcid');
+    });
+
+    it('should add the idluid parameter if a bid request contains a value for Identity Link from Live Ramp', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.idluid).to.eq('fake-identity-link');
+    });
+
+    it('should add the id5uid parameter if a bid request contains a value for ID5', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.id5uid.id).to.eq('fake-id5id');
+      expect(bidRequest.data.id5uid.linkType).to.eq(2);
+    });
+
+    it('should add the shduid parameter if a bid request contains a value for Shared ID', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.shduid.id).to.eq('fake-sharedid');
+      expect(bidRequest.data.shduid.third).to.eq('fake-sharedthird');
+    });
+
+    it('should add the liuid parameter if a bid request contains a value for LiveIntent ID', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.liuid).to.eq('fake-lipbid');
     });
 
     it('should add Sharethrough specific parameters', function() {
@@ -344,6 +410,18 @@ describe('sharethrough adapter spec', function() {
 
       const builtBidRequest = spec.buildRequests([bidRequest])[0];
       expect(builtBidRequest.data.schain).to.eq(JSON.stringify(bidRequest.schain));
+    });
+
+    it('should add badv if provided', () => {
+      const builtBidRequest = spec.buildRequests([bidRequests[3]])[0];
+
+      expect(builtBidRequest.data.badv).to.have.members(['domain1.com', 'domain2.com'])
+    });
+
+    it('should add bcat if provided', () => {
+      const builtBidRequest = spec.buildRequests([bidRequests[4]])[0];
+
+      expect(builtBidRequest.data.bcat).to.have.members(['IAB1-1', 'IAB1-2'])
     });
 
     it('should not add a supply chain parameter if schain is missing', function() {

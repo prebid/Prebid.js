@@ -458,7 +458,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
 
   if (config.getConfig('cache.url') && context !== OUTSTREAM) {
-    if (!bidResponse.videoCacheKey) {
+    if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
       addBid = false;
       callPrebidCache(auctionInstance, bidResponse, afterBidAdded, bidderRequest);
     } else if (!bidResponse.vastUrl) {
@@ -627,6 +627,16 @@ export const getPriceByGranularity = (granularity) => {
 }
 
 /**
+ * This function returns a function to get first advertiser domain from bid response meta
+ * @returns {function}
+ */
+export const getAdvertiserDomain = () => {
+  return (bid) => {
+    return (bid.meta && bid.meta.advertiserDomains && bid.meta.advertiserDomains.length > 0) ? bid.meta.advertiserDomains[0] : '';
+  }
+}
+
+/**
  * @param {string} mediaType
  * @param {string} bidderCode
  * @param {BidRequest} bidReq
@@ -662,6 +672,7 @@ export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
       createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
       createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
       createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
+      createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
     ]
   }
 

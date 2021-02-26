@@ -1,7 +1,8 @@
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }

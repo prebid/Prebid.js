@@ -137,6 +137,17 @@ function handleResponse(pubcid, callback, config) {
 }
 
 /**
+ * Builds and returns the shared Id URL with attached consent data if applicable
+ * @param {Object} consentData
+ * @return {string}
+ */
+function sharedIdUrl(consentData) {
+  if (!consentData || typeof consentData.gdprApplies !== 'boolean' || !consentData.gdprApplies) return SHAREDID_URL;
+
+  return `${SHAREDID_URL}?gdpr=1&gdpr_consent=${consentData.consentString}`
+}
+
+/**
  * Wraps pixelCallback in order to call sharedid sync
  * @param {string} pubcid Pubcommon id value
  * @param {function|undefined} pixelCallback fires a pixel to first party server
@@ -144,12 +155,12 @@ function handleResponse(pubcid, callback, config) {
  * @return {function(...[*]=)}
  */
 
-function getIdCallback(pubcid, pixelCallback, config) {
+function getIdCallback(pubcid, pixelCallback, config, consentData) {
   return function (callback) {
     if (typeof pixelCallback === 'function') {
       pixelCallback();
     }
-    ajax(SHAREDID_URL, handleResponse(pubcid, callback, config), undefined, {method: 'GET', withCredentials: true});
+    ajax(sharedIdUrl(consentData), handleResponse(pubcid, callback, config), undefined, {method: 'GET', withCredentials: true});
   }
 }
 
@@ -227,7 +238,7 @@ export const pubCommonIdSubmodule = {
     }
 
     const pixelCallback = this.makeCallback(pixelUrl, newId);
-    const combinedCallback = enableSharedId ? getIdCallback(newId, pixelCallback, config) : pixelCallback;
+    const combinedCallback = enableSharedId ? getIdCallback(newId, pixelCallback, config, consentData) : pixelCallback;
 
     return {id: newId, callback: combinedCallback};
   },
@@ -247,10 +258,11 @@ export const pubCommonIdSubmodule = {
    *
    * @function
    * @param {SubmoduleParams} [config]
+   * @param {ConsentData|undefined} consentData
    * @param {Object} storedId existing id
    * @returns {IdResponse|undefined}
    */
-  extendId: function(config = {}, storedId) {
+  extendId: function(config = {}, consentData, storedId) {
     const {params: {extend = false, pixelUrl, enableSharedId = SHAREDID_DEFAULT_STATE} = {}} = config;
 
     if (extend) {
