@@ -15,22 +15,25 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const requestUrl = validBidRequests[0].params.endpointdom || DEFAULT_URL;
     const isiframe = !((window.self === window.top) || window.frameElement);
     const screenSize = getClientDimensions();
     const docSize = getDocumentDimensions();
 
     return validBidRequests.map((bidRequest) => {
       const bidderParams = bidRequest.params;
+      const requestUrl = bidderParams.endpointdom || DEFAULT_URL;
+      const pubsubid = bidderParams.pubsubid;
+      if (pubsubid && pubsubid.length > 32) { utils.logError('Bidder param \'pubsubid\' should be less than 32 chars.'); }
       const pubcontainerid = bidderParams.pubcontainerid;
       const adUnitElement = document.getElementById(pubcontainerid || bidRequest.adUnitCode);
       const ishidden = !isVisible(adUnitElement);
-      const coords = {
+      const coords = isiframe ? {
         x: adUnitElement && adUnitElement.getBoundingClientRect().x,
         y: adUnitElement && adUnitElement.getBoundingClientRect().y,
+      } : {
+        x: getFramePos()[0],
+        y: getFramePos()[1],
       };
-      const pubsubid = bidderParams.pubsubid;
-      if (pubsubid && pubsubid.length > 32) { utils.logError('Bidder param \'pubsubid\' should be less than 32 chars.'); }
 
       const bidrequest = {
         bidId: bidRequest.bidId,
@@ -59,6 +62,7 @@ export const spec = {
           refererUrl: window.top.document.referrer || window.document.referrer,
           isiframe,
           version: '$prebid.version$',
+          ExtUserIDs: Object.keys(bidRequest.userId || {}),
           visitorInfo: {
             localTime: getLocalDateFormatted(),
             dayOfWeek: new Date().getDay(),
@@ -66,8 +70,8 @@ export const spec = {
             screenHeight: screenSize[1],
             docWidth: docSize[0],
             docHeight: docSize[1],
-            scrollbarx: window.scrollX,
-            scrollbary: window.scrollY,
+            scrollbarx: window.top.scrollX,
+            scrollbary: window.top.scrollY,
           },
           bidrequest,
         },
@@ -82,7 +86,7 @@ export const spec = {
       if (serverBody) {
         if (serverBody.bid) {
           const bidBody = serverBody.bid;
-          const bidRequest = bidRequests[0].data.bidrequest;
+          const bidRequest = bidRequests.data.bidrequest;
           const bidResponse = {
             currency: serverBody.currency || DEFAULT_CURRENCY,
             netRevenue: serverBody.netRevenue || DEFAULT_NET_REVENUE,
@@ -209,6 +213,24 @@ function getLocalDateFormatted() {
   const two = num => ('0' + num).slice(-2);
   const d = new Date();
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
+}
+
+function getFramePos() {
+  let t = window, m = 0;
+  let frm_left = 0, frm_top = 0;
+  do {
+    m = m + 1;
+    try {
+      if (m > 1) {
+        t = t.parent
+      }
+      frm_left = frm_left + t.frameElement.getBoundingClientRect().left;
+      frm_top = frm_top + t.frameElement.getBoundingClientRect().top;
+    } catch (o) { /* keep looping */
+    }
+  } while ((m < 100) && (t.parent !== t.self))
+
+  return [frm_left, frm_top];
 }
 
 registerBidder(spec);
