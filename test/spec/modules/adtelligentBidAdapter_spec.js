@@ -14,7 +14,8 @@ const aliasEP = {
   appaloosa: 'https://ghb.hb.appaloosa.media/v2/auction/',
   appaloosa_publisherSuffix: 'https://ghb.hb.appaloosa.media/v2/auction/',
   onefiftytwomedia: 'https://ghb.ads.152media.com/v2/auction/',
-  mediafuse: 'https://ghb.hbmp.mediafuse.com/v2/auction/'
+  mediafuse: 'https://ghb.hbmp.mediafuse.com/v2/auction/',
+  navelix: 'https://ghb.hb.navelix.com/v2/auction/',
 };
 
 const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };

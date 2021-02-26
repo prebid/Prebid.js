@@ -60,7 +60,8 @@ const cache = {
 const BID_REJECTED_IPF = 'rejected-ipf';
 
 export let rubiConf = {
-  pvid: utils.generateUUID().slice(0, 8)
+  pvid: utils.generateUUID().slice(0, 8),
+  analyticsEventDelay: 0
 };
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
@@ -487,7 +488,11 @@ function subscribeToGamSlots() {
       if (rubiConf.waitForGamSlots && !cache.auctions[auctionId].sent && Object.keys(cache.auctions[auctionId].gamHasRendered).every(adUnitCode => cache.auctions[auctionId].gamHasRendered[adUnitCode])) {
         clearTimeout(cache.timeouts[auctionId]);
         delete cache.timeouts[auctionId];
-        sendMessage.call(rubiconAdapter, auctionId);
+        if (rubiConf.analyticsEventDelay > 0) {
+          setTimeout(() => sendMessage.call(rubiconAdapter, auctionId), rubiConf.analyticsEventDelay)
+        } else {
+          sendMessage.call(rubiconAdapter, auctionId)
+        }
       }
     });
   });
@@ -568,9 +573,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           cache.gpt.registered = true;
         } else if (!cache.gpt.registered) {
           cache.gpt.registered = true;
-          let googletag = window.googletag || {};
-          googletag.cmd = googletag.cmd || [];
-          googletag.cmd.push(function() {
+          window.googletag = window.googletag || {};
+          window.googletag.cmd = window.googletag.cmd || [];
+          window.googletag.cmd.push(function() {
             subscribeToGamSlots();
           });
         }
