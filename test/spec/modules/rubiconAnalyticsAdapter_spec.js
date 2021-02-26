@@ -868,6 +868,9 @@ describe('rubicon analytics adapter', function () {
         advertiserDomains: ['prebid.org', 'magnite.com']
       }
 
+      // make sure we only pass max 10 adomains
+      bidResponse2.meta.advertiserDomains = [...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains]
+
       events.emit(BID_RESPONSE, bidResponse1);
       events.emit(BID_RESPONSE, bidResponse2);
       events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
@@ -879,7 +882,7 @@ describe('rubicon analytics adapter', function () {
       let message = JSON.parse(server.requests[0].requestBody);
       validate(message);
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.deep.equal(['magnite.com']);
-      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.deep.equal(['prebid.org', 'magnite.com']);
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.deep.equal(['prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com']);
     });
 
     it('should NOT pass along adomians correctly when edge cases', function () {
