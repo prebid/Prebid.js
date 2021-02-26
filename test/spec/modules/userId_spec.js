@@ -2,7 +2,6 @@ import {
   attachIdSystem,
   auctionDelay,
   coreStorage,
-  getEidPermissions,
   init,
   requestBidsHook,
   setStoredConsentData,
@@ -40,6 +39,7 @@ import {haloIdSubmodule} from 'modules/haloIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import {criteoIdSubmodule} from 'modules/criteoIdSystem.js';
 import {tapadIdSubmodule} from 'modules/tapadIdSystem.js';
+import {getPrebidInternal} from 'src/utils.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -1204,6 +1204,10 @@ describe('User ID', function () {
       }), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([sharedIdSubmodule]);
+      let eidPermissions;
+      getPrebidInternal().setEidPermissions = function (newEidPermissions) {
+        eidPermissions = newEidPermissions;
+      }
       init(config);
       config.setConfig({
         userSync: {
@@ -1225,10 +1229,14 @@ describe('User ID', function () {
       });
 
       requestBidsHook(function () {
-        const eidPermissions = getEidPermissions();
         expect(eidPermissions).to.deep.equal(
           [
-            {source: 'sharedid.org', bidders: ['sampleBidder']}
+            {
+              bidders: [
+                'sampleBidder'
+              ],
+              source: 'sharedid.org'
+            }
           ]
         );
         adUnits.forEach(unit => {
@@ -1256,6 +1264,7 @@ describe('User ID', function () {
           });
         });
         coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
+        getPrebidInternal().setEidPermissions = undefined;
         done();
       }, {adUnits});
     });
@@ -1267,6 +1276,10 @@ describe('User ID', function () {
       }), (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([sharedIdSubmodule]);
+      let eidPermissions;
+      getPrebidInternal().setEidPermissions = function (newEidPermissions) {
+        eidPermissions = newEidPermissions;
+      }
       init(config);
       config.setConfig({
         userSync: {
@@ -1285,7 +1298,6 @@ describe('User ID', function () {
       });
 
       requestBidsHook(function () {
-        const eidPermissions = getEidPermissions();
         expect(eidPermissions).to.deep.equal(
           []
         );
@@ -1306,6 +1318,7 @@ describe('User ID', function () {
             });
           });
         });
+        getPrebidInternal().setEidPermissions = undefined;
         coreStorage.setCookie('sharedid', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
@@ -2152,6 +2165,8 @@ describe('User ID', function () {
       coreStorage.setCookie('pubcid_sharedid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
+      resetConsentData();
+      delete window.__tcfapi;
     });
 
     it('pubcid callback with url', function () {
@@ -2285,6 +2300,57 @@ describe('User ID', function () {
 
       expect(server.requests[0].url).to.equal('https://id.sharedid.org/id');
       expect(coreStorage.getCookie('pubcid_sharedid')).to.be.null;
+    });
+
+    it('verify sharedid called with consent data when gdpr applies', function () {
+      let adUnits = [getAdUnitMock()];
+      let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+      let consentConfig = {
+        cmpApi: 'iab',
+        timeout: 7500,
+        allowAuctionWithoutConsent: false
+      };
+      customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url', enableSharedId: true});
+
+      server.respondWith('https://id.sharedid.org/id?gdpr=1&gdpr_consent=abc12345234', function(xhr) {
+        xhr.respond(200, {}, '{"sharedId":"testsharedid"}');
+      });
+      server.respondImmediately = true;
+
+      let testConsentData = {
+        tcString: 'abc12345234',
+        gdprApplies: true,
+        purposeOneTreatment: false,
+        eventStatus: 'tcloaded',
+        vendor: {consents: {887: true}},
+        purpose: {
+          consents: {
+            1: true
+          }
+        }
+      };
+
+      window.__tcfapi = function () { };
+      sinon.stub(window, '__tcfapi').callsFake((...args) => {
+        args[2](testConsentData, true);
+      });
+
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
+      init(config);
+      config.setConfig(customCfg);
+      setConsentConfig(consentConfig);
+
+      consentManagementRequestBidsHook(() => {
+      }, {});
+      requestBidsHook((config) => {
+      }, {adUnits});
+
+      expect(utils.triggerPixel.called).to.be.false;
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+      expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/pubcid/url');
+
+      expect(server.requests[0].url).to.equal('https://id.sharedid.org/id?gdpr=1&gdpr_consent=abc12345234');
+      expect(coreStorage.getCookie('pubcid_sharedid')).to.equal('testsharedid');
     });
   });
 

@@ -606,4 +606,8 @@ adapterManager.callSetTargetingBidder = function(bidder, bid) {
   tryCallBidderMethod(bidder, 'onSetTargeting', bid);
 };
 
+adapterManager.callBidViewableBidder = function(bidder, bid) {
+  tryCallBidderMethod(bidder, 'onBidViewable', bid);
+};
+
 export default adapterManager;

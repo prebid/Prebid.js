@@ -103,7 +103,9 @@ var sizeMap = {
   278: '320x500',
   282: '320x400',
   288: '640x380',
-  548: '500x1000'
+  548: '500x1000',
+  550: '980x480',
+  552: '300x200'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -254,46 +256,7 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
-      const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
-      const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
-      if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
-        const bidderData = {
-          bidders: [ bidderRequest.bidderCode ],
-          config: {
-            fpd: {}
-          }
-        };
-
-        if (!utils.isEmpty(siteData)) {
-          bidderData.config.fpd.site = siteData;
-        }
-
-        if (!utils.isEmpty(userData)) {
-          bidderData.config.fpd.user = userData;
-        }
-
-        utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
-      }
-
-      /**
-       * Prebid AdSlot
-       * @type {(string|undefined)}
-       */
-      const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-      if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(data.imp[0].ext, 'context.data.pbadslot', pbAdSlot);
-      }
-
-      /**
-       * Copy GAM AdUnit and Name to imp
-       */
-      ['name', 'adSlot'].forEach(name => {
-        /** @type {(string|undefined)} */
-        const value = utils.deepAccess(bidRequest, `fpd.context.adserver.${name}`);
-        if (typeof value === 'string' && value) {
-          utils.deepSetValue(data.imp[0].ext, `context.data.adserver.${name.toLowerCase()}`, value);
-        }
-      });
+      applyFPD(bidRequest, VIDEO, data);
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
@@ -547,49 +510,7 @@ export const spec = {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
-    // visitor properties
-    const visitorData = Object.assign({}, params.visitor, config.getConfig('fpd.user'));
-    Object.keys(visitorData).forEach((key) => {
-      if (visitorData[key] != null && key !== 'keywords') {
-        data[`tg_v.${key}`] = typeof visitorData[key] === 'object' && !Array.isArray(visitorData[key])
-          ? JSON.stringify(visitorData[key])
-          : visitorData[key].toString(); // initialize array;
-      }
-    });
-
-    // inventory properties
-    const inventoryData = Object.assign({}, params.inventory, config.getConfig('fpd.context'));
-    Object.keys(inventoryData).forEach((key) => {
-      if (inventoryData[key] != null && key !== 'keywords') {
-        data[`tg_i.${key}`] = typeof inventoryData[key] === 'object' && !Array.isArray(inventoryData[key])
-          ? JSON.stringify(inventoryData[key])
-          : inventoryData[key].toString();
-      }
-    });
-
-    // keywords
-    const keywords = (params.keywords || []).concat(
-      utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
-      utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
-    data.kw = Array.isArray(keywords) && keywords.length ? keywords.join(',') : '';
-
-    /**
-     * Prebid AdSlot
-     * @type {(string|undefined)}
-     */
-    const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-    if (typeof pbAdSlot === 'string' && pbAdSlot) {
-      data['tg_i.pbadslot'] = pbAdSlot.replace(/^\/+/, '');
-    }
-
-    /**
-     * GAM Ad Unit
-     * @type {(string|undefined)}
-     */
-    const gamAdUnit = utils.deepAccess(bidRequest, 'fpd.context.adServer.adSlot');
-    if (typeof gamAdUnit === 'string' && gamAdUnit) {
-      data['tg_i.dfp_ad_unit_code'] = gamAdUnit.replace(/^\/+/, '');
-    }
+    applyFPD(bidRequest, BANNER, data);
 
     if (config.getConfig('coppa') === true) {
       data['coppa'] = 1;
@@ -947,6 +868,81 @@ function addVideoParameters(data, bidRequest) {
   const size = parseSizes(bidRequest, 'video')
   data.imp[0].video.w = size[0]
   data.imp[0].video.h = size[1]
+}
+
+function applyFPD(bidRequest, mediaType, data) {
+  const bidFpd = {
+    user: {...bidRequest.params.visitor},
+    context: {...bidRequest.params.inventory}
+  };
+
+  if (bidRequest.params.keywords) bidFpd.context.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
+
+  let fpd = utils.mergeDeep({}, config.getConfig('fpd') || {}, bidRequest.fpd || {}, bidFpd);
+
+  const map = {user: {banner: 'tg_v.', code: 'user'}, context: {banner: 'tg_i.', code: 'site'}, adserver: 'dfp_ad_unit_code'};
+  let obj = {};
+  let impData = {};
+  let keywords = [];
+  const validate = function(prop, key) {
+    if (typeof prop === 'object' && !Array.isArray(prop)) {
+      utils.logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
+    } else if (typeof prop !== 'undefined') {
+      return (Array.isArray(prop)) ? prop.filter(value => {
+        if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
+
+        utils.logWarn('Rubicon: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
+      }).toString() : prop.toString();
+    }
+  };
+
+  Object.keys(fpd).filter(value => fpd[value] && map[value] && typeof fpd[value] === 'object').forEach((type) => {
+    obj[map[type].code] = Object.keys(fpd[type]).filter(value => typeof fpd[type][value] !== 'undefined').reduce((result, key) => {
+      if (key === 'keywords') {
+        if (!Array.isArray(fpd[type][key]) && mediaType === BANNER) fpd[type][key] = [fpd[type][key]]
+
+        result[key] = fpd[type][key];
+
+        if (mediaType === BANNER) keywords = keywords.concat(fpd[type][key]);
+      } else if (key === 'data') {
+        utils.mergeDeep(result, {ext: {data: fpd[type][key]}});
+      } else if (key === 'adServer' || key === 'pbAdSlot') {
+        (key === 'adServer') ? ['name', 'adSlot'].forEach(name => {
+          const value = validate(fpd[type][key][name]);
+          if (value) utils.deepSetValue(impData, `adserver.${name.toLowerCase()}`, value.replace(/^\/+/, ''))
+        }) : impData[key.toLowerCase()] = fpd[type][key].replace(/^\/+/, '')
+      } else {
+        utils.mergeDeep(result, {ext: {data: {[key]: fpd[type][key]}}});
+      }
+
+      return result;
+    }, {});
+
+    if (mediaType === BANNER) {
+      let duplicate = (typeof obj[map[type].code].ext === 'object' && obj[map[type].code].ext.data) || {};
+
+      Object.keys(duplicate).forEach((key) => {
+        const val = (key === 'adserver') ? duplicate.adserver.adslot : validate(duplicate[key], key);
+
+        if (val) data[(map[key]) ? `${map[type][BANNER]}${map[key]}` : `${map[type][BANNER]}${key}`] = val;
+      });
+    }
+  });
+
+  Object.keys(impData).forEach((key) => {
+    if (mediaType === BANNER) {
+      (map[key]) ? data[`tg_i.${map[key]}`] = impData[key].adslot : data[`tg_i.${key.toLowerCase()}`] = impData[key];
+    } else {
+      utils.mergeDeep(data.imp[0], {ext: {context: {data: {[key]: impData[key]}}}});
+    }
+  });
+
+  if (mediaType === BANNER) {
+    let kw = validate(keywords, 'keywords');
+    if (kw) data.kw = kw;
+  } else {
+    utils.mergeDeep(data, obj);
+  }
 }
 
 /**

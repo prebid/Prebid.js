@@ -129,9 +129,10 @@ function _buildPostBody(bidRequests) {
   });
 
   let eids = [
-    ...getUnifiedIdEids(bidRequests),
-    ...getIdentityLinkEids(bidRequests),
-    ...getCriteoEids(bidRequests)
+    ...getUnifiedIdEids([bidRequests[0]]),
+    ...getIdentityLinkEids([bidRequests[0]]),
+    ...getCriteoEids([bidRequests[0]]),
+    ...getPubCommonEids([bidRequests[0]])
   ];
 
   if (eids.length > 0) {
@@ -239,20 +240,24 @@ function _getExt(schain, fpd) {
   return ext;
 }
 
-function getUnifiedIdEids(bidRequests) {
-  return getEids(bidRequests, 'tdid', 'adserver.org', 'TDID');
+function getUnifiedIdEids(bidRequest) {
+  return getEids(bidRequest, 'tdid', 'adserver.org', 'TDID');
 }
 
-function getIdentityLinkEids(bidRequests) {
-  return getEids(bidRequests, 'idl_env', 'liveramp.com', 'idl');
+function getIdentityLinkEids(bidRequest) {
+  return getEids(bidRequest, 'idl_env', 'liveramp.com', 'idl');
 }
 
-function getCriteoEids(bidRequests) {
-  return getEids(bidRequests, 'criteoId', 'criteo.com', 'criteoId');
+function getCriteoEids(bidRequest) {
+  return getEids(bidRequest, 'criteoId', 'criteo.com', 'criteoId');
 }
 
-function getEids(bidRequests, type, source, rtiPartner) {
-  return bidRequests
+function getPubCommonEids(bidRequest) {
+  return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid');
+}
+
+function getEids(bidRequest, type, source, rtiPartner) {
+  return bidRequest
     .map(getUserId(type)) // bids -> userIds of a certain type
     .filter((x) => !!x) // filter out null userIds
     .map(formatEid(source, rtiPartner)); // userIds -> eid objects
@@ -321,6 +326,14 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.adomain && bid.adomain.length) {
       bidResponse.meta.advertiserDomains = bid.adomain;
+    }
+
+    if (bid.tl_source && bid.tl_source == 'hdx') {
+      bidResponse.meta.mediaType = 'banner';
+    }
+
+    if (bid.tl_source && bid.tl_source == 'tlx') {
+      bidResponse.meta.mediaType = 'native';
     }
   };
   return bidResponse;

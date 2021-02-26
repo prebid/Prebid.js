@@ -202,6 +202,11 @@ To run the unit tests:
 gulp test
 ```
 
+To run the unit tests for a perticular file (example for pubmaticBidAdapter_spec.js):
+```bash
+gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js"
+```
+
 To generate and view the code coverage reports:
 
 ```bash

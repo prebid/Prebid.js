@@ -212,36 +212,35 @@ function getBidRequest(id, impressions) {
 }
 
 /**
- * Adds a User ID module's response into user Eids array.
- *
- * @param  {array}  userEids       An array of objects containing user ids,
- *                                 will be attached to bid request later.
- * @param  {object} seenIdPartners An object with Identity partners names already added,
- *                                 updated with new partner name.
- * @param  {*}      id             The id obtained from User ID module.
- * @param  {string} source         The URL of the User ID module.
- * @param  {string} ixlPartnerName The name of the Identity Partner in IX Library.
- * @param  {string} rtiPartner     The name of the User ID provider in Prebid.
- * @return {boolean}               True if successfully added the ID to the userEids, false otherwise.
+ * From the userIdAsEids array, filter for the ones our adserver can use, and modify them
+ * for our purposes, e.g. add rtiPartner
+ * @param {array} allEids userIdAsEids passed in by prebid
+ * @return {object} contains toSend (eids to send to the adserver) and seenSources (used to filter
+ *                  identity info from IX Library)
  */
-function addUserEids(userEids, seenIdPartners, id, source, ixlPartnerName, rtiPartner) {
-  if (id) {
-    // mark the partnername that IX RTI uses
-    seenIdPartners[ixlPartnerName] = 1;
-    userEids.push({
-      source: source,
-      uids: [{
-        id: id,
-        ext: {
-          rtiPartner: rtiPartner
-        }
-      }]
-    });
-    return true;
+function getEidInfo(allEids) {
+  // determines which eids we send and the rtiPartner field in ext
+  var sourceRTIMapping = {
+    'liveramp.com': 'idl',
+    'netid.de': 'NETID',
+    'neustar.biz': 'fabrickId',
+    'zeotap.com': 'zeotapIdPlus'
+  };
+  var toSend = [];
+  var seenSources = {};
+  if (utils.isArray(allEids)) {
+    for (var i = 0; i < allEids.length; i++) {
+      if (sourceRTIMapping[allEids[i].source] && utils.deepAccess(allEids[i], 'uids.0')) {
+        seenSources[allEids[i].source] = 1;
+        allEids[i].uids[0].ext = {
+          rtiPartner: sourceRTIMapping[allEids[i].source]
+        };
+        delete allEids[i].uids[0].atype;
+        toSend.push(allEids[i]);
+      }
+    }
   }
-
-  utils.logWarn('Tried to add a user ID from Prebid, the ID received was null');
-  return false;
+  return { toSend: toSend, seenSources: seenSources };
 }
 
 /**
@@ -255,21 +254,12 @@ function addUserEids(userEids, seenIdPartners, id, source, ixlPartnerName, rtiPa
  *
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
-  const userEids = [];
-
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
 
-  // Dict for identity partners already populated from prebid
-  let seenIdPartners = {};
-
   // Get ids from Prebid User ID Modules
-  const userId = validBidRequests[0].userId;
-  if (userId && typeof userId === 'object') {
-    if (userId.idl_env) {
-      addUserEids(userEids, seenIdPartners, userId.idl_env, 'liveramp.com', 'LiveRampIp', 'idl');
-    }
-  }
+  var eidInfo = getEidInfo(utils.deepAccess(validBidRequests, '0.userIdAsEids'));
+  var userEids = eidInfo.toSend;
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
@@ -278,12 +268,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (identityInfo && typeof identityInfo === 'object') {
       for (const partnerName in identityInfo) {
         if (identityInfo.hasOwnProperty(partnerName)) {
-          // check if not already populated by prebid cache
-          if (!seenIdPartners.hasOwnProperty(partnerName)) {
-            let response = identityInfo[partnerName];
-            if (!response.responsePending && response.data && typeof response.data === 'object' && Object.keys(response.data).length) {
-              userEids.push(response.data);
-            }
+          let response = identityInfo[partnerName];
+          if (!response.responsePending && response.data && typeof response.data === 'object' &&
+                Object.keys(response.data).length && !eidInfo.seenSources[response.data.source]) {
+            userEids.push(response.data);
           }
         }
       }
@@ -341,6 +329,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         r.user.ext = {
           consent: gdprConsent.consentString || ''
         };
+
+        if (gdprConsent.hasOwnProperty('addtlConsent') && gdprConsent.addtlConsent) {
+          r.user.ext.consented_providers_settings = {
+            consented_providers: gdprConsent.addtlConsent
+          }
+        }
       }
     }
 
@@ -505,7 +499,8 @@ function buildIXDiag(validBidRequests) {
     nu: 0,
     ou: 0,
     allU: 0,
-    ren: false
+    ren: false,
+    version: '$prebid.version$'
   };
 
   // create ad unit map and collect the required diag properties
