@@ -116,18 +116,20 @@ export const spec = {
       payload.schain = JSON.stringify(validBidRequests[0].schain)
     }
     if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
+
       const userIds = validBidRequests[0].userId;
-      if (userIds.id5id) {
+      if(userIds.id5id) {
         userIds.id5id = deepAccess(userIds, 'id5id.uid');
       }
 
-      payload.userid = JSON.stringify(validBidRequests[0].userId);
+      payload.userid = JSON.stringify(userIds);
     }
 
     const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
-    if (Array.isArray(eids) && eids.length > 0) {
+    if(Array.isArray(eids) && eids.length > 0) {
       payload.eids = JSON.stringify(eids);
     }
+
 
     let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
 
