@@ -709,15 +709,6 @@ const OPEN_RTB_PROTOCOL = {
       };
     }
 
-    // check for and store valid aliases to add to the requests
-    _s2sConfigs.forEach(s2sConfig => {
-      s2sConfig.bidders.forEach(bidder => {
-        if (adapterManager.aliasRegistry[bidder]) {
-          aliases[bidder] = adapterManager.aliasRegistry[bidder];
-        }
-      })
-    })
-
     if (!utils.isEmpty(aliases)) {
       request.ext.prebid.aliases = { ...request.ext.prebid.aliases, ...aliases };
     }
