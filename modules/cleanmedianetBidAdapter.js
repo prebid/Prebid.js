@@ -62,7 +62,7 @@ export const spec = {
       const rtbEndpoint = baseEndpoint + 'p.ashx?sid=' + params.supplyPartnerId;
       let url =
         config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
-      
+
       const rtbBidRequest = {
         id: auctionId,
         site: {
