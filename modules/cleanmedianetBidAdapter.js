@@ -117,6 +117,7 @@ export const spec = {
               topframe: utils.inIframe() ? 0 : 1
             }
           });
+          rtbBidRequest.imp.push(bannerImp);
         }
       }
 
@@ -143,6 +144,7 @@ export const spec = {
           }
 
           videoImp = Object.assign({}, imp, videoImp);
+          rtbBidRequest.imp.push(videoImp);
         }
       }
 
