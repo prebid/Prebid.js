@@ -199,9 +199,9 @@ export const spec = {
         netRevenue: true,
         ttl: 350,
         mediaType: bid.mediaType || 'banner',
-		vastXml: bid.vastXml,
-		ad: bid.adm,
-		CMAdUnitLookupID: bid.CMAdUnitLookupID,
+        vastXml: bid.vastXml,
+        ad: bid.adm,
+        CMAdUnitLookupID: bid.CMAdUnitLookupID,
         CMAdLookupID: bid.CMAdLookupID
       };
 
