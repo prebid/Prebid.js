@@ -182,51 +182,51 @@ export const spec = {
 
     const bids = response.bid;
     let outBids = [];
-try {
-    bids.forEach(bid => {
-      const outBid = {
-        requestId: bid.bidderRequest,
-        bidderCode: 'cleanmedianet',
-        bidder: 'cleanmedianet',
-        cpm: parseFloat(bid.price),
-        width: bid.width,
-        height: bid.height,
-        creativeId: bid.crid || bid.adId,
-        currency: 'USD',
-        netRevenue: true,
-        ttl: 350,
-        mediaType: bid.mediaType || 'banner',
-        vastXml: bid.vastXml,
-        ad: bid.adm,
-        CMAdUnitLookupID: bid.CMAdUnitLookupID,
-        CMAdLookupID: bid.CMAdLookupID
-      };
+    try {
+      bids.forEach(bid => {
+        const outBid = {
+         requestId: bid.bidderRequest,
+         bidderCode: 'cleanmedianet',
+         bidder: 'cleanmedianet',
+         cpm: parseFloat(bid.price),
+         width: bid.width,
+         height: bid.height,
+         creativeId: bid.crid || bid.adId,
+         currency: 'USD',
+         netRevenue: true,
+         ttl: 350,
+         mediaType: bid.mediaType || 'banner',
+         vastXml: bid.vastXml,
+         ad: bid.adm,
+         CMAdUnitLookupID: bid.CMAdUnitLookupID,
+         CMAdLookupID: bid.CMAdLookupID
+        };
 
-      if (
-        utils.deepAccess(
-          bidRequest.bidRequest,
-          'mediaTypes.' + outBid.mediaType
-        )
-      ) {
-        if (outBid.mediaType === BANNER) {
-          outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
-        } else if (outBid.mediaType === VIDEO) {
-          const context = utils.deepAccess(
+        if (
+         utils.deepAccess(
+           bidRequest.bidRequest,
+           'mediaTypes.' + outBid.mediaType
+         )
+        ) {
+         if (outBid.mediaType === BANNER) {
+           outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
+         } else if (outBid.mediaType === VIDEO) {
+           const context = utils.deepAccess(
             bidRequest.bidRequest,
             'mediaTypes.video.context'
-          );
-          outBids.push(
+           );
+           outBids.push(
             Object.assign({}, outBid, {
               renderer:
-                context === 'outstream'
-                  ? newRenderer(bidRequest.bidRequest, bid)
-                  : undefined
+               context === 'outstream'
+                 ? newRenderer(bidRequest.bidRequest, bid)
+                 : undefined
             })
-          );
+           );
+         }
         }
-      }
-    });
-} catch(err) {}
+      });
+    } catch(err) {}
     return outBids;
   },
 
