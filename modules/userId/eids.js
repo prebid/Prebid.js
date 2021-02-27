@@ -71,7 +71,7 @@ const USER_IDS_CONFIG = {
   // identityLink
   'idl_env': {
     source: 'liveramp.com',
-    atype: 1
+    atype: 3
   },
 
   // liveIntentId

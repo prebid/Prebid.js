@@ -52,8 +52,8 @@ userIdAsEids = [
     {
         source: 'liveramp.com',
         uids: [{
-            id: 'some-random-id-value',
-            atype: 1
+            id: 'Ah4zcGxA1xuMNVMo9dkaASexpS3TjjzEOE_jOPgbDGhSgX2yoY9bch3nxninV1fXowpJFk7-rLf5Yu1uxLLO5r-STmTnjtD56wxNvSF93j3b',
+            atype: 3
         }]
     },
 
