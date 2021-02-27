@@ -224,9 +224,9 @@ export const spec = {
               })
             );
           }
-         }
+        }
       });
-      } catch(err) { }
+    } catch (err) { }
     return outBids;
   },
 
