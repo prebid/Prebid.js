@@ -183,17 +183,14 @@ export const spec = {
       return [];
     }
 
-    const bids = response.seatbid.reduce(
-      (acc, seatBid) => acc.concat(seatBid.bid),
-      []
-    );
+    const bids = response.bid;
     let outBids = [];
 
     bids.forEach(bid => {
       const outBid = {
         requestId: bid.bidderRequest,
-        bidderCode: errBcode,
-        bidder: errBcode,
+        bidderCode: 'cleanmedianet',
+        bidder: 'cleanmedianet',
         cpm: parseFloat(bid.price),
         width: bid.width,
         height: bid.height,
@@ -201,23 +198,13 @@ export const spec = {
         currency: 'USD',
         netRevenue: true,
         ttl: 350,
-        mediaType: bid.mediaType || 'banner'
+        mediaType: bid.mediaType || 'banner',
+		vastXml: bid.vastXml,
+		ad: bid.adm,
+		CMAdUnitLookupID: bid.CMAdUnitLookupID,
+        CMAdLookupID: bid.CMAdLookupID
       };
 
-	  if (bidResponse.mediaType === 'video') {
-         // bidResponse.vastUrl = bid.vastUrl;
-		bidResponse.vastXml = bid.vastXml;
-        bidResponse.ttl = 600;
-      } else {
-        bidResponse.ad = bid.adm;
-      }
-
-		try {
-			  bidResponse.CMAdUnitLookupID=bid.CMAdUnitLookupID;
-			  bidResponse.CMAdLookupID=bid.CMAdLookupID;
-		} catch (err) {}
-
-	  
       if (
         utils.deepAccess(
           bidRequest.bidRequest,
