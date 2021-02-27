@@ -60,8 +60,6 @@ export const spec = {
       } = bidRequest;
       const baseEndpoint = 'https://cleanmediaads.com/bidr/';
       const rtbEndpoint = baseEndpoint + 'p.ashx?sid=' + params.supplyPartnerId;
-      let url =
-        config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
       const rtbBidRequest = {
         id: auctionId,
