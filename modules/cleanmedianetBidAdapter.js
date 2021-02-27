@@ -1,5 +1,6 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js';
@@ -59,9 +60,23 @@ export const spec = {
       } = bidRequest;
       const baseEndpoint = 'https://cleanmediaads.com/bidr/';
       const rtbEndpoint = baseEndpoint + 'p.ashx?sid=' + params.supplyPartnerId;
-
+      let url =
+        config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
+      
       const rtbBidRequest = {
         id: auctionId,
+        site: {
+          domain: helper.getTopWindowDomain(url),
+          page: url,
+          ref: bidderRequest.refererInfo.referer
+        },
+        device: {
+          ua: navigator.userAgent,
+          dnt: utils.getDNT() ? 1 : 0,
+          h: screen.height,
+          w: screen.width,
+          language: navigator.language
+        },
         imp: [],
         ext: {},
         user: {
