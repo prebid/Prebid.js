@@ -182,7 +182,7 @@ export const spec = {
 
     const bids = response.bid;
     let outBids = [];
-
+try {
     bids.forEach(bid => {
       const outBid = {
         requestId: bid.bidderRequest,
@@ -226,6 +226,7 @@ export const spec = {
         }
       }
     });
+} catch(err) {}
     return outBids;
   },
 
