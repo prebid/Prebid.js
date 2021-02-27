@@ -58,34 +58,19 @@ export const spec = {
         sizes,
         transactionId
       } = bidRequest;
-      const baseEndpoint = 'https://bidder.cleanmediaads.com';
-      const rtbEndpoint =
-        `${baseEndpoint}/r/${
-          params.supplyPartnerId
-        }/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` +
-        (params.query ? '&' + params.query : '');
+      const baseEndpoint = 'https://cleanmediaads.com/bidr/';
+      const rtbEndpoint = baseEndpoint + 'p.ashx?sid=' + params.supplyPartnerId;
       let url =
         config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
       const rtbBidRequest = {
         id: auctionId,
-        site: {
-          domain: helper.getTopWindowDomain(url),
-          page: url,
-          ref: bidderRequest.refererInfo.referer
-        },
-        device: {
-          ua: navigator.userAgent,
-          dnt: utils.getDNT() ? 1 : 0,
-          h: screen.height,
-          w: screen.width,
-          language: navigator.language
-        },
         imp: [],
         ext: {},
         user: {
           ext: {}
-        }
+        },
+		bidderRequest
       };
 
       if (
@@ -109,69 +94,15 @@ export const spec = {
         }
       }
 
-      const imp = {
-        id: transactionId,
-        instl: params.instl === 1 ? 1 : 0,
-        tagid: adUnitCode,
-        bidfloor: params.bidfloor || 0,
-        bidfloorcur: 'USD',
-        secure: 1
-      };
-
-      const hasFavoredMediaType =
-        params.favoredMediaType &&
-        includes(this.supportedMediaTypes, params.favoredMediaType);
-
-      if (!mediaTypes || mediaTypes.banner) {
-        if (!hasFavoredMediaType || params.favoredMediaType === BANNER) {
-          const bannerImp = Object.assign({}, imp, {
-            banner: {
-              w: sizes.length ? sizes[0][0] : 300,
-              h: sizes.length ? sizes[0][1] : 250,
-              pos: params.pos || 0,
-              topframe: utils.inIframe() ? 0 : 1
-            }
-          });
-          rtbBidRequest.imp.push(bannerImp);
-        }
-      }
-
-      if (mediaTypes && mediaTypes.video) {
-        if (!hasFavoredMediaType || params.favoredMediaType === VIDEO) {
-          let videoImp = {
-            video: {
-              protocols: params.protocols || [1, 2, 3, 4, 5, 6],
-              pos: params.pos || 0,
-              ext: {context: mediaTypes.video.context}
-            }
-          };
-
-          let playerSize = mediaTypes.video.playerSize || sizes;
-          if (utils.isArray(playerSize[0])) {
-            videoImp.video.w = playerSize[0][0];
-            videoImp.video.h = playerSize[0][1];
-          } else if (utils.isNumber(playerSize[0])) {
-            videoImp.video.w = playerSize[0];
-            videoImp.video.h = playerSize[1];
-          } else {
-            videoImp.video.w = 300;
-            videoImp.video.h = 250;
-          }
-
-          videoImp = Object.assign({}, imp, videoImp);
-          rtbBidRequest.imp.push(videoImp);
-        }
-      }
-
-      if (rtbBidRequest.imp.length === 0) {
-        return;
-      }
-
       return {
         method: 'POST',
         url: rtbEndpoint,
         data: rtbBidRequest,
-        bidRequest
+        bidRequest,
+        options: {
+          withCredentials: false,
+          crossOrigin: true
+        }
       };
     });
   },
@@ -183,23 +114,26 @@ export const spec = {
       return [];
     }
 
-    const bids = response.seatbid.reduce(
-      (acc, seatBid) => acc.concat(seatBid.bid),
-      []
-    );
+    const bids = response.bid;
     let outBids = [];
 
     bids.forEach(bid => {
       const outBid = {
-        requestId: bidRequest.bidRequest.bidId,
-        cpm: bid.price,
-        width: bid.w,
-        height: bid.h,
-        ttl: 360,
-        creativeId: bid.crid || bid.adid,
+        requestId: bid.bidderRequest,
+        bidderCode: 'cleanmedianet',
+        bidder: 'cleanmedianet',
+        cpm: parseFloat(bid.price),
+        width: bid.width,
+        height: bid.height,
+        creativeId: bid.crid || bid.adId,
+        currency: 'USD',
         netRevenue: true,
-        currency: bid.cur || response.cur,
-        mediaType: helper.getMediaType(bid)
+        ttl: 350,
+        mediaType: bid.mediaType || 'banner',
+        vastXml: bid.vastXml,
+        ad: bid.adm,
+        CMAdUnitLookupID: bid.CMAdUnitLookupID,
+        CMAdLookupID: bid.CMAdLookupID
       };
 
       if (
@@ -217,8 +151,6 @@ export const spec = {
           );
           outBids.push(
             Object.assign({}, outBid, {
-              vastUrl: bid.ext.vast_url,
-              vastXml: bid.adm,
               renderer:
                 context === 'outstream'
                   ? newRenderer(bidRequest.bidRequest, bid)
@@ -280,7 +212,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
     url:
       (bidRequest.params && bidRequest.params.rendererUrl) ||
       (bid.ext && bid.ext.renderer_url) ||
-      'https://s.wlplayer.com/video/latest/renderer.js',
+      'https://dtyry4ejybx0.cloudfront.net/js/vid/renderer.js',
     config: rendererOptions,
     loaded: false
   });
@@ -295,7 +227,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
 function renderOutstream(bid) {
   bid.renderer.push(() => {
     const unitId = bid.adUnitCode + '/' + bid.adId;
-    window['GamoshiPlayer'].renderAd({
+    window['CMPlayer'].renderAd({
       id: unitId,
       debug: window.location.href.indexOf('pbjsDebug') >= 0,
       placement: document.getElementById(bid.adUnitCode),
@@ -304,7 +236,7 @@ function renderOutstream(bid) {
       events: {
         ALL_ADS_COMPLETED: () =>
           window.setTimeout(() => {
-            window['GamoshiPlayer'].removeAd(unitId);
+            window['CMPlayer'].removeAd(unitId);
           }, 300)
       },
       vastUrl: bid.vastUrl,
