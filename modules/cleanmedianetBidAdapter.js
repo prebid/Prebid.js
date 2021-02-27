@@ -206,27 +206,27 @@ export const spec = {
           utils.deepAccess(
             bidRequest.bidRequest,
             'mediaTypes.' + outBid.mediaType
-         )
+          )
         ) {
           if (outBid.mediaType === BANNER) {
             outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
           } else if (outBid.mediaType === VIDEO) {
             const context = utils.deepAccess(
-             bidRequest.bidRequest,
-             'mediaTypes.video.context'
+              bidRequest.bidRequest,
+              'mediaTypes.video.context'
             );
             outBids.push(
-             Object.assign({}, outBid, {
-               renderer:
+              Object.assign({}, outBid, {
+                renderer:
                 context === 'outstream'
                   ? newRenderer(bidRequest.bidRequest, bid)
                   : undefined
-             })
+              })
             );
           }
          }
-       });
-     } catch(err) {}
+      });
+      } catch(err) { }
     return outBids;
   },
 
