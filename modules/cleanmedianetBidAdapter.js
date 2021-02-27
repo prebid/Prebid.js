@@ -180,7 +180,10 @@ export const spec = {
       return [];
     }
 
-    const bids = response.bid;
+    const bids = response.seatbid.reduce(
+      (acc, seatBid) => acc.concat(seatBid.bid),
+      []
+    );
     let outBids = [];
     try {
       bids.forEach(bid => {
