@@ -388,7 +388,7 @@ function createOutstreamScript(bid) {
 
   insertJSNode('//dco.smartclip.net/?plc=7777778', null, function () {
     try { 
-      // eslint-disable-next-line no-unused-vars no-undef
+// eslint-disable-next-line
       let _outstreamPlayer = new OutstreamPlayer(divID, smartPlayObj)
     } catch (e) {
       utils.logError('[SmartPlay][renderer] Error caught: ' + e);
