@@ -105,7 +105,8 @@ describe('TheMediaGrid Adapter', function () {
         'sizes': [[728, 90]],
         'mediaTypes': {
           'video': {
-            'playerSize': [[400, 600]]
+            'playerSize': [[400, 600]],
+            'protocols': [1, 2, 3]
           },
           'banner': {
             'sizes': [[728, 90]]
@@ -281,7 +282,8 @@ describe('TheMediaGrid Adapter', function () {
           },
           'video': {
             'w': 400,
-            'h': 600
+            'h': 600,
+            'protocols': [1, 2, 3]
           }
         }]
       });
@@ -489,7 +491,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -547,7 +548,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -561,7 +561,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 600,
           'ad': '<div>test content 2</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -575,7 +574,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 728,
           'height': 90,
           'ad': '<div>test content 3</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -635,7 +633,6 @@ describe('TheMediaGrid Adapter', function () {
           'dealId': undefined,
           'width': 300,
           'height': 600,
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'video',
           'netRevenue': false,
@@ -652,7 +649,6 @@ describe('TheMediaGrid Adapter', function () {
           'dealId': undefined,
           'width': undefined,
           'height': undefined,
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'video',
           'netRevenue': false,
@@ -784,7 +780,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -798,7 +793,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 600,
           'ad': '<div>test content 2</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -812,7 +806,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 728,
           'height': 90,
           'ad': '<div>test content 3</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -826,7 +819,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 600,
           'ad': '<div>test content 4</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,

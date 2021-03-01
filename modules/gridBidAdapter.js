@@ -329,7 +329,6 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
     if (bid) {
       const bidResponse = {
         requestId: bid.bidId, // bid.bidderRequestId,
-        bidderCode: spec.code,
         cpm: serverBid.price,
         width: serverBid.w,
         height: serverBid.h,
@@ -365,7 +364,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
 }
 
 function createVideoRequest(bid, mediaType) {
-  const {playerSize, mimes, durationRangeSec} = mediaType;
+  const {playerSize, mimes, durationRangeSec, protocols} = mediaType;
   const size = (playerSize || bid.sizes || [])[0];
   if (!size) return;
 
@@ -378,6 +377,10 @@ function createVideoRequest(bid, mediaType) {
   if (durationRangeSec && durationRangeSec.length === 2) {
     result.minduration = durationRangeSec[0];
     result.maxduration = durationRangeSec[1];
+  }
+
+  if (protocols && protocols.length) {
+    result.protocols = protocols;
   }
 
   return result;

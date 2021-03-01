@@ -28,6 +28,7 @@
  *  It's permissible to return neither, one, or both fields.
  * @name Submodule#extendId
  * @param {SubmoduleConfig} config
+ * @param {ConsentData|undefined} consentData
  * @param {Object} storedId - existing id, if any
  * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
  */
@@ -136,8 +137,9 @@ import { getGlobal } from '../../src/prebidGlobal.js';
 import { gdprDataHandler } from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import { module, hook } from '../../src/hook.js';
-import { createEidsArray } from './eids.js';
+import { createEidsArray, buildEidPermissions } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
+import {getPrebidInternal} from '../../src/utils.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -214,6 +216,14 @@ export function setStoredValue(submodule, value) {
   }
 }
 
+function setPrebidServerEidPermissions(initializedSubmodules) {
+  let setEidPermissions = getPrebidInternal().setEidPermissions;
+  if (typeof setEidPermissions === 'function' && utils.isArray(initializedSubmodules)) {
+    setEidPermissions(buildEidPermissions(initializedSubmodules));
+  }
+}
+
+/**
 /**
  * @param {SubmoduleStorage} storage
  * @param {String|undefined} key optional key of the value
@@ -434,6 +444,26 @@ function getCombinedSubmoduleIds(submodules) {
 }
 
 /**
+ * This function will create a combined object for bidder with allowed subModule Ids
+ * @param {SubmoduleContainer[]} submodules
+ * @param {string} bidder
+ */
+function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
+  if (!Array.isArray(submodules) || !submodules.length || !bidder) {
+    return {};
+  }
+  return submodules
+    .filter(i => !i.config.bidders || !utils.isArray(i.config.bidders) || i.config.bidders.includes(bidder))
+    .filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
+    .reduce((carry, i) => {
+      Object.keys(i.idObj).forEach(key => {
+        carry[key] = i.idObj[key];
+      });
+      return carry;
+    }, {});
+}
+
+/**
  * @param {AdUnit[]} adUnits
  * @param {SubmoduleContainer[]} submodules
  */
@@ -441,19 +471,18 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
   if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
     return;
   }
-  const combinedSubmoduleIds = getCombinedSubmoduleIds(submodules);
-  const combinedSubmoduleIdsAsEids = createEidsArray(combinedSubmoduleIds);
-  if (Object.keys(combinedSubmoduleIds).length) {
-    adUnits.forEach(adUnit => {
-      if (adUnit.bids && utils.isArray(adUnit.bids)) {
-        adUnit.bids.forEach(bid => {
+  adUnits.forEach(adUnit => {
+    if (adUnit.bids && utils.isArray(adUnit.bids)) {
+      adUnit.bids.forEach(bid => {
+        const combinedSubmoduleIds = getCombinedSubmoduleIdsForBidder(submodules, bid.bidder);
+        if (Object.keys(combinedSubmoduleIds).length) {
           // create a User ID object on the bid,
           bid.userId = combinedSubmoduleIds;
-          bid.userIdAsEids = combinedSubmoduleIdsAsEids;
-        });
-      }
-    });
-  }
+          bid.userIdAsEids = createEidsArray(combinedSubmoduleIds);
+        }
+      });
+    }
+  });
 }
 
 /**
@@ -466,6 +495,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
   if (typeof initializedSubmodules === 'undefined') {
     initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
     if (initializedSubmodules.length) {
+      setPrebidServerEidPermissions(initializedSubmodules);
       // list of submodules that have callbacks that need to be executed
       const submodulesWithCallbacks = initializedSubmodules.filter(item => utils.isFn(item.callback));
 
@@ -621,7 +651,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
       response = submodule.submodule.getId(submodule.config, consentData, storedId);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-      response = submodule.submodule.extendId(submodule.config, storedId);
+      response = submodule.submodule.extendId(submodule.config, consentData, storedId);
     }
 
     if (utils.isPlainObject(response)) {

@@ -346,24 +346,6 @@ describe('lemmaBidAdapter', function() {
           type: 'iframe', url: syncurl_iframe
         }]);
       });
-
-      it('CCPA/USP', function() {
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
-          type: 'iframe', url: `${syncurl_iframe}&us_privacy=1NYN`
-        }]);
-      });
-
-      it('GDPR', function() {
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=foo`
-        }]);
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl_iframe}&gdpr=0&gdpr_consent=foo`
-        }]);
-        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
-          type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=`
-        }]);
-      });
     });
   });
 });
