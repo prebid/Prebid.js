@@ -328,50 +328,25 @@ export const spec = {
 }
 
 function createOutstreamScript(bid) {
-  // for SmartPlay 4.12
-  function scPrebidClose(ele, completeCollapsed) {
-    if (completeCollapsed) {
-      document.getElementById(ele.id).style.display = 'none';
-    }
-  }
-
   const confMinAdWidth = utils.getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
   const confMaxAdWidth = utils.getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
-  const confStartOpen = utils.getBidIdParameter('startOpen', bid.renderer.config.outstream_options) || 'false';
-  const confEndingScreen = utils.getBidIdParameter('endingScreen', bid.renderer.config.outstream_options) || 'true';
-  const confHeaderText = utils.getBidIdParameter('headerText', bid.renderer.config.outstream_options) || '';
-  const confSkipOffset = utils.getBidIdParameter('skipOffset', bid.renderer.config.outstream_options) || 0;
-  const confDesiredBitrate = utils.getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options) || 1600;
+  const confStartOpen = utils.getBidIdParameter('startOpen', bid.renderer.config.outstream_options);
+  const confEndingScreen = utils.getBidIdParameter('endingScreen', bid.renderer.config.outstream_options);
+  const confTitle = utils.getBidIdParameter('title', bid.renderer.config.outstream_options);
+  const confSkipOffset = utils.getBidIdParameter('skipOffset', bid.renderer.config.outstream_options);
+  const confDesiredBitrate = utils.getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options);
   const elementId = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options) || bid.adUnitCode;
-
-  // for SmartPlay 4.12
-  let initCollapsed = true;
-  let completeCollapsed = true;
-  if (confStartOpen === 'true') {
-    initCollapsed = false;
-  }
-  if (confEndingScreen === 'true') {
-    completeCollapsed = false;
-  }
 
   utils.logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
 
-  let smartPlayObj = {
+  var smartPlayObj = {
     minAdWidth: confMinAdWidth,
     maxAdWidth: confMaxAdWidth,
-    headerText: confHeaderText,
+    title: confTitle,
     skipOffset: confSkipOffset,
-    behaviourMatrix: {
-      init: {
-        'collapsed': initCollapsed
-      },
-      complete: {
-        'collapsed': completeCollapsed
-      }
-    },
-    environmentVars: {
-      desiredBitrate: confDesiredBitrate,
-    },
+    startOpen: confStartOpen,
+    endingScreen: confEndingScreen,
+    desiredBitrate: confDesiredBitrate,
     onStartCallback: function (m, n) {
       try {
         window.sc_smartIntxtStart(n);
@@ -384,25 +359,40 @@ function createOutstreamScript(bid) {
     },
     onEndCallback: function (m, n) {
       try {
-        scPrebidClose(n, completeCollapsed); // for SmartPlay 4.12
         window.sc_smartIntxtEnd(n);
       } catch (f) {}
     },
   };
+
   smartPlayObj.adResponse = bid.vastContent;
-  const script = window.document.createElement('script');
-  script.type = 'text/javascript';
-  script.async = 'true';
-  script.src = 'https://dco.smartclip.net/?plc=7777777';
-  script.onload = script.onreadystatechange = function () {
-    var rs = this.readyState;
-    if (rs && rs != 'complete' && rs != 'loaded') return;
-    try {
-      window.SmartPlay(elementId, smartPlayObj);
-    } catch (e) {
-      utils.logError('error caught : ' + e);
+
+  let script = '';
+  let divID = '#' + elementId;
+
+  var insertJSNode = function (url, nodeId = null, fun = null) {
+    script = document.createElement('script');
+    script.type = 'text/javascript';
+    if (nodeId != null) {
+      script.id = nodeId;
     }
-  };
+    if (url != '') {
+      script.async = 'true';
+      script.src = url;
+      if (fun != null) {
+        script.onload = script.onreadystatechange = fun;
+      }
+    } else {
+      script.text = 'var x=' + fun + '();';
+    }
+  }
+
+  insertJSNode('//dco.smartclip.net/?plc=7777778', null, function () {
+    try {
+      let _outstreamPlayer = new OutstreamPlayer(divID, smartPlayObj)
+    } catch (e) {
+      utils.logError('[SmartPlay][renderer] Error caught: ' + e);
+    }
+  })
   return script;
 }
 
@@ -412,12 +402,8 @@ function outstreamRender(bid) {
     bid.renderer.config.outstream_function(bid, script);
   } else {
     try {
-      const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
-      if (slot && window.document.getElementById(slot)) {
-        window.document.getElementById(slot).appendChild(script);
-      } else {
-        window.document.getElementsByTagName('head')[0].appendChild(script);
-      }
+      const firstScriptTagOnSite = window.document.getElementsByTagName('script')[0];
+      firstScriptTagOnSite.parentNode.insertBefore(script, firstScriptTagOnSite);
     } catch (err) {
       utils.logError('[SMARTX][renderer] Error:' + err.message)
     }
