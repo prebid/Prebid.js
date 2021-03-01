@@ -1,23 +1,18 @@
-import adagioAnalyticsAdapter from 'modules/adagioAnalyticsAdapter';
+import adagioAnalyticsAdapter from 'modules/adagioAnalyticsAdapter.js';
 import { expect } from 'chai';
-import * as utils from 'src/utils';
+import * as utils from 'src/utils.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('adagio analytics adapter', () => {
-  let xhr;
-  let requests;
-  let sandbox
+  let sandbox;
   let adagioQueuePushSpy;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
 
-    xhr = sandbox.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
     sandbox.stub(events, 'getEvents').returns([]);
 
     const w = utils.getWindowTop();

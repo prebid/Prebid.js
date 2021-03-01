@@ -1,9 +1,8 @@
-import { config } from '../src/config'
-import * as utils from '../src/utils'
-import * as url from '../src/url'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes'
-import includes from 'core-js/library/fn/array/includes'
+import { config } from '../src/config.js'
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import includes from 'core-js-pure/features/array/includes.js'
 
 /**
  * Adapter for requesting bids from adxcg.net
@@ -12,7 +11,7 @@ import includes from 'core-js/library/fn/array/includes'
  * updated to pass aditional auction and impression level parameters. added pass for video targeting parameters
  * updated to fix native support for image width/height and icon 2019.03.17
  * updated support for userid - pubcid,ttid 2019.05.28
- * updated to support prebid 3.0 -remove non https, move to banner.xx.sizes, remove utils.getTopWindowLocation,remove utils.getTopWindowUrl(),remove utils.getTopWindowReferrer()
+ * updated to support prebid 3.0 -  remove non https, move to banner.xx.sizes, remove utils.getTopWindowLocation,remove utils.getTopWindowUrl(),remove utils.getTopWindowReferrer()
  */
 
 const BIDDER_CODE = 'adxcg'
@@ -131,6 +130,10 @@ export const spec = {
         sizes.push(utils.parseSizesInput(bid.mediaTypes.banner.sizes).join('|'))
       }
 
+      if (isNativeRequest(bid)) {
+        sizes.push('0x0')
+      }
+
       let bidfloor = utils.getBidIdParameter('bidfloor', bid.params) || 0
       bidfloors.push(bidfloor)
       // copy video params
@@ -167,15 +170,15 @@ export const spec = {
       beaconParams.tdid = validBidRequests[0].userId.tdid;
     }
 
-    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.id5id'))) {
-      beaconParams.id5id = validBidRequests[0].userId.id5id;
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.id5id.uid'))) {
+      beaconParams.id5id = validBidRequests[0].userId.id5id.uid;
     }
 
     if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.idl_env'))) {
       beaconParams.idl_env = validBidRequests[0].userId.idl_env;
     }
 
-    let adxcgRequestUrl = url.format({
+    let adxcgRequestUrl = utils.buildUrl({
       protocol: 'https',
       hostname: 'hbps.adxcg.net',
       pathname: '/get/adi',
@@ -291,6 +294,10 @@ function isVideoRequest (bid) {
 
 function isBannerRequest (bid) {
   return bid.mediaType === 'banner' || !!utils.deepAccess(bid, 'mediaTypes.banner')
+}
+
+function isNativeRequest (bid) {
+  return bid.mediaType === 'native' || !!utils.deepAccess(bid, 'mediaTypes.native')
 }
 
 registerBidder(spec)

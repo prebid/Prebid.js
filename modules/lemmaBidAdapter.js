@@ -1,14 +1,17 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 var BIDDER_CODE = 'lemma';
 var LOG_WARN_PREFIX = 'LEMMA: ';
-var ENDPOINT = '//ads.lemmatechnologies.com/lemma/servad';
+var ENDPOINT = 'https://ads.lemmatechnologies.com/lemma/servad';
+var USER_SYNC = 'https://sync.lemmatechnologies.com/js/usersync.html?';
 var DEFAULT_CURRENCY = 'USD';
 var AUCTION_TYPE = 2;
 var DEFAULT_TMAX = 300;
 var DEFAULT_NET_REVENUE = false;
+var pubId = 0;
+var adunitId = 0;
 
 export var spec = {
 
@@ -57,11 +60,22 @@ export var spec = {
   interpretResponse: (response, request) => {
     return parseRTBResponse(request, response.body);
   },
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+    let syncurl = USER_SYNC + 'pid=' + pubId;
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: syncurl
+      }];
+    } else {
+      utils.logWarn(LOG_WARN_PREFIX + 'Please enable iframe based user sync.');
+    }
+  },
 };
 
 function _initConf(refererInfo) {
   var conf = {};
-  conf.pageURL = utils.getTopWindowUrl();
+  conf.pageURL = (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href;
   if (refererInfo && refererInfo.referer) {
     conf.refURL = refererInfo.referer;
   } else {
@@ -96,9 +110,9 @@ function parseRTBResponse(request, response) {
             newBid.dealId = bid.dealid;
           }
           if (req.imp && req.imp.length > 0) {
-            newBid.mediaType = req.mediaType;
             req.imp.forEach(robj => {
               if (bid.impid === robj.id) {
+                _checkMediaType(bid.adm, newBid);
                 switch (newBid.mediaType) {
                   case BANNER:
                     break;
@@ -167,8 +181,8 @@ function _getImpressionArray(request) {
 function endPointURL(request) {
   var params = request && request[0].params ? request[0].params : null;
   if (params) {
-    var pubId = params.pubId ? params.pubId : 0;
-    var adunitId = params.adunitId ? params.adunitId : 0;
+    pubId = params.pubId ? params.pubId : 0;
+    adunitId = params.adunitId ? params.adunitId : 0;
     return ENDPOINT + '?pid=' + pubId + '&aid=' + adunitId;
   }
   return null;
@@ -183,7 +197,7 @@ function _getDomain(url) {
 function _getSiteObject(request, conf) {
   var params = request && request.params ? request.params : null;
   if (params) {
-    var pubId = params.pubId ? params.pubId : '0';
+    pubId = params.pubId ? params.pubId : '0';
     var siteId = params.siteId ? params.siteId : '0';
     var appParams = params.app;
     if (!appParams) {
@@ -204,7 +218,7 @@ function _getSiteObject(request, conf) {
 function _getAppObject(request) {
   var params = request && request.params ? request.params : null;
   if (params) {
-    var pubId = params.pubId ? params.pubId : 0;
+    pubId = params.pubId ? params.pubId : 0;
     var appParams = params.app;
     if (appParams) {
       return {
@@ -251,10 +265,6 @@ function _getDeviceObject(request) {
 
 function setOtherParams(request, ortbRequest) {
   var params = request && request.params ? request.params : null;
-  if (request && request.gdprConsent) {
-    ortbRequest.regs = { ext: { gdpr: request.gdprConsent.gdprApplies ? 1 : 0 } };
-    ortbRequest.user = { ext: { consent: request.gdprConsent.consentString } };
-  }
   if (params) {
     ortbRequest.tmax = params.tmax;
     ortbRequest.bcat = params.bcat;
@@ -398,4 +408,13 @@ function parse(rawResp) {
   return null;
 }
 
+function _checkMediaType(adm, newBid) {
+  // Create a regex here to check the strings
+  var videoRegex = new RegExp(/VAST.*version/);
+  if (videoRegex.test(adm)) {
+    newBid.mediaType = VIDEO;
+  } else {
+    newBid.mediaType = BANNER;
+  }
+}
 registerBidder(spec);

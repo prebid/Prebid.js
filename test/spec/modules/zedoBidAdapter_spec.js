@@ -174,7 +174,7 @@ describe('The ZEDO bidding adapter', function () {
                     'type': 'StdBanner',
                     'adContent': '<a href="some_path"></a>'
                   },
-                  'cpm': '1200000'
+                  'bidCpm': '720000'
                 }
               ]
             }
@@ -217,7 +217,7 @@ describe('The ZEDO bidding adapter', function () {
                     'type': 'VAST',
                     'adContent': '<VAST></VAST>'
                   },
-                  'cpm': '1200000'
+                  'bidCpm': '780000'
                 }
               ]
             }

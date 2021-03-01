@@ -1,30 +1,31 @@
 'use strict';
 
-import * as utils from '../src/utils';
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'adbutler';
 
 export const spec = {
   code: BIDDER_CODE,
   pageID: Math.floor(Math.random() * 10e6),
-  aliases: ['divreach'],
+  aliases: ['divreach', 'doceree'],
 
   isBidRequestValid: function (bid) {
     return !!(bid.params.accountID && bid.params.zoneID);
   },
 
   buildRequests: function (validBidRequests) {
-    var i;
-    var zoneID;
-    var bidRequest;
-    var accountID;
-    var keyword;
-    var domain;
-    var requestURI;
-    var serverRequests = [];
-    var zoneCounters = {};
+    let i;
+    let zoneID;
+    let bidRequest;
+    let accountID;
+    let keyword;
+    let domain;
+    let requestURI;
+    let serverRequests = [];
+    let zoneCounters = {};
+    let extraParams = {};
 
     for (i = 0; i < validBidRequests.length; i++) {
       bidRequest = validBidRequests[i];
@@ -32,6 +33,7 @@ export const spec = {
       accountID = utils.getBidIdParameter('accountID', bidRequest.params);
       keyword = utils.getBidIdParameter('keyword', bidRequest.params);
       domain = utils.getBidIdParameter('domain', bidRequest.params);
+      extraParams = utils.getBidIdParameter('extra', bidRequest.params);
 
       if (!(zoneID in zoneCounters)) {
         zoneCounters[zoneID] = 0;
@@ -41,7 +43,7 @@ export const spec = {
         domain = 'servedbyadbutler.com';
       }
 
-      requestURI = location.protocol + '//' + domain + '/adserve/;type=hbr;';
+      requestURI = 'https://' + domain + '/adserve/;type=hbr;';
       requestURI += 'ID=' + encodeURIComponent(accountID) + ';';
       requestURI += 'setID=' + encodeURIComponent(zoneID) + ';';
       requestURI += 'pid=' + encodeURIComponent(spec.pageID) + ';';
@@ -50,6 +52,13 @@ export const spec = {
       // append the keyword for targeting if one was passed in
       if (keyword !== '') {
         requestURI += 'kw=' + encodeURIComponent(keyword) + ';';
+      }
+
+      for (let key in extraParams) {
+        if (extraParams.hasOwnProperty(key)) {
+          let val = encodeURIComponent(extraParams[key]);
+          requestURI += `${key}=${val};`;
+        }
       }
 
       zoneCounters[zoneID]++;
@@ -64,16 +73,16 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    var bidObj = bidRequest.bidRequest;
-    var bidResponses = [];
-    var bidResponse = {};
-    var isCorrectSize = false;
-    var isCorrectCPM = true;
-    var CPM;
-    var minCPM;
-    var maxCPM;
-    var width;
-    var height;
+    const bidObj = bidRequest.bidRequest;
+    let bidResponses = [];
+    let bidResponse = {};
+    let isCorrectSize = false;
+    let isCorrectCPM = true;
+    let CPM;
+    let minCPM;
+    let maxCPM;
+    let width;
+    let height;
 
     serverResponse = serverResponse.body;
     if (serverResponse && serverResponse.status === 'SUCCESS' && bidObj) {
@@ -92,7 +101,7 @@ export const spec = {
       }
 
       // Ensure that response ad matches one of the placement sizes.
-      utils._each(bidObj.sizes, function (size) {
+      utils._each(utils.deepAccess(bidObj, 'mediaTypes.banner.sizes', []), function (size) {
         if (width === size[0] && height === size[1]) {
           isCorrectSize = true;
         }
@@ -109,7 +118,7 @@ export const spec = {
         bidResponse.currency = 'USD';
         bidResponse.netRevenue = true;
         bidResponse.ttl = config.getConfig('_bidderTimeout');
-        bidResponse.referrer = utils.getTopWindowUrl();
+        bidResponse.referrer = utils.deepAccess(bidObj, 'refererInfo.referer');
         bidResponses.push(bidResponse);
       }
     }
@@ -117,9 +126,9 @@ export const spec = {
   },
 
   addTrackingPixels: function (trackingPixels) {
-    var trackingPixelMarkup = '';
+    let trackingPixelMarkup = '';
     utils._each(trackingPixels, function (pixelURL) {
-      var trackingPixel = '<img height="0" width="0" border="0" style="display:none;" src="';
+      let trackingPixel = '<img height="0" width="0" border="0" style="display:none;" src="';
       trackingPixel += pixelURL;
       trackingPixel += '">';
 

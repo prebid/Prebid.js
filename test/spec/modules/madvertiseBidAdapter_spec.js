@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
-import {spec} from 'modules/madvertiseBidAdapter';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import {spec} from 'modules/madvertiseBidAdapter.js';
 
 describe('madvertise adapater', function () {
   describe('Test validate req', function () {
@@ -114,7 +114,7 @@ describe('madvertise adapater', function () {
       expect(req[0]).to.have.property('method');
       expect(req[0].method).to.equal('GET');
       expect(req[0]).to.have.property('url');
-      expect(req[0].url).to.contain('//mobile.mng-ads.com/?rt=bid_request&v=1.0');
+      expect(req[0].url).to.contain('https://mobile.mng-ads.com/?rt=bid_request&v=1.0');
       expect(req[0].url).to.contain(`&s=test`);
       expect(req[0].url).to.contain(`&sizes[0]=728x90`);
       expect(req[0].url).to.contain(`&gdpr=1`);
@@ -130,7 +130,7 @@ describe('madvertise adapater', function () {
       expect(req[0]).to.have.property('method');
       expect(req[0].method).to.equal('GET');
       expect(req[0]).to.have.property('url');
-      expect(req[0].url).to.contain('//mobile.mng-ads.com/?rt=bid_request&v=1.0');
+      expect(req[0].url).to.contain('https://mobile.mng-ads.com/?rt=bid_request&v=1.0');
       expect(req[0].url).to.contain(`&s=test`);
       expect(req[0].url).to.contain(`&sizes[0]=728x90`);
       expect(req[0].url).not.to.contain(`&gdpr=1`);

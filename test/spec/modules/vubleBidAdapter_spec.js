@@ -1,8 +1,8 @@
 // import or require modules necessary for the test, e.g.:
 
 import {expect} from 'chai';
-import {spec as adapter} from 'modules/vubleBidAdapter';
-import * as utils from 'src/utils';
+import {spec as adapter} from 'modules/vubleBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('VubleAdapter', function () {
   describe('Check methods existance', function () {
@@ -202,7 +202,27 @@ describe('VubleAdapter', function () {
         adUnitCode: ''
       }
     };
-    let bidderRequest = {
+    let request4 = {
+      method: 'POST',
+      url: 'https://player.mediabong.net/prebid/request',
+      data: {
+        width: '640',
+        height: '360',
+        pub_id: '3',
+        zone_id: '3579',
+        context: 'instream',
+        floor_price: 0,
+        url: '',
+        env: 'net',
+        bid_id: 'ijkl',
+        adUnitCode: '',
+        gdpr_consent: {
+          consent_string: 'test',
+          gdpr_applies: true
+        }
+      }
+    };
+    let bidderRequest1 = {
       refererInfo: {
         referer: 'https://www.vuble.tv/',
         reachedTop: true,
@@ -214,10 +234,17 @@ describe('VubleAdapter', function () {
         ]
       }
     };
+    let bidderRequest2 = {
+      'gdprConsent': {
+        consentString: 'test',
+        gdprApplies: true
+      }
+    };
 
     it('must return the right formatted requests', function () {
       expect(adapter.buildRequests([bid1, bid2])).to.deep.equal([request1, request2]);
-      expect(adapter.buildRequests([bid3], bidderRequest)).to.deep.equal([request3]);
+      expect(adapter.buildRequests([bid3], bidderRequest1)).to.deep.equal([request3]);
+      expect(adapter.buildRequests([bid3], bidderRequest2)).to.deep.equal([request4]);
     });
   });
 

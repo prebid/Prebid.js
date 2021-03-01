@@ -1,14 +1,29 @@
 import {expect} from 'chai';
-import {LogError, spec} from 'modules/sovrnBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {LogError, spec} from 'modules/sovrnBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
+
+const adUnitBidRequest = {
+  'bidder': 'sovrn',
+  'params': {
+    'tagid': '403370'
+  },
+  'adUnitCode': 'adunit-code',
+  'sizes': [
+    [300, 250],
+    [300, 600]
+  ],
+  'bidId': '30b31c1838de1e',
+  'bidderRequestId': '22edbae2733bf6',
+  'auctionId': '1d1a030790a475',
+}
 
 describe('sovrnBidAdapter', function() {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'sovrn',
       'params': {
         'tagid': '403370'
@@ -70,10 +85,15 @@ describe('sovrnBidAdapter', function() {
     });
 
     it('sets the proper banner object', function() {
-      const payload = JSON.parse(request.data);
+      const payload = JSON.parse(request.data)
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
       expect(payload.imp[0].banner.w).to.equal(1)
       expect(payload.imp[0].banner.h).to.equal(1)
+    })
+
+    it('includes the ad unit code int the request', function() {
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].adunitcode).to.equal('adunit-code')
     })
 
     it('accepts a single array as a size', function() {
@@ -152,6 +172,25 @@ describe('sovrnBidAdapter', function() {
       expect(data.user.ext.consent).to.equal(consentString);
     });
 
+    it('should send us_privacy if bidderRequest has a value for uspConsent', function () {
+      let uspString = '1NYN';
+      let bidderRequest = {
+        'bidderCode': 'sovrn',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        uspConsent: uspString,
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
+
+      expect(data.regs.ext['us_privacy']).to.equal(uspString);
+    });
+
     it('converts tagid to string', function () {
       const ivBidRequests = [{
         'bidder': 'sovrn',
@@ -215,8 +254,8 @@ describe('sovrnBidAdapter', function() {
       expect(data.source.ext.schain.nodes.length).to.equal(1)
     });
 
-    it('should add digitrust data if present', function() {
-      const digitrustRequests = [{
+    it('should add ids to the bid request', function() {
+      const criteoIdRequest = [{
         'bidder': 'sovrn',
         'params': {
           'tagid': 403370
@@ -230,12 +269,8 @@ describe('sovrnBidAdapter', function() {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
         'userId': {
-          'digitrustid': {
-            'data': {
-              'id': 'digitrust-id-123',
-              'keyv': 4
-            }
-          }
+          'criteoId': 'A_CRITEO_ID',
+          'tdid': 'SOMESORTOFID',
         }
       }].concat(bidRequests);
       const bidderRequest = {
@@ -243,11 +278,65 @@ describe('sovrnBidAdapter', function() {
           referer: 'http://example.com/page.html',
         }
       };
-      const data = JSON.parse(spec.buildRequests(digitrustRequests, bidderRequest).data);
 
-      expect(data.user.ext.digitrust.id).to.equal('digitrust-id-123');
-      expect(data.user.ext.digitrust.keyv).to.equal(4);
+      const data = JSON.parse(spec.buildRequests(criteoIdRequest, bidderRequest).data);
+      expect(data.user.ext.eids[0].source).to.equal('criteo.com')
+      expect(data.user.ext.eids[0].uids[0].id).to.equal('A_CRITEO_ID')
+      expect(data.user.ext.eids[0].uids[0].atype).to.equal(1)
+      expect(data.user.ext.eids[1].source).to.equal('adserver.org')
+      expect(data.user.ext.eids[1].uids[0].id).to.equal('SOMESORTOFID')
+      expect(data.user.ext.eids[1].uids[0].ext.rtiPartner).to.equal('TDID')
+      expect(data.user.ext.eids[1].uids[0].atype).to.equal(1)
+      expect(data.user.ext.tpid[0].source).to.equal('criteo.com')
+      expect(data.user.ext.tpid[0].uid).to.equal('A_CRITEO_ID')
+      expect(data.user.ext.prebid_criteoid).to.equal('A_CRITEO_ID')
     });
+
+    it('should ignore empty segments', function() {
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].ext).to.be.undefined
+    })
+
+    it('should pass the segments param value as trimmed deal ids array', function() {
+      const segmentsRequests = [{
+        'bidder': 'sovrn',
+        'params': {
+          'segments': ' test1,test2 '
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [
+          [300, 250],
+          [300, 600]
+        ],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }]
+      const request = spec.buildRequests(segmentsRequests, bidderRequest)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].ext.deals[0]).to.equal('test1')
+      expect(payload.imp[0].ext.deals[1]).to.equal('test2')
+    })
+    it('should use the floor provided from the floor module if present', function() {
+      const floorBid = {...adUnitBidRequest, getFloor: () => ({currency: 'USD', floor: 1.10})}
+      floorBid.params = {
+        tagid: 1234,
+        bidfloor: 2.00
+      }
+      const request = spec.buildRequests([floorBid], bidderRequest)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].bidfloor).to.equal(1.10)
+    })
+    it('should use the floor from the param if there is no floor from the floor module', function() {
+      const floorBid = {...adUnitBidRequest, getFloor: () => ({})}
+      floorBid.params = {
+        tagid: 1234,
+        bidfloor: 2.00
+      }
+      const request = spec.buildRequests([floorBid], bidderRequest)
+      const payload = JSON.parse(request.data)
+      expect(payload.imp[0].bidfloor).to.equal(2.00)
+    })
   });
 
   describe('interpretResponse', function () {
@@ -303,16 +392,16 @@ describe('sovrnBidAdapter', function() {
         'currency': 'USD',
         'netRevenue': true,
         'mediaType': 'banner',
-        'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
-        'ttl': 60000
+        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+        'ttl': 90
       }];
 
       let result = spec.interpretResponse(response);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('should get correct bid response when dealId is passed', function () {
-      response.body.dealid = 'baking';
+      response.body.seatbid[0].bid[0].dealid = 'baking';
 
       let expectedResponse = [{
         'requestId': '263c448586f5a1',
@@ -324,12 +413,33 @@ describe('sovrnBidAdapter', function() {
         'currency': 'USD',
         'netRevenue': true,
         'mediaType': 'banner',
-        'ad': decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`),
-        'ttl': 60000
+        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+        'ttl': 90
       }];
 
       let result = spec.interpretResponse(response);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
+    });
+
+    it('should get correct bid response when ttl is set', function () {
+      response.body.seatbid[0].bid[0].ext = { 'ttl': 480 };
+
+      let expectedResponse = [{
+        'requestId': '263c448586f5a1',
+        'cpm': 0.45882675,
+        'width': 728,
+        'height': 90,
+        'creativeId': 'creativelycreatedcreativecreative',
+        'dealId': null,
+        'currency': 'USD',
+        'netRevenue': true,
+        'mediaType': 'banner',
+        'ad': decodeURIComponent(`<!-- Creative --><img src="<!-- NURL -->">`),
+        'ttl': 480
+      }];
+
+      let result = spec.interpretResponse(response);
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('handles empty bid response', function () {
@@ -399,10 +509,53 @@ describe('sovrnBidAdapter', function() {
       const expectedReturnStatement = [
         {
           'type': 'iframe',
-          'url': 'https://ap.lijit.com/beacon?informer=13487408&gdpr_consent=',
+          'url': 'https://ap.lijit.com/beacon?informer=13487408',
         }
       ];
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse);
+      expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
+    });
+
+    it('should include gdpr consent string if present', function() {
+      const gdprConsent = {
+        gdprApplies: 1,
+        consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
+      }
+      const expectedReturnStatement = [
+        {
+          'type': 'iframe',
+          'url': `https://ap.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&informer=13487408`,
+        }
+      ];
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, '');
+      expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
+    });
+
+    it('should include us privacy string if present', function() {
+      const uspString = '1NYN';
+      const expectedReturnStatement = [
+        {
+          'type': 'iframe',
+          'url': `https://ap.lijit.com/beacon?us_privacy=${uspString}&informer=13487408`,
+        }
+      ];
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, null, uspString);
+      expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
+    });
+
+    it('should include all privacy strings if present', function() {
+      const gdprConsent = {
+        gdprApplies: 1,
+        consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
+      }
+      const uspString = '1NYN';
+      const expectedReturnStatement = [
+        {
+          'type': 'iframe',
+          'url': `https://ap.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&us_privacy=${uspString}&informer=13487408`,
+        }
+      ];
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, uspString);
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
     });
 
