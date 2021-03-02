@@ -414,7 +414,7 @@ describe('SonobiBidAdapter', function () {
       expect(JSON.parse(bidRequests.data.schain)).to.deep.equal(bidRequest[0].schain)
     });
 
-    it('should return a properly formatte drequest with eids as a JSON-encoded set of eids', function () {
+    it('should return a properly formatted request with eids as a JSON-encoded set of eids', function () {
       bidRequest[0].userIdAsEids = [
         {
           'source': 'pubcid.org',
