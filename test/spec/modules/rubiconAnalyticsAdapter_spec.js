@@ -852,6 +852,69 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.dimensions).to.equal(undefined);
     });
 
+    it('should pass along adomians correctly', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // 1 adomains
+      let bidResponse1 = utils.deepClone(MOCK.BID_RESPONSE[0]);
+      bidResponse1.meta = {
+        advertiserDomains: ['magnite.com']
+      }
+
+      // two adomains
+      let bidResponse2 = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      bidResponse2.meta = {
+        advertiserDomains: ['prebid.org', 'magnite.com']
+      }
+
+      // make sure we only pass max 10 adomains
+      bidResponse2.meta.advertiserDomains = [...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains]
+
+      events.emit(BID_RESPONSE, bidResponse1);
+      events.emit(BID_RESPONSE, bidResponse2);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.deep.equal(['magnite.com']);
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.deep.equal(['prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com']);
+    });
+
+    it('should NOT pass along adomians correctly when edge cases', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // empty => nothing
+      let bidResponse1 = utils.deepClone(MOCK.BID_RESPONSE[0]);
+      bidResponse1.meta = {
+        advertiserDomains: []
+      }
+
+      // not array => nothing
+      let bidResponse2 = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      bidResponse2.meta = {
+        advertiserDomains: 'prebid.org'
+      }
+
+      events.emit(BID_RESPONSE, bidResponse1);
+      events.emit(BID_RESPONSE, bidResponse2);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.be.undefined;
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.be.undefined;
+    });
+
     function performFloorAuction(provider) {
       let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
       auctionInit.bidderRequests[0].bids[0].floorData = {
