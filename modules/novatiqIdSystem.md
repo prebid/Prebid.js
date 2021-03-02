@@ -1,6 +1,6 @@
 # Novatiq Snowflake ID
 
-Novatiq proprietary dynamic snowflake ID is a unique, non sequential and single use identifier for marketing activation. Only the snowflake ID moves beyond the firewall, keeping all customer data (publisher / brand and telco) private, secure and under control. Our in network solution matches verification requests to the telco network ID, safely and securely behind the telco firewall .
+Novatiq proprietary dynamic snowflake ID is a unique, non sequential and single use identifier for marketing activation. Our in network solution matches verification requests to telco network IDs, safely and securely inside telecom infrastructure. Novatiq snowflake ID can be used for identity validation and as a secured 1st party data delivery mechanism.
 
 ## Novatiq Snowflake ID Configuration
 
