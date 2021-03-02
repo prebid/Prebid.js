@@ -458,7 +458,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
 
   if (config.getConfig('cache.url') && context !== OUTSTREAM) {
-    if (!bidResponse.videoCacheKey) {
+    if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
       addBid = false;
       callPrebidCache(auctionInstance, bidResponse, afterBidAdded, bidderRequest);
     } else if (!bidResponse.vastUrl) {

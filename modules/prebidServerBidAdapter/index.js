@@ -203,6 +203,10 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
     payload.us_privacy = uspConsent;
   }
 
+  if (typeof s2sConfig.coopSync === 'boolean') {
+    payload.coopSync = s2sConfig.coopSync;
+  }
+
   const jsonPayload = JSON.stringify(payload);
   ajax(s2sConfig.syncEndpoint,
     (response) => {
@@ -640,6 +644,23 @@ const OPEN_RTB_PROTOCOL = {
       const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
       if (storedAuctionResponseBid) {
         utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
+      }
+
+      const getFloorBid = find(firstBidRequest.bids, bid => bid.adUnitCode === adUnit.code && typeof bid.getFloor === 'function');
+
+      if (getFloorBid) {
+        let floorInfo;
+        try {
+          floorInfo = getFloorBid.getFloor({
+            currency: config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY,
+          });
+        } catch (e) {
+          utils.logError('PBS: getFloor threw an error: ', e);
+        }
+        if (floorInfo && floorInfo.currency && !isNaN(parseFloat(floorInfo.floor))) {
+          imp.bidfloor = parseFloat(floorInfo.floor);
+          imp.bidfloorcur = floorInfo.currency
+        }
       }
 
       if (imp.banner || imp.video || imp.native) {

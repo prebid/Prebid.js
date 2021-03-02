@@ -23,7 +23,11 @@ const bid = {
     clickUrl: 'https://www.link.example',
     clickTrackers: ['https://tracker.example'],
     impressionTrackers: ['https://impression.example'],
-    javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>'
+    javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
+    ext: {
+      foo: 'foo-value',
+      baz: 'baz-value'
+    }
   }
 };
 
@@ -36,7 +40,11 @@ const bidWithUndefinedFields = {
     clickUrl: 'https://www.link.example',
     clickTrackers: ['https://tracker.example'],
     impressionTrackers: ['https://impression.example'],
-    javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>'
+    javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
+    ext: {
+      foo: 'foo-value',
+      baz: undefined
+    }
   }
 };
 
@@ -59,14 +67,21 @@ describe('native.js', function () {
     expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
     expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal(bid.native.body);
     expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal(bid.native.clickUrl);
+    expect(targeting.hb_native_foo).to.equal(bid.native.foo);
   });
 
   it('sends placeholders for configured assets', function () {
     const bidRequest = {
-      mediaTypes: {
-        native: {
-          body: { sendId: true },
-          clickUrl: { sendId: true },
+      nativeParams: {
+        body: { sendId: true },
+        clickUrl: { sendId: true },
+        ext: {
+          foo: {
+            sendId: false
+          },
+          baz: {
+            sendId: true
+          }
         }
       }
     };
@@ -75,15 +90,33 @@ describe('native.js', function () {
     expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
     expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal('hb_native_body:123');
     expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal('hb_native_linkurl:123');
+    expect(targeting.hb_native_foo).to.equal(bid.native.ext.foo);
+    expect(targeting.hb_native_baz).to.equal('hb_native_baz:123');
   });
 
   it('should only include native targeting keys with values', function () {
-    const targeting = getNativeTargeting(bidWithUndefinedFields);
+    const bidRequest = {
+      nativeParams: {
+        body: { sendId: true },
+        clickUrl: { sendId: true },
+        ext: {
+          foo: {
+            required: false
+          },
+          baz: {
+            required: false
+          }
+        }
+      }
+    };
+
+    const targeting = getNativeTargeting(bidWithUndefinedFields, bidRequest);
 
     expect(Object.keys(targeting)).to.deep.equal([
       CONSTANTS.NATIVE_KEYS.title,
       CONSTANTS.NATIVE_KEYS.sponsoredBy,
-      CONSTANTS.NATIVE_KEYS.clickUrl
+      CONSTANTS.NATIVE_KEYS.clickUrl,
+      'hb_native_foo'
     ]);
   });
 
@@ -138,6 +171,12 @@ describe('native.js', function () {
         sponsoredBy: {
           required: false,
           sendTargetingKeys: false
+        },
+        ext: {
+          foo: {
+            required: false,
+            sendTargetingKeys: true
+          }
         }
       }
 
@@ -148,7 +187,8 @@ describe('native.js', function () {
       CONSTANTS.NATIVE_KEYS.title,
       CONSTANTS.NATIVE_KEYS.body,
       CONSTANTS.NATIVE_KEYS.image,
-      CONSTANTS.NATIVE_KEYS.clickUrl
+      CONSTANTS.NATIVE_KEYS.clickUrl,
+      'hb_native_foo'
     ]);
   });
 
@@ -265,7 +305,7 @@ describe('native.js', function () {
 
     const message = getAllAssetsMessage(messageRequest, bid);
 
-    expect(message.assets.length).to.equal(7);
+    expect(message.assets.length).to.equal(9);
     expect(message.assets).to.deep.include({
       key: 'body',
       value: bid.native.body
@@ -294,6 +334,14 @@ describe('native.js', function () {
       key: 'sponsoredBy',
       value: bid.native.sponsoredBy
     });
+    expect(message.assets).to.deep.include({
+      key: 'foo',
+      value: bid.native.ext.foo
+    });
+    expect(message.assets).to.deep.include({
+      key: 'baz',
+      value: bid.native.ext.baz
+    });
   });
 
   it('creates native all asset message with only defined fields', function() {
@@ -305,7 +353,7 @@ describe('native.js', function () {
 
     const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields);
 
-    expect(message.assets.length).to.equal(3);
+    expect(message.assets.length).to.equal(4);
     expect(message.assets).to.deep.include({
       key: 'clickUrl',
       value: bid.native.clickUrl
@@ -317,6 +365,10 @@ describe('native.js', function () {
     expect(message.assets).to.deep.include({
       key: 'sponsoredBy',
       value: bid.native.sponsoredBy
+    });
+    expect(message.assets).to.deep.include({
+      key: 'foo',
+      value: bid.native.ext.foo
     });
   });
 });
