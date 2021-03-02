@@ -329,7 +329,6 @@ function _addBidResponse(serverBid, bidRequest, bidResponses) {
     if (bid) {
       const bidResponse = {
         requestId: bid.bidId, // bid.bidderRequestId,
-        bidderCode: spec.code,
         cpm: serverBid.price,
         width: serverBid.w,
         height: serverBid.h,
