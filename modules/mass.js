@@ -65,7 +65,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
  * Check if a bid is MASS.
  */
 function isMassBid(bid) {
-  // the deal ID must start with MASS:
+  // the deal ID must start with META_MASS:
   if (!(/^META_MASS/i.test(bid.dealId))) {
     return false;
   }
