@@ -38,7 +38,7 @@ export const nextrollIdSubmodule = {
    * @returns {{id: {nextroll: string} | undefined}}
    */
   getId(config) {
-    const key = KEY_PREFIX + deepAccess(config, 'params.sellerId', 'undefined');
+    const key = KEY_PREFIX + deepAccess(config, 'params.partnerId', 'undefined');
     const dataString = storage.getDataFromLocalStorage(NEXTROLL_ID_LS_KEY) || '{}';
     const data = JSON.parse(dataString);
     const nextrollId = deepAccess(data, `${key}.value`);
