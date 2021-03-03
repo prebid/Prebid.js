@@ -276,10 +276,15 @@ function getNativeAssets(response, nativeConfig) {
     native.clickUrl = adJson.TrackingPrefix + '/ar?event_kind=CLICK&attempt=' + adJson.Attempt +
       '&campaign=' + adJson.Campaign + '&url=' + encodeURIComponent(adJson.Content.Landing.Url);
 
-    native.clickTrackers = getTrackers(adJson.OnEvents['CLICK']);
-    native.impressionTrackers = getTrackers(adJson.OnEvents['IMPRESSION']);
+    if (adJson.OnEvents) {
+      native.clickTrackers = getTrackers(adJson.OnEvents['CLICK']);
+      native.impressionTrackers = getTrackers(adJson.OnEvents['IMPRESSION']);
+      native.javascriptTrackers = getTrackers(adJson.OnEvents['IMPRESSION'], true);
+    } else {
+      native.impressionTrackers = [];
+    }
+
     native.impressionTrackers.push(impressionUrl);
-    native.javascriptTrackers = getTrackers(adJson.OnEvents['IMPRESSION'], true);
   }
 
   Object.keys(nativeConfig).map(function(key, index) {
