@@ -2,15 +2,16 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import find from 'core-js-pure/features/array/find.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
 const DEFAULT_DC = 'hb-api';
+const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   aliases: ['ayl'], // short code
   /**
    * Determines whether or not the given bid request is valid.
@@ -35,16 +36,18 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     const payload = {
       Version: VERSION,
-      Bids: bidRequests.reduce((accumulator, bid) => {
-        let sizesArray = getSizeArray(bid);
+      Bids: bidRequests.reduce((accumulator, bidReq) => {
+        let mediatype = getMediatype(bidReq);
+        let sizesArray = getSizeArray(bidReq);
         let size = getSize(sizesArray);
-        accumulator[bid.bidId] = {};
-        accumulator[bid.bidId].PlacementID = bid.params.placement;
-        accumulator[bid.bidId].TransactionID = bid.transactionId;
-        accumulator[bid.bidId].Width = size.width;
-        accumulator[bid.bidId].Height = size.height;
-        accumulator[bid.bidId].AvailableSizes = sizesArray.join(',');
-        if (bid.mediaTypes && bid.mediaTypes.native) accumulator[bid.bidId].Native = bid.mediaTypes.native;
+        accumulator[bidReq.bidId] = {};
+        accumulator[bidReq.bidId].PlacementID = bidReq.params.placement;
+        accumulator[bidReq.bidId].TransactionID = bidReq.transactionId;
+        accumulator[bidReq.bidId].Width = size.width;
+        accumulator[bidReq.bidId].Height = size.height;
+        accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(',');
+        accumulator[bidReq.bidId].Pricing = getFloor(bidReq, mediatype);
+        if (mediatype === NATIVE) accumulator[bidReq.bidId].Native = bidReq.mediaTypes.native;
         return accumulator;
       }, {}),
       PageRefreshed: getPageRefreshed()
@@ -124,6 +127,32 @@ function getCanonicalUrl() {
     return link.href;
   }
   return '';
+}
+
+/* Get mediatype from bidRequest */
+function getMediatype(bidRequest) {
+  var type = BANNER;
+  if (bidRequest.mediaTypes) {
+    if (bidRequest.mediaTypes.native) {
+      type = NATIVE;
+    } else if (bidRequest.mediaTypes.video) {
+      type = VIDEO;
+    }
+  }
+
+  return type;
+}
+/* Get Floor price information */
+function getFloor(bidRequest, size, mediaType) {
+  const bidFloors = bidRequest.getFloor({
+    currency: CURRENCY,
+    mediaType,
+    size: [ size.w, size.h ]
+  });
+
+  if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
+    return bidFloors.floor;
+  }
 }
 
 /* Get information on page refresh */
@@ -367,7 +396,7 @@ function createBid(response, bidRequests) {
     creativeId: response.CreativeID,
     cpm: response.Price,
     netRevenue: true,
-    currency: 'USD'
+    currency: CURRENCY
   };
 
   if (request && request.Native) {
