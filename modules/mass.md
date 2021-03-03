@@ -13,8 +13,8 @@ This module scans incoming bids for the presence of a META_MASS DealID and uses
 external resources to decypher and process the MASS:// URI found within the ad markup.
 This modules is designed to work with MASS enabled Exchanges and DSP's.
 
-This module only loads external resources if the publisher ad server has selected the MASS
-enabled bid as the winner. 
+This module only loads external JavaScript resources if the publisher ad server has 
+selected a MASS enabled bid as a winner. 
 
 Find out more [here](https://massplatform.net).
 
