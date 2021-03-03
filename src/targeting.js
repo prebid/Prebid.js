@@ -5,6 +5,7 @@ import { auctionManager } from './auctionManager.js';
 import { sizeSupported } from './sizeMapping.js';
 import { ADPOD } from './mediaTypes.js';
 import includes from 'core-js-pure/features/array/includes.js';
+import find from 'core-js-pure/features/array/find.js';
 
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -19,7 +20,7 @@ export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
 );
 
 // return unexpired bids
-const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
+const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 - TTL_BUFFER) > timestamp();
 
 // return bids whose status is not set. Winning bids can only have a status of `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
@@ -200,7 +201,7 @@ export function newTargeting(auctionManager) {
         // check if key is in default keys, if not, it's custom, we won't remove it.
         const isCustom = defaultKeys.filter(defaultKey => key.indexOf(defaultKeyring[defaultKey]) === 0).length === 0;
         // check if key explicitly allowed, if not, we'll remove it.
-        const found = isCustom || allowedKeys.find(allowedKey => {
+        const found = isCustom || find(allowedKeys, allowedKey => {
           const allowedKeyName = defaultKeyring[allowedKey];
           // we're looking to see if the key exactly starts with one of our default keys.
           // (which hopefully means it's not custom)
@@ -249,7 +250,8 @@ export function newTargeting(auctionManager) {
       });
     });
 
-    const allowedKeys = config.getConfig('targetingControls.allowTargetingKeys');
+    const defaultKeys = Object.keys(Object.assign({}, CONSTANTS.DEFAULT_TARGETING_KEYS, CONSTANTS.NATIVE_KEYS));
+    const allowedKeys = config.getConfig('targetingControls.allowTargetingKeys') || defaultKeys;
     if (Array.isArray(allowedKeys) && allowedKeys.length > 0) {
       targeting = getAllowedTargetingKeyValues(targeting, allowedKeys);
     }

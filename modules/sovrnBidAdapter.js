@@ -14,7 +14,7 @@ export const spec = {
    * @return boolean for whether or not a bid is valid
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.tagid && !isNaN(parseFloat(bid.params.tagid)) && isFinite(bid.params.tagid));
+    return !!(bid.params.tagid && !isNaN(parseFloat(bid.params.tagid)) && isFinite(bid.params.tagid))
   },
 
   /**
@@ -45,14 +45,21 @@ export const spec = {
         }
 
         if (bid.schain) {
-          schain = schain || bid.schain;
+          schain = schain || bid.schain
         }
-        iv = iv || utils.getBidIdParameter('iv', bid.params);
+        iv = iv || utils.getBidIdParameter('iv', bid.params)
 
-        let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+        let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes
         bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
         bidSizes = bidSizes.filter(size => utils.isArray(size))
         const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
+        const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
+          currency: 'USD',
+          mediaType: 'banner',
+          size: '*'
+        }) : {}
+        floorInfo.floor = floorInfo.floor || utils.getBidIdParameter('bidfloor', bid.params)
+
         const imp = {
           adunitcode: bid.adUnitCode,
           id: bid.bidId,
@@ -62,7 +69,7 @@ export const spec = {
             h: 1,
           },
           tagid: String(utils.getBidIdParameter('tagid', bid.params)),
-          bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
+          bidfloor: floorInfo.floor
         }
 
         const segmentsString = utils.getBidIdParameter('segments', bid.params)

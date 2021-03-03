@@ -257,12 +257,12 @@ describe('Nobid Adapter', function () {
             'uids': [
               {
                 'id': 'ID5_ID',
-                'atype': 1
+                'atype': 1,
+                'ext': {
+                  'linkType': 0
+                }
               }
-            ],
-            'ext': {
-              'linkType': 0
-            }
+            ]
           },
           {
             'source': 'adserver.org',
@@ -284,7 +284,7 @@ describe('Nobid Adapter', function () {
       refererInfo: {referer: REFERER}
     }
 
-    it('should criteo eid', function () {
+    it('should get user ids from eids', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.sid).to.exist.and.to.equal(2);
