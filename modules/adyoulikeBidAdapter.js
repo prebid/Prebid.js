@@ -46,8 +46,15 @@ export const spec = {
         accumulator[bidReq.bidId].Width = size.width;
         accumulator[bidReq.bidId].Height = size.height;
         accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(',');
-        accumulator[bidReq.bidId].Pricing = getFloor(bidReq, mediatype);
-        if (mediatype === NATIVE) accumulator[bidReq.bidId].Native = bidReq.mediaTypes.native;
+        if (typeof bidReq.getFloor === 'function') {
+          accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
+        }
+        if (mediatype === NATIVE) {
+          accumulator[bidReq.bidId].Native = bidReq.mediaTypes.native;
+        }
+        if (mediatype === VIDEO) {
+          accumulator[bidReq.bidId].Video = bidReq.mediaTypes.video;
+        }
         return accumulator;
       }, {}),
       PageRefreshed: getPageRefreshed()
@@ -132,12 +139,11 @@ function getCanonicalUrl() {
 /* Get mediatype from bidRequest */
 function getMediatype(bidRequest) {
   var type = BANNER;
-  if (bidRequest.mediaTypes) {
-    if (bidRequest.mediaTypes.native) {
-      type = NATIVE;
-    } else if (bidRequest.mediaTypes.video) {
-      type = VIDEO;
-    }
+
+  if (utils.deepAccess(bidRequest, 'mediaTypes.native')) {
+    type = NATIVE;
+  } else if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+    type = VIDEO;
   }
 
   return type;
@@ -147,7 +153,7 @@ function getFloor(bidRequest, size, mediaType) {
   const bidFloors = bidRequest.getFloor({
     currency: CURRENCY,
     mediaType,
-    size: [ size.w, size.h ]
+    size: [ size.width, size.height ]
   });
 
   if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
@@ -286,6 +292,15 @@ function getTrackers(eventsArray, jsTrackers) {
   return result;
 }
 
+function getVideoAd(response) {
+  var adJson = {};
+  if (typeof response.Ad === 'string') {
+    adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
+
+    return utils.deepAccess(adJson, 'Content.MainVideo.Vast');
+  }
+}
+
 function getNativeAssets(response, nativeConfig) {
   const native = {};
 
@@ -407,6 +422,9 @@ function createBid(response, bidRequests) {
   if (request && request.Native) {
     bid.native = getNativeAssets(response, request.Native);
     bid.mediaType = 'native';
+  } else if(request && request.Video) {
+    bid.vastXml = response.Vast || getVideoAd(response);
+    bid.mediaType = 'video';
   } else {
     bid.width = response.Width;
     bid.height = response.Height;
