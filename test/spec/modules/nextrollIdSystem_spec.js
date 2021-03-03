@@ -23,22 +23,22 @@ describe('NextrollId module', function () {
       expect: {
         id: {nextroll: 'id_value'},
       },
-      params: {partner_id: '1002'},
+      params: {sellerId: '1002'},
       localStorage: LS_VALUE
     },
     {
       expect: {id: undefined},
-      params: {partner_id: '1003'},
+      params: {sellerId: '1003'},
       localStorage: LS_VALUE
     },
     {
       expect: {id: undefined},
-      params: {partner_id: ''},
+      params: {sellerId: ''},
       localStorage: LS_VALUE
     },
     {
       expect: {id: undefined},
-      params: {partner_id: '102'},
+      params: {sellerId: '102'},
       localStorage: undefined
     },
     {
