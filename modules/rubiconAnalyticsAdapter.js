@@ -60,7 +60,8 @@ const cache = {
 const BID_REJECTED_IPF = 'rejected-ipf';
 
 export let rubiConf = {
-  pvid: utils.generateUUID().slice(0, 8)
+  pvid: utils.generateUUID().slice(0, 8),
+  analyticsEventDelay: 0
 };
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
@@ -138,7 +139,8 @@ function sendMessage(auctionId, bidWonId) {
         'mediaType',
         'floorValue',
         'floorRuleValue',
-        'floorRule'
+        'floorRule',
+        'adomains'
       ]) : undefined
     ]);
   }
@@ -162,13 +164,18 @@ function sendMessage(auctionId, bidWonId) {
   let message = {
     eventTimeMillis: Date.now(),
     integration: rubiConf.int_type || DEFAULT_INTEGRATION,
-    ruleId: rubiConf.rule_name,
     version: '$prebid.version$',
     referrerUri: referrer,
     referrerHostname: rubiconAdapter.referrerHostname || getHostNameFromReferer(referrer),
     channel: 'web',
-    wrapperName: rubiConf.wrapperName
   };
+  if (rubiConf.wrapperName) {
+    message.wrapper = {
+      name: rubiConf.wrapperName,
+      family: rubiConf.wrapperFamily,
+      rule: rubiConf.rule_name
+    }
+  }
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
       let bid = auctionCache.bids[bidId];
@@ -181,7 +188,8 @@ function sendMessage(auctionId, bidWonId) {
           'dimensions',
           'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
           'gam',
-          'pbAdSlot'
+          'pbAdSlot',
+          'pattern'
         ]);
         adUnit.bids = [];
         adUnit.status = 'no-bid'; // default it to be no bid
@@ -357,7 +365,11 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
     'seatBidId',
     'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
     'floorRuleValue', () => utils.deepAccess(bid, 'floorData.floorRuleValue'),
-    'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined
+    'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined,
+    'adomains', () => {
+      let adomains = utils.deepAccess(bid, 'meta.advertiserDomains');
+      return Array.isArray(adomains) && adomains.length > 0 ? adomains.slice(0, 10) : undefined
+    }
   ]);
 }
 
@@ -463,6 +475,9 @@ function subscribeToGamSlots() {
         let bid = cache.auctions[auctionId].bids[bidId];
         // if this slot matches this bids adUnit, add the adUnit info
         if (isMatchingAdSlot(bid.adUnit.adUnitCode)) {
+          // mark this adUnit as having been rendered by gam
+          cache.auctions[auctionId].gamHasRendered[bid.adUnit.adUnitCode] = true;
+
           bid.adUnit.gam = utils.pick(event, [
             // these come in as `null` from Gpt, which when stringified does not get removed
             // so set explicitly to undefined when not a number
@@ -474,6 +489,16 @@ function subscribeToGamSlots() {
           ]);
         }
       });
+      // Now if all adUnits have gam rendered, send the payload
+      if (rubiConf.waitForGamSlots && !cache.auctions[auctionId].sent && Object.keys(cache.auctions[auctionId].gamHasRendered).every(adUnitCode => cache.auctions[auctionId].gamHasRendered[adUnitCode])) {
+        clearTimeout(cache.timeouts[auctionId]);
+        delete cache.timeouts[auctionId];
+        if (rubiConf.analyticsEventDelay > 0) {
+          setTimeout(() => sendMessage.call(rubiconAdapter, auctionId), rubiConf.analyticsEventDelay)
+        } else {
+          sendMessage.call(rubiconAdapter, auctionId)
+        }
+      }
     });
   });
 }
@@ -538,6 +563,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         ]);
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
+        cacheEntry.gamHasRendered = {};
         cacheEntry.referrer = utils.deepAccess(args, 'bidderRequests.0.refererInfo.referer');
         const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (floorData) {
@@ -550,12 +576,23 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         if (!cache.gpt.registered && utils.isGptPubadsDefined()) {
           subscribeToGamSlots();
           cache.gpt.registered = true;
+        } else if (!cache.gpt.registered) {
+          cache.gpt.registered = true;
+          window.googletag = window.googletag || {};
+          window.googletag.cmd = window.googletag.cmd || [];
+          window.googletag.cmd.push(function() {
+            subscribeToGamSlots();
+          });
         }
         break;
       case BID_REQUESTED:
         Object.assign(cache.auctions[args.auctionId].bids, args.bids.reduce((memo, bid) => {
           // mark adUnits we expect bidWon events for
           cache.auctions[args.auctionId].bidsWon[bid.adUnitCode] = false;
+
+          if (rubiConf.waitForGamSlots) {
+            cache.auctions[args.auctionId].gamHasRendered[bid.adUnitCode] = false;
+          }
 
           memo[bid.bidId] = utils.pick(bid, [
             'bidder', bidder => bidder.toLowerCase(),
@@ -626,7 +663,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                   return {adSlot: bid.fpd.context.adServer.adSlot}
                 }
               },
-              'pbAdSlot', () => utils.deepAccess(bid, 'fpd.context.pbAdSlot')
+              'pbAdSlot', () => utils.deepAccess(bid, 'fpd.context.pbAdSlot'),
+              'pattern', () => utils.deepAccess(bid, 'fpd.context.aupName')
             ])
           ]);
           return memo;
@@ -702,7 +740,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         // check if this BID_WON missed the boat, if so send by itself
         if (auctionCache.sent === true) {
           sendMessage.call(this, args.auctionId, args.requestId);
-        } else if (Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
+        } else if (!rubiConf.waitForGamSlots && Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
           // only send if we've received bidWon events for all adUnits in auction
           memo = memo && auctionCache.bidsWon[adUnitCode];
           return memo;
@@ -717,7 +755,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         // start timer to send batched payload just in case we don't hear any BID_WON events
         cache.timeouts[args.auctionId] = setTimeout(() => {
           sendMessage.call(this, args.auctionId);
-        }, SEND_TIMEOUT);
+        }, rubiConf.analyticsBatchTimeout || SEND_TIMEOUT);
         break;
       case BID_TIMEOUT:
         args.forEach(badBid => {

@@ -15,16 +15,10 @@ const HOST_GETTERS = {
       return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com';
     }
   }()),
-  appaloosa: function () {
-    return 'ghb.hb.appaloosa.media';
-  },
-  onefiftytwomedia: function () {
-    return 'ghb.ads.152media.com';
-  },
-  mediafuse: function () {
-    return 'ghb.hbmp.mediafuse.com';
-  }
-
+  navelix: () => 'ghb.hb.navelix.com',
+  appaloosa: () => 'ghb.hb.appaloosa.media',
+  onefiftytwomedia: () => 'ghb.ads.152media.com',
+  mediafuse: () => 'ghb.hbmp.mediafuse.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -41,6 +35,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
   aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa',
+    { code: 'navelix', gvlid: 380 },
     {
       code: 'mediafuse',
       skipPbsAliasing: true

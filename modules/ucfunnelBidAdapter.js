@@ -69,7 +69,7 @@ export const spec = {
       cpm: ad.cpm || 0,
       creativeId: ad.crid || ad.ad_id || bidRequest.params.adid,
       dealId: ad.deal || null,
-      currency: 'USD',
+      currency: ad.currency || 'USD',
       netRevenue: true,
       ttl: 1800,
       meta: {}

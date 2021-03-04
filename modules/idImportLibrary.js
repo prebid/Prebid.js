@@ -200,10 +200,10 @@ function postData() {
     logInfo('No user ids');
     return;
   }
-  logInfo('Users' + JSON.stringify(userIds));
+  logInfo('Users' + userIds);
   const syncPayload = {};
   syncPayload.hid = MD5(email).toString();
-  syncPayload.uids = JSON.stringify(userIds);
+  syncPayload.uids = userIds;
   const payloadString = JSON.stringify(syncPayload);
   logInfo(payloadString);
   ajax(conf.url, syncCallback(), payloadString, {method: 'POST', withCredentials: true});
@@ -240,4 +240,4 @@ export function setConfig(config) {
   associateIds();
 }
 
-config.getConfig('idLibrary', config => setConfig(config.idLibrary));
+config.getConfig('idImportLibrary', config => setConfig(config.idImportLibrary));
