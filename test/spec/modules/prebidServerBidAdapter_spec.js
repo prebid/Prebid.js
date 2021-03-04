@@ -270,7 +270,7 @@ const RESPONSE_OPENRTB = {
                 'win': 'http://wurl.org?id=333'
               }
             },
-            'dchain': { 'ver': '1.0', 'complete' : 0, 'nodes' : [ { 'asi': 'magnite.com', "bsid": '123456789', } ] },
+            'dchain': { 'ver': '1.0', 'complete': 0, 'nodes': [ { 'asi': 'magnite.com', "bsid": '123456789', } ] },
             'bidder': {
               'appnexus': {
                 'brand_id': 1,
