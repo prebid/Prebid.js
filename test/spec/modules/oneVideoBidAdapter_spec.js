@@ -567,7 +567,6 @@ describe('OneVideoBidAdapter', function () {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
         cpm: serverResponse.seatbid[0].bid[0].price,
-        adId: serverResponse.seatbid[0].bid[0].adid,
         creativeId: serverResponse.seatbid[0].bid[0].crid,
         vastXml: serverResponse.seatbid[0].bid[0].adm,
         width: 640,
