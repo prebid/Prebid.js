@@ -112,12 +112,12 @@ function bidToImp(bid) {
 /**
  * Calls the priceModule function getFloor() to get the module floors
  *
- * @param {*} bid
- * @param {*} mt : mediatype : SUPPORTED_AD_TYPES only
- *
- * @return {Object} floors object, empty object on failing to getFloor
+ * @param  {object}  bid 
+ * @param  {string}  mt : mediatype : SUPPORTED_AD_TYPES only
+ * @param  {integer} width
+ * @param  {integer} height
+ * @return {object}  floors object, empty object on failing to getFloor
  * eg : { floor : 3.5, currency : 'CAD'}
- *
  */
 function _getModuleFloor(bid, mt, width, height) {
   if (!(bid.hasOwnProperty('getFloor') && typeof bid.getFloor == 'function')) {
