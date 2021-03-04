@@ -33,6 +33,13 @@ function bidToBannerImp(bid) {
   imp.banner.h = bid.params.size[1];
   imp.banner.topframe = utils.inIframe() ? 0 : 1;
 
+  // get floors
+  var moduleFloor = _getModuleFloor(bid, BANNER, imp.banner.w, imp.banner.h);
+  var adapterFloor = _getAdapterFloor(bid);
+
+  if (!(_applyFloor(imp, moduleFloor, adapterFloor))) {
+    utils.logWarn('No floors applied')
+  }
   return imp;
 }
 
@@ -46,7 +53,7 @@ function bidToVideoImp(bid) {
   const imp = bidToImp(bid);
   const videoAdUnitRef = utils.deepAccess(bid, 'mediaTypes.video');
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-  const videoAdUnitWhitelist = [
+  const videoAdUnitAllowlist = [
     'mimes', 'minduration', 'maxduration', 'protocols', 'protocol',
     'startdelay', 'placement', 'linearity', 'skip', 'skipmin',
     'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate',
@@ -69,10 +76,17 @@ function bidToVideoImp(bid) {
   }
 
   for (let adUnitProperty in videoAdUnitRef) {
-    if (videoAdUnitWhitelist.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
+    if (videoAdUnitAllowlist.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
       imp.video[adUnitProperty] = videoAdUnitRef[adUnitProperty];
     }
   }
+
+  // get floors from priceFloors module and IX cfg
+  var moduleFloor = _getModuleFloor(bid, VIDEO, imp.video.w, imp.video.h);
+  var adapterFloor = _getAdapterFloor(bid);
+
+  // can check returned bool value for success/failure
+  _applyFloor(imp, moduleFloor, adapterFloor);
 
   return imp;
 }
@@ -92,12 +106,103 @@ function bidToImp(bid) {
     imp.ext.sid = `${bid.params.size[0]}x${bid.params.size[1]}`;
   }
 
-  if (bid.params.hasOwnProperty('bidFloor') && bid.params.hasOwnProperty('bidFloorCur')) {
-    imp.bidfloor = bid.params.bidFloor;
-    imp.bidfloorcur = bid.params.bidFloorCur;
+  return imp;
+}
+
+/**
+ * Calls the priceModule function getFloor() to get the module floors
+ *
+ * @param {*} bid
+ * @param {*} mt : mediatype : SUPPORTED_AD_TYPES only
+ *
+ * @return {Object} floors object, empty object on failing to getFloor
+ * eg : { floor : 3.5, currency : 'CAD'}
+ *
+ */
+function _getModuleFloor(bid, mt, width, height) {
+  if (!(bid.hasOwnProperty('getFloor') && typeof bid.getFloor == 'function')) {
+    return {};
   }
 
-  return imp;
+  if (!mt || mt.length === 0 || !utils.contains(SUPPORTED_AD_TYPES, mt)) {
+    mt = '*';
+  }
+
+  var floors = bid.getFloor({
+    mediaType: mt,
+    size: [width, height]
+  });
+
+  return floors;
+}
+
+/**
+ * @param  {*}      bid
+ * @return {Object} floor object with ix configured values or empty object
+ */
+function _getAdapterFloor(bid) {
+  var adapterFloor = {};
+  if (bid.params.hasOwnProperty('bidFloor') && bid.params.hasOwnProperty('bidFloorCur')) {
+    adapterFloor.floor = bid.params.bidFloor;
+    adapterFloor.currency = bid.params.bidFloorCur;
+  }
+  return adapterFloor;
+}
+
+/**
+ * Validates priceFloors module floors and adapter floors
+ * Then applies the higher floor value to the impression
+ *
+ * @param  {*}    imp : object to set the floors in
+ * @param  {*}    moduleFloor : obtained from calling getFloors
+ * @param  {*}    adapterFloor : obtained from reading bid.param.bidFloor and bid.param.bidFloorCur
+ * @return {bool} success ?
+ ** true: successfully applied floors , populated imp.bidfloor + imp.bidfloorcurrency
+ ** false: did not apply floors
+ */
+function _applyFloor(imp, moduleFloor, adapterFloor) {
+  var gotmodulefloor = false;
+  var gotadapterfloor = false;
+
+  if (typeof moduleFloor === 'object' &&
+  utils.deepAccess(moduleFloor, 'currency') &&
+  utils.deepAccess(moduleFloor, 'floor')) {
+    gotmodulefloor = true;
+  }
+
+  if (typeof adapterFloor === 'object' &&
+  utils.deepAccess(adapterFloor, 'currency') &&
+  utils.deepAccess(adapterFloor, 'floor')) {
+    gotadapterfloor = true;
+  }
+
+  if (!gotmodulefloor && !gotadapterfloor) {
+    utils.logInfo('No floors available, no floors applied')
+    return false;
+  }
+
+  if (gotadapterfloor && gotmodulefloor) {
+    if (adapterFloor.currency !== moduleFloor.currency) {
+      utils.logWarn('The bid floor currency mismatch between IX params and priceFloors module config');
+      return false;
+    }
+    // pick the higher floor
+    imp.bidfloor = adapterFloor.floor > moduleFloor.floor ? adapterFloor.floor : moduleFloor.floor;
+    // no currency mismatch
+    imp.bidfloorcur = adapterFloor.currency;
+    return true;
+  }
+  if (gotadapterfloor) {
+    imp.bidfloor = adapterFloor.floor;
+    imp.bidfloorcur = adapterFloor.currency;
+    return true;
+  }
+  if (gotmodulefloor) {
+    imp.bidfloor = moduleFloor.floor;
+    imp.bidfloorcur = moduleFloor.currency;
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -270,7 +375,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         if (identityInfo.hasOwnProperty(partnerName)) {
           let response = identityInfo[partnerName];
           if (!response.responsePending && response.data && typeof response.data === 'object' &&
-                Object.keys(response.data).length && !eidInfo.seenSources[response.data.source]) {
+            Object.keys(response.data).length && !eidInfo.seenSources[response.data.source]) {
             userEids.push(response.data);
           }
         }
@@ -610,16 +715,21 @@ function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
 }
 
 /**
- *
+ * @param  {object} bid      ValidBidRequest object, used to adjust floor
  * @param  {object} imp      Impression object to be modified
  * @param  {array}  newSize  The new size to be applied
  * @return {object} newImp   Updated impression object
  */
-function createMissingBannerImp(imp, newSize) {
+function createMissingBannerImp(bid, imp, newSize) {
   const newImp = utils.deepClone(imp);
   newImp.ext.sid = `${newSize[0]}x${newSize[1]}`;
   newImp.banner.w = newSize[0];
   newImp.banner.h = newSize[1];
+  // adjust floor
+  var moduleFloor = _getModuleFloor(bid, BANNER, newSize[0], newSize[1]);
+  var adapterFloor = _getAdapterFloor(bid);
+  _applyFloor(newImp, moduleFloor, adapterFloor);
+
   return newImp;
 }
 
@@ -658,7 +768,7 @@ export const spec = {
     }
 
     if (!includesSize(bid.sizes, paramsSize) && !((mediaTypeVideoPlayerSize && includesSize(mediaTypeVideoPlayerSize, paramsSize)) ||
-     (mediaTypeBannerSizes && includesSize(mediaTypeBannerSizes, paramsSize)))) {
+      (mediaTypeBannerSizes && includesSize(mediaTypeBannerSizes, paramsSize)))) {
       utils.logError('ix bidder params: bid size is not included in ad unit sizes or player size.');
       return false;
     }
@@ -730,13 +840,12 @@ export const spec = {
           if (!videoImps[validBidRequest.transactionId].hasOwnProperty('ixImps')) {
             videoImps[validBidRequest.transactionId].ixImps = [];
           }
-
           videoImps[validBidRequest.transactionId].ixImps.push(bidToVideoImp(validBidRequest));
         }
       }
       if (validBidRequest.mediaType === BANNER ||
-          (utils.deepAccess(validBidRequest, 'mediaTypes.banner') && includesSize(utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), validBidRequest.params.size)) ||
-          (!validBidRequest.mediaType && !validBidRequest.mediaTypes)) {
+        (utils.deepAccess(validBidRequest, 'mediaTypes.banner') && includesSize(utils.deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), validBidRequest.params.size)) ||
+        (!validBidRequest.mediaType && !validBidRequest.mediaTypes)) {
         let imp = bidToBannerImp(validBidRequest);
 
         if (!bannerImps.hasOwnProperty(validBidRequest.transactionId)) {
@@ -767,7 +876,7 @@ export const spec = {
 
         let origImp = missingBannerSizes[transactionId].impression;
         for (let i = 0; i < missingSizes.length; i++) {
-          let newImp = createMissingBannerImp(origImp, missingSizes[i]);
+          let newImp = createMissingBannerImp(validBidRequest, origImp, missingSizes[i]);
           bannerImps[transactionId].missingImps.push(newImp);
           bannerImps[transactionId].missingCount++;
         }
