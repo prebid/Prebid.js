@@ -270,6 +270,7 @@ const RESPONSE_OPENRTB = {
                 'win': 'http://wurl.org?id=333'
               }
             },
+            'dchain': { 'ver': '1.0', 'complete': 0, 'nodes': [ { 'asi': 'magnite.com', 'bsid': '123456789', } ] },
             'bidder': {
               'appnexus': {
                 'brand_id': 1,
@@ -1936,6 +1937,9 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('meta');
       expect(response.meta).to.have.property('advertiserDomains');
       expect(response.meta.advertiserDomains[0]).to.equal('appnexus.com');
+      expect(response.meta).to.have.property('dchain');
+      expect(response.meta.dchain.ver).to.equal('1.0');
+      expect(response.meta.dchain.nodes[0].asi).to.equal('magnite.com');
       expect(response).to.not.have.property('vastUrl');
       expect(response).to.not.have.property('videoCacheKey');
       expect(response).to.have.property('ttl', 60);
