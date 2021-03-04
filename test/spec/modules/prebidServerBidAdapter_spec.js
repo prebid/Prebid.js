@@ -829,6 +829,101 @@ describe('S2S Adapter', function () {
       expect(requestBid.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
     });
 
+    describe('price floors module', function () {
+      function runTest(expectedFloor, expectedCur) {
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        const requestBid = JSON.parse(server.requests[requestCount].requestBody);
+        expect(requestBid.imp[0].bidfloor).to.equal(expectedFloor);
+        expect(requestBid.imp[0].bidfloorcur).to.equal(expectedCur);
+        requestCount += 1;
+      }
+
+      let getFloorResponse, requestCount;
+      beforeEach(function () {
+        getFloorResponse = {};
+        requestCount = 0;
+      });
+
+      it('should NOT pass bidfloor and bidfloorcur when getFloor not present or returns invalid response', function () {
+        const _config = {
+          s2sConfig: CONFIG,
+        };
+
+        config.setConfig(_config);
+
+        // if no get floor
+        runTest(undefined, undefined);
+
+        // if getFloor returns empty object
+        BID_REQUESTS[0].bids[0].getFloor = () => getFloorResponse;
+        sinon.spy(BID_REQUESTS[0].bids[0], 'getFloor');
+
+        runTest(undefined, undefined);
+        // make sure getFloor was called
+        expect(
+          BID_REQUESTS[0].bids[0].getFloor.calledWith({
+            currency: 'USD',
+          })
+        ).to.be.true;
+
+        // if getFloor does not return number
+        getFloorResponse = {currency: 'EUR', floor: 'not a number'};
+        runTest(undefined, undefined);
+
+        // if getFloor does not return currency
+        getFloorResponse = {floor: 1.1};
+        runTest(undefined, undefined);
+      });
+
+      it('should correctly pass bidfloor and bidfloorcur', function () {
+        const _config = {
+          s2sConfig: CONFIG,
+        };
+
+        config.setConfig(_config);
+
+        BID_REQUESTS[0].bids[0].getFloor = () => getFloorResponse;
+        sinon.spy(BID_REQUESTS[0].bids[0], 'getFloor');
+
+        // returns USD and string floor
+        getFloorResponse = {currency: 'USD', floor: '1.23'};
+        runTest(1.23, 'USD');
+        // make sure getFloor was called
+        expect(
+          BID_REQUESTS[0].bids[0].getFloor.calledWith({
+            currency: 'USD',
+          })
+        ).to.be.true;
+
+        // returns non USD and number floor
+        getFloorResponse = {currency: 'EUR', floor: 0.85};
+        runTest(0.85, 'EUR');
+      });
+
+      it('should correctly pass adServerCurrency when set to getFloor not default', function () {
+        config.setConfig({
+          s2sConfig: CONFIG,
+          currency: { adServerCurrency: 'JPY' },
+        });
+
+        // we have to start requestCount at 1 because a conversion rates fetch occurs when adServerCur is not USD!
+        requestCount = 1;
+
+        BID_REQUESTS[0].bids[0].getFloor = () => getFloorResponse;
+        sinon.spy(BID_REQUESTS[0].bids[0], 'getFloor');
+
+        // returns USD and string floor
+        getFloorResponse = {currency: 'JPY', floor: 97.2};
+        runTest(97.2, 'JPY');
+        // make sure getFloor was called with JPY
+        expect(
+          BID_REQUESTS[0].bids[0].getFloor.calledWith({
+            currency: 'JPY',
+          })
+        ).to.be.true;
+      });
+    });
+
     it('adds device.w and device.h even if the config lacks a device object', function () {
       const _config = {
         s2sConfig: CONFIG,
@@ -953,17 +1048,15 @@ describe('S2S Adapter', function () {
       adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
-
-      expect(requestBid.ext).to.deep.equal({
-        prebid: {
-          aliases: {
-            brealtime: 'appnexus'
-          },
-          auctiontimestamp: 1510852447530,
-          targeting: {
-            includebidderkeys: false,
-            includewinners: true
-          }
+      expect(requestBid.ext).to.haveOwnProperty('prebid');
+      expect(requestBid.ext.prebid).to.deep.include({
+        aliases: {
+          brealtime: 'appnexus'
+        },
+        auctiontimestamp: 1510852447530,
+        targeting: {
+          includebidderkeys: false,
+          includewinners: true
         }
       });
     });
@@ -985,17 +1078,15 @@ describe('S2S Adapter', function () {
       adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
-
-      expect(requestBid.ext).to.deep.equal({
-        prebid: {
-          aliases: {
-            [alias]: 'appnexus'
-          },
-          auctiontimestamp: 1510852447530,
-          targeting: {
-            includebidderkeys: false,
-            includewinners: true
-          }
+      expect(requestBid.ext).to.haveOwnProperty('prebid');
+      expect(requestBid.ext.prebid).to.deep.include({
+        aliases: {
+          [alias]: 'appnexus'
+        },
+        auctiontimestamp: 1510852447530,
+        targeting: {
+          includebidderkeys: false,
+          includewinners: true
         }
       });
     });
@@ -1376,7 +1467,7 @@ describe('S2S Adapter', function () {
 
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.equal({
+      expect(requestBid.ext.prebid).to.deep.include({
         auctiontimestamp: 1510852447530,
         foo: 'bar',
         targeting: {
@@ -1410,7 +1501,7 @@ describe('S2S Adapter', function () {
 
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.equal({
+      expect(requestBid.ext.prebid).to.deep.include({
         auctiontimestamp: 1510852447530,
         targeting: {
           includewinners: false,
@@ -1446,7 +1537,7 @@ describe('S2S Adapter', function () {
 
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.equal({
+      expect(requestBid.ext.prebid).to.deep.include({
         auctiontimestamp: 1510852447530,
         cache: {
           vastxml: 'vastxml-set-though-extPrebid.cache.vastXml'
@@ -2437,6 +2528,37 @@ describe('S2S Adapter', function () {
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
+    });
+
+    it('should add cooperative sync flag to cookie_sync request if property is present', function () {
+      let s2sConfig = utils.deepClone(CONFIG);
+      s2sConfig.coopSync = false;
+      s2sConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.coopSync).to.equal(false);
+    });
+
+    it('should not add cooperative sync flag to cookie_sync request if property is not present', function () {
+      let s2sConfig = utils.deepClone(CONFIG);
+      s2sConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.coopSync).to.be.undefined;
     });
   });
 });

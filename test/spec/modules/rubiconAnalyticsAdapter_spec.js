@@ -636,6 +636,7 @@ describe('rubicon analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
+        analyticsEventDelay: 0,
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -654,6 +655,7 @@ describe('rubicon analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
+        analyticsEventDelay: 0,
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -674,6 +676,7 @@ describe('rubicon analytics adapter', function () {
         }
       });
       expect(rubiConf).to.deep.equal({
+        analyticsEventDelay: 0,
         pvid: '12345678',
         wrapperName: '1001_general',
         int_type: 'dmpbjs',
@@ -847,6 +850,69 @@ describe('rubicon analytics adapter', function () {
         height: 480
       });
       expect(message.auctions[0].adUnits[1].bids[0].bidResponse.dimensions).to.equal(undefined);
+    });
+
+    it('should pass along adomians correctly', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // 1 adomains
+      let bidResponse1 = utils.deepClone(MOCK.BID_RESPONSE[0]);
+      bidResponse1.meta = {
+        advertiserDomains: ['magnite.com']
+      }
+
+      // two adomains
+      let bidResponse2 = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      bidResponse2.meta = {
+        advertiserDomains: ['prebid.org', 'magnite.com']
+      }
+
+      // make sure we only pass max 10 adomains
+      bidResponse2.meta.advertiserDomains = [...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains, ...bidResponse2.meta.advertiserDomains]
+
+      events.emit(BID_RESPONSE, bidResponse1);
+      events.emit(BID_RESPONSE, bidResponse2);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.deep.equal(['magnite.com']);
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.deep.equal(['prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com', 'prebid.org', 'magnite.com']);
+    });
+
+    it('should NOT pass along adomians correctly when edge cases', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // empty => nothing
+      let bidResponse1 = utils.deepClone(MOCK.BID_RESPONSE[0]);
+      bidResponse1.meta = {
+        advertiserDomains: []
+      }
+
+      // not array => nothing
+      let bidResponse2 = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      bidResponse2.meta = {
+        advertiserDomains: 'prebid.org'
+      }
+
+      events.emit(BID_RESPONSE, bidResponse1);
+      events.emit(BID_RESPONSE, bidResponse2);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.be.undefined;
+      expect(message.auctions[0].adUnits[1].bids[0].bidResponse.adomains).to.be.undefined;
     });
 
     function performFloorAuction(provider) {
@@ -1361,22 +1427,11 @@ describe('rubicon analytics adapter', function () {
     describe('with googletag enabled', function () {
       let gptSlot0, gptSlot1;
       let gptSlotRenderEnded0, gptSlotRenderEnded1;
-      let gptslotOnload0, gptslotOnload1;
       beforeEach(function () {
         mockGpt.enable();
         gptSlot0 = mockGpt.makeSlot({code: '/19968336/header-bid-tag-0'});
         gptSlotRenderEnded0 = {
           eventName: 'slotRenderEnded',
-          params: {
-            slot: gptSlot0,
-            isEmpty: false,
-            advertiserId: 1111,
-            creativeId: 2222,
-            lineItemId: 3333
-          }
-        };
-        gptslotOnload0 = {
-          eventName: 'slotOnload',
           params: {
             slot: gptSlot0,
             isEmpty: false,
@@ -1395,16 +1450,6 @@ describe('rubicon analytics adapter', function () {
             advertiserId: 4444,
             creativeId: 5555,
             lineItemId: 6666
-          }
-        };
-        gptslotOnload1 = {
-          eventName: 'slotOnload',
-          params: {
-            slot: gptSlot1,
-            isEmpty: false,
-            advertiserId: 1111,
-            creativeId: 2222,
-            lineItemId: 3333
           }
         };
       });
@@ -1521,7 +1566,7 @@ describe('rubicon analytics adapter', function () {
       it('should send request when waitForGamSlots is present but no bidWons are sent', function () {
         config.setConfig({
           rubicon: {
-            waitForGamSlots: true
+            waitForGamSlots: true,
           }
         });
         events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
@@ -1532,15 +1577,9 @@ describe('rubicon analytics adapter', function () {
         events.emit(AUCTION_END, MOCK.AUCTION_END);
         events.emit(SET_TARGETING, MOCK.SET_TARGETING);
 
-        // should not send if just slotRenderEnded is emmitted for both
+        // should send if just slotRenderEnded is emmitted for both
         mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
         mockGpt.emitEvent(gptSlotRenderEnded1.eventName, gptSlotRenderEnded1.params);
-
-        expect(server.requests.length).to.equal(0);
-
-        // now emit slotOnload and it should send
-        mockGpt.emitEvent(gptslotOnload0.eventName, gptslotOnload0.params);
-        mockGpt.emitEvent(gptslotOnload1.eventName, gptslotOnload1.params);
 
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
@@ -1562,6 +1601,51 @@ describe('rubicon analytics adapter', function () {
           adSlot: '/19968336/header-bid-tag1'
         };
         expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should delay the event call depending on analyticsEventDelay config', function () {
+        config.setConfig({
+          rubicon: {
+            waitForGamSlots: true,
+            analyticsEventDelay: 2000
+          }
+        });
+        events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+        events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+        // should send if just slotRenderEnded is emmitted for both
+        mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+        mockGpt.emitEvent(gptSlotRenderEnded1.eventName, gptSlotRenderEnded1.params);
+
+        // Should not be sent until delay
+        expect(server.requests.length).to.equal(0);
+
+        // tick the clock and it should fire
+        clock.tick(2000);
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+        let expectedGam0 = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        let expectedGam1 = {
+          advertiserId: 4444,
+          creativeId: 5555,
+          lineItemId: 6666,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expect(expectedGam0).to.deep.equal(message.auctions[0].adUnits[0].gam);
+        expect(expectedGam1).to.deep.equal(message.auctions[0].adUnits[1].gam);
       });
     });
 
@@ -1696,6 +1780,35 @@ describe('rubicon analytics adapter', function () {
       expect(timedOutBid).to.not.have.property('bidResponse');
     });
 
+    it('should pass aupName as pattern', function () {
+      let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequest.bids[0].fpd = {
+        context: {
+          aupName: '1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile'
+        }
+      };
+      bidRequest.bids[1].fpd = {
+        context: {
+          aupName: '1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile'
+        }
+      };
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, bidRequest);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].pattern).to.equal('1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile');
+      expect(message.auctions[0].adUnits[1].pattern).to.equal('1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile');
+    });
+
     it('should successfully convert bid price to USD in parseBidResponse', function () {
       // Set the rates
       setConfig({
@@ -1752,7 +1865,8 @@ describe('rubicon analytics adapter', function () {
   describe('wrapper details passed in', () => {
     it('should correctly pass in the wrapper details if provided', () => {
       config.setConfig({rubicon: {
-        wrapperName: '1001_wrapperName',
+        wrapperName: '1001_wrapperName_exp.4',
+        wrapperFamily: '1001_wrapperName',
         rule_name: 'na-mobile'
       }});
 
@@ -1769,7 +1883,8 @@ describe('rubicon analytics adapter', function () {
       const request = server.requests[0];
       const message = JSON.parse(request.requestBody);
       expect(message.wrapper).to.deep.equal({
-        name: '1001_wrapperName',
+        name: '1001_wrapperName_exp.4',
+        family: '1001_wrapperName',
         rule: 'na-mobile'
       });
 

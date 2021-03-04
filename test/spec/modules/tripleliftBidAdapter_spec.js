@@ -506,15 +506,16 @@ describe('triplelift adapter', function () {
       });
     });
 
-    it('should add user ids from multiple bid requests', function () {
+    it('should consolidate user ids from multiple bid requests', function () {
       const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
       const criteoId = '53e30ea700424f7bbdd793b02abc5d7';
+      const pubcid = '3261d8ad-435d-481d-abd1-9f1a9ec99f0e';
 
       const bidRequestsMultiple = [
-        { ...bidRequests[0], userId: { tdid: tdidId } },
-        { ...bidRequests[0], userId: { idl_env: idlEnvId } },
-        { ...bidRequests[0], userId: { criteoId: criteoId } }
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } },
+        { ...bidRequests[0], userId: { tdid: tdidId, idl_env: idlEnvId, criteoId, pubcid } }
       ];
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
@@ -549,10 +550,22 @@ describe('triplelift adapter', function () {
                   ext: { rtiPartner: 'criteoId' }
                 }
               ]
+            },
+            {
+              source: 'pubcid.org',
+              uids: [
+                {
+                  id: '3261d8ad-435d-481d-abd1-9f1a9ec99f0e',
+                  ext: { rtiPartner: 'pubcid' }
+                }
+              ]
             }
           ]
         }
       });
+
+      expect(payload.user.ext.eids).to.be.an('array');
+      expect(payload.user.ext.eids).to.have.lengthOf(4);
     });
 
     it('should return a query string for TL call', function () {
