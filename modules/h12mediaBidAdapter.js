@@ -22,17 +22,20 @@ export const spec = {
     return validBidRequests.map((bidRequest) => {
       const bidderParams = bidRequest.params;
       const requestUrl = bidderParams.endpointdom || DEFAULT_URL;
-      const pubsubid = bidderParams.pubsubid;
-      if (pubsubid && pubsubid.length > 32) { utils.logError('Bidder param \'pubsubid\' should be less than 32 chars.'); }
+      let pubsubid = bidderParams.pubsubid;
+      if (pubsubid && pubsubid.length > 32) {
+        utils.logError('Bidder param \'pubsubid\' should be less than 32 chars.');
+        pubsubid = '';
+      }
       const pubcontainerid = bidderParams.pubcontainerid;
       const adUnitElement = document.getElementById(pubcontainerid || bidRequest.adUnitCode);
       const ishidden = !isVisible(adUnitElement);
       const coords = isiframe ? {
-        x: adUnitElement && adUnitElement.getBoundingClientRect().x,
-        y: adUnitElement && adUnitElement.getBoundingClientRect().y,
-      } : {
         x: getFramePos()[0],
         y: getFramePos()[1],
+      } : {
+        x: adUnitElement && adUnitElement.getBoundingClientRect().x,
+        y: adUnitElement && adUnitElement.getBoundingClientRect().y,
       };
 
       const bidrequest = {
@@ -52,7 +55,7 @@ export const spec = {
       return {
         method: 'POST',
         url: requestUrl,
-        options: {withCredentials: true},
+        options: {withCredentials: false},
         data: {
           gdpr: !!utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
           gdpr_cs: utils.deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
@@ -115,7 +118,6 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
-    const serverBody = serverResponses[0].body;
     const syncs = [];
     const uspApplies = !!utils.deepAccess(usPrivacy, 'uspConsent', false);
     const uspString = utils.deepAccess(usPrivacy, 'uspConsent', '');
@@ -123,16 +125,16 @@ export const spec = {
       gdprApplies: false, consentString: '',
     };
 
-    if (serverBody) {
-      const userSyncUrls = serverBody.usersync || [];
-      const userSyncUrlProcess = url => {
-        return url
-          .replace('{gdpr}', gdprConsent.gdprApplies)
-          .replace('{gdpr_cs}', gdprConsent.consentString)
-          .replace('{usp}', uspApplies)
-          .replace('{sup_cs}', uspString);
-      }
+    const userSyncUrlProcess = url => {
+      return url
+        .replace('{gdpr}', gdprConsent.gdprApplies)
+        .replace('{gdpr_cs}', gdprConsent.consentString)
+        .replace('{usp}', uspApplies)
+        .replace('{sup_cs}', uspString);
+    }
 
+    serverResponses.forEach(serverResponse => {
+      const userSyncUrls = serverResponse.body.usersync;
       userSyncUrls.forEach(sync => {
         if (syncOptions.iframeEnabled && sync.type === 'iframe' && sync.url) {
           syncs.push({
@@ -146,8 +148,8 @@ export const spec = {
             url: userSyncUrlProcess(sync.url),
           });
         }
-      });
-    }
+      })
+    });
 
     return syncs;
   },
