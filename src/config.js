@@ -334,7 +334,7 @@ export function newConfig() {
 
     Object.keys(obj).forEach((type) => {
       let prop = (type === 'site') ? 'context' : type;
-      duplicate[prop] = (prop === 'context' || prop === 'user') ? Object.keys(obj[type]).reduce((result, key) => {
+      duplicate[prop] = (prop === 'context' || prop === 'user') ? Object.keys(obj[type]).filter(key => key !== 'data').reduce((result, key) => {
         if (key === 'ext') {
           utils.mergeDeep(result, obj[type][key]);
         } else {
@@ -412,7 +412,6 @@ export function newConfig() {
           } else {
             utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
           }
-          // utils.mergeDeep(duplicate, {ext: {data: {[key.toLowerCase()]: opt[type][key]}}});
         }
       });
     });
@@ -423,26 +422,19 @@ export function newConfig() {
   /**
    * Copy FPD over to OpenRTB standard format in each adunit
    */
-  function checkAdUnitFpd(arr, bool) {
+  function convertAdUnitFpd(arr) {
     let convert = [];
 
-    if (bool) {
-      arr.forEach((adunit) => {
-        if (adunit.fpd) {
-          (adunit['ortb2Imp']) ? utils.mergeDeep(adunit['ortb2Imp'], convertImpFpd(adunit.fpd)) : adunit['ortb2Imp'] = convertImpFpd(adunit.fpd);
-          convert.push((({ fpd, ...duplicate }) => duplicate)(adunit));
-        } else {
-          convert.push(adunit);
-        }
-      });
+    arr.forEach((adunit) => {
+      if (adunit.fpd) {
+        (adunit['ortb2Imp']) ? utils.mergeDeep(adunit['ortb2Imp'], convertImpFpd(adunit.fpd)) : adunit['ortb2Imp'] = convertImpFpd(adunit.fpd);
+        convert.push((({ fpd, ...duplicate }) => duplicate)(adunit));
+      } else {
+        convert.push(adunit);
+      }
+    });
 
-      return convert;
-    } else if (arr.fpd) {
-      (arr['ortb2Imp']) ? utils.mergeDeep(arr['ortb2Imp'], convertImpFpd(arr.fpd)) : arr['ortb2Imp'] = convertImpFpd(arr.fpd);
-      return (({ fpd, ...duplicate }) => duplicate)(arr)
-    } else {
-      return arr;
-    }
+    return convert;
   }
 
   /*
@@ -624,7 +616,7 @@ export function newConfig() {
     callbackWithBidder,
     setBidderConfig,
     getBidderConfig,
-    checkAdUnitFpd,
+    convertAdUnitFpd,
     getLegacyFpd,
     getLegacyImpFpd
   };
