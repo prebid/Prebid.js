@@ -94,7 +94,6 @@ export const spec = {
       requestId: bidRequest.bidId,
       bidderCode: spec.code,
       cpm: bid.price,
-      // adId: bid.adid,
       creativeId: bid.crid,
       width: size.width,
       height: size.height,
