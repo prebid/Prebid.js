@@ -1936,7 +1936,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('cpm', 0.5);
       expect(response).to.have.property('meta');
       expect(response.meta).to.have.property('advertiserDomains');
-      expect(response.meta.advertiserDomains[0]).to.equal('appnexus.com')
+      expect(response.meta.advertiserDomains[0]).to.equal('appnexus.com');
       expect(response.meta).to.have.property('dchain');
       expect(response.meta.dchain.ver).to.equal('1.0');
       expect(response.meta.dchain.nodes[0].asi).to.equal('magnite.com');
