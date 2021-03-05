@@ -19,8 +19,8 @@ const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
-const PBJS_FLOOR = 'p';
-const IX_ADAPTER_FLOOR = 'x';
+
+const FLOOR_SOURCE = { PBJS : 'p', IX: 'x' };
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
@@ -117,22 +117,21 @@ function _applyFloor(bid, imp, mediaType) {
     adapterFloor = { floor: bid.params.bidFloor, currency: bid.params.bidFloorCur };
   }
 
-  if (!mediaType || !utils.contains(SUPPORTED_AD_TYPES, mediaType)) {
-    mediaType = '*';
-  } else {
-    const { w: width, h: height } = imp[mediaType];
+  if (utils.isFn(bid.getFloor)) {
+    let _mediaType = '*';
+    let _size = '*';
 
-    if (utils.isFn(bid.getFloor)) {
-      moduleFloor = bid.getFloor({
-        mediaType,
-        size: [width, height]
-      });
+    if (mediaType && utils.contains(SUPPORTED_AD_TYPES, mediaType)) {
+      const { w: width, h: height } = imp[mediaType];
+  
+      _mediaType = mediaType;
+      _size = [width, height];
     }
-  }
 
-  if (!moduleFloor && !adapterFloor) {
-    utils.logInfo('No floors available, no floors applied')
-    return;
+    moduleFloor = bid.getFloor({ 
+      mediaType: _mediaType, 
+      size: _size
+    });
   }
 
   if (adapterFloor && moduleFloor) {
@@ -141,23 +140,28 @@ function _applyFloor(bid, imp, mediaType) {
       return;
     }
 
-    imp.bidfloorcur = adapterFloor.currency;
-
     if (adapterFloor.floor > moduleFloor.floor) {
       imp.bidfloor = adapterFloor.floor;
-      imp.ext.fl = IX_ADAPTER_FLOOR;
+      imp.bidfloorcur = adapterFloor.currency;
+      imp.ext.fl = FLOOR_SOURCE.IX;
     } else {
       imp.bidfloor = moduleFloor.floor;
-      imp.ext.fl = PBJS_FLOOR;
+      imp.bidfloorcur = moduleFloor.currency;
+      imp.ext.fl = FLOOR_SOURCE.PBJS;
     }
+    return;
+  }
+
+  if (moduleFloor) {
+    imp.bidfloor = moduleFloor.floor;
+    imp.bidfloorcur = moduleFloor.currency;
+    imp.ext.fl = FLOOR_SOURCE.PBJS;
   } else if (adapterFloor) {
     imp.bidfloor = adapterFloor.floor;
     imp.bidfloorcur = adapterFloor.currency;
-    imp.ext.fl = IX_ADAPTER_FLOOR;
-  } else if (moduleFloor) {
-    imp.bidfloor = moduleFloor.floor;
-    imp.bidfloorcur = moduleFloor.currency;
-    imp.ext.fl = PBJS_FLOOR;
+    imp.ext.fl = FLOOR_SOURCE.IX;
+  } else {
+      utils.logInfo('No floors available, no floors applied')
   }
 }
 
