@@ -270,6 +270,7 @@ const RESPONSE_OPENRTB = {
                 'win': 'http://wurl.org?id=333'
               }
             },
+            'dchain': { 'ver': '1.0', 'complete': 0, 'nodes': [ { 'asi': 'magnite.com', 'bsid': '123456789', } ] },
             'bidder': {
               'appnexus': {
                 'brand_id': 1,
@@ -1936,6 +1937,9 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('meta');
       expect(response.meta).to.have.property('advertiserDomains');
       expect(response.meta.advertiserDomains[0]).to.equal('appnexus.com');
+      expect(response.meta).to.have.property('dchain');
+      expect(response.meta.dchain.ver).to.equal('1.0');
+      expect(response.meta.dchain.nodes[0].asi).to.equal('magnite.com');
       expect(response).to.not.have.property('vastUrl');
       expect(response).to.not.have.property('videoCacheKey');
       expect(response).to.have.property('ttl', 60);
@@ -2528,6 +2532,37 @@ describe('S2S Adapter', function () {
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
+    });
+
+    it('should add cooperative sync flag to cookie_sync request if property is present', function () {
+      let s2sConfig = utils.deepClone(CONFIG);
+      s2sConfig.coopSync = false;
+      s2sConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.coopSync).to.equal(false);
+    });
+
+    it('should not add cooperative sync flag to cookie_sync request if property is not present', function () {
+      let s2sConfig = utils.deepClone(CONFIG);
+      s2sConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.coopSync).to.be.undefined;
     });
   });
 });
