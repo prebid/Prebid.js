@@ -336,18 +336,18 @@ function addBidderFirstPartyDataToRequest(request) {
   const bidderConfig = config.getBidderConfig();
   const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
     const currBidderConfig = bidderConfig[bidder];
-    if (currBidderConfig.fpd) {
-      const fpd = {};
-      if (currBidderConfig.fpd.context) {
-        fpd.site = currBidderConfig.fpd.context;
+    if (currBidderConfig.ortb2) {
+      const ortb2 = {};
+      if (currBidderConfig.ortb2.site) {
+        ortb2.site = currBidderConfig.ortb2.site;
       }
-      if (currBidderConfig.fpd.user) {
-        fpd.user = currBidderConfig.fpd.user;
+      if (currBidderConfig.ortb2.user) {
+        ortb2.user = currBidderConfig.ortb2.user;
       }
 
       acc.push({
         bidders: [ bidder ],
-        config: { fpd }
+        config: { ortb2 }
       });
     }
     return acc;
@@ -618,23 +618,27 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: adUnit.code, ext, secure: s2sConfig.secure };
 
-      /**
-       * Prebid AdSlot
-       * @type {(string|undefined)}
-       */
-      const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
-      if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.context.data.pbadslot', pbAdSlot);
-      }
-
-      /**
-       * Copy GAM AdUnit and Name to imp
-       */
-      ['name', 'adSlot'].forEach(name => {
-        /** @type {(string|undefined)} */
-        const value = utils.deepAccess(adUnit, `fpd.context.adserver.${name}`);
-        if (typeof value === 'string' && value) {
-          utils.deepSetValue(imp, `ext.context.data.adserver.${name.toLowerCase()}`, value);
+      const ortb2 = {...utils.deepAccess(adUnit, 'ortb2Imp.ext.data')};
+      Object.keys(ortb2).forEach(prop => {
+        /**
+          * Prebid AdSlot
+          * @type {(string|undefined)}
+        */
+        if (prop === 'pbadslot') {
+          if (typeof ortb2[prop] === 'string' && ortb2[prop]) utils.deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
+        } else if (prop === 'adserver') {
+          /**
+           * Copy GAM AdUnit and Name to imp
+           */
+          ['name', 'adslot'].forEach(name => {
+            /** @type {(string|undefined)} */
+            const value = utils.deepAccess(ortb2, `adserver.${name}`);
+            if (typeof value === 'string' && value) {
+              utils.deepSetValue(imp, `ext.data.adserver.${name.toLowerCase()}`, value);
+            }
+          });
+        } else {
+          utils.deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
         }
       });
 
@@ -763,12 +767,12 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'regs.coppa', 1);
     }
 
-    const commonFpd = getConfig('fpd') || {};
-    if (commonFpd.context) {
-      utils.deepSetValue(request, 'site.ext.data', commonFpd.context);
+    const commonFpd = getConfig('ortb2') || {};
+    if (commonFpd.site) {
+      utils.deepSetValue(request, 'site', commonFpd.site);
     }
     if (commonFpd.user) {
-      utils.deepSetValue(request, 'user.ext.data', commonFpd.user);
+      utils.deepSetValue(request, 'user', commonFpd.user);
     }
     addBidderFirstPartyDataToRequest(request);
 
