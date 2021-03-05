@@ -9,7 +9,7 @@ const mockedMassBids = [
     bidId: 'mass-bid-1',
     requestId: 'mass-bid-1',
     bidderRequestId: 'bidder-request-id-1',
-    dealId: 'META_MASS1234',
+    dealId: 'MASS1234',
     ad: 'mass://provider/product/etc...'
   }
 ];
@@ -21,7 +21,7 @@ const mockedNonMassBids = [
     bidId: 'non-mass-bid-1',
     requstId: 'non-mass-bid-1',
     bidderRequestId: 'bidder-request-id-1',
-    dealId: 'META_MASS1234',
+    dealId: 'MASS1234',
     ad: '<creative />'
   },
   {

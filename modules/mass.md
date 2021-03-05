@@ -9,7 +9,8 @@ Maintainer: dev@massplatform.net
 This module enables the MASS protocol for Prebid. To use it, you'll need to
 work with a MASS enabled provider.
 
-This module scans incoming bids for the presence of a META_MASS DealID and uses 
+This module scans incoming bids for the presence of a "mass" flag being set to 
+true in the bid meta or a publisher specified DealID pattern and uses 
 external resources to decypher and process the MASS:// URI found within the ad markup.
 This modules is designed to work with MASS enabled Exchanges and DSP's.
 
@@ -37,8 +38,9 @@ gulp build --modules=mass,...
 pbjs.que.push(function() {
   pbjs.setConfig({
     mass: {
-      // optional - custom bootloader
-      bootloaderUrl: 'https://cdn.massplatform.net/bootloader.js'
+      enabled: true,
+      bootloaderUrl: 'https://cdn.massplatform.net/bootloader.js',
+      dealIdPattern: /^MASS/i
     }
   });
 });
