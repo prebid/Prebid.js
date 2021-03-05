@@ -64,7 +64,7 @@ export const spec = {
         return false;
       }
       if (!utils.getBidIdParameter('outstream_function', bid.params)) {
-        utils.logMessage(BIDDER_CODE + ': outstream_function parameter is not defined. The default outstream renderer will be injected in the header. You can override the default SmartX outstream rendering by defining your own Outstream function using field outstream_function.');
+        utils.logMessage(BIDDER_CODE + ': outstream_function parameter is not defined. The default outstream renderer will be injected in the header.');
         return true;
       }
     }
@@ -311,7 +311,7 @@ export const spec = {
                   return utils.logMessage('SmartX outstream video loaded event');
                 },
                 ended: function ended() {
-                  utils.logMessage('SmartX outstream renderer video event');
+                  return utils.logMessage('SmartX outstream renderer video event');
                 }
               });
             } catch (err) {
@@ -366,34 +366,19 @@ function createOutstreamScript(bid) {
 
   smartPlayObj.adResponse = bid.vastContent;
 
-  let script = '';
-  let divID = '#' + elementId;
-
-  var insertJSNode = function (url, nodeId = null, fun = null) {
-    script = document.createElement('script');
-    script.type = 'text/javascript';
-    if (nodeId != null) {
-      script.id = nodeId;
-    }
-    if (url != '') {
-      script.async = 'true';
-      script.src = url;
-      if (fun != null) {
-        script.onload = script.onreadystatechange = fun;
-      }
-    } else {
-      script.text = 'var x=' + fun + '();';
-    }
-  }
-
-  insertJSNode('//dco.smartclip.net/?plc=7777778', null, function () {
+  const divID = '#' + elementId;
+  var script = document.createElement('script');
+  script.src = 'https://dco.smartclip.net/?plc=7777778';
+  script.type = 'text/javascript';
+  script.async = 'true';
+  script.onload = script.onreadystatechange = function () {
     try {
       // eslint-disable-next-line
-      let _outstreamPlayer = new OutstreamPlayer(divID, smartPlayObj)
+      let _outstreamPlayer = new OutstreamPlayer(divID, smartPlayObj);
     } catch (e) {
       utils.logError('[SmartPlay][renderer] Error caught: ' + e);
     }
-  })
+  };
   return script;
 }
 
@@ -403,8 +388,12 @@ function outstreamRender(bid) {
     bid.renderer.config.outstream_function(bid, script);
   } else {
     try {
-      const firstScriptTagOnSite = window.document.getElementsByTagName('script')[0];
-      firstScriptTagOnSite.parentNode.insertBefore(script, firstScriptTagOnSite);
+      const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
+      if (slot && window.document.getElementById(slot)) {
+          window.document.getElementById(slot).appendChild(script);
+      } else {
+        window.document.getElementsByTagName('head')[0].appendChild(script);
+      }
     } catch (err) {
       utils.logError('[SMARTX][renderer] Error:' + err.message)
     }
