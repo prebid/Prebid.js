@@ -15,7 +15,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const isiframe = !((window.self === window.top) || window.frameElement);
+    const isiframe = inIframe();
     const screenSize = getClientDimensions();
     const docSize = getDocumentDimensions();
 
@@ -215,6 +215,14 @@ function getLocalDateFormatted() {
   const two = num => ('0' + num).slice(-2);
   const d = new Date();
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
+}
+
+function inIframe () {
+  try {
+    return utils.getWindowSelf() !== utils.getWindowTop();
+  } catch (e) {
+    return true;
+  }
 }
 
 function getFramePos() {
