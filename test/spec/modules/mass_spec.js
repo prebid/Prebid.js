@@ -10,8 +10,20 @@ const mockedMassBids = [
     requestId: 'mass-bid-1',
     bidderRequestId: 'bidder-request-id-1',
     dealId: 'MASS1234',
-    ad: 'mass://provider/product/etc...'
-  }
+    ad: 'mass://provider/product/etc...',
+    meta: {}
+  },
+  {
+    bidder: 'ix',
+    bidId: 'mass-bid-2',
+    requestId: 'mass-bid-2',
+    bidderRequestId: 'bidder-request-id-1',
+    dealId: '1234',
+    ad: 'mass://provider/product/etc...',
+    meta: {
+      mass: true
+    }
+  },
 ];
 
 // mock non-MASS bids:
@@ -22,7 +34,10 @@ const mockedNonMassBids = [
     requstId: 'non-mass-bid-1',
     bidderRequestId: 'bidder-request-id-1',
     dealId: 'MASS1234',
-    ad: '<creative />'
+    ad: '<creative />',
+    meta: {
+      mass: true
+    }
   },
   {
     bidder: 'ix',
@@ -30,7 +45,8 @@ const mockedNonMassBids = [
     requestId: 'non-mass-bid-2',
     bidderRequestId: 'bidder-request-id-1',
     dealId: '1234',
-    ad: 'mass://provider/product/etc...'
+    ad: 'mass://provider/product/etc...',
+    meta: {}
   },
 ];
 

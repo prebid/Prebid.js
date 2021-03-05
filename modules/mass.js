@@ -69,7 +69,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
  */
 function isMassBid(bid) {
   // either bid.meta.mass is set or deal ID matches a publisher specified pattern:
-  if (!(bid.meta.mass || (cfg.dealIdPattern && cfg.dealIdPattern.test(bid.dealId)))) {
+  if (!((bid.meta && bid.meta.mass) || (cfg.dealIdPattern && cfg.dealIdPattern.test(bid.dealId)))) {
     return false;
   }
 
