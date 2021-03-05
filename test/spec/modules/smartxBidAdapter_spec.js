@@ -508,7 +508,7 @@ describe('The smartx adapter', function () {
 
       expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
       expect(scriptTag.getAttribute('src')).to.equal('https://dco.smartclip.net/?plc=7777778');
-      
+
       window.document.getElementById.restore();
     });
   });

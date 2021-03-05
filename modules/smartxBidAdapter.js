@@ -390,7 +390,7 @@ function outstreamRender(bid) {
     try {
       const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
       if (slot && window.document.getElementById(slot)) {
-          window.document.getElementById(slot).appendChild(script);
+        window.document.getElementById(slot).appendChild(script);
       } else {
         window.document.getElementsByTagName('head')[0].appendChild(script);
       }
