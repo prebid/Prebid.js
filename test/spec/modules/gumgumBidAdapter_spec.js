@@ -7,7 +7,7 @@ import { spec } from 'modules/gumgumBidAdapter.js';
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
 
-describe('gumgumAdapter', function () {
+describe.only('gumgumAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -157,6 +157,36 @@ describe('gumgumAdapter', function () {
       const request = { ...bidRequests[0], params: zoneParam };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.t).to.equal(zoneParam.zone);
+    });
+
+    it('should set the iriscat param when found', function () {
+      const request = { ...bidRequests[0], params: { iriscat: 'abc123' } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.have.property('iriscat');
+    });
+
+    it('should not set the iriscat param when not found', function () {
+      const request = { ...bidRequests[0] }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('iriscat');
+    });
+
+    it('should set the irisid param when found', function () {
+      const request = { ...bidRequests[0], params: { irisid: 'abc123' } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.have.property('irisid');
+    });
+
+    it('should not set the irisid param when not found', function () {
+      const request = { ...bidRequests[0] }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('irisid');
+    });
+
+    it('should not set the irisid param when not of type string', function () {
+      const request = { ...bidRequests[0], params: { irisid: 123456 } }
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.not.have.property('irisid');
     });
 
     describe('product id', function () {
