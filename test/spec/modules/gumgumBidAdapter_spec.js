@@ -7,7 +7,7 @@ import { spec } from 'modules/gumgumBidAdapter.js';
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
 
-describe.only('gumgumAdapter', function () {
+describe('gumgumAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
