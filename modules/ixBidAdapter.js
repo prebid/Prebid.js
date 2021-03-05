@@ -14,10 +14,13 @@ const CENT_TO_DOLLAR_FACTOR = 100;
 const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600; // 1hr
 const NET_REVENUE = true;
+
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
+const PBJS_FLOOR = 'p';
+const IX_ADAPTER_FLOOR = 'x';
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
@@ -33,13 +36,8 @@ function bidToBannerImp(bid) {
   imp.banner.h = bid.params.size[1];
   imp.banner.topframe = utils.inIframe() ? 0 : 1;
 
-  // get floors
-  var moduleFloor = _getModuleFloor(bid, BANNER, imp.banner.w, imp.banner.h);
-  var adapterFloor = _getAdapterFloor(bid);
+  _applyFloor(bid, imp, BANNER);
 
-  if (!(_applyFloor(imp, moduleFloor, adapterFloor))) {
-    utils.logWarn('No floors applied')
-  }
   return imp;
 }
 
@@ -75,18 +73,13 @@ function bidToVideoImp(bid) {
     }
   }
 
-  for (let adUnitProperty in videoAdUnitRef) {
-    if (videoAdUnitAllowlist.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
+  for (const adUnitProperty in videoAdUnitRef) {
+    if (videoAdUnitAllowlist.indexOf(adUnitProperty) !== -1 && !imp.video[adUnitProperty]) {
       imp.video[adUnitProperty] = videoAdUnitRef[adUnitProperty];
     }
   }
 
-  // get floors from priceFloors module and IX cfg
-  var moduleFloor = _getModuleFloor(bid, VIDEO, imp.video.w, imp.video.h);
-  var adapterFloor = _getAdapterFloor(bid);
-
-  // can check returned bool value for success/failure
-  _applyFloor(imp, moduleFloor, adapterFloor);
+  _applyFloor(bid, imp, VIDEO);
 
   return imp;
 }
@@ -110,99 +103,62 @@ function bidToImp(bid) {
 }
 
 /**
- * Calls the priceModule function getFloor() to get the module floors
- *
- * @param  {object}  bid 
- * @param  {string}  mt : mediatype : SUPPORTED_AD_TYPES only
- * @param  {integer} width
- * @param  {integer} height
- * @return {object}  floors object, empty object on failing to getFloor
- * eg : { floor : 3.5, currency : 'CAD'}
+ * Gets priceFloors floors and IX adapter floors,
+ * Validates and sets the higher one on the impression
+ * @param  {object}    bid bid object
+ * @param  {object}    imp impression object
+ * @param  {string}    mediaType the impression ad type, one of the SUPPORTED_AD_TYPES
  */
-function _getModuleFloor(bid, mt, width, height) {
-  if (!(bid.hasOwnProperty('getFloor') && typeof bid.getFloor == 'function')) {
-    return {};
+function _applyFloor(bid, imp, mediaType) {
+  let adapterFloor = null;
+  let moduleFloor = null;
+
+  if (bid.params.bidFloor && bid.params.bidFloorCur) {
+    adapterFloor = { floor: bid.params.bidFloor, currency: bid.params.bidFloorCur };
   }
 
-  if (!mt || mt.length === 0 || !utils.contains(SUPPORTED_AD_TYPES, mt)) {
-    mt = '*';
+  if (!mediaType || !utils.contains(SUPPORTED_AD_TYPES, mediaType)) {
+    mediaType = '*';
+  } else {
+    const { w: width, h: height } = imp[mediaType];
+
+    if (utils.isFn(bid.getFloor)) {
+      moduleFloor = bid.getFloor({
+        mediaType,
+        size: [width, height]
+      });
+    }
   }
 
-  var floors = bid.getFloor({
-    mediaType: mt,
-    size: [width, height]
-  });
-
-  return floors;
-}
-
-/**
- * @param  {*}      bid
- * @return {Object} floor object with ix configured values or empty object
- */
-function _getAdapterFloor(bid) {
-  var adapterFloor = {};
-  if (bid.params.hasOwnProperty('bidFloor') && bid.params.hasOwnProperty('bidFloorCur')) {
-    adapterFloor.floor = bid.params.bidFloor;
-    adapterFloor.currency = bid.params.bidFloorCur;
-  }
-  return adapterFloor;
-}
-
-/**
- * Validates priceFloors module floors and adapter floors
- * Then applies the higher floor value to the impression
- *
- * @param  {*}    imp : object to set the floors in
- * @param  {*}    moduleFloor : obtained from calling getFloors
- * @param  {*}    adapterFloor : obtained from reading bid.param.bidFloor and bid.param.bidFloorCur
- * @return {bool} success ?
- ** true: successfully applied floors , populated imp.bidfloor + imp.bidfloorcurrency
- ** false: did not apply floors
- */
-function _applyFloor(imp, moduleFloor, adapterFloor) {
-  var gotmodulefloor = false;
-  var gotadapterfloor = false;
-
-  if (typeof moduleFloor === 'object' &&
-  utils.deepAccess(moduleFloor, 'currency') &&
-  utils.deepAccess(moduleFloor, 'floor')) {
-    gotmodulefloor = true;
-  }
-
-  if (typeof adapterFloor === 'object' &&
-  utils.deepAccess(adapterFloor, 'currency') &&
-  utils.deepAccess(adapterFloor, 'floor')) {
-    gotadapterfloor = true;
-  }
-
-  if (!gotmodulefloor && !gotadapterfloor) {
+  if (!moduleFloor && !adapterFloor) {
     utils.logInfo('No floors available, no floors applied')
-    return false;
+    return;
   }
 
-  if (gotadapterfloor && gotmodulefloor) {
+  if (adapterFloor && moduleFloor) {
     if (adapterFloor.currency !== moduleFloor.currency) {
       utils.logWarn('The bid floor currency mismatch between IX params and priceFloors module config');
-      return false;
+      return;
     }
-    // pick the higher floor
-    imp.bidfloor = adapterFloor.floor > moduleFloor.floor ? adapterFloor.floor : moduleFloor.floor;
-    // no currency mismatch
+
     imp.bidfloorcur = adapterFloor.currency;
-    return true;
-  }
-  if (gotadapterfloor) {
+
+    if (adapterFloor.floor > moduleFloor.floor) {
+      imp.bidfloor = adapterFloor.floor;
+      imp.ext.fl = IX_ADAPTER_FLOOR;
+    } else {
+      imp.bidfloor = moduleFloor.floor;
+      imp.ext.fl = PBJS_FLOOR;
+    }
+  } else if (adapterFloor) {
     imp.bidfloor = adapterFloor.floor;
     imp.bidfloorcur = adapterFloor.currency;
-    return true;
-  }
-  if (gotmodulefloor) {
+    imp.ext.fl = IX_ADAPTER_FLOOR;
+  } else if (moduleFloor) {
     imp.bidfloor = moduleFloor.floor;
     imp.bidfloorcur = moduleFloor.currency;
-    return true;
+    imp.ext.fl = PBJS_FLOOR;
   }
-  return false;
 }
 
 /**
@@ -725,10 +681,8 @@ function createMissingBannerImp(bid, imp, newSize) {
   newImp.ext.sid = `${newSize[0]}x${newSize[1]}`;
   newImp.banner.w = newSize[0];
   newImp.banner.h = newSize[1];
-  // adjust floor
-  var moduleFloor = _getModuleFloor(bid, BANNER, newSize[0], newSize[1]);
-  var adapterFloor = _getAdapterFloor(bid);
-  _applyFloor(newImp, moduleFloor, adapterFloor);
+
+  _applyFloor(bid, newImp, BANNER);
 
   return newImp;
 }

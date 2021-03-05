@@ -4,7 +4,6 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/ixBidAdapter.js';
 import { createEidsArray } from 'modules/userId/eids.js';
-import { createSandbox } from 'sinon';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/cygnus';
@@ -27,7 +26,7 @@ describe('IndexexchangeAdapter', function () {
       }
     ]
   };
-  var div_many_sizes = [
+  const div_many_sizes = [
     [300, 250],
     [600, 410],
     [336, 280],
@@ -1066,12 +1065,6 @@ describe('IndexexchangeAdapter', function () {
     const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType, DEFAULT_OPTION)[0];
     const queryWithoutMediaType = requestWithoutMediaType.data;
 
-    const sandbox = sinon.createSandbox();
-
-    afterEach(() => {
-      sandbox.restore();
-    });
-
     it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
       expect(requestUrl).to.equal(IX_SECURE_ENDPOINT);
@@ -1123,7 +1116,7 @@ describe('IndexexchangeAdapter', function () {
     it('video impression has #priceFloors floors', function () {
       const bid = utils.deepClone(ONE_VIDEO[0]);
       const flr = 5.5
-      var floorInfo = {floor: flr, currency: 'USD'};
+      const floorInfo = {floor: flr, currency: 'USD'};
       bid.getFloor = function () {
         return floorInfo;
       }
@@ -1133,13 +1126,14 @@ describe('IndexexchangeAdapter', function () {
       const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
       expect(imp1.bidfloor).to.equal(flr);
       expect(imp1.bidfloorcur).to.equal('USD');
+      expect(imp1.ext.fl).to.equal('p');
     });
 
     it('banner imp has floors from #priceFloors module', function () {
       const floor300x250 = 3.25
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0])
 
-      var floorInfo = { floor: floor300x250, currency: 'USD' };
+      const floorInfo = { floor: floor300x250, currency: 'USD' };
       bid.getFloor = function () {
         return floorInfo;
       };
@@ -1150,39 +1144,19 @@ describe('IndexexchangeAdapter', function () {
 
       expect(imp1.bidfloorcur).to.equal('USD');
       expect(imp1.bidfloor).to.equal(floor300x250);
+      expect(imp1.ext.fl).to.equal('p');
     });
 
     it('ix adapter floors chosen over #priceFloors ', function () {
       const bid = utils.deepClone(ONE_BANNER[0]);
 
-      var floorhi = 4.5
-      var floorlow = 3.5
+      const floorhi = 4.5
+      const floorlow = 3.5
 
       bid.params.bidFloor = floorhi
       bid.params.bidFloorCur = 'USD'
 
-      var floorInfo = { floor: floorlow, currency: 'USD' };
-      bid.getFloor = function () {
-        return floorInfo;
-      };
-
-      // check if floors are in imp
-      const requestBidFloor = spec.buildRequests([bid])[0];
-      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
-      expect(imp1.bidfloor).to.equal(bid.params.bidFloor);
-      expect(imp1.bidfloorcur).to.equal(bid.params.bidFloorCur);
-    });
-
-    it(' #priceFloors floors chosen over ix adapter floors', function () {
-      const bid = utils.deepClone(ONE_BANNER[0]);
-
-      var floorhi = 4.5
-      var floorlow = 3.5
-
-      bid.params.bidFloor = floorlow
-      bid.params.bidFloorCur = 'USD'
-
-      var floorInfo = { floor: floorhi, currency: 'USD' };
+      const floorInfo = { floor: floorlow, currency: 'USD' };
       bid.getFloor = function () {
         return floorInfo;
       };
@@ -1192,6 +1166,29 @@ describe('IndexexchangeAdapter', function () {
       const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
       expect(imp1.bidfloor).to.equal(floorhi);
       expect(imp1.bidfloorcur).to.equal(bid.params.bidFloorCur);
+      expect(imp1.ext.fl).to.equal('x');
+    });
+
+    it(' #priceFloors floors chosen over ix adapter floors', function () {
+      const bid = utils.deepClone(ONE_BANNER[0]);
+
+      const floorhi = 4.5
+      const floorlow = 3.5
+
+      bid.params.bidFloor = floorlow
+      bid.params.bidFloorCur = 'USD'
+
+      const floorInfo = { floor: floorhi, currency: 'USD' };
+      bid.getFloor = function () {
+        return floorInfo;
+      };
+
+      // check if floors are in imp
+      const requestBidFloor = spec.buildRequests([bid])[0];
+      const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
+      expect(imp1.bidfloor).to.equal(floorhi);
+      expect(imp1.bidfloorcur).to.equal(bid.params.bidFloorCur);
+      expect(imp1.ext.fl).to.equal('p');
     });
 
     it('impression should have bidFloor and bidFloorCur if configured', function () {
@@ -1203,13 +1200,14 @@ describe('IndexexchangeAdapter', function () {
 
       expect(impression.bidfloor).to.equal(bid.params.bidFloor);
       expect(impression.bidfloorcur).to.equal(bid.params.bidFloorCur);
+      expect(impression.ext.fl).to.equal('x');
     });
 
     it('missing sizes #priceFloors ', function () {
       const bid = utils.deepClone(ONE_BANNER[0]);
       bid.mediaTypes.banner.sizes.push([500, 400])
 
-      var floorInfo = { floor: 3.25, currency: 'USD' };
+      const floorInfo = { floor: 3.25, currency: 'USD' };
       bid.getFloor = function () {
         return floorInfo;
       };
@@ -1253,19 +1251,18 @@ describe('IndexexchangeAdapter', function () {
           'banner|*': 7.5
         }
       };
-      var floorInfo = { floor: flr, currency: 'USD' };
+      const floorInfo = { floor: flr, currency: 'USD' };
       bid.getFloor = function () {
         return floorInfo;
       };
-      var floorspy = sinon.spy(bid, 'getFloor');
+
+      sinon.spy(bid, 'getFloor');
+
       const requestBidFloor = spec.buildRequests([bid])[0];
       // called getFloor with 300 x 250
       expect(bid.getFloor.getCall(0).args[0].mediaType).to.equal('banner');
       expect(bid.getFloor.getCall(0).args[0].size[0]).to.equal(300);
       expect(bid.getFloor.getCall(0).args[0].size[1]).to.equal(250);
-
-      // TODO: should get this special cutting chai
-      // floorspy.should.have.been.calledWith(floorcallparam);
 
       const imp1 = JSON.parse(requestBidFloor.data.r).imp[0];
       expect(imp1.bidfloor).to.equal(flr);
