@@ -296,8 +296,8 @@ function getVideoAd(response) {
   var adJson = {};
   if (typeof response.Ad === 'string') {
     adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
-
-    return utils.deepAccess(adJson, 'Content.MainVideo.Vast');
+    const vast64 = utils.deepAccess(adJson, 'Content.MainVideo.Vast');
+    return vast64 ? window.atob(vast64) : '';
   }
 }
 
