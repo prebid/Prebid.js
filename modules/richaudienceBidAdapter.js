@@ -125,7 +125,7 @@ export const spec = {
     }
     return bidResponses
   },
-  /*** 
+  /***
    * User Syncs
    *
    * @param {syncOptions} Publisher prebid configuration
