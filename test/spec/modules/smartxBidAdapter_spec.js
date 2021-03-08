@@ -421,6 +421,8 @@ describe('The smartx adapter', function () {
     it('should return an array of bid responses', function () {
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
       expect(responses).to.be.an('array').with.length(2);
+      expect(bidderRequestObj).to.be.an('Object');
+      expect(bidderRequestObj.bidRequest.bids).to.be.an('array').with.length(2);
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].currency).to.equal('USD');
       expect(responses[0].cpm).to.equal(12);
@@ -505,7 +507,7 @@ describe('The smartx adapter', function () {
       responses[0].renderer.render(responses[0]);
 
       expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
-      expect(scriptTag.getAttribute('src')).to.equal('https://dco.smartclip.net/?plc=7777777');
+      expect(scriptTag.getAttribute('src')).to.equal('https://dco.smartclip.net/?plc=7777778');
 
       window.document.getElementById.restore();
     });
