@@ -724,7 +724,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     if (!utils.isEmpty(aliases)) {
-      request.ext.prebid.aliases = aliases;
+      request.ext.prebid.aliases = {...request.ext.prebid.aliases, ...aliases};
     }
 
     const bidUserIdAsEids = utils.deepAccess(bidRequests, '0.bids.0.userIdAsEids');
