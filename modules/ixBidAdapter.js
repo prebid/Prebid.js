@@ -20,7 +20,7 @@ const PRICE_TO_DOLLAR_FACTOR = {
 };
 const USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 
-const FLOOR_SOURCE = { PBJS : 'p', IX: 'x' };
+const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
@@ -123,13 +123,11 @@ function _applyFloor(bid, imp, mediaType) {
 
     if (mediaType && utils.contains(SUPPORTED_AD_TYPES, mediaType)) {
       const { w: width, h: height } = imp[mediaType];
-  
       _mediaType = mediaType;
       _size = [width, height];
     }
-
-    moduleFloor = bid.getFloor({ 
-      mediaType: _mediaType, 
+    moduleFloor = bid.getFloor({
+      mediaType: _mediaType,
       size: _size
     });
   }
@@ -161,7 +159,7 @@ function _applyFloor(bid, imp, mediaType) {
     imp.bidfloorcur = adapterFloor.currency;
     imp.ext.fl = FLOOR_SOURCE.IX;
   } else {
-      utils.logInfo('No floors available, no floors applied')
+    utils.logInfo('No floors available, no floors applied')
   }
 }
 
