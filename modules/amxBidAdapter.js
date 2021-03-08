@@ -259,7 +259,7 @@ export const spec = {
       d: '',
       m: createBidMap(bidRequests),
       cpp: config.getConfig('coppa') ? 1 : 0,
-      fpd: config.getConfig('fpd'),
+      fpd: config.getLegacyFpd(config.getConfig('ortb2')),
       eids: values(bidRequests.reduce((all, bid) => {
         // we only want unique ones in here
         if (bid == null || bid.userIdAsEids == null) {
