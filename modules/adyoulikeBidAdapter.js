@@ -422,7 +422,7 @@ function createBid(response, bidRequests) {
   if (request && request.Native) {
     bid.native = getNativeAssets(response, request.Native);
     bid.mediaType = 'native';
-  } else if(request && request.Video) {
+  } else if (request && request.Video) {
     bid.vastXml = response.Vast || getVideoAd(response);
     bid.mediaType = 'video';
   } else {
