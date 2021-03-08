@@ -341,7 +341,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
     queryParams.tps = customParamsForAllBids.join(',');
   }
 
-  enrichQueryWithFloors(queryParams, bids);
+  enrichQueryWithFloors(queryParams, BANNER, bids);
 
   let url = queryParams.ph
     ? `https://u.openx.net/w/1.0/arj`
@@ -416,6 +416,9 @@ function generateVideoParameters(bid, bidderRequest) {
     queryParams.vtest = 1;
   }
 
+  // each video bid makes a separate request
+  enrichQueryWithFloors(queryParams, VIDEO, [bid]);
+
   return queryParams;
 }
 
@@ -449,11 +452,11 @@ function createVideoBidResponses(response, {bid, startTime}) {
   return bidResponses;
 }
 
-function enrichQueryWithFloors(queryParams, bids) {
+function enrichQueryWithFloors(queryParams, mediaType, bids) {
   let customFloorsForAllBids = [];
   let hasCustomFloor = false;
   bids.forEach(function (bid) {
-    let floor = getBidFloor(bid, BANNER);
+    let floor = getBidFloor(bid, mediaType);
 
     if (floor) {
       customFloorsForAllBids.push(floor);
