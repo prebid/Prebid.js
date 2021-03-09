@@ -27,7 +27,7 @@ describe('Interactive Offers Prebbid.js Adapter', function() {
 
     it('returns a Prebid.js request object with a valid json string at the "data" property', function() {
       let request = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(request.data).to.not.be.empty;
+      expect(request.data).length !== 0;
     });
   });
   describe('interpretResponse function', function() {
