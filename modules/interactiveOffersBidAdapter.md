@@ -8,7 +8,7 @@ Maintainer: faria@interactiveoffers.com
 
 # Description
 
-Module that connects to interactiveOffers demand sources. Param pubd is required.
+Module that connects to interactiveOffers demand sources. Param pubid is required.
 
 # Test Parameters
 ```
