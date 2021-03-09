@@ -55,7 +55,7 @@ export const spec = {
       return {
         method: 'POST',
         url: requestUrl,
-        options: {withCredentials: false},
+        options: {withCredentials: true},
         data: {
           gdpr: !!utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
           gdpr_cs: utils.deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
@@ -130,7 +130,7 @@ export const spec = {
         .replace('{gdpr}', gdprConsent.gdprApplies)
         .replace('{gdpr_cs}', gdprConsent.consentString)
         .replace('{usp}', uspApplies)
-        .replace('{sup_cs}', uspString);
+        .replace('{usp_cs}', uspString);
     }
 
     serverResponses.forEach(serverResponse => {
