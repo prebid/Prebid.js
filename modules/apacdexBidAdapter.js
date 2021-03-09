@@ -301,17 +301,17 @@ function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
  * @param {string} url
  * @returns {string}
  */
-function getDomain(pageUrl) {
+export function getDomain(pageUrl) {
   if (config.getConfig('publisherDomain')) {
     var publisherDomain = config.getConfig('publisherDomain');
-    return publisherDomain.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#]/)[0];
+    return publisherDomain.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
   }
 
   if (!pageUrl) {
     return pageUrl;
   }
 
-  return pageUrl.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#]/)[0];
+  return pageUrl.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
 }
 
 /**
@@ -320,7 +320,7 @@ function getDomain(pageUrl) {
  * @param {Object} geo
  * @returns {boolean}
  */
-function validateGeoObject(geo) {
+export function validateGeoObject(geo) {
   if (!utils.isPlainObject(geo)) {
     return false;
   }
