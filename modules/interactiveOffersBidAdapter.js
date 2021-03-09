@@ -39,7 +39,7 @@ export const spec = {
         utils.logWarn('pubid must be a valid numeric ID');
         ret = false;
       }
-      if(bid.params.tmax && !utils.isNumber(bid.params.tmax)){
+      if (bid.params.tmax && !utils.isNumber(bid.params.tmax)) {
         utils.logWarn('tmax must be a valid numeric ID');
         ret = false;
       }
@@ -68,11 +68,11 @@ export const spec = {
   }
 };
 
-function parseRequestPrebidjsToOpenRTB(prebidRequest){
+function parseRequestPrebidjsToOpenRTB(prebidRequest) {
   let pageURL = window.location.href;
   let url = (new URL(pageURL));
   let domain = url.hostname;
-  let secure = (url.protocol=='https:'?1:0);
+  let secure = (url.protocol == 'https:' ?1:0);
   let openRTBRequest = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequest']));
   openRTBRequest.id = prebidRequest.auctionId;
 
@@ -101,7 +101,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest){
   openRTBRequest.user = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestUser']));
 
   openRTBRequest.imp = [];
-  prebidRequest.bids.forEach(function(bid, impId){
+  prebidRequest.bids.forEach(function(bid, impId) {
     impId++;
     let imp = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestImp']));
     imp.id = impId;
@@ -111,14 +111,14 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest){
     openRTBRequest.site.publisher.id = openRTBRequest.site.publisher.id || bid.params.pubid;
     openRTBRequest.tmax = openRTBRequest.tmax || bid.params.tmax || 0;
 
-    Object.keys(bid.mediaTypes).forEach(function(mediaType){
-      if(mediaType == 'banner'){
+    Object.keys(bid.mediaTypes).forEach(function(mediaType) {
+      if (mediaType == 'banner') {
         imp.banner = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestImpBanner']));
         imp.banner.w = 0;
         imp.banner.h = 0;
         imp.banner.format = [];
-        bid.mediaTypes[mediaType].sizes.forEach(function(adSize){
-          if(!imp.banner.w){
+        bid.mediaTypes[mediaType].sizes.forEach(function(adSize) {
+          if (!imp.banner.w) {
             imp.banner.w = adSize[0];
             imp.banner.h = adSize[1];
           }
@@ -130,11 +130,11 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest){
   });
   return openRTBRequest;
 }
-function parseResponseOpenRTBToPrebidjs(openRTBResponse){
+function parseResponseOpenRTBToPrebidjs(openRTBResponse) {
   let prebidResponse = [];
-  openRTBResponse.forEach(function(response){
-    response.seatbid.forEach(function(seatbid){
-      seatbid.bid.forEach(function(bid){
+  openRTBResponse.forEach(function(response) {
+    response.seatbid.forEach(function(seatbid) {
+      seatbid.bid.forEach(function(bid) {
         let prebid = JSON.parse(JSON.stringify(DEFAULT['PrebidBid']));
         prebid.requestId = bid.ext.tagid;
         prebid.ad = bid.adm;
