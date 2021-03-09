@@ -1,9 +1,9 @@
 # Overview
-
+ 
 ```
 Module Name: interactiveOffers Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: devteam@interactiveoffers.com
+Maintainer: faria@interactiveoffers.com
 ```
 
 # Description
@@ -24,8 +24,8 @@ Module that connects to interactiveOffers demand sources. Param pubId is require
                    {
                        bidder: "interactiveOffers",
                        params: {
-                           pubId: '10',
-                           tmax: 5000
+                           pubid: 10,
+                           tmax: 250
                        }
                    }
                ]
