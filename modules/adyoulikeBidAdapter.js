@@ -296,8 +296,7 @@ function getVideoAd(response) {
   var adJson = {};
   if (typeof response.Ad === 'string') {
     adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
-    const vast64 = utils.deepAccess(adJson, 'Content.MainVideo.Vast');
-    return vast64 ? window.atob(vast64) : '';
+    return utils.deepAccess(adJson, 'Content.MainVideo.Vast');
   }
 }
 
@@ -423,7 +422,8 @@ function createBid(response, bidRequests) {
     bid.native = getNativeAssets(response, request.Native);
     bid.mediaType = 'native';
   } else if (request && request.Video) {
-    bid.vastXml = response.Vast || getVideoAd(response);
+    const vast64 = response.Vast || getVideoAd(response);
+    bid.vastXml = vast64 ? window.atob(vast64) : '';
     bid.mediaType = 'video';
   } else {
     bid.width = response.Width;
