@@ -104,14 +104,11 @@ export const spec = {
         bidResponse.vastXml = response.vastXML;
         try {
           if (bidResponse.vastXml != null) {
-            bidResponse.renderer = Renderer.install({
-              url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
-            });
-            bidResponse.renderer.setRender(renderer);
-          } else if (JSON.parse(bidRequest.data).videoData.format == 'outstream') {
-            bidResponse.renderer = Renderer.install({
-              url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
-            });
+            if (JSON.parse(bidRequest.data).videoData.format == 'outstream' || JSON.parse(bidRequest.data).videoData.format == 'banner') {
+              bidResponse.renderer = Renderer.install({
+                url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
+              });
+            }
             bidResponse.renderer.setRender(renderer);
           }
         } catch (e) {
@@ -202,6 +199,10 @@ function raiGetVideoInfo(bid) {
       playerSize: bid.mediaTypes.video.playerSize,
       mimes: bid.mediaTypes.video.mimes
     };
+  } else {
+    videoData = {
+      format: 'banner'
+    }
   }
   return videoData;
 }
