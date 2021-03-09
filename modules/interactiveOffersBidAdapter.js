@@ -70,14 +70,8 @@ export const spec = {
 
 function parseRequestPrebidjsToOpenRTB(prebidRequest) {
   let pageURL = window.location.href;
-<<<<<<< HEAD
   let domain = window.location.hostname;
   let secure = (window.location.protocol == 'https:' ? 1 : 0);
-=======
-  let url = (new URL(pageURL));
-  let domain = url.hostname;
-  let secure = (url.protocol == 'https:' ?1:0);
->>>>>>> Interactive Offers bid adapter
   let openRTBRequest = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequest']));
   openRTBRequest.id = prebidRequest.auctionId;
   openRTBRequest.ext = {
