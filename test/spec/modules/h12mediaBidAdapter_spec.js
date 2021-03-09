@@ -238,8 +238,8 @@ describe('H12 Media Adapter', function () {
     it('should not have error on empty USP', function () {
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
-      const bidderRequestWithoutGDRP = {...bidderRequest, gdprConsent: null};
-      const requests = spec.buildRequests([validBid, validBid2], bidderRequestWithoutGDRP);
+      const bidderRequestWithoutUSP = {...bidderRequest, uspConsent: null};
+      const requests = spec.buildRequests([validBid, validBid2], bidderRequestWithoutUSP);
       const requestsData = requests[0].data;
       const requestsData2 = requests[1].data;
 
@@ -263,18 +263,18 @@ describe('H12 Media Adapter', function () {
       const requests = spec.buildRequests([validBid], bidderRequest);
       const requestsData = requests[0].data.bidrequest;
 
-      expect(requestsData).to.deep.include({coords: {x: 10, y: 10}});
+      expect(requestsData).to.deep.include({coords: {x: 0, y: 71}});
     });
 
-    it('should define not iframe', function () {
+    it('should define iframe', function () {
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
       const requests = spec.buildRequests([validBid, validBid2], bidderRequest);
       const requestsData = requests[0].data;
       const requestsData2 = requests[1].data;
 
-      expect(requestsData).to.include({isiframe: false});
-      expect(requestsData2).to.include({isiframe: false});
+      expect(requestsData).to.include({isiframe: true});
+      expect(requestsData2).to.include({isiframe: true});
     });
 
     it('should define visible element', function () {
@@ -312,14 +312,14 @@ describe('H12 Media Adapter', function () {
     it('should return no bids if the response is empty', function () {
       const bidResponse = spec.interpretResponse({ body: [] }, { validBid });
 
-      expect(bidResponse.length).to.equal(0);
+      expect(bidResponse).to.be.empty;
     });
 
     it('should return valid bid responses', function () {
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
       const request = spec.buildRequests([validBid, validBid2], bidderRequest);
-      const bidResponse = spec.interpretResponse({body: serverResponse}, request);
+      const bidResponse = spec.interpretResponse({body: serverResponse}, request[0]);
 
       expect(bidResponse[0]).to.deep.include({
         requestId: validBid.bidId,
@@ -341,7 +341,7 @@ describe('H12 Media Adapter', function () {
       createElementVisible(validBid.adUnitCode);
       createElementVisible(validBid2.adUnitCode);
       const request = spec.buildRequests([validBid, validBid2], bidderRequest);
-      const bidResponse = spec.interpretResponse({body: serverResponse2}, request);
+      const bidResponse = spec.interpretResponse({body: serverResponse2}, request[0]);
 
       expect(bidResponse[0]).to.deep.include({
         requestId: validBid2.bidId,

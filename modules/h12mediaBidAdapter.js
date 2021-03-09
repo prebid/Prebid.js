@@ -134,7 +134,7 @@ export const spec = {
     }
 
     serverResponses.forEach(serverResponse => {
-      const userSyncUrls = serverResponse.body.usersync;
+      const userSyncUrls = serverResponse.body.usersync || [];
       userSyncUrls.forEach(sync => {
         if (syncOptions.iframeEnabled && sync.type === 'iframe' && sync.url) {
           syncs.push({
@@ -226,21 +226,23 @@ function inIframe () {
 }
 
 function getFramePos() {
-  let t = window, m = 0;
-  let frm_left = 0, frm_top = 0;
+  let t = window;
+  let m = 0;
+  let frmLeft = 0;
+  let frmTop = 0;
   do {
     m = m + 1;
     try {
       if (m > 1) {
         t = t.parent
       }
-      frm_left = frm_left + t.frameElement.getBoundingClientRect().left;
-      frm_top = frm_top + t.frameElement.getBoundingClientRect().top;
+      frmLeft = frmLeft + t.frameElement.getBoundingClientRect().left;
+      frmTop = frmTop + t.frameElement.getBoundingClientRect().top;
     } catch (o) { /* keep looping */
     }
   } while ((m < 100) && (t.parent !== t.self))
 
-  return [frm_left, frm_top];
+  return [frmLeft, frmTop];
 }
 
 registerBidder(spec);
