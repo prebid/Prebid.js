@@ -7,16 +7,11 @@ const BIDDER_CODE = 'interactiveOffers';
 const ENDPOINT = 'https://rtb.ioadx.com/bidRequest/?partnerId=4a3bab187a74ac4862920cca864d6eff195ff5e4';
 
 const DEFAULT = {
-  'OpenRTBBidRequest': {
-    test: 0,
-    at: 2,
-    allimps: 0
-  },
+  'OpenRTBBidRequest': {},
   'OpenRTBBidRequestSite': {},
   'OpenRTBBidRequestSitePublisher': {},
   'OpenRTBBidRequestSiteContent': {
     language: navigator.language,
-    livestream: 0
   },
   'OpenRTBBidRequestSource': {},
   'OpenRTBBidRequestDevice': {
@@ -25,9 +20,7 @@ const DEFAULT = {
   },
   'OpenRTBBidRequestUser': {},
   'OpenRTBBidRequestImp': {},
-  'OpenRTBBidRequestImpBanner': {
-    pos:0
-  },
+  'OpenRTBBidRequestImpBanner': {},
   'PrebidBid': {
     currency: 'USD',
     ttl: 60,
