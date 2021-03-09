@@ -7,7 +7,7 @@ Maintainer: prebid@adyoulike.com
 # Description
 
 Module that connects to Adyoulike demand sources.
-Banner formats are supported.
+Banner, Native and Video ad formats are supported.
 
 # Test Parameters
 ```
@@ -16,6 +16,10 @@ Banner formats are supported.
     "mediaTypes": {
       "banner": {
         "sizes": ["300x250"]
+      },
+      "video": {
+        context: "instream",
+        playerSize: [[640, 480]]
       },
       "native": {
         "image": {
