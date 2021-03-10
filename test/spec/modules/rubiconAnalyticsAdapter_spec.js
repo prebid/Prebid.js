@@ -1436,8 +1436,8 @@ describe('rubicon analytics adapter', function () {
             slot: gptSlot0,
             isEmpty: false,
             advertiserId: 1111,
-            creativeId: 2222,
-            lineItemId: 3333
+            sourceAgnosticCreativeId: 2222,
+            sourceAgnosticLineItemId: 3333
           }
         };
 
@@ -1448,8 +1448,8 @@ describe('rubicon analytics adapter', function () {
             slot: gptSlot1,
             isEmpty: false,
             advertiserId: 4444,
-            creativeId: 5555,
-            lineItemId: 6666
+            sourceAgnosticCreativeId: 5555,
+            sourceAgnosticLineItemId: 6666
           }
         };
       });
@@ -1515,8 +1515,8 @@ describe('rubicon analytics adapter', function () {
             slot: gptSlot1,
             isEmpty: false,
             advertiserId: 0,
-            creativeId: 0,
-            lineItemId: 0
+            sourceAgnosticCreativeId: 0,
+            sourceAgnosticLineItemId: 0
           }
         }]);
         expect(server.requests.length).to.equal(1);
@@ -1535,6 +1535,38 @@ describe('rubicon analytics adapter', function () {
           advertiserId: 0,
           creativeId: 0,
           lineItemId: 0,
+          adSlot: '/19968336/header-bid-tag1'
+        };
+        expect(message).to.deep.equal(expectedMessage);
+      });
+
+      it('should pick backup Ids if no sourceAgnostic available first', function () {
+        performStandardAuction([gptSlotRenderEnded0, {
+          eventName: 'slotRenderEnded',
+          params: {
+            slot: gptSlot1,
+            isEmpty: false,
+            advertiserId: 0,
+            lineItemId: 1234,
+            creativeId: 5678
+          }
+        }]);
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        validate(message);
+
+        let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
+        expectedMessage.auctions[0].adUnits[0].gam = {
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        };
+        expectedMessage.auctions[0].adUnits[1].gam = {
+          advertiserId: 0,
+          creativeId: 5678,
+          lineItemId: 1234,
           adSlot: '/19968336/header-bid-tag1'
         };
         expect(message).to.deep.equal(expectedMessage);
