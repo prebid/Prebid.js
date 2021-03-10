@@ -110,8 +110,8 @@ const trackEvent = (eventName, data) =>
 const DEFAULT_MIN_FLOOR = 0;
 
 function ensureFloor(floorValue) {
-  return typeof floorValue === 'number' && isFinite(floorValue) && floorValue > 0.0 ?
-    floorValue : DEFAULT_MIN_FLOOR;
+  return typeof floorValue === 'number' && isFinite(floorValue) && floorValue > 0.0
+    ? floorValue : DEFAULT_MIN_FLOOR;
 }
 
 function getFloor(bid) {

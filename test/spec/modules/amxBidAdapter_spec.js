@@ -211,7 +211,7 @@ describe('AmxBidAdapter', () => {
     });
 
     it('will read the prebid version & global', () => {
-      const { data: { V: prebidVersion, vg: prebidGlobal }  } = spec.buildRequests([{
+      const { data: { V: prebidVersion, vg: prebidGlobal } } = spec.buildRequests([{
         ...sampleBidRequestBase,
         params: {
           testMode: true
