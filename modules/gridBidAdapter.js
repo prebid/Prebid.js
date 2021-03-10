@@ -180,8 +180,8 @@ export const spec = {
     }
 
     const configKeywords = utils.transformBidderParamKeywords({
-      'user': utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || null,
-      'context': utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || null
+      'user': utils.deepAccess(config.getConfig('ortb2.user'), 'keywords') || null,
+      'context': utils.deepAccess(config.getConfig('ortb2.site'), 'keywords') || null
     });
 
     if (configKeywords.length) {
