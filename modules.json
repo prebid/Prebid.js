@@ -45,5 +45,6 @@
     "yieldoneBidAdapter",
     "synacormediaBidAdapter",
     "identityLinkIdSystem",
-    "unifiedIdSystem"
+    "unifiedIdSystem",
+    "medianetBidAdapter"
 ]
