@@ -46,16 +46,17 @@ describe('storage manager', function() {
 
   describe('localstorage forbidden access in 3rd-party context', function() {
     let errorLogSpy;
-    const originalLocalStorage = { get: () => window.localStorage };
+    let originalLocalStorage;
     const localStorageMock = { get: () => { throw Error } };
 
     beforeEach(function() {
+      originalLocalStorage = window.localStorage;
       Object.defineProperty(window, 'localStorage', localStorageMock);
       errorLogSpy = sinon.spy(utils, 'logError');
     });
 
     afterEach(function() {
-      Object.defineProperty(window, 'localStorage', originalLocalStorage);
+      Object.defineProperty(window, 'localStorage', { get: () => originalLocalStorage });
       errorLogSpy.restore();
     })
 
@@ -70,4 +71,28 @@ describe('storage manager', function() {
       sinon.assert.calledThrice(errorLogSpy);
     })
   })
+
+  describe('localstorage is enabled', function() {
+    let localStorage;
+
+    beforeEach(function() {
+      localStorage = window.localStorage;
+      localStorage.clear();
+    });
+
+    afterEach(function() {
+      localStorage.clear();
+    })
+
+    it('should remove side-effect after checking', function () {
+      const storage = getStorageManager();
+
+      localStorage.setItem('unrelated', 'dummy');
+      const val = storage.localStorageIsEnabled();
+
+      expect(val).to.be.true;
+      expect(localStorage.length).to.be.eq(1);
+      expect(localStorage.getItem('unrelated')).to.be.eq('dummy');
+    });
+  });
 });
