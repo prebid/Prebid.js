@@ -488,6 +488,18 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
 
+  let _s2sConfigs = [];
+  const s2sBidders = [];
+  config.getConfig('s2sConfig', config => {
+    if (config && config.s2sConfig) {
+      _s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
+    }
+  });
+
+  _s2sConfigs.forEach(s2sConfig => {
+    s2sBidders.push(...s2sConfig.bidders);
+  });
+
   adUnits = checkAdUnitSetup(adUnits);
 
   if (adUnitCodes && adUnitCodes.length) {
@@ -512,11 +524,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     const allBidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adapterManager.bidderRegistry;
 
-    const s2sConfig = config.getConfig('s2sConfig');
-    const s2sBidders = s2sConfig && s2sConfig.bidders;
-    const bidders = (s2sBidders) ? allBidders.filter(bidder => {
-      return !includes(s2sBidders, bidder);
-    }) : allBidders;
+    const bidders = (s2sBidders) ? allBidders.filter(bidder => !includes(s2sBidders, bidder)) : allBidders;
 
     adUnit.transactionId = utils.generateUUID();
 
@@ -587,11 +595,7 @@ $$PREBID_GLOBAL$$.requestBids.before(executeCallbacks, 49);
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
-  if (utils.isArray(adUnitArr)) {
-    $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
-  } else if (typeof adUnitArr === 'object') {
-    $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
-  }
+  $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, config.convertAdUnitFpd(utils.isArray(adUnitArr) ? adUnitArr : [adUnitArr]));
   // emit event
   events.emit(ADD_AD_UNITS);
 };
