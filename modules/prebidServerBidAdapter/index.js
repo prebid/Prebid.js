@@ -743,6 +743,11 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'ext.prebid.data.eidpermissions', eidPermissions);
     }
 
+    const multibid = config.getConfig('multibid');
+    if (multibid) {
+      utils.deepSetValue(request, 'ext.prebid.multibid', multibid);
+    }
+
     if (bidRequests) {
       if (firstBidRequest.gdprConsent) {
         // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module

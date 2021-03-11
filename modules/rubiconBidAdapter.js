@@ -256,6 +256,11 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
+      const multibid = config.getConfig('multibid');
+      if (multibid) {
+        utils.deepSetValue(data, 'ext.prebid.multibid', multibid);
+      }
+
       applyFPD(bidRequest, VIDEO, data);
 
       // if storedAuctionResponse has been set, pass SRID

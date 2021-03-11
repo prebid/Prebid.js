@@ -1626,6 +1626,26 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
         });
 
+        it('should add multibid configuration to PBS Request', function () {
+          createVideoBidderRequest();
+
+          const multibid = [{
+            bidder: 'bidderA',
+            maxbids: 2
+          }, {
+            bidder: 'bidderB',
+            maxbids: 2
+          }];
+
+          config.setConfig({multibid: multibid});
+
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // should have the aliases object sent to PBS
+          expect(request.data.ext.prebid).to.haveOwnProperty('multibid');
+          expect(request.data.ext.prebid.multibid).to.deep.equal(multibid);
+        });
+
         it('should send video exp param correctly when set', function () {
           createVideoBidderRequest();
           config.setConfig({s2sConfig: {defaultTtl: 600}});
