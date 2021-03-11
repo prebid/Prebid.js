@@ -8,6 +8,7 @@ describe('AdTrueBidAdapter', function () {
   const adapter = newBidder(spec)
   let bidRequests;
   let bidResponses;
+  let bidResponses2;
   beforeEach(function () {
     bidRequests = [
       {
@@ -81,6 +82,49 @@ describe('AdTrueBidAdapter', function () {
             {
               type: 1,
               url: 'https://hb.adtrue.com/prebid/usersync?bidder=adtrue'
+            }
+          ]
+        }
+      }
+    };
+    bidResponses2 = {
+      body: {
+        id: '1610681506302',
+        seatbid: [
+          {
+            bid: [
+              {
+                id: '1',
+                impid: '201fb513ca24e9',
+                price: 2.880000114440918,
+                burl: 'https://hb.adtrue.com/prebid/win-notify?impid=1610681506302&wp=${AUCTION_PRICE}',
+                adm: '<a href=\'https://adtrue.com?ref=pbjs\' target=\'_blank\'><img src=\'http://cdn.adtrue.com/img/prebid_sample_300x250.jpg?v=1.2\' style=\' width: 300px; \' /></a>',
+                adid: '1610681506302',
+                adomain: [
+                  'adtrue.com'
+                ],
+                cid: 'f6l0r6n',
+                crid: 'abc77au4',
+                attr: [],
+                w: 300,
+                h: 250
+              }
+            ],
+            seat: 'adtrue',
+            group: 0
+          }
+        ],
+        bidid: '1610681506302',
+        cur: 'USD',
+        ext: {
+          cookie_sync: [
+            {
+              type: 2,
+              url: 'https://hb.adtrue.com/prebid/usersync?bidder=adtrue&type=image'
+            },
+            {
+              type: 1,
+              url: 'https://hb.adtrue.com/prebid/usersync?bidder=appnexus'
             }
           ]
         }
@@ -357,7 +401,6 @@ describe('AdTrueBidAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    let USER_SYNC_URL_IFRAME = 'https://hb.adtrue.com/prebid/usersync?bidder=adtrue&publisherId=1212&zoneId=21423&gdpr=0&gdpr_consent=&us_privacy=&coppa=0';
     let sandbox;
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
@@ -367,8 +410,22 @@ describe('AdTrueBidAdapter', function () {
     });
     it('execute as per config', function () {
       expect(spec.getUserSyncs({iframeEnabled: true}, [bidResponses], undefined, undefined)).to.deep.equal([{
-        type: 'iframe', url: USER_SYNC_URL_IFRAME
+        type: 'iframe',
+        url: 'https://hb.adtrue.com/prebid/usersync?bidder=adtrue&publisherId=1212&zoneId=21423&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
+    });
+    // Multiple user sync output
+    it('execute as per config', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, [bidResponses2], undefined, undefined)).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://hb.adtrue.com/prebid/usersync?bidder=adtrue&type=image&publisherId=1212&zoneId=21423&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
+        },
+        {
+          type: 'iframe',
+          url: 'https://hb.adtrue.com/prebid/usersync?bidder=appnexus&publisherId=1212&zoneId=21423&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
+        }
+      ]);
     });
   });
 });

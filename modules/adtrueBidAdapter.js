@@ -444,6 +444,14 @@ export const spec = {
         utils.logWarn(LOG_WARN_PREFIX + 'Error: missing publisherId');
         return false;
       }
+      if (!utils.isStr(bid.params.publisherId)) {
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric');
+        return false;
+      }
+      if (!utils.isStr(bid.params.zoneId)) {
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: zoneId is mandatory and cannot be numeric');
+        return false;
+      }
       return true;
     }
     return false;
@@ -514,7 +522,6 @@ export const spec = {
     if (validBidRequests[0].schain) {
       utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
-
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
       utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
@@ -525,7 +532,6 @@ export const spec = {
     if (bidderRequest && bidderRequest.uspConsent) {
       utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
-
     // coppa compliance
     if (config.getConfig('coppa') === true) {
       utils.deepSetValue(payload, 'regs.coppa', 1);
@@ -581,7 +587,6 @@ export const spec = {
                 }
               });
             }
-
             newBid.meta = {};
             if (bid.ext && bid.ext.dspid) {
               newBid.meta.networkId = bid.ext.dspid;
@@ -593,14 +598,12 @@ export const spec = {
               newBid.meta.advertiserDomains = bid.adomain;
               newBid.meta.clickUrl = bid.adomain[0];
             }
-
             // adserverTargeting
             if (seatbidder.ext && seatbidder.ext.buyid) {
               newBid.adserverTargeting = {
                 'hb_buyid_adtrue': seatbidder.ext.buyid
               };
             }
-
             bidResponses.push(newBid);
           });
         });
@@ -622,7 +625,7 @@ export const spec = {
         url: url +
           '&publisherId=' + publisherId +
           '&zoneId=' + zoneId +
-          '&gdpr=' + (gdprConsent ? (gdprConsent.gdprApplies ? 1 : 0) : 0) +
+          '&gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0) +
           '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : '')) +
           '&us_privacy=' + encodeURIComponent((uspConsent || '')) +
           '&coppa=' + (config.getConfig('coppa') === true ? 1 : 0)
