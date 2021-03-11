@@ -71,7 +71,7 @@ export const spec = {
         if (bid.mediaTypes && bid.mediaTypes.native) {
           let nativeReq = bid.mediaTypes.native;
           if (nativeReq.type === 'image') {
-            nativeReq = NATIVE_IMAGE;
+            nativeReq = Object.assign({}, NATIVE_IMAGE, nativeReq);
           }
           accumulator[bid.bidId].Native = nativeReq;
         }
