@@ -1,4 +1,4 @@
-import { hook } from './hook.js';
+import {hook} from './hook.js';
 import * as utils from './utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
@@ -110,7 +110,12 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
         try {
           localStorage.setItem('prebid.cookieTest', '1');
           return localStorage.getItem('prebid.cookieTest') === '1';
-        } catch (error) {}
+        } catch (error) {
+        } finally {
+          try {
+            localStorage.removeItem('prebid.cookieTest');
+          } catch (error) {}
+        }
       }
       return false;
     }
@@ -154,7 +159,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    */
   const setDataInLocalStorage = function (key, value, done) {
     let cb = function (result) {
-      if (result && result.valid) {
+      if (result && result.valid && hasLocalStorage()) {
         window.localStorage.setItem(key, value);
       }
     }
@@ -174,7 +179,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    */
   const getDataFromLocalStorage = function (key, done) {
     let cb = function (result) {
-      if (result && result.valid) {
+      if (result && result.valid && hasLocalStorage()) {
         return window.localStorage.getItem(key);
       }
       return null;
@@ -194,7 +199,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
    */
   const removeDataFromLocalStorage = function (key, done) {
     let cb = function (result) {
-      if (result && result.valid) {
+      if (result && result.valid && hasLocalStorage()) {
         window.localStorage.removeItem(key);
       }
     }

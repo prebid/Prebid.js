@@ -1,10 +1,17 @@
 import {expect} from 'chai';
-import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter.js';
+import {
+  spec,
+  getPriceGranularity,
+  masSizeOrdering,
+  resetUserSync,
+  hasVideoMediaType,
+  resetRubiConf
+} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
-import { createEidsArray } from 'modules/userId/eids.js';
+import {createEidsArray} from 'modules/userId/eids.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 const PBS_INTEGRATION = 'pbjs';
@@ -137,7 +144,7 @@ describe('the rubicon adapter', function () {
       'targeting': [
         {
           'key': getProp('targeting_key', `rpfl_${i}`),
-          'values': [ '43_tier_all_test' ]
+          'values': ['43_tier_all_test']
         }
       ]
     };
@@ -220,11 +227,26 @@ describe('the rubicon adapter', function () {
       'size_id': 201,
     };
     bid.userId = {
-      lipb: { lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB'] },
+      lipb: {lipbid: '0000-1111-2222-3333', segments: ['segA', 'segB']},
       idl_env: '1111-2222-3333-4444',
-      sharedid: { id: '1111', third: '2222' },
+      sharedid: {id: '1111', third: '2222'},
       tdid: '3000',
-      pubcid: '4000'
+      pubcid: '4000',
+      pubProvidedId: [{
+        source: 'example.com',
+        uids: [{
+          id: '333333',
+          ext: {
+            stype: 'ppuid'
+          }
+        }]
+      }, {
+        source: 'id-partner.com',
+        uids: [{
+          id: '4444444'
+        }]
+      }],
+      criteoId: '1111',
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
     bid.storedAuctionResponse = 11111;
@@ -347,6 +369,8 @@ describe('the rubicon adapter', function () {
   afterEach(function () {
     sandbox.restore();
     utils.logError.restore();
+    config.resetConfig();
+    resetRubiConf();
   });
 
   describe('MAS mapping / ordering', function () {
@@ -372,7 +396,10 @@ describe('the rubicon adapter', function () {
       describe('to fastlane', function () {
         it('should make a well-formed request object', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let duplicate = Object.assign(bidderRequest);
+          duplicate.bids[0].params.floor = 0.01;
+
+          let [request] = spec.buildRequests(duplicate.bids, duplicate);
           let data = parseQuery(request.data);
 
           expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
@@ -461,35 +488,30 @@ describe('the rubicon adapter', function () {
           data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.equal('1.23');
         });
-        it('should not send p_pos to AE if not params.position specified', function() {
-	      var noposRequest = utils.deepClone(bidderRequest);
-	      delete noposRequest.bids[0].params.position;
+        it('should not send p_pos to AE if not params.position specified', function () {
+          var noposRequest = utils.deepClone(bidderRequest);
+          delete noposRequest.bids[0].params.position;
 
-	      let [request] = spec.buildRequests(noposRequest.bids, noposRequest);
-	      let data = parseQuery(request.data);
+          let [request] = spec.buildRequests(noposRequest.bids, noposRequest);
+          let data = parseQuery(request.data);
 
-	      expect(data['site_id']).to.equal('70608');
-	      expect(data['p_pos']).to.equal(undefined);
+          expect(data['site_id']).to.equal('70608');
+          expect(data['p_pos']).to.equal(undefined);
         });
 
-        it('should not send p_pos to AE if not params.position is invalid', function() {
-	      var badposRequest = utils.deepClone(bidderRequest);
-	      badposRequest.bids[0].params.position = 'bad';
+        it('should not send p_pos to AE if not params.position is invalid', function () {
+          var badposRequest = utils.deepClone(bidderRequest);
+          badposRequest.bids[0].params.position = 'bad';
 
-	      let [request] = spec.buildRequests(badposRequest.bids, badposRequest);
-	      let data = parseQuery(request.data);
+          let [request] = spec.buildRequests(badposRequest.bids, badposRequest);
+          let data = parseQuery(request.data);
 
-	      expect(data['site_id']).to.equal('70608');
-	      expect(data['p_pos']).to.equal(undefined);
+          expect(data['site_id']).to.equal('70608');
+          expect(data['p_pos']).to.equal(undefined);
         });
 
         it('should correctly send p_pos in sra fashion', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            const config = {
-              'rubicon.singleRequest': true
-            };
-            return config[key];
-          });
+          config.setConfig({rubicon: {singleRequest: true}});
           // first one is atf
           var sraPosRequest = utils.deepClone(bidderRequest);
 
@@ -519,11 +541,11 @@ describe('the rubicon adapter', function () {
           expect(data['p_pos']).to.equal('atf;;btf;;');
         });
 
-        it('should not send x_source.pchain to AE if params.pchain is not specified', function() {
-	      var noPchainRequest = utils.deepClone(bidderRequest);
-	      delete noPchainRequest.bids[0].params.pchain;
+        it('should not send x_source.pchain to AE if params.pchain is not specified', function () {
+          var noPchainRequest = utils.deepClone(bidderRequest);
+          delete noPchainRequest.bids[0].params.pchain;
 
-	      let [request] = spec.buildRequests(noPchainRequest.bids, noPchainRequest);
+          let [request] = spec.buildRequests(noPchainRequest.bids, noPchainRequest);
           expect(request.data).to.contain('&site_id=70608&');
           expect(request.data).to.not.contain('x_source.pchain');
         });
@@ -532,7 +554,7 @@ describe('the rubicon adapter', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_floor', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
@@ -547,7 +569,6 @@ describe('the rubicon adapter', function () {
             'size_id': '15',
             'alt_size_ids': '43',
             'p_pos': 'atf',
-            'rp_floor': '0.01',
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
@@ -624,7 +645,7 @@ describe('the rubicon adapter', function () {
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
-          let refererInfo = { referer: 'https://www.prebid.org' };
+          let refererInfo = {referer: 'https://www.prebid.org'};
           bidderRequest = Object.assign({refererInfo}, bidderRequest);
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
@@ -681,233 +702,6 @@ describe('the rubicon adapter', function () {
           let data = parseQuery(request.data);
 
           expect(data['rp_floor']).to.equal('2');
-        });
-
-        it('should send digitrust params', function () {
-          window.DigiTrust = {
-            getUser: function () {
-            }
-          };
-          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-            ({
-              success: true,
-              identity: {
-                privacy: {optout: false},
-                id: 'testId',
-                keyv: 'testKeyV'
-              }
-            })
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let data = parseQuery(request.data);
-
-          let expectedQuery = {
-            'dt.id': 'testId',
-            'dt.keyv': 'testKeyV',
-            'dt.pref': '0'
-          };
-
-          // test that all values above are both present and correct
-          Object.keys(expectedQuery).forEach(key => {
-            let value = expectedQuery[key];
-            expect(data[key]).to.equal(value);
-          });
-
-          delete window.DigiTrust;
-        });
-
-        it('should not send digitrust params when DigiTrust not loaded', function () {
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let data = parseQuery(request.data);
-
-          let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-          // Test that none of the DigiTrust keys are part of the query
-          undefinedKeys.forEach(key => {
-            expect(typeof data[key]).to.equal('undefined');
-          });
-        });
-
-        it('should not send digitrust params due to optout', function () {
-          window.DigiTrust = {
-            getUser: function () {
-            }
-          };
-          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-            ({
-              success: true,
-              identity: {
-                privacy: {optout: true},
-                id: 'testId',
-                keyv: 'testKeyV'
-              }
-            })
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let data = parseQuery(request.data);
-
-          let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-          // Test that none of the DigiTrust keys are part of the query
-          undefinedKeys.forEach(key => {
-            expect(typeof data[key]).to.equal('undefined');
-          });
-
-          delete window.DigiTrust;
-        });
-
-        it('should not send digitrust params due to failure', function () {
-          window.DigiTrust = {
-            getUser: function () {
-            }
-          };
-          sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
-            ({
-              success: false,
-              identity: {
-                privacy: {optout: false},
-                id: 'testId',
-                keyv: 'testKeyV'
-              }
-            })
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let data = parseQuery(request.data);
-
-          let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-          // Test that none of the DigiTrust keys are part of the query
-          undefinedKeys.forEach(key => {
-            expect(typeof data[key]).to.equal('undefined');
-          });
-
-          delete window.DigiTrust;
-        });
-
-        describe('digiTrustId config', function () {
-          beforeEach(function () {
-            window.DigiTrust = {
-              getUser: sandbox.spy()
-            };
-          });
-
-          afterEach(function () {
-            delete window.DigiTrust;
-          });
-
-          it('should send digiTrustId config params', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {
-                digiTrustId: {
-                  success: true,
-                  identity: {
-                    privacy: {optout: false},
-                    id: 'testId',
-                    keyv: 'testKeyV'
-                  }
-                }
-              };
-              return config[key];
-            });
-
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            let data = parseQuery(request.data);
-
-            let expectedQuery = {
-              'dt.id': 'testId',
-              'dt.keyv': 'testKeyV'
-            };
-
-            // test that all values above are both present and correct
-            Object.keys(expectedQuery).forEach(key => {
-              let value = expectedQuery[key];
-              expect(data[key]).to.equal(value);
-            });
-
-            // should not have called DigiTrust.getUser()
-            expect(window.DigiTrust.getUser.notCalled).to.equal(true);
-          });
-
-          it('should not send digiTrustId config params due to optout', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {
-                digiTrustId: {
-                  success: true,
-                  identity: {
-                    privacy: {optout: true},
-                    id: 'testId',
-                    keyv: 'testKeyV'
-                  }
-                }
-              }
-              return config[key];
-            });
-
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            let data = parseQuery(request.data);
-
-            let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-            // Test that none of the DigiTrust keys are part of the query
-            undefinedKeys.forEach(key => {
-              expect(typeof data[key]).to.equal('undefined');
-            });
-
-            // should not have called DigiTrust.getUser()
-            expect(window.DigiTrust.getUser.notCalled).to.equal(true);
-          });
-
-          it('should not send digiTrustId config params due to failure', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {
-                digiTrustId: {
-                  success: false,
-                  identity: {
-                    privacy: {optout: false},
-                    id: 'testId',
-                    keyv: 'testKeyV'
-                  }
-                }
-              }
-              return config[key];
-            });
-
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            let data = parseQuery(request.data);
-
-            let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-            // Test that none of the DigiTrust keys are part of the query
-            undefinedKeys.forEach(key => {
-              expect(typeof data[key]).to.equal('undefined');
-            });
-
-            // should not have called DigiTrust.getUser()
-            expect(window.DigiTrust.getUser.notCalled).to.equal(true);
-          });
-
-          it('should not send digiTrustId config params if they do not exist', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              var config = {};
-              return config[key];
-            });
-
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            let data = parseQuery(request.data);
-
-            let undefinedKeys = ['dt.id', 'dt.keyv'];
-
-            // Test that none of the DigiTrust keys are part of the query
-            undefinedKeys.forEach(key => {
-              expect(typeof data[key]).to.equal('undefined');
-            });
-
-            // should have called DigiTrust.getUser() once
-            expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
-          });
         });
 
         describe('GDPR consent config', function () {
@@ -1032,22 +826,40 @@ describe('the rubicon adapter', function () {
             });
           });
 
-          it('should use first party data from getConfig over the bid params, if present', () => {
-            const context = {
-              keywords: ['e', 'f'],
-              rating: '4-star'
+          it('should merge first party data from getConfig with the bid params, if present', () => {
+            const site = {
+              keywords: 'e,f',
+              rating: '4-star',
+              ext: {
+                data: {
+                  page: 'home'
+                }
+              }
             };
             const user = {
-              keywords: ['d'],
+              data: [{
+                'name': 'www.dataprovider1.com',
+                'ext': { 'taxonomyname': 'IAB Audience Taxonomy' },
+                'segment': [
+                  { 'id': '687' },
+                  { 'id': '123' }
+                ]
+              }],
               gender: 'M',
               yob: '1984',
-              geo: { country: 'ca' }
+              geo: {country: 'ca'},
+              keywords: 'd',
+              ext: {
+                data: {
+                  age: 40
+                }
+              }
             };
 
             sandbox.stub(config, 'getConfig').callsFake(key => {
               const config = {
-                fpd: {
-                  context,
+                ortb2: {
+                  site,
                   user
                 }
               };
@@ -1055,14 +867,16 @@ describe('the rubicon adapter', function () {
             });
 
             const expectedQuery = {
-              'kw': 'a,b,c,d,e,f',
+              'kw': 'a,b,c,d',
               'tg_v.ucat': 'new',
               'tg_v.lastsearch': 'iphone',
               'tg_v.likes': 'sports,video games',
               'tg_v.gender': 'M',
+              'tg_v.age': '40',
+              'tg_v.iab': '687,123',
               'tg_v.yob': '1984',
-              'tg_v.geo': '{"country":"ca"}',
-              'tg_i.rating': '4-star',
+              'tg_i.rating': '4-star,5-star',
+              'tg_i.page': 'home',
               'tg_i.prodtype': 'tech,mobile',
             };
 
@@ -1082,12 +896,7 @@ describe('the rubicon adapter', function () {
           it('should group all bid requests with the same site id', function () {
             sandbox.stub(Math, 'random').callsFake(() => 0.1);
 
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              const config = {
-                'rubicon.singleRequest': true
-              };
-              return config[key];
-            });
+            config.setConfig({rubicon: {singleRequest: true}});
 
             const expectedQuery = {
               'account_id': '14062',
@@ -1096,7 +905,6 @@ describe('the rubicon adapter', function () {
               'size_id': '15',
               'alt_size_ids': '43',
               'p_pos': 'atf',
-              'rp_floor': '0.01',
               'rp_secure': /[01]/,
               'rand': '0.1',
               'tk_flint': INTEGRATION,
@@ -1195,13 +1003,7 @@ describe('the rubicon adapter', function () {
           });
 
           it('should not send more than 10 bids in a request (split into separate requests with <= 10 bids each)', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              const config = {
-                'rubicon.singleRequest': true
-              };
-              return config[key];
-            });
-
+            config.setConfig({rubicon: {singleRequest: true}});
             let serverRequests;
             let data;
 
@@ -1243,12 +1045,7 @@ describe('the rubicon adapter', function () {
           });
 
           it('should not group bid requests if singleRequest does not equal true', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              const config = {
-                'rubicon.singleRequest': false
-              };
-              return config[key];
-            });
+            config.setConfig({rubicon: {singleRequest: false}});
 
             const bidCopy = utils.deepClone(bidderRequest.bids[0]);
             bidderRequest.bids.push(bidCopy);
@@ -1266,12 +1063,7 @@ describe('the rubicon adapter', function () {
           });
 
           it('should not group video bid requests', function () {
-            sandbox.stub(config, 'getConfig').callsFake((key) => {
-              const config = {
-                'rubicon.singleRequest': true
-              };
-              return config[key];
-            });
+            config.setConfig({rubicon: {singleRequest: true}});
 
             const bidCopy = utils.deepClone(bidderRequest.bids[0]);
             bidderRequest.bids.push(bidCopy);
@@ -1315,7 +1107,7 @@ describe('the rubicon adapter', function () {
           });
         });
 
-        describe('user id config', function() {
+        describe('user id config', function () {
           it('should send tpid_tdid when userIdAsEids contains unifiedId', function () {
             const clonedBid = utils.deepClone(bidderRequest.bids[0]);
             clonedBid.userId = {
@@ -1326,6 +1118,7 @@ describe('the rubicon adapter', function () {
             let data = parseQuery(request.data);
 
             expect(data['tpid_tdid']).to.equal('abcd-efgh-ijkl-mnop-1234');
+            expect(data['eid_adserver.org']).to.equal('abcd-efgh-ijkl-mnop-1234');
           });
 
           describe('LiveIntent support', function () {
@@ -1333,7 +1126,8 @@ describe('the rubicon adapter', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 lipb: {
-                  lipbid: '0000-1111-2222-3333'
+                  lipbid: '0000-1111-2222-3333',
+                  segments: ['segA', 'segB']
                 }
               };
               clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
@@ -1341,6 +1135,8 @@ describe('the rubicon adapter', function () {
               let data = parseQuery(request.data);
 
               expect(data['tpid_liveintent.com']).to.equal('0000-1111-2222-3333');
+              expect(data['eid_liveintent.com']).to.equal('0000-1111-2222-3333');
+              expect(data['tg_v.LIseg']).to.equal('segA,segB');
             });
 
             it('should send tg_v.LIseg when userIdAsEids contains liveintentId with ext.segments as array', function () {
@@ -1374,6 +1170,34 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          describe('pubcid support', function () {
+            it('should send eid_pubcid.org when userIdAsEids contains pubcid', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                pubcid: '1111'
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_pubcid.org']).to.equal('1111^1');
+            });
+          });
+
+          describe('Criteo support', function () {
+            it('should send eid_criteo.com when userIdAsEids contains criteo', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                criteoId: '1111'
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_criteo.com']).to.equal('1111^1');
+            });
+          });
+
           describe('SharedID support', function () {
             it('should send sharedid when userIdAsEids contains sharedId', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
@@ -1391,9 +1215,73 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          describe('pubProvidedId support', function () {
+            it('should send pubProvidedId when userIdAsEids contains pubProvidedId ids', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                pubProvidedId: [{
+                  source: 'example.com',
+                  uids: [{
+                    id: '11111',
+                    ext: {
+                      stype: 'ppuid'
+                    }
+                  }]
+                }, {
+                  source: 'id-partner.com',
+                  uids: [{
+                    id: '222222'
+                  }]
+                }]
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['ppuid']).to.equal('11111');
+            });
+          });
+
+          describe('ID5 support', function () {
+            it('should send ID5 id when userIdAsEids contains ID5', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                id5id: {
+                  uid: '11111',
+                  ext: {
+                    linkType: '22222'
+                  }
+                }
+              };
+              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_id5-sync.com']).to.equal('11111^1^22222');
+            });
+          });
+
+          describe('UserID catchall support', function () {
+            it('should send user id with generic format', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
+              clonedBid.userIdAsEids = [{
+                source: 'catchall',
+                uids: [{
+                  id: '11111',
+                  atype: 2
+                }]
+              }]
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_catchall']).to.equal('11111^2');
+            });
+          });
+
           describe('Config user.id support', function () {
             it('should send ppuid when config defines user.id', function () {
-              config.setConfig({ user: { id: '123' } });
+              config.setConfig({user: {id: '123'}});
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               clonedBid.userId = {
                 sharedid: {
@@ -1412,12 +1300,12 @@ describe('the rubicon adapter', function () {
         describe('Prebid AdSlot', function () {
           beforeEach(function () {
             // enforce that the bid at 0 does not have a 'context' property
-            if (bidderRequest.bids[0].hasOwnProperty('fpd')) {
-              delete bidderRequest.bids[0].fpd;
+            if (bidderRequest.bids[0].hasOwnProperty('ortb2Imp')) {
+              delete bidderRequest.bids[0].ortb2Imp;
             }
           });
 
-          it('should not send \"tg_i.pbadslot’\" if \"fpd.context\" object is not valid', function () {
+          it('should not send \"tg_i.pbadslot’\" if \"ortb2Imp.ext.data\" object is not valid', function () {
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = parseQuery(request.data);
 
@@ -1425,8 +1313,8 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.pbadslot’');
           });
 
-          it('should not send \"tg_i.pbadslot’\" if \"fpd.context.pbAdSlot\" is undefined', function () {
-            bidderRequest.bids[0].fpd = {};
+          it('should not send \"tg_i.pbadslot’\" if \"ortb2Imp.ext.data.pbadslot\" is undefined', function () {
+            bidderRequest.bids[0].ortb2Imp = {};
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = parseQuery(request.data);
@@ -1435,10 +1323,12 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.pbadslot’');
           });
 
-          it('should not send \"tg_i.pbadslot’\" if \"fpd.context.pbAdSlot\" value is an empty string', function () {
-            bidderRequest.bids[0].fpd = {
-              context: {
-                pbAdSlot: ''
+          it('should not send \"tg_i.pbadslot’\" if \"ortb2Imp.ext.data.pbadslot\" value is an empty string', function () {
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                data: {
+                  pbadslot: ''
+                }
               }
             };
 
@@ -1449,10 +1339,12 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.pbadslot');
           });
 
-          it('should send \"tg_i.pbadslot\" if \"fpd.context.pbAdSlot\" value is a valid string', function () {
-            bidderRequest.bids[0].fpd = {
-              context: {
-                pbAdSlot: 'abc'
+          it('should send \"tg_i.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" value is a valid string', function () {
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                data: {
+                  pbadslot: 'abc'
+                }
               }
             }
 
@@ -1464,12 +1356,14 @@ describe('the rubicon adapter', function () {
             expect(data['tg_i.pbadslot']).to.equal('abc');
           });
 
-          it('should send \"tg_i.pbadslot\" if \"fpd.context.pbAdSlot\" value is a valid string, but all leading slash characters should be removed', function () {
-            bidderRequest.bids[0].fpd = {
-              context: {
-                pbAdSlot: '/a/b/c'
+          it('should send \"tg_i.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" value is a valid string, but all leading slash characters should be removed', function () {
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                data: {
+                  pbadslot: '/a/b/c'
+                }
               }
-            };
+            }
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = parseQuery(request.data);
@@ -1483,12 +1377,12 @@ describe('the rubicon adapter', function () {
         describe('GAM ad unit', function () {
           beforeEach(function () {
             // enforce that the bid at 0 does not have a 'context' property
-            if (bidderRequest.bids[0].hasOwnProperty('fpd')) {
-              delete bidderRequest.bids[0].fpd;
+            if (bidderRequest.bids[0].hasOwnProperty('ortb2Imp')) {
+              delete bidderRequest.bids[0].ortb2Imp;
             }
           });
 
-          it('should not send \"tg_i.dfp_ad_unit_code’\" if \"fpd.context\" object is not valid', function () {
+          it('should not send \"tg_i.dfp_ad_unit_code’\" if \"ortb2Imp.ext.data\" object is not valid', function () {
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = parseQuery(request.data);
 
@@ -1496,8 +1390,8 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.dfp_ad_unit_code’');
           });
 
-          it('should not send \"tg_i.dfp_ad_unit_code’\" if \"fpd.context.adServer.adSlot\" is undefined', function () {
-            bidderRequest.bids[0].fpd = {};
+          it('should not send \"tg_i.dfp_ad_unit_code’\" if \"ortb2Imp.ext.data.adServer.adslot\" is undefined', function () {
+            bidderRequest.bids[0].ortb2Imp = {};
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = parseQuery(request.data);
@@ -1506,11 +1400,13 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.dfp_ad_unit_code’');
           });
 
-          it('should not send \"tg_i.dfp_ad_unit_code’\" if \"fpd.context.adServer.adSlot\" value is an empty string', function () {
-            bidderRequest.bids[0].fpd = {
-              context: {
-                adServer: {
-                  adSlot: ''
+          it('should not send \"tg_i.dfp_ad_unit_code’\" if \"ortb2Imp.ext.data.adServer.adslot\" value is an empty string', function () {
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                data: {
+                  adserver: {
+                    adslot: ''
+                  }
                 }
               }
             };
@@ -1522,11 +1418,13 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
           });
 
-          it('should send \"tg_i.dfp_ad_unit_code\" if \"fpd.context.adServer.adSlot\" value is a valid string', function () {
-            bidderRequest.bids[0].fpd = {
-              context: {
-                adServer: {
-                  adSlot: 'abc'
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string', function () {
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                data: {
+                  adserver: {
+                    adslot: 'abc'
+                  }
                 }
               }
             }
@@ -1539,11 +1437,13 @@ describe('the rubicon adapter', function () {
             expect(data['tg_i.dfp_ad_unit_code']).to.equal('abc');
           });
 
-          it('should send \"tg_i.dfp_ad_unit_code\" if \"fpd.context.adServer.adSlot\" value is a valid string, but all leading slash characters should be removed', function () {
-            bidderRequest.bids[0].fpd = {
-              context: {
-                adServer: {
-                  adSlot: 'a/b/c'
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"ortb2Imp.ext.data.adServer.adslot\" value is a valid string, but all leading slash characters should be removed', function () {
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                data: {
+                  adserver: {
+                    adslot: 'a/b/c'
+                  }
                 }
               }
             };
@@ -1569,11 +1469,11 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let post = request.data;
 
-          expect(post).to.have.property('imp')
+          expect(post).to.have.property('imp');
           // .with.length.of(1);
           let imp = post.imp[0];
           expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
-          expect(imp.exp).to.equal(300);
+          expect(imp.exp).to.equal(undefined); // now undefined
           expect(imp.video.w).to.equal(640);
           expect(imp.video.h).to.equal(480);
           expect(imp.video.pos).to.equal(1);
@@ -1603,20 +1503,10 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
           expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
           expect(post.user.ext.eids[0].ext.segments[1]).to.equal('segB');
-          // Non-EID properties set using liveintent EID values
-          expect(post.user.ext).to.have.property('tpid').that.is.an('object');
-          expect(post.user.ext.tpid.source).to.equal('liveintent.com');
-          expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
-          expect(post).to.have.property('rp').that.is.an('object');
-          expect(post.rp).to.have.property('target').that.is.an('object');
-          expect(post.rp.target).to.have.property('LIseg').that.is.an('array');
-          expect(post.rp.target.LIseg[0]).to.equal('segA');
-          expect(post.rp.target.LIseg[1]).to.equal('segB');
           // LiveRamp should exist
           expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.user.ext.eids[1].uids[0].atype).to.equal(1);
-
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
@@ -1630,6 +1520,16 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.eids[4].source).to.equal('pubcid.org');
           expect(post.user.ext.eids[4].uids[0].atype).to.equal(1);
           expect(post.user.ext.eids[4].uids[0].id).to.equal('4000');
+          // example should exist
+          expect(post.user.ext.eids[5].source).to.equal('example.com');
+          expect(post.user.ext.eids[5].uids[0].id).to.equal('333333');
+          // id-partner.com
+          expect(post.user.ext.eids[6].source).to.equal('id-partner.com');
+          expect(post.user.ext.eids[6].uids[0].id).to.equal('4444444');
+          // CriteoId should exist
+          expect(post.user.ext.eids[7].source).to.equal('criteo.com');
+          expect(post.user.ext.eids[7].uids[0].id).to.equal('1111');
+          expect(post.user.ext.eids[7].uids[0].atype).to.equal(1);
 
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post.regs.ext.us_privacy).to.equal('1NYN');
@@ -1710,7 +1610,7 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].bidfloor).to.be.undefined;
         });
 
-        it('should add alias name to PBS Request', function() {
+        it('should add alias name to PBS Request', function () {
           createVideoBidderRequest();
 
           bidderRequest.bidderCode = 'superRubicon';
@@ -1726,7 +1626,37 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
         });
 
-        it('should send correct bidfloor to PBS', function() {
+        it('should send video exp param correctly when set', function () {
+          createVideoBidderRequest();
+          config.setConfig({s2sConfig: {defaultTtl: 600}});
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+
+          // should exp set to the right value according to config
+          let imp = post.imp[0];
+          expect(imp.exp).to.equal(600);
+        });
+
+        it('should not send video exp at all if not set in s2sConfig config', function () {
+          createVideoBidderRequest();
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+
+          // should exp set to the right value according to config
+          let imp = post.imp[0];
+          // bidderFactory stringifies request body before sending so removes undefined attributes:
+          expect(imp.exp).to.equal(undefined);
+        });
+
+        it('should send tmax as the bidderRequest timeout value', function () {
+          createVideoBidderRequest();
+          bidderRequest.timeout = 3333;
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let post = request.data;
+          expect(post.tmax).to.equal(3333);
+        });
+
+        it('should send correct bidfloor to PBS', function () {
           createVideoBidderRequest();
 
           bidderRequest.bids[0].params.floor = 0.1;
@@ -1916,14 +1846,14 @@ describe('the rubicon adapter', function () {
           let requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+          expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           bidderRequest.mediaTypes.video.context = 'instream';
 
           requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+          expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
         });
 
         it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {
@@ -1942,7 +1872,7 @@ describe('the rubicon adapter', function () {
 
           let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+          expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
         });
 
         it('should include coppa flag in video bid request', () => {
@@ -1966,39 +1896,58 @@ describe('the rubicon adapter', function () {
         it('should include first party data', () => {
           createVideoBidderRequest();
 
-          const context = {
-            keywords: ['e', 'f'],
-            rating: '4-star'
+          const site = {
+            ext: {
+              data: {
+                page: 'home'
+              }
+            },
+            content: {
+              data: [{foo: 'bar'}]
+            },
+            keywords: 'e,f',
+            rating: '4-star',
+            data: [{foo: 'bar'}]
           };
           const user = {
-            keywords: ['d'],
+            ext: {
+              data: {
+                age: 31
+              }
+            },
+            keywords: 'd',
             gender: 'M',
             yob: '1984',
-            geo: { country: 'ca' }
+            geo: {country: 'ca'},
+            data: [{foo: 'bar'}]
           };
 
           sandbox.stub(config, 'getConfig').callsFake(key => {
             const config = {
-              fpd: {
-                context,
+              ortb2: {
+                site,
                 user
               }
             };
             return utils.deepAccess(config, key);
           });
 
-          const expected = [{
-            bidders: [ 'rubicon' ],
-            config: {
-              fpd: {
-                site: Object.assign({}, bidderRequest.bids[0].params.inventory, context),
-                user: Object.assign({}, bidderRequest.bids[0].params.visitor, user)
-              }
-            }
-          }];
-
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.ext.prebid.bidderconfig).to.deep.equal(expected);
+
+          const expected = {
+            site: Object.assign({}, site, {keywords: bidderRequest.bids[0].params.keywords.join(',')}),
+            user: Object.assign({}, user),
+            siteData: Object.assign({}, site.ext.data, bidderRequest.bids[0].params.inventory),
+            userData: Object.assign({}, user.ext.data, bidderRequest.bids[0].params.visitor),
+          };
+
+          delete request.data.site.page;
+          delete request.data.site.content.language;
+
+          expect(request.data.site.keywords).to.deep.equal('a,b,c');
+          expect(request.data.user.keywords).to.deep.equal('d');
+          expect(request.data.site.ext.data).to.deep.equal(expected.siteData);
+          expect(request.data.user.ext.data).to.deep.equal(expected.userData);
         });
 
         it('should include storedAuctionResponse in video bid request', function () {
@@ -2017,28 +1966,33 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
         });
 
-        it('should include pbAdSlot in bid request', function () {
+        it('should include pbadslot in bid request', function () {
           createVideoBidderRequest();
-          bidderRequest.bids[0].fpd = {
-            context: {
-              pbAdSlot: '1234567890'
+          bidderRequest.bids[0].ortb2Imp = {
+            ext: {
+              data: {
+                pbadslot: '1234567890'
+              }
             }
-          };
+          }
 
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].ext.context.data.pbadslot).to.equal('1234567890');
+          expect(request.data.imp[0].ext.data.pbadslot).to.equal('1234567890');
         });
 
         it('should include GAM ad unit in bid request', function () {
           createVideoBidderRequest();
-          bidderRequest.bids[0].fpd = {
-            context: {
-              adServer: {
-                adSlot: '1234567890'
+          bidderRequest.bids[0].ortb2Imp = {
+            ext: {
+              data: {
+                adserver: {
+                  adslot: '1234567890',
+                  name: 'adServerName1'
+                }
               }
             }
           };
@@ -2048,23 +2002,19 @@ describe('the rubicon adapter', function () {
           );
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
+          expect(request.data.imp[0].ext.data.adserver.adslot).to.equal('1234567890');
+          expect(request.data.imp[0].ext.data.adserver.name).to.equal('adServerName1');
         });
 
         it('should use the integration type provided in the config instead of the default', () => {
           createVideoBidderRequest();
-          sandbox.stub(config, 'getConfig').callsFake(function (key) {
-            const config = {
-              'rubicon.int_type': 'testType'
-            };
-            return config[key];
-          });
+          config.setConfig({rubicon: {int_type: 'testType'}});
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
         });
 
         it('should pass the user.id provided in the config', function () {
-          config.setConfig({ user: { id: '123' } });
+          config.setConfig({user: {id: '123'}});
           createVideoBidderRequest();
 
           sandbox.stub(Date, 'now').callsFake(() =>
@@ -2078,7 +2028,7 @@ describe('the rubicon adapter', function () {
           // .with.length.of(1);
           let imp = post.imp[0];
           expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
-          expect(imp.exp).to.equal(300);
+          expect(imp.exp).to.equal(undefined);
           expect(imp.video.w).to.equal(640);
           expect(imp.video.h).to.equal(480);
           expect(imp.video.pos).to.equal(1);
@@ -2118,7 +2068,11 @@ describe('the rubicon adapter', function () {
         it('should combine an array of slot url params', function () {
           expect(spec.combineSlotUrlParams([])).to.deep.equal({});
 
-          expect(spec.combineSlotUrlParams([{p1: 'foo', p2: 'test', p3: ''}])).to.deep.equal({p1: 'foo', p2: 'test', p3: ''});
+          expect(spec.combineSlotUrlParams([{p1: 'foo', p2: 'test', p3: ''}])).to.deep.equal({
+            p1: 'foo',
+            p2: 'test',
+            p3: ''
+          });
 
           expect(spec.combineSlotUrlParams([{}, {p1: 'foo', p2: 'test'}])).to.deep.equal({p1: ';foo', p2: ';test'});
 
@@ -2149,7 +2103,6 @@ describe('the rubicon adapter', function () {
             'size_id': 15,
             'alt_size_ids': '43',
             'p_pos': 'atf',
-            'rp_floor': 0.01,
             'rp_secure': /[01]/,
             'tk_flint': INTEGRATION,
             'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
@@ -2181,7 +2134,7 @@ describe('the rubicon adapter', function () {
         it('should not fail if keywords param is not an array', function () {
           bidderRequest.bids[0].params.keywords = 'a,b,c';
           const slotParams = spec.createSlotParams(bidderRequest.bids[0], bidderRequest);
-          expect(slotParams.kw).to.equal('');
+          expect(slotParams.kw).to.equal('a,b,c');
         });
       });
 
@@ -2260,6 +2213,7 @@ describe('the rubicon adapter', function () {
                 'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
                 'size_id': '15',
                 'ad_id': '6',
+                'adomain': ['test.com'],
                 'advertiser': 7,
                 'network': 8,
                 'creative_id': 'crid-9',
@@ -2281,6 +2235,7 @@ describe('the rubicon adapter', function () {
                 'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
                 'size_id': '43',
                 'ad_id': '7',
+                'adomain': ['test.com'],
                 'advertiser': 7,
                 'network': 8,
                 'creative_id': 'crid-9',
@@ -2315,6 +2270,8 @@ describe('the rubicon adapter', function () {
           expect(bids[0].rubicon.networkId).to.equal(8);
           expect(bids[0].creativeId).to.equal('crid-9');
           expect(bids[0].currency).to.equal('USD');
+          expect(bids[0].meta.mediaType).to.equal('banner');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
           expect(bids[0].ad).to.contain(`alert('foo')`)
             .and.to.contain(`<html>`)
             .and.to.contain(`<div data-rp-impression-id='153dc240-8229-4604-b8f5-256933b9374d'>`);
@@ -2674,7 +2631,7 @@ describe('the rubicon adapter', function () {
             }]
           };
 
-          let bids = spec.interpretResponse({ body: response }, {
+          let bids = spec.interpretResponse({body: response}, {
             bidRequest: [utils.deepClone(bidderRequest.bids[0])]
           });
 
@@ -2685,7 +2642,7 @@ describe('the rubicon adapter', function () {
         describe('singleRequest enabled', function () {
           it('handles bidRequest of type Array and returns associated adUnits', function () {
             const overrideMap = [];
-            overrideMap[0] = { impression_id: '1' };
+            overrideMap[0] = {impression_id: '1'};
 
             const stubAds = [];
             for (let i = 0; i < 10; i++) {
@@ -2707,7 +2664,8 @@ describe('the rubicon adapter', function () {
                 'tracking': '',
                 'inventory': {},
                 'ads': stubAds
-              }}, { bidRequest: stubBids });
+              }
+            }, {bidRequest: stubBids});
             expect(bids).to.be.a('array').with.lengthOf(10);
 
             bids.forEach((bid) => {
@@ -2740,7 +2698,7 @@ describe('the rubicon adapter', function () {
 
           it('handles incorrect adUnits length by returning all bids with matching ads', function () {
             const overrideMap = [];
-            overrideMap[0] = { impression_id: '1' };
+            overrideMap[0] = {impression_id: '1'};
 
             const stubAds = [];
             for (let i = 0; i < 6; i++) {
@@ -2762,7 +2720,8 @@ describe('the rubicon adapter', function () {
                 'tracking': '',
                 'inventory': {},
                 'ads': stubAds
-              }}, { bidRequest: stubBids });
+              }
+            }, {bidRequest: stubBids});
 
             // no bids expected because response didn't match requested bid number
             expect(bids).to.be.a('array').with.lengthOf(6);
@@ -2773,11 +2732,11 @@ describe('the rubicon adapter', function () {
             // Create overrides to break associations between bids and ads
             // Each override should cause one less bid to be returned by interpretResponse
             const overrideMap = [];
-            overrideMap[0] = { impression_id: '1' };
-            overrideMap[2] = { status: 'error' };
-            overrideMap[4] = { status: 'error' };
-            overrideMap[7] = { status: 'error' };
-            overrideMap[8] = { status: 'error' };
+            overrideMap[0] = {impression_id: '1'};
+            overrideMap[2] = {status: 'error'};
+            overrideMap[4] = {status: 'error'};
+            overrideMap[7] = {status: 'error'};
+            overrideMap[8] = {status: 'error'};
 
             for (let i = 0; i < 10; i++) {
               stubAds.push(createResponseAdByIndex(i, sizeMap[i].sizeId, overrideMap));
@@ -2798,7 +2757,8 @@ describe('the rubicon adapter', function () {
                 'tracking': '',
                 'inventory': {},
                 'ads': stubAds
-              }}, { bidRequest: stubBids });
+              }
+            }, {bidRequest: stubBids});
             expect(bids).to.be.a('array').with.lengthOf(6);
 
             bids.forEach((bid) => {
@@ -2845,13 +2805,15 @@ describe('the rubicon adapter', function () {
               bid: [{
                 id: '0',
                 impid: 'instream_video1',
+                adomain: ['test.com'],
                 price: 2,
                 crid: '4259970',
                 ext: {
                   bidder: {
                     rp: {
                       mime: 'application/javascript',
-                      size_id: 201
+                      size_id: 201,
+                      advid: 12345
                     }
                   },
                   prebid: {
@@ -2880,6 +2842,9 @@ describe('the rubicon adapter', function () {
           expect(bids[0].netRevenue).to.equal(true);
           expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
           expect(bids[0].mediaType).to.equal('video');
+          expect(bids[0].meta.mediaType).to.equal('video');
+          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
+          expect(bids[0].meta.advertiserId).to.equal(12345);
           expect(bids[0].bidderCode).to.equal('rubicon');
           expect(bids[0].currency).to.equal('USD');
           expect(bids[0].width).to.equal(640);
@@ -2889,12 +2854,7 @@ describe('the rubicon adapter', function () {
 
       describe('config with integration type', () => {
         it('should use the integration type provided in the config instead of the default', () => {
-          sandbox.stub(config, 'getConfig').callsFake(function (key) {
-            const config = {
-              'rubicon.int_type': 'testType'
-            };
-            return config[key];
-          });
+          config.setConfig({rubicon: {int_type: 'testType'}});
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).tk_flint).to.equal('testType_v$prebid.version$');
         });
@@ -2929,7 +2889,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass gdpr params if consent is true', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
         gdprApplies: true, consentString: 'foo'
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr=1&gdpr_consent=foo`
@@ -2937,7 +2897,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass gdpr params if consent is false', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
         gdprApplies: false, consentString: 'foo'
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr=0&gdpr_consent=foo`
@@ -2945,7 +2905,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass gdpr param gdpr_consent only when gdprApplies is undefined', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
         consentString: 'foo'
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr_consent=foo`
@@ -2953,13 +2913,13 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass no params if gdpr consentString is not defined', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {})).to.deep.equal({
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {})).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
       });
     });
 
     it('should pass no params if gdpr consentString is a number', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
         consentString: 0
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
@@ -2967,7 +2927,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass no params if gdpr consentString is null', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
         consentString: null
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
@@ -2975,7 +2935,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass no params if gdpr consentString is a object', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
         consentString: {}
       })).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
@@ -2983,19 +2943,19 @@ describe('the rubicon adapter', function () {
     });
 
     it('should pass no params if gdpr is not defined', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined)).to.deep.equal({
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, undefined)).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
       });
     });
 
     it('should pass us_privacy if uspConsent is defined', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal({
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, undefined, '1NYN')).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?us_privacy=1NYN`
       });
     });
 
     it('should pass us_privacy after gdpr if both are present', function () {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
         consentString: 'foo'
       }, '1NYN')).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr_consent=foo&us_privacy=1NYN`
@@ -3003,8 +2963,8 @@ describe('the rubicon adapter', function () {
     });
   });
 
-  describe('get price granularity', function() {
-    it('should return correct buckets for all price granularity values', function() {
+  describe('get price granularity', function () {
+    it('should return correct buckets for all price granularity values', function () {
       const CUSTOM_PRICE_BUCKET_ITEM = {max: 5, increment: 0.5};
 
       const mockConfig = {
@@ -3037,7 +2997,7 @@ describe('the rubicon adapter', function () {
     });
   });
 
-  describe('Supply Chain Support', function() {
+  describe('Supply Chain Support', function () {
     const nodePropsOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
     let bidRequests;
     let schainConfig;
@@ -3128,6 +3088,53 @@ describe('the rubicon adapter', function () {
       bidderRequest.bids[0].schain = schain;
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       expect(request[0].data.source.ext.schain).to.deep.equal(schain);
+    });
+  });
+
+  describe('configurable settings', function() {
+    afterEach(() => {
+      config.setConfig({
+        rubicon: {
+          bannerHost: 'rubicon',
+          videoHost: 'prebid-server',
+          syncHost: 'eus',
+          returnVast: false
+        }
+      });
+      config.resetConfig();
+    });
+
+    beforeEach(function () {
+      resetUserSync();
+    });
+
+    it('should update fastlane endpoint if', function () {
+      config.setConfig({
+        rubicon: {
+          bannerHost: 'fastlane-qa',
+          videoHost: 'prebid-server-qa',
+          syncHost: 'eus-qa',
+          returnVast: true
+        }
+      });
+
+      // banner
+      let [bannerRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      expect(bannerRequest.url).to.equal('https://fastlane-qa.rubiconproject.com/a/api/fastlane.json');
+
+      // video and returnVast
+      createVideoBidderRequest();
+      let [videoRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      let post = videoRequest.data;
+      expect(videoRequest.url).to.equal('https://prebid-server-qa.rubiconproject.com/openrtb2/auction');
+      expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+      expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(true);
+
+      // user sync
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true
+      });
+      expect(syncs).to.deep.equal({type: 'iframe', url: 'https://eus-qa.rubiconproject.com/usync.html'});
     });
   });
 });

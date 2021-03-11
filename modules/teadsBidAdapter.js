@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 const utils = require('../src/utils.js');
 const BIDDER_CODE = 'teads';
+const GVL_ID = 132;
 const ENDPOINT_URL = 'https://a.teads.tv/hb/bid-request';
 const gdprStatus = {
   GDPR_APPLIES_PUBLISHER: 12,
@@ -11,6 +12,7 @@ const gdprStatus = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: ['video', 'banner'],
   /**
    * Determines whether or not the given bid request is valid.
@@ -133,8 +135,8 @@ function getTimeToFirstByte(win) {
     performance.getEntriesByType('navigation')[0] &&
     performance.getEntriesByType('navigation')[0].responseStart &&
     performance.getEntriesByType('navigation')[0].requestStart &&
-    performance.getEntriesByType('navigation')[0].responseStart >= 0 &&
-    performance.getEntriesByType('navigation')[0].requestStart >= 0 &&
+    performance.getEntriesByType('navigation')[0].responseStart > 0 &&
+    performance.getEntriesByType('navigation')[0].requestStart > 0 &&
     Math.round(
       performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
     );
@@ -146,8 +148,8 @@ function getTimeToFirstByte(win) {
   const ttfbWithTimingV1 = performance &&
     performance.timing.responseStart &&
     performance.timing.requestStart &&
-    performance.timing.responseStart >= 0 &&
-    performance.timing.requestStart >= 0 &&
+    performance.timing.responseStart > 0 &&
+    performance.timing.requestStart > 0 &&
     performance.timing.responseStart - performance.timing.requestStart;
 
   return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';

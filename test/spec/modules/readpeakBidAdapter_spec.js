@@ -28,7 +28,8 @@ describe('ReadPeakAdapter', function() {
       params: {
         bidfloor: 5.0,
         publisherId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
-        siteId: '11bc5dd5-7421-4dd8-c926-40fa653bec77'
+        siteId: '11bc5dd5-7421-4dd8-c926-40fa653bec77',
+        tagId: 'test-tag-1'
       },
       bidId: '2ffb201a808da7',
       bidderRequestId: '178e34bad3658f',
@@ -104,7 +105,8 @@ describe('ReadPeakAdapter', function() {
               ver: '1.1'
             },
             bidfloor: 5,
-            bidfloorcur: 'USD'
+            bidfloorcur: 'USD',
+            tagId: 'test-tag-1'
           }
         ],
         site: {
@@ -177,15 +179,11 @@ describe('ReadPeakAdapter', function() {
       expect(data.id).to.equal(bidRequest.bidderRequestId);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
-      expect(data.site).to.deep.equal({
-        publisher: {
-          id: bidRequest.params.publisherId,
-          domain: 'http://localhost:9876'
-        },
-        id: bidRequest.params.siteId,
-        page: bidderRequest.refererInfo.referer,
-        domain: parseUrl(bidderRequest.refererInfo.referer).hostname
-      });
+      expect(data.imp[0].tagId).to.equal('test-tag-1');
+      expect(data.site.publisher.id).to.equal(bidRequest.params.publisherId);
+      expect(data.site.id).to.equal(bidRequest.params.siteId);
+      expect(data.site.page).to.equal(bidderRequest.refererInfo.referer);
+      expect(data.site.domain).to.equal(parseUrl(bidderRequest.refererInfo.referer).hostname);
       expect(data.device).to.deep.contain({
         ua: navigator.userAgent,
         language: navigator.language

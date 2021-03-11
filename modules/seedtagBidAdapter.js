@@ -6,7 +6,13 @@ const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
 const SEEDTAG_SSP_ENDPOINT = 'https://s.seedtag.com/c/hb/bid';
 const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = 'https://s.seedtag.com/se/hb/timeout';
-
+const ALLOWED_PLACEMENTS = {
+  inImage: true,
+  inScreen: true,
+  inArticle: true,
+  banner: true,
+  video: true
+}
 const mediaTypesMap = {
   [BANNER]: 'display',
   [VIDEO]: 'video'
@@ -18,8 +24,8 @@ function mapMediaType(seedtagMediaType) {
   else return seedtagMediaType;
 }
 
-function getMediaTypeFromBid(bid) {
-  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0]
+function hasVideoMediaType(bid) {
+  return !!bid.mediaTypes && !!bid.mediaTypes.video
 }
 
 function hasMandatoryParams(params) {
@@ -27,14 +33,11 @@ function hasMandatoryParams(params) {
     !!params.publisherId &&
     !!params.adUnitId &&
     !!params.placement &&
-    (params.placement === 'inImage' ||
-      params.placement === 'inScreen' ||
-      params.placement === 'banner' ||
-      params.placement === 'video')
+    !!ALLOWED_PLACEMENTS[params.placement]
   );
 }
 
-function hasVideoMandatoryParams(mediaTypes) {
+function hasMandatoryVideoParams(mediaTypes) {
   const isVideoInStream =
     !!mediaTypes.video && mediaTypes.video.context === 'instream';
   const isPlayerSize =
@@ -65,7 +68,7 @@ function buildBidRequests(validBidRequests) {
       bidRequest.adPosition = params.adPosition;
     }
 
-    if (params.video) {
+    if (hasVideoMediaType(validBidRequest)) {
       bidRequest.videoParams = params.video || {};
       bidRequest.videoParams.w =
         validBidRequest.mediaTypes.video.playerSize[0][0];
@@ -88,8 +91,10 @@ function buildBid(seedtagBid) {
     currency: seedtagBid.currency,
     netRevenue: true,
     mediaType: mediaType,
-    ttl: seedtagBid.ttl
+    ttl: seedtagBid.ttl,
+    nurl: seedtagBid.nurl
   };
+
   if (mediaType === VIDEO) {
     bid.vastXml = seedtagBid.content;
   } else {
@@ -124,8 +129,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return getMediaTypeFromBid(bid) === VIDEO
-      ? hasMandatoryParams(bid.params) && hasVideoMandatoryParams(bid.mediaTypes)
+    return hasVideoMediaType(bid)
+      ? hasMandatoryParams(bid.params) && hasMandatoryVideoParams(bid.mediaTypes)
       : hasMandatoryParams(bid.params);
   },
 
@@ -200,6 +205,16 @@ export const spec = {
   onTimeout(data) {
     getTimeoutUrl(data);
     utils.triggerPixel(SEEDTAG_SSP_ONTIMEOUT_ENDPOINT);
+  },
+
+  /**
+   * Function to call when the adapter wins the auction
+   * @param {bid} Bid information received from the server
+   */
+  onBidWon: function (bid) {
+    if (bid && bid.nurl) {
+      utils.triggerPixel(bid.nurl);
+    }
   }
 }
 registerBidder(spec);

@@ -39,7 +39,7 @@ export function Renderer(options) {
 
   // use a function, not an arrow, in order to be able to pass "arguments" through
   this.render = function () {
-    if (!isRendererDefinedOnAdUnit(adUnitCode)) {
+    if (!isRendererPreferredFromAdUnit(adUnitCode)) {
       // we expect to load a renderer url once only so cache the request to load script
       loadExternalScript(url, moduleCode, this.callback);
     } else {
@@ -110,10 +110,26 @@ export function executeRenderer(renderer, bid) {
   renderer.render(bid);
 }
 
-function isRendererDefinedOnAdUnit(adUnitCode) {
+function isRendererPreferredFromAdUnit(adUnitCode) {
   const adUnits = $$PREBID_GLOBAL$$.adUnits;
   const adUnit = find(adUnits, adUnit => {
     return adUnit.code === adUnitCode;
   });
-  return !!(adUnit && adUnit.renderer && adUnit.renderer.url && adUnit.renderer.render);
+
+  if (!adUnit) {
+    return false
+  }
+
+  // renderer defined at adUnit level
+  const adUnitRenderer = utils.deepAccess(adUnit, 'renderer');
+  const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
+
+  // renderer defined at adUnit.mediaTypes level
+  const mediaTypeRenderer = utils.deepAccess(adUnit, 'mediaTypes.video.renderer');
+  const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render)
+
+  return !!(
+    (hasValidAdUnitRenderer && !(adUnitRenderer.backupOnly === true)) ||
+    (hasValidMediaTypeRenderer && !(mediaTypeRenderer.backupOnly === true))
+  );
 }
