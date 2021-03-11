@@ -98,8 +98,10 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     }
   };
 
-  Object.assign(request.user, config.getConfig('fpd.user'));
-  Object.assign(request.site, config.getConfig('fpd.context'));
+  let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+
+  Object.assign(request.user, fpd.user);
+  Object.assign(request.site, fpd.context);
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
@@ -115,6 +117,11 @@ const buildOpenRtbBidRequestPayload = (validBidRequests, bidderRequest) => {
     utils.deepSetValue(request, 'device.geo', geo);
     const ifa = utils.deepAccess(validBidRequests[0], 'params.app.ifa')
     utils.deepSetValue(request, 'device.ifa', ifa);
+  }
+
+  const eids = utils.deepAccess(validBidRequests[0], 'userIdAsEids');
+  if (eids && eids.length) {
+    utils.deepSetValue(request, 'user.ext.eids', eids);
   }
 
   utils.logInfo('[SMAATO] OpenRTB Request:', request);

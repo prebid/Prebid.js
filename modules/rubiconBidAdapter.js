@@ -15,17 +15,6 @@ config.getConfig('rubicon', config => {
 });
 
 const GVLID = 52;
-const DIGITRUST_PROP_NAMES = {
-  FASTLANE: {
-    id: 'dt.id',
-    keyv: 'dt.keyv',
-    pref: 'dt.pref'
-  },
-  PREBID_SERVER: {
-    id: 'id',
-    keyv: 'keyv'
-  }
-};
 
 var sizeMap = {
   1: '468x60',
@@ -113,7 +102,10 @@ var sizeMap = {
   274: '1800x200',
   278: '320x500',
   282: '320x400',
-  288: '640x380'
+  288: '640x380',
+  548: '500x1000',
+  550: '980x480',
+  552: '300x200'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -165,9 +157,9 @@ export const spec = {
         source: {
           tid: bidRequest.transactionId
         },
-        tmax: config.getConfig('TTL') || 1000,
+        tmax: bidderRequest.timeout,
         imp: [{
-          exp: 300,
+          exp: config.getConfig('s2sConfig.defaultTtl'),
           id: bidRequest.adUnitCode,
           secure: 1,
           ext: {
@@ -230,11 +222,6 @@ export const spec = {
 
       addVideoParameters(data, bidRequest);
 
-      const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
-      if (digiTrust) {
-        utils.deepSetValue(data, 'user.ext.digitrust', digiTrust);
-      }
-
       if (bidderRequest.gdprConsent) {
         // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
         let gdprApplies;
@@ -252,17 +239,7 @@ export const spec = {
 
       const eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids');
       if (eids && eids.length) {
-        // filter out unsupported id systems
-        utils.deepSetValue(data, 'user.ext.eids', eids.filter(eid => ['adserver.org', 'pubcid.org', 'liveintent.com', 'liveramp.com', 'sharedid.org', 'criteo.com'].indexOf(eid.source) !== -1));
-
-        // liveintent requires additional props to be set
-        const liveIntentEid = find(data.user.ext.eids, eid => eid.source === 'liveintent.com');
-        if (liveIntentEid) {
-          utils.deepSetValue(data, 'user.ext.tpid', { source: liveIntentEid.source, uid: liveIntentEid.uids[0].id });
-          if (liveIntentEid.ext && liveIntentEid.ext.segments) {
-            utils.deepSetValue(data, 'rp.target.LIseg', liveIntentEid.ext.segments);
-          }
-        }
+        utils.deepSetValue(data, 'user.ext.eids', eids);
       }
 
       // set user.id value from config value
@@ -279,46 +256,7 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
-      const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
-      const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
-      if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
-        const bidderData = {
-          bidders: [ bidderRequest.bidderCode ],
-          config: {
-            fpd: {}
-          }
-        };
-
-        if (!utils.isEmpty(siteData)) {
-          bidderData.config.fpd.site = siteData;
-        }
-
-        if (!utils.isEmpty(userData)) {
-          bidderData.config.fpd.user = userData;
-        }
-
-        utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
-      }
-
-      /**
-       * Prebid AdSlot
-       * @type {(string|undefined)}
-       */
-      const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-      if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(data.imp[0].ext, 'context.data.pbadslot', pbAdSlot);
-      }
-
-      /**
-       * Copy GAM AdUnit and Name to imp
-       */
-      ['name', 'adSlot'].forEach(name => {
-        /** @type {(string|undefined)} */
-        const value = utils.deepAccess(bidRequest, `fpd.context.adserver.${name}`);
-        if (typeof value === 'string' && value) {
-          utils.deepSetValue(data.imp[0].ext, `context.data.adserver.${name.toLowerCase()}`, value);
-        }
-      });
+      applyFPD(bidRequest, VIDEO, data);
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
@@ -390,6 +328,7 @@ export const spec = {
   getOrderedParams: function(params) {
     const containsTgV = /^tg_v/
     const containsTgI = /^tg_i/
+    const containsUId = /^eid_|^tpid_/
 
     const orderedParams = [
       'account_id',
@@ -402,17 +341,15 @@ export const spec = {
       'gdpr_consent',
       'us_privacy',
       'rp_schain',
-      'tpid_tdid',
-      'tpid_liveintent.com',
-      'tg_v.LIseg',
-      'dt.id',
-      'dt.keyv',
-      'dt.pref',
-      'rf',
-      'p_geo.latitude',
-      'p_geo.longitude',
-      'kw'
-    ].concat(Object.keys(params).filter(item => containsTgV.test(item)))
+    ].concat(Object.keys(params).filter(item => containsUId.test(item)))
+      .concat([
+        'x_liverampidl',
+        'ppuid',
+        'rf',
+        'p_geo.latitude',
+        'p_geo.longitude',
+        'kw'
+      ]).concat(Object.keys(params).filter(item => containsTgV.test(item)))
       .concat(Object.keys(params).filter(item => containsTgI.test(item)))
       .concat([
         'tk_flint',
@@ -486,7 +423,7 @@ export const spec = {
       'zone_id': params.zoneId,
       'size_id': parsedSizes[0],
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
-      'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
+      'rp_floor': (params.floor = parseFloat(params.floor)) >= 0.01 ? params.floor : undefined,
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
@@ -518,47 +455,47 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length) {
-      const unifiedId = find(bidRequest.userIdAsEids, eid => eid.source === 'adserver.org');
-      if (unifiedId) {
-        data['tpid_tdid'] = unifiedId.uids[0].id;
-      }
-      const liveintentId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveintent.com');
-      if (liveintentId) {
-        data['tpid_liveintent.com'] = liveintentId.uids[0].id;
-        if (liveintentId.ext && Array.isArray(liveintentId.ext.segments) && liveintentId.ext.segments.length) {
-          data['tg_v.LIseg'] = liveintentId.ext.segments.join(',');
-        }
-      }
-      const liverampId = find(bidRequest.userIdAsEids, eid => eid.source === 'liveramp.com');
-      if (liverampId) {
-        data['x_liverampidl'] = liverampId.uids[0].id;
-      }
-      const sharedId = find(bidRequest.userIdAsEids, eid => eid.source === 'sharedid.org');
-      if (sharedId) {
-        data['eid_sharedid.org'] = `${sharedId.uids[0].id}^${sharedId.uids[0].atype}^${sharedId.uids[0].ext.third}`;
-      }
-      const criteoId = find(bidRequest.userIdAsEids, eid => eid.source === 'criteo.com');
-      if (criteoId) {
-        data['eid_criteo.com'] = `${criteoId.uids[0].id}^${criteoId.uids[0].atype}`;
-      }
-    }
-
-    // set ppuid value from config value
+    // pass publisher provided userId if configured
     const configUserId = config.getConfig('user.id');
     if (configUserId) {
       data['ppuid'] = configUserId;
-    } else {
-      // if config.getConfig('user.id') doesn't return anything, then look for the first eid.uids[*].ext.stype === 'ppuid'
-      for (let i = 0; bidRequest.userIdAsEids && i < bidRequest.userIdAsEids.length; i++) {
-        if (bidRequest.userIdAsEids[i].uids) {
-          const pubProvidedId = find(bidRequest.userIdAsEids[i].uids, uid => uid.ext && uid.ext.stype === 'ppuid');
-          if (pubProvidedId && pubProvidedId.id) {
-            data['ppuid'] = pubProvidedId.id;
-            break;
+    }
+    // loop through userIds and add to request
+    if (bidRequest.userIdAsEids) {
+      bidRequest.userIdAsEids.forEach(eid => {
+        try {
+          // special cases
+          if (eid.source === 'adserver.org') {
+            data['tpid_tdid'] = eid.uids[0].id;
+            data['eid_adserver.org'] = eid.uids[0].id;
+          } else if (eid.source === 'liveintent.com') {
+            data['tpid_liveintent.com'] = eid.uids[0].id;
+            data['eid_liveintent.com'] = eid.uids[0].id;
+            if (eid.ext && Array.isArray(eid.ext.segments) && eid.ext.segments.length) {
+              data['tg_v.LIseg'] = eid.ext.segments.join(',');
+            }
+          } else if (eid.source === 'liveramp.com') {
+            data['x_liverampidl'] = eid.uids[0].id;
+          } else if (eid.source === 'sharedid.org') {
+            data['eid_sharedid.org'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.third) || ''}`;
+          } else if (eid.source === 'id5-sync.com') {
+            data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.linkType) || ''}`;
+          } else {
+            // add anything else with this generic format
+            data[`eid_${eid.source}`] = `${eid.uids[0].id}^${eid.uids[0].atype || ''}`;
           }
+          // send AE "ppuid" signal if exists, and hasn't already been sent
+          if (!data['ppuid']) {
+            // get the first eid.uids[*].ext.stype === 'ppuid', if one exists
+            const ppId = find(eid.uids, uid => uid.ext && uid.ext.stype === 'ppuid');
+            if (ppId && ppId.id) {
+              data['ppuid'] = ppId.id;
+            }
+          }
+        } catch (e) {
+          utils.logWarn('Rubicon: error reading eid:', eid, e);
         }
-      }
+      });
     }
 
     if (bidderRequest.gdprConsent) {
@@ -573,53 +510,7 @@ export const spec = {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
-    // visitor properties
-    const visitorData = Object.assign({}, params.visitor, config.getConfig('fpd.user'));
-    Object.keys(visitorData).forEach((key) => {
-      if (visitorData[key] != null && key !== 'keywords') {
-        data[`tg_v.${key}`] = typeof visitorData[key] === 'object' && !Array.isArray(visitorData[key])
-          ? JSON.stringify(visitorData[key])
-          : visitorData[key].toString(); // initialize array;
-      }
-    });
-
-    // inventory properties
-    const inventoryData = Object.assign({}, params.inventory, config.getConfig('fpd.context'));
-    Object.keys(inventoryData).forEach((key) => {
-      if (inventoryData[key] != null && key !== 'keywords') {
-        data[`tg_i.${key}`] = typeof inventoryData[key] === 'object' && !Array.isArray(inventoryData[key])
-          ? JSON.stringify(inventoryData[key])
-          : inventoryData[key].toString();
-      }
-    });
-
-    // keywords
-    const keywords = (params.keywords || []).concat(
-      utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
-      utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
-    data.kw = Array.isArray(keywords) && keywords.length ? keywords.join(',') : '';
-
-    /**
-     * Prebid AdSlot
-     * @type {(string|undefined)}
-     */
-    const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-    if (typeof pbAdSlot === 'string' && pbAdSlot) {
-      data['tg_i.pbadslot'] = pbAdSlot.replace(/^\/+/, '');
-    }
-
-    /**
-     * GAM Ad Unit
-     * @type {(string|undefined)}
-     */
-    const gamAdUnit = utils.deepAccess(bidRequest, 'fpd.context.adServer.adSlot');
-    if (typeof gamAdUnit === 'string' && gamAdUnit) {
-      data['tg_i.dfp_ad_unit_code'] = gamAdUnit.replace(/^\/+/, '');
-    }
-
-    // digitrust properties
-    const digitrustParams = _getDigiTrustQueryParams(bidRequest, 'FASTLANE');
-    Object.assign(data, digitrustParams);
+    applyFPD(bidRequest, BANNER, data);
 
     if (config.getConfig('coppa') === true) {
       data['coppa'] = 1;
@@ -700,6 +591,14 @@ export const spec = {
             bidObject.dealId = bid.dealid;
           }
 
+          if (bid.adomain) {
+            utils.deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
+          }
+
+          if (utils.deepAccess(bid, 'ext.bidder.rp.advid')) {
+            utils.deepSetValue(bidObject, 'meta.advertiserId', bid.ext.bidder.rp.advid);
+          }
+
           let serverResponseTimeMs = utils.deepAccess(responseObj, 'ext.responsetimemillis.rubicon');
           if (bidRequest && serverResponseTimeMs) {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
@@ -707,6 +606,7 @@ export const spec = {
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
+            utils.deepSetValue(bidObject, 'meta.mediaType', VIDEO);
             const extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
 
             // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
@@ -772,12 +672,16 @@ export const spec = {
             advertiserId: ad.advertiser, networkId: ad.network
           },
           meta: {
-            advertiserId: ad.advertiser, networkId: ad.network
+            advertiserId: ad.advertiser, networkId: ad.network, mediaType: BANNER
           }
         };
 
         if (ad.creative_type) {
           bid.mediaType = ad.creative_type;
+        }
+
+        if (ad.adomain) {
+          bid.meta.advertiserDomains = Array.isArray(ad.adomain) ? ad.adomain : [ad.adomain];
         }
 
         if (ad.creative_type === VIDEO) {
@@ -850,38 +754,6 @@ export const spec = {
 
 function _getScreenResolution() {
   return [window.screen.width, window.screen.height].join('x');
-}
-
-function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
-  if (!endpointName || !DIGITRUST_PROP_NAMES[endpointName]) {
-    return null;
-  }
-  const propNames = DIGITRUST_PROP_NAMES[endpointName];
-
-  function getDigiTrustId() {
-    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
-    if (bidRequestDigitrust) {
-      return bidRequestDigitrust;
-    }
-
-    let digiTrustUser = (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-
-  const digiTrustQueryParams = {
-    [propNames.id]: digiTrustId.id,
-    [propNames.keyv]: digiTrustId.keyv
-  };
-  if (propNames.pref) {
-    digiTrustQueryParams[propNames.pref] = 0;
-  }
-  return digiTrustQueryParams;
 }
 
 /**
@@ -996,6 +868,76 @@ function addVideoParameters(data, bidRequest) {
   const size = parseSizes(bidRequest, 'video')
   data.imp[0].video.w = size[0]
   data.imp[0].video.h = size[1]
+}
+
+function applyFPD(bidRequest, mediaType, data) {
+  const BID_FPD = {
+    user: {ext: {data: {...bidRequest.params.visitor}}},
+    site: {ext: {data: {...bidRequest.params.inventory}}}
+  };
+
+  if (bidRequest.params.keywords) BID_FPD.site.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
+
+  let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
+  let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
+  const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
+  const validate = function(prop, key) {
+    if (key === 'data' && Array.isArray(prop)) {
+      return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.taxonomyname').match(/iab/i)).map(value => {
+        let segments = value.segment.filter(obj => obj.id).reduce((result, obj) => {
+          result.push(obj.id);
+          return result;
+        }, []);
+        if (segments.length > 0) return segments.toString();
+      }).toString();
+    } else if (typeof prop === 'object' && !Array.isArray(prop)) {
+      utils.logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
+    } else if (typeof prop !== 'undefined') {
+      return (Array.isArray(prop)) ? prop.filter(value => {
+        if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
+
+        utils.logWarn('Rubicon: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
+      }).toString() : prop.toString();
+    }
+  };
+  const addBannerData = function(obj, name, key) {
+    let val = validate(obj, key);
+    let loc = (MAP[key]) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
+    data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
+  }
+
+  Object.keys(impData).forEach((key) => {
+    if (key === 'adserver') {
+      ['name', 'adslot'].forEach(prop => {
+        if (impData[key][prop]) impData[key][prop] = impData[key][prop].replace(/^\/+/, '');
+      });
+    } else if (key === 'pbadslot') {
+      impData[key] = impData[key].replace(/^\/+/, '');
+    }
+  });
+
+  if (mediaType === BANNER) {
+    ['site', 'user'].forEach(name => {
+      Object.keys(fpd[name]).forEach((key) => {
+        if (key !== 'ext') {
+          addBannerData(fpd[name][key], name, key);
+        } else if (fpd[name][key].data) {
+          Object.keys(fpd[name].ext.data).forEach((key) => {
+            addBannerData(fpd[name].ext.data[key], name, key);
+          });
+        }
+      });
+    });
+    Object.keys(impData).forEach((key) => {
+      (key === 'adserver') ? addBannerData(impData[key].adslot, name, key) : addBannerData(impData[key], 'site', key);
+    });
+  } else {
+    if (Object.keys(impData).length) {
+      utils.mergeDeep(data.imp[0].ext, {data: impData});
+    }
+
+    utils.mergeDeep(data, fpd);
+  }
 }
 
 /**

@@ -14,6 +14,7 @@ const VERSION = '1.4';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
+  gvlid: 919,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -221,6 +222,10 @@ function bidToAdRequest(bid) {
     options: bid.params.options
   };
 
+  if (bid.auc !== undefined) {
+    adRequest.auc = bid.auc;
+  }
+
   adRequest.native = utils.deepAccess(bid, 'mediaTypes.native');
 
   adRequest.video = utils.deepAccess(bid, 'mediaTypes.video');
@@ -276,8 +281,9 @@ function handleEids(bidRequests) {
   let eids = [];
   const bidRequest = bidRequests[0];
   if (bidRequest && bidRequest.userId) {
-    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1); // Also add this to eids
+    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid.org', 1); // Also add this to eids
     AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 1);
+    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteoId`), 'criteo.com', 1);
   }
   if (eids.length > 0) {
     return {user: {ext: {eids}}};

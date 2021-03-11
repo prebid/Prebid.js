@@ -4,7 +4,6 @@ import {
   spec
 } from 'modules/richaudienceBidAdapter.js';
 import {config} from 'src/config.js';
-import * as utils from 'src/utils.js';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS_NEW_SIZES = [{
@@ -20,7 +19,8 @@ describe('Richaudience adapter tests', function () {
     params: {
       bidfloor: 0.5,
       pid: 'ADb1f40rmi',
-      supplyType: 'site'
+      supplyType: 'site',
+      keywords: 'coche=mercedes;coche=audi'
     },
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
@@ -240,6 +240,9 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
     expect(requestContent).to.have.property('timeout').and.to.equal(3000);
     expect(requestContent).to.have.property('numIframes').and.to.equal(0);
+    expect(typeof requestContent.scr_rsl === 'string')
+    expect(typeof requestContent.cpuc === 'number')
+    expect(requestContent).to.have.property('kws').and.to.equal('coche=mercedes;coche=audi');
   })
 
   it('Verify build request to prebid video inestream', function() {
@@ -348,25 +351,30 @@ describe('Richaudience adapter tests', function () {
   });
 
   describe('UID test', function () {
-    pbjs.setConfig({
+    config.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
         allowAuctionWithoutConsent: true
+      },
+      userSync: {
+        userIds: [{
+          name: 'id5Id',
+          params: {
+            partner: 173, // change to the Partner Number you received from ID5
+            pd: 'MT1iNTBjY...' // optional, see table below for a link to how to generate this
+          },
+          storage: {
+            type: 'html5', // "html5" is the required storage type
+            name: 'id5id', // "id5id" is the required storage name
+            expires: 90, // storage lasts for 90 days
+            refreshInSeconds: 8 * 3600 // refresh ID every 8 hours to ensure it's fresh
+          }
+        }],
+        auctionDelay: 50 // 50ms maximum auction delay, applies to all userId modules
       }
     });
     it('Verify build id5', function () {
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
-      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: 'id5-user-id' };
-
-      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
-
-      expect(requestContent.user).to.deep.equal([{
-        'userId': 'id5-user-id',
-        'source': 'id5-sync.com'
-      }]);
-
       var request;
       DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
       DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: 1 };
@@ -739,7 +747,7 @@ describe('Richaudience adapter tests', function () {
     }, [], {consentString: '', gdprApplies: true});
     expect(syncs).to.have.lengthOf(0);
 
-    pbjs.setConfig({
+    config.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,

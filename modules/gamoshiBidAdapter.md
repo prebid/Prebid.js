@@ -3,7 +3,7 @@
 ```
 Module Name:  Gamoshi Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer:   salomon@gamoshi.com
+Maintainer:   dev@gamoshi.com
 ```
 
 # Description

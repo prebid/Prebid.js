@@ -9,6 +9,7 @@ let REFERER = '';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 108,
   aliases: ['ra'],
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -48,7 +49,10 @@ export const spec = {
         timeout: config.getConfig('bidderTimeout'),
         user: raiSetEids(bid),
         demand: raiGetDemandType(bid),
-        videoData: raiGetVideoInfo(bid)
+        videoData: raiGetVideoInfo(bid),
+        scr_rsl: raiGetResolution(),
+        cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
+        kws: (!utils.isEmpty(bid.params.keywords) ? bid.params.keywords : null)
       };
 
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
@@ -240,4 +244,12 @@ function renderAd(bid) {
   };
 
   window.raParams(raPlayerHB, raOutstreamHBPassback, true);
+}
+
+function raiGetResolution() {
+  let resolution = '';
+  if (typeof window.screen != 'undefined') {
+    resolution = window.screen.width + 'x' + window.screen.height;
+  }
+  return resolution;
 }
