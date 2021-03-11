@@ -56,7 +56,7 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
 
     return bids;
   }
-  
+
   return bidsReceived;
 })
 

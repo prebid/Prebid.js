@@ -640,6 +640,8 @@ export const spec = {
     }
 
     let ads = responseObj.ads;
+    let lastImpId;
+    let multibid = 0;
 
     // video ads array is wrapped in an object
     if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest) === 'video' && typeof ads === 'object') {
@@ -652,12 +654,14 @@ export const spec = {
     }
 
     return ads.reduce((bids, ad, i) => {
+      (ad.impression_id && lastImpId === ad.impression_id) ? multibid++ : lastImpId = ad.impression_id;
+
       if (ad.status !== 'ok') {
         return bids;
       }
 
       // associate bidRequests; assuming ads matches bidRequest
-      const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i] : bidRequest;
+      const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i - multibid] : bidRequest;
 
       if (associatedBidRequest && typeof associatedBidRequest === 'object') {
         let bid = {

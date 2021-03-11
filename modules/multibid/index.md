@@ -6,7 +6,12 @@ Purpose: To expand the number of key value pairs going to the ad server in the n
 
 
 # Description
+Allowing a single bidder to multi-bid into an auction has several use cases:
 
+1. allows a bidder to provide both outstream and banner
+2. supports the video VAST fallback scenario
+3. allows one bid to be blocked in the ad server and the second one still considered
+4. add extra high-value bids to the cache for future refreshes
 
 
 # Example of using config

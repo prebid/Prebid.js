@@ -2518,6 +2518,146 @@ describe('the rubicon adapter', function () {
           expect(bids[0].cpm).to.be.equal(0);
         });
 
+        it('should create bids with matching requestIds if imp id matches', function () {
+          let bidRequests = [{
+            'bidder': 'rubicon',
+            'params': {
+              'accountId': 1001,
+              'siteId': 12345,
+              'zoneId': 67890,
+              'floor': null
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [[300, 250]]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1460505748561-0',
+            'transactionId': '404a7b28-f276-41cc-a5cf-c1d3dc5671f9',
+            'sizes': [[300, 250]],
+            'bidId': '557ba307cef098',
+            'bidderRequestId': '46a00704ffeb7',
+            'auctionId': '3fdc6494-da94-44a0-a292-b55a90b08b2c',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0,
+            'startTime': 1615412098213
+          }, {
+            'bidder': 'rubicon',
+            'params': {
+              'accountId': 1001,
+              'siteId': 12345,
+              'zoneId': 67890,
+              'floor': null
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [[300, 250]]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1460505748561-1',
+            'transactionId': '404a7b28-f276-41cc-a5cf-c1d3dc5671f9',
+            'sizes': [[300, 250]],
+            'bidId': '456gt123jkl098',
+            'bidderRequestId': '46a00704ffeb7',
+            'auctionId': '3fdc6494-da94-44a0-a292-b55a90b08b2c',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0,
+            'startTime': 1615412098213
+          }];
+
+          let response = {
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43
+            ],
+            'tracking': '',
+            'inventory': {},
+            'ads': [
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+                'size_id': '15',
+                'ad_id': '6',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.811,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '15_tier_all_test'
+                    ]
+                  }
+                ]
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+                'size_id': '15',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.911,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ]
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+                'size_id': '43',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 1.911,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ]
+              }
+            ]
+          };
+
+          config.setConfig({ multibid: [{bidder: 'rubicon', maxbids: 2, targetbiddercodeprefix: 'rubi'}] });
+
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidRequests
+          });
+
+          expect(bids).to.be.lengthOf(3);
+          expect(bids[0].requestId).to.not.equal(bids[1].requestId);
+          expect(bids[1].requestId).to.equal(bids[2].requestId);
+        });
+
         it('should handle an error with no ads returned', function () {
           let response = {
             'status': 'ok',
