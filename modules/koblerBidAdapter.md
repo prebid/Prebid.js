@@ -21,7 +21,7 @@ This adapter currently only supports Banner Ads.
 | floorprice | Optional | Float | Same as bidfloor. | `5.0` |
 | position | Optional | Integer | The position of the ad unit. Can be used to differentiate between ad units if the same placement ID is used across multiple ad units. Defaults to 0. | `1` |
 | pos | Optional | Integer | Same as position. | `1` |
-| dealId | Optional | String | Deal ID. | `abc328745` |
+| dealId | Optional | String | Deal ID. | `'abc328745'` |
 
 # Test Parameters
 ```javascript
