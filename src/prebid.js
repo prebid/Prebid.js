@@ -595,11 +595,7 @@ $$PREBID_GLOBAL$$.requestBids.before(executeCallbacks, 49);
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
-  if (utils.isArray(adUnitArr)) {
-    $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
-  } else if (typeof adUnitArr === 'object') {
-    $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
-  }
+  $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, config.convertAdUnitFpd(utils.isArray(adUnitArr) ? adUnitArr : [adUnitArr]));
   // emit event
   events.emit(ADD_AD_UNITS);
 };
