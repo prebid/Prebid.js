@@ -155,6 +155,7 @@ function getGeo(validBidRequest) {
 }
 
 function getTest(validBidRequest) {
+  // TODO: should we make the request unbillable by setting test to 1 if debug mode is turned on? (pbjs_debug)
   return validBidRequest.params.test || config.getConfig('debug') ? 1 : 0;
 }
 
