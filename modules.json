@@ -12,6 +12,8 @@
     "medianetBidAdapter",
     "admanBidAdapter",
     "ironsourceBidAdapter",
+    "synacormediaBidAdapter",
+    "undertoneBidAdapter",
     "adpod",
     "consentManagement",
     "gdprEnforcement",
