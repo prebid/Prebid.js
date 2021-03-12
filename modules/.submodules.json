@@ -28,6 +28,7 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
+    "dgkeywordRtdProvider",
     "haloRtdProvider",
     "jwplayerRtdProvider",
     "reconciliationRtdProvider",
