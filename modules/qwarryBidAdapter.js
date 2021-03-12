@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'qwarry';
@@ -27,7 +28,7 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: { requestId: bidderRequest.bidderRequestId, bids },
+      data: { requestId: bidderRequest.bidderRequestId, bids, referer: getRefererInfo().referer },
       options: {
         contentType: 'application/json',
         customHeaders: {
