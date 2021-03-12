@@ -184,7 +184,7 @@ function getPosition(validBidRequest) {
 
 function getFloorInfo(validBidRequest, mainSize) {
   if (typeof validBidRequest.getFloor === 'function') {
-    const sizeParam = mainSize[0] === 0 && mainSize === 0 ? '*' : mainSize;
+    const sizeParam = mainSize[0] === 0 && mainSize[1] === 0 ? '*' : mainSize;
     return validBidRequest.getFloor({
       currency: getCurrency(),
       mediaType: BANNER,
