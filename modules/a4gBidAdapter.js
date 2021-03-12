@@ -71,7 +71,6 @@ export const spec = {
         const bidResponse = {
           requestId: response.id,
           creativeId: response.id,
-          adId: response.id,
           cpm: response.cpm,
           width: response.width,
           height: response.height,
