@@ -146,4 +146,4 @@ export const mwOpenLinkSubModule = {
   }
 };
 
-submodule('userId', mwOpenLinkSubModule);
+submodule('userId', mwOpenLinkIdSubModule);

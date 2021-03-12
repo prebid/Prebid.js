@@ -21,9 +21,9 @@ pbjs.setConfig({
         userIds: [{
             name: 'mwOpenLinkId',
             params: {
-                accountId: 0000,
-                partnerId: 0000,
-                uid: '12345xyz'
+                accountId: '1000',
+                partnerId: '1001',
+                uid: 'u-123xyz'
             }
         }]
     }
@@ -34,7 +34,8 @@ The below parameters apply only to the MediaWallah OpenLink ID User ID Module in
 
 | Params under usersync.userIds[]| Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
+| name | Required | String | The name of this module. | `'mwOpenLinkId'` |
 | params | Required | Object | Details for mwOLID syncing. | |
 | params.accountId | Required | String | The MediaWallah assigned Account Id | `1000` |
-| params.partnerId | Required | String | The MediaWallah assign partner Id | `1001` |
-| params.uid | Optional | String | Your unique Id for the user or browser. Used for matching| `u-123xyz` |
+| params.partnerId | Required | String | The MediaWallah assign Partner Id | `1001` |
+| params.uid | Optional | String | Your unique Id for the user or browser. Used for matching | `u-123xyz` |
