@@ -1,7 +1,15 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/koblerBidAdapter.js';
+import {spec} from 'modules/koblerBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory';
 
 describe('KoblerAdapter', function () {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
+      const adapter = newBidder(spec);
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
+
   describe('isBidRequestValid', function() {
     it('should not accept a request without bidId as valid', function() {
       const bid = {
