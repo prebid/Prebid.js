@@ -18,7 +18,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
  * @param {Object} userConsent
  */
 export function getDgKeywordsAndSet(reqBidsConfigObj, callback, config, userConsent) {
-  const URL = 'https://profiles.tagger.opecloud.com/api/v1/mediaconsortium/profile?url=';
+  const URL = 'https://mediaconsortium.profiles.tagger.opecloud.com/api/v1?url=';
   const PROFILE_TIMEOUT_MS = 1000;
   const timeout = (config && config.params && config.params.timeout && Number(config.params.timeout) > 0) ? Number(config.params.timeout) : PROFILE_TIMEOUT_MS;
   const url = (config && config.params && config.params.url) ? config.params.url : URL + encodeURIComponent(window.location.href);
