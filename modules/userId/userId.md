@@ -77,6 +77,13 @@ pbjs.setConfig({
                  name: '_criteoId',
                  expires: 1
               }
+        }, {
+            name: 'mwOpenLinkId',
+            params: {
+                accountId: 0000,
+                partnerId: 0000,
+                uid: '12345xyz'
+            }
         }],
         syncDelay: 5000,
         auctionDelay: 1000

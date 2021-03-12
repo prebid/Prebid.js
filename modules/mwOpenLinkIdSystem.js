@@ -114,7 +114,7 @@ function setID(configParams) {
 export { writeCookie };
 
 /** @type {Submodule} */
-export const mwOpenLinkSubModule = {
+export const mwOpenLinkIdSubModule = {
   /**
      * used to link submodule with config
      * @type {string}
@@ -127,10 +127,8 @@ export const mwOpenLinkSubModule = {
      * @return {(Object|undefined}
      */
   decode(mwOlId) {
-    if (mwOlId && utils.isPlainObject(mwOlId)) {
-      return { mwOlId };
-    }
-    return undefined;
+    const id = value ? utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined : undefined;
+    return id ? { 'mwOpenLinkId': id } : undefined;
   },
 
   /**
@@ -142,9 +140,8 @@ export const mwOpenLinkSubModule = {
   getId(submoduleConfig) {
     const submoduleConfigParams = (submoduleConfig && submoduleConfig.params) || {};
     if (!isValidConfig(submoduleConfigParams)) return undefined;
-    const newId = setID(submoduleConfigParams);
-    return newId;
+    return setID(submoduleConfigParams);
   }
 };
 
-submodule('userId', mwOpenLinkSubModule);
+submodule('userId', mwOpenLinkIdSubModule);

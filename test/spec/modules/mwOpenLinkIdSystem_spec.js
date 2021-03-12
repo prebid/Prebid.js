@@ -1,4 +1,4 @@
-import { writeCookie, mwOpenLinkSubModule } from 'modules/mwOpenLinkIdSystem.js';
+import { writeCookie, mwOpenLinkIdSubModule } from 'modules/mwOpenLinkIdSystem.js';
 
 const P_CONFIG_MOCK = {
   params: {
@@ -14,12 +14,12 @@ describe('mwOpenLinkId module', function () {
 
   it('getId() should return a MediaWallah openLink Id when the MediaWallah openLink first party cookie exists', function () {
     writeCookie({eid: 'XX-YY-ZZ-123'});
-    const id = mwOpenLinkSubModule.getId(P_CONFIG_MOCK);
+    const id = mwOpenLinkIdSubModule.getId(P_CONFIG_MOCK);
     expect(id).to.be.deep.equal({id: {eid: 'XX-YY-ZZ-123'}});
   });
 
   it('getId() should return an empty Id when the MediaWallah openLink first party cookie is missing', function () {
-    const id = mwOpenLinkSubModule.getId();
+    const id = mwOpenLinkIdSubModule.getId();
     expect(id).to.be.deep.equal(undefined);
   });
 });
