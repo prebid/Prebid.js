@@ -60,7 +60,8 @@ const cache = {
 const BID_REJECTED_IPF = 'rejected-ipf';
 
 export let rubiConf = {
-  pvid: utils.generateUUID().slice(0, 8)
+  pvid: utils.generateUUID().slice(0, 8),
+  analyticsEventDelay: 0
 };
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
@@ -138,7 +139,8 @@ function sendMessage(auctionId, bidWonId) {
         'mediaType',
         'floorValue',
         'floorRuleValue',
-        'floorRule'
+        'floorRule',
+        'adomains'
       ]) : undefined
     ]);
   }
@@ -363,7 +365,11 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
     'seatBidId',
     'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
     'floorRuleValue', () => utils.deepAccess(bid, 'floorData.floorRuleValue'),
-    'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined
+    'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined,
+    'adomains', () => {
+      let adomains = utils.deepAccess(bid, 'meta.advertiserDomains');
+      return Array.isArray(adomains) && adomains.length > 0 ? adomains.slice(0, 10) : undefined
+    }
   ]);
 }
 
@@ -476,8 +482,8 @@ function subscribeToGamSlots() {
             // these come in as `null` from Gpt, which when stringified does not get removed
             // so set explicitly to undefined when not a number
             'advertiserId', advertiserId => utils.isNumber(advertiserId) ? advertiserId : undefined,
-            'creativeId', creativeId => utils.isNumber(creativeId) ? creativeId : undefined,
-            'lineItemId', lineItemId => utils.isNumber(lineItemId) ? lineItemId : undefined,
+            'creativeId', creativeId => utils.isNumber(event.sourceAgnosticCreativeId) ? event.sourceAgnosticCreativeId : utils.isNumber(creativeId) ? creativeId : undefined,
+            'lineItemId', lineItemId => utils.isNumber(event.sourceAgnosticLineItemId) ? event.sourceAgnosticLineItemId : utils.isNumber(lineItemId) ? lineItemId : undefined,
             'adSlot', () => event.slot.getAdUnitPath(),
             'isSlotEmpty', () => event.isEmpty || undefined
           ]);
@@ -487,7 +493,11 @@ function subscribeToGamSlots() {
       if (rubiConf.waitForGamSlots && !cache.auctions[auctionId].sent && Object.keys(cache.auctions[auctionId].gamHasRendered).every(adUnitCode => cache.auctions[auctionId].gamHasRendered[adUnitCode])) {
         clearTimeout(cache.timeouts[auctionId]);
         delete cache.timeouts[auctionId];
-        sendMessage.call(rubiconAdapter, auctionId);
+        if (rubiConf.analyticsEventDelay > 0) {
+          setTimeout(() => sendMessage.call(rubiconAdapter, auctionId), rubiConf.analyticsEventDelay)
+        } else {
+          sendMessage.call(rubiconAdapter, auctionId)
+        }
       }
     });
   });
@@ -568,9 +578,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           cache.gpt.registered = true;
         } else if (!cache.gpt.registered) {
           cache.gpt.registered = true;
-          let googletag = window.googletag || {};
-          googletag.cmd = googletag.cmd || [];
-          googletag.cmd.push(function() {
+          window.googletag = window.googletag || {};
+          window.googletag.cmd = window.googletag.cmd || [];
+          window.googletag.cmd.push(function() {
             subscribeToGamSlots();
           });
         }
