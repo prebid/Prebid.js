@@ -107,6 +107,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
 }
 
 function getCurrency() {
+  // TODO: which currencies are allowed?
   return config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
 }
 
