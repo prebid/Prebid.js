@@ -127,7 +127,7 @@ export const mwOpenLinkIdSubModule = {
      * @return {(Object|undefined}
      */
   decode(mwOlId) {
-    const id = value ? utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined : undefined;
+    const id = mwOlId ? utils.isStr(mwOlId) ? mwOlId : utils.isPlainObject(mwOlId) ? mwOlId.eid : undefined : undefined;
     return id ? { 'mwOpenLinkId': id } : undefined;
   },
 

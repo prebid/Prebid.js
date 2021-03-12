@@ -505,7 +505,7 @@ describe('User ID', function () {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 13 configurations should result in 13 submodules add', function () {
+    it('config with 14 configurations should result in 14 submodules add', function () {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule]);
       init(config);
       config.setConfig({
@@ -551,7 +551,7 @@ describe('User ID', function () {
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 13 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 14 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
@@ -1474,7 +1474,7 @@ describe('User ID', function () {
 
       setSubmoduleRegistry([mwOpenLinkIdSubModule]);
       init(config);
-      config.setConfig(getConfigMock(['mwOpenLinkId', 'mwOpenLinkId', 'cookie']));
+      config.setConfig(getConfigMock(['mwOpenLinkId', 'mwol', 'cookie']));
 
       requestBidsHook(function () {
         adUnits.forEach(unit => {
@@ -1505,7 +1505,7 @@ describe('User ID', function () {
       coreStorage.setCookie('storage_criteo', JSON.stringify({'criteoId': 'test_bidid'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('mwol', JSON.stringify({eid: 'XX-YY-ZZ-123'}), (new Date(Date.now() + 5000).toUTCString()));
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
         ['unifiedId', 'unifiedid', 'cookie'],
@@ -1518,7 +1518,7 @@ describe('User ID', function () {
         ['zeotapIdPlus', 'IDP', 'cookie'],
         ['haloId', 'haloId', 'cookie'],
         ['criteo', 'storage_criteo', 'cookie'],
-        ['mwOpenLinkId', 'mwOpenLinkId', 'cookie']));
+        ['mwOpenLinkId', 'mwol', 'cookie']));
 
       requestBidsHook(function () {
         adUnits.forEach(unit => {
@@ -1560,9 +1560,9 @@ describe('User ID', function () {
             expect(bid.userId.criteoId).to.equal('test_bidid');
             // also check that mwOpenLink id was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mwOpenLinkId');
-            expect(bid.userId.criteoId).to.equal('XX-YY-ZZ-123');
+            expect(bid.userId.mwOpenLinkId).to.equal('XX-YY-ZZ-123');
 
-            expect(bid.userIdAsEids.length).to.equal(11);
+            expect(bid.userIdAsEids.length).to.equal(12);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1629,7 +1629,7 @@ describe('User ID', function () {
         ['zeotapIdPlus', 'IDP', 'cookie'],
         ['haloId', 'haloId', 'cookie'],
         ['criteo', 'storage_criteo', 'cookie'],
-        ['mwOpenLinkId', 'mwOpenLinkId', 'cookie'],));
+        ['mwOpenLinkId', 'mwol', 'cookie']));
 
       requestBidsHook(function () {
         adUnits.forEach(unit => {
@@ -1676,7 +1676,7 @@ describe('User ID', function () {
             expect(bid).to.have.deep.nested.property('userId.mwOpenLinkId');
             expect(bid.userId.mwOpenLinkId).to.equal('XX-YY-ZZ-123');
 
-            expect(bid.userIdAsEids.length).to.equal(11);
+            expect(bid.userIdAsEids.length).to.equal(12);
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1920,9 +1920,8 @@ describe('User ID', function () {
       coreStorage.setCookie('IDP', btoa(JSON.stringify('zeotapId')), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('haloId', JSON.stringify({'haloId': 'testHaloId'}), (new Date(Date.now() + 5000).toUTCString()));
       coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
-      coreStorage.setCookie('mwol', JSON.stringify({eid: 'XX-YY-ZZ-123'}), (new Date(Date.now() + 5000).toUTCString()));
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, mwOpenLinkIdSubModule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule]);
       init(config);
 
       config.setConfig({
@@ -1950,8 +1949,6 @@ describe('User ID', function () {
             name: 'haloId', storage: {name: 'haloId', type: 'cookie'}
           }, {
             name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
-          }, {
-            name: 'mwOpenLinkId'
           }]
         }
       });
@@ -2009,10 +2006,8 @@ describe('User ID', function () {
             // also check that haloId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.haloId');
             expect(bid.userId.haloId).to.equal('testHaloId');
+
             expect(bid.userIdAsEids.length).to.equal(10);
-            // also check that mwOpenLink id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.mwOpenLinkId');
-            expect(bid.userId.mwOpenLinkId).to.equal('XX-YY-ZZ-123');
           });
         });
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2026,6 +2021,7 @@ describe('User ID', function () {
         coreStorage.setCookie('IDP', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('haloId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('mwol', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
