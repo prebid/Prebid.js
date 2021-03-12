@@ -3,9 +3,11 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
+import { Renderer } from '../src/Renderer.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
+const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.0.0.js';
 
 let rubiConf = {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
@@ -108,6 +110,43 @@ var sizeMap = {
   552: '300x200'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
+
+function renderBid(bid) {
+  const config = bid.renderer.getConfig();
+  bid.renderer.push(() => {
+    window.MagniteApex.renderAd({
+      width: bid.width,
+      height: bid.height,
+      vastUrl: bid.vastUrl,
+      placement: {
+        attachTo: `#${bid.adUnitCode}`,
+        align: config.align || 'center',
+        position: config.position || 'append'
+      },
+      closeButton: config.closeButton || false,
+      label: config.label || undefined,
+      collapse: config.collapse || true
+    });
+  });
+}
+
+function outstreamRenderer(rtbBid) {
+  const renderer = Renderer.install({
+    id: rtbBid.adId,
+    url: rubiConf.rendererUrl || DEFAULT_RENDERER_URL,
+    config: rubiConf.rendererConfig || {},
+    loaded: false,
+    adUnitCode: rtbBid.adUnitCode
+  });
+
+  try {
+    renderer.setRender(renderBid);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  return renderer;
+}
 
 export const spec = {
   code: 'rubicon',
@@ -628,6 +667,11 @@ export const spec = {
             if (bid.adm) { bidObject.vastXml = bid.adm; }
             if (bid.nurl) { bidObject.vastUrl = bid.nurl; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
+
+            const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+            if (videoContext.toLowerCase() === 'outstream') {
+              bidObject.renderer = outstreamRenderer(bidObject);
+            }
           } else {
             utils.logWarn('Rubicon: video response received non-video media type');
           }
