@@ -146,7 +146,7 @@ function getDevice() {
 }
 
 function getGeo(validBidRequest) {
-  if (validBidRequest.params && validBidRequest.params.zip) {
+  if (validBidRequest.params.zip) {
     return {
       zip: validBidRequest.params.zip
     };
@@ -155,7 +155,7 @@ function getGeo(validBidRequest) {
 }
 
 function getTest(validBidRequest) {
-  return (validBidRequest.params && validBidRequest.params.test) || config.getConfig('debug') ? 1 : 0;
+  return validBidRequest.params.test || config.getConfig('debug') ? 1 : 0;
 }
 
 function getSizes(validBidRequest) {
@@ -170,8 +170,8 @@ function getSizes(validBidRequest) {
 function buildFormatArray(sizes) {
   return sizes.map(size => {
     return {
-      'w': size[0],
-      'h': size[1]
+      w: size[0],
+      h: size[1]
     };
   });
 }
