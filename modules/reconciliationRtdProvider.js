@@ -29,7 +29,7 @@ const MessageType = {
 /** @type {ModuleParams} */
 const DEFAULT_PARAMS = {
   initUrl: 'https://confirm.fiduciadlt.com/init',
-  impressionUrl: 'https://confirm.fiduciadlt.com/imp',
+  impressionUrl: 'https://confirm.fiduciadlt.com/pimp',
   allowAccess: false,
 };
 /** @type {ModuleParams} */
@@ -65,7 +65,7 @@ function handleAdMessage(e) {
           adDeliveryId = adSlot.getTargeting('RSDK_ADID');
           adDeliveryId = adDeliveryId.length
             ? adDeliveryId[0]
-            : utils.generateUUID();
+            : `${utils.timestamp()}-${utils.generateUUID()}`;
         }
       }
     }
@@ -78,7 +78,7 @@ function handleAdMessage(e) {
       adDeliveryId,
     });
 
-    track.trackGet(_moduleParams.impressionUrl, args);
+    track.trackPost(_moduleParams.impressionUrl, args);
 
     // Send response back to the Advertiser tag
     let response = {
@@ -187,26 +187,6 @@ export function getSlotByWin(win) {
 }
 
 /**
- * serialize object and return query params string
- * @param {Object} data
- * @return {string}
- */
-export function stringify(query) {
-  const parts = [];
-
-  for (let key in query) {
-    if (query.hasOwnProperty(key)) {
-      let val = query[key];
-      if (typeof query[key] !== 'object') {
-        parts.push(`${key}=${encodeURIComponent(val)}`);
-      } else {
-        parts.push(`${key}=${encodeURIComponent(stringify(val))}`);
-      }
-    }
-  }
-  return parts.join('&');
-}
-/**
  * Init Reconciliation post messages listeners to handle
  * impressions messages from ad creative
  */
@@ -236,9 +216,6 @@ function trackInit(adUnits) {
  * @param {Object} data
  */
 export const track = {
-  trackGet(url, data) {
-    utils.triggerPixel(`${url}?${stringify(data)}`);
-  },
   trackPost(url, data) {
     const ajax = ajaxBuilder();
 
@@ -269,7 +246,7 @@ function getReconciliationData(adUnitsCodes) {
 
     const adSlot = getSlotByCode(adUnitCode);
     const adUnitId = adSlot ? adSlot.getAdUnitPath() : adUnitCode;
-    const adDeliveryId = utils.generateUUID();
+    const adDeliveryId = `${utils.timestamp()}-${utils.generateUUID()}`;
 
     dataToReturn[adUnitCode] = {
       RSDK_AUID: adUnitId,

@@ -1,12 +1,13 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 const storage = getStorageManager();
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
-
+const GVLID = 607;
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
@@ -14,6 +15,7 @@ const VIDEO_CONTEXT = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   ENDPOINT: 'https://hb.aralego.com/header',
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -65,11 +67,12 @@ export const spec = {
     let bid = {
       requestId: bidRequest.bidId,
       cpm: ad.cpm || 0,
-      creativeId: ad.ad_id || bidRequest.params.adid,
+      creativeId: ad.crid || ad.ad_id || bidRequest.params.adid,
       dealId: ad.deal || null,
-      currency: 'USD',
+      currency: ad.currency || 'USD',
       netRevenue: true,
-      ttl: 1800
+      ttl: 1800,
+      meta: {}
     };
 
     if (bidRequest.params && bidRequest.params.bidfloor && ad.cpm && ad.cpm < bidRequest.params.bidfloor) {
@@ -77,6 +80,10 @@ export const spec = {
     }
     if (ad.creative_type) {
       bid.mediaType = ad.creative_type;
+      bid.meta.mediaType = ad.creative_type;
+    }
+    if (ad.adomain) {
+      bid.meta.advertiserDomains = ad.adomain;
     }
 
     switch (ad.creative_type) {
@@ -124,16 +131,19 @@ export const spec = {
     return [bid];
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent) {
+    let gdprApplies = (gdprConsent && gdprConsent.gdprApplies) ? '1' : '';
+    let apiVersion = (gdprConsent) ? gdprConsent.apiVersion : '';
+    let consentString = (gdprConsent) ? gdprConsent.consentString : '';
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: 'https://cdn.aralego.net/ucfad/cookie/sync.html'
+        url: 'https://cdn.aralego.net/ucfad/cookie/sync.html' + getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConsent)
       }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: 'https://sync.aralego.com/idSync'
+        url: 'https://sync.aralego.com/idSync' + getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConsent)
       }];
     }
   }
@@ -144,6 +154,22 @@ function transformSizes(requestSizes) {
   if (typeof requestSizes === 'object' && requestSizes.length) {
     return requestSizes[0];
   }
+}
+
+function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConsent) {
+  let param = '?';
+  if (gdprApplies == '1') {
+    param = param + 'gdpr=1&';
+  }
+  if (apiVersion == 1) {
+    param = param + 'euconsent=' + consentString + '&';
+  } else if (apiVersion == 2) {
+    param = param + 'euconsent-v2=' + consentString + '&';
+  }
+  if (uspConsent) {
+    param = param + 'usprivacy=' + uspConsent;
+  }
+  return (param == '?') ? '' : param;
 }
 
 function parseSizes(bid) {
@@ -202,14 +228,14 @@ function getRequestData(bid, bidderRequest) {
     schain: supplyChain,
     fp: bid.params.bidfloor
   };
-
+  addUserId(bidData, bid.userId);
   try {
     bidData.host = window.top.location.hostname;
-    bidData.u = window.top.location.href;
+    bidData.u = config.getConfig('publisherDomain') || window.top.location.href;
     bidData.xr = 0;
   } catch (e) {
     bidData.host = window.location.hostname;
-    bidData.u = document.referrer || window.location.href;
+    bidData.u = config.getConfig('publisherDomain') || bidderRequest.refererInfo.referrer || document.referrer || window.location.href;
     bidData.xr = 1;
   }
 
@@ -253,11 +279,63 @@ function getRequestData(bid, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    Object.assign(bidData, {
-      gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-      euconsent: bidderRequest.gdprConsent.consentString
-    });
+    if (bidderRequest.gdprConsent.apiVersion == 1) {
+      Object.assign(bidData, {
+        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+        euconsent: bidderRequest.gdprConsent.consentString
+      });
+    } else if (bidderRequest.gdprConsent.apiVersion == 2) {
+      Object.assign(bidData, {
+        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+        'euconsent-v2': bidderRequest.gdprConsent.consentString
+      });
+    }
   }
+
+  if (config.getConfig('coppa')) {
+    bidData.coppa = true;
+  }
+
+  return bidData;
+}
+
+function addUserId(bidData, userId) {
+  utils._each(userId, (userIdObjectOrValue, userIdProviderKey) => {
+    switch (userIdProviderKey) {
+      case 'sharedid':
+        if (userIdObjectOrValue.id) {
+          bidData[userIdProviderKey + '_id'] = userIdObjectOrValue.id;
+        }
+        if (userIdObjectOrValue.third) {
+          bidData[userIdProviderKey + '_third'] = userIdObjectOrValue.third;
+        }
+        break;
+      case 'haloId':
+        if (userIdObjectOrValue.haloId) {
+          bidData[userIdProviderKey + 'haloId'] = userIdObjectOrValue.haloId;
+        }
+        if (userIdObjectOrValue.auSeg) {
+          bidData[userIdProviderKey + '_auSeg'] = userIdObjectOrValue.auSeg;
+        }
+        break;
+      case 'parrableId':
+        if (userIdObjectOrValue.eid) {
+          bidData[userIdProviderKey + '_eid'] = userIdObjectOrValue.eid;
+        }
+        break;
+      case 'id5id':
+        if (userIdObjectOrValue.uid) {
+          bidData[userIdProviderKey + '_uid'] = userIdObjectOrValue.uid;
+        }
+        if (userIdObjectOrValue.ext && userIdObjectOrValue.ext.linkType) {
+          bidData[userIdProviderKey + '_linkType'] = userIdObjectOrValue.ext.linkType;
+        }
+        break;
+      default:
+        bidData[userIdProviderKey] = userIdObjectOrValue;
+        break;
+    }
+  });
 
   return bidData;
 }

@@ -1,6 +1,6 @@
 # ID5 Universal ID
 
-The ID5 Universal ID is a shared, neutral identifier that publishers and ad tech platforms can use to recognise users even in environments where 3rd party cookies are not available. The ID5 Universal ID is designed to respect users' privacy choices and publishers’ preferences throughout the advertising value chain. For more information about the ID5 Universal ID and detailed integration docs, please visit [our documentation](https://console.id5.io/docs/public/prebid). We also recommend that you sign up for our [release notes](https://id5.io/universal-id/release-notes) to stay up-to-date with any changes to the implementation of the ID5 Universal ID in Prebid.
+The ID5 Universal ID is a shared, neutral identifier that publishers and ad tech platforms can use to recognise users even in environments where 3rd party cookies are not available. The ID5 Universal ID is designed to respect users' privacy choices and publishers’ preferences throughout the advertising value chain. For more information about the ID5 Universal ID and detailed integration docs, please visit [our documentation](https://wiki.id5.io/x/BIAZ). We also recommend that you sign up for our [release notes](https://id5.io/universal-id/release-notes) to stay up-to-date with any changes to the implementation of the ID5 Universal ID in Prebid.
 
 ## ID5 Universal ID Registration
 
@@ -22,14 +22,18 @@ The following configuration parameters are available:
 pbjs.setConfig({
   userSync: {
     userIds: [{
-      name: "id5Id",
+      name: 'id5Id',
       params: {
         partner: 173,            // change to the Partner Number you received from ID5
-        pd: "MT1iNTBjY..."       // optional, see table below for a link to how to generate this
+        pd: 'MT1iNTBjY...',      // optional, see table below for a link to how to generate this
+        abTesting: {             // optional
+          enabled: true,         // false by default
+          controlGroupPct: 0.1   // valid values are 0.0 - 1.0 (inclusive)
+        }
       },
       storage: {
-        type: "html5",           // "html5" is the required storage type
-        name: "id5id",           // "id5id" is the required storage name
+        type: 'html5',           // "html5" is the required storage type
+        name: 'id5id',           // "id5id" is the required storage name
         expires: 90,             // storage lasts for 90 days
         refreshInSeconds: 8*3600 // refresh ID every 8 hours to ensure it's fresh
       }
@@ -46,6 +50,9 @@ pbjs.setConfig({
 | params.partner | Required | Number | This is the ID5 Partner Number obtained from registering with ID5. | `173` |
 | params.pd | Optional | String | Publisher-supplied data used for linking ID5 IDs across domains. See [our documentation](https://wiki.id5.io/x/BIAZ) for details on generating the string. Omit the parameter or leave as an empty string if no data to supply | `"MT1iNTBjY..."` |
 | params.provider | Optional | String | An identifier provided by ID5 to technology partners who manage Prebid setups on behalf of publishers. Reach out to [ID5](mailto:prebid@id5.io) if you have questions about this parameter  | `pubmatic-identity-hub` |
+| params.abTesting | Optional | Object | Allows publishers to easily run an A/B Test. If enabled and the user is in the Control Group, the ID5 ID will NOT be exposed to bid adapters for that request | Disabled by default |
+| params.abTesting.enabled | Optional | Boolean | Set this to `true` to turn on this feature | `true` or `false` |
+| params.abTesting.controlGroupPct | Optional | Number | Must be a number between `0.0` and `1.0` (inclusive) and is used to determine the percentage of requests that fall into the control group (and thus not exposing the ID5 ID). For example, a value of `0.20` will result in 20% of requests without an ID5 ID and 80% with an ID. | `0.1` |
 | storage | Required | Object | Storage settings for how the User ID module will cache the ID5 ID locally | |
 | storage.type | Required | String | This is where the results of the user ID will be stored. ID5 **requires** `"html5"`. | `"html5"` |
 | storage.name | Required | String | The name of the local storage where the user ID will be stored. ID5 **requires** `"id5id"`. | `"id5id"` |
@@ -53,3 +60,9 @@ pbjs.setConfig({
 | storage.refreshInSeconds | Optional | Integer | How many seconds until the ID5 ID will be refreshed. ID5 strongly recommends 8 hours between refreshes | `8*3600` |
 
 **ATTENTION:** As of Prebid.js v4.14.0, ID5 requires `storage.type` to be `"html5"` and `storage.name` to be `"id5id"`. Using other values will display a warning today, but in an upcoming release, it will prevent the ID5 module from loading. This change is to ensure the ID5 module in Prebid.js interoperates properly with the [ID5 API](https://github.com/id5io/id5-api.js) and to reduce the size of publishers' first-party cookies that are sent to their web servers. If you have any questions, please reach out to us at [prebid@id5.io](mailto:prebid@id5.io).
+
+### A Note on A/B Testing
+
+Publishers may want to test the value of the ID5 ID with their downstream partners. While there are various ways to do this, A/B testing is a standard approach. Instead of publishers manually enabling or disabling the ID5 User ID Module based on their control group settings (which leads to fewer calls to ID5, reducing our ability to recognize the user), we have baked this in to our module directly.
+
+To turn on A/B Testing, simply edit the configuration (see above table) to enable it and set what percentage of users you would like to set for the control group. The control group is the set of user where an ID5 ID will not be exposed in to bid adapters or in the various user id functions available on the `pbjs` global. An additional value of `ext.abTestingControlGroup` will be set to `true` or `false` that can be used to inform reporting systems that the user was in the control group or not. It's important to note that the control group is user based, and not request based. In other words, from one page view to another, a user will always be in or out of the control group.

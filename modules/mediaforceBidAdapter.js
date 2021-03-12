@@ -128,7 +128,7 @@ export const spec = {
       let impObj = {
         id: bid.bidId,
         tagid: tagid,
-        secure: window.location.protocol === 'https' ? 1 : 0,
+        secure: window.location.protocol === 'https:' ? 1 : 0,
         bidfloor: bidfloor,
         ext: {
           mediaforce: {

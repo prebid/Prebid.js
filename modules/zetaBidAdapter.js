@@ -20,19 +20,37 @@ export const spec = {
      */
   isBidRequestValid: function(bid) {
     // check for all required bid fields
-    let isValid = !!(
-      bid &&
-      bid.bidId &&
-      bid.params &&
-      bid.params.ip &&
-      bid.params.user &&
-      bid.params.user.buyeruid &&
-      bid.params.definerId
-    );
-    if (!isValid) {
-      utils.logWarn('Invalid bid request');
+    if (!(bid &&
+          bid.bidId &&
+          bid.params)) {
+      utils.logWarn('Invalid bid request - missing required bid data');
+      return false;
     }
-    return isValid;
+
+    if (!(bid.params.user &&
+          bid.params.user.buyeruid)) {
+      utils.logWarn('Invalid bid request - missing required user data');
+      return false;
+    }
+
+    if (!(bid.params.device &&
+          bid.params.device.ip)) {
+      utils.logWarn('Invalid bid request - missing required device data');
+      return false;
+    }
+
+    if (!(bid.params.device.geo &&
+          bid.params.device.geo.country)) {
+      utils.logWarn('Invalid bid request - missing required geo data');
+      return false;
+    }
+
+    if (!bid.params.definerId) {
+      utils.logWarn('Invalid bid request - missing required definer data');
+      return false;
+    }
+
+    return true;
   },
 
   /**
@@ -51,27 +69,23 @@ export const spec = {
       secure: secure,
       banner: buildBanner(request)
     };
-    let isMobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     let payload = {
       id: bidderRequest.auctionId,
       cur: [DEFAULT_CUR],
       imp: [impData],
-      site: {
-        mobile: isMobile,
-        page: bidderRequest.refererInfo.referer
-      },
-      device: {
-        ua: navigator.userAgent,
-        ip: params.ip
-      },
-      user: {
-        buyeruid: params.user.buyeruid,
-        uid: params.user.uid
-      },
+      site: params.site ? params.site : {},
+      device: params.device ? params.device : {},
+      user: params.user ? params.user : {},
+      app: params.app ? params.app : {},
       ext: {
         definerId: params.definerId
       }
     };
+
+    payload.device.ua = navigator.userAgent;
+    payload.site.page = bidderRequest.refererInfo.referer;
+    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
+
     if (params.test) {
       payload.test = params.test;
     }
