@@ -60,7 +60,7 @@ function isValidConfig(configParams) {
     utils.logError('User ID - parrableId submodule requires configParams');
     return false;
   }
-  if (!configParams.partner) {
+  if (!configParams.partners && !configParams.partner) {
     utils.logError('User ID - parrableId submodule requires partner list');
     return false;
   }
@@ -68,6 +68,15 @@ function isValidConfig(configParams) {
     utils.logWarn('User ID - parrableId submodule does not require a storage config');
   }
   return true;
+}
+
+function encodeBase64UrlSafe(base64) {
+  const ENC = {
+    '+': '-',
+    '/': '_',
+    '=': '.'
+  };
+  return base64.replace(/[+/=]/g, (m) => ENC[m]);
 }
 
 function readCookie() {
@@ -113,6 +122,51 @@ function migrateLegacyCookies(parrableId) {
   }
 }
 
+function shouldFilterImpression(configParams, parrableId) {
+  const config = configParams.timezoneFilter;
+
+  if (!config) {
+    return false;
+  }
+
+  if (parrableId) {
+    return false;
+  }
+
+  const offset = (new Date()).getTimezoneOffset() / 60;
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  function isAllowed() {
+    if (utils.isEmpty(config.allowedZones) &&
+      utils.isEmpty(config.allowedOffsets)) {
+      return true;
+    }
+    if (utils.contains(config.allowedZones, zone)) {
+      return true;
+    }
+    if (utils.contains(config.allowedOffsets, offset)) {
+      return true;
+    }
+    return false;
+  }
+
+  function isBlocked() {
+    if (utils.isEmpty(config.blockedZones) &&
+      utils.isEmpty(config.blockedOffsets)) {
+      return false;
+    }
+    if (utils.contains(config.blockedZones, zone)) {
+      return true;
+    }
+    if (utils.contains(config.blockedOffsets, offset)) {
+      return true;
+    }
+    return false;
+  }
+
+  return !isAllowed() || isBlocked();
+}
+
 function fetchId(configParams) {
   if (!isValidConfig(configParams)) return;
 
@@ -122,18 +176,28 @@ function fetchId(configParams) {
     migrateLegacyCookies(parrableId);
   }
 
+  if (shouldFilterImpression(configParams, parrableId)) {
+    return null;
+  }
+
   const eid = (parrableId) ? parrableId.eid : null;
   const refererInfo = getRefererInfo();
   const uspString = uspDataHandler.getConsentData();
+  const partners = configParams.partners || configParams.partner
+  const trackers = typeof partners === 'string'
+    ? partners.split(',')
+    : partners;
 
   const data = {
     eid,
-    trackers: configParams.partner.split(','),
-    url: refererInfo.referer
+    trackers,
+    url: refererInfo.referer,
+    prebidVersion: '$prebid.version$',
+    isIframe: utils.inIframe()
   };
 
   const searchParams = {
-    data: btoa(JSON.stringify(data)),
+    data: encodeBase64UrlSafe(btoa(JSON.stringify(data))),
     _rand: Math.random()
   };
 
@@ -204,7 +268,7 @@ export const parrableIdSubmodule = {
    */
   decode(parrableId) {
     if (parrableId && utils.isPlainObject(parrableId)) {
-      return { 'parrableid': parrableId.eid };
+      return { parrableId };
     }
     return undefined;
   },
@@ -212,11 +276,12 @@ export const parrableIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleParams} [configParams]
+   * @param {SubmoduleConfig} [config]
    * @param {ConsentData} [consentData]
    * @returns {function(callback:function), id:ParrableId}
    */
-  getId(configParams, gdprConsentData, currentStoredId) {
+  getId(config, gdprConsentData, currentStoredId) {
+    const configParams = (config && config.params) || {};
     return fetchId(configParams);
   }
 };

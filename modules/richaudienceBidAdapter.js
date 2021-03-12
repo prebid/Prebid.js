@@ -9,6 +9,7 @@ let REFERER = '';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 108,
   aliases: ['ra'],
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -48,7 +49,10 @@ export const spec = {
         timeout: config.getConfig('bidderTimeout'),
         user: raiSetEids(bid),
         demand: raiGetDemandType(bid),
-        videoData: raiGetVideoInfo(bid)
+        videoData: raiGetVideoInfo(bid),
+        scr_rsl: raiGetResolution(),
+        cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
+        kws: (!utils.isEmpty(bid.params.keywords) ? bid.params.keywords : null)
       };
 
       REFERER = (typeof bidderRequest.refererInfo.referer != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.referer) : null)
@@ -132,7 +136,7 @@ export const spec = {
     var consent = '';
 
     if (gdprConsent && typeof gdprConsent.consentString === 'string' && typeof gdprConsent.consentString != 'undefined') {
-      consent = `consentString=’${gdprConsent.consentString}`
+      consent = `consentString=${gdprConsent.consentString}`
     }
 
     if (syncOptions.iframeEnabled) {
@@ -201,7 +205,7 @@ function raiSetEids(bid) {
   let eids = [];
 
   if (bid && bid.userId) {
-    raiSetUserId(bid, eids, 'id5-sync.com', utils.deepAccess(bid, `userId.id5id`));
+    raiSetUserId(bid, eids, 'id5-sync.com', utils.deepAccess(bid, `userId.id5id.uid`));
     raiSetUserId(bid, eids, 'pubcommon', utils.deepAccess(bid, `userId.pubcid`));
     raiSetUserId(bid, eids, 'criteo.com', utils.deepAccess(bid, `userId.criteoId`));
     raiSetUserId(bid, eids, 'liveramp.com', utils.deepAccess(bid, `userId.idl_env`));
@@ -240,4 +244,12 @@ function renderAd(bid) {
   };
 
   window.raParams(raPlayerHB, raOutstreamHBPassback, true);
+}
+
+function raiGetResolution() {
+  let resolution = '';
+  if (typeof window.screen != 'undefined') {
+    resolution = window.screen.width + 'x' + window.screen.height;
+  }
+  return resolution;
 }

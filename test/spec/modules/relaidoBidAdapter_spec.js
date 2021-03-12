@@ -1,16 +1,20 @@
 import { expect } from 'chai';
 import { spec } from 'modules/relaidoBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { getStorageManager } from '../../../src/storageManager.js';
 
 const UUID_KEY = 'relaido_uuid';
 const DEFAULT_USER_AGENT = window.navigator.userAgent;
 const MOBILE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.5 Mobile/15E148 Safari/604.1';
+const relaido_uuid = 'hogehoge';
 
 const setUADefault = () => { window.navigator.__defineGetter__('userAgent', function () { return DEFAULT_USER_AGENT }) };
 const setUAMobile = () => { window.navigator.__defineGetter__('userAgent', function () { return MOBILE_USER_AGENT }) };
 
+const storage = getStorageManager();
+storage.setCookie(UUID_KEY, relaido_uuid);
+
 describe('RelaidoAdapter', function () {
-  const relaido_uuid = 'hogehoge';
   let bidRequest;
   let bidderRequest;
   let serverResponse;
@@ -65,7 +69,6 @@ describe('RelaidoAdapter', function () {
       height: bidRequest.mediaTypes.video.playerSize[0][1],
       mediaType: 'video',
     };
-    localStorage.setItem(UUID_KEY, relaido_uuid);
   });
 
   describe('spec.isBidRequestValid', function () {
@@ -86,10 +89,58 @@ describe('RelaidoAdapter', function () {
       setUADefault();
     });
 
-    it('should return false when the uuid are missing', function () {
-      localStorage.removeItem(UUID_KEY);
-      const result = !!(utils.isSafariBrowser());
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(result);
+    it('should return false when missing 300x250 over and 1x1 by banner', function () {
+      setUAMobile();
+      bidRequest.mediaTypes = {
+        banner: {
+          sizes: [
+            [100, 100],
+            [300, 100]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      setUADefault();
+    });
+
+    it('should return true when 300x250 by banner', function () {
+      setUAMobile();
+      bidRequest.mediaTypes = {
+        banner: {
+          sizes: [
+            [300, 250]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      setUADefault();
+    });
+
+    it('should return true when 1x1 by banner', function () {
+      setUAMobile();
+      bidRequest.mediaTypes = {
+        banner: {
+          sizes: [
+            [1, 1]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      setUADefault();
+    });
+
+    it('should return true when 300x250 over by banner', function () {
+      setUAMobile();
+      bidRequest.mediaTypes = {
+        banner: {
+          sizes: [
+            [100, 100],
+            [300, 250]
+          ]
+        }
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      setUADefault();
     });
 
     it('should return false when the placementId params are missing', function () {
@@ -136,7 +187,7 @@ describe('RelaidoAdapter', function () {
       expect(bidRequests).to.have.lengthOf(1);
       const request = bidRequests[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.equal('https://api.relaido.jp/vast/v1/out/bid/100000');
+      expect(request.url).to.equal('https://api.relaido.jp/bid/v1/prebid/100000');
       expect(request.bidId).to.equal(bidRequest.bidId);
       expect(request.width).to.equal(bidRequest.mediaTypes.video.playerSize[0][0]);
       expect(request.height).to.equal(bidRequest.mediaTypes.video.playerSize[0][1]);

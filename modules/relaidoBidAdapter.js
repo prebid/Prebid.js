@@ -6,17 +6,13 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.2';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
 const storage = getStorageManager();
 
 function isBidRequestValid(bid) {
-  if (!utils.isSafariBrowser() && !hasUuid()) {
-    utils.logWarn('uuid is not found.');
-    return false;
-  }
   if (!utils.deepAccess(bid, 'params.placementId')) {
     utils.logWarn('placementId param is reqeuired.');
     return false;
@@ -45,7 +41,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     const bidRequest = validBidRequests[i];
     const placementId = utils.getBidIdParameter('placementId', bidRequest.params);
     const bidDomain = bidRequest.params.domain || BIDDER_DOMAIN;
-    const bidUrl = `https://${bidDomain}/vast/v1/out/bid/${placementId}`;
+    const bidUrl = `https://${bidDomain}/bid/v1/prebid/${placementId}`;
     const uuid = getUuid();
     const mediaType = getMediaType(bidRequest);
 
@@ -64,11 +60,11 @@ function buildRequests(validBidRequests, bidderRequest) {
     };
 
     if (hasVideoMediaType(bidRequest)) {
-      const playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+      const playerSize = getValidSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
       payload.width = playerSize[0][0];
       payload.height = playerSize[0][1];
     } else if (hasBannerMediaType(bidRequest)) {
-      const sizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes');
+      const sizes = getValidSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes'));
       payload.width = sizes[0][0];
       payload.height = sizes[0][1];
     }
@@ -99,10 +95,6 @@ function interpretResponse(serverResponse, bidRequest) {
   const body = serverResponse.body;
   if (!body || body.status != 'ok') {
     return [];
-  }
-
-  if (body.uuid) {
-    storage.setDataInLocalStorage(UUID_KEY, body.uuid);
   }
 
   const playerUrl = bidRequest.player || body.playerUrl;
@@ -141,7 +133,6 @@ function getUserSyncs(syncOptions, serverResponses) {
   if (serverResponses.length > 0) {
     syncUrl = utils.deepAccess(serverResponses, '0.body.syncUrl') || syncUrl;
   }
-  receiveMessage();
   return [{
     type: 'iframe',
     url: syncUrl
@@ -219,37 +210,20 @@ function outstreamRender(bid) {
   });
 }
 
-function receiveMessage() {
-  window.addEventListener('message', setUuid);
-}
-
-function setUuid(e) {
-  if (utils.isPlainObject(e.data) && e.data.relaido_uuid) {
-    storage.setDataInLocalStorage(UUID_KEY, e.data.relaido_uuid);
-    window.removeEventListener('message', setUuid);
-  }
-}
-
 function isBannerValid(bid) {
   if (!isMobile()) {
     return false;
   }
-  const sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
-  if (sizes && utils.isArray(sizes)) {
-    if (utils.isArray(sizes[0])) {
-      const width = sizes[0][0];
-      const height = sizes[0][1];
-      if (width >= 300 && height >= 250) {
-        return true;
-      }
-    }
+  const sizes = getValidSizes(utils.deepAccess(bid, 'mediaTypes.banner.sizes'));
+  if (sizes.length > 0) {
+    return true;
   }
   return false;
 }
 
 function isVideoValid(bid) {
-  const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-  if (playerSize && utils.isArray(playerSize) && playerSize.length > 0) {
+  const playerSize = getValidSizes(utils.deepAccess(bid, 'mediaTypes.video.playerSize'));
+  if (playerSize.length > 0) {
     const context = utils.deepAccess(bid, 'mediaTypes.video.context');
     if (context && context === 'outstream') {
       return true;
@@ -258,12 +232,12 @@ function isVideoValid(bid) {
   return false;
 }
 
-function hasUuid() {
-  return !!storage.getDataFromLocalStorage(UUID_KEY);
-}
-
 function getUuid() {
-  return storage.getDataFromLocalStorage(UUID_KEY) || '';
+  const id = storage.getCookie(UUID_KEY)
+  if (id) return id;
+  const newId = utils.generateUUID();
+  storage.setCookie(UUID_KEY, newId);
+  return newId;
 }
 
 export function isMobile() {
@@ -289,6 +263,22 @@ function hasBannerMediaType(bid) {
 
 function hasVideoMediaType(bid) {
   return !!utils.deepAccess(bid, 'mediaTypes.video');
+}
+
+function getValidSizes(sizes) {
+  let result = [];
+  if (sizes && utils.isArray(sizes) && sizes.length > 0) {
+    for (let i = 0; i < sizes.length; i++) {
+      if (utils.isArray(sizes[i]) && sizes[i].length == 2) {
+        const width = sizes[i][0];
+        const height = sizes[i][1];
+        if ((width >= 300 && height >= 250) || (width == 1 && height == 1)) {
+          result.push([width, height]);
+        }
+      }
+    }
+  }
+  return result;
 }
 
 export const spec = {

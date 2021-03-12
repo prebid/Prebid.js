@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, sendEvent, log, setState, state } from 'modules/sublimeBidAdapter.js';
+import { spec } from 'modules/sublimeBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
 let utils = require('src/utils');
@@ -9,6 +9,16 @@ describe('Sublime Adapter', function() {
 
   describe('sendEvent', function() {
     let sandbox;
+    const triggeredPixelProperties = [
+      't',
+      'tse',
+      'z',
+      'e',
+      'src',
+      'puid',
+      'trId',
+      'pbav',
+    ];
 
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
@@ -16,8 +26,10 @@ describe('Sublime Adapter', function() {
 
     it('should trigger pixel', function () {
       sandbox.spy(utils, 'triggerPixel');
-      sendEvent('test', true);
+      spec.sendEvent('test');
       expect(utils.triggerPixel.called).to.equal(true);
+      const params = utils.parseUrl(utils.triggerPixel.args[0][0]).search;
+      expect(Object.keys(params)).to.have.members(triggeredPixelProperties);
     });
 
     afterEach(function () {
@@ -94,8 +106,9 @@ describe('Sublime Adapter', function() {
     });
 
     it('should contains a request id equals to the bid id', function() {
-      expect(request[0].data.requestId).to.equal(bidRequests[0].bidId);
-      expect(request[1].data.requestId).to.equal(bidRequests[1].bidId);
+      for (let i = 0; i < request.length; i = i + 1) {
+        expect(JSON.parse(request[i].data).requestId).to.equal(bidRequests[i].bidId);
+      }
     });
 
     it('should have an url that contains bid keyword', function() {
@@ -149,7 +162,7 @@ describe('Sublime Adapter', function() {
           currency: 'USD',
           netRevenue: true,
           ttl: 600,
-          pbav: '0.5.2',
+          pbav: '0.7.0',
           ad: '',
         },
       ];
@@ -191,7 +204,7 @@ describe('Sublime Adapter', function() {
         netRevenue: true,
         ttl: 600,
         ad: '<!-- Creative -->',
-        pbav: '0.5.2',
+        pbav: '0.7.0',
       };
 
       expect(result[0]).to.deep.equal(expectedResponse);
@@ -241,7 +254,7 @@ describe('Sublime Adapter', function() {
         netRevenue: true,
         ttl: 600,
         ad: '<!-- ad -->',
-        pbav: '0.5.2',
+        pbav: '0.7.0',
       };
 
       expect(result[0]).to.deep.equal(expectedResponse);
@@ -279,4 +292,24 @@ describe('Sublime Adapter', function() {
       });
     });
   });
+
+  describe('onBidWon', function() {
+    let sandbox;
+    let bid = { foo: 'bar' };
+
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+    });
+
+    it('should trigger "bidwon" pixel', function () {
+      sandbox.spy(utils, 'triggerPixel');
+      spec.onBidWon(bid);
+      const params = utils.parseUrl(utils.triggerPixel.args[0][0]).search;
+      expect(params.e).to.equal('bidwon');
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+  })
 });

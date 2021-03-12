@@ -171,10 +171,10 @@ describe('Adkernel adapter', function () {
           nurl: 'https://rtb.com/win?i=ZjKoPYSFI3Y_0',
           adm: '<!-- admarkup here -->',
           w: 300,
-          h: 250
+          h: 250,
+          dealid: 'deal'
         }]
       }],
-      cur: 'USD',
       ext: {
         adk_usersync: [{type: 1, url: 'https://adk.sync.com/sync'}]
       }
@@ -191,7 +191,6 @@ describe('Adkernel adapter', function () {
           cid: '16855'
         }]
       }],
-      cur: 'USD'
     }, usersyncOnlyResponse = {
       id: 'nobid1',
       ext: {
@@ -221,13 +220,28 @@ describe('Adkernel adapter', function () {
             }
           }),
           adomain: ['displayurl.com'],
+          cat: ['IAB1-4', 'IAB8-16', 'IAB25-5'],
           cid: '1',
-          crid: '4'
+          crid: '4',
+          ext: {
+            'advertiser_id': 777,
+            'advertiser_name': 'advertiser',
+            'agency_name': 'agency'
+          }
         }]
       }],
       bidid: 'pTuOlf5KHUo',
-      cur: 'USD'
+      cur: 'EUR'
     };
+
+  var sandbox;
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
 
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
     return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
@@ -235,7 +249,7 @@ describe('Adkernel adapter', function () {
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
   function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
-    let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
+    let dntmock = sandbox.stub(utils, 'getDNT').callsFake(() => dnt);
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
     dntmock.restore();
     let rtbRequests = pbRequests.map(r => JSON.parse(r.data));
@@ -307,6 +321,7 @@ describe('Adkernel adapter', function () {
     it('should fill device with caller macro', function () {
       expect(bidRequest).to.have.property('device');
       expect(bidRequest.device).to.have.property('ip', 'caller');
+      expect(bidRequest.device).to.have.property('ipv6', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
       expect(bidRequest.device).to.have.property('dnt', 1);
     });
@@ -495,6 +510,7 @@ describe('Adkernel adapter', function () {
       expect(resp).to.have.property('ttl');
       expect(resp).to.have.property('mediaType', BANNER);
       expect(resp).to.have.property('ad');
+      expect(resp).to.have.property('dealId', 'deal');
       expect(resp.ad).to.have.string('<!-- admarkup here -->');
     });
 
@@ -540,8 +556,7 @@ describe('Adkernel adapter', function () {
 
   describe('adapter configuration', () => {
     it('should have aliases', () => {
-      expect(spec.aliases).to.have.lengthOf(6);
-      expect(spec.aliases).to.include.members(['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon']);
+      expect(spec.aliases).to.have.lengthOf(11);
     });
   });
 
@@ -575,7 +590,13 @@ describe('Adkernel adapter', function () {
       let resp = spec.interpretResponse({body: nativeResponse}, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_01');
       expect(resp).to.have.property('cpm', 2.25);
-      expect(resp).to.have.property('currency', 'USD');
+      expect(resp).to.have.property('currency', 'EUR');
+      expect(resp).to.have.property('meta');
+      expect(resp.meta.advertiserId).to.be.eql(777);
+      expect(resp.meta.advertiserName).to.be.eql('advertiser');
+      expect(resp.meta.agencyName).to.be.eql('agency');
+      expect(resp.meta.advertiserDomains).to.be.eql(['displayurl.com']);
+      expect(resp.meta.secondaryCatIds).to.be.eql(['IAB1-4', 'IAB8-16', 'IAB25-5']);
       expect(resp).to.have.property('mediaType', NATIVE);
       expect(resp).to.have.property('native');
       expect(resp.native).to.have.property('clickUrl', 'http://rtb.com/click?i=pTuOlf5KHUo_0');

@@ -1,11 +1,13 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
+const PLAYER_URL = 'https://prebid.media.net/video/bundle.js';
 const SLOT_VISIBILITY = {
   NOT_DETERMINED: 0,
   ABOVE_THE_FOLD: 1,
@@ -16,12 +18,16 @@ const EVENTS = {
   BID_WON_EVENT_NAME: 'client_bid_won'
 };
 const EVENT_PIXEL_URL = 'qsearch-a.akamaihd.net/log';
-
+const OUTSTREAM = 'outstream';
 let refererInfo = getRefererInfo();
 
 let mnData = {};
+
+window.mnet = window.mnet || {};
+window.mnet.queue = window.mnet.queue || [];
+
 mnData.urlData = {
-  domain: utils.parseUrl(refererInfo.referer).host,
+  domain: utils.parseUrl(refererInfo.referer).hostname,
   page: refererInfo.referer,
   isTop: refererInfo.reachedTop
 }
@@ -113,8 +119,15 @@ function getWindowSize() {
   }
 }
 
-function getCoordinates(id) {
-  const element = document.getElementById(id);
+function getCoordinates(adUnitCode) {
+  let element = document.getElementById(adUnitCode);
+  if (!element && adUnitCode.indexOf('/') !== -1) {
+    // now it means that adUnitCode is GAM AdUnitPath
+    const {divId} = utils.getGptSlotInfoForAdUnitCode(adUnitCode);
+    if (utils.isStr(divId)) {
+      element = document.getElementById(divId);
+    }
+  }
   if (element && element.getBoundingClientRect) {
     const rect = element.getBoundingClientRect();
     let coordinates = {};
@@ -131,11 +144,16 @@ function getCoordinates(id) {
   return null;
 }
 
-function extParams(params, gdpr, uspConsent, userId) {
-  let windowSize = spec.getWindowSize();
-  let gdprApplies = !!(gdpr && gdpr.gdprApplies);
-  let uspApplies = !!(uspConsent);
-  let coppaApplies = !!(config.getConfig('coppa'));
+function extParams(bidRequest, bidderRequests) {
+  const params = utils.deepAccess(bidRequest, 'params');
+  const gdpr = utils.deepAccess(bidderRequests, 'gdprConsent');
+  const uspConsent = utils.deepAccess(bidderRequests, 'uspConsent');
+  const userId = utils.deepAccess(bidRequest, 'userId');
+  const sChain = utils.deepAccess(bidRequest, 'schain') || {};
+  const windowSize = spec.getWindowSize();
+  const gdprApplies = !!(gdpr && gdpr.gdprApplies);
+  const uspApplies = !!(uspConsent);
+  const coppaApplies = !!(config.getConfig('coppa'));
   return Object.assign({},
     { customer_id: params.cid },
     { prebid_version: $$PREBID_GLOBAL$$.version },
@@ -146,7 +164,8 @@ function extParams(params, gdpr, uspConsent, userId) {
     {coppa_applies: coppaApplies},
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
-    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true }
+    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true },
+    !utils.isEmpty(sChain) && {schain: sChain}
   );
 }
 
@@ -160,7 +179,15 @@ function slotParams(bidRequest) {
     },
     all: bidRequest.params
   };
-  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes || [];
+  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
+
+  const videoInMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
+  const videoInParams = utils.deepAccess(bidRequest, 'params.video') || {};
+  const videoCombinedObj = Object.assign({}, videoInParams, videoInMediaType);
+
+  if (!utils.isEmpty(videoCombinedObj)) {
+    params.video = videoCombinedObj;
+  }
 
   if (bannerSizes.length > 0) {
     params.banner = transformSizes(bannerSizes);
@@ -177,7 +204,7 @@ function slotParams(bidRequest) {
     params.tagid = bidRequest.params.crid.toString();
   }
 
-  let bidFloor = parseFloat(bidRequest.params.bidfloor);
+  let bidFloor = parseFloat(bidRequest.params.bidfloor || bidRequest.params.bidFloor);
   if (bidFloor) {
     params.bidfloor = bidFloor;
   }
@@ -246,7 +273,7 @@ function getBidderURL(cid) {
 function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site),
-    ext: extParams(bidRequests[0].params, bidderRequests.gdprConsent, bidderRequests.uspConsent, bidRequests[0].userId),
+    ext: extParams(bidRequests[0], bidderRequests),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
     tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
@@ -300,12 +327,46 @@ function clearMnData() {
   mnData = {};
 }
 
+function addRenderer(bid) {
+  const videoContext = utils.deepAccess(bid, 'context') || '';
+  const vastTimeout = utils.deepAccess(bid, 'vto');
+  /* Adding renderer only when the context is Outstream
+     and the provider has responded with a renderer.
+   */
+  if (videoContext == OUTSTREAM && vastTimeout) {
+    bid.renderer = newVideoRenderer(bid);
+  }
+}
+
+function newVideoRenderer(bid) {
+  const renderer = Renderer.install({
+    url: PLAYER_URL,
+  });
+  renderer.setRender(function (bid) {
+    window.mnet.queue.push(function () {
+      const obj = {
+        width: bid.width,
+        height: bid.height,
+        vastTimeout: bid.vto,
+        maxAllowedVastTagRedirects: bid.mavtr,
+        allowVpaid: bid.avp,
+        autoPlay: bid.ap,
+        preload: bid.pl,
+        mute: bid.mt
+      }
+      const adUnitCode = bid.dfp_id;
+      const divId = utils.getGptSlotInfoForAdUnitCode(adUnitCode).divId || adUnitCode;
+      window.mnet.mediaNetoutstreamPlayer(bid, divId, obj);
+    });
+  });
+  return renderer;
+}
 export const spec = {
 
   code: BIDDER_CODE,
   gvlid: 142,
 
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -366,9 +427,10 @@ export const spec = {
     }
     validBids = bids.filter(bid => isValidBid(bid));
 
+    validBids.forEach(addRenderer);
+
     return validBids;
   },
-
   getUserSyncs: function(syncOptions, serverResponses) {
     let cookieSyncUrls = fetchCookieSyncUrls(serverResponses);
 
