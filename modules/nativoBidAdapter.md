@@ -3,7 +3,7 @@
 ```
 Module Name: Nativo Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: nativo@nativo.com
+Maintainer: prebiddev@nativo.com
 ```
 
 # Description
@@ -19,35 +19,20 @@ gulp serve --modules=nativoBidAdapter
 ```
 var adUnits = [
         {
-            code: 'test-div',
+            code: 'div-gpt-ad-1460505748561-0',
             mediaTypes: {
                 banner: {
-                    sizes: [[300, 250]],  // a display size
+                    sizes: [[300, 250], [300,600]],
                 }
             },
-            bids: [
-                {
-                    bidder: "nativo",
-                    params: {
-                        placement: '12345'
-                    }
+            // Replace this object to test a new Adapter!
+            bids: [{
+                bidder: 'nativo',
+                params: {
+                    placementId: 13144370
                 }
-            ]
-        },{
-            code: 'test-div',
-            mediaTypes: {
-                banner: {
-                    sizes: [[320, 50]],   // a mobile size
-                }
-            },
-            bids: [
-                {
-                    bidder: "nativo",
-                    params: {
-                        placement: 67890
-                    }
-                }
-            ]
+            }]
+
         }
     ];
 

@@ -4,13 +4,13 @@ import { BANNER } from '../src/mediaTypes.js'
 // import { config } from 'src/config'
 
 const BIDDER_CODE = 'nativo'
-const BIDDER_ENDPOINT = 'http://www.testlocalbidrequest.com:3000/requestBid/' // test local endpoint
-const USER_SYNC_URL_IFRAME = 'http://www.testlocalbidrequest.com:3000/'
-const USER_SYNC_URL_IMAGE = 'http://www.testlocalbidrequest.com:3000/'
+const BIDDER_ENDPOINT = 'https://jadserve.postrelease.com/prebid'
 
 const TIME_TO_LIVE = 360
 
 const SUPPORTED_AD_TYPES = [BANNER]
+
+const bidRequestMap = {}
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
@@ -26,7 +26,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.adUnitCode)
+    return bid.params && !!bid.params.placementId
   },
 
   /**
@@ -38,16 +38,25 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const payload = {
-      selector: validBidRequests[0].adUnitCode,
-      id: validBidRequests[0].bidId
+    const placementIds = []
+    const placmentBidIdMap = {}
+    let placementId
+    validBidRequests.forEach((request) => {
+      placementId = request.params.placementId
+      placementIds.push(placementId)
+      placmentBidIdMap[placementId] = request.bidId
+    })
+    bidRequestMap[bidderRequest.bidderRequestId] = placmentBidIdMap
+
+    let params = {
+      ntv_ptd: placementIds.toString(),
+      ntv_pb_rid: bidderRequest.bidderRequestId,
+      ntv_url: encodeURIComponent(bidderRequest.refererInfo.referer),
     }
-    const payloadString = JSON.stringify(payload);
 
     let serverRequest = {
-      method: 'POST',
-      url: BIDDER_ENDPOINT,
-      data: payloadString
+      method: 'GET',
+      url: BIDDER_ENDPOINT + objectToQS(params),
     }
 
     return serverRequest
@@ -67,18 +76,16 @@ export const spec = {
     if (!response || !response.body || utils.isEmpty(response.body)) return []
 
     try {
-      // Parse the response and return a bidResponses array
       const body = response.body
-      // const headerValue = response.headers.get('some-response-header')
       const bidResponses = []
+      const seatbids = body.seatbid
 
-      let seatbids = body.seatbid
       // Step through and grab pertinent data
       let bidResponse
       seatbids.forEach((seatbid) => {
         seatbid.bid.forEach((bid) => {
           bidResponse = {
-            requestId: body.id,
+            requestId: this.getRequestId(body.id, bid.impid),
             cpm: bid.price,
             currency: body.cur,
             width: bid.w,
@@ -90,26 +97,15 @@ export const spec = {
             ad: bid.adm,
             meta: {
               advertiserDomains: bid.adomain,
-              // cat: bid.cat,
-              // impid: bid.impid,
-              // networkId: NETWORK_ID,
-              // networkName: NETWORK_NAME,
-              // agencyId: AGENCY_ID,
-              // agencyName: AGENCY_NAME,
-              // advertiserId: ADVERTISER_ID,
-              // advertiserName: ADVERTISER_NAME,
-              // advertiserDomains: [ARRAY_OF_ADVERTISER_DOMAINS],
-              // brandId: BRAND_ID,
-              // brandName: BRAND_NAME,
-              // primaryCatId: IAB_CATEGORY,
-              // secondaryCatIds: [ARRAY_OF_IAB_CATEGORIES],
-              // mediaType: MEDIA_TYPE
             },
           }
 
           bidResponses.push(bidResponse)
         })
       })
+
+      // Don't need the map anymore as it was unique for one request/response
+      delete bidRequestMap[body.id]
 
       return bidResponses
     } catch (error) {
@@ -134,40 +130,60 @@ export const spec = {
     gdprConsent,
     uspConsent
   ) {
-    // console.log('syncOptions', syncOptions) // eslint-disable-line no-console
-    // console.log('serverResponses', serverResponses) // eslint-disable-line no-console
-    // console.log('gdprConsent', gdprConsent) // eslint-disable-line no-console
-    // console.log('uspConsent', uspConsent) // eslint-disable-line no-console
-
-    const syncs = []
-
+    // Generate consent qs string
     let params = ''
-
     // GDPR
     if (gdprConsent) {
-      params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0)
-      params +=
-        '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '')
+      params = appendQSParamString(
+        params,
+        'gdpr',
+        gdprConsent.gdprApplies ? 1 : 0
+      )
+      params = appendQSParamString(
+        params,
+        'gdpr_consent',
+        encodeURIComponent(gdprConsent.consentString || '')
+      )
     }
-
     // CCPA
     if (uspConsent) {
-      params += '&us_privacy=' + encodeURIComponent(uspConsent)
+      params = appendQSParamString(
+        params,
+        'us_privacy',
+        encodeURIComponent(uspConsent.uspConsent)
+      )
     }
 
-    // TODO: We need to determine how we're including sync urls
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: USER_SYNC_URL_IFRAME + params,
-      })
+    // Get sync urls from the respnse and inject cinbsent params
+    const types = {
+      iframe: syncOptions.iframeEnabled,
+      image: syncOptions.pixelEnabled,
     }
-    if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: USER_SYNC_URL_IMAGE + params,
+    const syncs = []
+
+    let body
+    serverResponses.forEach((response) => {
+      if (!response) return
+
+      body = response.body
+
+      // Make sure we have valid content
+      if (!body && !body.seatbid && body.seatbid.length === 0) return
+
+      body.seatbid.forEach((seatbid) => {
+        // Grab the syncs for each seatbid
+        seatbid.syncUrls.forEach((sync) => {
+          if (types[sync.type]) {
+            if (sync.url.trim() !== '') {
+              syncs.push({
+                type: sync.type,
+                url: sync.url.replace('{GDPR_params}', params),
+              })
+            }
+          }
+        })
       })
-    }
+    })
 
     return syncs
   },
@@ -190,5 +206,44 @@ export const spec = {
    * @param {Object} bidder - The bid of which the targeting has been set
    */
   onSetTargeting: function (bid) {},
+
+  /**
+   * Maps Prebid's bidId to Nativo's placementId values per unique bidderRequestId
+   * @param {String} bidderRequestId - The unique ID value associated with the bidderRequest
+   * @param {String} placementId - The placement ID value from Nativo
+   * @returns {String} - The bidId value associated with the corresponding placementId
+   */
+  getRequestId: function (bidderRequestId, placementId) {
+    return (
+      bidRequestMap[bidderRequestId] &&
+      bidRequestMap[bidderRequestId][placementId]
+    )
+  },
 }
 registerBidder(spec)
+
+// Utils
+/**
+ * Append QS param to existing string
+ * @param {String} str - String to append to
+ * @param {String} key - Key to append
+ * @param {String} value - Value to append
+ * @returns
+ */
+function appendQSParamString(str, key, value) {
+  return str + `${str.length ? '&' : ''}${key}=${value}`
+}
+
+/**
+ * Convert an object to query string parameters
+ * @param {Object} obj - Object to convert
+ * @returns
+ */
+function objectToQS(obj) {
+  return (
+    '?' +
+    Object.keys(obj).reduce((value, key) => {
+      return appendQSParamString(value, key, obj[key])
+    }, '')
+  )
+}

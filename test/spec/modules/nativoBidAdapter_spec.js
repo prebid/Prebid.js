@@ -27,10 +27,10 @@ describe('nativoBidAdapterTests', function () {
     })
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid)
-      delete bid.adUnitCode
-      bid.adUnitCode = 0
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
+      let bid2 = Object.assign({}, bid)
+      delete bid2.params
+      bid2.params = {}
+      expect(spec.isBidRequestValid(bid2)).to.equal(false)
     })
   })
 
@@ -53,20 +53,27 @@ describe('nativoBidAdapterTests', function () {
       },
     ]
 
-    it('should contain a valid selector', function () {
-      const request = spec.buildRequests(bidRequests)
-      const payload = JSON.parse(request.data)
+    it('url should contain query string parameters', function () {
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          referer: 'https://www.test.com',
+        },
+      })
 
-      expect(payload.selector).to.exist
-      expect(payload.selector).to.be.a('string')
-      expect(payload.selector).to.not.have.lengthOf(0)
+      expect(request.url).to.exist
+      expect(request.url).to.be.a('string')
+
+      expect(request.url).to.include('?')
+      expect(request.url).to.include('ntv_url')
+      expect(request.url).to.include('ntv_ptd')
     })
   })
 })
 
 describe('interpretResponse', function () {
   let response = {
-    id: '1F254428-AB11-4D5E-9887-567B3F952CA5',
+    id: '126456',
     seatbid: [
       {
         seat: 'seat_0',
@@ -108,12 +115,19 @@ describe('interpretResponse', function () {
     ]
 
     let bidderRequest = {
+      id: 123456,
       bids: [
         {
-          adUnitCode: 'code',
+          params: {
+            placementId: 1
+          }
         },
       ],
     }
+
+    // mock
+    spec.getRequestId = () => 123456
+
     let result = spec.interpretResponse({ body: response }, { bidderRequest })
     expect(Object.keys(result[0])).to.have.deep.members(
       Object.keys(expectedResponse[0])
@@ -130,29 +144,84 @@ describe('interpretResponse', function () {
 })
 
 describe('getUserSyncs', function () {
-  const USER_SYNC_URL_IFRAME = 'http://www.testlocalbidrequest.com:3000/'
-  const USER_SYNC_URL_IMAGE = 'http://www.testlocalbidrequest.com:3000/'
+  const response = [
+    {
+      body: {
+        cur: 'USD',
+        id: 'a136dbd8-4387-48bf-b8e4-ff9c1d6056ee',
+        seatbid: [
+          {
+            bid: [{}],
+            seat: 'seat_0',
+            syncUrls: [
+              {
+                type: 'image',
+                url: 'pixel-tracker-test-url/?{GDPR_params}',
+              },
+              {
+                type: 'iframe',
+                url: 'iframe-tracker-test-url/?{GDPR_params}',
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ]
+
+  const gdprConsent = {
+    gdprApplies: true,
+    consentString: '111111'
+  }
+
+  const uspConsent = {
+    uspConsent: '1YYY'
+  }
 
   it('Returns empty array if no supported user syncs', function () {
-    let userSync = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false });
-    expect(userSync).to.be.an('array').with.lengthOf(0);
-  });
+    let userSync = spec.getUserSyncs(
+      {
+        iframeEnabled: false,
+        pixelEnabled: false,
+      },
+      response,
+      gdprConsent,
+      uspConsent
+    )
+    expect(userSync).to.be.an('array').with.lengthOf(0)
+  })
 
   it('Returns valid iframe user sync', function () {
-    let userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false });
-    expect(userSync).to.be.an('array').with.lengthOf(1);
-    expect(userSync[0].type).to.exist;
-    expect(userSync[0].url).to.exist;
-    expect(userSync[0].type).to.be.equal('iframe');
-    expect(userSync[0].url).to.be.equal(USER_SYNC_URL_IFRAME);
-  });
+    let userSync = spec.getUserSyncs(
+      {
+        iframeEnabled: true,
+        pixelEnabled: false,
+      },
+      response,
+      gdprConsent,
+      uspConsent
+    )
+    expect(userSync).to.be.an('array').with.lengthOf(1)
+    expect(userSync[0].type).to.exist
+    expect(userSync[0].url).to.exist
+    expect(userSync[0].type).to.be.equal('iframe')
+    expect(userSync[0].url).to.contain('gdpr=1&gdpr_consent=111111&us_privacy=1YYY')
+  })
 
   it('Returns valid URL and type', function () {
-    let userSync = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: true });
-    expect(userSync).to.be.an('array').with.lengthOf(1);
-    expect(userSync[0].type).to.exist;
-    expect(userSync[0].url).to.exist;
-    expect(userSync[0].type).to.be.equal('image');
-    expect(userSync[0].url).to.be.equal(USER_SYNC_URL_IMAGE);
-  });
-});
+    let userSync = spec.getUserSyncs(
+      {
+        iframeEnabled: false,
+        pixelEnabled: true,
+      },
+      response,
+      gdprConsent,
+      uspConsent
+    )
+    expect(userSync).to.be.an('array').with.lengthOf(1)
+    expect(userSync[0].type).to.exist
+    expect(userSync[0].url).to.exist
+    expect(userSync[0].type).to.be.equal('image')
+    expect(userSync[0].url).to.contain('gdpr=1&gdpr_consent=111111&us_privacy=1YYY')
+  })
+})
