@@ -148,7 +148,16 @@ pbjs.setConfig({
                 expires: 90,          // Expiration in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
-        }, {
+    }, {
+            name: 'nextroll',
+            params: {
+                partnerId: "1009",         // Set your real NextRoll partner ID here for production
+            },
+            storage: {
+                type: 'html5',
+                name: '_nextroll_id',
+            },
+    }, {
              name: 'criteo',
              storage: {              // It is best not to specify this parameter since the module needs to be called as many times as possible
                  type: 'html5',
