@@ -1,6 +1,8 @@
 import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
+import * as utils from 'src/utils.js';
+
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -98,7 +100,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
-      sinon.assert.callCount(prebidmanagerAnalytics.track, 7);
+      sinon.assert.callCount(prebidmanagerAnalytics.track, 6);
     });
   });
 
@@ -133,6 +135,25 @@ describe('Prebid Manager Analytics Adapter', function () {
       expect(pmEvents.utmTags.utm_campaign).to.equal('utm_camp');
       expect(pmEvents.utmTags.utm_term).to.equal('');
       expect(pmEvents.utmTags.utm_content).to.equal('');
+    });
+  });
+
+  describe('build page info', function () {
+    afterEach(function () {
+      prebidmanagerAnalytics.disableAnalytics()
+    });
+    it('should build page info', function () {
+      prebidmanagerAnalytics.enableAnalytics({
+        provider: 'prebidmanager',
+        options: {
+          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+        }
+      });
+
+      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
+
+      expect(pmEvents.pageInfo.domain).to.equal(window.location.hostname);
+      expect(pmEvents.pageInfo.referrerDomain).to.equal(utils.parseUrl(document.referrer).hostname);
     });
   });
 });

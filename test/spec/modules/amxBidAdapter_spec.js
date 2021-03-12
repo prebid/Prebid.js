@@ -17,10 +17,26 @@ const embeddedTrackingPixel = `https://1x1.a-mo.net/hbx/g_impression?A=sample&B=
 const sampleNurl = 'https://example.exchange/nurl';
 
 const sampleFPD = {
+  site: {
+    keywords: 'sample keywords',
+    ext: {
+      data: {
+        pageType: 'article'
+      }
+    }
+  },
+  user: {
+    gender: 'O',
+    yob: 1982,
+  }
+};
+
+const legacySampleFPD = {
   context: {
     keywords: 'sample keywords',
     data: {
       pageType: 'article'
+
     }
   },
   user: {
@@ -31,7 +47,7 @@ const sampleFPD = {
 
 const stubConfig = (withStub) => {
   const stub = sinon.stub(config, 'getConfig').callsFake(
-    (arg) => arg === 'fpd' ? sampleFPD : null
+    (arg) => arg === 'ortb2' ? sampleFPD : null
   )
 
   withStub();
@@ -189,6 +205,45 @@ describe('AmxBidAdapter', () => {
       expect(data.tm).to.equal(true);
     });
 
+    it('if prebid is in an iframe, will use the frame url as domain, if the topmost is not avialable', () => {
+      const { data } = spec.buildRequests([sampleBidRequestBase], {
+        ...sampleBidderRequest,
+        refererInfo: {
+          numIframes: 1,
+          referer: 'http://search-traffic-source.com',
+          stack: []
+        }
+      });
+      expect(data.do).to.equal('localhost')
+      expect(data.re).to.equal('http://search-traffic-source.com');
+    });
+
+    it('if we are in AMP, make sure we use the canonical URL or the referrer (which is sourceUrl)', () => {
+      const { data } = spec.buildRequests([sampleBidRequestBase], {
+        ...sampleBidderRequest,
+        refererInfo: {
+          isAmp: true,
+          referer: 'http://real-publisher-site.com/content',
+          stack: []
+        }
+      });
+      expect(data.do).to.equal('real-publisher-site.com')
+      expect(data.re).to.equal('http://real-publisher-site.com/content');
+    })
+
+    it('if prebid is in an iframe, will use the topmost url as domain', () => {
+      const { data } = spec.buildRequests([sampleBidRequestBase], {
+        ...sampleBidderRequest,
+        refererInfo: {
+          numIframes: 1,
+          referer: 'http://search-traffic-source.com',
+          stack: ['http://top-site.com', 'http://iframe.com']
+        }
+      });
+      expect(data.do).to.equal('top-site.com');
+      expect(data.re).to.equal('http://search-traffic-source.com');
+    });
+
     it('handles referer data and GDPR, USP Consent, COPPA', () => {
       const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
       delete data.m; // don't deal with "m" in this test
@@ -214,7 +269,7 @@ describe('AmxBidAdapter', () => {
     it('will forward first-party data', () => {
       stubConfig(() => {
         const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
-        expect(data.fpd).to.deep.equal(sampleFPD)
+        expect(data.fpd).to.deep.equal(legacySampleFPD)
       });
     });
 
