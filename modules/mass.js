@@ -6,8 +6,8 @@ import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
 import find from 'core-js-pure/features/array/find.js';
 
-let listenerAdded = false;
-let massEnabled = false;
+export let listenerAdded = false;
+export let massEnabled = false;
 
 const defaultCfg = {
   bootloaderUrl: 'https://cdn.massplatform.net/bootloader.js',
@@ -23,7 +23,7 @@ config.getConfig('mass', config => init(config.mass));
 /**
  * Module init.
  */
-function init(customCfg) {
+export function init(customCfg) {
   cfg = Object.assign({}, defaultCfg, customCfg);
 
   if (cfg.enabled === false) {
@@ -57,7 +57,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
     adm: bid.ad
   };
 
-  bid.ad = '<script>window.top.postMessage({massBidId: "' + bid.requestId + '"}, "*");\x3c/script>';
+  bid.ad = '<script>window.parent.postMessage({massBidId: "' + bid.requestId + '"}, "*");\x3c/script>';
 
   addListenerOnce();
 
@@ -67,7 +67,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
 /**
  * Check if a bid is MASS.
  */
-function isMassBid(bid) {
+export function isMassBid(bid) {
   // either bid.meta.mass is set or deal ID matches a publisher specified pattern:
   if (!((bid.meta && bid.meta.mass) || (cfg.dealIdPattern && cfg.dealIdPattern.test(bid.dealId)))) {
     return false;
@@ -80,7 +80,7 @@ function isMassBid(bid) {
 /**
  * Add listener to detect requests to render MASS ads.
  */
-function addListenerOnce() {
+export function addListenerOnce() {
   if (!listenerAdded) {
     window.addEventListener('message', e => {
       if (e && e.data && e.data.massBidId) {
@@ -95,7 +95,7 @@ function addListenerOnce() {
 /**
  * Prepare payload for render.
  */
-function getRenderPayload(e) {
+export function getRenderPayload(e) {
   const payload = {
     type: 'prebid',
     e
@@ -110,7 +110,7 @@ function getRenderPayload(e) {
 /**
  * Render a MASS ad.
  */
-function render(payload) {
+export function render(payload) {
   const ns = window.mass = window.mass || {};
 
   ns.bootloader = ns.bootloader || {queue: []};
