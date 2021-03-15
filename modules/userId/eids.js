@@ -172,6 +172,15 @@ const USER_IDS_CONFIG = {
   'tapadId': {
     source: 'tapad.com',
     atype: 1
+  },
+
+  // Novatiq Snowflake
+  'novatiq': {
+    getValue: function(data) {
+      return data.snowflake
+    },
+    source: 'novatiq.com',
+    atype: 1
   }
 };
 
