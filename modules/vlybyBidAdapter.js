@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 
-import { BANNER,VIDEO } from '../src/mediaTypes.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
 import { config } from '../src/config.js';
 
 const ENDPOINT = '//europe-west3-vlybypoc2019.cloudfunctions.net/prebid';
@@ -8,7 +8,7 @@ const BIDDER_CODE = 'vlyby';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [VIDEO,BANNER],
+  supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.publisherId && bid.params.siteId) {
@@ -53,16 +53,16 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
-    if(serverResponse.body){
+    if (serverResponse.body){
       const vHB = serverResponse.body.bids;
-      try{
+      try {
         let bidResponse = {
           requestId: vHB.bid,
           cpm: vHB.cpm,
           width: vHB.size.width,
           height: vHB.size.height,
           creativeId: vHB.creative.id,
-          currency: "EUR",
+          currency: 'EUR',
           netRevenue: true,
           ttl: 360,
           ad: vHB.creative.ad
