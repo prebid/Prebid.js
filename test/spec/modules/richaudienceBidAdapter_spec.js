@@ -87,7 +87,7 @@ describe('Richaudience adapter tests', function () {
     params: {
       bidfloor: 0.5,
       pid: 'ADb1f40rmi',
-      supplyType: 'site'
+      supplyType: 'site',
     },
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
@@ -255,9 +255,6 @@ describe('Richaudience adapter tests', function () {
 
     expect(requestContent).to.have.property('demand').and.to.equal('video');
     expect(requestContent.videoData).to.have.property('format').and.to.equal('instream');
-    // expect(requestContent.videoData).to.have.property('mimes').and.to.equal("['video/mp4']");
-    // expect(requestContent.videoData.playerSize[0][0]).to.equal('640');
-    // expect(requestContent.videoData.playerSize[0][0]).to.equal('480');
   })
 
   it('Verify build request to prebid video outstream', function() {
@@ -277,7 +274,6 @@ describe('Richaudience adapter tests', function () {
 
     expect(requestContent).to.have.property('demand').and.to.equal('video');
     expect(requestContent.videoData).to.have.property('format').and.to.equal('outstream');
-    // expect(requestContent.videoData).to.have.property('mimes').and.to.equal("['video/mp4']");
   })
 
   describe('gdpr test', function () {
