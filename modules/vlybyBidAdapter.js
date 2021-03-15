@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import find from 'core-js-pure/features/array/find.js'
+
 import { BANNER,VIDEO } from '../src/mediaTypes.js'
 import { config } from '../src/config.js';
 
@@ -25,7 +25,7 @@ export const spec = {
       method: 'POST',
       url: `${ENDPOINT}`,
       data: {
-        pubDomain:publisherDomain,
+        pubDomain: publisherDomain,
         auctionId: bidderRequest.auctionId,
         refererInfo: {
           isAmp: refererInfo.isAmp,

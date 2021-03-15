@@ -4,12 +4,11 @@
 Module Name:    VLYBY Prebid Outstream
 Module Type:    Bidder Adapter
 Tech-Support:   prebid@vlyby.com
-Publisher:      support@vlyby.com
 ```
 
 # Description
 
-VLYBY Digital GmbH provides with the VLYBY Prebid Adapter a Mediation for the Outstream Product. Please contact support@vlyby.com for additional information and access to VLYBY User Interface.
+VLYBY Digital GmbH provides with the VLYBY Prebid Adapter a Mediation for the Outstream Product. Please contact prebid@vlyby.com for additional information and access to VLYBY User Interface.
 
 # Demo Implementation
 
@@ -27,8 +26,9 @@ In most of the cases a Publisher will use his own AdServer for delivering Creati
         bids: [{
             bidder: 'vlyby',
                 params: { 
-                    publisherId: "f363eb2b75459b34592cc4",    // only demo
-                    siteId: "techpreview.vlyby_prebidadapter" // only demo
+                    publisherId: 'f363eb2b75459b34592cc4',     // needed - only demo
+                    siteId: 'techpreview.vlyby_prebidadapter', // needed - only demo
+                    placement:'default'                        // optional - provided by VLYBY UI
                 }
         }]
     }]
