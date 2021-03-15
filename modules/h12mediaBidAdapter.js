@@ -65,7 +65,7 @@ export const spec = {
           refererUrl: window.top.document.referrer || window.document.referrer,
           isiframe,
           version: '$prebid.version$',
-          ExtUserIDs: Object.keys(bidRequest.userId || {}),
+          ExtUserIDs: bidRequest.userId,
           visitorInfo: {
             localTime: getLocalDateFormatted(),
             dayOfWeek: new Date().getDay(),
