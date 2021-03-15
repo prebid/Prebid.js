@@ -42,8 +42,8 @@ describe('KoblerAdapter', function () {
     });
   });
 
-  describe('isBidRequestValid', function() {
-    it('should not accept a request without bidId as valid', function() {
+  describe('isBidRequestValid', function () {
+    it('should not accept a request without bidId as valid', function () {
       const bid = {
         params: {
           someParam: 'abc'
@@ -55,7 +55,7 @@ describe('KoblerAdapter', function () {
       expect(result).to.be.false;
     });
 
-    it('should not accept a request without params as valid', function() {
+    it('should not accept a request without params as valid', function () {
       const bid = {
         bidId: 'e11768e8-3b71-4453-8698-0a2feb866589'
       };
@@ -65,7 +65,7 @@ describe('KoblerAdapter', function () {
       expect(result).to.be.false;
     });
 
-    it('should not accept a request without placementId as valid', function() {
+    it('should not accept a request without placementId as valid', function () {
       const bid = {
         bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
         params: {
@@ -78,7 +78,7 @@ describe('KoblerAdapter', function () {
       expect(result).to.be.false;
     });
 
-    it('should accept a request with bidId and placementId as valid', function() {
+    it('should accept a request with bidId and placementId as valid', function () {
       const bid = {
         bidId: 'e11768e8-3b71-4453-8698-0a2feb866589',
         params: {
@@ -93,8 +93,8 @@ describe('KoblerAdapter', function () {
     });
   });
 
-  describe('buildRequests', function() {
-    it('should read data from bidder request', function() {
+  describe('buildRequests', function () {
+    it('should read data from bidder request', function () {
       const testUrl = 'kobler.no';
       const auctionId = '8319af54-9795-4642-ba3a-6f57d6ff9100';
       const timeout = 5000;
@@ -109,7 +109,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.site.page).to.be.equal(testUrl);
     });
 
-    it('should read data from valid bid requests', function() {
+    it('should read data from valid bid requests', function () {
       const firstSize = [400, 800];
       const secondSize = [450, 950];
       const sizes = [firstSize, secondSize];
@@ -141,7 +141,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[0].banner.format[1].h).to.be.equal(secondSize[1]);
     });
 
-    it('should use 0x0 as default size', function() {
+    it('should use 0x0 as default size', function () {
       const validBidRequests = [
         createValidBidRequest(
           undefined,
@@ -162,7 +162,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[0].banner.format[0].h).to.be.equal(0);
     });
 
-    it('should use 0 as default position', function() {
+    it('should use 0 as default position', function () {
       const validBidRequests = [createValidBidRequest()];
       const bidderRequest = createBidderRequest();
 
@@ -173,7 +173,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[0].banner.pos).to.be.equal(0);
     });
 
-    it('should read zip from valid bid requests', function() {
+    it('should read zip from valid bid requests', function () {
       const zip = '700 02';
       const validBidRequests = [
         createValidBidRequest(
@@ -191,7 +191,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.device.geo.zip).to.be.equal(zip);
     });
 
-    it('should read test from valid bid requests', function() {
+    it('should read test from valid bid requests', function () {
       const validBidRequests = [
         createValidBidRequest(
           {
@@ -208,7 +208,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.test).to.be.equal(1);
     });
 
-    it('should read bidfloor from valid bid requests', function() {
+    it('should read bidfloor from valid bid requests', function () {
       const floorPrice = 4.343;
       const validBidRequests = [
         createValidBidRequest(
@@ -227,7 +227,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[0].bidfloor).to.be.equal(floorPrice);
     });
 
-    it('should read floorprice from valid bid requests', function() {
+    it('should read floorprice from valid bid requests', function () {
       const floorPrice = 3.914;
       const validBidRequests = [
         createValidBidRequest(
@@ -246,7 +246,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[0].bidfloor).to.be.equal(floorPrice);
     });
 
-    it('should read position from valid bid requests', function() {
+    it('should read position from valid bid requests', function () {
       const placementId = 'yzksf234592';
       const validBidRequests = [
         createValidBidRequest(
@@ -282,7 +282,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[2].tagid).to.be.equal(placementId);
     });
 
-    it('should read pos from valid bid requests', function() {
+    it('should read pos from valid bid requests', function () {
       const placementId = 'pwsc92365429';
       const validBidRequests = [
         createValidBidRequest(
@@ -310,7 +310,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[1].tagid).to.be.equal(placementId);
     });
 
-    it('should read dealId from valid bid requests', function() {
+    it('should read dealId from valid bid requests', function () {
       const dealId1 = '78214682234823';
       const dealId2 = '89913861235234';
       const validBidRequests = [
@@ -339,7 +339,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[1].pmp.deals[0].id).to.be.equal(dealId2);
     });
 
-    it('should read timeout from config', function() {
+    it('should read timeout from config', function () {
       const timeout = 4000;
       const validBidRequests = [createValidBidRequest()];
       // No timeout field
@@ -359,7 +359,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.tmax).to.be.equal(timeout);
     });
 
-    it('should read currency from config', function() {
+    it('should read currency from config', function () {
       const currency = 'NOK';
       config.setConfig({
         currency: {
@@ -380,7 +380,7 @@ describe('KoblerAdapter', function () {
 
     // TODO: test for reading debug from config
 
-    it('should read floor price using floors module', function() {
+    it('should read floor price using floors module', function () {
       const floorPriceFor580x400 = 6.5148;
       const floorPriceForAnySize = 4.2343;
       const validBidRequests = [
@@ -415,7 +415,7 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[1].bidfloor).to.be.equal(floorPriceForAnySize);
     });
 
-    it('should create whole OpenRTB request', function() {
+    it('should create whole OpenRTB request', function () {
       config.setConfig({
         currency: {
           adServerCurrency: 'SEK'
@@ -555,6 +555,98 @@ describe('KoblerAdapter', function () {
       };
 
       expect(openRtbRequest).to.deep.equal(expectedOpenRtbRequest);
+    });
+  });
+
+  describe('interpretResponse', function () {
+    it('should handle empty body', function () {
+      const responseWithEmptyBody = {
+        body: undefined
+      };
+      const bids = spec.interpretResponse(responseWithEmptyBody)
+
+      expect(bids.length).to.be.equal(0);
+    });
+
+    it('should generate bids from OpenRTB response', function () {
+      const responseWithTwoBids = {
+        body: {
+          seatbid: [
+            {
+              bid: [
+                {
+                  impid: '6194ddef-89a4-404f-9efd-6b718fc23308',
+                  price: 7.981,
+                  nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&asp=${AD_SERVER_PRICE}',
+                  crid: 'edea9b03-3a57-41aa-9c00-abd673e22006',
+                  dealid: '',
+                  w: 320,
+                  h: 250,
+                  adm: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}"></script>',
+                  adomain: [
+                    'https://kobler.no'
+                  ]
+                },
+                {
+                  impid: '2ec0b40f-d3ca-4ba5-8ce3-48290565690f',
+                  price: 6.71234,
+                  nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&asp=${AD_SERVER_PRICE}',
+                  crid: 'fa2d5af7-2678-4204-9023-44c526160742',
+                  dealid: '2783483223432342',
+                  w: 580,
+                  h: 400,
+                  adm: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}"></script>',
+                  adomain: [
+                    'https://bid.kobler.no'
+                  ]
+                }
+              ]
+            }
+          ],
+          cur: 'USD'
+        }
+      };
+      const bids = spec.interpretResponse(responseWithTwoBids)
+
+      const expectedBids = [
+        {
+          requestId: '6194ddef-89a4-404f-9efd-6b718fc23308',
+          cpm: 7.981,
+          currency: 'USD',
+          width: 320,
+          height: 250,
+          creativeId: 'edea9b03-3a57-41aa-9c00-abd673e22006',
+          dealId: '',
+          netRevenue: true,
+          ttl: 600,
+          ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}"></script>',
+          nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&asp=${AD_SERVER_PRICE}',
+          meta: {
+            advertiserDomains: [
+              'https://kobler.no'
+            ]
+          }
+        },
+        {
+          requestId: '2ec0b40f-d3ca-4ba5-8ce3-48290565690f',
+          cpm: 6.71234,
+          currency: 'USD',
+          width: 580,
+          height: 400,
+          creativeId: 'fa2d5af7-2678-4204-9023-44c526160742',
+          dealId: '2783483223432342',
+          netRevenue: true,
+          ttl: 600,
+          ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}"></script>',
+          nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&asp=${AD_SERVER_PRICE}',
+          meta: {
+            advertiserDomains: [
+              'https://bid.kobler.no'
+            ]
+          }
+        }
+      ];
+      expect(bids).to.deep.equal(expectedBids);
     });
   });
 });
