@@ -649,4 +649,42 @@ describe('KoblerAdapter', function () {
       expect(bids).to.deep.equal(expectedBids);
     });
   });
+
+  describe('onBidWon', function () {
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('Should not trigger pixel if bid does not contain nurl', function () {
+      spec.onBidWon({});
+
+      expect(utils.triggerPixel.called).to.be.false;
+    });
+
+    it('Should not trigger pixel if nurl is empty', function () {
+      spec.onBidWon({
+        nurl: ''
+      });
+
+      expect(utils.triggerPixel.called).to.be.false;
+    });
+
+    it('Should trigger pixel with replaced nurl if nurl is not empty', function () {
+      spec.onBidWon({
+        cpm: 8.341,
+        nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&asp=${AD_SERVER_PRICE}',
+        adserverTargeting: {
+          hb_pb: 8
+        }
+      });
+
+      expect(utils.triggerPixel.callCount).to.be.equal(1);
+      expect(utils.triggerPixel.firstCall.args[0]).to.be.equal(
+        'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=8.341&asp=8'
+      );
+    });
+  });
 });
