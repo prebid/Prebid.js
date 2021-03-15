@@ -8,7 +8,7 @@ import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 91;
-export const ADAPTER_VERSION = 33;
+export const ADAPTER_VERSION = 34;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
@@ -16,9 +16,12 @@ export const PROFILE_ID_PUBLISHERTAG = 185;
 const storage = getStorageManager(GVLID);
 const LOG_PREFIX = 'Criteo: ';
 
-// Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
-const PUBLISHER_TAG_URL = 'https://static.criteo.net/js/ld/publishertag.prebid.js';
-
+// Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
+const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
+export const FAST_BID_VERSION_CURRENT = 105;
+const FAST_BID_VERSION_LATEST = 'latest';
+const FAST_BID_VERSION_NONE = 'none';
+const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
 const FAST_BID_PUBKEY_E = 65537;
 const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
 
@@ -65,15 +68,18 @@ export const spec = {
     });
 
     // If publisher tag not already loaded try to get it from fast bid
-    if (!publisherTagAvailable()) {
+    const fastBidVersion = config.getConfig('criteo.fastBidVersion');
+    const canLoadPublisherTag = canFastBid(fastBidVersion);
+    if (!publisherTagAvailable() && canLoadPublisherTag) {
       window.Criteo = window.Criteo || {};
       window.Criteo.usePrebidEvents = false;
 
       tryGetCriteoFastBid();
 
+      const fastBidUrl = getFastBidUrl(fastBidVersion);
       // Reload the PublisherTag after the timeout to ensure FastBid is up-to-date and tracking done properly
       setTimeout(() => {
-        loadExternalScript(PUBLISHER_TAG_URL, BIDDER_CODE);
+        loadExternalScript(fastBidUrl, BIDDER_CODE);
       }, bidderRequest.timeout);
     }
 
@@ -452,6 +458,27 @@ for (var i = 0; i < 10; ++i) {
   break;
 }
 </script>`;
+}
+
+export function canFastBid(fastBidVersion) {
+  return fastBidVersion !== FAST_BID_VERSION_NONE;
+}
+
+export function getFastBidUrl(fastBidVersion) {
+  let version;
+  if (fastBidVersion === FAST_BID_VERSION_LATEST) {
+    version = '';
+  } else if (fastBidVersion) {
+    let majorVersion = String(fastBidVersion).split('.')[0];
+    if (majorVersion < 102) {
+      utils.logWarn('Specifying a Fastbid version which is not supporting version selection.')
+    }
+    version = '.' + fastBidVersion;
+  } else {
+    version = '.' + FAST_BID_VERSION_CURRENT;
+  }
+
+  return PUBLISHER_TAG_URL_TEMPLATE.replace(FAST_BID_VERSION_PLACEHOLDER, version);
 }
 
 export function tryGetCriteoFastBid() {
