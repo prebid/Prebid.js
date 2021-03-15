@@ -61,7 +61,7 @@ export const onBidWon = function (bid) {
       .replace(/\${AD_SERVER_PRICE}/g, adServerPrice);
     utils.triggerPixel(winNotificationUrl);
   }
-}
+};
 
 export const onTimeout = function (timeoutDataArray) {
   if (utils.isArray(timeoutDataArray)) {
@@ -76,9 +76,9 @@ export const onTimeout = function (timeoutDataArray) {
       });
       const timeoutNotificationUrl = `${TIMEOUT_NOTIFICATION_ENDPOINT}?${query}`;
       utils.triggerPixel(timeoutNotificationUrl);
-    })
+    });
   }
-}
+};
 
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(br => buildOpenRtbImpObject(br));
