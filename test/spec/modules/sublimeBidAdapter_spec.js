@@ -18,9 +18,9 @@ describe('Sublime Adapter', function() {
       'puid',
       'trId',
       'pbav',
-      'ver',
+      'pubpbv',
       'device',
-      'timeout',
+      'pubtimeout',
     ];
 
     beforeEach(function () {

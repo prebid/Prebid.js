@@ -68,13 +68,13 @@ export function sendEvent(eventName, sspName) {
     puid: state.transactionId || state.notifyId,
     trId: state.transactionId || state.notifyId,
     pbav: SUBLIME_VERSION,
-    timeout: config.getConfig('bidderTimeout'),
-    ver: '$prebid.version$',
+    pubtimeout: config.getConfig('bidderTimeout'),
+    pubpbv: '$prebid.version$',
     device: detectDevice(),
   };
 
   if (eventName === 'bidwon') {
-    eventObject.sspname = sspName || ''
+    eventObject.sspname = sspName || '';
   }
 
   log('Sending pixel for event: ' + eventName, eventObject);
