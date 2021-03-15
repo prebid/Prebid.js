@@ -53,7 +53,7 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
-    if (serverResponse.body){
+    if (serverResponse.body) {
       const vHB = serverResponse.body.bids;
       try {
         let bidResponse = {
@@ -66,13 +66,11 @@ export const spec = {
           netRevenue: true,
           ttl: 360,
           ad: vHB.creative.ad
-      };
-      bidResponses.push(bidResponse);
-      }catch(e){}
+        };
+        bidResponses.push(bidResponse);
+      } catch(e){}
     }
     return bidResponses;
   }
 };
-
-
 registerBidder(spec)
