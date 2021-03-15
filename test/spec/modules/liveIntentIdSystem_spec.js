@@ -135,11 +135,10 @@ describe('LiveIntentId', function() {
     let request = server.requests[1];
     expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/prebid/89899');
     request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
+      204,
+      responseHeader
     );
-    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.calledOnceWith({})).to.be.true;
   });
 
   it('should call the default url of the LiveIntent Identity Exchange endpoint, with a partner', function() {
