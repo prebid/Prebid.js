@@ -68,7 +68,7 @@ export const spec = {
           ad: vHB.creative.ad
         };
         bidResponses.push(bidResponse);
-      } catch(e) { }
+      } catch (e) { }
     }
     return bidResponses;
   }
