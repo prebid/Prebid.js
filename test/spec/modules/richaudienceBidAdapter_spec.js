@@ -87,7 +87,7 @@ describe('Richaudience adapter tests', function () {
     params: {
       bidfloor: 0.5,
       pid: 'ADb1f40rmi',
-      supplyType: 'site',
+      supplyType: 'site'
     },
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
