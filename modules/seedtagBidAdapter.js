@@ -18,6 +18,28 @@ const mediaTypesMap = {
   [VIDEO]: 'video'
 };
 
+const deviceConnection = {
+  FIXED: 'fixed',
+  MOBILE: 'mobile',
+  UNKNOWN: 'unknown'
+};
+
+
+const getConnextionType = () => {
+  switch (connectionType) {
+    case 'wifi':
+    case "ethernet":
+      return deviceConnection.FIXED
+    case 'cellular':
+    case 'wimax':
+      return deviceConnection.MOBILE
+    default:
+      const isMobile = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window['MSStream']) ||
+        /android/i.test(navigator.userAgent)
+      return isMobile ? deviceConnection.UNKNOWN : deviceConnection.FIXED
+  }
+};
+
 function mapMediaType(seedtagMediaType) {
   if (seedtagMediaType === 'display') return BANNER;
   if (seedtagMediaType === 'video') return VIDEO;
@@ -55,13 +77,15 @@ function buildBidRequests(validBidRequests) {
         return mediaTypesMap[pbjsType];
       }
     );
+
     const bidRequest = {
       id: validBidRequest.bidId,
       transactionId: validBidRequest.transactionId,
       sizes: validBidRequest.sizes,
       supplyTypes: mediaTypes,
       adUnitId: params.adUnitId,
-      placement: params.placement
+      placement: params.placement,
+      connectionType: getConnextionType()
     };
 
     if (params.adPosition) {
@@ -149,7 +173,7 @@ export const spec = {
       version: '$prebid.version$',
       bidRequests: buildBidRequests(validBidRequests)
     };
-
+    console.log(bidderRequest)
     if (payload.cmp) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
       if (gdprApplies !== undefined) payload['ga'] = gdprApplies;

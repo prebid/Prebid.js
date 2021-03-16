@@ -57,6 +57,7 @@ var adUnits = [{
         adUnitId: '0000',               // required
         placement: 'video',             // required
         adPosition: 0,                  // optional
+        connectionType: 'mobile'        // optional (can be mobile/fixed/unknown)
         // Video object as specified in OpenRTB 2.5
         video: {
           mimes: ['video/mp4'], // recommended
