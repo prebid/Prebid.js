@@ -71,11 +71,15 @@ export const spec = {
       bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
       bid.sizes = bid.sizes.filter(size => utils.isArray(size));
 
-      // Stuff to send: [bid id, sizes, adUnitId]
+      var options = utils.deepClone(bid.params);
+      delete options.adUnitId;
+
+      // Stuff to send: [bid id, sizes, adUnitId, options]
       imps.push({
         bidId: bid.bidId,
         sizes: bid.sizes,
-        adUnitId: utils.getBidIdParameter('adUnitId', bid.params)
+        adUnitId: utils.getBidIdParameter('adUnitId', bid.params),
+        options: options
       });
     });
 
