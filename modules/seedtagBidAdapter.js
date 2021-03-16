@@ -24,11 +24,11 @@ const deviceConnection = {
   UNKNOWN: 'unknown'
 };
 
-
 const getConnextionType = () => {
-  switch (connectionType) {
+  const type = window.navigator.connection && (window.navigator.connection.type || window.navigator.connection.effectiveType)
+  switch (type) {
     case 'wifi':
-    case "ethernet":
+    case 'ethernet':
       return deviceConnection.FIXED
     case 'cellular':
     case 'wimax':
@@ -85,7 +85,6 @@ function buildBidRequests(validBidRequests) {
       supplyTypes: mediaTypes,
       adUnitId: params.adUnitId,
       placement: params.placement,
-      connectionType: getConnextionType()
     };
 
     if (params.adPosition) {
@@ -171,6 +170,7 @@ export const spec = {
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
+      connectionType: getConnextionType(),
       bidRequests: buildBidRequests(validBidRequests)
     };
 
