@@ -173,7 +173,7 @@ export const spec = {
       version: '$prebid.version$',
       bidRequests: buildBidRequests(validBidRequests)
     };
-    console.log(bidderRequest)
+
     if (payload.cmp) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
       if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
