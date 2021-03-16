@@ -24,24 +24,26 @@ https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_cache_id_synacorm
 ```
   var adUnits = [{
       code: 'test-div',
-      sizes: [
-          [300, 250]
-      ],
+      mediaTypes: {
+          banner: {
+              sizes: [[300, 250]]
+          }
+      },
       bids: [{
           bidder: "synacormedia",
           params: {
               seatId: "prebid",
-              placementId: "demo1",
+              tagId: "demo1",
               bidfloor: 0.10,
               pos: 1
           }
       }]
   },{
       code: 'test-div2',
-      mediaType: {
+      mediaTypes: {
         video: {
           context: 'instream',
-          playerSizes: [
+          playerSize: [
             [300, 250]
           ],
         }
@@ -50,14 +52,16 @@ https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_cache_id_synacorm
           bidder: "synacormedia",
           params: {
               seatId: "prebid",
-              placementId: "demo1"
+              tagId: "demo1",
               bidfloor: 0.20,
               pos: 1,
               video: {
                 minduration: 15,
-                maxduration: 30
+                maxduration: 30,
+                startdelay: 1,
+                linearity: 1
               }
           }
       }]
-  }];
+    }];
 ```

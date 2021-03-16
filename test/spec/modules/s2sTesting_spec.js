@@ -1,30 +1,13 @@
-import s2sTesting from 'modules/s2sTesting';
-import { config } from 'src/config';
-import find from 'core-js/library/fn/array/find';
-
-var events = require('src/events');
-var CONSTANTS = require('src/constants.json');
-const BID_ADJUSTMENT = CONSTANTS.EVENTS.BID_ADJUSTMENT;
+import s2sTesting from 'modules/s2sTesting.js';
 
 var expect = require('chai').expect;
 
 describe('s2sTesting', function () {
-  let mathRandomStub;
-  let randomNumber = 0;
-
-  beforeEach(function () {
-    mathRandomStub = sinon.stub(Math, 'random').callsFake(() => { return randomNumber; });
-  });
-
-  afterEach(function () {
-    mathRandomStub.restore();
-  });
-
   describe('s2sTesting.getSource', function () {
     // helper function to set random number and get the source
     function getExpectedSource(randNumber, sourceWeights, sources) {
       // set random number for testing
-      randomNumber = randNumber;
+      s2sTesting.globalRand = randNumber;
       return s2sTesting.getSource(sourceWeights, sources);
     }
 
@@ -93,27 +76,17 @@ describe('s2sTesting', function () {
     describe('setting source through s2sConfig', function () {
       beforeEach(function () {
         // set random number for testing
-        randomNumber = 0.7;
-      });
-
-      it('does not work if testing is "false"', function () {
-        config.setConfig({s2sConfig: {
-          bidders: ['rubicon'],
-          testing: false,
-          bidderControl: {rubicon: {bidSource: {server: 1, client: 1}}}
-        }});
-        expect(s2sTesting.getSourceBidderMap()).to.eql({
-          server: [],
-          client: []
-        });
+        s2sTesting.globalRand = 0.7;
+        s2sTesting.bidSource = {};
       });
 
       it('sets one client bidder', function () {
-        config.setConfig({s2sConfig: {
+        const s2sConfig = {
           bidders: ['rubicon'],
-          testing: true,
           bidderControl: {rubicon: {bidSource: {server: 1, client: 1}}}
-        }});
+        };
+
+        s2sTesting.calculateBidSources(s2sConfig);
         expect(s2sTesting.getSourceBidderMap()).to.eql({
           server: [],
           client: ['rubicon']
@@ -121,11 +94,11 @@ describe('s2sTesting', function () {
       });
 
       it('sets one server bidder', function () {
-        config.setConfig({s2sConfig: {
+        const s2sConfig = {
           bidders: ['rubicon'],
-          testing: true,
           bidderControl: {rubicon: {bidSource: {server: 4, client: 1}}}
-        }});
+        }
+        s2sTesting.calculateBidSources(s2sConfig);
         expect(s2sTesting.getSourceBidderMap()).to.eql({
           server: ['rubicon'],
           client: []
@@ -133,10 +106,10 @@ describe('s2sTesting', function () {
       });
 
       it('defaults to server', function () {
-        config.setConfig({s2sConfig: {
+        const s2sConfig = {
           bidders: ['rubicon'],
-          testing: true
-        }});
+        }
+        s2sTesting.calculateBidSources(s2sConfig);
         expect(s2sTesting.getSourceBidderMap()).to.eql({
           server: ['rubicon'],
           client: []
@@ -144,25 +117,75 @@ describe('s2sTesting', function () {
       });
 
       it('sets two bidders', function () {
-        config.setConfig({s2sConfig: {
+        const s2sConfig = {
           bidders: ['rubicon', 'appnexus'],
-          testing: true,
           bidderControl: {
             rubicon: {bidSource: {server: 3, client: 1}},
             appnexus: {bidSource: {server: 1, client: 1}}
-          }}});
+          }
+        }
+        s2sTesting.calculateBidSources(s2sConfig);
         var serverClientBidders = s2sTesting.getSourceBidderMap();
         expect(serverClientBidders.server).to.eql(['rubicon']);
         expect(serverClientBidders.client).to.have.members(['appnexus']);
       });
+
+      it('sends both bidders to same source when weights are the same', function () {
+        s2sTesting.globalRand = 0.01;
+
+        const s2sConfig = {
+          bidders: ['rubicon', 'appnexus'],
+          bidderControl: {
+            rubicon: {bidSource: {server: 1, client: 99}},
+            appnexus: {bidSource: {server: 1, client: 99}}
+          }
+        }
+        s2sTesting.calculateBidSources(s2sConfig);
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          client: ['rubicon', 'appnexus'],
+          server: []
+        });
+        s2sTesting.calculateBidSources(s2sConfig);
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          client: ['rubicon', 'appnexus'],
+          server: []
+        });
+        s2sTesting.calculateBidSources(s2sConfig);
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          client: ['rubicon', 'appnexus'],
+          server: []
+        });
+
+        const s2sConfig2 = {
+          bidders: ['rubicon', 'appnexus'],
+          bidderControl: {
+            rubicon: {bidSource: {server: 99, client: 1}},
+            appnexus: {bidSource: {server: 99, client: 1}}
+          }
+        }
+        s2sTesting.calculateBidSources(s2sConfig2);
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          server: ['rubicon', 'appnexus'],
+          client: []
+        });
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          server: ['rubicon', 'appnexus'],
+          client: []
+        });
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          server: ['rubicon', 'appnexus'],
+          client: []
+        });
+      });
     });
 
     describe('setting source through adUnits', function () {
+      const s2sConfig3 = {testing: true};
+
       beforeEach(function () {
-        // reset s2sconfig bid sources
-        config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
-        randomNumber = 0.7;
+        s2sTesting.globalRand = 0.7;
+        s2sTesting.bidSource = {};
       });
 
       it('sets one bidder source from one adUnit', function () {
@@ -171,7 +194,8 @@ describe('s2sTesting', function () {
             {bidder: 'rubicon', bidSource: {server: 4, client: 1}}
           ]}
         ];
-        expect(s2sTesting.getSourceBidderMap(adUnits)).to.eql({
+
+        expect(s2sTesting.getSourceBidderMap(adUnits, [])).to.eql({
           server: ['rubicon'],
           client: []
         });
@@ -184,7 +208,7 @@ describe('s2sTesting', function () {
             {bidder: 'rubicon', bidSource: {server: 1, client: 1}}
           ]}
         ];
-        expect(s2sTesting.getSourceBidderMap(adUnits)).to.eql({
+        expect(s2sTesting.getSourceBidderMap(adUnits, [])).to.eql({
           server: [],
           client: ['rubicon']
         });
@@ -199,7 +223,7 @@ describe('s2sTesting', function () {
             {bidder: 'rubicon', bidSource: {}}
           ]}
         ];
-        expect(s2sTesting.getSourceBidderMap(adUnits)).to.eql({
+        expect(s2sTesting.getSourceBidderMap(adUnits, [])).to.eql({
           server: [],
           client: ['rubicon']
         });
@@ -215,7 +239,7 @@ describe('s2sTesting', function () {
             {bidder: 'appnexus', bidSource: {server: 3, client: 1}}
           ]}
         ];
-        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits);
+        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits, []);
         expect(serverClientBidders.server).to.eql(['appnexus']);
         expect(serverClientBidders.client).to.have.members(['rubicon']);
         // should have saved the source on the bid
@@ -236,7 +260,7 @@ describe('s2sTesting', function () {
             {bidder: 'bidder3', bidSource: {client: 1}}
           ]}
         ];
-        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits);
+        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits, []);
         expect(serverClientBidders.server).to.have.members(['rubicon']);
         expect(serverClientBidders.server).to.not.have.members(['appnexus', 'bidder3']);
         expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus', 'bidder3']);
@@ -259,7 +283,7 @@ describe('s2sTesting', function () {
             {bidder: 'bidder3', calcSource: 'server', bidSource: {client: 1}}
           ]}
         ];
-        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits);
+        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits, []);
 
         expect(serverClientBidders.server).to.have.members(['appnexus', 'bidder3']);
         expect(serverClientBidders.server).to.not.have.members(['rubicon']);
@@ -277,10 +301,8 @@ describe('s2sTesting', function () {
 
     describe('setting source through s2sconfig and adUnits', function () {
       beforeEach(function () {
-        // reset s2sconfig bid sources
-        config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
-        randomNumber = 0.7;
+        s2sTesting.globalRand = 0.7;
       });
 
       it('should get sources from  both', function () {
@@ -293,15 +315,15 @@ describe('s2sTesting', function () {
         ];
 
         // set rubicon: client and appnexus: server
-        config.setConfig({s2sConfig: {
+        const s2sConfig = {
           bidders: ['rubicon', 'appnexus'],
           testing: true,
           bidderControl: {
             rubicon: {bidSource: {server: 2, client: 1}},
             appnexus: {bidSource: {server: 1}}
           }
-        }});
-
+        }
+        s2sTesting.calculateBidSources(s2sConfig);
         var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits);
         expect(serverClientBidders.server).to.have.members(['rubicon', 'appnexus']);
         expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus']);

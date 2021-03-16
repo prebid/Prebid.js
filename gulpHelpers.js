@@ -6,6 +6,7 @@ const MANIFEST = 'package.json';
 const through = require('through2');
 const _ = require('lodash');
 const gutil = require('gulp-util');
+const submodules = require('./modules/.submodules.json');
 
 const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
@@ -39,7 +40,9 @@ module.exports = {
       .replace(/\/>/g, '\\/>');
   },
   getArgModules() {
-    var modules = (argv.modules || '').split(',').filter(module => !!module);
+    var modules = (argv.modules || '')
+      .split(',')
+      .filter(module => !!module);
 
     try {
       if (modules.length === 1 && path.extname(modules[0]).toLowerCase() === '.json') {
@@ -56,6 +59,16 @@ module.exports = {
       });
     }
 
+    // we need to forcefuly include the parentModule if the subModule is present in modules list and parentModule is not present in modules list
+    Object.keys(submodules).forEach(parentModule => {
+      if (
+        !modules.includes(parentModule) &&
+        modules.some(module => submodules[parentModule].includes(module))
+      ) {
+        modules.unshift(parentModule);
+      }
+    });
+
     return modules;
   },
   getModules: _.memoize(function(externalModules) {
@@ -71,7 +84,9 @@ module.exports = {
           if (fs.lstatSync(modulePath).isDirectory()) {
             modulePath = path.join(modulePath, 'index.js')
           }
-          memo[modulePath] = moduleName;
+          if (fs.existsSync(modulePath)) {
+            memo[modulePath] = moduleName;
+          }
           return memo;
         }, {});
     } catch (err) {
@@ -79,7 +94,10 @@ module.exports = {
     }
     return Object.assign(externalModules.reduce((memo, module) => {
       try {
-        var modulePath = require.resolve(module);
+        // prefer internal project modules before looking at project dependencies
+        var modulePath = require.resolve(module, {paths: ['./modules']});
+        if (modulePath === '') modulePath = require.resolve(module);
+
         memo[modulePath] = module;
       } catch (err) {
         // do something

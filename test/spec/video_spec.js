@@ -1,4 +1,4 @@
-import { isValidVideoBid } from 'src/video';
+import { isValidVideoBid } from 'src/video.js';
 
 describe('video.js', function () {
   it('validates valid instream bids', function () {
@@ -64,6 +64,29 @@ describe('video.js', function () {
         bidder: 'appnexus',
         mediaTypes: {
           video: { context: 'outstream' }
+        }
+      }]
+    }];
+    const valid = isValidVideoBid(bid, bidRequests);
+    expect(valid).to.equal(true);
+  });
+
+  it('validates valid outstream bids with a publisher defined renderer', function () {
+    const bid = {
+      requestId: '123abc',
+    };
+    const bidRequests = [{
+      bids: [{
+        bidId: '123abc',
+        bidder: 'appnexus',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            renderer: {
+              url: 'render.url',
+              render: () => true,
+            }
+          }
         }
       }]
     }];

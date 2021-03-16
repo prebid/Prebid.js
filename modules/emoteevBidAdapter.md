@@ -18,14 +18,16 @@ Module that connects to Emoteev's demand sources
             code: 'test-div',
             mediaTypes: {
                 banner: {
-                    sizes: [[300, 250]],
+                    sizes: [[720, 90]],
                 }
             },
             bids: [
                 {
                     bidder: 'emoteev',
                     params: {
-                        adSpaceId: 5084
+                        adSpaceId: 5084,
+                        context: 'footer',
+                        externalId: 42,
                     }
                 }
             ]

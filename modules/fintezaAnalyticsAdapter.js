@@ -1,9 +1,10 @@
-import { ajax } from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
-import * as utils from '../src/utils';
-import { parse as parseURL } from '../src/url';
+import { ajax } from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+import * as utils from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 
+const storage = getStorageManager();
 const CONSTANTS = require('../src/constants.json');
 
 const ANALYTICS_TYPE = 'endpoint';
@@ -19,6 +20,7 @@ const SESSION_ID = '_fz_ssn';
 const SESSION_DURATION = 30 * 60 * 1000;
 const SESSION_RAND_PART = 9;
 const TRACK_TIME_KEY = '_fz_tr';
+const UNIQ_ID_KEY = '_fz_uniq';
 
 function getPageInfo() {
   const pageInfo = {
@@ -26,10 +28,46 @@ function getPageInfo() {
   }
 
   if (document.referrer) {
-    pageInfo.referrerDomain = parseURL(document.referrer).hostname;
+    pageInfo.referrerDomain = utils.parseUrl(document.referrer).hostname;
   }
 
   return pageInfo;
+}
+
+function getUniqId() {
+  let cookies;
+
+  try {
+    cookies = parseCookies(document.cookie);
+  } catch (a) {
+    cookies = {};
+  }
+
+  let isUniqFromLS;
+  let uniq = cookies[ UNIQ_ID_KEY ];
+  if (!uniq) {
+    try {
+      if (storage.hasLocalStorage()) {
+        uniq = storage.getDataFromLocalStorage(UNIQ_ID_KEY) || '';
+        isUniqFromLS = true;
+      }
+    } catch (b) {}
+  }
+
+  if (uniq && isNaN(uniq)) {
+    uniq = null;
+  }
+
+  if (uniq && isUniqFromLS) {
+    let expires = new Date();
+    expires.setFullYear(expires.getFullYear() + 10);
+
+    try {
+      storage.setCookie(UNIQ_ID_KEY, uniq, expires.toUTCString());
+    } catch (e) {}
+  }
+
+  return uniq;
 }
 
 function initFirstVisit() {
@@ -53,7 +91,7 @@ function initFirstVisit() {
     now.setFullYear(now.getFullYear() + 20);
 
     try {
-      document.cookie = FIRST_VISIT_DATE + '=' + visitDate + '; path=/; expires=' + now.toUTCString();
+      storage.setCookie(FIRST_VISIT_DATE, visitDate, now.toUTCString());
     } catch (e) {}
   }
 
@@ -73,7 +111,7 @@ function parseCookies(cookie) {
   let param, value;
   let i, j;
 
-  if (!cookie) {
+  if (!cookie || !storage.cookiesAreEnabled()) {
     return {};
   }
 
@@ -166,7 +204,7 @@ function initSession() {
   }
 
   try {
-    document.cookie = SESSION_ID + '=' + sessionId + '; path=/; expires=' + expires.toUTCString();
+    storage.setCookie(SESSION_ID, sessionId, expires.toUTCString());
   } catch (e) {}
 
   return {
@@ -212,10 +250,10 @@ function saveTrackRequestTime() {
   const expires = new Date(now + SESSION_DURATION);
 
   try {
-    if (window.localStorage) {
-      window.localStorage.setItem(TRACK_TIME_KEY, now.toString());
+    if (storage.hasLocalStorage()) {
+      storage.setDataInLocalStorage(TRACK_TIME_KEY, now.toString());
     } else {
-      document.cookie = TRACK_TIME_KEY + '=' + now + '; path=/; expires=' + expires.toUTCString();
+      storage.setCookie(TRACK_TIME_KEY, now.toString(), expires.toUTCString());
     }
   } catch (a) {}
 }
@@ -224,9 +262,9 @@ function getTrackRequestLastTime() {
   let cookie;
 
   try {
-    if (window.localStorage) {
+    if (storage.hasLocalStorage()) {
       return parseInt(
-        window.localStorage.getItem(TRACK_TIME_KEY) || 0,
+        storage.getDataFromLocalStorage(TRACK_TIME_KEY) || 0,
         10,
       );
     }
@@ -330,6 +368,10 @@ function prepareTrackData(evtype, args) {
       ac: getAntiCacheParam(),
     })
 
+    if (fntzAnalyticsAdapter.context.uniqId) {
+      trackData.fz_uniq = fntzAnalyticsAdapter.context.uniqId;
+    }
+
     if (session.id) {
       trackData.ssn = session.id;
     }
@@ -347,12 +389,12 @@ function sendTrackRequest(trackData) {
   try {
     ajax(
       fntzAnalyticsAdapter.context.host,
-      null, // Callback
+      null,
       trackData,
       {
         method: 'GET',
-        contentType: 'application/x-www-form-urlencoded',
-        // preflight: true,
+        withCredentials: true,
+        contentType: 'application/x-www-form-urlencoded'
       },
     );
     saveTrackRequestTime();
@@ -396,6 +438,7 @@ fntzAnalyticsAdapter.enableAnalytics = function (config) {
     bidWonTrack: config.options.bidWonTrack || BID_WON_TRACK,
     firstVisit: initFirstVisit(),
     screenResolution: `${window.screen.width}x${window.screen.height}`,
+    uniqId: getUniqId(),
     pageInfo: getPageInfo(),
   };
 

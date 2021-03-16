@@ -2,20 +2,43 @@
 import {expect} from 'chai'; // may prefer 'assert' in place of 'expect'
 import {
   spec
-} from 'modules/richaudienceBidAdapter';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
+} from 'modules/richaudienceBidAdapter.js';
+import {config} from 'src/config.js';
 
 describe('Richaudience adapter tests', function () {
-  var DEFAULT_PARAMS = [{
+  var DEFAULT_PARAMS_NEW_SIZES = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
-    sizes: [
-      [300, 250],
-      [300, 600],
-      [728, 90],
-      [970, 250]
-    ],
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250], [300, 600], [728, 90], [970, 250]]
+      }
+    },
+    bidder: 'richaudience',
+    params: {
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site',
+      keywords: 'coche=mercedes;coche=audi'
+    },
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
+    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    user: {}
+  }];
+
+  var DEFAULT_PARAMS_VIDEO_IN = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4']
+      }
+    },
     bidder: 'richaudience',
     params: {
       bidfloor: 0.5,
@@ -25,7 +48,59 @@ describe('Richaudience adapter tests', function () {
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
     bidderRequestId: '1858b7382993ca',
-    transactionId: '29df2112-348b-4961-8863-1b33684d95e6'
+    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    user: {}
+  }];
+
+  var DEFAULT_PARAMS_VIDEO_OUT = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    mediaTypes: {
+      video: {
+        context: 'outstream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4']
+      }
+    },
+    bidder: 'richaudience',
+    params: {
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site'
+    },
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
+    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    user: {}
+  }];
+
+  var DEFAULT_PARAMS_VIDEO_OUT_PARAMS = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    mediaTypes: {
+      video: {
+        context: 'outstream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4']
+      }
+    },
+    bidder: 'richaudience',
+    params: {
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site',
+      player: {
+        init: 'close',
+        end: 'close',
+        skin: 'dark'
+      }
+    },
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
+    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    user: {}
   }];
 
   var DEFAULT_PARAMS_APP = [{
@@ -101,20 +176,42 @@ describe('Richaudience adapter tests', function () {
     }
   };
 
-  it('Verify build request', function () {
-    config.setConfig({
-      'currency': {
-        'adServerCurrency': 'USD'
-      }
-    });
+  var DEFAULT_PARAMS_GDPR = {
+    gdprConsent: {
+      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+      gdprApplies: true
+    },
+    refererInfo: {
+      referer: 'http://domain.com',
+      numIframes: 0
+    }
+  }
 
-    const request = spec.buildRequests(DEFAULT_PARAMS, {
+  it('Referer undefined', function() {
+    config.setConfig({
+      'currency': {'adServerCurrency': 'USD'}
+    })
+
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {}
+    })
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('referer').and.to.equal(null);
+    expect(requestContent).to.have.property('referer').and.to.equal(null);
+  })
+
+  it('Verify build request to prebid 3.0 display test', function() {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
         gdprApplies: true
       },
       refererInfo: {
-        referer: 'http://domain.com',
+        referer: 'https://domain.com',
         numIframes: 0
       }
     });
@@ -130,15 +227,62 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('bidder').and.to.equal('richaudience');
     expect(requestContent).to.have.property('bidderRequestId').and.to.equal('1858b7382993ca');
     expect(requestContent).to.have.property('tagId').and.to.equal('test-div');
-    expect(requestContent).to.have.property('referer').and.to.equal('http%3A%2F%2Fdomain.com');
+    expect(requestContent).to.have.property('referer').and.to.equal('https%3A%2F%2Fdomain.com');
     expect(requestContent).to.have.property('sizes');
     expect(requestContent.sizes[0]).to.have.property('w').and.to.equal(300);
     expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(250);
     expect(requestContent.sizes[1]).to.have.property('w').and.to.equal(300);
     expect(requestContent.sizes[1]).to.have.property('h').and.to.equal(600);
+    expect(requestContent.sizes[2]).to.have.property('w').and.to.equal(728);
+    expect(requestContent.sizes[2]).to.have.property('h').and.to.equal(90);
+    expect(requestContent.sizes[3]).to.have.property('w').and.to.equal(970);
+    expect(requestContent.sizes[3]).to.have.property('h').and.to.equal(250);
     expect(requestContent).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
     expect(requestContent).to.have.property('timeout').and.to.equal(3000);
-  });
+    expect(requestContent).to.have.property('numIframes').and.to.equal(0);
+    expect(typeof requestContent.scr_rsl === 'string')
+    expect(typeof requestContent.cpuc === 'number')
+    expect(requestContent).to.have.property('kws').and.to.equal('coche=mercedes;coche=audi');
+  })
+
+  it('Verify build request to prebid video inestream', function() {
+    const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_IN, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    expect(request[0]).to.have.property('method').and.to.equal('POST');
+    const requestContent = JSON.parse(request[0].data);
+
+    expect(requestContent).to.have.property('demand').and.to.equal('video');
+    expect(requestContent.videoData).to.have.property('format').and.to.equal('instream');
+    // expect(requestContent.videoData.playerSize[0][0]).to.equal('640');
+    // expect(requestContent.videoData.playerSize[0][0]).to.equal('480');
+  })
+
+  it('Verify build request to prebid video outstream', function() {
+    const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_OUT, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    expect(request[0]).to.have.property('method').and.to.equal('POST');
+    const requestContent = JSON.parse(request[0].data);
+
+    expect(requestContent.videoData).to.have.property('format').and.to.equal('outstream');
+  })
 
   describe('gdpr test', function () {
     it('Verify build request with GDPR', function () {
@@ -159,7 +303,7 @@ describe('Richaudience adapter tests', function () {
           gdprApplies: true
         },
         refererInfo: {
-          referer: 'http://domain.com',
+          referer: 'https://domain.com',
           numIframes: 0
         }
       });
@@ -174,7 +318,7 @@ describe('Richaudience adapter tests', function () {
           gdprApplies: true
         },
         refererInfo: {
-          referer: 'http://domain.com',
+          referer: 'https://domain.com',
           numIframes: 0
         }
       });
@@ -197,7 +341,7 @@ describe('Richaudience adapter tests', function () {
           consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA'
         },
         refererInfo: {
-          referer: 'http://domain.com',
+          referer: 'https://domain.com',
           numIframes: 0
         }
       });
@@ -206,14 +350,247 @@ describe('Richaudience adapter tests', function () {
     });
   });
 
+  describe('UID test', function () {
+    config.setConfig({
+      consentManagement: {
+        cmpApi: 'iab',
+        timeout: 5000,
+        allowAuctionWithoutConsent: true
+      },
+      userSync: {
+        userIds: [{
+          name: 'id5Id',
+          params: {
+            partner: 173, // change to the Partner Number you received from ID5
+            pd: 'MT1iNTBjY...' // optional, see table below for a link to how to generate this
+          },
+          storage: {
+            type: 'html5', // "html5" is the required storage type
+            name: 'id5id', // "id5id" is the required storage name
+            expires: 90, // storage lasts for 90 days
+            refreshInSeconds: 8 * 3600 // refresh ID every 8 hours to ensure it's fresh
+          }
+        }],
+        auctionDelay: 50 // 50ms maximum auction delay, applies to all userId modules
+      }
+    });
+    it('Verify build id5', function () {
+      var request;
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: 1 };
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      var requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: [] };
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: null };
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = { uid: {} };
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = null;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.id5id = {};
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+    });
+
+    it('Verify build pubCommonId', function () {
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.pubcid = 'pub_common_user_id';
+
+      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      var requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent.user).to.deep.equal([{
+        'userId': 'pub_common_user_id',
+        'source': 'pubcommon'
+      }]);
+
+      var request;
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.pubcid = 1;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      var requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.pubcid = [];
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.pubcid = null;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.pubcid = {};
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+    });
+
+    it('Verify build criteoId', function () {
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = 'criteo-user-id';
+
+      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      var requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent.user).to.deep.equal([{
+        'userId': 'criteo-user-id',
+        'source': 'criteo.com'
+      }]);
+
+      var request;
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = 1;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      var requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = [];
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = null;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = {};
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+    });
+
+    it('Verify build identityLink', function () {
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = 'identity-link-user-id';
+
+      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      var requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent.user).to.deep.equal([{
+        'userId': 'identity-link-user-id',
+        'source': 'liveramp.com'
+      }]);
+
+      var request;
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = 1;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      var requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = [];
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = null;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = {};
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+    });
+    it('Verify build liveIntentId', function () {
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = 'identity-link-user-id';
+
+      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      var requestContent = JSON.parse(request[0].data)
+
+      expect(requestContent.user).to.deep.equal([{
+        'userId': 'identity-link-user-id',
+        'source': 'liveramp.com'
+      }]);
+
+      var request;
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = 1;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      var requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = [];
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = null;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = {};
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+    });
+    it('Verify build TradeDesk', function () {
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.tdid = 'tdid-user-id';
+
+      var request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      var requestContent = JSON.parse(request[0].data)
+
+      expect(requestContent.user).to.deep.equal([{
+        'userId': 'tdid-user-id',
+        'source': 'adserver.org'
+      }]);
+
+      request;
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId = {};
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = 1;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.criteoId = [];
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = null;
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+
+      DEFAULT_PARAMS_WO_OPTIONAL[0].userId.idl_env = {};
+      request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, DEFAULT_PARAMS_GDPR);
+      requestContent = JSON.parse(request[0].data);
+      expect(requestContent.user.eids).to.equal(undefined);
+    });
+  });
+
   it('Verify interprete response', function () {
-    const request = spec.buildRequests(DEFAULT_PARAMS, {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
         gdprApplies: true
       },
       refererInfo: {
-        referer: 'http://domain.com',
+        referer: 'https://domain.com',
         numIframes: 0
       }
     });
@@ -233,21 +610,41 @@ describe('Richaudience adapter tests', function () {
     expect(bid.dealId).to.equal('dealId');
   });
 
-  it('no banner media response', function () {
-    const request = spec.buildRequests(DEFAULT_PARAMS, {
+  it('no banner media response inestream', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_IN, {
       gdprConsent: {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
         gdprApplies: true
       },
       refererInfo: {
-        referer: 'http://domain.com',
+        referer: 'https://domain.com',
         numIframes: 0
       }
     });
 
     const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request[0]);
     const bid = bids[0];
+    expect(bid.mediaType).to.equal('video');
     expect(bid.vastXml).to.equal('<VAST></VAST>');
+  });
+
+  it('no banner media response outstream', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS_VIDEO_OUT, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'https://domain.com',
+        numIframes: 0
+      }
+    });
+
+    const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request[0]);
+    const bid = bids[0];
+    expect(bid.mediaType).to.equal('video');
+    expect(bid.vastXml).to.equal('<VAST></VAST>');
+    expect(bid.renderer.url).to.equal('https://cdn3.richaudience.com/prebidVideo/player.js');
   });
 
   it('Verifies bidder_code', function () {
@@ -260,7 +657,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   it('Verifies if bid request is valid', function () {
-    expect(spec.isBidRequestValid(DEFAULT_PARAMS[0])).to.equal(true);
+    expect(spec.isBidRequestValid(DEFAULT_PARAMS_NEW_SIZES[0])).to.equal(true);
     expect(spec.isBidRequestValid(DEFAULT_PARAMS_WO_OPTIONAL[0])).to.equal(true);
     expect(spec.isBidRequestValid({})).to.equal(false);
     expect(spec.isBidRequestValid({
@@ -322,13 +719,14 @@ describe('Richaudience adapter tests', function () {
     })).to.equal(true);
   });
 
-  it('Verifies user sync', function () {
+  it('Verifies user syncs iframe', function () {
     var syncs = spec.getUserSyncs({
       iframeEnabled: true
     }, [BID_RESPONSE], {
       consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
       gdprApplies: true
     });
+
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
     syncs = spec.getUserSyncs({
@@ -343,5 +741,54 @@ describe('Richaudience adapter tests', function () {
       iframeEnabled: true
     }, [], {consentString: '', gdprApplies: false});
     expect(syncs).to.have.lengthOf(1);
+
+    syncs = spec.getUserSyncs({
+      iframeEnabled: false
+    }, [], {consentString: '', gdprApplies: true});
+    expect(syncs).to.have.lengthOf(0);
+
+    config.setConfig({
+      consentManagement: {
+        cmpApi: 'iab',
+        timeout: 5000,
+        allowAuctionWithoutConsent: true,
+        pixelEnabled: true
+      }
+    });
+  });
+
+  it('Verifies user syncs image', function () {
+    var syncs = spec.getUserSyncs({
+      iframeEnabled: false,
+      pixelEnabled: true
+    }, [BID_RESPONSE], {
+      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+      referer: 'http://domain.com',
+      gdprApplies: true
+    })
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('image');
+
+    syncs = spec.getUserSyncs({
+      iframeEnabled: false,
+      pixelEnabled: true
+    }, [BID_RESPONSE], {
+      consentString: '',
+      referer: 'http://domain.com',
+      gdprApplies: true
+    })
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('image');
+
+    syncs = spec.getUserSyncs({
+      iframeEnabled: false,
+      pixelEnabled: true
+    }, [], {
+      consentString: null,
+      referer: 'http://domain.com',
+      gdprApplies: true
+    })
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('image');
   });
 });

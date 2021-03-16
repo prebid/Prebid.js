@@ -3,7 +3,7 @@
 ```
 Module Name: Sovrn Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: trand@sovrn.com
+Maintainer: jrosendahl@sovrn.com
 ```
 
 # Description

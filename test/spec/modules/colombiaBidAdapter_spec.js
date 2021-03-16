@@ -86,7 +86,7 @@ describe('colombiaBidAdapter', function() {
     let bidRequest = [
       {
         'method': 'POST',
-        'url': ENDPOINT,
+        'url': 'https://ade.clmbtech.com/cde/prebid.htm',
         'data': {
           'v': 'hb1',
           'p': '307466',
@@ -96,23 +96,23 @@ describe('colombiaBidAdapter', function() {
           'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
           't': 'i',
-		  'd': HOST_NAME
         }
       }
     ];
 
     let serverResponse = {
       body: {
-        'ad': '<div>This is test case</div> ',
+        'ad': '<div>This is test case for colombia adapter</div> ',
         'cpm': 3.14,
         'creativeId': '6b958110-612c-4b03-b6a9-7436c9f746dc-1sk24',
         'currency': 'USD',
-        'statusMessage': 'Bid available',
         'uid': '23beaa6af6cdde',
-        'width': 300,
-        'height': 250,
+        'width': 728,
+        'height': 90,
         'netRevenue': true,
-        'ttl': 600
+        'ttl': 600,
+        'dealid': '',
+        'referrer': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836'
       }
     };
 
@@ -120,26 +120,26 @@ describe('colombiaBidAdapter', function() {
       let expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 3.14,
-        'width': 300,
-        'height': 250,
+        'width': 728,
+        'height': 90,
         'creativeId': '6b958110-612c-4b03-b6a9-7436c9f746dc-1sk24',
         'dealId': '',
         'currency': 'USD',
         'netRevenue': true,
-        'ttl': 3000,
-        'referrer': '',
-        'ad': '<div>This is test case</div>'
+        'ttl': 300,
+        'referrer': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
+        'ad': '<div>This is test case for colombia adapter</div>'
       }];
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
     it('handles empty bid response', function () {
       let response = {
         body: {
-          'uid': '2c0b634db95a01',
+          'uid': '23beaa6af6cdde',
           'height': 0,
-          'crid': '',
+          'creativeId': '',
           'statusMessage': 'Bid returned empty or error response',
           'width': 0,
           'cpm': 0

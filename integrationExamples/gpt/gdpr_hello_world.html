@@ -1,5 +1,7 @@
 <html>
   <head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <script>
       (function(window, document) {
           if (!window.__cmp) {
@@ -79,16 +81,21 @@
 
       <script>
         var PREBID_TIMEOUT = 700;
+        var FAILSAFE_TIMEOUT = 2500;
   
         var adUnits = [{
           code: 'div-gpt-ad-1460505748561-0',
-          sizes: [[300, 250], [300,600]],
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300,600]]
+            }
+          },
   
           // Replace this object to test a new Adapter!
           bids: [{
-            bidder: 'appnexusAst',
+            bidder: 'appnexus',
             params: {
-              placementId: '10433394'
+              placementId: 13144370
             }
           }]
   
@@ -99,7 +106,6 @@
   
       </script>
   
-      <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
       <script>
         var googletag = googletag || {};
         googletag.cmd = googletag.cmd || [];
@@ -120,7 +126,8 @@
             }
           });
           pbjs.requestBids({
-            bidsBackHandler: sendAdserverRequest
+            bidsBackHandler: sendAdserverRequest,
+            timeout: PREBID_TIMEOUT
           });
         });
   
@@ -135,26 +142,12 @@
           });
         }
   
-        // setTimeout(function() {
-        //   sendAdserverRequest();
-        //   console.log('timeout in main pbjs fired');
-        // }, PREBID_TIMEOUT);
+        setTimeout(function() {
+           sendAdserverRequest();
+           console.log('timeout in main pbjs fired');
+        }, FAILSAFE_TIMEOUT);
   
-      </script>
-  
-      <script>
-        (function () {
-          var gads = document.createElement('script');
-          gads.async = true;
-          gads.type = 'text/javascript';
-          var useSSL = 'https:' == document.location.protocol;
-          gads.src = (useSSL ? 'https:' : 'http:') +
-            '//www.googletagservices.com/tag/js/gpt.js';
-          var node = document.getElementsByTagName('script')[0];
-          node.parentNode.insertBefore(gads, node);
-        })();
-      </script>
-  
+      </script>  
       <script>
         googletag.cmd.push(function () {
           googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());

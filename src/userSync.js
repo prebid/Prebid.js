@@ -1,16 +1,27 @@
-import * as utils from './utils';
-import { config } from './config';
-import includes from 'core-js/library/fn/array/includes';
+import * as utils from './utils.js';
+import { config } from './config.js';
+import includes from 'core-js-pure/features/array/includes.js';
+import { getCoreStorageManager } from './storageManager.js';
+
+export const USERSYNC_DEFAULT_CONFIG = {
+  syncEnabled: true,
+  filterSettings: {
+    image: {
+      bidders: '*',
+      filter: 'include'
+    }
+  },
+  syncsPerBidder: 5,
+  syncDelay: 3000,
+  auctionDelay: 0
+};
 
 // Set userSync default values
 config.setDefaults({
-  'userSync': {
-    syncEnabled: true,
-    pixelEnabled: true,
-    syncsPerBidder: 5,
-    syncDelay: 3000
-  }
+  'userSync': utils.deepClone(USERSYNC_DEFAULT_CONFIG)
 });
+
+const storage = getCoreStorageManager('usersync');
 
 /**
  * Factory function which creates a new UserSyncPool.
@@ -24,21 +35,35 @@ export function newUserSync(userSyncDependencies) {
   // Let getDefaultQueue() set the defaults
   let queue = getDefaultQueue();
 
-  // Whether or not user syncs have been trigger on this page load
-  let hasFired = false;
+  // Whether or not user syncs have been trigger on this page load for a specific bidder
+  let hasFiredBidder = new Set();
   // How many bids for each adapter
   let numAdapterBids = {};
 
   // for now - default both to false in case filterSettings config is absent/misconfigured
   let permittedPixels = {
-    image: false,
+    image: true,
     iframe: false
-  }
+  };
 
   // Use what is in config by default
   let usConfig = userSyncDependencies.config;
   // Update if it's (re)set
   config.getConfig('userSync', (conf) => {
+    // Added this logic for https://github.com/prebid/Prebid.js/issues/4864
+    // if userSync.filterSettings does not contain image/all configs, merge in default image config to ensure image pixels are fired
+    if (conf.userSync) {
+      let fs = conf.userSync.filterSettings;
+      if (utils.isPlainObject(fs)) {
+        if (!fs.image && !fs.all) {
+          conf.userSync.filterSettings.image = {
+            bidders: '*',
+            filter: 'include'
+          };
+        }
+      }
+    }
+
     usConfig = Object.assign(usConfig, conf.userSync);
   });
 
@@ -61,7 +86,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireSyncs() {
-    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies || (!usConfig.enableOverride && hasFired)) {
+    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies) {
       return;
     }
 
@@ -75,7 +100,16 @@ export function newUserSync(userSyncDependencies) {
     }
     // Reset the user sync queue
     queue = getDefaultQueue();
-    hasFired = true;
+  }
+
+  function forEachFire(queue, fn) {
+    // Randomize the order of the pixels before firing
+    // This is to avoid giving any bidder who has registered multiple syncs
+    // any preferential treatment and balancing them out
+    utils.shuffle(queue).forEach((sync) => {
+      fn(sync);
+      hasFiredBidder.add(sync[0]);
+    });
   }
 
   /**
@@ -84,13 +118,10 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireImagePixels() {
-    if (!(usConfig.pixelEnabled || permittedPixels.image)) {
+    if (!permittedPixels.image) {
       return;
     }
-    // Randomize the order of the pixels before firing
-    // This is to avoid giving any bidder who has registered multiple syncs
-    // any preferential treatment and balancing them out
-    utils.shuffle(queue.image).forEach((sync) => {
+    forEachFire(queue.image, (sync) => {
       let [bidderName, trackingPixelUrl] = sync;
       utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
       // Create image object and add the src url
@@ -104,11 +135,10 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function loadIframes() {
-    if (!(usConfig.iframeEnabled || permittedPixels.iframe)) {
+    if (!(permittedPixels.iframe)) {
       return;
     }
-    // Randomize the order of these syncs just like the pixels above
-    utils.shuffle(queue.iframe).forEach((sync) => {
+    forEachFire(queue.iframe, (sync) => {
       let [bidderName, iframeUrl] = sync;
       utils.logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
       // Insert iframe into DOM
@@ -146,6 +176,9 @@ export function newUserSync(userSyncDependencies) {
    * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
    */
   publicApi.registerSync = (type, bidder, url) => {
+    if (hasFiredBidder.has(bidder)) {
+      return utils.logMessage(`already fired syncs for "${bidder}", ignoring registerSync call`);
+    }
     if (!usConfig.syncEnabled || !utils.isArray(queue[type])) {
       return utils.logWarn(`User sync type "${type}" not supported`);
     }
@@ -263,20 +296,13 @@ export function newUserSync(userSyncDependencies) {
       if (shouldBidderBeBlocked(type, bidder)) {
         return false;
       }
-      // TODO remove this else if code that supports deprecated fields (sometime in 2.x); for now - only run if filterSettings config is not present
-    } else if (usConfig.enabledBidders && usConfig.enabledBidders.length && usConfig.enabledBidders.indexOf(bidder) < 0) {
-      return false
-    } else if (type === 'iframe' && !(usConfig.iframeEnabled || permittedPixels.iframe)) {
-      return false;
-    } else if (type === 'image' && !(usConfig.pixelEnabled || permittedPixels.image)) {
-      return false;
     }
     return true;
   }
   return publicApi;
 }
 
-const browserSupportsCookies = !utils.isSafariBrowser() && utils.cookiesAreEnabled();
+const browserSupportsCookies = !utils.isSafariBrowser() && storage.cookiesAreEnabled();
 
 export const userSync = newUserSync({
   config: config.getConfig('userSync'),
@@ -295,8 +321,6 @@ export const userSync = newUserSync({
  *
  * @property {boolean} enableOverride
  * @property {boolean} syncEnabled
- * @property {boolean} pixelEnabled
- * @property {boolean} iframeEnabled
  * @property {int} syncsPerBidder
  * @property {string[]} enabledBidders
  * @property {Object} filterSettings
