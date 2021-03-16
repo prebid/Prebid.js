@@ -143,6 +143,9 @@ describe('auctionmanager.js', function () {
       adId: '1adId',
       source: 'client',
       mediaType: 'banner',
+      meta: {
+        advertiserDomains: ['adomain']
+      }
     };
 
     /* return the expected response for a given bid, filter by keys if given */
@@ -154,6 +157,7 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.SIZE ] = bid.getSize();
       expected[ CONSTANTS.TARGETING_KEYS.SOURCE ] = bid.source;
       expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
+      expected[ CONSTANTS.TARGETING_KEYS.ADOMAIN ] = bid.meta.advertiserDomains[0];
       if (bid.mediaType === 'video') {
         expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
         expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
@@ -239,6 +243,12 @@ describe('auctionmanager.js', function () {
                 return bidResponse.mediaType;
               }
             },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ADOMAIN,
+              val: function (bidResponse) {
+                return bidResponse.meta.advertiserDomains[0];
+              }
+            }
           ]
 
         }
@@ -308,6 +318,12 @@ describe('auctionmanager.js', function () {
               key: CONSTANTS.TARGETING_KEYS.CACHE_ID,
               val: function (bidResponse) {
                 return bidResponse.videoCacheKey;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ADOMAIN,
+              val: function (bidResponse) {
+                return bidResponse.meta.advertiserDomains[0];
               }
             }
           ]

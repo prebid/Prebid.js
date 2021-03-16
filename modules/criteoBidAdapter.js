@@ -8,7 +8,7 @@ import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 91;
-export const ADAPTER_VERSION = 32;
+export const ADAPTER_VERSION = 33;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
@@ -28,7 +28,7 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [ BANNER, VIDEO, NATIVE ],
 
-  /**
+  /** f
    * @param {object} bid
    * @return {boolean}
    */
@@ -56,10 +56,11 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
     let data;
+    let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
 
     Object.assign(bidderRequest, {
-      publisherExt: config.getConfig('fpd.context'),
-      userExt: config.getConfig('fpd.user'),
+      publisherExt: fpd.context,
+      userExt: fpd.user,
       ceh: config.getConfig('criteo.ceh')
     });
 
@@ -79,10 +80,6 @@ export const spec = {
     if (publisherTagAvailable()) {
       // eslint-disable-next-line no-undef
       const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
-      const enableSendAllBids = config.getConfig('enableSendAllBids');
-      if (adapter.setEnableSendAllBids && typeof adapter.setEnableSendAllBids === 'function' && typeof enableSendAllBids === 'boolean') {
-        adapter.setEnableSendAllBids(enableSendAllBids);
-      }
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -133,8 +130,6 @@ export const spec = {
         if (slot.native) {
           if (bidRequest.params.nativeCallback) {
             bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
-          } else if (config.getConfig('enableSendAllBids') === true) {
-            return;
           } else {
             bid.native = createPrebidNativeAd(slot.native);
             bid.mediaType = NATIVE;
@@ -253,12 +248,14 @@ function buildCdbUrl(context) {
 
 function checkNativeSendId(bidRequest) {
   return !(bidRequest.nativeParams &&
-    ((bidRequest.nativeParams.image && bidRequest.nativeParams.image.sendId !== true) ||
-      (bidRequest.nativeParams.icon && bidRequest.nativeParams.icon.sendId !== true) ||
-      (bidRequest.nativeParams.clickUrl && bidRequest.nativeParams.clickUrl.sendId !== true) ||
-      (bidRequest.nativeParams.displayUrl && bidRequest.nativeParams.displayUrl.sendId !== true) ||
-      (bidRequest.nativeParams.privacyLink && bidRequest.nativeParams.privacyLink.sendId !== true) ||
-      (bidRequest.nativeParams.privacyIcon && bidRequest.nativeParams.privacyIcon.sendId !== true)));
+    (
+      (bidRequest.nativeParams.image && ((bidRequest.nativeParams.image.sendId !== true || bidRequest.nativeParams.image.sendTargetingKeys === true))) ||
+        (bidRequest.nativeParams.icon && ((bidRequest.nativeParams.icon.sendId !== true || bidRequest.nativeParams.icon.sendTargetingKeys === true))) ||
+        (bidRequest.nativeParams.clickUrl && ((bidRequest.nativeParams.clickUrl.sendId !== true || bidRequest.nativeParams.clickUrl.sendTargetingKeys === true))) ||
+        (bidRequest.nativeParams.displayUrl && ((bidRequest.nativeParams.displayUrl.sendId !== true || bidRequest.nativeParams.displayUrl.sendTargetingKeys === true))) ||
+        (bidRequest.nativeParams.privacyLink && ((bidRequest.nativeParams.privacyLink.sendId !== true || bidRequest.nativeParams.privacyLink.sendTargetingKeys === true))) ||
+        (bidRequest.nativeParams.privacyIcon && ((bidRequest.nativeParams.privacyIcon.sendId !== true || bidRequest.nativeParams.privacyIcon.sendTargetingKeys === true)))
+    ));
 }
 
 /**
@@ -284,8 +281,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.zoneId) {
         slot.zoneid = bidRequest.params.zoneId;
       }
-      if (bidRequest.fpd && bidRequest.fpd.context) {
-        slot.ext = bidRequest.fpd.context;
+      if (utils.deepAccess(bidRequest, 'ortb2Imp.ext')) {
+        slot.ext = bidRequest.ortb2Imp.ext;
       }
       if (bidRequest.params.ext) {
         slot.ext = Object.assign({}, slot.ext, bidRequest.params.ext);
@@ -416,6 +413,7 @@ function hasValidVideoMediaType(bidRequest) {
  */
 function createPrebidNativeAd(payload) {
   return {
+    sendTargetingKeys: false, // no key is added to KV by default
     title: payload.products[0].title,
     body: payload.products[0].description,
     sponsoredBy: payload.advertiser.description,

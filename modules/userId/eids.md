@@ -33,11 +33,11 @@ userIdAsEids = [
         source: 'id5-sync.com',
         uids: [{
             id: 'some-random-id-value',
-            atype: 1
-        },
-        ext: {
-            linkType: 2,
-            abTestingControlGroup: false
+            atype: 1,
+            ext: {
+                linkType: 2,
+                abTestingControlGroup: false
+            }
         }]
     },
 
@@ -142,9 +142,18 @@ userIdAsEids = [
             atype: 1
         }]
     },
-
     {
         source: 'mediawallahscript.com',
+    },
+    {
+        source: 'tapad.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'novatiq.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
