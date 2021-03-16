@@ -25,8 +25,8 @@ const deviceConnection = {
 };
 
 const getConnextionType = () => {
-  const type = window.navigator.connection && (window.navigator.connection.type || window.navigator.connection.effectiveType)
-  switch (type) {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {}
+  switch (connection.type || connection.effectiveType) {
     case 'wifi':
     case 'ethernet':
       return deviceConnection.FIXED
@@ -34,8 +34,7 @@ const getConnextionType = () => {
     case 'wimax':
       return deviceConnection.MOBILE
     default:
-      const isMobile = (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window['MSStream']) ||
-        /android/i.test(navigator.userAgent)
+      const isMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || /android/i.test(navigator.userAgent)
       return isMobile ? deviceConnection.UNKNOWN : deviceConnection.FIXED
   }
 };
