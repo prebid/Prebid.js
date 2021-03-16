@@ -387,12 +387,12 @@ describe('the spotx adapter', function () {
       sinon.stub(config, 'getConfig').callsFake(function (key) {
         if (key === 'cache') {
           return {
-            url: "prebidCacheLocation",
+            url: 'prebidCacheLocation'
             ignoreBidderCacheKey: true
           };
         }
         if (key === 'cache.url') {
-          return "prebidCacheLocation";
+          return 'prebidCacheLocation';
         }
         if (key === 'cache.ignoreBidderCacheKey') {
           return true;
