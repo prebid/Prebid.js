@@ -378,8 +378,6 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[0].bidfloorcur).to.be.equal(currency);
     });
 
-    // TODO: test for reading debug from config
-
     it('should read floor price using floors module', function () {
       const floorPriceFor580x400 = 6.5148;
       const floorPriceForAnySize = 4.2343;
