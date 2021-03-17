@@ -72,7 +72,7 @@ export const spec = {
 
     // EIDS Support
     if (validBidRequests[0].userId) {
-      data.user.ext.eids = createEidsArray(validBidRequests[0].userId);
+      utils.deepSetValue(data, 'user.ext.eids', createEidsArray(validBidRequests[0].userId));
     }
 
     validBidRequests.map(bid => {

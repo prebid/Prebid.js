@@ -139,7 +139,8 @@ function sendMessage(auctionId, bidWonId) {
         'mediaType',
         'floorValue',
         'floorRuleValue',
-        'floorRule'
+        'floorRule',
+        'adomains'
       ]) : undefined
     ]);
   }
@@ -364,7 +365,11 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
     'seatBidId',
     'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
     'floorRuleValue', () => utils.deepAccess(bid, 'floorData.floorRuleValue'),
-    'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined
+    'floorRule', () => utils.debugTurnedOn() ? utils.deepAccess(bid, 'floorData.floorRule') : undefined,
+    'adomains', () => {
+      let adomains = utils.deepAccess(bid, 'meta.advertiserDomains');
+      return Array.isArray(adomains) && adomains.length > 0 ? adomains.slice(0, 10) : undefined
+    }
   ]);
 }
 
@@ -477,8 +482,8 @@ function subscribeToGamSlots() {
             // these come in as `null` from Gpt, which when stringified does not get removed
             // so set explicitly to undefined when not a number
             'advertiserId', advertiserId => utils.isNumber(advertiserId) ? advertiserId : undefined,
-            'creativeId', creativeId => utils.isNumber(creativeId) ? creativeId : undefined,
-            'lineItemId', lineItemId => utils.isNumber(lineItemId) ? lineItemId : undefined,
+            'creativeId', creativeId => utils.isNumber(event.sourceAgnosticCreativeId) ? event.sourceAgnosticCreativeId : utils.isNumber(creativeId) ? creativeId : undefined,
+            'lineItemId', lineItemId => utils.isNumber(event.sourceAgnosticLineItemId) ? event.sourceAgnosticLineItemId : utils.isNumber(lineItemId) ? lineItemId : undefined,
             'adSlot', () => event.slot.getAdUnitPath(),
             'isSlotEmpty', () => event.isEmpty || undefined
           ]);
