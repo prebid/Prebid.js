@@ -28,15 +28,13 @@ describe('ProxistoreBidAdapter', function () {
   };
   describe('isBidRequestValid', function () {
     it('it should be true if required params are presents and there is no info in the local storage', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('it should be false if the value in the localstorage is less than 5minutes of the actual time', function () {
       const date = new Date();
       date.setMinutes(date.getMinutes() - 1);
       localStorage.setItem(`PX_NoAds_${bid.params.website}`, date);
-      // eslint-disable-next-line no-console
-      console.log(spec.isBidRequestValid(bid));
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('it should be true if the value in the localstorage is more than 5minutes of the actual time', function () {
       const date = new Date();
