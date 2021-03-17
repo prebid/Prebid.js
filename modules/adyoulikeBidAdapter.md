@@ -11,7 +11,7 @@ Banner, Native and Video ad formats are supported.
 
 # Test Parameters
 ```
-    var adUnits = {
+  var adUnits = {
     "code": "test-div",
     "mediaTypes": {
       "banner": {
@@ -51,13 +51,17 @@ Banner, Native and Video ad formats are supported.
           "required": true,
           "sizes": []
         }
+      },
+      video: {
+        playerSize: [640, 480],
+        context: 'instream'
       }
-      bids: [{
-        bidder: "adyoulike",
-        params: {
-          placement: 194 f787b85c829fb8822cdaf1ae64435,
-          DC: "fra01", // Optional for set the data center name
-        }
-      }]
-    };
+    },
+    bids: [{
+      bidder: "adyoulike",
+      params: {
+        placement: 194f787b85c829fb8822cdaf1ae64435
+      }
+    }]
+  };
 ```
