@@ -1636,7 +1636,6 @@ describe('S2S Adapter', function () {
       config.setConfig({ fpd: { context: commonContext, user: commonUser } });
       config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
-
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
       expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
