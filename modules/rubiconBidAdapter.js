@@ -111,43 +111,6 @@ var sizeMap = {
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
-function renderBid(bid) {
-  const config = bid.renderer.getConfig();
-  bid.renderer.push(() => {
-    window.MagniteApex.renderAd({
-      width: bid.width,
-      height: bid.height,
-      vastUrl: bid.vastUrl,
-      placement: {
-        attachTo: `#${bid.adUnitCode}`,
-        align: config.align || 'center',
-        position: config.position || 'append'
-      },
-      closeButton: config.closeButton || false,
-      label: config.label || undefined,
-      collapse: config.collapse || true
-    });
-  });
-}
-
-function outstreamRenderer(rtbBid) {
-  const renderer = Renderer.install({
-    id: rtbBid.adId,
-    url: rubiConf.rendererUrl || DEFAULT_RENDERER_URL,
-    config: rubiConf.rendererConfig || {},
-    loaded: false,
-    adUnitCode: rtbBid.adUnitCode
-  });
-
-  try {
-    renderer.setRender(renderBid);
-  } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
-  }
-
-  return renderer;
-}
-
 export const spec = {
   code: 'rubicon',
   gvlid: GVLID,
@@ -825,6 +788,63 @@ function _renderCreative(script, impId) {
 </div>
 </body>
 </html>`;
+}
+
+function hideGoogleAdsDiv(adUnit) {
+  const el = adUnit.querySelector("div[id^='google_ads']");
+  if (el) {
+    el.style.setProperty('display', 'none');
+  }
+}
+
+function hideSmartAdServerIframe(adUnit) {
+  const el = adUnit.querySelector("script[id^='sas_script']");
+  if (el && el.nextSibling && el.nextSibling.localName === 'iframe') {
+    el.nextSibling.style.setProperty('display', 'none');
+  }
+}
+
+function renderBid(bid) {
+  // hide existing ad units
+  const adUnitElement = document.getElementById(bid.adUnitCode);
+  hideGoogleAdsDiv(adUnitElement);
+  hideSmartAdServerIframe(adUnitElement);
+
+  // configure renderer
+  const config = bid.renderer.getConfig();
+  bid.renderer.push(() => {
+    window.MagniteApex.renderAd({
+      width: bid.width,
+      height: bid.height,
+      vastUrl: bid.vastUrl,
+      placement: {
+        attachTo: `#${bid.adUnitCode}`,
+        align: config.align || 'center',
+        position: config.position || 'append'
+      },
+      closeButton: config.closeButton || false,
+      label: config.label || undefined,
+      collapse: config.collapse || true
+    });
+  });
+}
+
+function outstreamRenderer(rtbBid) {
+  const renderer = Renderer.install({
+    id: rtbBid.adId,
+    url: rubiConf.rendererUrl || DEFAULT_RENDERER_URL,
+    config: rubiConf.rendererConfig || {},
+    loaded: false,
+    adUnitCode: rtbBid.adUnitCode
+  });
+
+  try {
+    renderer.setRender(renderBid);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  return renderer;
 }
 
 function parseSizes(bid, mediaType) {
