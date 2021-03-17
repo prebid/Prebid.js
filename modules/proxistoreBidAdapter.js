@@ -108,8 +108,6 @@ function isBidRequestValid(bid) {
   const canDisplay = function () {
     if (!storage.hasLocalStorage()) {
       utils.logError('Local storage API disabled');
-      // eslint-disable-next-line no-console
-      console.log('*** LOCAL STORAGE IDSALBE');
       return false;
     }
 
