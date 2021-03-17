@@ -106,6 +106,10 @@ export const spec = {
           if (bidResponse.vastXml != null) {
             if (JSON.parse(bidRequest.data).videoData.format == 'outstream' || JSON.parse(bidRequest.data).videoData.format == 'banner') {
               bidResponse.renderer = Renderer.install({
+                id: bidRequest.bidId,
+                adunitcode: bidRequest.tagId,
+                loaded: false,
+                config: response.media_type,
                 url: 'https://cdn3.richaudience.com/prebidVideo/player.js'
               });
             }
