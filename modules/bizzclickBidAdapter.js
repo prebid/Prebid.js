@@ -81,10 +81,12 @@ export const spec = {
       let data = {
         id: bidRequest.bidId,
         test: config.getConfig('debug') ? 1 : 0,
+        at: 1,
         cur: ['USD'],
         device: {
           w: winTop.screen.width,
           h: winTop.screen.height,
+          dnt: utils.getDNT() ? 1 : 0,
           language: (navigator && navigator.language) ? navigator.language.indexOf('-') != -1 ? navigator.language.split('-')[0] : navigator.language : '',
         },
         site: {
@@ -94,9 +96,26 @@ export const spec = {
         source: {
           tid: bidRequest.transactionId
         },
+        regs: {
+          coppa: config.getConfig('coppa') === true ? 1 : 0,
+          ext: {}
+        },
+        user: {
+          ext: {}
+        },
         tmax: bidRequest.timeout,
         imp: [impObject],
       };
+      if (bidRequest) {
+        if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
+          utils.deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
+          utils.deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
+        }
+
+        if (bidRequest.uspConsent !== undefined) {
+          utils.deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
+        }
+      }
       bids.push(data)
     }
     return {
