@@ -762,7 +762,7 @@ function updateSubmodules() {
       callback: undefined,
       idObj: undefined
     } : null;
-  }).filter(submodule => submodule !== null);
+  }).filter(submodule => submodule !== null);console.log(submodules);
 
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50

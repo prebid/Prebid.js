@@ -10,8 +10,10 @@ import events from '../../src/events.js';
 import * as utils from '../../src/utils.js';
 import { getRefererInfo } from '../../src/refererDetection.js'
 import CONSTANTS from '../../src/constants.json';
+import { getStorageManager } from '../../src/storageManager.js';
 
 const MODULE_NAME = 'First Party Data';
+const storage = getStorageManager();
 let ortb2 = {};
 let shouldRun = true;
 
@@ -51,18 +53,128 @@ function setKeywords() {
   if (keywords && keywords.content) utils.mergeDeep(ortb2, {site: { keywords: keywords.content.replace(/\s/g, '')}});
 }
 
+function filterData(data, key) {
+  if (!Array.isArray(data)) {
+    utils.logWarn(`Filtered ${key} data: Must be an array of objects`);
+    return;
+  }
+
+  let duplicate = data.filter(index => {
+    if (typeof index !== 'object' || !index.name || !index.segment || !Array.isArray(index.segment)) {
+      utils.logWarn(`Filtered ${key}.data: must be an object containing name and segment`, index);
+      return false;
+    }
+
+    return true;
+  }).reduce((result, value) => {
+    if (value.ext && (typeof value.ext !== 'object' || Array.isArray(value.ext))) {
+      utils.logWarn(`Filtered ext attribute from ${key}.data: must be an object`, value);
+      delete value.ext;
+    } 
+
+    value.segment = value.segment.filter(el => {
+      if (!el.id || typeof el.id !== 'string') { 
+        utils.logWarn(`Filtered ${key}.data.segment: id is required and must be a string`, el);
+        return false;
+      }
+      return true;
+    });
+
+    if (value.segment.length) {
+      result.push(value);
+    } else {
+      utils.logWarn(`Filtered ${key}.data: must contain segment data`);
+    }
+
+    return result;
+  }, []);
+
+  return (duplicate.length) ? duplicate : null;
+}
+
+/**
+ * Retrieve an item from storage if it exists and hasn't expired.
+ * @param {string} key Key of the item.
+ * @returns {string|null} Value of the item.
+ */
+export function getStorageItem(key) {
+  let val = null;
+
+  try {
+    const expVal = storage.getDataFromLocalStorage(key + '_exp');
+
+    if (!expVal) {
+      // If there is no expiry time, then just return the item
+      val = storage.getDataFromLocalStorage(key);
+    } else {
+      // Only return the item if it hasn't expired yet.
+      // Otherwise delete the item.
+      const expDate = new Date(expVal);
+      const isValid = (expDate.getTime() - Date.now()) > 0;
+      if (isValid) {
+        val = storage.getDataFromLocalStorage(key);
+      } else {
+        removeStorageItem(key);
+      }
+    }
+  } catch (e) {
+    utils.logMessage(e);
+  }
+
+  return val;
+}
+
 function validateFpd(obj) {
+  console.log("FPD", obj);
   let validObject =  Object.assign({}, Object.keys(obj).filter(key => {
     if (key !== 'imp') return key;
 
     utils.logWarn('Filtered imp property in ortb2 data');
   }).reduce((result, key) => {
-    result[key] = obj[key];
-    
-    return result;
+    let prop = obj[key];
+    let modified = {};
+
+    let optout = (storage.cookiesAreEnabled() && storage.getCookie(name)) ||
+      (storage.hasLocalStorage() && getStorageItem(name));console.log(output);
+
+    if (key === 'user' && optout) {
+      utils.logWarn(`Filtered ${key} data: pubcid optout found`);
+      return result;
+    }
+
+    modified = Object.keys(obj[key]).reduce((combined, keyData) => {
+      let data; 
+
+      if (key === 'user' && keyData === 'data') {
+        data = filterData(obj[key][keyData], key);
+
+        if (data) combined[keyData] = data;
+      } else if(key === 'site' && keyData === 'content' && obj[key][keyData].data) {
+        let content = Object.keys(obj[key][keyData]).reduce((merged, contentData) => {
+          if (contentData === 'data') {
+            data = filterData(obj[key][keyData][contentData], key + '.content');
+
+            if (data) merged[contentData] = data;
+          } else { 
+            merged[contentData] = obj[key][keyData][contentData];
+          }
+
+          return merged;
+        }, {});
+
+        if (Object.keys(content).length) combined[keyData] = content;
+      } else {
+        combined[keyData] = obj[key][keyData];
+      }
+
+      return combined;
+    }, {});
+
+    if (Object.keys(modified).length) result[key] = modified;
+
+    return result; 
   }, {}));
   
-
   console.log(validObject);
 
   return validObject;
@@ -84,9 +196,7 @@ function storeValue(config) {
 
 
 /**
- * test browser support for storage config types (local storage or cookie), initializes submodules but consentManagement is required,
- * so a callback is added to fire after the consentManagement module.
- * @param {{getConfig:function}} config
+ * 
  */
 export function init() {
   setReferer();
@@ -110,12 +220,9 @@ export function init() {
     }
 
     conf.ortb2 = validateFpd(utils.mergeDeep(ortb2, conf.ortb2));
-    //ortb2 = {...conf.ortb2}
     shouldRun = false;
     config.setConfig({ortb2: conf.ortb2});
   });
 }
-
-// init config update listener to start the application
 
 init();
