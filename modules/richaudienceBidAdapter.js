@@ -168,7 +168,7 @@ export const spec = {
     }
     return syncs
   },
-}; 
+};
 
 registerBidder(spec);
 
