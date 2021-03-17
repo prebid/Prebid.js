@@ -215,6 +215,12 @@ export const spec = {
         }
       };
 
+      // If the publisher asks to ignore the bidder cache key we need to return the full vast xml
+      // so that it can be cached on the publishes specified server.
+      if (!!config.getConfig('cache') && !!config.getConfig('cache.url') && (config.getConfig('cache.ignoreBidderCacheKey') === true)) {
+        requestPayload['ext']['wrap_response'] = 0;
+      }
+
       if (utils.getBidIdParameter('number_of_ads', bid.params)) {
         requestPayload['ext']['number_of_ads'] = utils.getBidIdParameter('number_of_ads', bid.params);
       }
@@ -336,13 +342,17 @@ export const spec = {
             ttl: 360,
             netRevenue: true,
             channel_id: serverResponseBody.id,
-            cache_key: spotxBid.ext.cache_key,
-            vastUrl: 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key,
-            videoCacheKey: spotxBid.ext.cache_key,
             mediaType: VIDEO,
             width: spotxBid.w,
             height: spotxBid.h
           };
+
+          if (!!config.getConfig('cache') && !!config.getConfig('cache.url') && (config.getConfig('cache.ignoreBidderCacheKey') === true)) {
+            bid.vastXml = spotxBid.adm;
+          } else {
+            bid.cache_key = spotxBid.ext.cache_key;
+            bid.vastUrl = 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key
+          }
 
           bid.meta = bid.meta || {};
           if (spotxBid && spotxBid.adomain && spotxBid.adomain.length > 0) {
