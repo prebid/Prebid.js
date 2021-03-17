@@ -1,14 +1,17 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-const BIDDER_CODE = 'proxistore';
+import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { getStorageManager } from "../src/storageManager.js";
+import * as utils from "../src/utils.js";
+
+const BIDDER_CODE = "proxistore";
 const storage = getStorageManager();
 const PROXISTORE_VENDOR_ID = 418;
 
 function _createServerRequest(bidRequests, bidderRequest) {
-  const sizeIds = [];
-
+  console.log("Proxistore adapter create server request");
+  var sizeIds = [];
+  console.log(bidRequests);
   bidRequests.forEach(function (bid) {
-    const sizeId = {
+    var sizeId = {
       id: bid.bidId,
       sizes: bid.sizes.map(function (size) {
         return {
@@ -16,11 +19,12 @@ function _createServerRequest(bidRequests, bidderRequest) {
           height: size[1],
         };
       }),
-      floor: assignFloor(bid),
+      floor: _assignFloor(bid),
+      segments: _assignSegments(bid),
     };
     sizeIds.push(sizeId);
   });
-  const payload = {
+  var payload = {
     auctionId: bidRequests[0].auctionId,
     transactionId: bidRequests[0].auctionId,
     bids: sizeIds,
@@ -30,21 +34,17 @@ function _createServerRequest(bidRequests, bidderRequest) {
       applies: false,
     },
   };
-  const options = {
-    contentType: 'application/json',
-    withCredentials: true,
-  };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
     if (
-      typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' &&
+      typeof bidderRequest.gdprConsent.gdprApplies === "boolean" &&
       bidderRequest.gdprConsent.gdprApplies
     ) {
       payload.gdpr.applies = true;
     }
 
     if (
-      typeof bidderRequest.gdprConsent.consentString === 'string' &&
+      typeof bidderRequest.gdprConsent.consentString === "string" &&
       bidderRequest.gdprConsent.consentString
     ) {
       payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
@@ -53,21 +53,36 @@ function _createServerRequest(bidRequests, bidderRequest) {
     if (
       bidderRequest.gdprConsent.vendorData &&
       bidderRequest.gdprConsent.vendorData.vendorConsents &&
-      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined'
+      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[
+        PROXISTORE_VENDOR_ID.toString(10)
+      ] !== "undefined"
     ) {
       payload.gdpr.consentGiven = !!bidderRequest.gdprConsent.vendorData
         .vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
     }
   }
 
+  const options = {
+    contentType: "application/json",
+    withCredentials: !!payload.gdpr.consentGiven,
+  };
+  const endPointUri = payload.gdpr.consentGiven
+    ? `https://abs.proxistore.com/${payload.language}/v3/rtb/prebid/multi`
+    : `https://cookieless-proxistore.com/${payload.language}/cookieless`;
+
   return {
-    method: 'POST',
-    url:
-      bidRequests[0].params.url ||
-      'https://abs.proxistore.com/' + payload.language + '/v3/rtb/prebid/multi',
+    method: "POST",
+    url: endPointUri,
     data: JSON.stringify(payload),
     options: options,
   };
+}
+
+function _assignSegments(bid) {
+  if (bid.hasOwnProperty("fpd")) {
+    return bid.fpd.segments || [];
+  }
+  return [];
 }
 
 function _createBidResponse(response) {
@@ -94,15 +109,17 @@ function _createBidResponse(response) {
  */
 
 function isBidRequestValid(bid) {
-  const hasNoAd = function () {
+  const canDisplay = function () {
     if (!storage.hasLocalStorage()) {
+      utils.logError("Local storage API disabled");
       return false;
     }
+
     const pxNoAds = storage.getDataFromLocalStorage(
       `PX_NoAds_${bid.params.website}`
     );
     if (!pxNoAds) {
-      return false;
+      return true;
     } else {
       const storedDate = new Date(pxNoAds);
       const now = new Date();
@@ -110,9 +127,8 @@ function isBidRequestValid(bid) {
       return diff <= 5;
     }
   };
-  return !!(bid.params.website && bid.params.language) && !hasNoAd();
+  return !!(bid.params.website && bid.params.language) && !canDisplay();
 }
-
 /**
  * Make a server request from the list of BidRequests.
  *
@@ -122,7 +138,7 @@ function isBidRequestValid(bid) {
  */
 
 function buildRequests(bidRequests, bidderRequest) {
-  const request = _createServerRequest(bidRequests, bidderRequest);
+  var request = _createServerRequest(bidRequests, bidderRequest);
   return request;
 }
 /**
@@ -134,7 +150,7 @@ function buildRequests(bidRequests, bidderRequest) {
  */
 
 function interpretResponse(serverResponse, bidRequest) {
-  const itemName = `PX_NoAds_${websiteFromBidRequest(bidRequest)}`;
+  const itemName = `PX_NoAds_${_websiteFromBidRequest(bidRequest)}`;
   if (serverResponse.body.length > 0) {
     storage.removeDataFromLocalStorage(itemName, true);
     return serverResponse.body.map(_createBidResponse);
@@ -144,28 +160,29 @@ function interpretResponse(serverResponse, bidRequest) {
   }
 }
 
-const websiteFromBidRequest = function (bidR) {
+function _websiteFromBidRequest(bidR) {
   if (bidR.data) {
     return JSON.parse(bidR.data).website;
   } else if (bidR.params.website) {
     return bidR.params.website;
   }
-};
+}
 
-const assignFloor = function (bid) {
-  if (typeof bid.getFloor === 'function') {
-    let floorInfo = bid.getFloor({
-      currency: 'EUR',
-      mediaType: 'banner',
-      size: '*',
+function _assignFloor(bid) {
+  if (typeof bid.getFloor === "function") {
+    var floorInfo = bid.getFloor({
+      currency: "EUR",
+      mediaType: "banner",
+      size: "*",
     });
-    if (floorInfo.currency === 'EUR') {
+
+    if (floorInfo.currency === "EUR") {
       return floorInfo.floor;
     }
   }
-  return null;
-};
 
+  return null;
+}
 /**
  * Register the user sync pixels which should be dropped after the auction.
  *
