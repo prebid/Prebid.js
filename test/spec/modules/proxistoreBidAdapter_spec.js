@@ -34,6 +34,8 @@ describe('ProxistoreBidAdapter', function () {
       const date = new Date();
       date.setMinutes(date.getMinutes() - 1);
       localStorage.setItem(`PX_NoAds_${bid.params.website}`, date);
+      // eslint-disable-next-line no-console
+      console.log(spec.isBidRequestValid(bid));
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('it should be true if the value in the localstorage is more than 5minutes of the actual time', function () {
@@ -46,7 +48,8 @@ describe('ProxistoreBidAdapter', function () {
   describe('buildRequests', function () {
     const url = {
       cookieBase: 'https://abs.proxistore.com/fr/v3/rtb/prebid/multi',
-      cookieLess: 'https://cookieless-proxistore.com/fr/cookieless',
+      cookieLess:
+        'https://cookieless-proxistore.com/v3/rtb/prebid/multi/cookieless',
     };
     let request = spec.buildRequests([bid], bidderRequest);
     it('should return a valid object', function () {

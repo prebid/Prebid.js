@@ -64,7 +64,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
   };
   const endPointUri = payload.gdpr.consentGiven
     ? `https://abs.proxistore.com/${payload.language}/v3/rtb/prebid/multi`
-    : `https://cookieless-proxistore.com/${payload.language}/v3/rtb/prebid/multi/cookieless`;
+    : `https://cookieless-proxistore.com/v3/rtb/prebid/multi/cookieless`;
 
   return {
     method: 'POST',
@@ -108,6 +108,8 @@ function isBidRequestValid(bid) {
   const canDisplay = function () {
     if (!storage.hasLocalStorage()) {
       utils.logError('Local storage API disabled');
+      // eslint-disable-next-line no-console
+      console.log('*** LOCAL STORAGE IDSALBE');
       return false;
     }
 
