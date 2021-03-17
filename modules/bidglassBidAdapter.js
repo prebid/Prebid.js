@@ -71,18 +71,16 @@ export const spec = {
       bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
       bid.sizes = bid.sizes.filter(size => utils.isArray(size));
 
-      var adUnitId = utils.getBidIdParameter('adUnitId', bid.params),
-        options = utils.deepClone(bid.params);
+      var adUnitId = utils.getBidIdParameter('adUnitId', bid.params);
+      var options = utils.deepClone(bid.params);
 
       delete options.adUnitId;
 
       // Merge externally set targeting params
-      if( bidglass && bidglass.getTargeting ) {
-
+      if (typeof bidglass === 'object' && bidglass.getTargeting) {
         let targeting = bidglass.getTargeting(adUnitId, options.targeting);
 
-        if( targeting && Object.keys(targeting).length > 0 ) options.targeting = targeting;
-
+        if (targeting && Object.keys(targeting).length > 0) options.targeting = targeting;
       }
 
       // Stuff to send: [bid id, sizes, adUnitId, options]
