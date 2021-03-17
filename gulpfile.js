@@ -286,7 +286,7 @@ function test(done) {
   } else {
     var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
-    var browserOverride = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+    var browserOverride = helpers.parseBrowserArgs(argv);
     if (browserOverride.length > 0) {
       karmaConf.browsers = browserOverride;
     }
