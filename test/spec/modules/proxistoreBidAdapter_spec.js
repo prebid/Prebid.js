@@ -44,8 +44,11 @@ describe('ProxistoreBidAdapter', function () {
     });
   });
   describe('buildRequests', function () {
-    const url = 'https://abs.proxistore.com/fr/v3/rtb/prebid/multi';
-    const request = spec.buildRequests([bid], bidderRequest);
+    const url = {
+      cookieBase: 'https://abs.proxistore.com/fr/v3/rtb/prebid/multi',
+      cookieLess: 'https://cookieless-proxistore.com/fr/cookieless',
+    };
+    let request = spec.buildRequests([bid], bidderRequest);
     it('should return a valid object', function () {
       expect(request).to.be.an('object');
       expect(request.method).to.exist;
@@ -55,9 +58,6 @@ describe('ProxistoreBidAdapter', function () {
     it('request method should be POST', function () {
       expect(request.method).to.equal('POST');
     });
-    it('should contain a valid url', function () {
-      expect(request.url).equal(url);
-    });
     it('should have the value consentGiven to true bc we have 418 in the vendor list', function () {
       const data = JSON.parse(request.data);
       expect(data.gdpr.consentString).equal(
@@ -65,6 +65,14 @@ describe('ProxistoreBidAdapter', function () {
       );
       expect(data.gdpr.applies).to.be.true;
       expect(data.gdpr.consentGiven).to.be.true;
+    });
+    it('should contain a valid url', function () {
+      // has gdpr consent
+      expect(request.url).equal(url.cookieBase);
+      // doens't have gpdr consent
+      bidderRequest.gdprConsent.vendorData = null;
+      request = spec.buildRequests([bid], bidderRequest);
+      expect(request.url).equal(url.cookieLess);
     });
     it('should have a property a length of bids equal to one if there is only one bid', function () {
       const data = JSON.parse(request.data);
@@ -85,7 +93,6 @@ describe('ProxistoreBidAdapter', function () {
       let req = spec.buildRequests([bid], bidderRequest);
       data = JSON.parse(req.data);
       expect(data.bids[0].floor).equal(1);
-
       bid.getFloor = function () {
         return { currency: 'USD', floor: 1.0 };
       };
