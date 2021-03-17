@@ -769,10 +769,10 @@ const OPEN_RTB_PROTOCOL = {
 
     const commonFpd = getConfig('ortb2') || {};
     if (commonFpd.site) {
-      utils.deepSetValue(request, 'site', commonFpd.site);
+      utils.mergeDeep(request, {site: commonFpd.site});
     }
     if (commonFpd.user) {
-      utils.deepSetValue(request, 'user', commonFpd.user);
+      utils.mergeDeep(request, {user: commonFpd.user});
     }
     addBidderFirstPartyDataToRequest(request);
 
