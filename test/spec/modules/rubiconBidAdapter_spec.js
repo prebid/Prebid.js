@@ -488,6 +488,17 @@ describe('the rubicon adapter', function () {
           data = parseQuery(request.data);
           expect(data.rp_hard_floor).to.equal('1.23');
         });
+
+        it('should send rp_maxbids to AE if rubicon multibid config exists', function () {
+          var multibidRequest = utils.deepClone(bidderRequest);
+          multibidRequest.bidLimit = 5;
+
+          let [request] = spec.buildRequests(multibidRequest.bids, multibidRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['rp_maxbids']).to.equal('5');
+        });
+
         it('should not send p_pos to AE if not params.position specified', function () {
           var noposRequest = utils.deepClone(bidderRequest);
           delete noposRequest.bids[0].params.position;

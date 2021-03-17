@@ -515,6 +515,10 @@ export const spec = {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
+    if (bidderRequest.bidLimit) {
+      data['rp_maxbids'] = bidderRequest.bidLimit;
+    }
+
     applyFPD(bidRequest, BANNER, data);
 
     if (config.getConfig('coppa') === true) {
