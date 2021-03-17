@@ -126,10 +126,15 @@ function _applyFloor(bid, imp, mediaType) {
       _mediaType = mediaType;
       _size = [width, height];
     }
-    moduleFloor = bid.getFloor({
-      mediaType: _mediaType,
-      size: _size
-    });
+    try {
+      moduleFloor = bid.getFloor({
+        mediaType: _mediaType,
+        size: _size
+      });
+    } catch (err) {
+      // continue with no module floors
+      utils.logWarn('priceFloors module call getFloor failed, error : ', err);
+    }
   }
 
   if (adapterFloor && moduleFloor) {
