@@ -14,8 +14,9 @@ When the module is included, it's automatically enabled and saves an id to both 
 
 ### Prebid Params
 
-Individual params may be set for the MediaWallah openLink User ID Submodule. At least one identifier must be set in the params.
-```
+Individual params may be set for the MediaWallah openLink User ID Submodule. At least accountId and partnerId must be set in the params.
+
+```javascript
 pbjs.setConfig({
     userSync: {
         userIds: [{
@@ -28,6 +29,7 @@ pbjs.setConfig({
         }]
     }
 });
+```
 
 ### Parameter Descriptions for the `usersync` Configuration Section
 The below parameters apply only to the MediaWallah OpenLink ID User ID Module integration.

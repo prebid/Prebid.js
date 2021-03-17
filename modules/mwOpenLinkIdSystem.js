@@ -12,15 +12,13 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const openLinkID = {
   name: 'mwol',
-  cookie_expiration: (86400 * 1000 * 365 * 1), // 1 year
-  value: ''
+  cookie_expiration: (86400 * 1000 * 365 * 1) // 1 year
 }
 
 const storage = getStorageManager();
 
 function getExpirationDate() {
-  const oneYearFromNow = new Date(utils.timestamp() + openLinkID.cookie_expiration);
-  return oneYearFromNow.toGMTString();
+  return (new Date(utils.timestamp() + openLinkID.cookie_expiration)).toGMTString();
 }
 
 function isValidConfig(configParams) {
@@ -39,29 +37,29 @@ function isValidConfig(configParams) {
   return true;
 }
 
-function deserializeMWOlId(mwOLIdStr) {
-  const mwOLId = {};
-  const values = mwOLIdStr.split(',');
+function deserializeMwOlId(mwOlIdStr) {
+  const mwOlId = {};
+  const mwOlIdArr = mwOlIdStr.split(',');
 
-  values.forEach(function(value) {
+  mwOlIdArr.forEach(function(value) {
     const pair = value.split(':');
     // unpack a value of 1 as true
-    mwOLId[pair[0]] = +pair[1] === 1 ? true : pair[1];
+    mwOlId[pair[0]] = +pair[1] === 1 ? true : pair[1];
   });
 
-  return mwOLId;
+  return mwOlId;
 }
 
-function serializeMWOLId(mwOLId) {
+function serializeMwOlId(mwOlId) {
   let components = [];
 
-  if (mwOLId.eid) {
-    components.push('eid:' + mwOLId.eid);
+  if (mwOlId.eid) {
+    components.push('eid:' + mwOlId.eid);
   }
-  if (mwOLId.ibaOptout) {
+  if (mwOlId.ibaOptout) {
     components.push('ibaOptout:1');
   }
-  if (mwOLId.ccpaOptout) {
+  if (mwOlId.ccpaOptout) {
     components.push('ccpaOptout:1');
   }
 
@@ -72,15 +70,15 @@ function readCookie(name) {
   if (!name) name = openLinkID.name;
   const mwOlIdStr = storage.getCookie(name);
   if (mwOlIdStr) {
-    return deserializeMWOlId(decodeURIComponent(mwOlIdStr));
+    return deserializeMwOlId(decodeURIComponent(mwOlIdStr));
   }
   return null;
 }
 
-function writeCookie(mwOLId) {
-  if (mwOLId) {
-    const mwOLIdStr = encodeURIComponent(serializeMWOLId(mwOLId));
-    storage.setCookie(openLinkID.name, mwOLIdStr, getExpirationDate(), 'lax');
+function writeCookie(mwOlId) {
+  if (mwOlId) {
+    const mwOlIdStr = encodeURIComponent(serializeMwOlId(mwOlId));
+    storage.setCookie(openLinkID.name, mwOlIdStr, getExpirationDate(), 'lax');
   }
 }
 
@@ -97,15 +95,12 @@ function register(configParams, olid) {
 
 function setID(configParams) {
   if (!isValidConfig(configParams)) return undefined;
-
-  const mwOLId = readCookie();
-  openLinkID.value = utils.generateUUID();
-
-  const newmwOLId = mwOLId ? utils.deepClone(mwOLId) : {eid: openLinkID.value};
-  writeCookie(newmwOLId);
-  register(configParams, newmwOLId.eid);
+  const mwOlId = readCookie();
+  const newMwOlId = mwOlId ? utils.deepClone(mwOlId) : {eid: utils.generateUUID()};
+  writeCookie(newMwOlId);
+  register(configParams, newMwOlId.eid);
   return {
-    id: mwOLId
+    id: newMwOlId
   };
 };
 
@@ -127,7 +122,7 @@ export const mwOpenLinkIdSubModule = {
      * @return {(Object|undefined}
      */
   decode(mwOlId) {
-    const id = mwOlId ? utils.isStr(mwOlId) ? mwOlId : utils.isPlainObject(mwOlId) ? mwOlId.eid : undefined : undefined;
+    const id = mwOlId && utils.isPlainObject(mwOlId) ? mwOlId.eid : undefined;
     return id ? { 'mwOpenLinkId': id } : undefined;
   },
 

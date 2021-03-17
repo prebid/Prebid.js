@@ -17,9 +17,4 @@ describe('mwOpenLinkId module', function () {
     const id = mwOpenLinkIdSubModule.getId(P_CONFIG_MOCK);
     expect(id).to.be.deep.equal({id: {eid: 'XX-YY-ZZ-123'}});
   });
-
-  it('getId() should return an empty Id when the MediaWallah openLink first party cookie is missing', function () {
-    const id = mwOpenLinkIdSubModule.getId();
-    expect(id).to.be.deep.equal(undefined);
-  });
 });

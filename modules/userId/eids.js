@@ -171,7 +171,8 @@ const USER_IDS_CONFIG = {
   },
   // MediaWallah OpenLink
   'mwOpenLinkId': {
-    source: 'mediawallahscript.com'
+    source: 'mediawallahscript.com',
+    atype: 1
   },
   'tapadId': {
     source: 'tapad.com',
