@@ -566,7 +566,7 @@ function buildIXDiag(validBidRequests) {
     iu: 0,
     nu: 0,
     ou: 0,
-    allU: 0,
+    allu: 0,
     ren: false,
     version: '$prebid.version$'
   };
@@ -602,7 +602,7 @@ function buildIXDiag(validBidRequests) {
         ixdiag.iu++;
       }
 
-      ixdiag.allU++;
+      ixdiag.allu++;
     }
   }
 
