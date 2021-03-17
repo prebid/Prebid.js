@@ -400,6 +400,16 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.site.content).to.deep.equal(jsContent);
     });
 
+    it('should contain the keyword values if it present in ortb2.(site/user)', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.user' ? {'keywords': 'foo'} : (arg === 'ortb2.site' ? {'keywords': 'bar'} : null));
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.ext.keywords).to.deep.equal([{'key': 'user', 'value': ['foo']}, {'key': 'context', 'value': ['bar']}]);
+      getConfigStub.restore();
+    });
+
     it('shold be right tmax when timeout in config is less then timeout in bidderRequest', function() {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'bidderTimeout' ? 2000 : null);
@@ -491,7 +501,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -549,7 +558,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -563,7 +571,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 600,
           'ad': '<div>test content 2</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -577,7 +584,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 728,
           'height': 90,
           'ad': '<div>test content 3</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -637,7 +643,6 @@ describe('TheMediaGrid Adapter', function () {
           'dealId': undefined,
           'width': 300,
           'height': 600,
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'video',
           'netRevenue': false,
@@ -654,7 +659,6 @@ describe('TheMediaGrid Adapter', function () {
           'dealId': undefined,
           'width': undefined,
           'height': undefined,
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'video',
           'netRevenue': false,
@@ -786,7 +790,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -800,7 +803,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 600,
           'ad': '<div>test content 2</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -814,7 +816,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 728,
           'height': 90,
           'ad': '<div>test content 3</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,
@@ -828,7 +829,6 @@ describe('TheMediaGrid Adapter', function () {
           'width': 300,
           'height': 600,
           'ad': '<div>test content 4</div>',
-          'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
           'netRevenue': false,

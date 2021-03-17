@@ -111,6 +111,13 @@ function getDefaultBidderFn (bidder) {
       }
 
       return bid
+    },
+    trustx: function (bid, data, acEnabled) {
+      if (acEnabled && data.ac && data.ac.length) {
+        deepSetValue(bid, 'params.keywords.p_standard', data.ac)
+      }
+
+      return bid
     }
   }
 
