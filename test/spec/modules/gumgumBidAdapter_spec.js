@@ -258,6 +258,10 @@ describe('gumgumAdapter', function () {
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.fp).to.equal(bidfloor);
       });
+      it('should return a floor currency', function () {
+        const request = spec.buildRequests(bidRequests)[0];
+        expect(request.data.fpc).to.equal(floorTestData.currency);
+      })
     });
 
     it('sends bid request to ENDPOINT via GET', function () {
