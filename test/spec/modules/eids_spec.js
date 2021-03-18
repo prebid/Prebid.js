@@ -276,6 +276,20 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+  it('uid2', function() {
+    const userId = {
+      uid20: {'id': 'Sample_AD_Token'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'uid20.com',
+      uids: [{
+        id: 'Sample_AD_Token',
+        atype: 1
+      }]
+    });
+  });
   it('pubProvidedId', function() {
     const userId = {
       pubProvidedId: [{
