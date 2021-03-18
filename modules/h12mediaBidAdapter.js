@@ -22,7 +22,7 @@ export const spec = {
     return validBidRequests.map((bidRequest) => {
       const bidderParams = bidRequest.params;
       const requestUrl = bidderParams.endpointdom || DEFAULT_URL;
-      let pubsubid = bidderParams.pubsubid;
+      let pubsubid = bidderParams.pubsubid || '';
       if (pubsubid && pubsubid.length > 32) {
         utils.logError('Bidder param \'pubsubid\' should be less than 32 chars.');
         pubsubid = '';

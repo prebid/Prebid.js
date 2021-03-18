@@ -22,6 +22,7 @@ describe('H12 Media Adapter', function () {
     auctionId: '9adc85ed-43ee-4a78-816b-52b7e578f313',
     params: {
       pubid: 123321,
+      pubsubid: 'pubsubtestid',
     },
   };
 
@@ -199,6 +200,28 @@ describe('H12 Media Adapter', function () {
       const requestsData2 = requests[1].data.bidrequest;
 
       expect(requestsData2).to.deep.include({adunitSize: []});
+    });
+
+    it('should return pubsubid from params', function () {
+      createElementVisible(validBid.adUnitCode);
+      createElementVisible(validBid2.adUnitCode);
+      const requests = spec.buildRequests([validBid, validBid2], bidderRequest);
+      const requestsData = requests[0].data.bidrequest;
+      const requestsData2 = requests[1].data.bidrequest;
+
+      expect(requestsData).to.include({pubsubid: 'pubsubtestid'});
+      expect(requestsData2).to.include({pubsubid: ''});
+    });
+
+    it('should return empty for incorrect pubsubid from params', function () {
+      createElementVisible(validBid.adUnitCode);
+      createElementVisible(validBid2.adUnitCode);
+      const bidWithPub = {...validBid};
+      bidWithPub.params.pubsubid = 'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii'; // More than 32 chars
+      const requests = spec.buildRequests([bidWithPub], bidderRequest);
+      const requestsData = requests[0].data.bidrequest;
+
+      expect(requestsData).to.include({pubsubid: ''});
     });
 
     it('should return bid size from params', function () {
