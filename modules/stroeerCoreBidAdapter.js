@@ -332,7 +332,7 @@ export const spec = {
 
     function getGlobalKeyValues() {
       try {
-        return win.SDG.Publisher.getConfig().getFilteredKeyValues();
+        return getValidKeyValues(win.SDG.Publisher.getConfig().getFilteredKeyValues());
       } catch (e) {
         return undefined;
       }
@@ -340,10 +340,19 @@ export const spec = {
 
     function getLocalKeyValues(position) {
       try {
-        return win.SDG.getCN().getSlotByPosition(position).getFilteredKeyValues();
+        return getValidKeyValues(win.SDG.getCN().getSlotByPosition(position).getFilteredKeyValues());
       } catch (e) {
         return undefined;
       }
+    }
+
+    function getValidKeyValues(allKeyValues) {
+      const validKeys = Object.keys(allKeyValues).filter((key) => isValidValuesForKeyValue(allKeyValues[key]))
+      return validKeys.reduce((keyValues, key) => ({...keyValues, [key]: allKeyValues[key]}), {});
+    }
+
+    function isValidValuesForKeyValue(values) {
+      return Array.isArray(values) && values.every((v) => typeof v === 'string' || typeof v === 'number');
     }
   },
 

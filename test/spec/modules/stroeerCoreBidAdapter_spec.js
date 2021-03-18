@@ -594,27 +594,55 @@ describe('stroeerCore bid adapter', function () {
         assert.deepEqual(actualJsonPayload, expectedJsonPayload);
       });
 
-      it('should have expected global key values', () => {
-        win.SDG = buildFakeSDGForGlobalKeyValues({
-          adset: ['brsl'],
-          browserapp: ['chrome'],
+      describe('and metatag is available', () => {
+        it('should have expected global key values', () => {
+          win.SDG = buildFakeSDGForGlobalKeyValues({
+            adset: ['brsl'],
+            browserapp: ['chrome'],
+          });
+
+          const bidReq = buildBidderRequest();
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+          assert.deepEqual(serverRequestInfo.data.kvg, {
+            adset: ['brsl'],
+            browserapp: ['chrome'],
+          });
         });
 
-        const bidReq = buildBidderRequest();
+        it('should filter out invalid global key values', () => {
+          win.SDG = buildFakeSDGForGlobalKeyValues({
+            validString: ['brsl'],
+            validNumber: [1],
+            validMixed: ['brsl', 1],
+            invalidOne: [true],
+            invalidTwo: [['string']],
+            invalidThree: [[1]],
+            invalidFour: {a: 1},
+            invalidFive: [{a: 1}],
+            invalidSix: true,
+            invalidSeven: 'string',
+            invalidEight: 1,
+          });
 
-        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+          const bidReq = buildBidderRequest();
 
-        assert.deepEqual(serverRequestInfo.data.kvg, {
-          adset: ['brsl'],
-          browserapp: ['chrome'],
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+          assert.deepEqual(serverRequestInfo.data.kvg, {
+            validString: ['brsl'],
+            validNumber: [1],
+            validMixed: ['brsl', 1],
+          });
         });
 
         function buildFakeSDGForGlobalKeyValues(keyValues) {
           return {
             Publisher: {
-              getConfig: function() {
+              getConfig: function () {
                 return {
-                  getFilteredKeyValues: function() {
+                  getFilteredKeyValues: function () {
                     return keyValues;
                   }
                 }
@@ -622,35 +650,62 @@ describe('stroeerCore bid adapter', function () {
             }
           }
         }
-      });
 
-      it('should have expected local key values', () => {
-        win.SDG = buildFakeSDGForLocalKeyValues({
-          'div-1': {
+        it('should have expected local key values', () => {
+          win.SDG = buildFakeSDGForLocalKeyValues({
+            'div-1': {
+              as: ['banner'],
+              hb_unit: ['banner'],
+              pc: ['1'],
+            },
+            'div-2': {
+              as: ['bannerer'],
+              hb_unit: ['bannerer'],
+              pc: ['2'],
+            }
+          });
+
+          const bidReq = buildBidderRequest();
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+          assert.deepEqual(serverRequestInfo.data.bids[0].kvl, {
             as: ['banner'],
             hb_unit: ['banner'],
             pc: ['1'],
-          },
-          'div-2': {
+          });
+
+          assert.deepEqual(serverRequestInfo.data.bids[1].kvl, {
             as: ['bannerer'],
             hb_unit: ['bannerer'],
             pc: ['2'],
-          }
+          });
         });
 
-        const bidReq = buildBidderRequest();
-        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+        it('should filter out invalid local key values', () => {
+          win.SDG = buildFakeSDGForLocalKeyValues({
+            'div-1': {
+              validString: ['brsl'],
+              validNumber: [1],
+              validMixed: ['brsl', 1],
+              invalidOne: [true],
+              invalidTwo: [['string']],
+              invalidThree: [[1]],
+              invalidFour: {a: 1},
+              invalidFive: [{a: 1}],
+              invalidSix: true,
+              invalidSeven: 'string',
+              invalidEight: 1,
+            }
+          });
 
-        assert.deepEqual(serverRequestInfo.data.bids[0].kvl, {
-          as: ['banner'],
-          hb_unit: ['banner'],
-          pc: ['1'],
-        });
+          const bidReq = buildBidderRequest();
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
 
-        assert.deepEqual(serverRequestInfo.data.bids[1].kvl, {
-          as: ['bannerer'],
-          hb_unit: ['bannerer'],
-          pc: ['2'],
+          assert.deepEqual(serverRequestInfo.data.bids[0].kvl, {
+            validString: ['brsl'],
+            validNumber: [1],
+            validMixed: ['brsl', 1],
+          });
         });
 
         function buildFakeSDGForLocalKeyValues(localTargeting) {
@@ -666,60 +721,60 @@ describe('stroeerCore bid adapter', function () {
             }
           }
         }
-      });
 
-      it('should have expected context', () => {
-        win.SDG = buildFakeSDGContext({
-          'div-1': {
-            adUnits: ['adUnit-1', 'adUnit-2'],
-            zone: 'zone-1',
-            pageType: 'pageType-1'
-          },
-          'div-2': {
-            adUnits: ['adUnit-3', 'adUnit-4', 'adUnit-5'],
-            zone: 'zone-2',
-            pageType: 'pageType-2'
-          }
-        });
-        const bidReq = buildBidderRequest();
+        it('should have expected context', () => {
+          win.SDG = buildFakeSDGContext({
+            'div-1': {
+              adUnits: ['adUnit-1', 'adUnit-2'],
+              zone: 'zone-1',
+              pageType: 'pageType-1'
+            },
+            'div-2': {
+              adUnits: ['adUnit-3', 'adUnit-4', 'adUnit-5'],
+              zone: 'zone-2',
+              pageType: 'pageType-2'
+            }
+          });
+          const bidReq = buildBidderRequest();
 
-        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
 
-        assert.deepEqual(serverRequestInfo.data.bids[0].ctx, {
-          'position': 'div-1',
-          'adUnits': ['adUnit-1', 'adUnit-2'],
-          'zone': 'zone-1',
-          'pageType': 'pageType-1'
-        });
+          assert.deepEqual(serverRequestInfo.data.bids[0].ctx, {
+            'position': 'div-1',
+            'adUnits': ['adUnit-1', 'adUnit-2'],
+            'zone': 'zone-1',
+            'pageType': 'pageType-1'
+          });
 
-        assert.deepEqual(serverRequestInfo.data.bids[1].ctx, {
-          'position': 'div-2',
-          'adUnits': ['adUnit-3', 'adUnit-4', 'adUnit-5'],
-          'zone': 'zone-2',
-          'pageType': 'pageType-2'
-        });
+          assert.deepEqual(serverRequestInfo.data.bids[1].ctx, {
+            'position': 'div-2',
+            'adUnits': ['adUnit-3', 'adUnit-4', 'adUnit-5'],
+            'zone': 'zone-2',
+            'pageType': 'pageType-2'
+          });
 
-        function buildFakeSDGContext(config) {
-          return {
-            getCN: function () {
-              return {
-                getSlotByPosition: function (position) {
-                  return {
-                    getAdUnits: function () {
-                      return config[position].adUnits;
-                    },
-                    getZone: function () {
-                      return config[position].zone;
-                    },
-                    getPageType: function () {
-                      return config[position].pageType;
-                    },
-                  };
-                }
-              };
+          function buildFakeSDGContext(config) {
+            return {
+              getCN: function () {
+                return {
+                  getSlotByPosition: function (position) {
+                    return {
+                      getAdUnits: function () {
+                        return config[position].adUnits;
+                      },
+                      getZone: function () {
+                        return config[position].zone;
+                      },
+                      getPageType: function () {
+                        return config[position].pageType;
+                      },
+                    };
+                  }
+                };
+              }
             }
           }
-        }
+        });
       });
 
       it('should handle banner sizes for pre version 3', () => {
