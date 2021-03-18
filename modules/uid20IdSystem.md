@@ -8,7 +8,7 @@ Individual params may be set for the UID 2.0 Submodule. At least one identifier 
 
 ```
 pbjs.setConfig({
-    usersync: {
+    userSync: {
         userIds: [{
             name: 'uid20',
             storage: {
@@ -22,7 +22,7 @@ pbjs.setConfig({
 ## Parameter Descriptions for the `usersync` Configuration Section
 The below parameters apply only to the UID 2.0 User ID Module integration.
 
-| Param under usersync.userIds[] | Scope | Type | Description | Example |
+| Param under userSync.userIds[] | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
 | name | Required | String | ID value for the UID20 module - `"uid20"` | `"uid20"` |
 | storage | Required | Object | The publisher must specify the local storage in which to store the results of the call to get the user ID. This can be either cookie or HTML5 storage. | |
