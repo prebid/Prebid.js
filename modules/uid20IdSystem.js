@@ -70,7 +70,7 @@ export const uid20IdSubmodule = {
    * @function
    * @param {SubmoduleConfig} [config]
    * @param {ConsentData|undefined} consentData
-   * @returns {sharedId}
+   * @returns {uid20}
    */
   getId(config, consentData) {
     logInfo('Creating UID2');
