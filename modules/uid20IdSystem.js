@@ -43,7 +43,7 @@ function encodeId(value) {
 }
 
 /** @type {Submodule} */
-export const uid2IdSubmodule = {
+export const uid20IdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -94,4 +94,4 @@ export const uid2IdSubmodule = {
 };
 
 // Register submodule for userId
-submodule('userId', uid2IdSubmodule);
+submodule('userId', uid20IdSubmodule);
