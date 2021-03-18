@@ -154,6 +154,10 @@ describe('H12 Media Adapter', function () {
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
+    sandbox.stub(frameElement, 'getBoundingClientRect').returns({
+      left: 10,
+      top: 10,
+    });
   });
 
   afterEach(function () {
@@ -286,7 +290,7 @@ describe('H12 Media Adapter', function () {
       const requests = spec.buildRequests([validBid], bidderRequest);
       const requestsData = requests[0].data.bidrequest;
 
-      expect(requestsData).to.deep.include({coords: {x: 0, y: 71}});
+      expect(requestsData).to.deep.include({coords: {x: 10, y: 10}});
     });
 
     it('should define iframe', function () {
