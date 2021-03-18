@@ -81,11 +81,13 @@ export const spec = {
 
   buildRequests: function(validBidRequests, bidderRequest) {
     // device.connectiontype
-    let connection = navigator.connection || navigator.webkitConnection;
-    let connectiontype = 'unknown';
+    let connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
+    let connectionType = 'unknown';
+    let effectiveType = '';
 
-    if (connection && connection.effectiveType) {
-      connectiontype = connection.effectiveType;
+    if (connection) {
+      connectionType = connection.type;
+      effectiveType = connection.effectiveType;
     }
 
     const requests = validBidRequests.map(validBidRequest => {
@@ -105,7 +107,8 @@ export const spec = {
         app,
         site,
         validBidRequest,
-        connectiontype,
+        connectionType,
+        effectiveType,
         devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
         bidfloor: getBidFloor(validBidRequest),
         dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
