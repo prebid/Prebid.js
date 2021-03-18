@@ -509,7 +509,7 @@ describe('User ID', function () {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 14 configurations should result in 14 submodules add', function () {
+    it('config with 15 configurations should result in 15 submodules add', function () {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule, netIdSubmodule, sharedIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, haloIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule]);
       init(config);
       config.setConfig({
@@ -558,7 +558,7 @@ describe('User ID', function () {
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 14 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 15 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
