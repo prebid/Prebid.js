@@ -22,7 +22,9 @@ Find out more [here](https://massplatform.net).
 ## Disclosure
 
 - This module loads external JavaScript to render creatives
-- This module should only be used by publishers that have been invited to the MASS network
+
+## Generic Mode
+- You can specify your our own renderUrl using the module configuration option. When specifying a custom renderer, quality assurance is your responsibility.
 
 ## Integration
 
