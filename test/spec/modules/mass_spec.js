@@ -79,6 +79,7 @@ describe('MASS Module', function() {
   });
 
   it('should only affect MASS bids', function() {
+    init({renderUrl: 'http://...'});
     mockedNonMassBids.forEach(function(mockedBid) {
       const originalBid = Object.assign({}, mockedBid);
       const bid = Object.assign({}, originalBid);
@@ -92,6 +93,7 @@ describe('MASS Module', function() {
   });
 
   it('should only update the ad markup field', function() {
+    init({renderUrl: 'http://...'});
     mockedMassBids.forEach(function(mockedBid) {
       const originalBid = Object.assign({}, mockedBid);
       const bid = Object.assign({}, originalBid);

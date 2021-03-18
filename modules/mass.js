@@ -10,7 +10,6 @@ export let listenerAdded = false;
 export let massEnabled = false;
 
 const defaultCfg = {
-  bootloaderUrl: 'https://cdn.massplatform.net/bootloader.js',
   dealIdPattern: /^MASS/i
 };
 let cfg;
@@ -43,7 +42,7 @@ export function init(customCfg) {
  * Before hook for 'addBidResponse'.
  */
 export function addBidResponseHook(next, adUnitCode, bid) {
-  if (!isMassBid(bid)) {
+  if (!isMassBid(bid) || !cfg.renderUrl) {
     return next(adUnitCode, bid);
   }
 
@@ -120,7 +119,7 @@ export function render(payload) {
     const s = document.createElement('script');
     s.type = 'text/javascript';
     s.async = true;
-    s.src = cfg.bootloaderUrl;
+    s.src = cfg.renderUrl;
 
     const x = document.getElementsByTagName('script')[0];
     x.parentNode.insertBefore(s, x);

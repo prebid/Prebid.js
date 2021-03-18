@@ -39,7 +39,7 @@ pbjs.que.push(function() {
   pbjs.setConfig({
     mass: {
       enabled: true,
-      bootloaderUrl: 'https://cdn.massplatform.net/bootloader.js',
+      renderUrl: 'https://cdn.massplatform.net/bootloader.js',
       dealIdPattern: /^MASS/i
     }
   });
