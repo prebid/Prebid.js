@@ -86,8 +86,13 @@ export const spec = {
     let effectiveType = '';
 
     if (connection) {
-      connectionType = connection.type;
-      effectiveType = connection.effectiveType;
+      if (connection.type) {
+        connectionType = connection.type;
+      }
+
+      if (connection.effectiveType) {
+        effectiveType = connection.effectiveType;
+      }
     }
 
     const requests = validBidRequests.map(validBidRequest => {
