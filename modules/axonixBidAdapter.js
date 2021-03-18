@@ -5,7 +5,7 @@ import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'axonix';
-const BIDDER_VERSION = '1.0.0';
+const BIDDER_VERSION = '1.0.1';
 
 const CURRENCY = 'USD';
 const DEFAULT_REGION = 'us-east-1';
