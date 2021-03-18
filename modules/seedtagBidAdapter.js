@@ -6,7 +6,13 @@ const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
 const SEEDTAG_SSP_ENDPOINT = 'https://s.seedtag.com/c/hb/bid';
 const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = 'https://s.seedtag.com/se/hb/timeout';
-
+const ALLOWED_PLACEMENTS = {
+  inImage: true,
+  inScreen: true,
+  inArticle: true,
+  banner: true,
+  video: true
+}
 const mediaTypesMap = {
   [BANNER]: 'display',
   [VIDEO]: 'video'
@@ -27,10 +33,7 @@ function hasMandatoryParams(params) {
     !!params.publisherId &&
     !!params.adUnitId &&
     !!params.placement &&
-    (params.placement === 'inImage' ||
-      params.placement === 'inScreen' ||
-      params.placement === 'banner' ||
-      params.placement === 'video')
+    !!ALLOWED_PLACEMENTS[params.placement]
   );
 }
 
@@ -88,8 +91,10 @@ function buildBid(seedtagBid) {
     currency: seedtagBid.currency,
     netRevenue: true,
     mediaType: mediaType,
-    ttl: seedtagBid.ttl
+    ttl: seedtagBid.ttl,
+    nurl: seedtagBid.nurl
   };
+
   if (mediaType === VIDEO) {
     bid.vastXml = seedtagBid.content;
   } else {
@@ -200,6 +205,16 @@ export const spec = {
   onTimeout(data) {
     getTimeoutUrl(data);
     utils.triggerPixel(SEEDTAG_SSP_ONTIMEOUT_ENDPOINT);
+  },
+
+  /**
+   * Function to call when the adapter wins the auction
+   * @param {bid} Bid information received from the server
+   */
+  onBidWon: function (bid) {
+    if (bid && bid.nurl) {
+      utils.triggerPixel(bid.nurl);
+    }
   }
 }
 registerBidder(spec);
