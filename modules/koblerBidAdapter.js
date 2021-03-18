@@ -191,9 +191,13 @@ function getFloorInfo(validBidRequest, mainSize) {
   } else {
     return {
       currency: getCurrency(),
-      floor: validBidRequest.params.bidfloor || validBidRequest.params.floorprice || 0.0,
+      floor: getFloorPrice(validBidRequest)
     };
   }
+}
+
+function getFloorPrice(validBidRequest) {
+  return parseFloat(validBidRequest.params.floorPrice) || 0.0;
 }
 
 function buildPmpObject(validBidRequest) {

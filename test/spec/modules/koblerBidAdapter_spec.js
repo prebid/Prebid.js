@@ -208,32 +208,13 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.test).to.be.equal(1);
     });
 
-    it('should read bidfloor from valid bid requests', function () {
+    it('should read floorPrice from valid bid requests', function () {
       const floorPrice = 4.343;
       const validBidRequests = [
         createValidBidRequest(
           {
             placementId: 'oqr3224234',
-            bidfloor: floorPrice
-          }
-        )
-      ];
-      const bidderRequest = createBidderRequest();
-
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      const openRtbRequest = JSON.parse(result.data);
-
-      expect(openRtbRequest.imp.length).to.be.equal(1);
-      expect(openRtbRequest.imp[0].bidfloor).to.be.equal(floorPrice);
-    });
-
-    it('should read floorprice from valid bid requests', function () {
-      const floorPrice = 3.914;
-      const validBidRequests = [
-        createValidBidRequest(
-          {
-            placementId: 'pwe824381',
-            floorprice: floorPrice
+            floorPrice: floorPrice
           }
         )
       ];
@@ -396,7 +377,7 @@ describe('KoblerAdapter', function () {
           {
             placementId: 'pcha322364',
             zip: '0015',
-            bidfloor: 5.6234,
+            floorPrice: 5.6234,
             position: 1,
             dealId: '623472534328234'
           },
@@ -406,7 +387,7 @@ describe('KoblerAdapter', function () {
         createValidBidRequest(
           {
             placementId: 'sdfgoi32y4',
-            floorprice: 3.2543,
+            floorPrice: 3.2543,
             position: 2,
             dealId: '92368234753283'
           },
