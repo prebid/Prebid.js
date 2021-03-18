@@ -28,7 +28,7 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [ BANNER, VIDEO, NATIVE ],
 
-  /**
+  /** f
    * @param {object} bid
    * @return {boolean}
    */
@@ -56,10 +56,11 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
     let data;
+    let fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
 
     Object.assign(bidderRequest, {
-      publisherExt: config.getConfig('fpd.context'),
-      userExt: config.getConfig('fpd.user'),
+      publisherExt: fpd.context,
+      userExt: fpd.user,
       ceh: config.getConfig('criteo.ceh')
     });
 
@@ -280,8 +281,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.zoneId) {
         slot.zoneid = bidRequest.params.zoneId;
       }
-      if (bidRequest.fpd && bidRequest.fpd.context) {
-        slot.ext = bidRequest.fpd.context;
+      if (utils.deepAccess(bidRequest, 'ortb2Imp.ext')) {
+        slot.ext = bidRequest.ortb2Imp.ext;
       }
       if (bidRequest.params.ext) {
         slot.ext = Object.assign({}, slot.ext, bidRequest.params.ext);
