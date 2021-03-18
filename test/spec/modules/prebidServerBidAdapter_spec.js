@@ -658,7 +658,7 @@ describe('S2S Adapter', function () {
         adapter.callBids(s2sBidRequest, gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
-        expect(requestBid.gdpr).is.equal(1);
+        expect(requestBid.gdpr).is.equal(0);
         expect(requestBid.gdpr_consent).is.undefined;
       });
     });
