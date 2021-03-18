@@ -4,12 +4,13 @@ import { server } from 'test/mocks/xhr.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
 const DG_GET_KEYWORDS_TIMEOUT = 1950;
+const DG_TEST_URL = 'http://testNotExistsUrl.comm';
 const DEF_CONFIG = {
   name: 'dgkeyword',
   waitForIt: true,
   params: {
-    timeout: DG_GET_KEYWORDS_TIMEOUT
-  }
+    timeout: DG_GET_KEYWORDS_TIMEOUT,
+  },
 };
 
 describe('Digital Garage Keyword Module', function () {
@@ -24,99 +25,36 @@ describe('Digital Garage Keyword Module', function () {
           code: 'code1',
           mediaTypes: {
             banner: {
-              sizes: [[300, 250]]
+              sizes: [[300, 250]],
             },
           },
           bids: [
             {
               bidder: 'dg',
               params: {
-                placementId: 99999999
-              }
+                placementId: 99999999,
+              },
             },
             {
               bidder: 'dg2',
               params: {
                 placementId: 99999998,
-                dgkeyword: false
-              }
-            },
-            {
-              bidder: 'dg3',
-              params: {
-                placementId: 99999997
-              }
-            }
-          ]
-        },
-        {
-          code: 'code2',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250]]
-            },
-          },
-          bids: [
-            {
-              bidder: 'dg',
-              params: {
-                placementId: 99999996
-              }
-            },
-            {
-              bidder: 'dg2',
-              params: {
-                placementId: 99999995
-              }
-            },
-            {
-              bidder: 'dg3',
-              params: {
-                placementId: 99999994
-              }
-            }
-          ]
-        },
-      ];
-      expect(dgRtd.getTargetBidderOfDgKeywords(adUnits_no_target)).an('array').that.is.empty;
-    });
-    it('should have targets', function () {
-      const adUnits_targets = [
-        {
-          code: 'code1',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250]]
-            },
-          },
-          bids: [
-            {
-              bidder: 'dg',
-              params: {
-                placementId: 99999999
-              }
-            },
-            {
-              bidder: 'dg2',
-              params: {
-                placementId: 99999998,
-                dgkeyword: true
-              }
+                dgkeyword: false,
+              },
             },
             {
               bidder: 'dg3',
               params: {
                 placementId: 99999997,
-                dgkeyword: false
-              }
-            }
-          ]
+              },
+            },
+          ],
         },
         {
           code: 'code2',
           mediaTypes: {
             banner: {
-              sizes: [[300, 250]]
+              sizes: [[300, 250]],
             },
           },
           bids: [
@@ -124,24 +62,88 @@ describe('Digital Garage Keyword Module', function () {
               bidder: 'dg',
               params: {
                 placementId: 99999996,
-                dgkeyword: true
-              }
+              },
             },
             {
               bidder: 'dg2',
               params: {
                 placementId: 99999995,
-                dgkeyword: 'aa'
-              }
+              },
             },
             {
               bidder: 'dg3',
               params: {
                 placementId: 99999994,
-                dgkeyword: true
-              }
-            }
-          ]
+              },
+            },
+          ],
+        },
+      ];
+      expect(dgRtd.getTargetBidderOfDgKeywords(adUnits_no_target)).an('array')
+        .that.is.empty;
+    });
+    it('should have targets', function () {
+      const adUnits_targets = [
+        {
+          code: 'code1',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]],
+            },
+          },
+          bids: [
+            {
+              bidder: 'dg',
+              params: {
+                placementId: 99999999,
+              },
+            },
+            {
+              bidder: 'dg2',
+              params: {
+                placementId: 99999998,
+                dgkeyword: true,
+              },
+            },
+            {
+              bidder: 'dg3',
+              params: {
+                placementId: 99999997,
+                dgkeyword: false,
+              },
+            },
+          ],
+        },
+        {
+          code: 'code2',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]],
+            },
+          },
+          bids: [
+            {
+              bidder: 'dg',
+              params: {
+                placementId: 99999996,
+                dgkeyword: true,
+              },
+            },
+            {
+              bidder: 'dg2',
+              params: {
+                placementId: 99999995,
+                dgkeyword: 'aa',
+              },
+            },
+            {
+              bidder: 'dg3',
+              params: {
+                placementId: 99999994,
+                dgkeyword: true,
+              },
+            },
+          ],
         },
       ];
       const targets = dgRtd.getTargetBidderOfDgKeywords(adUnits_targets);
@@ -163,37 +165,37 @@ describe('Digital Garage Keyword Module', function () {
         code: 'code1',
         mediaTypes: {
           banner: {
-            sizes: [[300, 250]]
+            sizes: [[300, 250]],
           },
         },
         bids: [
           {
             bidder: 'dg',
             params: {
-              placementId: 99999999
-            }
+              placementId: 99999999,
+            },
           },
           {
             bidder: 'dg2',
             params: {
               placementId: 99999998,
-              dgkeyword: true
-            }
+              dgkeyword: true,
+            },
           },
           {
             bidder: 'dg3',
             params: {
               placementId: 99999997,
-              dgkeyword: false
-            }
-          }
-        ]
+              dgkeyword: false,
+            },
+          },
+        ],
       },
       {
         code: 'code2',
         mediaTypes: {
           banner: {
-            sizes: [[300, 250]]
+            sizes: [[300, 250]],
           },
         },
         bids: [
@@ -201,24 +203,24 @@ describe('Digital Garage Keyword Module', function () {
             bidder: 'dg',
             params: {
               placementId: 99999996,
-              dgkeyword: true
-            }
+              dgkeyword: true,
+            },
           },
           {
             bidder: 'dg2',
             params: {
               placementId: 99999995,
-              dgkeyword: 'aa'
-            }
+              dgkeyword: 'aa',
+            },
           },
           {
             bidder: 'dg3',
             params: {
               placementId: 99999994,
-              dgkeyword: true
-            }
-          }
-        ]
+              dgkeyword: true,
+            },
+          },
+        ],
       },
     ];
     describe('should get profiles error.', function () {
@@ -226,21 +228,26 @@ describe('Digital Garage Keyword Module', function () {
         let pdjs = getGlobal();
         pbjs.adUnits = cloneDeep(AD_UNITS);
         let config = cloneDeep(DEF_CONFIG);
-        config.params.url = 'https://profiles.tagger.opecloud.comm';
-        dgRtd.getDgKeywordsAndSet(pdjs, () => {
-          let targets = pbjs.adUnits[0].bids;
-          expect(targets[1].bidder).to.be.equal('dg2');
-          expect(targets[1].params.placementId).to.be.equal(99999998);
-          expect(targets[1].params.dgkeyword).to.be.an('undefined');
-          targets = pbjs.adUnits[1].bids;
-          expect(targets[0].bidder).to.be.equal('dg');
-          expect(targets[0].params.placementId).to.be.equal(99999996);
-          expect(targets[0].params.dgkeyword).to.be.an('undefined');
-          expect(targets[2].bidder).to.be.equal('dg3');
-          expect(targets[2].params.placementId).to.be.equal(99999994);
-          expect(targets[2].params.dgkeyword).to.be.an('undefined');
-          done();
-        }, config, null);
+        config.params.url = DG_TEST_URL;
+        dgRtd.getDgKeywordsAndSet(
+          pdjs,
+          () => {
+            let targets = pbjs.adUnits[0].bids;
+            expect(targets[1].bidder).to.be.equal('dg2');
+            expect(targets[1].params.placementId).to.be.equal(99999998);
+            expect(targets[1].params.dgkeyword).to.be.an('undefined');
+            targets = pbjs.adUnits[1].bids;
+            expect(targets[0].bidder).to.be.equal('dg');
+            expect(targets[0].params.placementId).to.be.equal(99999996);
+            expect(targets[0].params.dgkeyword).to.be.an('undefined');
+            expect(targets[2].bidder).to.be.equal('dg3');
+            expect(targets[2].params.placementId).to.be.equal(99999994);
+            expect(targets[2].params.dgkeyword).to.be.an('undefined');
+            done();
+          },
+          config,
+          null
+        );
       });
     });
     describe('should get profiles timeout.', function () {
@@ -248,42 +255,27 @@ describe('Digital Garage Keyword Module', function () {
         let pdjs = getGlobal();
         pbjs.adUnits = cloneDeep(AD_UNITS);
         let config = cloneDeep(DEF_CONFIG);
-        config.params.timeout = 10;
-        dgRtd.getDgKeywordsAndSet(pdjs, () => {
-          let targets = pbjs.adUnits[0].bids;
-          expect(targets[1].bidder).to.be.equal('dg2');
-          expect(targets[1].params.placementId).to.be.equal(99999998);
-          expect(targets[1].params.dgkeyword).to.be.an('undefined');
-          targets = pbjs.adUnits[1].bids;
-          expect(targets[0].bidder).to.be.equal('dg');
-          expect(targets[0].params.placementId).to.be.equal(99999996);
-          expect(targets[0].params.dgkeyword).to.be.an('undefined');
-          expect(targets[2].bidder).to.be.equal('dg3');
-          expect(targets[2].params.placementId).to.be.equal(99999994);
-          expect(targets[2].params.dgkeyword).to.be.an('undefined');
-          done();
-        }, config, null);
-      });
-    });
-    describe('should get profiles ok.', function () {
-      it('should get profiles ok.', function (done) {
-        let pdjs = getGlobal();
-        pbjs.adUnits = cloneDeep(AD_UNITS);
-        let config = cloneDeep(DEF_CONFIG);
-        dgRtd.getDgKeywordsAndSet(pdjs, () => {
-          let targets = pbjs.adUnits[0].bids;
-          expect(targets[1].bidder).to.be.equal('dg2');
-          expect(targets[1].params.placementId).to.be.equal(99999998);
-          expect(targets[1].params.dgkeyword).to.be.an('undefined');
-          targets = pbjs.adUnits[1].bids;
-          expect(targets[0].bidder).to.be.equal('dg');
-          expect(targets[0].params.placementId).to.be.equal(99999996);
-          expect(targets[0].params.dgkeyword).to.be.an('undefined');
-          expect(targets[2].bidder).to.be.equal('dg3');
-          expect(targets[2].params.placementId).to.be.equal(99999994);
-          expect(targets[2].params.dgkeyword).to.be.an('undefined');
-          done();
-        }, config, null);
+        config.params.timeout = 1;
+        config.params.url = DG_TEST_URL;
+        dgRtd.getDgKeywordsAndSet(
+          pdjs,
+          () => {
+            let targets = pbjs.adUnits[0].bids;
+            expect(targets[1].bidder).to.be.equal('dg2');
+            expect(targets[1].params.placementId).to.be.equal(99999998);
+            expect(targets[1].params.dgkeyword).to.be.an('undefined');
+            targets = pbjs.adUnits[1].bids;
+            expect(targets[0].bidder).to.be.equal('dg');
+            expect(targets[0].params.placementId).to.be.equal(99999996);
+            expect(targets[0].params.dgkeyword).to.be.an('undefined');
+            expect(targets[2].bidder).to.be.equal('dg3');
+            expect(targets[2].params.placementId).to.be.equal(99999994);
+            expect(targets[2].params.dgkeyword).to.be.an('undefined');
+            done();
+          },
+          config,
+          null
+        );
       });
     });
   });
