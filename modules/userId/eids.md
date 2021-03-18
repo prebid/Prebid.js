@@ -162,6 +162,13 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }]
-    }
+    },
+     {
+        source: 'uid20.com',
+        uids: [{
+            id: 'some-random-id-value',
+             atype: 1
+        }]
+     }
 ]
 ```

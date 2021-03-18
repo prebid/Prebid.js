@@ -84,6 +84,13 @@ pbjs.setConfig({
                 partnerId: 0000,
                 uid: '12345xyz'
             }
+        }, {
+            name: 'uid20',
+            storage: {            
+                type: 'cookie',
+                name: 'uid20id',
+                expires: 1
+        }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -161,7 +168,13 @@ pbjs.setConfig({
                  type: 'html5',
                  name: '_criteoId',
                  expires: 1
-              }
+        }, {
+             name: 'uid20',
+             storage: {            
+                type: 'html5',
+                name: 'uid20id',
+                expires: 1
+        }
         }],
         syncDelay: 5000
     }
