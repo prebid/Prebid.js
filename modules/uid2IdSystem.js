@@ -1,7 +1,7 @@
 /**
- * This module adds uid2 ID support to the User ID module
+ * This module adds UID 2.0 ID support to the User ID module
  * The {@link module:modules/userId} module is required.
- * @module modules/uid2IdSystem
+ * @module modules/uid20IdSystem
  * @requires module:modules/userId
  */
 
