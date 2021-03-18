@@ -20,7 +20,6 @@ This adapter currently only supports Banner Ads.
 | bidfloor | Optional | Float | Floor price in CPM and in the currency given in currency.adServerCurrency. Can be used as an alternative to the [Floors module](https://docs.prebid.org/dev-docs/modules/floors.html), which is also supported by this adapter. Defaults to 0. | `5.0` |
 | floorprice | Optional | Float | Same as bidfloor. | `5.0` |
 | position | Optional | Integer | The position of the ad unit. Can be used to differentiate between ad units if the same placement ID is used across multiple ad units. Defaults to 0. | `1` |
-| pos | Optional | Integer | Same as position. | `1` |
 | dealId | Optional | String | Deal ID. | `'abc328745'` |
 
 # Test Parameters

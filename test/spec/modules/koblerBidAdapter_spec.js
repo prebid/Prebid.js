@@ -282,34 +282,6 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[2].tagid).to.be.equal(placementId);
     });
 
-    it('should read pos from valid bid requests', function () {
-      const placementId = 'pwsc92365429';
-      const validBidRequests = [
-        createValidBidRequest(
-          {
-            placementId: placementId,
-            pos: 4
-          }
-        ),
-        createValidBidRequest(
-          {
-            placementId: placementId,
-            pos: 5
-          }
-        )
-      ];
-      const bidderRequest = createBidderRequest();
-
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      const openRtbRequest = JSON.parse(result.data);
-
-      expect(openRtbRequest.imp.length).to.be.equal(2);
-      expect(openRtbRequest.imp[0].banner.pos).to.be.equal(4);
-      expect(openRtbRequest.imp[0].tagid).to.be.equal(placementId);
-      expect(openRtbRequest.imp[1].banner.pos).to.be.equal(5);
-      expect(openRtbRequest.imp[1].tagid).to.be.equal(placementId);
-    });
-
     it('should read dealId from valid bid requests', function () {
       const dealId1 = '78214682234823';
       const dealId2 = '89913861235234';
@@ -435,7 +407,7 @@ describe('KoblerAdapter', function () {
           {
             placementId: 'sdfgoi32y4',
             floorprice: 3.2543,
-            pos: 2,
+            position: 2,
             dealId: '92368234753283'
           },
           '8320bf79-9d90-4a17-87c6-5d505706a921',
@@ -444,7 +416,7 @@ describe('KoblerAdapter', function () {
         createValidBidRequest(
           {
             placementId: 'gwms2738647',
-            pos: 3
+            position: 3
           },
           'd0de713b-32e3-4191-a2df-a007f08ffe72',
           [[800, 900]]

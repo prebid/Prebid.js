@@ -177,7 +177,7 @@ function buildFormatArray(sizes) {
 }
 
 function getPosition(validBidRequest) {
-  return parseInt(validBidRequest.params.position) || parseInt(validBidRequest.params.pos) || 0;
+  return parseInt(validBidRequest.params.position) || 0;
 }
 
 function getFloorInfo(validBidRequest, mainSize) {
