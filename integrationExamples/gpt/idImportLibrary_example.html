@@ -19,7 +19,7 @@
           consentManagement: {
             cmpApi: 'iab',
             timeout: 1000,
-            allowAuctionWithoutConsent: true
+            defaultGdprScope: true
           },
           userSync: {
             userIds: [
@@ -29,7 +29,7 @@
                   partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
                 },
                 storage: {
-                  type: "cookie",
+                  type: "html5",
                   name: "id5id",
                   expires: 90,
                   refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
@@ -38,7 +38,7 @@
               }, {
                 name: "pubCommonId",
                 storage: {
-                  type: "cookie",
+                  type: "html5",
                   name: "pubcid",
                   expires: 365
                 },
@@ -48,7 +48,7 @@
                   pid: '14' // Set your real identityLink placement ID here
                 },
                 storage: {
-                  type: 'cookie',
+                  type: 'html5',
                   name: 'idl_env',
                   expires: 30
                 }
@@ -59,7 +59,7 @@
                   syncTime: 60 // in seconds, default is 24 hours
                 },
                 storage: {
-                  type: "cookie",
+                  type: "html5",
                   name: "sharedid",
                   expires: 28
                 }
@@ -80,7 +80,7 @@
               {
                 name: 'haloId',
                 storage: {
-                  type: "cookie",
+                  type: "html5",
                   name: "haloId",
                   expires: 28
                 }
