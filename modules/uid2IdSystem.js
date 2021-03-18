@@ -1,5 +1,5 @@
 /**
- * This module adds UID 2.0 ID support to the User ID module
+ * This module adds uid2 ID support to the User ID module
  * The {@link module:modules/userId} module is required.
  * @module modules/uid2IdSystem
  * @requires module:modules/userId
@@ -59,7 +59,7 @@ export const uid2IdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{sharedid:{ id: string, third:string}} or undefined if value doesn't exists
+   * @returns {{uid20:{ id: string }} or undefined if value doesn't exists
    */
   decode(value) {
     return (value) ? encodeId(value) : undefined;
@@ -75,7 +75,7 @@ export const uid2IdSubmodule = {
   getId(config, consentData) {
     logInfo('Creating UID2');
     let value = storage.getCookie(ADVERTISING_COOKIE);
-    logInfo('The advestising token: ' + value);
+    logInfo('The advertising token: ' + value);
     return {id: value}
   },
 
