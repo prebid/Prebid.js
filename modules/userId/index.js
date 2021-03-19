@@ -125,12 +125,12 @@
  */
 
 /**
-  * @typedef {Object} RefreshUserIdsOpnpmjs.com/package/ctions
+  * @typedef {Object} RefreshUserIdsOptions
   * @property {(string[]|undefined)} submoduleNames - submodules to refresh
   */
 
 import find from 'core-js-pure/features/array/find.js';
-import findIndex from 'core-js-pure/features/array/find-index';
+import findIndex from 'core-js-pure/features/array/find-index.js';
 import { config } from '../../src/config.js';
 import events from '../../src/events.js';
 import * as utils from '../../src/utils.js';
