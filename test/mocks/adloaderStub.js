@@ -13,7 +13,9 @@ function createStub() {
     } else if (typeof args[3] === 'function') {
       args[3]();
     }
-    return document.createElement('script');
+    const script = document.createElement('script');
+    script.src = args[0];
+    return script;
   });
 }
 
