@@ -74,7 +74,7 @@ function bidToVideoImp(bid) {
   }
 
   for (const adUnitProperty in videoAdUnitRef) {
-    if (videoAdUnitAllowlist.indexOf(adUnitProperty) !== -1 && !imp.video[adUnitProperty]) {
+    if (videoAdUnitAllowlist.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
       imp.video[adUnitProperty] = videoAdUnitRef[adUnitProperty];
     }
   }
@@ -164,7 +164,7 @@ function _applyFloor(bid, imp, mediaType) {
     imp.bidfloorcur = adapterFloor.currency;
     imp.ext.fl = FLOOR_SOURCE.IX;
   } else {
-    utils.logInfo('No floors available, no floors applied')
+    utils.logInfo('IX Bid Adapter: No floors available, no floors applied');
   }
 }
 
