@@ -828,7 +828,7 @@ export function init(config) {
       if (ppid.length >= 32 && ppid.length<= 150) {
         googletag.cmd = googletag.cmd || [];
         googletag.cmd.push(function() {
-          googletag.pubads().setPublisherProvidedId()
+          googletag.pubads().setPublisherProvidedId(ppid)
         });
       }
     }
