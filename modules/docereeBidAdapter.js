@@ -7,7 +7,7 @@ const BIDDER_CODE = 'doceree';
 const END_POINT = 'https://bidder.doceree.com'
 
 function registerImpression(responseJson) {
-  return (function(){
+  return (function() {
     if (responseJson.impressionLink) {
       ajax(responseJson.impressionLink, function() {
         // nothing to do
@@ -15,7 +15,6 @@ function registerImpression(responseJson) {
     }
   })()
 }
-
 
 function processHTMLAndRender(responseJson, creativeHtml) {
   if (responseJson.sourceURL) {
