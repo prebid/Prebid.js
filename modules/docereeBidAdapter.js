@@ -7,12 +7,15 @@ const BIDDER_CODE = 'doceree';
 const END_POINT = 'https://bidder.doceree.com'
 
 function registerImpression(responseJson) {
-  if (responseJson.impressionLink) {
-    ajax(responseJson.impressionLink, function() {
-      // nothing to do
-    }, null, {method: 'GET', customHeaders: {'Content-type': 'application/json; charset=utf-8'}});
-  }
+  return (function(){
+    if (responseJson.impressionLink) {
+      ajax(responseJson.impressionLink, function() {
+        // nothing to do
+      }, null, {method: 'GET', customHeaders: {'Content-type': 'application/json; charset=utf-8'}});
+    }
+  })()
 }
+
 
 function processHTMLAndRender(responseJson, creativeHtml) {
   if (responseJson.sourceURL) {
