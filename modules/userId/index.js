@@ -12,7 +12,7 @@
  * @summary performs action to obtain id and return a value in the callback's response argument.
  *  If IdResponse#id is defined, then it will be written to the current active storage.
  *  If IdResponse#callback is defined, then it'll called at the end of auction.
- *  It's permissible to return neither, one, or both fields.
+ *  It's permissible to return neither, one, or both fields.'findIndex' is defined but never used    
  * @name Submodule#getId
  * @param {SubmoduleConfig} config
  * @param {ConsentData|undefined} consentData
@@ -822,7 +822,7 @@ export function init(config) {
       updateSubmodules();
     }
     // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
-    if (userSync && userSync.userIds && userSync.ppid && getUserIdsAsEids().findIndex(x => x.source === userSync.ppid) >= 0 && typeof getUserIdsAsEids().find(x => x.source === userSync.ppid).uids[0].id === 'string') {
+    if (userSync && userSync.userIds && userSync.ppid && findIndex(getUserIdsAsEids(), x => x.source === userSync.ppid) >= 0 && typeof getUserIdsAsEids().find(x => x.source === userSync.ppid).uids[0].id === 'string') {
       let googletag = window.googletag || {};
       googletag.cmd = googletag.cmd || [];
       googletag.cmd.push(function() {
