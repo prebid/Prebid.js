@@ -820,6 +820,13 @@ export function init(config) {
       auctionDelay = utils.isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
       updateSubmodules();
     }
+    if (userSync && userSync.userIds && getUserIds().hasOwnProperty(userSync.ppid) && typeof getUserIds()[userSync.ppid] === 'string') {
+      let googletag = window.googletag || {};
+      googletag.cmd = googletag.cmd || [];
+      googletag.cmd.push(function() {
+        googletag.pubads().setPublisherProvidedId(getUserIds()[userSync.ppid])
+      });
+    }
   });
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
