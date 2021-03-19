@@ -125,12 +125,12 @@
  */
 
 /**
-  * @typedef {Object} RefreshUserIdsOptions
+  * @typedef {Object} RefreshUserIdsOpnpmjs.com/package/ctions
   * @property {(string[]|undefined)} submoduleNames - submodules to refresh
   */
 
 import find from 'core-js-pure/features/array/find.js';
-import findIndex from 'core-js-pure/features/array/virtual/find-index';
+import findIndex from 'core-js-pure/features/array/find-index';
 import { config } from '../../src/config.js';
 import events from '../../src/events.js';
 import * as utils from '../../src/utils.js';
@@ -821,7 +821,7 @@ export function init(config) {
       auctionDelay = utils.isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
       updateSubmodules();
     }
-    //userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
+    // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
     if (userSync && userSync.userIds && userSync.ppid && getUserIdsAsEids().findIndex(x => x.source === userSync.ppid) >= 0 && typeof getUserIdsAsEids().find(x => x.source === userSync.ppid).uids[0].id === 'string') {
       let googletag = window.googletag || {};
       googletag.cmd = googletag.cmd || [];
