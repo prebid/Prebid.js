@@ -824,10 +824,13 @@ export function init(config) {
     // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
     if (userSync && userSync.userIds && userSync.ppid && findIndex(getUserIdsAsEids(), x => x.source === userSync.ppid) >= 0 && typeof getUserIdsAsEids().find(x => x.source === userSync.ppid).uids[0].id === 'string') {
       let googletag = window.googletag || {};
-      googletag.cmd = googletag.cmd || [];
-      googletag.cmd.push(function() {
-        googletag.pubads().setPublisherProvidedId(getUserIdsAsEids().find(x => x.source === userSync.ppid).uids[0].id)
-      });
+      let ppid = getUserIdsAsEids().find(x => x.source === userSync.ppid).uids[0].id.replace(/\W/g, '') || {};
+      if(typeOf ppid === 'string' && ppid.length >= 32 && ppid.length<= 150 {
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function() {
+          googletag.pubads().setPublisherProvidedId()
+        });
+      }
     }
   });
 
