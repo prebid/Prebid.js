@@ -13,6 +13,7 @@ function registerImpression(responseJson) {
         // nothing to do
       }, null, {method: 'GET', customHeaders: {'Content-type': 'application/json; charset=utf-8'}});
     }
+    return ""
   })()
 }
 
