@@ -82,17 +82,8 @@ export const spec = {
         responseJson.sourceHTML = responseJson.sourceHTML.replace(/[\uE000-\uF8FF]/g, '');
         let creative = processHTMLAndRender(responseJson, responseJson.sourceHTML)
         bidResponse.ad = `<div id="${placementId}">${creative}</div>`
-        var bidResponses = [bidResponse];
-        return bidResponses
       } else {
-        ajax(responseJson.sourceURL, function(creativeHtml, error) {
-          if (creativeHtml) {
-            let creative = processHTMLAndRender(responseJson, creativeHtml)
-            bidResponse.ad = `<div id="${placementId}">${creative}</div>`
-            var bidResponses = [bidResponse];
-            return bidResponses
-          }
-        }, null, {method: 'GET', customHeaders: {'Content-type': 'plain/html; charset=utf-8'}});
+        bidResponse.ad = `<iframe id="ifrm" src="${responseJson.sourceURL}" onload="${registerImpression(responseJson)}" style="border:none;margin:0"></iframe>`
       }
     } else {
       if (responseJson.ctaLink) {
@@ -100,10 +91,8 @@ export const spec = {
       } else {
         bidResponse.ad = `<div id="${placementId}"><img onload="${registerImpression(responseJson)}" src="${responseJson.sourceURL}" /></div>`;
       }
-      var bidResponses = [bidResponse];
-      return bidResponses
     }
-    
+    return [bidResponse];
   }
 };
 
