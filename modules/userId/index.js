@@ -12,7 +12,7 @@
  * @summary performs action to obtain id and return a value in the callback's response argument.
  *  If IdResponse#id is defined, then it will be written to the current active storage.
  *  If IdResponse#callback is defined, then it'll called at the end of auction.
- *  It's permissible to return neither, one, or both fields.'findIndex' is defined but never used    
+ *  It's permissible to return neither, one, or both fields.
  * @name Submodule#getId
  * @param {SubmoduleConfig} config
  * @param {ConsentData|undefined} consentData
