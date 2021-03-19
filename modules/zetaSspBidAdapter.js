@@ -108,7 +108,10 @@ export const spec = {
         ad: zetaBid.adm,
         ttl: TTL,
         creativeId: zetaBid.crid,
-        netRevenue: NET_REV
+        netRevenue: NET_REV,
+        meta: {
+          advertiserDomains: zetaBid.adomain
+        }
       };
       bidResponse.push(bid);
     }
