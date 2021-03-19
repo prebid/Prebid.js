@@ -8,6 +8,30 @@ const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
 const DEFAULT_DC = 'hb-api';
 
+const NATIVE_IMAGE = {
+  image: {
+    required: true
+  },
+  title: {
+    required: true
+  },
+  sponsoredBy: {
+    required: true
+  },
+  clickUrl: {
+    required: true
+  },
+  body: {
+    required: false
+  },
+  icon: {
+    required: false
+  },
+  cta: {
+    required: false
+  }
+};
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
@@ -44,7 +68,13 @@ export const spec = {
         accumulator[bid.bidId].Width = size.width;
         accumulator[bid.bidId].Height = size.height;
         accumulator[bid.bidId].AvailableSizes = sizesArray.join(',');
-        if (bid.mediaTypes && bid.mediaTypes.native) accumulator[bid.bidId].Native = bid.mediaTypes.native;
+        if (bid.mediaTypes && bid.mediaTypes.native) {
+          let nativeReq = bid.mediaTypes.native;
+          if (nativeReq.type === 'image') {
+            nativeReq = Object.assign({}, NATIVE_IMAGE, nativeReq);
+          }
+          accumulator[bid.bidId].Native = nativeReq;
+        }
         return accumulator;
       }, {}),
       PageRefreshed: getPageRefreshed()
