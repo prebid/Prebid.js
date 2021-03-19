@@ -1,11 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { triggerPixel } from '../src/utils.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 const BIDDER_CODE = 'doceree';
 const END_POINT = 'https://bidder.doceree.com'
-const TRACKING_END_POINT = 'https://tracking.doceree.com'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -72,33 +70,6 @@ export const spec = {
     };
     return [bidResponse];
   },
-  onTimeout: function(timeoutData) {
-    if (timeoutData == null || !timeoutData.length) {
-      return;
-    }
-    timeoutData.forEach(td => {
-      const encodedBuf = window.btoa(encodeURIComponent(JSON.stringify({
-          bidId: td.bidId,
-          timeout: td.timeout,
-      })));
-      triggerPixel(TRACKING_END_POINT + "/v1/hbTimeout?adp=prebidjs&data="+encodedBuf);
-    })
-  },
-  onBidWon: function (bidWon) {  
-    if (bidWon == null) {
-      return;
-    }
-    const encodedBuf = window.btoa(encodeURIComponent(JSON.stringify({
-          requestId: bidWon.requestId,
-          cpm: bidWon.cpm,
-          adId: bidWon.adId,
-          currency: bidWon.currency,
-          netRevenue:bidWon.netRevenue,
-          status: bidWon.status,
-          hb_pb: bidWon.adserverTargeting && bidWon.adserverTargeting.hb_pb,
-      })));
-    triggerPixel(TRACKING_END_POINT +"/v1/hbBidWon?adp=prebidjs&data="+encodedBuf);
-  }
 };
 
 registerBidder(spec);
