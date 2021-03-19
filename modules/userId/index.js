@@ -825,7 +825,7 @@ export function init(config) {
     if (userSync && userSync.userIds && userSync.ppid && findIndex(getUserIdsAsEids(), x => x.source === userSync.ppid) >= 0 && typeof getUserIdsAsEids().find(x => x.source === userSync.ppid).uids[0].id === 'string') {
       let googletag = window.googletag || {};
       const ppid = getUserIdsAsEids().find(x => x.source === userSync.ppid).uids[0].id.replace(/\W/g, '');
-      if (ppid.length >= 32 && ppid.length<= 150) {
+      if (ppid.length >= 32 && ppid.length <= 150) {
         googletag.cmd = googletag.cmd || [];
         googletag.cmd.push(function() {
           googletag.pubads().setPublisherProvidedId(ppid)
