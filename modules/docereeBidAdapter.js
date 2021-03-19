@@ -6,10 +6,19 @@ import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'doceree';
 const END_POINT = 'https://bidder.doceree.com'
 
+function registerImpression(responseJson) {
+  if (responseJson.impressionLink) {
+    ajax(responseJson.impressionLink, function() {
+      // nothing to do
+    }, null, {method: 'GET', customHeaders: {'Content-type': 'application/json; charset=utf-8'}});
+  }
+}
+
 function processHTMLAndRender(responseJson, creativeHtml) {
   if (responseJson.sourceURL) {
     creativeHtml = creativeHtml.replace('<head>', `<head><style>html,body{padding:0;margin:0;}</style><base href="${responseJson.sourceURL.split('unzip')[0]}unzip/" target="_blank">`);
   }
+  creativeHtml = creativeHtml.replace('<body', `<body onload="${registerImpression(responseJson)}" `);
   creativeHtml = creativeHtml.replaceAll('[TRACKING_LINK]', responseJson.ctaLink);
   creativeHtml = creativeHtml.replaceAll(/DOCEREE_CLICK_URL_UNESC/g, responseJson.ctaLink);
   while (creativeHtml.indexOf('_ucid') > -1) {
@@ -73,23 +82,28 @@ export const spec = {
         responseJson.sourceHTML = responseJson.sourceHTML.replace(/[\uE000-\uF8FF]/g, '');
         let creative = processHTMLAndRender(responseJson, responseJson.sourceHTML)
         bidResponse.ad = `<div id="${placementId}">${creative}</div>`
+        var bidResponses = [bidResponse];
+        return bidResponses
       } else {
-        ajax(responseJson.sourceURL, function(error, creativeHtml) {
-          if (!error) {
+        ajax(responseJson.sourceURL, function(creativeHtml, error) {
+          if (creativeHtml) {
             let creative = processHTMLAndRender(responseJson, creativeHtml)
             bidResponse.ad = `<div id="${placementId}">${creative}</div>`
+            var bidResponses = [bidResponse];
+            return bidResponses
           }
         }, null, {method: 'GET', customHeaders: {'Content-type': 'plain/html; charset=utf-8'}});
       }
     } else {
       if (responseJson.ctaLink) {
-        bidResponse.ad = `<a  href="${responseJson.ctaLink}" target="_blank"><img onload="${responseJson.impressionUrl}" src="${responseJson.sourceURL}" /></a>`;
+        bidResponse.ad = `<a  href="${responseJson.ctaLink}" target="_blank"><img onload="${registerImpression(responseJson)}" src="${responseJson.sourceURL}" /></a>`;
       } else {
-        bidResponse.ad = `<div id="${placementId}"><img onload="${responseJson.impressionUrl}" src="${responseJson.sourceURL}" /></div>`;
+        bidResponse.ad = `<div id="${placementId}"><img onload="${registerImpression(responseJson)}" src="${responseJson.sourceURL}" /></div>`;
       }
+      var bidResponses = [bidResponse];
+      return bidResponses
     }
-    var bidResponses = [bidResponse];
-    return bidResponses
+    
   }
 };
 
