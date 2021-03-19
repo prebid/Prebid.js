@@ -820,7 +820,7 @@ export function init(config) {
       auctionDelay = utils.isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
       updateSubmodules();
     }
-    if (userSync && userSync.userIds && getUserIds().hasOwnProperty(userSync.ppid) && typeof getUserIds()[userSync.ppid] === 'string') {
+    if (userSync && userSync.userIds && userSync.ppid && getUserIds().hasOwnProperty(userSync.ppid) && typeof getUserIds()[userSync.ppid] === 'string') {
       let googletag = window.googletag || {};
       googletag.cmd = googletag.cmd || [];
       googletag.cmd.push(function() {
