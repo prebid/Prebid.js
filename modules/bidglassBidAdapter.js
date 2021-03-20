@@ -67,6 +67,8 @@ export const spec = {
       return ori;
     };
 
+    let bidglass = window['bidglass'];
+
     utils._each(validBidRequests, function(bid) {
       bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
       bid.sizes = bid.sizes.filter(size => utils.isArray(size));
