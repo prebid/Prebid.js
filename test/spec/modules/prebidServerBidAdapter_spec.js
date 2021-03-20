@@ -1631,13 +1631,14 @@ describe('S2S Adapter', function () {
           }
         }
       }));
+      const commonContextExpected = utils.mergeDeep({'page': 'http://mytestpage.com', 'publisher': {'id': '1'}}, commonContext);
 
       config.setConfig({ fpd: { context: commonContext, user: commonUser } });
       config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
-      expect(parsedRequestBody.site).to.deep.equal(commonContext);
+      expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
       expect(parsedRequestBody.user).to.deep.equal(commonUser);
     });
 
