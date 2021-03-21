@@ -208,25 +208,24 @@ function _getVidParams (attributes) {
  * @param {Object} bid
  * @returns {Number} floor
  */
-function _getFloor (mediaTypes, bidfloor, bid) {
+function _getFloor (mediaTypes, staticBidfloor, bid) {
   const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
-  let floor = bidfloor || 0;
+  const bidFloor = { floor: 0, currency: 'USD' };
 
   if (typeof bid.getFloor === 'function') {
-    const floorInfo = bid.getFloor({
-      currency: 'USD',
+    const { currency, floor } = bid.getFloor({
       mediaType: curMediaType,
       size: '*'
     });
+    floor && (bidFloor.floor = floor);
+    currency && (bidFloor.currency = currency);
 
-    if (typeof floorInfo === 'object' &&
-      floorInfo.currency === 'USD' &&
-      !isNaN(parseFloat(floorInfo.floor))) {
-      floor = Math.max(floor, parseFloat(floorInfo.floor));
+    if (staticBidfloor && floor && currency === 'USD') {
+      bidFloor.floor = Math.max(staticBidfloor, parseFloat(floor));
     }
   }
 
-  return floor;
+  return bidFloor;
 }
 
 /**
@@ -250,7 +249,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       transactionId,
       userId = {}
     } = bidRequest;
-    const bidFloor = _getFloor(mediaTypes, params.bidfloor, bidRequest);
+    const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     let sizes = [1, 1];
     let data = {};
 
@@ -265,8 +264,9 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.pv = pageViewId;
     }
 
-    if (bidFloor) {
-      data.fp = bidFloor;
+    if (floor) {
+      data.fp = floor;
+      data.fpc = currency;
     }
 
     if (params.iriscat && typeof params.iriscat === 'string') {

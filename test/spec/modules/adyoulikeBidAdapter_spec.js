@@ -95,6 +95,29 @@ describe('Adyoulike Adapter', function () {
     }
   ];
 
+  const bidRequestWithNativeImageType = [
+    {
+      'bidId': 'bid_id_0',
+      'bidder': 'adyoulike',
+      'placementCode': 'adunit/hb-0',
+      'params': {
+        'placement': 'placement_0'
+      },
+      'sizes': '300x250',
+      'mediaTypes':
+      {
+        'native': {
+          'type': 'image',
+          'additional': {
+            'will': 'be',
+            'sent': ['300x250']
+          }
+        },
+      },
+      'transactionId': 'bid_id_0_transaction_id'
+    }
+  ];
+
   const sentBidNative = {
     'bid_id_0': {
       'PlacementID': 'e622af275681965d3095808561a1e510',
@@ -133,6 +156,37 @@ describe('Adyoulike Adapter', function () {
         }
       }
     }
+  };
+
+  const sentNativeImageType = {
+    'additional': {
+      'sent': [
+        '300x250'
+      ],
+      'will': 'be'
+    },
+    'body': {
+      'required': false
+    },
+    'clickUrl': {
+      'required': true
+    },
+    'cta': {
+      'required': false
+    },
+    'icon': {
+      'required': false
+    },
+    'image': {
+      'required': true
+    },
+    'sponsoredBy': {
+      'required': true
+    },
+    'title': {
+      'required': true
+    },
+    'type': 'image'
   };
 
   const bidRequestWithDCPlacement = [
@@ -339,6 +393,23 @@ describe('Adyoulike Adapter', function () {
 
     afterEach(function () {
       canonicalQuery.restore();
+    });
+
+    it('Should expand short native image config type', function() {
+      const request = spec.buildRequests(bidRequestWithNativeImageType, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(request.url).to.contain(getEndpoint());
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
+      expect(request.url).to.contains('RefererUrl=' + encodeURIComponent(referrerUrl));
+      expect(request.url).to.contains('PublisherDomain=http%3A%2F%2Flocalhost%3A9876');
+
+      expect(payload.Version).to.equal('1.0');
+      expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
+      expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
+      expect(payload.Bids['bid_id_0'].Native).deep.equal(sentNativeImageType);
     });
 
     it('should add gdpr/usp consent information to the request', function () {
