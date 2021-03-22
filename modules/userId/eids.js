@@ -169,8 +169,21 @@ const USER_IDS_CONFIG = {
     source: 'neustar.biz',
     atype: 1
   },
+  // MediaWallah OpenLink
+  'mwOpenLinkId': {
+    source: 'mediawallahscript.com',
+    atype: 1
+  },
   'tapadId': {
     source: 'tapad.com',
+    atype: 1
+  },
+  // Novatiq Snowflake
+  'novatiq': {
+    getValue: function(data) {
+      return data.snowflake
+    },
+    source: 'novatiq.com',
     atype: 1
   }
 };
@@ -223,4 +236,26 @@ export function createEidsArray(bidRequestUserId) {
     }
   }
   return eids;
+}
+
+/**
+ * @param {SubmoduleContainer[]} submodules
+ */
+export function buildEidPermissions(submodules) {
+  let eidPermissions = [];
+  submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
+    .forEach(i => {
+      Object.keys(i.idObj).forEach(key => {
+        if (utils.deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
+          utils.deepAccess(USER_IDS_CONFIG, key + '.source')) {
+          eidPermissions.push(
+            {
+              source: USER_IDS_CONFIG[key].source,
+              bidders: i.config.bidders
+            }
+          );
+        }
+      });
+    });
+  return eidPermissions;
 }

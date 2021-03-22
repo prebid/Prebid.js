@@ -99,6 +99,24 @@ describe('Zemanta Adapter', function () {
         }
         expect(spec.isBidRequestValid(bid)).to.equal(false)
       })
+      it('should succeed with outbrain config', function () {
+        const bid = {
+          bidder: 'zemanta',
+          params: {
+            publisher: {
+              id: 'publisher-id',
+            }
+          },
+          ...nativeBidRequestParams,
+        }
+        config.resetConfig()
+        config.setConfig({
+          outbrain: {
+            bidderUrl: 'https://bidder-url.com',
+          }
+        })
+        expect(spec.isBidRequestValid(bid)).to.equal(true)
+      })
       it('should fail if bidder url is not set', function () {
         const bid = {
           bidder: 'zemanta',
@@ -457,6 +475,16 @@ describe('Zemanta Adapter', function () {
     })
 
     it('should return user sync if pixel enabled', function () {
+      const ret = spec.getUserSyncs({pixelEnabled: true})
+      expect(ret).to.deep.equal([{type: 'image', url: 'https://usersync-url.com'}])
+    })
+    it('should return user sync if pixel enabled with outbrain config', function () {
+      config.resetConfig()
+      config.setConfig({
+        outbrain: {
+          usersyncUrl: 'https://usersync-url.com',
+        }
+      })
       const ret = spec.getUserSyncs({pixelEnabled: true})
       expect(ret).to.deep.equal([{type: 'image', url: 'https://usersync-url.com'}])
     })

@@ -221,7 +221,7 @@ describe('OneVideoBidAdapter', function () {
       const placement = bidRequest.params.video.placement;
       const rewarded = bidRequest.params.video.rewarded;
       const inventoryid = bidRequest.params.video.inventoryid;
-      const VERSION = '3.0.5';
+      const VERSION = '3.0.6';
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
@@ -567,7 +567,6 @@ describe('OneVideoBidAdapter', function () {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
         cpm: serverResponse.seatbid[0].bid[0].price,
-        adId: serverResponse.seatbid[0].bid[0].adid,
         creativeId: serverResponse.seatbid[0].bid[0].crid,
         vastXml: serverResponse.seatbid[0].bid[0].adm,
         width: 640,
