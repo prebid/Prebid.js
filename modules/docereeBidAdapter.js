@@ -93,7 +93,7 @@ export const spec = {
       }
     } else {
       if (responseJson.ctaLink) {
-        bidResponse.ad = `<a  href="${responseJson.ctaLink}" target="_blank"><img onload="${registerImpression(responseJson)}" src="${responseJson.sourceURL}" /></a>`;
+        bidResponse.ad = `<a href="${responseJson.ctaLink}" target="_blank"><img onload="${registerImpression(responseJson)}" src="${responseJson.sourceURL}" /></a>`;
       } else {
         bidResponse.ad = `<div id="${placementId}"><img onload="${registerImpression(responseJson)}" src="${responseJson.sourceURL}" /></div>`;
       }
