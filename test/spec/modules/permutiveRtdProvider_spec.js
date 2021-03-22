@@ -54,7 +54,7 @@ describe('permutiveRtdProvider', function () {
         })
       }
     })
-    it('sets segment targeting for Rubicon', function () {
+    it('sets segment targeting for Magnite', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
       const config = getConfig()
@@ -93,10 +93,29 @@ describe('permutiveRtdProvider', function () {
         })
       }
     })
+    it('sets segment targeting for TrustX', function () {
+      const data = transformedTargeting()
+      const adUnits = getAdUnits()
+      const config = getConfig()
+
+      initSegments({ adUnits }, callback, config)
+
+      function callback () {
+        adUnits.forEach(adUnit => {
+          adUnit.bids.forEach(bid => {
+            const { bidder, params } = bid
+
+            if (bidder === 'trustx') {
+              expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac)
+            }
+          })
+        })
+      }
+    })
   })
 
   describe('Custom segment targeting', function () {
-    it('sets custom segment targeting for Rubicon', function () {
+    it('sets custom segment targeting for Magnite', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
       const config = getConfig()
@@ -122,6 +141,81 @@ describe('permutiveRtdProvider', function () {
             if (bidder === 'rubicon') {
               expect(deepAccess(params, 'visitor.permutive')).to.eql(data.gam)
               expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac)
+            }
+          })
+        })
+      }
+    })
+  })
+
+  describe('Existing key-value targeting', function () {
+    it('doesn\'t overwrite existing key-values for Xandr', function () {
+      const adUnits = getAdUnits()
+      const config = getConfig()
+
+      initSegments({ adUnits }, callback, config)
+
+      function callback () {
+        adUnits.forEach(adUnit => {
+          adUnit.bids.forEach(bid => {
+            const { bidder, params } = bid
+
+            if (bidder === 'appnexus') {
+              expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true'])
+            }
+          })
+        })
+      }
+    })
+    it('doesn\'t overwrite existing key-values for Magnite', function () {
+      const adUnits = getAdUnits()
+      const config = getConfig()
+
+      initSegments({ adUnits }, callback, config)
+
+      function callback () {
+        adUnits.forEach(adUnit => {
+          adUnit.bids.forEach(bid => {
+            const { bidder, params } = bid
+
+            if (bidder === 'rubicon') {
+              expect(deepAccess(params, 'visitor.test_kv')).to.eql(['true'])
+            }
+          })
+        })
+      }
+    })
+    it('doesn\'t overwrite existing key-values for Ozone', function () {
+      const adUnits = getAdUnits()
+      const config = getConfig()
+
+      initSegments({ adUnits }, callback, config)
+
+      function callback () {
+        adUnits.forEach(adUnit => {
+          adUnit.bids.forEach(bid => {
+            const { bidder, params } = bid
+
+            if (bidder === 'ozone') {
+              expect(deepAccess(params, 'customData.0.targeting.test_kv')).to.eql(['true'])
+            }
+          })
+        })
+      }
+    })
+    it('doesn\'t overwrite existing key-values for TrustX', function () {
+      const adUnits = getAdUnits()
+      const config = getConfig()
+
+      initSegments({ adUnits }, callback, config)
+
+      function callback () {
+        adUnits.forEach(adUnit => {
+          adUnit.bids.forEach(bid => {
+            const { bidder, params } = bid
+
+            if (bidder === 'trustx') {
+              expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true'])
             }
           })
         })
@@ -168,7 +262,7 @@ function getConfig () {
     name: 'permutive',
     waitForIt: true,
     params: {
-      acBidders: ['appnexus', 'rubicon', 'ozone'],
+      acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx'],
       maxSegs: 500
     }
   }
@@ -197,15 +291,20 @@ function getTargetingData () {
 }
 
 function getAdUnits () {
+  const div_1_sizes = [
+    [300, 250],
+    [300, 600]
+  ]
+  const div_2_sizes = [
+    [728, 90],
+    [970, 250]
+  ]
   return [
     {
       code: '/19968336/header-bid-tag-0',
       mediaTypes: {
         banner: {
-          sizes: [
-            [300, 250],
-            [300, 600]
-          ]
+          sizes: div_1_sizes
         }
       },
       bids: [
@@ -214,7 +313,7 @@ function getAdUnits () {
           params: {
             placementId: 13144370,
             keywords: {
-              inline_kvs: ['1']
+              test_kv: ['true']
             }
           }
         },
@@ -228,7 +327,7 @@ function getAdUnits () {
               area: ['home']
             },
             visitor: {
-              inline_kvs: ['1']
+              test_kv: ['true']
             }
           }
         },
@@ -242,11 +341,20 @@ function getAdUnits () {
               {
                 settings: {},
                 targeting: {
-                  inline_kvs: ['1', '2', '3', '4']
+                  test_kv: ['true']
                 }
               }
             ],
             ozoneData: {}
+          }
+        },
+        {
+          bidder: 'trustx',
+          params: {
+            uid: 45,
+            keywords: {
+              test_kv: ['true']
+            }
           }
         }
       ]
@@ -255,17 +363,17 @@ function getAdUnits () {
       code: '/19968336/header-bid-tag-1',
       mediaTypes: {
         banner: {
-          sizes: [
-            [728, 90],
-            [970, 250]
-          ]
+          sizes: div_2_sizes
         }
       },
       bids: [
         {
           bidder: 'appnexus',
           params: {
-            placementId: 13144370
+            placementId: 13144370,
+            keywords: {
+              test_kv: ['true']
+            }
           }
         },
         {
@@ -273,7 +381,14 @@ function getAdUnits () {
           params: {
             publisherId: 'OZONEGMG0001',
             siteId: '4204204209',
-            placementId: '0420420500'
+            placementId: '0420420500',
+            customData: [
+              {
+                targeting: {
+                  test_kv: ['true']
+                }
+              }
+            ]
           }
         }
       ]

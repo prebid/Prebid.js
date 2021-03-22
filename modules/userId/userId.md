@@ -77,6 +77,13 @@ pbjs.setConfig({
                  name: '_criteoId',
                  expires: 1
               }
+        }, {
+            name: 'mwOpenLinkId',
+            params: {
+                accountId: 0000,
+                partnerId: 0000,
+                uid: '12345xyz'
+            }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -182,6 +189,10 @@ pbjs.setConfig({
         {
             name: "criteo",
             value: { "criteoId": "wK-fkF8zaEIlMkZMbHl3eFo4NEtoNmZaeXJtYkFjZlVuWjBhcjJMaTRYd3pZNSUyQnlKRHNGRXlpdzdjd3pjVzhjcSUyQmY4eTFzN3VSZjV1ZyUyRlA0U2ZiR0UwN2I4bDZRJTNEJTNE" }
+        },
+        {
+            name: "novatiq",
+            value: { "snowflake": "81b001ec-8914-488c-a96e-8c220d4ee08895ef" }
         }],
         syncDelay: 5000
     }

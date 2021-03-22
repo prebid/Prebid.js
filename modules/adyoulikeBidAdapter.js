@@ -9,6 +9,30 @@ const BIDDER_CODE = 'adyoulike';
 const DEFAULT_DC = 'hb-api';
 const CURRENCY = 'USD';
 
+const NATIVE_IMAGE = {
+  image: {
+    required: true
+  },
+  title: {
+    required: true
+  },
+  sponsoredBy: {
+    required: true
+  },
+  clickUrl: {
+    required: true
+  },
+  body: {
+    required: false
+  },
+  icon: {
+    required: false
+  },
+  cta: {
+    required: false
+  }
+};
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
@@ -40,17 +64,21 @@ export const spec = {
         let mediatype = getMediatype(bidReq);
         let sizesArray = getSizeArray(bidReq);
         let size = getSize(sizesArray);
-        accumulator[bidReq.bidId] = {};
-        accumulator[bidReq.bidId].PlacementID = bidReq.params.placement;
-        accumulator[bidReq.bidId].TransactionID = bidReq.transactionId;
-        accumulator[bidReq.bidId].Width = size.width;
-        accumulator[bidReq.bidId].Height = size.height;
-        accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(',');
+        accumulator[bid.bidId] = {};
+        accumulator[bid.bidId].PlacementID = bid.params.placement;
+        accumulator[bid.bidId].TransactionID = bid.transactionId;
+        accumulator[bid.bidId].Width = size.width;
+        accumulator[bid.bidId].Height = size.height;
+        accumulator[bid.bidId].AvailableSizes = sizesArray.join(',');
         if (typeof bidReq.getFloor === 'function') {
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
         }
         if (mediatype === NATIVE) {
-          accumulator[bidReq.bidId].Native = bidReq.mediaTypes.native;
+          let nativeReq = bid.mediaTypes.native;
+          if (nativeReq.type === 'image') {
+            nativeReq = Object.assign({}, NATIVE_IMAGE, nativeReq);
+          }
+          accumulator[bid.bidId].Native = nativeReq;
         }
         if (mediatype === VIDEO) {
           accumulator[bidReq.bidId].Video = bidReq.mediaTypes.video;
