@@ -1642,6 +1642,13 @@ describe('the rubicon adapter', function () {
 
           const multibid = [{
             bidder: 'bidderA',
+            maxBids: 2
+          }, {
+            bidder: 'bidderB',
+            maxBids: 2
+          }];
+          const expected = [{
+            bidder: 'bidderA',
             maxbids: 2
           }, {
             bidder: 'bidderB',
@@ -1654,7 +1661,7 @@ describe('the rubicon adapter', function () {
 
           // should have the aliases object sent to PBS
           expect(request.data.ext.prebid).to.haveOwnProperty('multibid');
-          expect(request.data.ext.prebid.multibid).to.deep.equal(multibid);
+          expect(request.data.ext.prebid.multibid).to.deep.equal(expected);
         });
 
         it('should send video exp param correctly when set', function () {

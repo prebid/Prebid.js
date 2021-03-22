@@ -745,7 +745,17 @@ const OPEN_RTB_PROTOCOL = {
 
     const multibid = config.getConfig('multibid');
     if (multibid) {
-      utils.deepSetValue(request, 'ext.prebid.multibid', multibid);
+      utils.deepSetValue(request, 'ext.prebid.multibid', multibid.reduce((result, i) => {
+        let obj = {};
+
+        Object.keys(i).forEach(key => {
+          obj[key.toLowerCase()] = i[key];
+        });
+
+        result.push(obj);
+
+        return result;
+      }, []));
     }
 
     if (bidRequests) {

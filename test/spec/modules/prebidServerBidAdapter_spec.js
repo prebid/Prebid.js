@@ -1579,6 +1579,13 @@ describe('S2S Adapter', function () {
       const bidRequests = utils.deepClone(BID_REQUESTS);
       const multibid = [{
         bidder: 'bidderA',
+        maxBids: 2
+      }, {
+        bidder: 'bidderB',
+        maxBids: 2
+      }];
+      const expected = [{
+        bidder: 'bidderA',
         maxbids: 2
       }, {
         bidder: 'bidderB',
@@ -1589,7 +1596,7 @@ describe('S2S Adapter', function () {
 
       adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-      expect(parsedRequestBody.ext.prebid.multibid).to.deep.equal(multibid);
+      expect(parsedRequestBody.ext.prebid.multibid).to.deep.equal(expected);
     });
 
     it('passes first party data in request', () => {

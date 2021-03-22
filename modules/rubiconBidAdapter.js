@@ -258,7 +258,17 @@ export const spec = {
 
       const multibid = config.getConfig('multibid');
       if (multibid) {
-        utils.deepSetValue(data, 'ext.prebid.multibid', multibid);
+        utils.deepSetValue(data, 'ext.prebid.multibid', multibid.reduce((result, i) => {
+          let obj = {};
+
+          Object.keys(i).forEach(key => {
+            obj[key.toLowerCase()] = i[key];
+          });
+
+          result.push(obj);
+
+          return result;
+        }, []));
       }
 
       applyFPD(bidRequest, VIDEO, data);

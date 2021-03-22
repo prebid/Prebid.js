@@ -25,8 +25,8 @@ config.getConfig(MODULE_NAME, conf => {
 
   conf.multibid.forEach(entry => {
     multiConfig[entry.bidder] = {
-      maxbids: entry.maxbids,
-      prefix: entry.targetbiddercodeprefix
+      maxbids: entry.maxBids,
+      prefix: entry.targetBiddercodePrefix
     }
   });
 });
@@ -50,8 +50,8 @@ export function validateMultibid(conf) {
   }).map(entry => {
     // Check if entry.maxbids is not defined, not typeof number, or less than 1, set maxbids to 1 and reset configuration
     // Check if entry.maxbids is greater than 9, set maxbids to 9 and reset configuration
-    if (typeof entry.maxbids !== 'number' || entry.maxbids < 1 || entry.maxbids > 9) {
-      entry.maxbids = (typeof entry.maxbids !== 'number' || entry.maxbids < 1) ? 1 : 9;
+    if (typeof entry.maxBids !== 'number' || entry.maxBids < 1 || entry.maxBids > 9) {
+      entry.maxBids = (typeof entry.maxBids !== 'number' || entry.maxBids < 1) ? 1 : 9;
       check = false;
     }
 
