@@ -78,6 +78,9 @@ export const spec = {
       currency: responseJson.currency,
       mediaType: 'banner',
       creativeId: placementId,
+      meta: {
+        advertiserDomains: [responseJson.advertiserDomain]
+      }
     };
 
     if (responseJson.creativeType && responseJson.creativeType !== 'banner') {

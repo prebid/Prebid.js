@@ -72,13 +72,14 @@ describe('BidlabBidAdapter', function () {
           width: '300',
           ctaLink: 'https://doceree.com/',
           sourceURL: 'https://servedbydoceree.doceree.com/generic/300x250_DocereeGeneralAd.jpg',
+          advertiserDomain: 'doceree.com',
         }
       };
       let bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
       let dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl',
-        'netRevenue', 'currency', 'mediaType', 'creativeId');
+        'netRevenue', 'currency', 'mediaType', 'creativeId', 'meta');
       expect(dataItem.requestId).to.equal('G125fzC5NKl3FHeOT8yvL98ILfQS9TVUgk6Q');
       expect(dataItem.cpm).to.equal(2);
       expect(dataItem.width).to.equal(300);
@@ -88,6 +89,8 @@ describe('BidlabBidAdapter', function () {
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
       expect(dataItem.creativeId).to.equal('DOC_7jm9j5eqkl0xvc5w');
+      expect(dataItem.meta.advertiserDomains).to.be.an('array').that.is.not.empty;
+      expect(dataItem.meta.advertiserDomains[0]).to.equal('doceree.com')
     });
   })
 });
