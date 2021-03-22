@@ -109,10 +109,11 @@ export const spec = {
         ttl: TTL,
         creativeId: zetaBid.crid,
         netRevenue: NET_REV,
-        meta: {
-          advertiserDomains: zetaBid.adomain
-        }
       };
+      if (zetaBid.adomain && zetaBid.adomain.length) {
+        bid.meta = {};
+        bid.meta.advertiserDomains = zetaBid.adomain;
+      }
       bidResponse.push(bid);
     }
     return bidResponse;

@@ -58,6 +58,9 @@ describe('Zeta Ssp Bid Adapter', function() {
             price: 0.0,
             adm: 'adMarkup',
             crid: 'creativeId',
+            adomain: [
+              'https://example.com'
+            ],
             h: 250,
             w: 300
           }
@@ -82,5 +85,6 @@ describe('Zeta Ssp Bid Adapter', function() {
     expect(bid.height).to.equal(receivedBid.h);
     expect(bid.width).to.equal(receivedBid.w);
     expect(bid.requestId).to.equal(receivedBid.impid);
+    expect(bid.meta.advertiserDomains).to.equal(receivedBid.adomain);
   });
 });
