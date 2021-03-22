@@ -8,7 +8,8 @@ import {
   filterData,
   validateFpd,
   init,
-  resetOrtb2
+  resetOrtb2,
+  unsubscribe
 } from 'modules/firstPartyData/index.js';
 import events from 'src/events.js';
 
@@ -74,6 +75,10 @@ describe('the first party data module', function () {
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
     logErrorSpy = sinon.spy(utils, 'logError');
+  });
+
+  after(function () {
+    unsubscribe();
   });
 
   afterEach(function () {

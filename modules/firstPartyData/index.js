@@ -204,6 +204,7 @@ export const resetOrtb2 = () => { ortb2 = {} };
 * Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
 */
 export function init() {
+  // Set defaults if applicable
   setReferer();
   setPage();
   setDomain();
@@ -214,7 +215,7 @@ export function init() {
 }
 
 // Set currency setConfig callback
-config.getConfig('currency', conf => {
+const curListener = config.getConfig('currency', conf => {
   if (!conf.currency.adServerCurrency) return;
 
   utils.mergeDeep(ortb2, {cur: conf.currency.adServerCurrency});
@@ -223,7 +224,7 @@ config.getConfig('currency', conf => {
 });
 
 // Set ortb2 setConfig callback to pass data through validator
-config.getConfig('ortb2', conf => {
+const ortb2Listener = config.getConfig('ortb2', conf => {
   if (!shouldRun) {
     shouldRun = true;
   } else {
@@ -232,5 +233,10 @@ config.getConfig('ortb2', conf => {
     config.setConfig({ortb2: conf.ortb2});
   }
 });
+
+/**
+* Removes listener
+*/
+export const unsubscribe = () => { curListener(); ortb2Listener(); };
 
 init();
