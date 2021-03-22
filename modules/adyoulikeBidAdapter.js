@@ -64,21 +64,21 @@ export const spec = {
         let mediatype = getMediatype(bidReq);
         let sizesArray = getSizeArray(bidReq);
         let size = getSize(sizesArray);
-        accumulator[bid.bidId] = {};
-        accumulator[bid.bidId].PlacementID = bid.params.placement;
-        accumulator[bid.bidId].TransactionID = bid.transactionId;
-        accumulator[bid.bidId].Width = size.width;
-        accumulator[bid.bidId].Height = size.height;
-        accumulator[bid.bidId].AvailableSizes = sizesArray.join(',');
+        accumulator[bidReq.bidId] = {};
+        accumulator[bidReq.bidId].PlacementID = bidReq.params.placement;
+        accumulator[bidReq.bidId].TransactionID = bidReq.transactionId;
+        accumulator[bidReq.bidId].Width = size.width;
+        accumulator[bidReq.bidId].Height = size.height;
+        accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(',');
         if (typeof bidReq.getFloor === 'function') {
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
         }
         if (mediatype === NATIVE) {
-          let nativeReq = bid.mediaTypes.native;
+          let nativeReq = bidReq.mediaTypes.native;
           if (nativeReq.type === 'image') {
             nativeReq = Object.assign({}, NATIVE_IMAGE, nativeReq);
           }
-          accumulator[bid.bidId].Native = nativeReq;
+          accumulator[bidReq.bidId].Native = nativeReq;
         }
         if (mediatype === VIDEO) {
           accumulator[bidReq.bidId].Video = bidReq.mediaTypes.video;
