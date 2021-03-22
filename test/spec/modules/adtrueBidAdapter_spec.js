@@ -414,7 +414,7 @@ describe('AdTrueBidAdapter', function () {
         url: 'https://hb.adtrue.com/prebid/usersync?bidder=adtrue&publisherId=1212&zoneId=21423&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
-    // Multiple user sync output
+    // Multiple user sync/type output
     it('execute as per config', function () {
       expect(spec.getUserSyncs({iframeEnabled: true}, [bidResponses2], undefined, undefined)).to.deep.equal([
         {
