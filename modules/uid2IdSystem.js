@@ -71,7 +71,7 @@ export const uid2IdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{uid20:{ id: string }} or undefined if value doesn't exists
+   * @returns {{uid2:{ id: string }} or undefined if value doesn't exists
    */
   decode(value) {
     return (value) ? encodeId(value) : undefined;

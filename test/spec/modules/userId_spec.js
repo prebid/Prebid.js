@@ -1742,7 +1742,7 @@ describe('User ID', function () {
         coreStorage.setCookie('haloId', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('storage_criteo', '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie('mwol', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('__uid2_advertising_token', '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie('uid2id', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });

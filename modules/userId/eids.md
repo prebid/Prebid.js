@@ -164,10 +164,10 @@ userIdAsEids = [
         }]
     },
      {
-        source: 'uid20.com',
+        source: 'uid2.com',
         uids: [{
             id: 'some-random-id-value',
-             atype: 1
+             atype: 3
         }]
      }
 ]
