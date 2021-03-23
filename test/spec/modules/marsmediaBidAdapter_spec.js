@@ -1,11 +1,41 @@
-import {spec} from '../../../modules/marsmediaBidAdapter.js';
-import * as utils from '../../../src/utils.js';
-import * as sinon from 'sinon';
+import { spec } from 'modules/marsmediaBidAdapter.js';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 
-var r1adapter = spec;
+var marsAdapter = spec;
 
 describe('marsmedia adapter tests', function () {
+  let element, win;
+  let sandbox;
+
   beforeEach(function() {
+    element = {
+      x: 0,
+      y: 0,
+
+      width: 0,
+      height: 0,
+
+      getBoundingClientRect: () => {
+        return {
+          width: element.width,
+          height: element.height,
+
+          left: element.x,
+          top: element.y,
+          right: element.x + element.width,
+          bottom: element.y + element.height
+        };
+      }
+    };
+    win = {
+      document: {
+        visibilityState: 'visible'
+      },
+
+      innerWidth: 800,
+      innerHeight: 600
+    };
     this.defaultBidderRequest = {
       'refererInfo': {
         'referer': 'Reference Page',
@@ -15,28 +45,40 @@ describe('marsmedia adapter tests', function () {
         ]
       }
     };
+
+    this.defaultBidRequestList = [
+      {
+        'bidder': 'marsmedia',
+        'params': {
+          'zoneId': 9999
+        },
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250]]
+          }
+        },
+        'adUnitCode': 'Unit-Code',
+        'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+        'bidderRequestId': '418b37f85e772c',
+        'auctionId': '18fd8b8b0bd757',
+        'bidRequestsCount': 1,
+        'bidId': '51ef8751f9aead'
+      }
+    ];
+
+    sandbox = sinon.sandbox.create();
+    sandbox.stub(document, 'getElementById').withArgs('Unit-Code').returns(element);
+    sandbox.stub(utils, 'getWindowTop').returns(win);
+    sandbox.stub(utils, 'getWindowSelf').returns(win);
+  });
+
+  afterEach(function() {
+    sandbox.restore();
   });
 
   describe('Verify 1.0 POST Banner Bid Request', function () {
     it('buildRequests works', function () {
-      var bidRequestList = [
-        {
-          'bidder': 'marsmedia',
-          'params': {
-            'zoneId': 9999
-          },
-          'mediaType': 'banner',
-          'adUnitCode': 'div-gpt-ad-1438287399331-0',
-          'sizes': [[300, 250]],
-          'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-          'bidderRequestId': '418b37f85e772c',
-          'auctionId': '18fd8b8b0bd757',
-          'bidRequestsCount': 1,
-          'bidId': '51ef8751f9aead'
-        }
-      ];
-
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
 
       expect(bidRequest.url).to.have.string('https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
@@ -52,11 +94,11 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.imp[0].ext.bidder.zoneId).to.equal(9999);
     });
 
-    it('interpretResponse works', function() {
+    /* it('interpretResponse works', function() {
       var bidList = {
         'body': [
           {
-            'impid': 'div-gpt-ad-1438287399331-0',
+            'impid': 'Unit-Code',
             'w': 300,
             'h': 250,
             'adm': '<div>My Compelling Ad</div>',
@@ -67,7 +109,7 @@ describe('marsmedia adapter tests', function () {
         ]
       };
 
-      var bannerBids = r1adapter.interpretResponse(bidList);
+      var bannerBids = marsAdapter.interpretResponse(bidList);
 
       expect(bannerBids.length).to.equal(1);
       const bid = bannerBids[0];
@@ -78,7 +120,7 @@ describe('marsmedia adapter tests', function () {
       expect(bid.netRevenue).to.equal(true);
       expect(bid.cpm).to.equal(1.0);
       expect(bid.ttl).to.equal(350);
-    });
+    }); */
   });
 
   describe('Verify POST Video Bid Request', function() {
@@ -95,7 +137,7 @@ describe('marsmedia adapter tests', function () {
               'context': 'instream'
             }
           },
-          'adUnitCode': 'div-gpt-ad-1438287399331-1',
+          'adUnitCode': 'Unit-Code',
           'sizes': [
             [300, 250]
           ],
@@ -107,7 +149,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       expect(bidRequest.url).to.have.string('https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
@@ -132,7 +174,7 @@ describe('marsmedia adapter tests', function () {
       var bidList = {
         'body': [
           {
-            'impid': 'div-gpt-ad-1438287399331-1',
+            'impid': 'Unit-Code',
             'price': 1,
             'adm': 'https://example.com/',
             'adomain': [
@@ -147,7 +189,7 @@ describe('marsmedia adapter tests', function () {
         ]
       };
 
-      var videoBids = r1adapter.interpretResponse(bidList);
+      var videoBids = marsAdapter.interpretResponse(bidList);
 
       expect(videoBids.length).to.equal(1);
       const bid = videoBids[0];
@@ -166,7 +208,7 @@ describe('marsmedia adapter tests', function () {
       var bidList = {
         'body': [
           {
-            'impid': 'div-gpt-ad-1438287399331-1',
+            'impid': 'Unit-Code',
             'price': 1,
             'adm': '<?xml><VAST></VAST>',
             'adomain': [
@@ -181,7 +223,7 @@ describe('marsmedia adapter tests', function () {
         ]
       };
 
-      var videoBids = r1adapter.interpretResponse(bidList);
+      var videoBids = marsAdapter.interpretResponse(bidList);
 
       expect(videoBids.length).to.equal(1);
       const bid = videoBids[0];
@@ -199,26 +241,6 @@ describe('marsmedia adapter tests', function () {
 
   describe('misc buildRequests', function() {
     it('should send GDPR Consent data to Marsmedia tag', function () {
-      var bidRequestList = [
-        {
-          'bidder': 'marsmedia',
-          'params': {
-            'zoneId': 9999
-          },
-          'mediaTypes': {
-            'banner': {
-              'sizes': [[300, 250]]
-            }
-          },
-          'adUnitCode': 'div-gpt-ad-1438287399331-3',
-          'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-          'bidderRequestId': '418b37f85e772c',
-          'auctionId': '18fd8b8b0bd757',
-          'bidRequestsCount': 1,
-          'bidId': '51ef8751f9aead'
-        }
-      ];
-
       var consentString = 'testConsentString';
       var gdprBidderRequest = this.defaultBidderRequest;
       gdprBidderRequest.gdprConsent = {
@@ -226,11 +248,48 @@ describe('marsmedia adapter tests', function () {
         'consentString': consentString
       };
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, gdprBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, gdprBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.user.ext.consent).to.equal(consentString);
       expect(openrtbRequest.regs.ext.gdpr).to.equal(true);
+    });
+
+    it('should have CCPA Consent if defined', function () {
+      const ccpaBidderRequest = this.defaultBidderRequest;
+      ccpaBidderRequest.uspConsent = '1YYN';
+      const bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, ccpaBidderRequest);
+      const openrtbRequest = JSON.parse(bidRequest.data);
+
+      expect(openrtbRequest.regs.ext.us_privacy).to.equal('1YYN');
+    });
+
+    it('should submit coppa if set in config', function () {
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+      const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+      const requestparse = JSON.parse(request.data);
+      expect(requestparse.regs.coppa).to.equal(1);
+      config.getConfig.restore();
+    });
+
+    it('should process floors module if available', function() {
+      const floorBidderRequest = this.defaultBidRequestList;
+      const floorInfo = {
+        currency: 'USD',
+        floor: 1.20
+      };
+      floorBidderRequest[0].getFloor = () => floorInfo;
+      const request = marsAdapter.buildRequests(floorBidderRequest, this.defaultBidderRequest);
+      const requestparse = JSON.parse(request.data);
+      expect(requestparse.imp[0].bidfloor).to.equal(1.20);
+    });
+
+    it('should have 0 bidfloor value', function() {
+      const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+      const requestparse = JSON.parse(request.data);
+      expect(requestparse.imp[0].bidfloor).to.equal(0);
     });
 
     it('prefer 2.0 sizes', function () {
@@ -245,7 +304,7 @@ describe('marsmedia adapter tests', function () {
               'sizes': [[300, 600]]
             }
           },
-          'adUnitCode': 'div-gpt-ad-1438287399331-0',
+          'adUnitCode': 'Unit-Code',
           'sizes': [[300, 250]],
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
           'bidderRequestId': '418b37f85e772c',
@@ -255,7 +314,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].banner.format[0].w).to.equal(300);
@@ -274,7 +333,7 @@ describe('marsmedia adapter tests', function () {
               'sizes': [[300]]
             }
           },
-          'adUnitCode': 'div-gpt-ad-1438287399331-0',
+          'adUnitCode': 'Unit-Code',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757',
@@ -283,7 +342,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       expect(bidRequest.method).to.be.undefined;
     });
 
@@ -297,7 +356,7 @@ describe('marsmedia adapter tests', function () {
           'mediaTypes': {
             'banner': {}
           },
-          'adUnitCode': 'div-gpt-ad-1438287399331-0',
+          'adUnitCode': 'Unit-Code',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757',
@@ -306,7 +365,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       expect(bidRequest.method).to.be.undefined;
     });
 
@@ -320,7 +379,7 @@ describe('marsmedia adapter tests', function () {
           'mediaTypes': {
             'banner': {'sizes': [['400', '500'], ['4n0', '5g0']]}
           },
-          'adUnitCode': 'div-gpt-ad-1438287399331-0',
+          'adUnitCode': 'Unit-Code',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757',
@@ -329,35 +388,15 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].banner.format.length).to.equal(1);
     });
 
     it('dnt is correctly set to 1', function () {
-      var bidRequestList = [
-        {
-          'bidder': 'marsmedia',
-          'params': {
-            'zoneId': 9999
-          },
-          'mediaTypes': {
-            'banner': {
-              'sizes': [[300, 600]]
-            }
-          },
-          'adUnitCode': 'div-gpt-ad-1438287399331-0',
-          'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-          'bidderRequestId': '418b37f85e772c',
-          'auctionId': '18fd8b8b0bd757',
-          'bidRequestsCount': 1,
-          'bidId': '51ef8751f9aead'
-        }
-      ];
-
       var dntStub = sinon.stub(utils, 'getDNT').returns(1);
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
 
       dntStub.restore();
 
@@ -378,7 +417,7 @@ describe('marsmedia adapter tests', function () {
               'playerSize': ['600', '300']
             }
           },
-          'adUnitCode': 'div-gpt-ad-1438287399331-1',
+          'adUnitCode': 'Unit-Code',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757',
@@ -387,7 +426,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].video.w).to.equal(600);
@@ -407,7 +446,7 @@ describe('marsmedia adapter tests', function () {
               'playerSize': ['badWidth', 'badHeight']
             }
           },
-          'adUnitCode': 'div-gpt-ad-1438287399331-1',
+          'adUnitCode': 'Unit-Code',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757',
@@ -416,7 +455,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].video.w).to.be.undefined;
@@ -435,7 +474,7 @@ describe('marsmedia adapter tests', function () {
               'context': 'instream'
             }
           },
-          'adUnitCode': 'div-gpt-ad-1438287399331-1',
+          'adUnitCode': 'Unit-Code',
           'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
           'bidderRequestId': '418b37f85e772c',
           'auctionId': '18fd8b8b0bd757',
@@ -444,7 +483,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].video.w).to.be.undefined;
@@ -453,52 +492,74 @@ describe('marsmedia adapter tests', function () {
 
     it('should return empty site data when refererInfo is missing', function() {
       delete this.defaultBidderRequest.refererInfo;
-      var bidRequestList = [
-        {
-          'bidder': 'marsmedia',
-          'params': {
-            'zoneId': 9999
-          },
-          'mediaType': 'banner',
-          'adUnitCode': 'div-gpt-ad-1438287399331-0',
-          'sizes': [[300, 250]],
-          'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-          'bidderRequestId': '418b37f85e772c',
-          'auctionId': '18fd8b8b0bd757',
-          'bidRequestsCount': 1,
-          'bidId': '51ef8751f9aead'
-        }
-      ];
-
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
       const openrtbRequest = JSON.parse(bidRequest.data);
 
       expect(openrtbRequest.site.domain).to.equal('');
       expect(openrtbRequest.site.page).to.equal('');
       expect(openrtbRequest.site.ref).to.equal('');
     });
+
+    context('when element is fully in view', function() {
+      it('returns 100', function() {
+        Object.assign(element, { width: 600, height: 400 });
+        const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+        const openrtbRequest = JSON.parse(request.data);
+        expect(openrtbRequest.imp[0].ext.viewability).to.equal(100);
+      });
+    });
+
+    context('when element is out of view', function() {
+      it('returns 0', function() {
+        Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
+        const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+        const openrtbRequest = JSON.parse(request.data);
+        expect(openrtbRequest.imp[0].ext.viewability).to.equal(0);
+      });
+    });
+
+    context('when element is partially in view', function() {
+      it('returns percentage', function() {
+        Object.assign(element, { width: 800, height: 800 });
+        const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+        const openrtbRequest = JSON.parse(request.data);
+        expect(openrtbRequest.imp[0].ext.viewability).to.equal(75);
+      });
+    });
+
+    context('when nested iframes', function() {
+      it('returns \'na\'', function() {
+        Object.assign(element, { width: 600, height: 400 });
+
+        utils.getWindowTop.restore();
+        utils.getWindowSelf.restore();
+        sandbox.stub(utils, 'getWindowTop').returns(win);
+        sandbox.stub(utils, 'getWindowSelf').returns({});
+
+        const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+        const openrtbRequest = JSON.parse(request.data);
+        expect(openrtbRequest.imp[0].ext.viewability).to.equal('na');
+      });
+    });
+
+    context('when tab is inactive', function() {
+      it('returns 0', function() {
+        Object.assign(element, { width: 600, height: 400 });
+
+        utils.getWindowTop.restore();
+        win.document.visibilityState = 'hidden';
+        sandbox.stub(utils, 'getWindowTop').returns(win);
+
+        const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+        const openrtbRequest = JSON.parse(request.data);
+        expect(openrtbRequest.imp[0].ext.viewability).to.equal(0);
+      });
+    });
   });
 
   it('should return empty site.domain and site.page when refererInfo.stack is empty', function() {
     this.defaultBidderRequest.refererInfo.stack = [];
-    var bidRequestList = [
-      {
-        'bidder': 'marsmedia',
-        'params': {
-          'zoneId': 9999
-        },
-        'mediaType': 'banner',
-        'adUnitCode': 'div-gpt-ad-1438287399331-0',
-        'sizes': [[300, 250]],
-        'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-        'bidderRequestId': '418b37f85e772c',
-        'auctionId': '18fd8b8b0bd757',
-        'bidRequestsCount': 1,
-        'bidId': '51ef8751f9aead'
-      }
-    ];
-
-    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+    var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
     const openrtbRequest = JSON.parse(bidRequest.data);
 
     expect(openrtbRequest.site.domain).to.equal('');
@@ -508,24 +569,7 @@ describe('marsmedia adapter tests', function () {
 
   it('should secure correctly', function() {
     this.defaultBidderRequest.refererInfo.stack[0] = ['https://securesite.dvl'];
-    var bidRequestList = [
-      {
-        'bidder': 'marsmedia',
-        'params': {
-          'zoneId': 9999
-        },
-        'mediaType': 'banner',
-        'adUnitCode': 'div-gpt-ad-1438287399331-0',
-        'sizes': [[300, 250]],
-        'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-        'bidderRequestId': '418b37f85e772c',
-        'auctionId': '18fd8b8b0bd757',
-        'bidRequestsCount': 1,
-        'bidId': '51ef8751f9aead'
-      }
-    ];
-
-    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+    var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
     const openrtbRequest = JSON.parse(bidRequest.data);
 
     expect(openrtbRequest.imp[0].secure).to.equal(1);
@@ -551,9 +595,12 @@ describe('marsmedia adapter tests', function () {
         'params': {
           'zoneId': 9999
         },
-        'mediaType': 'banner',
-        'adUnitCode': 'div-gpt-ad-1438287399331-0',
-        'sizes': [[300, 250]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250]]
+          }
+        },
+        'adUnitCode': 'Unit-Code',
         'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
         'bidderRequestId': '418b37f85e772c',
         'auctionId': '18fd8b8b0bd757',
@@ -563,7 +610,7 @@ describe('marsmedia adapter tests', function () {
       }
     ];
 
-    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+    var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
     const openrtbRequest = JSON.parse(bidRequest.data);
 
     expect(openrtbRequest.source.ext.schain).to.deep.equal(schain);
@@ -571,7 +618,7 @@ describe('marsmedia adapter tests', function () {
 
   describe('misc interpretResponse', function () {
     it('No bid response', function() {
-      var noBidResponse = r1adapter.interpretResponse({
+      var noBidResponse = marsAdapter.interpretResponse({
         'body': ''
       });
       expect(noBidResponse.length).to.equal(0);
@@ -589,22 +636,22 @@ describe('marsmedia adapter tests', function () {
           'sizes': [[300, 250]]
         }
       },
-      'adUnitCode': 'bannerDiv'
+      'adUnitCode': 'Unit-Code'
     };
 
     it('should return true when required params found', function () {
-      expect(r1adapter.isBidRequestValid(bid)).to.equal(true);
+      expect(marsAdapter.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('should return false when placementId missing', function () {
       delete bid.params.zoneId;
-      expect(r1adapter.isBidRequestValid(bid)).to.equal(false);
+      expect(marsAdapter.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
   describe('getUserSyncs', function () {
     it('returns an empty string', function () {
-      expect(r1adapter.getUserSyncs()).to.deep.equal([]);
+      expect(marsAdapter.getUserSyncs()).to.deep.equal([]);
     });
   });
 
