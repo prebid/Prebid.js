@@ -5,12 +5,13 @@
 
 import { config } from '../../src/config.js';
 import * as utils from '../../src/utils.js';
+import { getHook } from '../../src/hook.js';
 import { getRefererInfo } from '../../src/refererDetection.js'
 import { getStorageManager } from '../../src/storageManager.js';
 
-const storage = getStorageManager();
+const STORAGE = getStorageManager();
 let ortb2 = {};
-let shouldRun = true;
+let globalConfig = {};
 let win = (window === window.top) ? window : window.top;
 
 /**
@@ -78,6 +79,18 @@ function setKeywords() {
 }
 
 /**
+ * Checks for currency and if exists merges into ortb2 global data
+ * Sets listener for currency if changes occur or doesnt exist when run
+ */
+function setCurrency() {
+  let cur = {...config.getConfig('currency')};
+
+  if (cur && cur.adServerCurrency) {
+    utils.mergeDeep(ortb2, {cur: cur.adServerCurrency});
+  }
+}
+
+/**
  * Filters data based on predefined requirements
  * @param {Object} data object from user.data or site.content.data
  * @param {String} name of data parent - user/site.content
@@ -134,6 +147,7 @@ export function filterData(data, key) {
  * @returns {Object} validated/filtered data
  */
 export function validateFpd(obj) {
+  if (!obj) return {};
   // Filter out imp property if exists
   let validObject = Object.assign({}, Object.keys(obj).filter(key => {
     if (key !== 'imp') return key;
@@ -144,8 +158,8 @@ export function validateFpd(obj) {
 
     // Checks for existsnece of pubcid optout cookie/storage
     // if exists, filters user data out
-    let optout = (storage.cookiesAreEnabled() && storage.getCookie('_pubcid_optout')) ||
-      (storage.hasLocalStorage() && storage.getDataFromLocalStorage('_pubcid_optout'));
+    let optout = (STORAGE.cookiesAreEnabled() && STORAGE.getCookie('_pubcid_optout')) ||
+      (STORAGE.hasLocalStorage() && STORAGE.getDataFromLocalStorage('_pubcid_optout'));
 
     if (key === 'user' && optout) {
       utils.logWarn(`Filtered ${key} data: pubcid optout found`);
@@ -204,39 +218,39 @@ export const resetOrtb2 = () => { ortb2 = {} };
 * Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
 */
 export function init() {
-  // Set defaults if applicable
   setReferer();
   setPage();
   setDomain();
   setDimensions();
   setKeywords();
+  setCurrency();
 
-  config.setConfig({ortb2: utils.mergeDeep({}, validateFpd(ortb2), config.getConfig('ortb2'))});
+  let conf = utils.mergeDeep({}, ortb2, validateFpd(config.getConfig('ortb2')));
+
+  if (!utils.deepEqual(conf, globalConfig)) {
+    config.setConfig({ortb2: conf});
+    globalConfig = {...conf};
+    resetOrtb2();
+  }
+
+  let bidderDuplicate = {...config.getBidderConfig()};
+
+  Object.keys(bidderDuplicate).forEach(bidder => {
+    let modConf = Object.keys(bidderDuplicate[bidder]).reduce((res, key) => {
+      let valid = (key !== 'ortb2') ? bidderDuplicate[bidder][key] : validateFpd(bidderDuplicate[bidder][key]);
+
+      if (valid) res[key] = valid;
+
+      return res;
+    }, {});
+
+    if (Object.keys(modConf).length) config.setBidderConfig({bidders: [bidder], config: modConf});
+  });
 }
 
-// Set currency setConfig callback
-const curListener = config.getConfig('currency', conf => {
-  if (!conf.currency.adServerCurrency) return;
+function addBidderRequestHook(fn, bidderRequests) {
+  init();
+  fn.call(this, bidderRequests);
+}
 
-  utils.mergeDeep(ortb2, {cur: conf.currency.adServerCurrency});
-  shouldRun = true;
-  config.setConfig({ortb2: utils.mergeDeep({}, validateFpd(ortb2), config.getConfig('ortb2'))});
-});
-
-// Set ortb2 setConfig callback to pass data through validator
-const ortb2Listener = config.getConfig('ortb2', conf => {
-  if (!shouldRun) {
-    shouldRun = true;
-  } else {
-    conf.ortb2 = validateFpd(utils.mergeDeep({}, ortb2, conf.ortb2));
-    shouldRun = false;
-    config.setConfig({ortb2: conf.ortb2});
-  }
-});
-
-/**
-* Removes listener
-*/
-export const unsubscribe = () => { curListener(); ortb2Listener(); };
-
-init();
+getHook('addBidderRequests').before(addBidderRequestHook);

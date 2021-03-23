@@ -3,13 +3,12 @@ import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import CONSTANTS from 'src/constants.json';
-import { getRefererInfo } from 'src/refererDetection.js'
+import {getRefererInfo} from 'src/refererDetection.js'
 import {
   filterData,
   validateFpd,
   init,
-  resetOrtb2,
-  unsubscribe
+  resetOrtb2
 } from 'modules/firstPartyData/index.js';
 import events from 'src/events.js';
 
@@ -74,16 +73,10 @@ describe('the first party data module', function () {
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
-    logErrorSpy = sinon.spy(utils, 'logError');
-  });
-
-  after(function () {
-    unsubscribe();
   });
 
   afterEach(function () {
     sandbox.restore();
-    utils.logError.restore();
     config.resetConfig();
     resetOrtb2();
   });
@@ -345,6 +338,9 @@ describe('the first party data module', function () {
       canonical.rel = 'canonical';
       keywords = document.createElement('meta');
       keywords.name = 'keywords';
+    });
+
+    beforeEach(function() {
       querySelectorStub = sinon.stub(window.top.document, 'querySelector');
       querySelectorStub.withArgs("link[rel='canonical']").returns(canonical);
       querySelectorStub.withArgs("meta[name='keywords']").returns(keywords);
@@ -356,10 +352,14 @@ describe('the first party data module', function () {
       });
     });
 
-    after(function() {
+    afterEach(function() {
       widthStub.restore();
       heightStub.restore();
       querySelectorStub.restore();
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      keywords = document.createElement('meta');
+      keywords.name = 'keywords';
     });
 
     it('sets default referer and dimension values to ortb2 data', function () {
@@ -381,8 +381,6 @@ describe('the first party data module', function () {
     it('sets page and domain values to ortb2 data if canonical link exists', function () {
       let validated;
 
-      width = 800;
-      height = 400;
       canonical.href = 'https://www.domain.com/path?query=12345';
 
       init();
@@ -391,23 +389,21 @@ describe('the first party data module', function () {
       expect(validated.site.ref).to.equal(getRefererInfo().referer);
       expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
       expect(validated.site.domain).to.equal('domain.com');
-      expect(validated.device).to.deep.to.equal({width: 800, height: 400});
+      expect(validated.device).to.deep.to.equal({width: 1120, height: 750});
       expect(validated.site.keywords).to.be.undefined;
     });
 
     it('sets keyword values to ortb2 data if keywords meta exists', function () {
       let validated;
 
-      width = 1120;
-      height = 750;
       keywords.content = 'value1,value2,value3';
 
       init();
 
       validated = config.getConfig('ortb2');
       expect(validated.site.ref).to.equal(getRefererInfo().referer);
-      expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
-      expect(validated.site.domain).to.equal('domain.com');
+      expect(validated.site.page).to.be.undefined;
+      expect(validated.site.domain).to.be.undefined;
       expect(validated.device).to.deep.to.equal({width: 1120, height: 750});
       expect(validated.site.keywords).to.equal('value1,value2,value3');
     });
@@ -421,13 +417,13 @@ describe('the first party data module', function () {
 
       validated = config.getConfig('ortb2');
       expect(validated.site.ref).to.equal('https://testpage.com');
-      expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
+      expect(validated.site.page).to.be.undefined;
       expect(validated.site.domain).to.equal('newDomain.com');
       expect(validated.device).to.deep.to.equal({width: 1120, height: 750});
-      expect(validated.site.keywords).to.equal('value1,value2,value3');
+      expect(validated.site.keywords).to.be.undefined;
     });
 
-    it('filters ortb2 data that is set prior to init firing', function () {
+    it('filters ortb2 data that is set', function () {
       let validated;
       let conf = {
         ortb2: {
@@ -461,6 +457,9 @@ describe('the first party data module', function () {
       };
 
       config.setConfig(conf);
+      canonical.href = 'https://www.domain.com/path?query=12345';
+      width = 1120;
+      height = 750;
 
       init();
 
@@ -471,54 +470,7 @@ describe('the first party data module', function () {
       expect(validated.site.content.data).to.deep.equal([{segment: [{id: 'test'}], name: 'bar'}]);
       expect(validated.user.data).to.be.undefined;
       expect(validated.device).to.deep.to.equal({width: 1, height: 1});
-      expect(validated.site.keywords).to.to.equal('value1,value2,value3');
-    });
-
-    it('filters ortb2 data that is set after init firing', function () {
-      let validated;
-      let conf = {
-        ortb2: {
-          user: {
-            data: {},
-            gender: 'f',
-            age: 45
-          },
-          site: {
-            content: {
-              data: [{
-                segment: {
-                  test: 1
-                },
-                name: 'foo'
-              }, {
-                segment: [{
-                  id: 'test'
-                }, {
-                  id: 3
-                }],
-                name: 'bar'
-              }]
-            }
-          },
-          device: {
-            width: 1,
-            height: 1
-          }
-        }
-      };
-
-      init();
-
-      config.setConfig(conf);
-
-      validated = config.getConfig('ortb2');
-      expect(validated.site.ref).to.equal(getRefererInfo().referer);
-      expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
-      expect(validated.site.domain).to.equal('domain.com');
-      expect(validated.site.content.data).to.deep.equal([{segment: [{id: 'test'}], name: 'bar'}]);
-      expect(validated.user.data).to.be.undefined;
-      expect(validated.device).to.deep.to.equal({width: 1, height: 1});
-      expect(validated.site.keywords).to.to.equal('value1,value2,value3');
+      expect(validated.site.keywords).to.be.undefined;
     });
 
     it('should not overwrite existing data with default settings', function () {
@@ -549,15 +501,15 @@ describe('the first party data module', function () {
         }
       };
 
-      init();
-
       config.setConfig(conf);
+
+      init();
 
       validated = config.getConfig('ortb2');
       expect(validated.site.ref).to.equal('https://referer.com');
     });
 
-    it('should add currency if currency config exists prior to init firing', function () {
+    it('should add currency if currency config exists', function () {
       let validated;
       let conf = {
         currency: {
@@ -573,20 +525,70 @@ describe('the first party data module', function () {
       expect(validated.cur).to.equal('USD');
     });
 
-    it('should add currency if currency config exists after init firing', function () {
+    it('should filter bidderConfig data', function () {
       let validated;
       let conf = {
-        currency: {
-          adServerCurrency: 'JAP'
+        bidders: ['bidderA', 'bidderB'],
+        config: {
+          ortb2: {
+            site: {
+              keywords: 'other',
+              ref: 'https://domain.com'
+            },
+            user: {
+              keywords: 'test',
+              data: [{
+                segment: [{id: 4}],
+                name: 't'
+              }]
+            }
+          }
         }
       };
 
-      config.setConfig(conf);
+      config.setBidderConfig(conf);
 
       init();
 
-      validated = config.getConfig('ortb2');
-      expect(validated.cur).to.equal('JAP');
+      validated = config.getBidderConfig();
+      expect(validated.bidderA.ortb2).to.not.be.undefined;
+      expect(validated.bidderA.ortb2.user.data).to.be.undefined;
+      expect(validated.bidderA.ortb2.user.keywords).to.equal('test');
+      expect(validated.bidderA.ortb2.site.keywords).to.equal('other');
+      expect(validated.bidderA.ortb2.site.ref).to.equal('https://domain.com');
+    });
+
+    it('should not filter bidderConfig data as it is valid', function () {
+      let validated;
+      let conf = {
+        bidders: ['bidderA', 'bidderB'],
+        config: {
+          ortb2: {
+            site: {
+              keywords: 'other',
+              ref: 'https://domain.com'
+            },
+            user: {
+              keywords: 'test',
+              data: [{
+                segment: [{id: 'data1_id'}],
+                name: 'data1'
+              }]
+            }
+          }
+        }
+      };
+
+      config.setBidderConfig(conf);
+
+      init();
+
+      validated = config.getBidderConfig();
+      expect(validated.bidderA.ortb2).to.not.be.undefined;
+      expect(validated.bidderA.ortb2.user.data).to.deep.equal([{segment: [{id: 'data1_id'}], name: 'data1'}]);
+      expect(validated.bidderA.ortb2.user.keywords).to.equal('test');
+      expect(validated.bidderA.ortb2.site.keywords).to.equal('other');
+      expect(validated.bidderA.ortb2.site.ref).to.equal('https://domain.com');
     });
   });
 });
