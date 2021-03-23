@@ -263,20 +263,20 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[2].tagid).to.be.equal(placementId);
     });
 
-    it('should read dealId from valid bid requests', function () {
-      const dealId1 = '78214682234823';
-      const dealId2 = '89913861235234';
+    it('should read dealIds from valid bid requests', function () {
+      const dealIds1 = ['78214682234823'];
+      const dealIds2 = ['89913861235234', '27368423545328640'];
       const validBidRequests = [
         createValidBidRequest(
           {
             placementId: 'rsl1239823',
-            dealId: dealId1
+            dealIds: dealIds1
           }
         ),
         createValidBidRequest(
           {
             placementId: 'pqw234232',
-            dealId: dealId2
+            dealIds: dealIds2
           }
         )
       ];
@@ -287,9 +287,10 @@ describe('KoblerAdapter', function () {
 
       expect(openRtbRequest.imp.length).to.be.equal(2);
       expect(openRtbRequest.imp[0].pmp.deals.length).to.be.equal(1);
-      expect(openRtbRequest.imp[0].pmp.deals[0].id).to.be.equal(dealId1);
-      expect(openRtbRequest.imp[1].pmp.deals.length).to.be.equal(1);
-      expect(openRtbRequest.imp[1].pmp.deals[0].id).to.be.equal(dealId2);
+      expect(openRtbRequest.imp[0].pmp.deals[0].id).to.be.equal(dealIds1[0]);
+      expect(openRtbRequest.imp[1].pmp.deals.length).to.be.equal(2);
+      expect(openRtbRequest.imp[1].pmp.deals[0].id).to.be.equal(dealIds2[0]);
+      expect(openRtbRequest.imp[1].pmp.deals[1].id).to.be.equal(dealIds2[1]);
     });
 
     it('should read timeout from config', function () {
@@ -379,7 +380,7 @@ describe('KoblerAdapter', function () {
             zip: '0015',
             floorPrice: 5.6234,
             position: 1,
-            dealId: '623472534328234'
+            dealIds: ['623472534328234']
           },
           '953ee65d-d18a-484f-a840-d3056185a060',
           [[400, 600]]
@@ -389,7 +390,7 @@ describe('KoblerAdapter', function () {
             placementId: 'sdfgoi32y4',
             floorPrice: 3.2543,
             position: 2,
-            dealId: '92368234753283'
+            dealIds: ['92368234753283', '263845832942']
           },
           '8320bf79-9d90-4a17-87c6-5d505706a921',
           [[400, 500], [200, 250], [300, 350]]
@@ -470,6 +471,9 @@ describe('KoblerAdapter', function () {
               deals: [
                 {
                   id: '92368234753283'
+                },
+                {
+                  id: '263845832942'
                 }
               ]
             }

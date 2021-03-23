@@ -201,13 +201,14 @@ function getFloorPrice(validBidRequest) {
 }
 
 function buildPmpObject(validBidRequest) {
-  if (validBidRequest.params.dealId) {
+  if (validBidRequest.params.dealIds) {
     return {
-      deals: [
-        {
-          id: validBidRequest.params.dealId
+      deals: validBidRequest.params.dealIds.map(dealId => {
+          return {
+            id: dealId
+          };
         }
-      ]
+      )
     };
   }
   return {};

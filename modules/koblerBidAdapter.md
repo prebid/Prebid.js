@@ -19,7 +19,7 @@ This adapter currently only supports Banner Ads.
 | test | Optional | Boolean | Whether the request is for testing only. When multiple ad units are submitted together, it is enough to set this parameter on the first one. Defaults to false. | `true` |
 | floorPrice | Optional | Float | Floor price in CPM and in the currency given in currency.adServerCurrency. Can be used as an alternative to the [Floors module](https://docs.prebid.org/dev-docs/modules/floors.html), which is also supported by this adapter. Defaults to 0. | `5.0` |
 | position | Optional | Integer | The position of the ad unit. Can be used to differentiate between ad units if the same placement ID is used across multiple ad units. Defaults to 0. | `1` |
-| dealId | Optional | String | Deal ID. | `'abc328745'` |
+| dealIds | Optional | Array of Strings | Array of deal IDs. | `['abc328745', 'mxw243253']` |
 
 # Test Parameters
 ```javascript
@@ -56,7 +56,7 @@ This adapter currently only supports Banner Ads.
         test: true,
         floorPrice: 5.0,
         position: 1,
-        dealId: 'abc328745'
+        dealIds: ['abc328745', 'mxw243253']
       }
     }]
   }];
