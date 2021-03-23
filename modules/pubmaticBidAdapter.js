@@ -998,6 +998,15 @@ export const spec = {
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
 
+    // First Party Data
+    const commonFpd = getConfig('ortb2') || {};
+    if (commonFpd.site) {
+      utils.mergeDeep(payload, {site: commonFpd.site});
+    }
+    if (commonFpd.user) {
+      utils.mergeDeep(payload, {user: commonFpd.user});
+    }
+
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
     if (typeof config.getConfig('app') === 'object') {
