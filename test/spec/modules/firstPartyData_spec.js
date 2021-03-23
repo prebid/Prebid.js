@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import CONSTANTS from 'src/constants.json';
-import {getRefererInfo} from 'src/refererDetection.js'
+import {getRefererInfo} from 'src/refererDetection.js';
 import {
   filterData,
   validateFpd,
