@@ -49,6 +49,23 @@ Module that connects to lunamedia demand sources
                 {
                     code:'1',
                     mediaTypes:{
+                        video: {
+                            playerSize: [640, 480],
+                            context: 'outstream'
+                        }
+                    },
+                    bids:[
+                        {
+                            bidder: 'lunamediahb',
+                            params: {
+                                placementId: 0
+                            }
+                        }
+                    ]
+                },
+                {
+                    code:'1',
+                    mediaTypes:{
                         native: {
                             title: {
                                 required: true
