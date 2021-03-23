@@ -80,7 +80,7 @@ describe('LunamediaHBBidAdapter', function () {
       expect(data).to.be.an('object');
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'wPlayer', 'hPlayer', 'schain');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'wPlayer', 'hPlayer', 'schain', 'videoContext');
       expect(placement.traffic).to.equal(VIDEO);
       expect(placement.wPlayer).to.equal(playerSize[0]);
       expect(placement.hPlayer).to.equal(playerSize[1]);

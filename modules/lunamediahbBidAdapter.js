@@ -14,7 +14,7 @@ function isBidResponseValid(bid) {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return Boolean(bid.vastUrl);
+      return Boolean(bid.vastUrl) || Boolean(bid.vastXml);
     case NATIVE:
       return Boolean(bid.native && bid.native.impressionTrackers);
     default:
@@ -70,14 +70,17 @@ export const spec = {
         schain: bid.schain || {},
       };
       const mediaType = bid.mediaTypes
-      
+
       if (mediaType && mediaType[BANNER] && mediaType[BANNER].sizes) {
         placement.sizes = mediaType[BANNER].sizes;
         placement.traffic = BANNER;
-      } else if (mediaType && mediaType[VIDEO] && mediaType[VIDEO].playerSize) {
-        placement.wPlayer = mediaType[VIDEO].playerSize[0];
-        placement.hPlayer = mediaType[VIDEO].playerSize[1];
+      } else if (mediaType && mediaType[VIDEO]) {
+        if (mediaType[VIDEO].playerSize) {
+          placement.wPlayer = mediaType[VIDEO].playerSize[0];
+          placement.hPlayer = mediaType[VIDEO].playerSize[1];
+        }
         placement.traffic = VIDEO;
+        placement.videoContext = mediaType[VIDEO].context || 'instream'
       } else if (mediaType && mediaType[NATIVE]) {
         placement.native = mediaType[NATIVE];
         placement.traffic = NATIVE;
