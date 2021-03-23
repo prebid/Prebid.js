@@ -164,7 +164,7 @@ userIdAsEids = [
         }]
     },
      {
-        source: 'uid2.com',
+        source: 'uidapi.com',
         uids: [{
             id: 'some-random-id-value',
              atype: 3

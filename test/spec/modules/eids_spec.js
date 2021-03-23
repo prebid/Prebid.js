@@ -283,7 +283,7 @@ describe('eids array generation for known sub-modules', function() {
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
-      source: 'uid2.com',
+      source: 'uidapi.com',
       uids: [{
         id: 'Sample_AD_Token',
         atype: 3

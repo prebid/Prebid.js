@@ -2096,7 +2096,7 @@ describe('User ID', function () {
               id: 'Sample_AD_Token'
             });
             expect(bid.userIdAsEids[0]).to.deep.equal({
-              source: 'uid2.com',
+              source: 'uidapi.com',
               uids: [{
                 id: 'Sample_AD_Token',
                 atype: 3,

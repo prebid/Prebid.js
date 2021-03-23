@@ -187,7 +187,7 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
   'uid2': {
-    source: 'uid2.com',
+    source: 'uidapi.com',
     atype: 3,
     getValue: function(data) {
       return data.id;
