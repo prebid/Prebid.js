@@ -2,7 +2,8 @@ import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } f
 import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
-
+resetLiveIntentIdSubmodule();
+liveIntentIdSubmodule.setModuleMode('standard')
 const PUBLISHER_ID = '89899';
 const defaultConfigParams = { params: {publisherId: PUBLISHER_ID} };
 const responseHeader = {'Content-Type': 'application/json'}
@@ -16,6 +17,7 @@ describe('LiveIntentId', function() {
   let imgStub;
 
   beforeEach(function() {
+    liveIntentIdSubmodule.setModuleMode('standard');
     imgStub = sinon.stub(utils, 'triggerPixel');
     getCookieStub = sinon.stub(storage, 'getCookie');
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
@@ -34,7 +36,7 @@ describe('LiveIntentId', function() {
     resetLiveIntentIdSubmodule();
   });
 
-  it('should initialize LiveConnect with a privacy string when getId, and include it in the resolution request', function() {
+  it('should initialize LiveConnect with a privacy string when getId, and include it in the resolution request', function () {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
       gdprApplies: true,
@@ -45,12 +47,16 @@ describe('LiveIntentId', function() {
     submoduleCallback(callBackSpy);
     let request = server.requests[1];
     expect(request.url).to.match(/.*us_privacy=1YNY.*&gdpr=1&gdpr_consent=consentDataString.*/);
+    const response = {
+      unifiedId: 'a_unified_id',
+      segments: [123, 234]
+    }
     request.respond(
       200,
       responseHeader,
-      JSON.stringify({})
+      JSON.stringify(response)
     );
-    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.calledOnceWith(response)).to.be.true;
   });
 
   it('should fire an event when getId', function() {
@@ -129,11 +135,10 @@ describe('LiveIntentId', function() {
     let request = server.requests[1];
     expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/prebid/89899');
     request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
+      204,
+      responseHeader
     );
-    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.calledOnceWith({})).to.be.true;
   });
 
   it('should call the default url of the LiveIntent Identity Exchange endpoint, with a partner', function() {
