@@ -7,10 +7,12 @@ import {
   QUANTCAST_TEST_PUBLISHER,
   QUANTCAST_PROTOCOL,
   QUANTCAST_PORT,
-  spec as qcSpec
-} from '../../../modules/quantcastBidAdapter';
-import { newBidder } from '../../../src/adapters/bidderFactory';
-import { parse } from 'src/url';
+  spec as qcSpec,
+  storage
+} from '../../../modules/quantcastBidAdapter.js';
+import { newBidder } from '../../../src/adapters/bidderFactory.js';
+import { parseUrl } from 'src/utils.js';
+import { config } from 'src/config.js';
 
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
@@ -41,6 +43,8 @@ describe('Quantcast adapter', function () {
         canonicalUrl: 'http://example.com/hello.html'
       }
     };
+
+    storage.setCookie('__qca', '', 'Thu, 01 Jan 1970 00:00:00 GMT');
   });
 
   function setupVideoBidRequest(videoParams) {
@@ -89,13 +93,13 @@ describe('Quantcast adapter', function () {
   describe('`buildRequests`', function () {
     it('sends secure bid requests', function () {
       const requests = qcSpec.buildRequests([bidRequest]);
-      const url = parse(requests[0]['url']);
+      const url = parseUrl(requests[0]['url']);
       expect(url.protocol).to.equal('https');
     });
 
     it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', function () {
       const requests = qcSpec.buildRequests([bidRequest]);
-      const url = parse(requests[0]['url']);
+      const url = parseUrl(requests[0]['url']);
       expect(url.hostname).to.equal(QUANTCAST_TEST_DOMAIN);
     });
 
@@ -138,7 +142,9 @@ describe('Quantcast adapter', function () {
       bidId: '2f7b179d443f14',
       gdprSignal: 0,
       uspSignal: 0,
-      prebidJsVersion: '$prebid.version$'
+      coppa: 0,
+      prebidJsVersion: '$prebid.version$',
+      fpa: ''
     };
 
     it('sends banner bid requests contains all the required parameters', function () {
@@ -205,7 +211,9 @@ describe('Quantcast adapter', function () {
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
         uspSignal: 0,
-        prebidJsVersion: '$prebid.version$'
+        coppa: 0,
+        prebidJsVersion: '$prebid.version$',
+        fpa: ''
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
@@ -240,7 +248,9 @@ describe('Quantcast adapter', function () {
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
         uspSignal: 0,
-        prebidJsVersion: '$prebid.version$'
+        coppa: 0,
+        prebidJsVersion: '$prebid.version$',
+        fpa: ''
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
@@ -271,7 +281,9 @@ describe('Quantcast adapter', function () {
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
         uspSignal: 0,
-        prebidJsVersion: '$prebid.version$'
+        coppa: 0,
+        prebidJsVersion: '$prebid.version$',
+        fpa: ''
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
@@ -334,7 +346,9 @@ describe('Quantcast adapter', function () {
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
         uspSignal: 0,
-        prebidJsVersion: '$prebid.version$'
+        coppa: 0,
+        prebidJsVersion: '$prebid.version$',
+        fpa: ''
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedBidRequest));
@@ -342,11 +356,232 @@ describe('Quantcast adapter', function () {
   });
 
   it('propagates GDPR consent string and signal', function () {
-    const bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentString' } }
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString'
+      }
+    };
+
     const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
     const parsed = JSON.parse(requests[0].data);
+
     expect(parsed.gdprSignal).to.equal(1);
     expect(parsed.gdprConsent).to.equal('consentString');
+  });
+
+  it('allows TCF v1 request with consent for purpose 1', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          vendorConsents: {
+            '11': true
+          },
+          purposeConsents: {
+            '1': true
+          }
+        },
+        apiVersion: 1
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
+
+    expect(parsed.gdprSignal).to.equal(1);
+    expect(parsed.gdprConsent).to.equal('consentString');
+  });
+
+  it('blocks TCF v1 request without vendor consent', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          vendorConsents: {
+            '11': false
+          },
+          purposeConsents: {
+            '1': true
+          }
+        },
+        apiVersion: 1
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+
+    expect(requests).to.equal(undefined);
+  });
+
+  it('blocks TCF v1 request without consent for purpose 1', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          vendorConsents: {
+            '11': true
+          },
+          purposeConsents: {
+            '1': false
+          }
+        },
+        apiVersion: 1
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+
+    expect(requests).to.equal(undefined);
+  });
+
+  it('allows TCF v2 request when Quantcast has consent for purpose 1', function() {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          vendor: {
+            consents: {
+              '11': true
+            }
+          },
+          purpose: {
+            consents: {
+              '1': true
+            }
+          }
+        },
+        apiVersion: 2
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
+
+    expect(parsed.gdprSignal).to.equal(1);
+    expect(parsed.gdprConsent).to.equal('consentString');
+  });
+
+  it('blocks TCF v2 request when no consent for Quantcast', function() {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          vendor: {
+            consents: {
+              '11': false
+            }
+          },
+          purpose: {
+            consents: {
+              '1': true
+            }
+          }
+        },
+        apiVersion: 2
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+
+    expect(requests).to.equal(undefined);
+  });
+
+  it('blocks TCF v2 request when no consent for purpose 1', function() {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          vendor: {
+            consents: {
+              '11': true
+            }
+          },
+          purpose: {
+            consents: {
+              '1': false
+            }
+          }
+        },
+        apiVersion: 2
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+
+    expect(requests).to.equal(undefined);
+  });
+
+  it('blocks TCF v2 request when Quantcast not allowed by publisher', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          vendor: {
+            consents: {
+              '11': true
+            }
+          },
+          purpose: {
+            consents: {
+              '1': true
+            }
+          },
+          publisher: {
+            restrictions: {
+              '1': {
+                '11': 0
+              }
+            }
+          }
+        },
+        apiVersion: 2
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+
+    expect(requests).to.equal(undefined);
+  });
+
+  it('blocks TCF v2 request when legitimate interest required', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'consentString',
+        vendorData: {
+          vendor: {
+            consents: {
+              '11': true
+            }
+          },
+          purpose: {
+            consents: {
+              '1': true
+            }
+          },
+          publisher: {
+            restrictions: {
+              '1': {
+                '11': 2
+              }
+            }
+          }
+        },
+        apiVersion: 2
+      }
+    };
+
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+
+    expect(requests).to.equal(undefined);
   });
 
   it('propagates US Privacy/CCPA consent information', function () {
@@ -355,6 +590,57 @@ describe('Quantcast adapter', function () {
     const parsed = JSON.parse(requests[0].data);
     expect(parsed.uspSignal).to.equal(1);
     expect(parsed.uspConsent).to.equal('consentString');
+  });
+
+  it('propagates Quantcast first-party cookie (fpa)', function() {
+    storage.setCookie('__qca', 'P0-TestFPA');
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
+    expect(parsed.fpa).to.equal('P0-TestFPA');
+  });
+
+  describe('propagates coppa', function() {
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('propagates coppa as 1 if coppa param is set to true in the bid request', function () {
+      bidRequest.params = {
+        publisherId: 'test_publisher_id',
+        coppa: true
+      };
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        const config = {
+          'coppa': true
+        };
+        return config[key];
+      });
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(requests[0].data).coppa).to.equal(1);
+    });
+
+    it('propagates coppa as 0 if there is no coppa param or coppa is set to false in the bid request', function () {
+      const requestsWithoutCoppa = qcSpec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(requestsWithoutCoppa[0].data).coppa).to.equal(0);
+
+      bidRequest.params = {
+        publisherId: 'test_publisher_id',
+        coppa: false
+      };
+      sandbox.stub(config, 'getConfig').callsFake((key) => {
+        const config = {
+          'coppa': false
+        };
+        return config[key];
+      });
+      const requestsWithFalseCoppa = qcSpec.buildRequests([bidRequest], bidderRequest);
+      expect(JSON.parse(requestsWithFalseCoppa[0].data).coppa).to.equal(0);
+    });
   });
 
   describe('`interpretResponse`', function () {
@@ -491,6 +777,68 @@ describe('Quantcast adapter', function () {
       const interpretedResponse = qcSpec.interpretResponse(response);
 
       expect(interpretedResponse.length).to.equal(0);
+    });
+
+    it('should return pixel url when available userSync available', function () {
+      const syncOptions = {
+        pixelEnabled: true
+      };
+      const serverResponses = [
+        {
+          body: {
+            userSync: {
+              url: 'http://quantcast.com/pixelUrl'
+            }
+          }
+        },
+        {
+          body: {
+
+          }
+        }
+      ];
+
+      const actualSyncs = qcSpec.getUserSyncs(syncOptions, serverResponses);
+      const expectedSync = {
+        type: 'image',
+        url: 'http://quantcast.com/pixelUrl'
+      };
+      expect(actualSyncs.length).to.equal(1);
+      expect(actualSyncs[0]).to.deep.equal(expectedSync);
+      qcSpec.resetUserSync();
+    });
+
+    it('should not return user syncs if done already', function () {
+      const syncOptions = {
+        pixelEnabled: true
+      };
+      const serverResponses = [
+        {
+          body: {
+            userSync: {
+              url: 'http://quantcast.com/pixelUrl'
+            }
+          }
+        },
+        {
+          body: {
+
+          }
+        }
+      ];
+
+      let actualSyncs = qcSpec.getUserSyncs(syncOptions, serverResponses);
+      const expectedSync = {
+        type: 'image',
+        url: 'http://quantcast.com/pixelUrl'
+      };
+      expect(actualSyncs.length).to.equal(1);
+      expect(actualSyncs[0]).to.deep.equal(expectedSync);
+
+      actualSyncs = qcSpec.getUserSyncs(syncOptions, serverResponses);
+      expect(actualSyncs.length).to.equal(0);
+
+      qcSpec.resetUserSync();
     });
   });
 });

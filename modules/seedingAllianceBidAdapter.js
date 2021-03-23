@@ -1,16 +1,16 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { NATIVE } from '../src/mediaTypes';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { NATIVE } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'seedingAlliance';
 const DEFAULT_CUR = 'EUR';
 const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=nativendo';
 
-const NATIVE_ASSET_IDS = {0: 'title', 1: 'body', 2: 'sponsoredBy', 3: 'image'};
+const NATIVE_ASSET_IDS = {0: 'title', 1: 'body', 2: 'sponsoredBy', 3: 'image', 4: 'cta', 5: 'icon'};
 
 const NATIVE_PARAMS = {
   title: {
@@ -34,6 +34,18 @@ const NATIVE_PARAMS = {
     id: 3,
     type: 3,
     name: 'img'
+  },
+
+  cta: {
+    id: 4,
+    type: 12,
+    name: 'data'
+  },
+
+  icon: {
+    id: 5,
+    type: 1,
+    name: 'img'
   }
 };
 
@@ -50,7 +62,6 @@ export const spec = {
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
     const tid = validBidRequests[0].transactionId;
     const cur = [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
-    let pubcid = null;
     let url = bidderRequest.refererInfo.referer;
 
     const imp = validBidRequests.map((bid, id) => {
@@ -100,10 +111,6 @@ export const spec = {
       };
     });
 
-    if (validBidRequests[0].crumbs && validBidRequests[0].crumbs.pubcid) {
-      pubcid = validBidRequests[0].crumbs.pubcid;
-    }
-
     const request = {
       id: bidderRequest.auctionId,
       site: {
@@ -114,15 +121,26 @@ export const spec = {
       },
       cur,
       imp,
-      user: {
-        buyeruid: pubcid
+      user: {},
+      regs: {
+        ext: {
+          gdpr: 0
+        }
       }
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(request, 'regs.ext.gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0);
+    }
 
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: JSON.stringify(request),
+      options: {
+        contentType: 'application/json'
+      },
       bids: validBidRequests
     };
   },

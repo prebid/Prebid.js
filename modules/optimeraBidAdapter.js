@@ -1,5 +1,5 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { deepAccess } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'optimera';
 const SCORES_BASE_URL = 'https://dyv1bugovvq1g.cloudfront.net/';

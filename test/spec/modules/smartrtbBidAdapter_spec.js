@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/smartrtbBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
+import { spec, _getPlatform } from 'modules/smartrtbBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
 
 const br = {
   body: {

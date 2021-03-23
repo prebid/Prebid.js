@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/cosmosBidAdapter';
-import * as utils from 'src/utils';
+import { spec } from 'modules/cosmosBidAdapter.js';
+import * as utils from 'src/utils.js';
 const constants = require('src/constants.json');
 
 describe('Cosmos adapter', function () {

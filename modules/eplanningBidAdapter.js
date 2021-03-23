@@ -1,11 +1,14 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+export const storage = getStorageManager();
 
 const BIDDER_CODE = 'eplanning';
 const rnd = Math.random();
 const DEFAULT_SV = 'ads.us.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
-const PARAMS = ['ci', 'sv', 't'];
+const PARAMS = ['ci', 'sv', 't', 'ml', 'sn'];
 const DOLLARS = 'USD';
 const NET_REVENUE = true;
 const TTL = 120;
@@ -13,6 +16,9 @@ const NULL_SIZE = '1x1';
 const FILE = 'file';
 const STORAGE_RENDER_PREFIX = 'pbsr_';
 const STORAGE_VIEW_PREFIX = 'pbvi_';
+const mobileUserAgent = isMobileUserAgent();
+const PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC = ['1x1', '300x50', '320x50', '300x250'];
+const PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC = ['1x1', '970x90', '970x250', '160x600', '300x600', '728x90', '300x250'];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -29,7 +35,7 @@ export const spec = {
     let params;
     const urlConfig = getUrlConfig(bidRequests);
     const pcrs = getCharset();
-    const spaces = getSpaces(bidRequests);
+    const spaces = getSpaces(bidRequests, urlConfig.ml);
     const pageUrl = bidderRequest.refererInfo.referer;
     const getDomain = (url) => {
       let anchor = document.createElement('a');
@@ -41,16 +47,16 @@ export const spec = {
       params = {};
     } else {
       url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
-      const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? encodeURIComponent(window.top.document.referrer) : encodeURIComponent(bidderRequest.refererInfo.referer);
+      const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? window.top.document.referrer : bidderRequest.refererInfo.referer;
 
-      if (utils.hasLocalStorage()) {
+      if (storage.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);
       }
 
       params = {
         rnd: rnd,
         e: spaces.str,
-        ur: encodeURIComponent(pageUrl || FILE),
+        ur: pageUrl || FILE,
         r: 'pbjs',
         pbv: '$prebid.version$',
         ncb: '1',
@@ -137,6 +143,18 @@ export const spec = {
   },
 }
 
+function getUserAgent() {
+  return window.navigator.userAgent;
+}
+function getInnerWidth() {
+  return utils.getWindowSelf().innerWidth;
+}
+function isMobileUserAgent() {
+  return getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
+}
+function isMobileDevice() {
+  return (getInnerWidth() <= 1024) || window.orientation || mobileUserAgent;
+}
 function getUrlConfig(bidRequests) {
   if (isTestRequest(bidRequests)) {
     return getTestConfig(bidRequests.filter(br => br.params.t));
@@ -170,8 +188,32 @@ function getTestConfig(bidRequests) {
   };
 }
 
+function compareSizesByPriority(size1, size2) {
+  var priorityOrderForSizesAsc = isMobileDevice() ? PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC : PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC;
+  var index1 = priorityOrderForSizesAsc.indexOf(size1);
+  var index2 = priorityOrderForSizesAsc.indexOf(size2);
+  if (index1 > -1) {
+    if (index2 > -1) {
+      return (index1 < index2) ? 1 : -1;
+    } else {
+      return -1;
+    }
+  } else {
+    return (index2 > -1) ? 1 : 0;
+  }
+}
+
+function getSizesSortedByPriority(sizes) {
+  return utils.parseSizesInput(sizes).sort(compareSizesByPriority);
+}
+
 function getSize(bid, first) {
-  return bid.sizes && bid.sizes.length ? utils.parseSizesInput(first ? bid.sizes[0] : bid.sizes).join(',') : NULL_SIZE;
+  var arraySizes = bid.sizes && bid.sizes.length ? getSizesSortedByPriority(bid.sizes) : [];
+  if (arraySizes.length) {
+    return first ? arraySizes[0] : arraySizes.join(',');
+  } else {
+    return NULL_SIZE;
+  }
 }
 
 function getSpacesStruct(bids) {
@@ -185,12 +227,23 @@ function getSpacesStruct(bids) {
   return e;
 }
 
-function getSpaces(bidRequests) {
+function cleanName(name) {
+  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function getSpaces(bidRequests, ml) {
   let spacesStruct = getSpacesStruct(bidRequests);
   let es = {str: '', vs: '', map: {}};
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
-    let name = getSize(bid, true) + '_' + i;
+
+    let name;
+    if (ml) {
+      name = cleanName(bid.adUnitCode);
+    } else {
+      name = (bid.params && bid.params.sn) || (getSize(bid, true) + '_' + i);
+    }
+
     es.map[name] = bid.bidId;
     return name + ':' + getSize(bid);
   }).join('+')).join('+');
@@ -200,7 +253,7 @@ function getSpaces(bidRequests) {
 function getVs(bid) {
   let s;
   let vs = '';
-  if (utils.hasLocalStorage()) {
+  if (storage.hasLocalStorage()) {
     s = getViewabilityData(bid);
     vs += s.render >= 4 ? s.ratio.toString(16) : 'F';
   } else {
@@ -210,8 +263,8 @@ function getVs(bid) {
 }
 
 function getViewabilityData(bid) {
-  let r = utils.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
-  let v = utils.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
+  let r = storage.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
+  let v = storage.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
   let ratio = r > 0 ? (v / r) : 0;
   return {
     render: r,
@@ -310,11 +363,13 @@ function getViewabilityTracker() {
   }
 
   function isNotHiddenByNonFriendlyIframe() {
-    return (window === window.top) || window.frameElement;
+    try { return (window === window.top) || window.frameElement; } catch (e) {}
   }
 
   function defineContext(e) {
-    context = e && window.document.body.contains(e) ? window : (window.top.document.body.contains(e) ? top : undefined);
+    try {
+      context = e && window.document.body.contains(e) ? window : (window.top.document.body.contains(e) ? top : undefined);
+    } catch (err) {}
     return context;
   }
 
@@ -350,7 +405,7 @@ function getViewabilityTracker() {
   }
 
   function itIsNotHiddenByTabFocus() {
-    return getContext().top.document.hasFocus();
+    try { return getContext().top.document.hasFocus(); } catch (e) {}
   }
 
   function isDefined(e) {
@@ -404,9 +459,9 @@ function visibilityHandler(obj) {
 function registerAuction(storageID) {
   let value;
   try {
-    value = utils.getDataFromLocalStorage(storageID);
+    value = storage.getDataFromLocalStorage(storageID);
     value = value ? window.parseInt(value, 10) + 1 : 1;
-    utils.setDataInLocalStorage(storageID, value);
+    storage.setDataInLocalStorage(storageID, value);
   } catch (exc) {
     return false;
   }

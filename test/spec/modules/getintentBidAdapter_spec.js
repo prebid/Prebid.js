@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec } from 'modules/getintentBidAdapter'
+import { spec } from 'modules/getintentBidAdapter.js'
 
 describe('GetIntent Adapter Tests:', function () {
   const bidRequests = [{

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/vrtcalBidAdapter';
+import {spec} from '../../../modules/vrtcalBidAdapter.js';
 
 describe('Vrtcal Adapter', function () {
   let bid = {

@@ -1,7 +1,10 @@
 // RealVu Analytics Adapter
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const utils = require('../src/utils.js');
 
@@ -779,7 +782,7 @@ export let lib = {
   writePos: function (a) {
     try {
       let v = a.x + ',' + a.y + ',' + a.w + ',' + a.h;
-      localStorage.setItem(this.keyPos(a), v);
+      storage.setDataInLocalStorage(this.keyPos(a), v);
     } catch (ex) {
       /* continue regardless of error */
     }
@@ -787,7 +790,7 @@ export let lib = {
 
   readPos: function (a) {
     try {
-      let s = localStorage.getItem(this.keyPos(a));
+      let s = storage.getDataFromLocalStorage(this.keyPos(a));
       if (s) {
         let v = s.split(',');
         a.x = parseInt(v[0], 10);
@@ -806,7 +809,7 @@ export let lib = {
   incrMem: function(a, evt, name) {
     try {
       let k1 = this.keyPos(a) + '.' + name;
-      let vmem = localStorage.getItem(k1);
+      let vmem = storage.getDataFromLocalStorage(k1);
       if (vmem == null) vmem = '1:3';
       let vr = vmem.split(':');
       let nv = parseInt(vr[0], 10);
@@ -819,7 +822,7 @@ export let lib = {
       if (evt == 'v') {
         nv |= 1;
       }
-      localStorage.setItem(k1, nv + ':' + nr);
+      storage.setDataInLocalStorage(k1, nv + ':' + nr);
     } catch (ex) {
       /* do nothing */
     }
@@ -827,7 +830,7 @@ export let lib = {
 
   score: function (a, name) {
     try {
-      let vstr = localStorage.getItem(this.keyPos(a) + '.' + name);
+      let vstr = storage.getDataFromLocalStorage(this.keyPos(a) + '.' + name);
       if (vstr != null) {
         let vr = vstr.split(':');
         let nv = parseInt(vr[0], 10);

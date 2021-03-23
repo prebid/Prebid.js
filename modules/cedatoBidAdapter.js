@@ -1,13 +1,15 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+
+const storage = getStorageManager();
 
 const BIDDER_CODE = 'cedato';
 const BID_URL = 'https://h.cedatoplayer.com/hb';
 const SYNC_URL = 'https://h.cedatoplayer.com/hb_usync';
 const TTL = 10000;
 const CURRENCY = 'USD';
-const FIRST_PRICE = 1;
 const NET_REVENUE = true;
 
 export const spec = {
@@ -20,16 +22,13 @@ export const spec = {
       bid.params &&
       bid.params.player_id &&
       utils.checkCookieSupport() &&
-      utils.cookiesAreEnabled()
+      storage.cookiesAreEnabled()
     );
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
-    const req = bidRequests[Math.floor(Math.random() * bidRequests.length)];
-    const params = req.params;
-    const at = FIRST_PRICE;
-    const site = { id: params.player_id, domain: document.domain };
-    const device = { ua: navigator.userAgent };
+    const site = { domain: document.domain };
+    const device = { ua: navigator.userAgent, w: screen.width, h: screen.height };
     const currency = CURRENCY;
     const tmax = bidderRequest.timeout;
     const auctionId = bidderRequest.auctionId;
@@ -39,7 +38,7 @@ export const spec = {
     const imp = bidRequests.map(req => {
       const banner = getMediaType(req, 'banner');
       const video = getMediaType(req, 'video');
-      const bidfloor = params.bidfloor;
+      const params = req.params;
       const bidId = req.bidId;
       const adUnitCode = req.adUnitCode;
       const bidRequestsCount = req.bidRequestsCount;
@@ -51,16 +50,15 @@ export const spec = {
         banner,
         video,
         adUnitCode,
-        bidfloor,
         bidRequestsCount,
         bidderWinsCount,
-        transactionId
+        transactionId,
+        params
       };
     });
 
     const payload = {
       version: '$prebid.version$',
-      at,
       site,
       device,
       imp,
@@ -83,12 +81,7 @@ export const spec = {
       }
     }
 
-    return {
-      method: 'POST',
-      url: params.bid_url || BID_URL,
-      data: JSON.stringify(payload),
-      bidderRequest
-    };
+    return formatRequest(payload, bidderRequest);
   },
 
   interpretResponse: function(resp, {bidderRequest}) {
@@ -184,6 +177,33 @@ function newBid(serverBid, bidderRequest) {
   }
 
   return bid;
+}
+
+function formatRequest(payload, bidderRequest) {
+  const payloadByUrl = {};
+  const requests = [];
+
+  payload.imp.forEach(imp => {
+    const url = imp.params.bid_url || BID_URL;
+    if (!payloadByUrl[url]) {
+      payloadByUrl[url] = {
+        ...payload,
+        imp: []
+      };
+    }
+    payloadByUrl[url].imp.push(imp);
+  });
+
+  for (const url in payloadByUrl) {
+    requests.push({
+      url,
+      method: 'POST',
+      data: JSON.stringify(payloadByUrl[url]),
+      bidderRequest
+    });
+  }
+
+  return requests;
 }
 
 const getSync = (type, gdprConsent, uspConsent = '') => {

@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
@@ -20,6 +20,19 @@ function isBidResponseValid(bid) {
       return Boolean(bid.native);
     default:
       return false;
+  }
+}
+
+function getUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+    eids.push({
+      source,
+      uids: [ uid ]
+    });
   }
 }
 
@@ -43,15 +56,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    let winTop = window;
-    let location;
-    try {
-      location = new URL(bidderRequest.refererInfo.referer)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      utils.logMessage(e);
-    };
+    const winTop = utils.getWindowTop();
+    const location = winTop.location;
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
@@ -60,12 +66,16 @@ export const spec = {
       'secure': location.protocol === 'https:' ? 1 : 0,
       'host': location.host,
       'page': location.pathname,
-      'placements': placements
+      'placements': placements,
     };
 
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
+      }
+      if (bidderRequest.gdprConsent) {
+        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL'
+        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
       }
     }
 
@@ -76,10 +86,33 @@ export const spec = {
         placementId: bid.params.placement_id,
         bidId: bid.bidId,
         sizes: bid.mediaTypes[traff].sizes,
-        traffic: traff
+        traffic: traff,
+        eids: [],
+        floor: {}
       };
+      if (typeof bid.getFloor === 'function') {
+        let tmpFloor = {};
+        for (let size of placement.sizes) {
+          tmpFloor = bid.getFloor({
+            currency: 'USD',
+            mediaType: traff,
+            size: size
+          });
+          if (tmpFloor) {
+            placement.floor[`${size[0]}x${size[1]}`] = tmpFloor.floor;
+          }
+        }
+      }
       if (bid.schain) {
         placement.schain = bid.schain;
+      }
+      if (bid.userId) {
+        getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
+        getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
+        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com')
+        getUserId(placement.eids, bid.userId.tdid, 'adserver.org', {
+          rtiPartner: 'TDID'
+        });
       }
       placements.push(placement);
     }

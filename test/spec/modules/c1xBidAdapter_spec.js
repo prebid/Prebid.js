@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { c1xAdapter } from 'modules/c1xBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { c1xAdapter } from 'modules/c1xBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://ht.c1exchange.com/ht';
 const BIDDER_CODE = 'c1x';

@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'komoona';
 const ENDPOINT = 'https://bidder.komoona.com/v1/GetSBids';

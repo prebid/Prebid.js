@@ -1,4 +1,4 @@
-import ga from 'modules/googleAnalyticsAdapter';
+import ga from 'modules/googleAnalyticsAdapter.js';
 
 var assert = require('assert');
 

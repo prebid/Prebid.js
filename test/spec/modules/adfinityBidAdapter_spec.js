@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/adfinityBidAdapter';
+import {spec} from '../../../modules/adfinityBidAdapter.js';
 
 describe('AdfinityAdapter', function () {
   let bid = {

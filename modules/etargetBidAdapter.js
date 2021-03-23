@@ -1,7 +1,7 @@
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'etarget';
 const countryMap = {
@@ -96,6 +96,7 @@ export const spec = {
           currency: data.win_cur,
           netRevenue: true,
           ttl: 360,
+          reason: data.reason ? data.reason : 'none',
           ad: data.banner,
           vastXml: data.vast_content,
           vastUrl: data.vast_link,

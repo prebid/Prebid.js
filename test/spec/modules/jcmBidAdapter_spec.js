@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/jcmBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/jcmBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://media.adfrontiers.com/';
 

@@ -1,4 +1,4 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'segmento';
 const URL = 'https://prebid-bidder.rutarget.ru/bid';

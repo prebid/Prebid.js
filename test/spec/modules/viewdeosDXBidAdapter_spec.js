@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/viewdeosDXBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/viewdeosDXBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
-const ENDPOINT = 'https://hb.sync.viewdeos.com/auction/';
+const ENDPOINT = 'https://ghb.sync.viewdeos.com/auction/';
 
 const DISPLAY_REQUEST = {
   'bidder': 'viewdeos',
@@ -43,6 +43,7 @@ const SERVER_VIDEO_RESPONSE = {
   }
   ]
 };
+const SERVER_OUSTREAM_VIDEO_RESPONSE = SERVER_VIDEO_RESPONSE;
 
 const SERVER_DISPLAY_RESPONSE = {
   'source': {'aid': 12345, 'pubId': 54321},
@@ -72,6 +73,25 @@ const SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS = {
   }],
   'cookieURLs': ['link3', 'link4'],
   'cookieURLSTypes': ['image', 'iframe']
+};
+
+const outstreamVideoBidderRequest = {
+  bidderCode: 'bidderCode',
+  bids: [{
+    'params': {
+      'aid': 12345,
+      'outstream': {
+        'video_controls': 'show'
+      }
+    },
+    mediaTypes: {
+      video: {
+        context: 'outstream',
+        playerSize: [640, 480]
+      }
+    },
+    bidId: '2e41f65424c87c'
+  }]
 };
 
 const videoBidderRequest = {
@@ -119,8 +139,16 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe('viewdeosDXBidAdapter', function () { // todo remove only
+describe('viewdeosDXBidAdapter', function () {
   const adapter = newBidder(spec);
+
+  describe('when outstream params are passing properly', function() {
+    const videoBids = spec.interpretResponse({body: SERVER_OUSTREAM_VIDEO_RESPONSE}, {bidderRequest: outstreamVideoBidderRequest});
+    it('should return renderer with expected outstream params config', function() {
+      expect(!!videoBids[0].renderer).to.equal(true);
+      expect(videoBids[0].renderer.getConfig().video_controls).to.equal('show');
+    })
+  })
 
   describe('user syncs as image', function () {
     it('should be returned if pixel enabled', function () {

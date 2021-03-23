@@ -1,6 +1,6 @@
-import { isValidSchainConfig, isSchainObjectValid, makeBidRequestsHook } from '../../../modules/schain';
-import { deepClone } from '../../../src/utils';
-import {config} from '../../../src/config';
+import { isValidSchainConfig, isSchainObjectValid, makeBidRequestsHook } from '../../../modules/schain.js';
+import { deepClone } from '../../../src/utils.js';
+import {config} from '../../../src/config.js';
 import { expect } from 'chai';
 
 describe('#isValidSchainConfig: module config validation', function() {

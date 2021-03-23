@@ -1,11 +1,11 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as bidfactory from '../src/bidfactory';
-import {BANNER} from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as bidfactory from '../src/bidfactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 var CONSTANTS = require('../src/constants.json');
 
 const BIDDER_CODE = 'tribeos';
-const ENDPOINT_URL = 'https://bidder-api-us-east.tribeos.io/prebid/';
+const ENDPOINT_URL = 'https://bidder.tribeos.tech/prebid/';
 const LOG_PREFIX = 'TRIBEOS: ';
 export const spec = {
   code: BIDDER_CODE,

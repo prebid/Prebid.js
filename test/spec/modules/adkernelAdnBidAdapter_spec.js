@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adkernelAdnBidAdapter';
+import {spec} from 'modules/adkernelAdnBidAdapter.js';
 
 describe('AdkernelAdn adapter', function () {
   const bid1_pub1 = {
@@ -243,17 +243,18 @@ describe('AdkernelAdn adapter', function () {
       expect(tagRequest).to.not.have.property('user');
     });
 
-    it('shouldn\'t contain gdpr-related information for default request', function () {
+    it('shouldn\'t contain gdpr nor ccpa information for default request', function () {
       let [_, tagRequests] = buildRequest([bid1_pub1]);
       expect(tagRequests[0]).to.not.have.property('user');
     });
 
-    it('should contain gdpr-related information if consent is configured', function () {
+    it('should contain gdpr and ccpa information if consent is configured', function () {
       let [_, bidRequests] = buildRequest([bid1_pub1],
-        {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}});
+        {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}, uspConsent: '1YNN'});
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('gdpr', 1);
       expect(bidRequests[0].user).to.have.property('consent', 'test-consent-string');
+      expect(bidRequests[0].user).to.have.property('us_privacy', '1YNN');
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {

@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
-import { VIDEO, BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'trustx';
 const ENDPOINT_URL = 'https://sofia.trustx.org/hb';
@@ -207,7 +207,6 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses, RendererCo
         const bid = slot.bids.shift();
         const bidResponse = {
           requestId: bid.bidId, // bid.bidderRequestId,
-          bidderCode: spec.code,
           cpm: serverBid.price,
           width: serverBid.w,
           height: serverBid.h,
