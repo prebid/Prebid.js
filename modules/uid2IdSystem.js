@@ -7,14 +7,26 @@
 
 import * as utils from '../src/utils.js'
 import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
-
-const MODULE_NAME = 'uid20';
+const MODULE_NAME = 'uid2';
 const GVLID = 887;
-const LOG_PRE_FIX = 'UID20: ';
+const LOG_PRE_FIX = 'UID2: ';
 const ADVERTISING_COOKIE = '__uid2_advertising_token';
+
+function readCookie() {
+  return storage.cookiesAreEnabled() ? storage.getCookie(ADVERTISING_COOKIE) : null;
+}
+
+function readFromLocalStorage() {
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(ADVERTISING_COOKIE) : null;
+}
+
+function getStorage() {
+  return getStorageManager(GVLID, MODULE_NAME);
+}
+
+const storage = getStorage();
 
 const logInfo = createLogInfo(LOG_PRE_FIX);
 
@@ -35,7 +47,7 @@ function encodeId(value) {
     const bidIds = {
       id: value
     }
-    result.uid20 = bidIds;
+    result.uid2 = bidIds;
     logInfo('Decoded value ' + JSON.stringify(result));
     return result;
   }
@@ -43,7 +55,7 @@ function encodeId(value) {
 }
 
 /** @type {Submodule} */
-export const uid20IdSubmodule = {
+export const uid2IdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -70,28 +82,16 @@ export const uid20IdSubmodule = {
    * @function
    * @param {SubmoduleConfig} [config]
    * @param {ConsentData|undefined} consentData
-   * @returns {uid20}
+   * @returns {sharedId}
    */
   getId(config, consentData) {
-    logInfo('Creating UID2');
-    let value = storage.getCookie(ADVERTISING_COOKIE);
+    logInfo('Creating UID 2.0');
+    let value = readCookie() || readFromLocalStorage();
     logInfo('The advertising token: ' + value);
     return {id: value}
   },
 
-  /**
-   * performs actions even if the id exists and returns a value
-   * @param config
-   * @param consentData
-   * @param storedId
-   * @returns {{callback: *}}
-   */
-  extendId(config, consentData, storedId) {
-    logInfo('Existing id ' + storedId);
-    let value = storage.getCookie(ADVERTISING_COOKIE);
-    return {id: value}
-  }
 };
 
 // Register submodule for userId
-submodule('userId', uid20IdSubmodule);
+submodule('userId', uid2IdSubmodule);

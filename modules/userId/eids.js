@@ -186,9 +186,9 @@ const USER_IDS_CONFIG = {
     source: 'novatiq.com',
     atype: 1
   },
-  'uid20': {
-    source: 'uid20.com',
-    atype: 1,
+  'uid2': {
+    source: 'uid2.com',
+    atype: 3,
     getValue: function(data) {
       return data.id;
     }
