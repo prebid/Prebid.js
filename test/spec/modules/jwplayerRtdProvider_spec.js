@@ -1,5 +1,5 @@
 import { fetchTargetingForMediaId, getVatFromCache, extractPublisherParams,
-  formatTargetingResponse, getVatFromPlayer, enrichAdUnits,
+  formatTargetingResponse, getVatFromPlayer, enrichAdUnits, addTargetingToBid,
   fetchTargetingInformation, jwplayerSubmodule } from 'modules/jwplayerRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -229,8 +229,8 @@ describe('jwplayerRtdProvider', function() {
 
           const bid = {};
           const adUnit = {
-            fpd: {
-              context: {
+            ortb2Imp: {
+              ext: {
                 data: {
                   jwTargeting: {
                     mediaID: mediaIdWithSegment,
@@ -252,7 +252,7 @@ describe('jwplayerRtdProvider', function() {
           };
           jwplayerSubmodule.getBidRequestData({ adUnits: [adUnit] }, bidRequestSpy);
           expect(bidRequestSpy.calledOnce).to.be.true;
-          expect(bid).to.have.deep.property('jwTargeting', expectedTargeting);
+          expect(bid.rtd.jwplayer).to.have.deep.property('targeting', expectedTargeting);
           fakeServer.respond();
           expect(bidRequestSpy.calledOnce).to.be.true;
         });
@@ -298,8 +298,8 @@ describe('jwplayerRtdProvider', function() {
         }
       ];
       const adUnit = {
-        fpd: {
-          context: {
+        ortb2Imp: {
+          ext: {
             data: {
               jwTargeting: {
                 mediaID: testIdForSuccess
@@ -313,8 +313,8 @@ describe('jwplayerRtdProvider', function() {
       enrichAdUnits([adUnit]);
       const bid1 = bids[0];
       const bid2 = bids[1];
-      expect(bid1).to.not.have.property('jwTargeting');
-      expect(bid2).to.not.have.property('jwTargeting');
+      expect(bid1).to.not.have.property('rtd');
+      expect(bid2).to.not.have.property('rtd');
 
       const request = fakeServer.requests[0];
       request.respond(
@@ -330,8 +330,8 @@ describe('jwplayerRtdProvider', function() {
         })
       );
 
-      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
-      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
+      expect(bid1.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
+      expect(bid2.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
     });
 
     it('immediately adds cached targeting', function () {
@@ -345,8 +345,8 @@ describe('jwplayerRtdProvider', function() {
         }
       ];
       const adUnit = {
-        fpd: {
-          context: {
+        ortb2Imp: {
+          ext: {
             data: {
               jwTargeting: {
                 mediaID: testIdForSuccess
@@ -373,8 +373,8 @@ describe('jwplayerRtdProvider', function() {
       enrichAdUnits([adUnit]);
       const bid1 = bids[0];
       const bid2 = bids[1];
-      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
-      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForSuccess);
+      expect(bid1.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
+      expect(bid2.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForSuccess);
     });
 
     it('adds content block when segments are absent and no request is pending', function () {
@@ -392,8 +392,8 @@ describe('jwplayerRtdProvider', function() {
         }
       ];
       const adUnit = {
-        fpd: {
-          context: {
+        ortb2Imp: {
+          ext: {
             data: {
               jwTargeting: {
                 mediaID: testIdForFailure
@@ -407,25 +407,49 @@ describe('jwplayerRtdProvider', function() {
       enrichAdUnits([adUnit]);
       const bid1 = bids[0];
       const bid2 = bids[1];
-      expect(bid1).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
-      expect(bid2).to.have.deep.property('jwTargeting', expectedTargetingForFailure);
+      expect(bid1.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForFailure);
+      expect(bid2.rtd.jwplayer).to.have.deep.property('targeting', expectedTargetingForFailure);
     });
   });
 
   describe(' Extract Publisher Params', function () {
-    it('should default to config', function () {
-      const config = { mediaID: 'test' };
+    const config = { mediaID: 'test' };
 
-      const adUnit1 = { fpd: { context: {} } };
-      const targeting1 = extractPublisherParams(adUnit1, config);
-      expect(targeting1).to.deep.equal(config);
+    it('should exclude adUnits that do not support instream video and do not specify jwTargeting', function () {
+      const oustreamAdUnit = { mediaTypes: { video: { context: 'outstream' } } };
+      const oustreamTargeting = extractPublisherParams(oustreamAdUnit, config);
+      expect(oustreamTargeting).to.be.undefined;
 
-      const adUnit2 = { fpd: { context: { data: { jwTargeting: {} } } } };
-      const targeting2 = extractPublisherParams(adUnit2, config);
-      expect(targeting2).to.deep.equal(config);
+      const bannerAdUnit = { mediaTypes: { banner: {} } };
+      const bannerTargeting = extractPublisherParams(bannerAdUnit, config);
+      expect(bannerTargeting).to.be.undefined;
 
-      const targeting3 = extractPublisherParams(null, config);
-      expect(targeting3).to.deep.equal(config);
+      const targeting = extractPublisherParams({}, config);
+      expect(targeting).to.be.undefined;
+    });
+
+    it('should include ad unit when media type is video and is instream', function () {
+      const adUnit = { mediaTypes: { video: { context: 'instream' } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
+    });
+
+    it('should include banner ad units that specify jwTargeting', function() {
+      const adUnit = { mediaTypes: { banner: {} }, ortb2Imp: { ext: { data: { jwTargeting: {} } } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
+    });
+
+    it('should include outstream ad units that specify jwTargeting', function() {
+      const adUnit = { mediaTypes: { video: { context: 'outstream' } }, ortb2Imp: { ext: { data: { jwTargeting: {} } } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
+    });
+
+    it('should fallback to config when empty jwTargeting is defined in ad unit', function () {
+      const adUnit = { ortb2Imp: { ext: { data: { jwTargeting: {} } } } };
+      const targeting = extractPublisherParams(adUnit, config);
+      expect(targeting).to.deep.equal(config);
     });
 
     it('should prioritize adUnit properties ', function () {
@@ -433,7 +457,7 @@ describe('jwplayerRtdProvider', function() {
       const expectedPlayerID = 'test_player_id';
       const config = { playerID: 'bad_id', mediaID: 'bad_id' };
 
-      const adUnit = { fpd: { context: { data: { jwTargeting: { mediaID: expectedMediaID, playerID: expectedPlayerID } } } } };
+      const adUnit = { ortb2Imp: { ext: { data: { jwTargeting: { mediaID: expectedMediaID, playerID: expectedPlayerID } } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.have.property('mediaID', expectedMediaID);
       expect(targeting).to.have.property('playerID', expectedPlayerID);
@@ -444,16 +468,97 @@ describe('jwplayerRtdProvider', function() {
       const expectedPlayerID = 'test_player_id';
       const config = { playerID: expectedPlayerID, mediaID: 'bad_id' };
 
-      const adUnit = { fpd: { context: { data: { jwTargeting: { mediaID: expectedMediaID } } } } };
+      const adUnit = { ortb2Imp: { ext: { data: { jwTargeting: { mediaID: expectedMediaID } } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.have.property('mediaID', expectedMediaID);
       expect(targeting).to.have.property('playerID', expectedPlayerID);
     });
 
-    it('should return empty object when Publisher Params are absent', function () {
-      const targeting = extractPublisherParams(null, null);
-      expect(targeting).to.deep.equal({});
+    it('should return undefined when Publisher Params are absent', function () {
+      const targeting = extractPublisherParams({}, null);
+      expect(targeting).to.be.undefined;
     })
+  });
+
+  describe('Add Targeting to Bid', function () {
+    const targeting = {foo: 'bar'};
+
+    it('creates realTimeData when absent from Bid', function () {
+      const targeting = {foo: 'bar'};
+      const bid = {};
+      addTargetingToBid(bid, targeting);
+      expect(bid).to.have.property('rtd');
+      expect(bid).to.have.nested.property('rtd.jwplayer.targeting', targeting);
+    });
+
+    it('adds to existing realTimeData', function () {
+      const otherRtd = {
+        targeting: {
+          seg: 'rtd seg'
+        }
+      };
+
+      const bid = {
+        rtd: {
+          otherRtd
+        }
+      };
+
+      addTargetingToBid(bid, targeting);
+      expect(bid).to.have.property('rtd');
+      const rtd = bid.rtd;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+
+      expect(rtd).to.have.deep.property('otherRtd', otherRtd);
+    });
+
+    it('adds to existing realTimeData.jwplayer', function () {
+      const otherInfo = { seg: 'rtd seg' };
+      const bid = {
+        rtd: {
+          jwplayer: {
+            otherInfo
+          }
+        }
+      };
+      addTargetingToBid(bid, targeting);
+
+      expect(bid).to.have.property('rtd');
+      const rtd = bid.rtd;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.otherInfo', otherInfo);
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
+
+    it('overrides existing jwplayer.targeting', function () {
+      const otherInfo = { seg: 'rtd seg' };
+      const bid = {
+        rtd: {
+          jwplayer: {
+            targeting: {
+              otherInfo
+            }
+          }
+        }
+      };
+      addTargetingToBid(bid, targeting);
+
+      expect(bid).to.have.property('rtd');
+      const rtd = bid.rtd;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
+
+    it('creates jwplayer when absent from realTimeData', function () {
+      const bid = { rtd: {} };
+      addTargetingToBid(bid, targeting);
+
+      expect(bid).to.have.property('rtd');
+      const rtd = bid.rtd;
+      expect(rtd).to.have.property('jwplayer');
+      expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
   });
 
   describe('jwplayerSubmodule', function () {
@@ -472,8 +577,8 @@ describe('jwplayerRtdProvider', function() {
         bidReqConfig = {
           adUnits: [
             {
-              fpd: {
-                context: {
+              ortb2Imp: {
+                ext: {
                   data: {
                     jwTargeting: {
                       mediaID: validMediaIDs[0]
@@ -486,8 +591,8 @@ describe('jwplayerRtdProvider', function() {
               ]
             },
             {
-              fpd: {
-                context: {
+              ortb2Imp: {
+                ext: {
                   data: {
                     jwTargeting: {
                       mediaID: validMediaIDs[1]
@@ -553,8 +658,8 @@ describe('jwplayerRtdProvider', function() {
       it('sets targeting data in proper structure', function () {
         const bid = {};
         const adUnitWithMediaId = {
-          fpd: {
-            context: {
+          ortb2Imp: {
+            ext: {
               data: {
                 jwTargeting: {
                   mediaID: testIdForSuccess
@@ -578,15 +683,15 @@ describe('jwplayerRtdProvider', function() {
         };
         jwplayerSubmodule.getBidRequestData({ adUnits: [adUnitWithMediaId, adUnitEmpty] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
-        expect(bid).to.have.deep.property('jwTargeting', expectedTargeting);
+        expect(bid.rtd.jwplayer).to.have.deep.property('targeting', expectedTargeting);
       });
 
       it('excludes segments when absent', function () {
         const adUnitCode = 'test_ad_unit';
         const bid = {};
         const adUnit = {
-          fpd: {
-            context: {
+          ortb2Imp: {
+            ext: {
               data: {
                 jwTargeting: {
                   mediaID: testIdForFailure
@@ -596,7 +701,7 @@ describe('jwplayerRtdProvider', function() {
           },
           bids: [ bid ]
         };
-        const expectedContentId = 'jw_' + adUnit.fpd.context.data.jwTargeting.mediaID;
+        const expectedContentId = 'jw_' + adUnit.ortb2Imp.ext.data.jwTargeting.mediaID;
         const expectedTargeting = {
           content: {
             id: expectedContentId
@@ -605,9 +710,9 @@ describe('jwplayerRtdProvider', function() {
 
         jwplayerSubmodule.getBidRequestData({ adUnits: [ adUnit ] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
-        expect(bid.jwTargeting).to.not.have.property('segments');
-        expect(bid.jwTargeting).to.not.have.property('segments');
-        expect(bid).to.have.deep.property('jwTargeting', expectedTargeting);
+        expect(bid.rtd.jwplayer.targeting).to.not.have.property('segments');
+        expect(bid.rtd.jwplayer.targeting).to.not.have.property('segments');
+        expect(bid.rtd.jwplayer).to.have.deep.property('targeting', expectedTargeting);
       });
 
       it('does not modify bid when jwTargeting block is absent', function () {
@@ -627,8 +732,8 @@ describe('jwplayerRtdProvider', function() {
 
         const adUnitEmptyfpd = {
           code: 'test_ad_unit_empty_fpd',
-          fpd: {
-            context: {
+          ortb2Imp: {
+            ext: {
               id: 'sthg'
             }
           },
@@ -637,9 +742,9 @@ describe('jwplayerRtdProvider', function() {
 
         jwplayerSubmodule.getBidRequestData({ adUnits: [adUnitWithMediaId, adUnitEmpty, adUnitEmptyfpd] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
-        expect(bid1).to.not.have.property('jwTargeting');
-        expect(bid2).to.not.have.property('jwTargeting');
-        expect(bid3).to.not.have.property('jwTargeting');
+        expect(bid1).to.not.have.property('rtd');
+        expect(bid2).to.not.have.property('rtd');
+        expect(bid3).to.not.have.property('rtd');
       });
     });
   });

@@ -70,8 +70,7 @@ export const spec = {
       if (response.cpm > 0) {
         const bidResponse = {
           requestId: response.id,
-          creativeId: response.id,
-          adId: response.id,
+          creativeId: response.crid || response.id,
           cpm: response.cpm,
           width: response.width,
           height: response.height,

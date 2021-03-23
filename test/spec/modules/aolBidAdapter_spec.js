@@ -93,7 +93,7 @@ describe('AolAdapter', function () {
 
   const USER_ID_DATA = {
     criteoId: SUPPORTED_USER_ID_SOURCES['criteo.com'],
-    vmuid: SUPPORTED_USER_ID_SOURCES['verizonmedia.com'],
+    connectid: SUPPORTED_USER_ID_SOURCES['verizonmedia.com'],
     idl_env: SUPPORTED_USER_ID_SOURCES['liveramp.com'],
     lipb: {
       lipbid: SUPPORTED_USER_ID_SOURCES['liveintent.com'],
@@ -490,7 +490,7 @@ describe('AolAdapter', function () {
           '&param1=val1&param2=val2&param3=val3&param4=val4');
       });
 
-      for (const [source, idValue] of Object.entries(SUPPORTED_USER_ID_SOURCES)) {
+      Object.keys(SUPPORTED_USER_ID_SOURCES).forEach(source => {
         it(`should set the user ID query param for ${source}`, function () {
           let bidRequest = createCustomBidRequest({
             params: getNexageGetBidParams()
@@ -498,9 +498,9 @@ describe('AolAdapter', function () {
           bidRequest.bids[0].userId = {};
           bidRequest.bids[0].userIdAsEids = createEidsArray(USER_ID_DATA);
           let [request] = spec.buildRequests(bidRequest.bids);
-          expect(request.url).to.contain(`&eid${source}=${encodeURIComponent(idValue)}`);
+          expect(request.url).to.contain(`&eid${source}=${encodeURIComponent(SUPPORTED_USER_ID_SOURCES[source])}`);
         });
-      }
+      });
 
       it('should return request object for One Mobile POST endpoint when POST configuration is present', function () {
         let bidConfig = getNexagePostBidParams();

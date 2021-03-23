@@ -44,7 +44,8 @@ module.exports = (function () {
     eventsFired.push({
       eventType: eventString,
       args: eventPayload,
-      id: key
+      id: key,
+      elapsedTime: utils.getPerformanceNow(),
     });
 
     /** Push each specific callback to the `callbacks` array.
