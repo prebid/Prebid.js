@@ -75,11 +75,29 @@ describe('riseAdapter', function () {
       bidderCode: 'rise',
     }
 
+    const customSessionId = '12345678';
+
     it('sends bid request to ENDPOINT via GET', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (const request of requests) {
         expect(request.url).to.equal(ENDPOINT);
         expect(request.method).to.equal('GET');
+      }
+    });
+
+    it('sends the is_wrapper query param', function () {
+      bidRequests[0].params.isWrapper = true;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      for (const request of requests) {
+        expect(request.data.is_wrapper).to.equal(true);
+      }
+    });
+
+    it('sends the custom session id as a query param', function () {
+      bidRequests[0].params.sessionId = customSessionId;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      for (const request of requests) {
+        expect(request.data.session_id).to.equal(customSessionId);
       }
     });
 
