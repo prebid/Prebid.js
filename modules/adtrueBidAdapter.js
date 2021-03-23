@@ -511,9 +511,7 @@ export const spec = {
     if (typeof config.getConfig('device') === 'object') {
       payload.device = Object.assign(payload.device, config.getConfig('device'));
     }
-
     utils.deepSetValue(payload, 'source.tid', conf.transactionId);
-
     // test bids
     if (window.location.href.indexOf('adtrueTest=true') !== -1) {
       payload.test = 1;
@@ -617,19 +615,25 @@ export const spec = {
     if (!responses || responses.length === 0 || (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled)) {
       return [];
     }
-    return responses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.cookie_sync)
-      .map(rsp => rsp.body.ext.cookie_sync)
-      .reduce((a, b) => a.concat(b), [])
-      .map(({url, type}) => ({
-        type: SYNC_TYPES[type],
-        url: url +
-          '&publisherId=' + publisherId +
-          '&zoneId=' + zoneId +
-          '&gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0) +
-          '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : '')) +
-          '&us_privacy=' + encodeURIComponent((uspConsent || '')) +
-          '&coppa=' + (config.getConfig('coppa') === true ? 1 : 0)
-      }));
+    return responses.reduce((accum, rsp) => {
+      let cookieSyncs = utils.deepAccess(rsp, 'body.ext.cookie_sync');
+      if (cookieSyncs) {
+        let cookieSyncObjects = cookieSyncs.map(cookieSync => {
+          return {
+            type: SYNC_TYPES[cookieSync.type],
+            url: cookieSync.url +
+              '&publisherId=' + publisherId +
+              '&zoneId=' + zoneId +
+              '&gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0) +
+              '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : '')) +
+              '&us_privacy=' + encodeURIComponent((uspConsent || '')) +
+              '&coppa=' + (config.getConfig('coppa') === true ? 1 : 0)
+          };
+        });
+        return accum.concat(cookieSyncObjects);
+      }
+    }, []);
   }
 };
+
 registerBidder(spec);
