@@ -111,7 +111,7 @@ export function notifyTranslationModule(fn) {
   fn.call(this, 'dfp');
 }
 
-getHook('registerAdserver').before(notifyTranslationModule);
+if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('registerAdserver').before(notifyTranslationModule); }
 
 /**
  * @typedef {Object} DfpAdpodOptions
