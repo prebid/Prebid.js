@@ -41,6 +41,8 @@ export const spec = {
     const ua = navigator.userAgent;
     const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
+    const bcat = setOnAny(validBidRequests, 'params.bcat');
+    const badv = setOnAny(validBidRequests, 'params.badv');
     const cur = CURRENCY;
     const endpointUrl = config.getConfig('zemanta.bidderUrl') || config.getConfig('outbrain.bidderUrl');
     const timeout = bidderRequest.timeout;
@@ -77,7 +79,9 @@ export const spec = {
       source: { fd: 1 },
       cur: [cur],
       tmax: timeout,
-      imp: imps
+      imp: imps,
+      bcat: bcat,
+      badv: badv,
     };
 
     if (test) {

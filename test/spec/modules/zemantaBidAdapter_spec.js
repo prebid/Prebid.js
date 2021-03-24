@@ -251,16 +251,24 @@ describe('Zemanta Adapter', function () {
         expect(res.data).to.deep.equal(JSON.stringify(expectedData))
       })
 
-      it('should pass optional tagid in request', function () {
+      it('should pass optional parameters in request', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
         }
         bidRequest.params.tagid = 'test-tag'
+        bidRequest.params.publisher.name = 'test-publisher'
+        bidRequest.params.publisher.domain = 'test-publisher.com'
+        bidRequest.params.bcat = ['bad-category']
+        bidRequest.params.badv = ['bad-advertiser']
 
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         const resData = JSON.parse(res.data)
         expect(resData.imp[0].tagid).to.equal('test-tag')
+        expect(resData.site.publisher.name).to.equal('test-publisher')
+        expect(resData.site.publisher.domain).to.equal('test-publisher.com')
+        expect(resData.bcat).to.deep.equal(['bad-category'])
+        expect(resData.badv).to.deep.equal(['bad-advertiser'])
       });
 
       it('should pass bidder timeout', function () {
