@@ -253,6 +253,35 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
   }
+
+  // Universal ID
+  const userId = utils.deepAccess(validBidRequests, 'userId');
+  const eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
+  
+  utils.logMessage('-------- UID ------------')
+  utils.logMessage(validBidRequests);
+  utils.logMessage(eidsArr);
+  utils.logMessage(userId);
+
+  let eids = [];
+  eidsArr.forEach(eidsElement => {
+    utils.logMessage('-------- EID ELEMENT ------------')
+    utils.logMessage(eidsElement)
+    if (eidsElement.source && eidsElement.uids[0].id) {
+      eids.push({
+        source: eidsElement.source,
+        userId: eidsElement.uids[0].id
+      });
+    }
+  });
+  utils.logMessage('-------- EIDS ------------')
+  utils.logMessage(eids)
+
+  let user = {};
+  user.eids = eidsArr;
+  payload.user = user;
+
+  utils.logMessage('-------- UID ------------')
   // < GDPR
 
   // > Payload
@@ -267,6 +296,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.params = params;
   payload.regs = regs;
   // < Payload
+
+  utils.logMessage('-------- PAYLOAD ------------')
+  utils.logMessage(JSON.stringify(payload))
+  utils.logMessage('-------- PAYLOAD ------------')
 
   return {
     method: 'POST',
