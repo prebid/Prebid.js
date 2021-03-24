@@ -19,7 +19,7 @@ describe('Optimon Analytics Adapter', () => {
   let optmn_queue = [];
 
   beforeEach(() => {
-    optmn_currentWindow.optimonAnalyticsAdapter = (...arguments) => queue.push(arguments);
+    optmn_currentWindow.optimonAnalyticsAdapter = (...arguments) => optmn_queue.push(arguments);
     adapterManager.enableAnalytics({
       provider: 'optimon'
     });
@@ -37,7 +37,7 @@ describe('Optimon Analytics Adapter', () => {
       events.emit(constants.EVENTS[CONSTANTS.EVENTS[i]], optmn_arguments);
     }
 
-    expect(queue.length).to.eql(3);
+    expect(optmn_queue.length).to.eql(3);
   });
 });
 
