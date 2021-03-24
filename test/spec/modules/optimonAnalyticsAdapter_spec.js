@@ -17,7 +17,7 @@ describe('Optimon Analytics Adapter', () => {
   let optmn_queue = [];
 
   beforeEach(() => {
-    optmn_currentWindow.optimonAnalyticsAdapter = (...optmn_args) => optmn_queue.push(optmn_args);
+    optmn_currentWindow.OptimonAnalyticsAdapter = (...optmn_args) => optmn_queue.push(optmn_args);
     adapterManager.enableAnalytics({
       provider: 'optimon'
     });
@@ -25,7 +25,7 @@ describe('Optimon Analytics Adapter', () => {
   });
 
   afterEach(() => {
-    optimonAnalyticsAdapter.finishedSendingAnalyticsData();
+    OptimonAnalyticsAdapter.disableAnalytics();
   });
 
   it('should forward all events to the queue', () => {
@@ -36,62 +36,5 @@ describe('Optimon Analytics Adapter', () => {
     events.emit(constants.EVENTS.BID_WON, args)
 
     expect(optmn_queue.length).to.eql(3);
-  });
-});
-
-describe('when auction ended', function () {
-  let auction;
-
-  beforeEach(function () {
-    simulateAuction([
-      [AUCTION_END, optmn_handleAuctionEnd],
-    ]);
-    auction = JSON.parse(server.requests[0].requestBody)[0];
-  });
-
-  afterEach(function () {
-    optimonAnalyticsAdapter.sendAuctionToServer(auction);
-  });
-
-  it('should track the adunit code', function () {
-    expect(auction.adUnits[0].code).to.equal(AD_UNIT_CODE);
-  });
-});
-
-describe('when bid won', function () {
-  let auction;
-
-  beforeEach(function () {
-    simulateAuction([
-      [BID_WON, optmn_handleBidWon],
-    ]);
-    auction = JSON.parse(server.requests[0].requestBody)[0];
-  });
-
-  afterEach(function () {
-    optimonAnalyticsAdapter.sendAuctionToServer(auction);
-  });
-
-  it('should track the adunit code', function () {
-    expect(auction.adUnits[0].code).to.equal(AD_UNIT_CODE);
-  });
-});
-
-describe('when bid timeout', function () {
-  let auction;
-
-  beforeEach(function () {
-    simulateAuction([
-      [BID_TIMEOUT, optmn_handleBidTimeout],
-    ]);
-    auction = JSON.parse(server.requests[0].requestBody)[0];
-  });
-
-  afterEach(function () {
-    optimonAnalyticsAdapter.sendAuctionToServer(auction);
-  });
-
-  it('should track the adunit code', function () {
-    expect(auction.adUnits[0].code).to.equal(AD_UNIT_CODE);
   });
 });
