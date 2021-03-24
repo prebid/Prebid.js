@@ -286,6 +286,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
+  utils.logMessage('-------- PAYLOAD ------------')
+  utils.logMessage(JSON.stringify(payload))
+  utils.logMessage('-------- PAYLOAD ------------')
+
   return {
     method: 'POST',
     url: `https://${HOST}/${ENDPOINT}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
