@@ -32,9 +32,9 @@ describe('Optimon Analytics Adapter', () => {
   });
 
   it('should forward all events to the queue', () => {
-    const optmn_arguments = [ AD_UNIT_CODE, PUBLISHER_CONFIG];
+    const optmn_arguments = [AD_UNIT_CODE, PUBLISHER_CONFIG];
 
-    for(var i = 0; i < DEF.EVENTS.length; i++) {
+    for (var i = 0; i < DEF.EVENTS.length; i++) {
       events.emit(constants.EVENTS[DEF.EVENTS[i]], optmn_arguments);
     }
 
