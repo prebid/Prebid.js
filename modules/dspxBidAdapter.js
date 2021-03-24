@@ -131,7 +131,7 @@ export const spec = {
 
     const syncs = []
 
-    var gdprParams = '';
+    let gdprParams = '';
     if (gdprConsent) {
       if ('gdprApplies' in gdprConsent && typeof gdprConsent.gdprApplies === 'boolean') {
         gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
