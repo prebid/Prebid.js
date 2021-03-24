@@ -25,15 +25,15 @@ describe('Optimon Analytics Adapter', () => {
   });
 
   afterEach(() => {
-    OptimonAnalyticsAdapter.disableAnalytics();
+    optimonAnalyticsAdapter.disableAnalytics();
   });
 
   it('should forward all events to the queue', () => {
     const optmn_arguments = [AD_UNIT_CODE, PUBLISHER_CONFIG];
 
-    events.emit(constants.EVENTS.AUCTION_END, args)
-    events.emit(constants.EVENTS.BID_TIMEOUT, args)
-    events.emit(constants.EVENTS.BID_WON, args)
+    events.emit(constants.EVENTS.AUCTION_END, optmn_arguments)
+    events.emit(constants.EVENTS.BID_TIMEOUT, optmn_arguments)
+    events.emit(constants.EVENTS.BID_WON, optmn_arguments)
 
     expect(optmn_queue.length).to.eql(3);
   });
