@@ -1,18 +1,19 @@
 import * as utils from 'src/utils.js';
+import { expect } from 'chai';
 import optimonAnalyticsAdapter from '../../../modules/optimonAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
 import events from 'src/events';
 import constants from 'src/constants.json'
 
 const {
-  EVENTS: { BID_TIMEOUT, BID_WON, AUCTION_END },
-  AD_UNIT_CODE = 'demo-adunit-1',
-  PUBLISHER_CONFIG = {
-    pubId: 'optimon_test',
-    pubAdxAccount: 123456789,
-    pubTimezone: 'Asia/Jerusalem'
-  }
-} = CONSTANTS;
+  EVENTS: { BID_TIMEOUT, BID_WON, AUCTION_END }
+} = DEF;
+const AD_UNIT_CODE = 'demo-adunit-1';
+const PUBLISHER_CONFIG = {
+  pubId: 'optimon_test',
+  pubAdxAccount: 123456789,
+  pubTimezone: 'Asia/Jerusalem'
+};
 
 describe('Optimon Analytics Adapter', () => {
   const optmn_currentWindow = utils.getWindowSelf();
@@ -33,8 +34,8 @@ describe('Optimon Analytics Adapter', () => {
   it('should forward all events to the queue', () => {
     const optmn_arguments = [ AD_UNIT_CODE, PUBLISHER_CONFIG, ...arguments[0]];
 
-    for(var i = 0; i < CONSTANTS.EVENTS.length; i++) {
-      events.emit(constants.EVENTS[CONSTANTS.EVENTS[i]], optmn_arguments);
+    for(var i = 0; i < DEF.EVENTS.length; i++) {
+      events.emit(constants.EVENTS[DEF.EVENTS[i]], optmn_arguments);
     }
 
     expect(optmn_queue.length).to.eql(3);
