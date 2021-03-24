@@ -1,12 +1,27 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {
+  registerBidder
+} from '../src/adapters/bidderFactory.js';
+import {
+  BANNER,
+  NATIVE,
+  VIDEO
+} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import {config} from '../src/config.js';
+import {
+  config
+} from '../src/config.js';
 
 const BIDDER_CODE = 'gothamads';
 const ACCOUNTID_MACROS = '[account_id]';
 const URL_ENDPOINT = `https://us-e-node1.gothamads.com/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;
-const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
+const NATIVE_ASSET_IDS = {
+  0: 'title',
+  2: 'icon',
+  3: 'image',
+  5: 'sponsoredBy',
+  4: 'body',
+  1: 'cta'
+};
 const NATIVE_PARAMS = {
   title: {
     id: 0,
@@ -94,9 +109,23 @@ export const spec = {
         source: {
           tid: bidRequest.transactionId
         },
+        regs: {
+          coppa: config.getConfig('coppa') === true ? 1 : 0,
+          ext: {}
+        },
         tmax: bidRequest.timeout,
         imp: [impObject],
       };
+      if (bidRequest) {
+        if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
+          utils.deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
+          utils.deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
+        }
+
+        if (bidRequest.uspConsent !== undefined) {
+          utils.deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
+        }
+      }
       bids.push(data)
     }
     return {
@@ -164,18 +193,27 @@ const checkRequestType = (bidRequest, type) => {
 }
 
 const parseNative = admObject => {
-  const { assets, link, imptrackers, jstracker } = admObject.native;
+  const {
+    assets,
+    link,
+    imptrackers,
+    jstracker
+  } = admObject.native;
   const result = {
     clickUrl: link.url,
     clickTrackers: link.clicktrackers || undefined,
     impressionTrackers: imptrackers || undefined,
-    javascriptTrackers: jstracker ? [ jstracker ] : undefined
+    javascriptTrackers: jstracker ? [jstracker] : undefined
   };
   assets.forEach(asset => {
     const kind = NATIVE_ASSET_IDS[asset.id];
     const content = kind && asset[NATIVE_PARAMS[kind].name];
     if (content) {
-      result[kind] = content.text || content.value || { url: content.url, width: content.w, height: content.h };
+      result[kind] = content.text || content.value || {
+        url: content.url,
+        width: content.w,
+        height: content.h
+      };
     }
   });
 
