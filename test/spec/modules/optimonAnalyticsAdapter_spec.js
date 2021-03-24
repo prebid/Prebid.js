@@ -20,7 +20,7 @@ describe('Optimon Analytics Adapter', () => {
   let optmn_queue = [];
 
   beforeEach(() => {
-    optmn_currentWindow.optimonAnalyticsAdapter = (...arguments) => optmn_queue.push(arguments);
+    optmn_currentWindow.optimonAnalyticsAdapter = (...optmn_args) => optmn_queue.push(optmn_args);
     adapterManager.enableAnalytics({
       provider: 'optimon'
     });
@@ -32,7 +32,7 @@ describe('Optimon Analytics Adapter', () => {
   });
 
   it('should forward all events to the queue', () => {
-    const optmn_arguments = [ AD_UNIT_CODE, PUBLISHER_CONFIG, ...arguments[0]];
+    const optmn_arguments = [ AD_UNIT_CODE, PUBLISHER_CONFIG];
 
     for(var i = 0; i < DEF.EVENTS.length; i++) {
       events.emit(constants.EVENTS[DEF.EVENTS[i]], optmn_arguments);
