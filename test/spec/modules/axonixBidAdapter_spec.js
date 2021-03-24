@@ -179,7 +179,8 @@ describe('AxonixBidAdapter', function () {
       expect(data.site).to.have.property('page', 'https://www.prebid.org');
 
       expect(data).to.have.property('validBidRequest', BANNER_REQUEST);
-      expect(data).to.have.property('connectiontype').to.exist;
+      expect(data).to.have.property('connectionType').to.exist;
+      expect(data).to.have.property('effectiveType').to.exist;
       expect(data).to.have.property('devicetype', 2);
       expect(data).to.have.property('bidfloor', 0);
       expect(data).to.have.property('dnt', 0);
@@ -237,7 +238,8 @@ describe('AxonixBidAdapter', function () {
       expect(data.site).to.have.property('page', 'https://www.prebid.org');
 
       expect(data).to.have.property('validBidRequest', VIDEO_REQUEST);
-      expect(data).to.have.property('connectiontype').to.exist;
+      expect(data).to.have.property('connectionType').to.exist;
+      expect(data).to.have.property('effectiveType').to.exist;
       expect(data).to.have.property('devicetype', 2);
       expect(data).to.have.property('bidfloor', 0);
       expect(data).to.have.property('dnt', 0);
