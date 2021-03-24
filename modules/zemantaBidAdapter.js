@@ -143,10 +143,18 @@ export const spec = {
       }
     }).filter(Boolean);
   },
-  getUserSyncs: (syncOptions) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     const syncs = [];
-    const syncUrl = config.getConfig('zemanta.usersyncUrl') || config.getConfig('outbrain.usersyncUrl');
+    let syncUrl = config.getConfig('zemanta.usersyncUrl') || config.getConfig('outbrain.usersyncUrl');
     if (syncOptions.pixelEnabled && syncUrl) {
+      if (gdprConsent) {
+        syncUrl += '&gdpr=' + (gdprConsent.gdprApplies & 1);
+        syncUrl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+      }
+      if (uspConsent) {
+        syncUrl += '&us_privacy=' + encodeURIComponent(uspConsent);
+      }
+
       syncs.push({
         type: 'image',
         url: syncUrl
