@@ -5,9 +5,6 @@ import adapterManager from 'src/adapterManager';
 import events from 'src/events';
 import constants from 'src/constants.json'
 
-const {
-  EVENTS: { BID_TIMEOUT, BID_WON, AUCTION_END }
-} = DEF;
 const AD_UNIT_CODE = 'demo-adunit-1';
 const PUBLISHER_CONFIG = {
   pubId: 'optimon_test',
@@ -34,9 +31,9 @@ describe('Optimon Analytics Adapter', () => {
   it('should forward all events to the queue', () => {
     const optmn_arguments = [AD_UNIT_CODE, PUBLISHER_CONFIG];
 
-    for (var i = 0; i < DEF.EVENTS.length; i++) {
-      events.emit(constants.EVENTS[DEF.EVENTS[i]], optmn_arguments);
-    }
+    events.emit(constants.EVENTS.AUCTION_END, args)
+    events.emit(constants.EVENTS.BID_TIMEOUT, args)
+    events.emit(constants.EVENTS.BID_WON, args)
 
     expect(optmn_queue.length).to.eql(3);
   });
