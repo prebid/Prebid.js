@@ -3,10 +3,8 @@ import {
   init,
   addBidResponseHook,
   addListenerOnce,
-  getRenderPayload,
-  render,
   listenerAdded,
-  massEnabled
+  isEnabled
 } from 'modules/mass';
 import { logInfo } from 'src/utils.js';
 
@@ -70,12 +68,12 @@ describe('MASS Module', function() {
   let bidderRequest = Object.assign({}, mockedBidderRequest);
 
   it('should be enabled by default', function() {
-    expect(massEnabled).to.equal(true);
+    expect(isEnabled).to.equal(true);
   });
 
   it('can be disabled', function() {
     init({enabled: false});
-    expect(massEnabled).to.equal(false);
+    expect(isEnabled).to.equal(false);
   });
 
   it('should only affect MASS bids', function() {
@@ -114,17 +112,5 @@ describe('MASS Module', function() {
   it('should add a message listener', function() {
     addListenerOnce();
     expect(listenerAdded).to.equal(true);
-  });
-
-  it('should get correct bid in render payload', function() {
-    const payload = getRenderPayload({data: {massBidId: 'mass-bid-1'}});
-    expect(payload.type).to.equal('prebid');
-    expect(payload.bid.bidId).to.equal('mass-bid-1');
-  });
-
-  it('should load the bootloader on rendering', function() {
-    render({});
-    expect(window.mass).to.be.an('object');
-    expect(window.mass.bootloader.loaded).to.equal(true);
   });
 });
