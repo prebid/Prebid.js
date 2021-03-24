@@ -10,6 +10,7 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'zemanta';
+const GVLID = 164;
 const CURRENCY = 'USD';
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
 const NATIVE_PARAMS = {
@@ -23,7 +24,10 @@ const NATIVE_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['outbrain'],
+  gvlid: GVLID,
+  aliases: [
+    { code: 'outbrain', gvlid: GVLID }
+  ],
   supportedMediaTypes: [ NATIVE, BANNER ],
   isBidRequestValid: (bid) => {
     return (
