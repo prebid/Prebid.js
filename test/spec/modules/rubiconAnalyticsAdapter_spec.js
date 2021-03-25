@@ -135,6 +135,31 @@ const BID3 = Object.assign({}, BID, {
   }
 });
 
+const BID4 = Object.assign({}, BID, {
+  adUnitCode: '/19968336/header-bid-tag1',
+  bidId: '3bd4ebb1c900e2',
+  adId: 'fake_ad_id',
+  requestId: '3bd4ebb1c900e2',
+  width: 728,
+  height: 90,
+  mediaType: 'banner',
+  cpm: 1.52,
+  source: 'server',
+  pbsBidId: 'zzzz-yyyy-xxxx-wwww',
+  seatBidId: 'aaaa-bbbb-cccc-dddd',
+  rubiconTargeting: {
+    'rpfl_elemid': '/19968336/header-bid-tag1',
+    'rpfl_14062': '2_tier0100'
+  },
+  adserverTargeting: {
+    'hb_bidder': 'rubicon',
+    'hb_adid': '3bd4ebb1c900e2',
+    'hb_pb': '1.500',
+    'hb_size': '728x90',
+    'hb_source': 'server'
+  }
+});
+
 const floorMinRequest = {
   'bidder': 'rubicon',
   'params': {
@@ -1713,6 +1738,39 @@ describe('rubicon analytics adapter', function () {
       validate(message);
       expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal('abc-123-do-re-me');
       expect(message.bidsWon[0].bidId).to.equal('abc-123-do-re-me');
+    });
+
+    it('should correctly overwrite bidId if pbsBidId is on the bidResponse', function () {
+      // Only want one bid request in our mock auction
+      let bidRequested = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequested.bids.shift();
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.adUnits.shift();
+
+      // clone the mock bidResponse and duplicate
+      let seatBidResponse = utils.deepClone(BID4);
+
+      const setTargeting = {
+        [seatBidResponse.adUnitCode]: seatBidResponse.adserverTargeting
+      };
+
+      const bidWon = Object.assign({}, seatBidResponse, {
+        'status': 'rendered'
+      });
+
+      // spoof the auction with just our duplicates
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, bidRequested);
+      events.emit(BID_RESPONSE, seatBidResponse);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, setTargeting);
+      events.emit(BID_WON, bidWon);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal('zzzz-yyyy-xxxx-wwww');
+      expect(message.bidsWon[0].bidId).to.equal('zzzz-yyyy-xxxx-wwww');
     });
 
     it('should pick the highest cpm bid if more than one bid per bidRequestId', function () {
