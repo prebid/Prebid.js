@@ -462,27 +462,30 @@ describe('gumgumAdapter', function () {
 
   describe('interpretResponse', function () {
     let serverResponse = {
-      'ad': {
-        'id': 29593,
-        'width': 300,
-        'height': 250,
-        'ipd': 2000,
-        'markup': '<html><h3>I am an ad</h3></html>',
-        'ii': true,
-        'du': null,
-        'price': 0,
-        'zi': 0,
-        'impurl': 'http://g2.gumgum.com/ad/view',
-        'clsurl': 'http://g2.gumgum.com/ad/close'
+      ad: {
+        id: 29593,
+        width: 300,
+        height: 250,
+        ipd: 2000,
+        markup: '<html><h3>I am an ad</h3></html>',
+        ii: true,
+        du: null,
+        price: 0,
+        zi: 0,
+        impurl: 'http://g2.gumgum.com/ad/view',
+        clsurl: 'http://g2.gumgum.com/ad/close'
       },
-      'pag': {
-        't': 'ggumtest',
-        'pvid': 'aa8bbb65-427f-4689-8cee-e3eed0b89eec',
-        'css': 'html { overflow-y: auto }',
-        'js': 'console.log("environment", env);'
+      pag: {
+        t: 'ggumtest',
+        pvid: 'aa8bbb65-427f-4689-8cee-e3eed0b89eec',
+        css: 'html { overflow-y: auto }',
+        js: 'console.log("environment", env);'
       },
-      'jcsi': { t: 0, rq: 8 },
-      'thms': 10000
+      jcsi: { t: 0, rq: 8 },
+      thms: 10000,
+      meta: {
+        adomain: ['advertiser.com']
+      }
     }
     let bidRequest = {
       id: 12345,
@@ -501,19 +504,35 @@ describe('gumgumAdapter', function () {
       requestId: 12345,
       width: '300',
       mediaType: BANNER,
-      ttl: 60
+      ttl: 60,
+      meta: {
+        advertiserDomains: ['advertiser.com']
+      }
     };
 
     it('should get correct bid response', function () {
       expect(spec.interpretResponse({ body: serverResponse }, bidRequest)).to.deep.equal([expectedResponse]);
     });
 
+    it('should set a default value for advertiserDomains if adomain is not found', function () {
+      const response = { ...serverResponse };
+      delete response.meta;
+
+      const expected = { ...expectedResponse };
+      const meta = { advertiserDomains: [] };
+      expected.meta = meta;
+
+      expect(spec.interpretResponse({ body: response }, bidRequest)).to.deep.equal([expected]);
+    });
+
     it('should pass correct currency if found in bid response', function () {
       const cur = 'EURO';
-      let response = Object.assign({}, serverResponse);
-      let expected = Object.assign({}, expectedResponse);
+      const response = { ...serverResponse };
       response.ad.cur = cur;
+
+      const expected = { ...expectedResponse };
       expected.currency = cur;
+
       expect(spec.interpretResponse({ body: response }, bidRequest)).to.deep.equal([expected]);
     });
 
