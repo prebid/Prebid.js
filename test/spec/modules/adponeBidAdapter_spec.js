@@ -193,25 +193,6 @@ describe('adponeBidAdapter', function () {
     });
   });
 
-  describe('getUserSyncs', function () {
-    it('Verifies that getUserSyncs is a function', function () {
-      expect((typeof (spec.getUserSyncs)).should.equals('function'));
-    });
-    it('Verifies getUserSyncs returns expected result', function () {
-      expect((typeof (spec.getUserSyncs)).should.equals('function'));
-      expect(spec.getUserSyncs({iframeEnabled: true})).to.deep.equal({
-        type: 'iframe',
-        url: 'https://eu-ads.adpone.com'
-      });
-    });
-    it('Verifies that iframeEnabled: false returns an empty array', function () {
-      expect(spec.getUserSyncs({iframeEnabled: false})).to.deep.equal(EMPTY_ARRAY);
-    });
-    it('Verifies that iframeEnabled: null returns an empty array', function () {
-      expect(spec.getUserSyncs(null)).to.deep.equal(EMPTY_ARRAY);
-    });
-  });
-
   describe('test onBidWon function', function () {
     beforeEach(function() {
       sinon.stub(utils, 'triggerPixel');

@@ -11,8 +11,6 @@ export const spec = {
   code: ADPONE_CODE,
   supportedMediaTypes: [BANNER],
 
-  getUserSyncs,
-
   isBidRequestValid: bid => {
     return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'adpone'
   },
@@ -37,7 +35,7 @@ export const spec = {
         withCredentials: true
       };
 
-      if (bidderRequest.gdprConsent) {
+      if (bidderRequest && bidderRequest.gdprConsent) {
         url += '&gdpr_applies=' + bidderRequest.gdprConsent.gdprApplies;
         url += '&consentString=' + bidderRequest.gdprConsent.consentString;
       }
@@ -87,4 +85,3 @@ export const spec = {
 };
 
 registerBidder(spec);
-
