@@ -51,16 +51,12 @@ Banner, Native and Video ad formats are supported.
           "required": true,
           "sizes": []
         }
-      },
-      video: {
-        playerSize: [640, 480],
-        context: 'instream'
       }
     },
     bids: [{
       bidder: "adyoulike",
       params: {
-        placement: 194f787b85c829fb8822cdaf1ae64435
+        placement: "e622af275681965d3095808561a1e510"
       }
     }]
   };
