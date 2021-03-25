@@ -8,8 +8,8 @@ const emptyUrl = '';
 const analyticsType = 'endpoint';
 const pubxaiAnalyticsVersion = 'v1.1.0';
 const defaultHost = 'api.pbxai.com';
-const auctionPath = '/analytics/auction/beta';
-const winningBidPath = '/analytics/bidwon/beta';
+const auctionPath = '/analytics/auction';
+const winningBidPath = '/analytics/bidwon';
 
 let initOptions;
 let auctionTimestamp;
