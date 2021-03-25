@@ -87,7 +87,7 @@ describe('Verizon Media ID Submodule', () => {
         pixelId: PIXEL_ID,
         '1p': '0',
         gdpr: '1',
-        euconsent: consentData.gdpr.consentString,
+        gdpr_consent: consentData.gdpr.consentString,
         us_privacy: consentData.uspConsent
       };
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
@@ -107,7 +107,7 @@ describe('Verizon Media ID Submodule', () => {
         he: HASHED_EMAIL,
         '1p': '0',
         gdpr: '1',
-        euconsent: consentData.gdpr.consentString,
+        gdpr_consent: consentData.gdpr.consentString,
         us_privacy: consentData.uspConsent
       };
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
@@ -134,7 +134,7 @@ describe('Verizon Media ID Submodule', () => {
 
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
       expect(requestQueryParams.gdpr).to.equal('1');
-      expect(requestQueryParams.euconsent).to.equal(consentData.gdpr.consentString);
+      expect(requestQueryParams.gdpr_consent).to.equal(consentData.gdpr.consentString);
     });
 
     it('sets GDPR consent data flag correctly when call is NOT under GDPR jurisdiction.', () => {
@@ -147,7 +147,7 @@ describe('Verizon Media ID Submodule', () => {
 
       const requestQueryParams = utils.parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
       expect(requestQueryParams.gdpr).to.equal('0');
-      expect(requestQueryParams.euconsent).to.equal('');
+      expect(requestQueryParams.gdpr_consent).to.equal('');
     });
 
     [1, '1', true].forEach(firstPartyParamValue => {

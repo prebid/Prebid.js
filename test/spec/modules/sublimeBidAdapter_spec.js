@@ -18,6 +18,9 @@ describe('Sublime Adapter', function() {
       'puid',
       'trId',
       'pbav',
+      'pubpbv',
+      'device',
+      'pubtimeout',
     ];
 
     beforeEach(function () {
@@ -139,6 +142,7 @@ describe('Sublime Adapter', function() {
   describe('interpretResponse', function() {
     let serverResponse = {
       'request_id': '3db3773286ee59',
+      'sspname': 'foo',
       'cpm': 0.5,
       'ad': '<!-- Creative -->',
     };
@@ -160,9 +164,10 @@ describe('Sublime Adapter', function() {
           creativeId: 1,
           dealId: 1,
           currency: 'USD',
+          sspname: 'foo',
           netRevenue: true,
           ttl: 600,
-          pbav: '0.7.0',
+          pbav: '0.7.1',
           ad: '',
         },
       ];
@@ -173,6 +178,7 @@ describe('Sublime Adapter', function() {
     it('should get correct default size for 1x1', function() {
       let serverResponse = {
         'requestId': 'xyz654_2',
+        'sspname': 'sublime',
         'cpm': 0.5,
         'ad': '<!-- Creative -->',
       };
@@ -204,7 +210,8 @@ describe('Sublime Adapter', function() {
         netRevenue: true,
         ttl: 600,
         ad: '<!-- Creative -->',
-        pbav: '0.7.0',
+        pbav: '0.7.1',
+        sspname: 'sublime'
       };
 
       expect(result[0]).to.deep.equal(expectedResponse);
@@ -224,6 +231,7 @@ describe('Sublime Adapter', function() {
     it('should return bid with default value in response', function () {
       let serverResponse = {
         'requestId': 'xyz654_2',
+        'sspname': 'sublime',
         'ad': '<!-- ad -->',
       };
 
@@ -251,10 +259,11 @@ describe('Sublime Adapter', function() {
         creativeId: 1,
         dealId: 1,
         currency: 'EUR',
+        sspname: 'sublime',
         netRevenue: true,
         ttl: 600,
         ad: '<!-- ad -->',
-        pbav: '0.7.0',
+        pbav: '0.7.1',
       };
 
       expect(result[0]).to.deep.equal(expectedResponse);

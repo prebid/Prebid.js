@@ -101,7 +101,7 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
   }
 ]
 
-const NET_REVENUE = false;
+const NET_REVENUE = true;
 const dealChannelValues = {
   1: 'PMP',
   5: 'PREF',
@@ -203,6 +203,9 @@ function _parseSlotParam(paramName, paramValue) {
 function _cleanSlot(slotName) {
   if (utils.isStr(slotName)) {
     return slotName.replace(/^\s+/g, '').replace(/\s+$/g, '');
+  }
+  if (slotName) {
+    utils.logWarn(BIDDER_CODE + ': adSlot must be a string. Ignoring adSlot');
   }
   return '';
 }

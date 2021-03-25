@@ -2614,7 +2614,7 @@ describe('PubMatic adapter', function () {
         }
         expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
         expect(response[0].currency).to.equal('USD');
-        expect(response[0].netRevenue).to.equal(false);
+        expect(response[0].netRevenue).to.equal(true);
         expect(response[0].ttl).to.equal(300);
         expect(response[0].meta.networkId).to.equal(123);
         expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
@@ -2638,7 +2638,7 @@ describe('PubMatic adapter', function () {
         }
         expect(response[1].dealId).to.equal(bidResponses.body.seatbid[1].bid[0].dealid);
         expect(response[1].currency).to.equal('USD');
-        expect(response[1].netRevenue).to.equal(false);
+        expect(response[1].netRevenue).to.equal(true);
         expect(response[1].ttl).to.equal(300);
         expect(response[1].meta.networkId).to.equal(422);
         expect(response[1].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-789');

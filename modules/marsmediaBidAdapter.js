@@ -3,6 +3,7 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 function MarsmediaAdapter() {
   this.code = 'marsmedia';
@@ -16,7 +17,7 @@ function MarsmediaAdapter() {
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
   let that = this;
-  let version = '2.3';
+  let version = '2.4';
 
   this.isBidRequestValid = function (bid) {
     return !!(bid.params && bid.params.zoneId);
@@ -53,6 +54,7 @@ function MarsmediaAdapter() {
       if (!(impObj.banner || impObj.video)) {
         continue;
       }
+      impObj.bidfloor = _getFloor(BRs[i]);
       impObj.ext = frameExt(BRs[i]);
       impList.push(impObj);
     }
@@ -153,9 +155,31 @@ function MarsmediaAdapter() {
   }
 
   function frameExt(bid) {
-    return {
-      bidder: {
-        zoneId: bid.params['zoneId']
+    if ((bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes)) {
+      let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+      bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
+      bidSizes = bidSizes.filter(size => utils.isArray(size));
+      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
+
+      const element = document.getElementById(bid.adUnitCode);
+      const minSize = _getMinSize(processedSizes);
+      const viewabilityAmount = _isViewabilityMeasurable(element)
+        ? _getViewability(element, utils.getWindowTop(), minSize)
+        : 'na';
+      const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
+
+      return {
+        bidder: {
+          zoneId: bid.params['zoneId']
+        },
+        viewability: viewabilityAmountRounded
+      }
+    } else {
+      return {
+        bidder: {
+          zoneId: bid.params['zoneId']
+        },
+        viewability: 'na'
       }
     }
   }
@@ -180,12 +204,15 @@ function MarsmediaAdapter() {
       }
     };
     if (BRs[0].schain) {
-      bid.source = {
-        'ext': {
-          'schain': BRs[0].schain
-        }
-      }
+      utils.deepSetValue(bid, 'source.ext.schain', BRs[0].schain);
     }
+    if (bidderRequest.uspConsent) {
+      utils.deepSetValue(bid, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+    }
+    if (config.getConfig('coppa') === true) {
+      utils.deepSetValue(bid, 'regs.coppa', config.getConfig('coppa') & 1)
+    }
+
     return bid;
   }
 
@@ -241,12 +268,6 @@ function MarsmediaAdapter() {
     sendbeacon(bid, 20)
   };
 
-  function sendbeacon(bid, type) {
-    const bidString = JSON.stringify(bid);
-    const encodedBuf = window.btoa(bidString);
-    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=' + type + '&bid=3mhdom&hb_j=' + encodedBuf, null);
-  }
-
   this.interpretResponse = function (serverResponse) {
     let responses = serverResponse.body || [];
     let bids = [];
@@ -295,6 +316,126 @@ function MarsmediaAdapter() {
 
     return bids;
   };
+
+  function sendbeacon(bid, type) {
+    const bidString = JSON.stringify(bid);
+    const encodedBuf = window.btoa(bidString);
+    utils.triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=' + type + '&bid=3mhdom&hb_j=' + encodedBuf, null);
+  }
+
+  /**
+   * Gets bidfloor
+   * @param {Object} bid
+   * @returns {Number} floor
+   */
+  function _getFloor (bid) {
+    const curMediaType = bid.mediaTypes.video ? 'video' : 'banner';
+    let floor = 0;
+
+    if (typeof bid.getFloor === 'function') {
+      const floorInfo = bid.getFloor({
+        currency: 'USD',
+        mediaType: curMediaType,
+        size: '*'
+      });
+
+      if (typeof floorInfo === 'object' &&
+        floorInfo.currency === 'USD' &&
+        !isNaN(parseFloat(floorInfo.floor))) {
+        floor = floorInfo.floor;
+      }
+    }
+
+    return floor;
+  }
+
+  function _getMinSize(sizes) {
+    return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
+  }
+
+  function _isViewabilityMeasurable(element) {
+    return !_isIframe() && element !== null;
+  }
+
+  function _isIframe() {
+    try {
+      return utils.getWindowSelf() !== utils.getWindowTop();
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function _getViewability(element, topWin, { w, h } = {}) {
+    return topWin.document.visibilityState === 'visible'
+      ? _getPercentInView(element, topWin, { w, h })
+      : 0;
+  }
+
+  function _getPercentInView(element, topWin, { w, h } = {}) {
+    const elementBoundingBox = _getBoundingBox(element, { w, h });
+
+    const elementInViewBoundingBox = _getIntersectionOfRects([ {
+      left: 0,
+      top: 0,
+      right: topWin.innerWidth,
+      bottom: topWin.innerHeight
+    }, elementBoundingBox ]);
+
+    let elementInViewArea, elementTotalArea;
+
+    if (elementInViewBoundingBox !== null) {
+      // Some or all of the element is in view
+      elementInViewArea = elementInViewBoundingBox.width * elementInViewBoundingBox.height;
+      elementTotalArea = elementBoundingBox.width * elementBoundingBox.height;
+
+      return ((elementInViewArea / elementTotalArea) * 100);
+    }
+
+    return 0;
+  }
+
+  function _getBoundingBox(element, { w, h } = {}) {
+    let { width, height, left, top, right, bottom } = element.getBoundingClientRect();
+
+    if ((width === 0 || height === 0) && w && h) {
+      width = w;
+      height = h;
+      right = left + w;
+      bottom = top + h;
+    }
+
+    return { width, height, left, top, right, bottom };
+  }
+
+  function _getIntersectionOfRects(rects) {
+    const bbox = {
+      left: rects[0].left,
+      right: rects[0].right,
+      top: rects[0].top,
+      bottom: rects[0].bottom
+    };
+
+    for (let i = 1; i < rects.length; ++i) {
+      bbox.left = Math.max(bbox.left, rects[i].left);
+      bbox.right = Math.min(bbox.right, rects[i].right);
+
+      if (bbox.left >= bbox.right) {
+        return null;
+      }
+
+      bbox.top = Math.max(bbox.top, rects[i].top);
+      bbox.bottom = Math.min(bbox.bottom, rects[i].bottom);
+
+      if (bbox.top >= bbox.bottom) {
+        return null;
+      }
+    }
+
+    bbox.width = bbox.right - bbox.left;
+    bbox.height = bbox.bottom - bbox.top;
+
+    return bbox;
+  }
 }
 
 export const spec = new MarsmediaAdapter();
