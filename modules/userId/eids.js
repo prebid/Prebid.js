@@ -80,7 +80,7 @@ const USER_IDS_CONFIG = {
       return data.lipbid;
     },
     source: 'liveintent.com',
-    atype: 1,
+    atype: 3,
     getEidExt: function(data) {
       if (Array.isArray(data.segments) && data.segments.length) {
         return {
