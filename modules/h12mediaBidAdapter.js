@@ -15,7 +15,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const isiframe = inIframe();
+    const isiframe = utils.inIframe();
     const screenSize = getClientDimensions();
     const docSize = getDocumentDimensions();
 
@@ -24,15 +24,16 @@ export const spec = {
       const requestUrl = bidderParams.endpointdom || DEFAULT_URL;
       let pubsubid = bidderParams.pubsubid || '';
       if (pubsubid && pubsubid.length > 32) {
-        utils.logError('Bidder param \'pubsubid\' should be less than 32 chars.');
+        utils.logError('Bidder param \'pubsubid\' should be not more than 32 chars.');
         pubsubid = '';
       }
       const pubcontainerid = bidderParams.pubcontainerid;
       const adUnitElement = document.getElementById(pubcontainerid || bidRequest.adUnitCode);
       const ishidden = !isVisible(adUnitElement);
+      const framePos = getFramePos();
       const coords = isiframe ? {
-        x: getFramePos()[0],
-        y: getFramePos()[1],
+        x: framePos[0],
+        y: framePos[1],
       } : {
         x: adUnitElement && adUnitElement.getBoundingClientRect().x,
         y: adUnitElement && adUnitElement.getBoundingClientRect().y,
@@ -52,6 +53,14 @@ export const spec = {
         pubcontainerid,
       };
 
+      let windowTop;
+      try {
+        windowTop = window.top;
+      } catch (e) {
+        utils.logMessage(e);
+        windowTop = window;
+      }
+
       return {
         method: 'POST',
         url: requestUrl,
@@ -62,7 +71,7 @@ export const spec = {
           usp: !!utils.deepAccess(bidderRequest, 'uspConsent', false),
           usp_cs: utils.deepAccess(bidderRequest, 'uspConsent', ''),
           topLevelUrl: utils.deepAccess(bidderRequest, 'refererInfo.referer', ''),
-          refererUrl: window.top.document.referrer || window.document.referrer,
+          refererUrl: windowTop.document.referrer,
           isiframe,
           version: '$prebid.version$',
           ExtUserIDs: bidRequest.userId,
@@ -73,8 +82,8 @@ export const spec = {
             screenHeight: screenSize[1],
             docWidth: docSize[0],
             docHeight: docSize[1],
-            scrollbarx: window.top.scrollX,
-            scrollbary: window.top.scrollY,
+            scrollbarx: windowTop.scrollX,
+            scrollbary: windowTop.scrollY,
           },
           bidrequest,
         },
@@ -156,7 +165,11 @@ export const spec = {
 }
 
 function getContext(elem) {
-  return elem && window.document.body.contains(elem) ? window : (window.top.document.body.contains(elem) ? top : undefined);
+  try {
+    return elem && window.document.body.contains(elem) ? window : (window.top.document.body.contains(elem) ? top : undefined);
+  } catch (e) {
+    return undefined;
+  }
 }
 
 function isDefined(val) {
@@ -215,14 +228,6 @@ function getLocalDateFormatted() {
   const two = num => ('0' + num).slice(-2);
   const d = new Date();
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
-}
-
-function inIframe () {
-  try {
-    return utils.getWindowSelf() !== utils.getWindowTop();
-  } catch (e) {
-    return true;
-  }
 }
 
 function getFramePos() {
