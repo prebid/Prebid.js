@@ -1,34 +1,9 @@
 import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'doceree';
 const END_POINT = 'https://bidder.doceree.com'
-
-function registerImpression(responseJson) {
-  return (function() {
-    if (responseJson.impressionLink) {
-      ajax(responseJson.impressionLink, function() {
-        // nothing to do
-      }, null, {method: 'GET', customHeaders: {'Content-type': 'application/json; charset=utf-8'}});
-    }
-    return ''
-  })()
-}
-
-function processHTMLAndRender(responseJson, creativeHtml) {
-  if (responseJson.sourceURL) {
-    creativeHtml = creativeHtml.replace('<head>', `<head><style>html,body{padding:0;margin:0;}</style><base href="${responseJson.sourceURL.split('unzip')[0]}unzip/" target="_blank">`);
-  }
-  creativeHtml = creativeHtml.replace('<body', `<body onload="${registerImpression(responseJson)}" `);
-  creativeHtml = creativeHtml.replaceAll('[TRACKING_LINK]', responseJson.ctaLink);
-  creativeHtml = creativeHtml.replaceAll(/DOCEREE_CLICK_URL_UNESC/g, responseJson.ctaLink);
-  while (creativeHtml.indexOf('_ucid') > -1) {
-    creativeHtml = creativeHtml.replace('_ucid', utils.generateUUID())
-  }
-  return creativeHtml;
-}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -69,6 +44,7 @@ export const spec = {
     const responseJson = serverResponse ? serverResponse.body : {};
     const placementId = responseJson.DIVID;
     const bidResponse = {
+      ad: responseJson.sourceHTML,
       width: Number(responseJson.width),
       height: Number(responseJson.height),
       requestId: responseJson.guid,
@@ -82,22 +58,6 @@ export const spec = {
         advertiserDomains: [responseJson.advertiserDomain]
       }
     };
-
-    if (responseJson.creativeType && responseJson.creativeType !== 'banner') {
-      if (responseJson.sourceHTML) {
-        responseJson.sourceHTML = responseJson.sourceHTML.replace(/[\uE000-\uF8FF]/g, '');
-        let creative = processHTMLAndRender(responseJson, responseJson.sourceHTML)
-        bidResponse.ad = `<div id="${placementId}">${creative}</div>`
-      } else {
-        bidResponse.ad = `<iframe id="ifrm" src="${responseJson.sourceURL}" onload="${registerImpression(responseJson)}" style="border:none;margin:0"></iframe>`
-      }
-    } else {
-      if (responseJson.ctaLink) {
-        bidResponse.ad = `<a href="${responseJson.ctaLink}" target="_blank"><img onload="${registerImpression(responseJson)}" src="${responseJson.sourceURL}" /></a>`;
-      } else {
-        bidResponse.ad = `<div id="${placementId}"><img onload="${registerImpression(responseJson)}" src="${responseJson.sourceURL}" /></div>`;
-      }
-    }
     return [bidResponse];
   }
 };

@@ -71,7 +71,8 @@ describe('BidlabBidAdapter', function () {
           height: '250',
           width: '300',
           ctaLink: 'https://doceree.com/',
-          sourceURL: 'https://servedbydoceree.doceree.com/generic/300x250_DocereeGeneralAd.jpg',
+          sourceURL: '',
+          sourceHTML: '<div>test</div>',
           advertiserDomain: 'doceree.com',
         }
       };
@@ -84,7 +85,7 @@ describe('BidlabBidAdapter', function () {
       expect(dataItem.cpm).to.equal(2);
       expect(dataItem.width).to.equal(300);
       expect(dataItem.height).to.equal(250);
-      expect(dataItem.ad).to.equal('<a href="https://doceree.com/" target="_blank"><img onload="" src="https://servedbydoceree.doceree.com/generic/300x250_DocereeGeneralAd.jpg" /></a>');
+      expect(dataItem.ad).to.equal('<div>test</div>');
       expect(dataItem.ttl).to.equal(30);
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
