@@ -102,7 +102,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveramp.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
