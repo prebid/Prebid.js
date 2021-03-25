@@ -3,7 +3,7 @@ import {spec, storage} from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
-describe('Conversant adapter tests', function() {/
+describe('Conversant adapter tests', function() {
   const siteId = '108060';
   const versionPattern = /^\d+\.\d+\.\d+(.)*$/;
 
