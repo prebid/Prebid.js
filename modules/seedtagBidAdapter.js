@@ -24,7 +24,7 @@ const deviceConnection = {
   UNKNOWN: 'unknown'
 };
 
-const getConnextionType = () => {
+const getConnectionType = () => {
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {}
   switch (connection.type || connection.effectiveType) {
     case 'wifi':
@@ -169,7 +169,7 @@ export const spec = {
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
-      connectionType: getConnextionType(),
+      connectionType: getConnectionType(),
       bidRequests: buildBidRequests(validBidRequests)
     };
 
