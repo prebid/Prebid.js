@@ -278,7 +278,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   utils.logMessage(eids)
 
   let user = {};
-  user.eids = eidsArr;
+  user.ext = {};
+  user.ext.eids = eidsArr;
   payload.user = user;
 
   utils.logMessage('-------- UID ------------')
