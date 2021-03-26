@@ -1,8 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'proxistore';
-const storage = getStorageManager();
 const PROXISTORE_VENDOR_ID = 418;
 
 function _createServerRequest(bidRequests, bidderRequest) {
@@ -104,23 +102,7 @@ function _createBidResponse(response) {
  */
 
 function isBidRequestValid(bid) {
-  const canDisplay = function () {
-    if (!storage.hasLocalStorage()) {
-      return false;
-    }
-    const pxNoAds = storage.getDataFromLocalStorage(
-      `PX_NoAds_${bid.params.website}`
-    );
-    if (!pxNoAds) {
-      return true;
-    } else {
-      const storedDate = new Date(pxNoAds);
-      const now = new Date();
-      const diff = Math.abs(storedDate.getTime() - now.getTime()) / 60000;
-      return diff <= 5;
-    }
-  };
-  return !!(bid.params.website && bid.params.language) && !canDisplay();
+  return !!(bid.params.website && bid.params.language);
 }
 /**
  * Make a server request from the list of BidRequests.
@@ -143,22 +125,7 @@ function buildRequests(bidRequests, bidderRequest) {
  */
 
 function interpretResponse(serverResponse, bidRequest) {
-  const itemName = `PX_NoAds_${_websiteFromBidRequest(bidRequest)}`;
-  if (serverResponse.body.length > 0) {
-    storage.removeDataFromLocalStorage(itemName, true);
-    return serverResponse.body.map(_createBidResponse);
-  } else {
-    storage.setDataInLocalStorage(itemName, new Date());
-    return [];
-  }
-}
-
-function _websiteFromBidRequest(bidR) {
-  if (bidR.data) {
-    return JSON.parse(bidR.data).website;
-  } else if (bidR.params.website) {
-    return bidR.params.website;
-  }
+  return serverResponse.body.map(_createBidResponse);
 }
 
 function _assignFloor(bid) {
