@@ -390,7 +390,8 @@ function interpretResponse (serverResponse, bidRequest) {
       pvid: 0
     },
     meta: {
-      adomain: []
+      adomain: [],
+      mediaType: ''
     }
   }
   const {
@@ -406,7 +407,8 @@ function interpretResponse (serverResponse, bidRequest) {
     },
     jcsi,
     meta: {
-      adomain: advertiserDomains
+      adomain: advertiserDomains,
+      mediaType: type
     }
   } = Object.assign(defaultResponse, serverResponseBody)
   let data = bidRequest.data || {}
@@ -416,7 +418,8 @@ function interpretResponse (serverResponse, bidRequest) {
   let sizes = utils.parseSizesInput(bidRequest.sizes)
   let [width, height] = sizes[0].split('x')
   let metaData = {
-    advertiserDomains: advertiserDomains
+    advertiserDomains: advertiserDomains || [],
+    mediaType: type || mediaType
   }
 
   // return 1x1 when breakout expected

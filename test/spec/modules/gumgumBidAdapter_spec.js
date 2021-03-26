@@ -461,7 +461,8 @@ describe('gumgumAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    let serverResponse = {
+    const metaData = { adomain: ['advertiser.com'], mediaType: BANNER }
+    const serverResponse = {
       ad: {
         id: 29593,
         width: 300,
@@ -483,18 +484,17 @@ describe('gumgumAdapter', function () {
       },
       jcsi: { t: 0, rq: 8 },
       thms: 10000,
-      meta: {
-        adomain: ['advertiser.com']
-      }
+      meta: metaData
     }
-    let bidRequest = {
+    const bidRequest = {
       id: 12345,
       sizes: [[300, 250], [1, 1]],
       url: ENDPOINT,
       method: 'GET',
       pi: 3
     }
-    let expectedResponse = {
+    const expectedMetaData = { advertiserDomains: ['advertiser.com'], mediaType: BANNER };
+    const expectedResponse = {
       ad: '<html><h3>I am an ad</h3></html>',
       cpm: 0,
       creativeId: 29593,
@@ -505,9 +505,7 @@ describe('gumgumAdapter', function () {
       width: '300',
       mediaType: BANNER,
       ttl: 60,
-      meta: {
-        advertiserDomains: ['advertiser.com']
-      }
+      meta: expectedMetaData
     };
 
     it('should get correct bid response', function () {
@@ -515,12 +513,21 @@ describe('gumgumAdapter', function () {
     });
 
     it('should set a default value for advertiserDomains if adomain is not found', function () {
-      const response = { ...serverResponse };
-      delete response.meta;
+      const meta = { ...metaData };
+      delete meta.adomain;
 
+      const response = { ...serverResponse, meta };
+      const expectedMeta = { ...expectedMetaData, advertiserDomains: [] };
+      const expected = { ...expectedResponse, meta: expectedMeta };
+
+      expect(spec.interpretResponse({ body: response }, bidRequest)).to.deep.equal([expected]);
+    });
+
+    it('should set a default value for meta.mediaType if mediaType is not found in the response', function () {
+      const meta = { ...metaData };
+      delete meta.mediaType;
+      const response = { ...serverResponse, meta };
       const expected = { ...expectedResponse };
-      const meta = { advertiserDomains: [] };
-      expected.meta = meta;
 
       expect(spec.interpretResponse({ body: response }, bidRequest)).to.deep.equal([expected]);
     });
