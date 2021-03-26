@@ -525,9 +525,7 @@ export const spec = {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
-    if (bidderRequest.bidLimit) {
-      data['rp_maxbids'] = bidderRequest.bidLimit;
-    }
+    data['rp_maxbids'] = bidderRequest.bidLimit || 1;
 
     applyFPD(bidRequest, BANNER, data);
 
