@@ -62,18 +62,6 @@ export var spec = {
   },
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     let syncurl = USER_SYNC + 'pid=' + pubId;
-
-    // Attaching GDPR Consent Params in UserSync url
-    if (gdprConsent) {
-      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
-    }
-
-    // CCPA
-    if (uspConsent) {
-      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
-    }
-
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
@@ -122,9 +110,9 @@ function parseRTBResponse(request, response) {
             newBid.dealId = bid.dealid;
           }
           if (req.imp && req.imp.length > 0) {
-            newBid.mediaType = req.mediaType;
             req.imp.forEach(robj => {
               if (bid.impid === robj.id) {
+                _checkMediaType(bid.adm, newBid);
                 switch (newBid.mediaType) {
                   case BANNER:
                     break;
@@ -277,10 +265,6 @@ function _getDeviceObject(request) {
 
 function setOtherParams(request, ortbRequest) {
   var params = request && request.params ? request.params : null;
-  if (request && request.gdprConsent) {
-    ortbRequest.regs = { ext: { gdpr: request.gdprConsent.gdprApplies ? 1 : 0 } };
-    ortbRequest.user = { ext: { consent: request.gdprConsent.consentString } };
-  }
   if (params) {
     ortbRequest.tmax = params.tmax;
     ortbRequest.bcat = params.bcat;
@@ -424,4 +408,13 @@ function parse(rawResp) {
   return null;
 }
 
+function _checkMediaType(adm, newBid) {
+  // Create a regex here to check the strings
+  var videoRegex = new RegExp(/VAST.*version/);
+  if (videoRegex.test(adm)) {
+    newBid.mediaType = VIDEO;
+  } else {
+    newBid.mediaType = BANNER;
+  }
+}
 registerBidder(spec);

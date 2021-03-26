@@ -143,11 +143,32 @@ userIdAsEids = [
         }]
     },
     {
+        source: 'mediawallahscript.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
         source: 'tapad.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
         }]
-    }
+    },
+    {
+        source: 'novatiq.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+     {
+        source: 'uidapi.com',
+        uids: [{
+            id: 'some-random-id-value',
+             atype: 3
+        }]
+     }
 ]
 ```

@@ -59,7 +59,7 @@ export const verizonMediaIdSubmodule = {
       '1p': includes([1, '1', true], params['1p']) ? '1' : '0',
       he: params.he,
       gdpr: isEUConsentRequired(consentData) ? '1' : '0',
-      euconsent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
+      gdpr_consent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
       us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
     };
 

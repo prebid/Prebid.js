@@ -8,16 +8,16 @@ import sha256 from 'crypto-js/sha256.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { createEidsArray } from './userId/eids.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { OUTSTREAM } from '../src/video.js';
 
 export const BIDDER_CODE = 'adagio';
 export const LOG_PREFIX = 'Adagio:';
-export const VERSION = '2.6.0';
+export const VERSION = '2.7.0';
 export const FEATURES_VERSION = '1';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
-export const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
+export const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 export const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 export const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 export const GVLID = 617;
@@ -687,6 +687,112 @@ function _renderer(bid) {
   });
 }
 
+function _parseNativeBidResponse(bid) {
+  if (!bid.admNative || !Array.isArray(bid.admNative.assets)) {
+    utils.logError(`${LOG_PREFIX} Invalid native response`);
+    return;
+  }
+
+  const native = {}
+
+  function addAssetDataValue(data) {
+    const map = {
+      1: 'sponsoredBy', // sponsored
+      2: 'body', // desc
+      3: 'rating',
+      4: 'likes',
+      5: 'downloads',
+      6: 'price',
+      7: 'salePrice',
+      8: 'phone',
+      9: 'address',
+      10: 'body2', // desc2
+      11: 'displayUrl',
+      12: 'cta'
+    }
+    if (map.hasOwnProperty(data.type) && typeof data.value === 'string') {
+      native[map[data.type]] = data.value;
+    }
+  }
+
+  // assets
+  bid.admNative.assets.forEach(asset => {
+    if (asset.title) {
+      native.title = asset.title.text
+    } else if (asset.data) {
+      addAssetDataValue(asset.data)
+    } else if (asset.img) {
+      switch (asset.img.type) {
+        case 1:
+          native.icon = {
+            url: asset.img.url,
+            width: asset.img.w,
+            height: asset.img.h
+          };
+          break;
+        default:
+          native.image = {
+            url: asset.img.url,
+            width: asset.img.w,
+            height: asset.img.h
+          };
+          break;
+      }
+    }
+  });
+
+  if (bid.admNative.link) {
+    if (bid.admNative.link.url) {
+      native.clickUrl = bid.admNative.link.url;
+    }
+    if (Array.isArray(bid.admNative.link.clickTrackers)) {
+      native.clickTrackers = bid.admNative.link.clickTrackers
+    }
+  }
+
+  if (Array.isArray(bid.admNative.eventtrackers)) {
+    native.impressionTrackers = [];
+    bid.admNative.eventtrackers.forEach(tracker => {
+      // Only Impression events are supported. Prebid does not support Viewability events yet.
+      if (tracker.event !== 1) {
+        return;
+      }
+
+      // methods:
+      // 1: image
+      // 2: js
+      // note: javascriptTrackers is a string. If there's more than one JS tracker in bid response, the last script will be used.
+      switch (tracker.method) {
+        case 1:
+          native.impressionTrackers.push(tracker.url);
+          break;
+        case 2:
+          native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          break;
+      }
+    });
+  } else {
+    native.impressionTrackers = Array.isArray(bid.admNative.imptrackers) ? bid.admNative.imptrackers : [];
+    if (bid.admNative.jstracker) {
+      native.javascriptTrackers = bid.admNative.jstracker;
+    }
+  }
+
+  if (bid.admNative.privacy) {
+    native.privacyLink = bid.admNative.privacy;
+  }
+
+  if (bid.admNative.ext) {
+    native.ext = {}
+
+    if (bid.admNative.ext.bvw) {
+      native.ext.adagio_bvw = bid.admNative.ext.bvw;
+    }
+  }
+
+  bid.native = native
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -871,6 +977,10 @@ export const spec = {
 
                   bidObj.renderer.setRender(_renderer);
                 }
+              }
+
+              if (bidObj.mediaType === NATIVE) {
+                _parseNativeBidResponse(bidObj);
               }
 
               bidObj.site = bidReq.params.site;

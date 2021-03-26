@@ -68,7 +68,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
           }
 
           bid = Object.assign({}, bid, getDefinedParams(adUnit, [
-            'fpd',
+            'ortb2Imp',
             'mediaType',
             'renderer',
             'storedAuctionResponse'
@@ -604,6 +604,10 @@ adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
 
 adapterManager.callSetTargetingBidder = function(bidder, bid) {
   tryCallBidderMethod(bidder, 'onSetTargeting', bid);
+};
+
+adapterManager.callBidViewableBidder = function(bidder, bid) {
+  tryCallBidderMethod(bidder, 'onBidViewable', bid);
 };
 
 export default adapterManager;

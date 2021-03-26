@@ -65,7 +65,7 @@ function handleAdMessage(e) {
           adDeliveryId = adSlot.getTargeting('RSDK_ADID');
           adDeliveryId = adDeliveryId.length
             ? adDeliveryId[0]
-            : utils.generateUUID();
+            : `${utils.timestamp()}-${utils.generateUUID()}`;
         }
       }
     }
@@ -246,7 +246,7 @@ function getReconciliationData(adUnitsCodes) {
 
     const adSlot = getSlotByCode(adUnitCode);
     const adUnitId = adSlot ? adSlot.getAdUnitPath() : adUnitCode;
-    const adDeliveryId = utils.generateUUID();
+    const adDeliveryId = `${utils.timestamp()}-${utils.generateUUID()}`;
 
     dataToReturn[adUnitCode] = {
       RSDK_AUID: adUnitId,
