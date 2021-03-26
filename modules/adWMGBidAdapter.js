@@ -12,8 +12,8 @@ import {
 } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adWMG';
-const ENDPOINT = 'https://rtb.adwmg.com/prebid';
-let SYNC_ENDPOINT = 'https://rtb.adwmg.com/cphb.html?';
+const ENDPOINT = 'https://hb.adwmg.com/hb';
+let SYNC_ENDPOINT = 'https://hb.adwmg.com/chcp.html?';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -318,5 +318,5 @@ export const spec = {
       osv: detectOs().osv
     }
   }
-}
+};
 registerBidder(spec);
