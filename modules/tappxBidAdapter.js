@@ -134,6 +134,9 @@ function interpretBannerBid(serverBid, request) {
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
   HOST = utils.deepAccess(validBidRequests, 'params.host');
+  let hostInfo = getHostInfo(HOST)
+  utils.logMessage('-------- hostInfo ------------')
+  utils.logMessage(hostInfo)
   hostDomain = HOST.split('/', 1)[0];
 
   const ENDPOINT = utils.deepAccess(validBidRequests, 'params.endpoint');
@@ -308,6 +311,28 @@ function getLanguage() {
 function getOs() {
   let ua = navigator.userAgent;
   if (ua == null) { return 'unknown'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'ios'; } else if (ua.match(/Android/)) { return 'android'; } else if (ua.match(/Window/)) { return 'windows'; } else { return 'unknown'; }
+}
+
+function getHostInfo(hostParam) {
+  let domainInfo = {};
+
+  domainInfo.domain = hostParam.split('/', 1)[0];
+  domainInfo.url = hostParam;
+
+  let regexNewEndpoints = new RegExp(`^(zz.*|testing)\.ssp\.tappx\.com$`, 'i');
+  let regexClassicEndpoints = new RegExp(`^[a-z]{3}\.[a-z]{3}\.tappx\.com$`, 'i');
+
+  if (regexNewEndpoints.test(domainInfo.domain)) {
+    let endpoint = domainInfo.domain.split('.', 1)[0]
+    if (endpoint.toUpperCase().indexOf('TESTING') === -1) {
+      domainInfo.endpoint = endpoint
+      domainInfo.new_endpoint = true;
+    }
+  } else if (regexClassicEndpoints.test(domainInfo.domain)) {
+    domainInfo.new_endpoint = false;
+  }
+
+  return domainInfo;
 }
 
 registerBidder(spec);
