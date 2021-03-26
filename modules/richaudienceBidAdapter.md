@@ -39,7 +39,7 @@ Please reach out to your account manager for more information.
                             "pid":"ADb1f40rmo",
                             "supplyType":"site",
                             "bidfloor":0.40,
-                            "keywords": "bici=scott;coche=audi;coche=mercedes;"
+                            "keywords": "key1=value1;key2=value2;key3=value3;"
                         }
                     }]
                 }

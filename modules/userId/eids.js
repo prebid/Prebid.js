@@ -169,9 +169,29 @@ const USER_IDS_CONFIG = {
     source: 'neustar.biz',
     atype: 1
   },
+  // MediaWallah OpenLink
+  'mwOpenLinkId': {
+    source: 'mediawallahscript.com',
+    atype: 1
+  },
   'tapadId': {
     source: 'tapad.com',
     atype: 1
+  },
+  // Novatiq Snowflake
+  'novatiq': {
+    getValue: function(data) {
+      return data.snowflake
+    },
+    source: 'novatiq.com',
+    atype: 1
+  },
+  'uid2': {
+    source: 'uidapi.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
   }
 };
 

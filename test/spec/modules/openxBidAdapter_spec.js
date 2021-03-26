@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec, USER_ID_CODE_TO_QUERY_ARG} from 'modules/openxBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {userSync} from 'src/userSync.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -1187,6 +1188,7 @@ describe('OpenxAdapter', function () {
           let getFloorSpy = sinon.spy(bidRequest1, 'getFloor');
 
           spec.buildRequests([bidRequest1], mockBidderRequest);
+          expect(getFloorSpy.args[0][0].mediaType).to.equal(BANNER);
           expect(getFloorSpy.args[0][0].currency).to.equal('USD');
         });
 
@@ -1205,6 +1207,7 @@ describe('OpenxAdapter', function () {
           let getFloorSpy = sinon.spy(bidRequest1, 'getFloor');
 
           spec.buildRequests([bidRequest1], mockBidderRequest);
+          expect(getFloorSpy.args[0][0].mediaType).to.equal(BANNER);
           expect(getFloorSpy.args[0][0].currency).to.equal('bitcoin');
         });
       })
@@ -1345,6 +1348,87 @@ describe('OpenxAdapter', function () {
         });
       });
     });
+
+    describe('floors', function () {
+      it('should send out custom floors on bids that have customFloors specified', function () {
+        const bidRequest = Object.assign({},
+          bidRequestsWithMediaTypes[0],
+          {
+            params: {
+              'unit': '12345678',
+              'delDomain': 'test-del-domain',
+              'customFloor': 1.500001
+            }
+          }
+        );
+
+        const request = spec.buildRequests([bidRequest], mockBidderRequest);
+        const dataParams = request[0].data;
+
+        expect(dataParams.aumfs).to.exist;
+        expect(dataParams.aumfs).to.equal('1500');
+      });
+
+      context('with floors module', function () {
+        let adServerCurrencyStub;
+        function makeBidWithFloorInfo(floorInfo) {
+          return Object.assign(utils.deepClone(bidRequestsWithMediaTypes[0]),
+            {
+              getFloor: () => {
+                return floorInfo;
+              }
+            });
+        }
+
+        beforeEach(function () {
+          adServerCurrencyStub = sinon
+            .stub(config, 'getConfig')
+            .withArgs('currency.adServerCurrency')
+        });
+
+        afterEach(function () {
+          config.getConfig.restore();
+        });
+
+        it('should send out floors on bids', function () {
+          const floors = [9.99, 18.881];
+          const bidRequests = floors.map(floor => {
+            return makeBidWithFloorInfo({
+              currency: 'AUS',
+              floor: floor
+            });
+          });
+          const request = spec.buildRequests(bidRequests, mockBidderRequest);
+
+          expect(request[0].data.aumfs).to.exist;
+          expect(request[0].data.aumfs).to.equal('9990');
+          expect(request[1].data.aumfs).to.exist;
+          expect(request[1].data.aumfs).to.equal('18881');
+        });
+
+        it('should send out floors on bids in the default currency', function () {
+          const bidRequest1 = makeBidWithFloorInfo({});
+
+          let getFloorSpy = sinon.spy(bidRequest1, 'getFloor');
+
+          spec.buildRequests([bidRequest1], mockBidderRequest);
+          expect(getFloorSpy.args[0][0].mediaType).to.equal(VIDEO);
+          expect(getFloorSpy.args[0][0].currency).to.equal('USD');
+        });
+
+        it('should send out floors on bids in the ad server currency if defined', function () {
+          adServerCurrencyStub.returns('bitcoin');
+
+          const bidRequest1 = makeBidWithFloorInfo({});
+
+          let getFloorSpy = sinon.spy(bidRequest1, 'getFloor');
+
+          spec.buildRequests([bidRequest1], mockBidderRequest);
+          expect(getFloorSpy.args[0][0].mediaType).to.equal(VIDEO);
+          expect(getFloorSpy.args[0][0].currency).to.equal('bitcoin');
+        });
+      })
+    })
   });
 
   describe('buildRequest for multi-format ad', function () {

@@ -341,21 +341,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
     queryParams.tps = customParamsForAllBids.join(',');
   }
 
-  let customFloorsForAllBids = [];
-  let hasCustomFloor = false;
-  bids.forEach(function (bid) {
-    let floor = getBidFloor(bid, BANNER);
-
-    if (floor) {
-      customFloorsForAllBids.push(floor);
-      hasCustomFloor = true;
-    } else {
-      customFloorsForAllBids.push(0);
-    }
-  });
-  if (hasCustomFloor) {
-    queryParams.aumfs = customFloorsForAllBids.join(',');
-  }
+  enrichQueryWithFloors(queryParams, BANNER, bids);
 
   let url = queryParams.ph
     ? `https://u.openx.net/w/1.0/arj`
@@ -430,6 +416,9 @@ function generateVideoParameters(bid, bidderRequest) {
     queryParams.vtest = 1;
   }
 
+  // each video bid makes a separate request
+  enrichQueryWithFloors(queryParams, VIDEO, [bid]);
+
   return queryParams;
 }
 
@@ -463,6 +452,24 @@ function createVideoBidResponses(response, {bid, startTime}) {
   return bidResponses;
 }
 
+function enrichQueryWithFloors(queryParams, mediaType, bids) {
+  let customFloorsForAllBids = [];
+  let hasCustomFloor = false;
+  bids.forEach(function (bid) {
+    let floor = getBidFloor(bid, mediaType);
+
+    if (floor) {
+      customFloorsForAllBids.push(floor);
+      hasCustomFloor = true;
+    } else {
+      customFloorsForAllBids.push(0);
+    }
+  });
+  if (hasCustomFloor) {
+    queryParams.aumfs = customFloorsForAllBids.join(',');
+  }
+}
+
 function getBidFloor(bidRequest, mediaType) {
   let floorInfo = {};
   const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
@@ -476,7 +483,7 @@ function getBidFloor(bidRequest, mediaType) {
   }
   let floor = floorInfo.floor || bidRequest.params.customFloor || 0;
 
-  return Math.round(floor * 1000); // normalize to microCpm
+  return Math.round(floor * 1000); // normalize to micro currency
 }
 
 registerBidder(spec);
