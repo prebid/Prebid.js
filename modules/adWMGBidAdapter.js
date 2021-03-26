@@ -7,7 +7,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adWMG';
 const ENDPOINT = 'https://hb.adwmg.com/hb';
-let SYNC_ENDPOINT = 'https://hb.adwmg.com/chcp.html?';
+let SYNC_ENDPOINT = 'https://hb.adwmg.com/cphb.html?';
 
 export const spec = {
   code: BIDDER_CODE,
