@@ -1,8 +1,7 @@
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { getStorageManager } from "../src/storageManager.js";
-import * as utils from "../src/utils.js";
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
-const BIDDER_CODE = "proxistore";
+const BIDDER_CODE = 'proxistore';
 const storage = getStorageManager();
 const PROXISTORE_VENDOR_ID = 418;
 
@@ -35,14 +34,14 @@ function _createServerRequest(bidRequests, bidderRequest) {
 
   if (bidderRequest && bidderRequest.gdprConsent) {
     if (
-      typeof bidderRequest.gdprConsent.gdprApplies === "boolean" &&
+      typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' &&
       bidderRequest.gdprConsent.gdprApplies
     ) {
       payload.gdpr.applies = true;
     }
 
     if (
-      typeof bidderRequest.gdprConsent.consentString === "string" &&
+      typeof bidderRequest.gdprConsent.consentString === 'string' &&
       bidderRequest.gdprConsent.consentString
     ) {
       payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
@@ -51,9 +50,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
     if (
       bidderRequest.gdprConsent.vendorData &&
       bidderRequest.gdprConsent.vendorData.vendorConsents &&
-      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[
-        PROXISTORE_VENDOR_ID.toString(10)
-      ] !== "undefined"
+      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined'
     ) {
       payload.gdpr.consentGiven = !!bidderRequest.gdprConsent.vendorData
         .vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
@@ -61,7 +58,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
   }
 
   const options = {
-    contentType: "application/json",
+    contentType: 'application/json',
     withCredentials: !!payload.gdpr.consentGiven,
   };
   const endPointUri = payload.gdpr.consentGiven
@@ -69,7 +66,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
     : `https://cookieless-proxistore.com/${payload.language}/v3/rtb/prebid/multi/cookieless`;
 
   return {
-    method: "POST",
+    method: 'POST',
     url: endPointUri,
     data: JSON.stringify(payload),
     options: options,
@@ -77,10 +74,10 @@ function _createServerRequest(bidRequests, bidderRequest) {
 }
 
 function _assignSegments(bid) {
-  if (bid.hasOwnProperty("fpd")) {
-    return bid.fpd.segments || [];
+  if (bid.ortb2 && bid.ortb2.user && bid.ortb2.user.ext && bid.ortb2.user.ext.data) {
+    return bid.ortb2.user.ext.data || {segments: [], contextual_categories: {}};
   }
-  return [];
+  return {segments: [], contextual_categories: {}};
 }
 
 function _createBidResponse(response) {
@@ -109,10 +106,8 @@ function _createBidResponse(response) {
 function isBidRequestValid(bid) {
   const canDisplay = function () {
     if (!storage.hasLocalStorage()) {
-      utils.logError("Local storage API disabled");
       return false;
     }
-
     const pxNoAds = storage.getDataFromLocalStorage(
       `PX_NoAds_${bid.params.website}`
     );
@@ -167,30 +162,19 @@ function _websiteFromBidRequest(bidR) {
 }
 
 function _assignFloor(bid) {
-  if (typeof bid.getFloor === "function") {
+  if (typeof bid.getFloor === 'function') {
     var floorInfo = bid.getFloor({
-      currency: "EUR",
-      mediaType: "banner",
-      size: "*",
+      currency: 'EUR',
+      mediaType: 'banner',
+      size: '*',
     });
 
-    if (floorInfo.currency === "EUR") {
+    if (floorInfo.currency === 'EUR') {
       return floorInfo.floor;
     }
   }
 
   return null;
-}
-/**
- * Register the user sync pixels which should be dropped after the auction.
- *
- * @param syncOptions Which user syncs are allowed?
- * @param serverResponses List of server's responses.
- * @return The user syncs which should be dropped.
- */
-
-function getUserSyncs(syncOptions, serverResponses) {
-  return [];
 }
 
 export const spec = {
@@ -198,7 +182,7 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
-  getUserSyncs: getUserSyncs,
+
 };
 
 registerBidder(spec);
