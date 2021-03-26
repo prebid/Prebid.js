@@ -339,6 +339,8 @@ function getNativeAssets(response, nativeConfig) {
 
     var impressionUrl = adJson.TrackingPrefix +
             '/pixel?event_kind=IMPRESSION&attempt=' + adJson.Attempt;
+    var insertionUrl = adJson.TrackingPrefix +
+            '/pixel?event_kind=INSERTION&attempt=' + adJson.Attempt;
 
     if (adJson.Campaign) {
       impressionUrl += '&campaign=' + adJson.Campaign;
@@ -355,7 +357,7 @@ function getNativeAssets(response, nativeConfig) {
       native.impressionTrackers = [];
     }
 
-    native.impressionTrackers.push(impressionUrl);
+    native.impressionTrackers.push(impressionUrl, insertionUrl);
   }
 
   Object.keys(nativeConfig).map(function(key, index) {
