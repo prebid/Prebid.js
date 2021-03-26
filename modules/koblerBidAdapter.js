@@ -204,11 +204,10 @@ function buildPmpObject(validBidRequest) {
   if (validBidRequest.params.dealIds) {
     return {
       deals: validBidRequest.params.dealIds.map(dealId => {
-          return {
-            id: dealId
-          };
-        }
-      )
+        return {
+          id: dealId
+        };
+      })
     };
   }
   return {};
