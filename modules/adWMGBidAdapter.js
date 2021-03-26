@@ -1,15 +1,9 @@
 'use strict';
 
 import * as utils from '../src/utils.js';
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
-import {
-  config
-} from '../src/config.js';
-import {
-  BANNER
-} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adWMG';
 const ENDPOINT = 'https://hb.adwmg.com/hb';
