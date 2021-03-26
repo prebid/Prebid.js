@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { expect } from 'chai';
 let { spec } = require('modules/proxistoreBidAdapter');
 const BIDDER_CODE = 'proxistore';
@@ -22,19 +23,22 @@ describe('ProxistoreBidAdapter', function () {
       website: 'example.fr',
       language: 'fr',
     },
+    ortb2: {
+      user: { ext: { data: { segments: [], contextual_categories: {} } } },
+    },
     auctionId: 442133079,
     bidId: 464646969,
     transactionId: 511916005,
   };
   describe('isBidRequestValid', function () {
     it('it should be true if required params are presents and there is no info in the local storage', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('it should be false if the value in the localstorage is less than 5minutes of the actual time', function () {
       const date = new Date();
       date.setMinutes(date.getMinutes() - 1);
       localStorage.setItem(`PX_NoAds_${bid.params.website}`, date);
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
     it('it should be true if the value in the localstorage is more than 5minutes of the actual time', function () {
       const date = new Date();
@@ -102,4 +106,32 @@ describe('ProxistoreBidAdapter', function () {
       expect(data.bids[0].floor).to.be.null;
     });
   });
+  describe('interpretResponse', function() {
+    const emptyResponseParam = {body: []};
+    const fakeResponseParam = {body: [
+      { ad: '',
+        cpm: 6.25,
+        creativeId: '22c3290b-8cd5-4cd6-8e8c-28a2de180ccd',
+        currency: 'EUR',
+        dealId: '2021-03_a63ec55e-b9bb-4ca4-b2c9-f456be67e656',
+        height: 600,
+        netRevenue: true,
+        requestId: '3543724f2a033c9',
+        segments: [],
+        ttl: 10,
+        vastUrl: null,
+        vastXml: null,
+        width: 300}
+    ]
+    };
+
+    it('should always return an array', function() {
+      let response = spec.interpretResponse(emptyResponseParam, bid);
+      expect(response).to.be.an('array');
+      expect(response.length).equal(0);
+      response = spec.interpretResponse(fakeResponseParam, bid);
+      expect(response).to.be.an('array');
+      expect(response.length).equal(1);
+    });
+  })
 });
