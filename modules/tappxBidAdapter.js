@@ -258,15 +258,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const userId = utils.deepAccess(validBidRequests, 'userId');
   const eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
   
-  utils.logMessage('-------- UID ------------')
-  utils.logMessage(validBidRequests);
-  utils.logMessage(eidsArr);
-  utils.logMessage(userId);
-
   let eids = [];
   eidsArr.forEach(eidsElement => {
-    utils.logMessage('-------- EID ELEMENT ------------')
-    utils.logMessage(eidsElement)
     if (eidsElement.source && eidsElement.uids[0].id) {
       eids.push({
         source: eidsElement.source,
@@ -274,15 +267,12 @@ function buildOneRequest(validBidRequests, bidderRequest) {
       });
     }
   });
-  utils.logMessage('-------- EIDS ------------')
-  utils.logMessage(eids)
 
   let user = {};
   user.ext = {};
   user.ext.eids = eidsArr;
   payload.user = user;
 
-  utils.logMessage('-------- UID ------------')
   // < GDPR
 
   // > Payload
