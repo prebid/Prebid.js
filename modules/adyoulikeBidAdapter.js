@@ -344,6 +344,7 @@ function getNativeAssets(response, nativeConfig) {
 
     if (adJson.Campaign) {
       impressionUrl += '&campaign=' + adJson.Campaign;
+      insertionUrl += '&campaign=' + adJson.Campaign;
     }
 
     native.clickUrl = adJson.TrackingPrefix + '/ar?event_kind=CLICK&attempt=' + adJson.Attempt +
