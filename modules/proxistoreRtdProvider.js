@@ -24,8 +24,6 @@ function getBidRequest(reqBidsConfigObj, prebidCallback, config, userConsent) {
     _getSddanTargeting(gdpr, true, prebidCallback, adUnits);
   } else if (gdpr) {
     _getSddanTargeting(gdpr, false, prebidCallback, adUnits);
-  } else {
-    _getSddanTargeting(null, null, prebidCallback, adUnits);
   }
 }
 
@@ -59,7 +57,9 @@ function _getSddanTargeting(tcData, isCookiebased, prebidCallback, adUnits) {
       success: (response) => {
         _updateBidRequest(JSON.parse(response), adUnits, prebidCallback);
       },
-      error: () => prebidCallback()
+      error: () => {
+        prebidCallback();
+      }
       ,
     },
     null,
@@ -72,7 +72,7 @@ function _getSddanTargeting(tcData, isCookiebased, prebidCallback, adUnits) {
   );
 };
 
-function _updateBidRequest(response, adUnits, callback) {
+export function _updateBidRequest(response, adUnits, callback) {
   if (response) {
     adUnits.forEach(function (adUnit) {
       if (adUnit.hasOwnProperty('bids')) {
