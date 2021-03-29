@@ -62,7 +62,7 @@ describe('ProxistoreBidAdapter', function () {
     it('request method should be POST', function () {
       expect(request.method).to.equal('POST');
     });
-    it('should have the value consentGiven to true bc we have 418 in the vendor list', function () {   
+    it('should have the value consentGiven to true bc we have 418 in the vendor list', function () {
       const data = JSON.parse(request.data);
       expect(data.gdpr.consentString).equal(
         bidderRequest.gdprConsent.consentString
@@ -78,7 +78,7 @@ describe('ProxistoreBidAdapter', function () {
       request = spec.buildRequests([bid], bidderRequest);
       expect(request.url).equal(url.cookieLess);
     });
-    it('should have a property a length of bids equal to one if there is only one bid', function () {  
+    it('should have a property a length of bids equal to one if there is only one bid', function () {
       const data = JSON.parse(request.data);
       expect(data.hasOwnProperty('bids')).to.be.true;
       expect(data.bids).to.be.an('array');
