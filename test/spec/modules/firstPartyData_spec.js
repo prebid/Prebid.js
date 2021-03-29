@@ -1,8 +1,6 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
-import { getGlobal } from 'src/prebidGlobal.js';
-import CONSTANTS from 'src/constants.json';
 import {getRefererInfo} from 'src/refererDetection.js';
 import {
   filterData,
@@ -10,16 +8,14 @@ import {
   init,
   resetOrtb2
 } from 'modules/firstPartyData/index.js';
-import events from 'src/events.js';
 
 describe('the first party data module', function () {
-  let sandbox,
-    logErrorSpy;
+  let sandbox;
 
   let ortb2 = {
     device: {
-      height: 911,
-      width: 1733
+      h: 911,
+      w: 1733
     },
     user: {
       data: [{
@@ -47,8 +43,8 @@ describe('the first party data module', function () {
 
   let conf = {
     device: {
-      height: 500,
-      width: 750
+      h: 500,
+      w: 750
     },
     user: {
       keywords: 'test1, test2',
@@ -209,8 +205,8 @@ describe('the first party data module', function () {
       let duplicate = utils.deepClone(ortb2);
       let expected = {
         device: {
-          height: 911,
-          width: 1733
+          h: 911,
+          w: 1733
         },
         user: {
           data: [{
@@ -244,8 +240,8 @@ describe('the first party data module', function () {
       let duplicate = utils.deepClone(ortb2);
       let expected = {
         device: {
-          height: 911,
-          width: 1733
+          h: 911,
+          w: 1733
         }
       };
 
@@ -261,8 +257,8 @@ describe('the first party data module', function () {
       let duplicate = utils.deepClone(ortb2);
       let expected = {
         device: {
-          height: 911,
-          width: 1733
+          h: 911,
+          w: 1733
         },
         site: {
           content: {
@@ -291,8 +287,8 @@ describe('the first party data module', function () {
       let duplicate = utils.deepClone(ortb2);
       let expected = {
         device: {
-          height: 911,
-          width: 1733
+          h: 911,
+          w: 1733
         },
         user: {
           data: [{
@@ -374,7 +370,7 @@ describe('the first party data module', function () {
       expect(validated.site.ref).to.equal(getRefererInfo().referer);
       expect(validated.site.page).to.be.undefined;
       expect(validated.site.domain).to.be.undefined;
-      expect(validated.device).to.deep.equal({width: 1120, height: 750});
+      expect(validated.device).to.deep.equal({w: 1120, h: 750});
       expect(validated.site.keywords).to.be.undefined;
     });
 
@@ -389,7 +385,7 @@ describe('the first party data module', function () {
       expect(validated.site.ref).to.equal(getRefererInfo().referer);
       expect(validated.site.page).to.equal('https://www.domain.com/path?query=12345');
       expect(validated.site.domain).to.equal('domain.com');
-      expect(validated.device).to.deep.to.equal({width: 1120, height: 750});
+      expect(validated.device).to.deep.to.equal({w: 1120, h: 750});
       expect(validated.site.keywords).to.be.undefined;
     });
 
@@ -404,7 +400,7 @@ describe('the first party data module', function () {
       expect(validated.site.ref).to.equal(getRefererInfo().referer);
       expect(validated.site.page).to.be.undefined;
       expect(validated.site.domain).to.be.undefined;
-      expect(validated.device).to.deep.to.equal({width: 1120, height: 750});
+      expect(validated.device).to.deep.to.equal({w: 1120, h: 750});
       expect(validated.site.keywords).to.equal('value1,value2,value3');
     });
 
@@ -419,7 +415,7 @@ describe('the first party data module', function () {
       expect(validated.site.ref).to.equal('https://testpage.com');
       expect(validated.site.page).to.be.undefined;
       expect(validated.site.domain).to.equal('newDomain.com');
-      expect(validated.device).to.deep.to.equal({width: 1120, height: 750});
+      expect(validated.device).to.deep.to.equal({w: 1120, h: 750});
       expect(validated.site.keywords).to.be.undefined;
     });
 
@@ -450,8 +446,8 @@ describe('the first party data module', function () {
             }
           },
           device: {
-            width: 1,
-            height: 1
+            w: 1,
+            h: 1
           }
         }
       };
@@ -469,7 +465,7 @@ describe('the first party data module', function () {
       expect(validated.site.domain).to.equal('domain.com');
       expect(validated.site.content.data).to.deep.equal([{segment: [{id: 'test'}], name: 'bar'}]);
       expect(validated.user.data).to.be.undefined;
-      expect(validated.device).to.deep.to.equal({width: 1, height: 1});
+      expect(validated.device).to.deep.to.equal({w: 1, h: 1});
       expect(validated.site.keywords).to.be.undefined;
     });
 

@@ -60,7 +60,7 @@ function setDimensions() {
     height = window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight;
   }
 
-  utils.mergeDeep(ortb2, {device: {width: width, height: height}});
+  utils.mergeDeep(ortb2, {device: {w: width, h: height}});
 }
 
 /**
