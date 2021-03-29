@@ -1,12 +1,14 @@
 /**
- * This module adds dgkeyword provider to the eal time data module
+ * This module adds dgkeyword provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
- * The module will get keywords from 1plux profile api
+ * The module will get keywords from 1plux profile api.
+ * This module can work only with AppNexusBidAdapter.
  * @module modules/dgkeywordProvider
  * @requires module:modules/realTimeData
  */
 
 import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
@@ -32,18 +34,9 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, config, userCons
   } else {
     utils.logMessage('[dgkeyword sub module] dgkeyword targets:', setKeywordTargetBidders);
     utils.logMessage('[dgkeyword sub module] get targets from profile api start.');
-    try {
-      fetch(url, {
-        referrerPolicy: 'no-referrer-when-downgrade',
-        mode: 'cors',
-        credentials: 'include'
-      }).then(function (response) {
-        if (response.status === 200) {
-          return response.json();
-        } else {
-          throw new Error('profile api access error.');
-        }
-      }).then(function (res) {
+    ajax(url, {
+      success: function(response) {
+        const res = JSON.parse(response);
         if (!isFinish) {
           utils.logMessage('[dgkeyword sub module] get targets from profile api end.');
           if (res) {
@@ -63,23 +56,24 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, config, userCons
           isFinish = true;
         }
         callback();
-      }).catch(function (error) {
+      },
+      error: function(errorStatus) {
         // error occur
-        utils.logError('[dgkeyword sub module] profile api access error.', error);
+        utils.logError('[dgkeyword sub module] profile api access error.', errorStatus);
         callback();
-      });
-      setTimeout(function () {
-        if (!isFinish) {
-          // profile api timeout
-          utils.logInfo('[dgkeyword sub module] profile api timeout. [timeout: ' + timeout + 'ms]');
-          isFinish = true;
-        }
-        callback();
-      }, timeout);
-    } catch (error) {
-      utils.logError('[dgkeyword sub module] fetch error.', error);
+      }
+    }, null, {
+      withCredentials: true,
+      contentType: 'application/json',
+    });
+    setTimeout(function () {
+      if (!isFinish) {
+        // profile api timeout
+        utils.logInfo('[dgkeyword sub module] profile api timeout. [timeout: ' + timeout + 'ms]');
+        isFinish = true;
+      }
       callback();
-    }
+    }, timeout);
   }
 }
 
