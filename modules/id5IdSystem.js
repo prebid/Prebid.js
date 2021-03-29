@@ -67,7 +67,8 @@ export const id5IdSubmodule = {
     } else if (abConfig.enabled === true && controlGroup === true) {
       // A/B Testing is enabled and user is in the Control Group, so do not share the ID5 ID
       utils.logInfo('User ID - ID5 submodule: A/B Testing Enabled - user is in the Control Group, so the ID5 ID is NOT exposed');
-      universalUid = linkType = 0;
+      universalUid = '';
+      linkType = 0;
     } else if (abConfig.enabled === true) {
       // A/B Testing is enabled but user is not in the Control Group, so ID5 ID is shared
       utils.logInfo('User ID - ID5 submodule: A/B Testing Enabled - user is NOT in the Control Group, so the ID5 ID is exposed');
