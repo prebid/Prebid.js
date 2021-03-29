@@ -14,11 +14,6 @@ import * as utils from 'src/utils.js';
 import find from 'core-js-pure/features/array/find.js';
 
 describe('multibid adapter', function () {
-  let sandbox,
-    logErrorSpy;
-  let logErrorStub;
-  let logWarnStub;
-  let logInfoStub;
   let bidArray = [{
     'bidderCode': 'bidderA',
     'requestId': '1c5f0a05d3629a',
@@ -124,14 +119,7 @@ describe('multibid adapter', function () {
     }]
   }];
 
-  beforeEach(function () {
-    sandbox = sinon.sandbox.create();
-    logErrorSpy = sinon.spy(utils, 'logError');
-  });
-
   afterEach(function () {
-    sandbox.restore();
-    utils.logError.restore();
     config.resetConfig();
     resetMultiConfig();
     resetMultibidUnits();
@@ -145,11 +133,6 @@ describe('multibid adapter', function () {
 
     beforeEach(function() {
       result = null;
-      logWarnStub = sinon.stub(utils, 'logWarn');
-    });
-
-    afterEach(function() {
-      logWarnStub.restore();
     });
 
     it('does not modify bidderRequest when no multibid config exists', function () {
@@ -165,6 +148,18 @@ describe('multibid adapter', function () {
       let bidRequests = [{...bidderRequests[0]}];
 
       config.setConfig({multibid: [{bidder: 'bidderA', maxBids: 2}]});
+
+      adjustBidderRequestsHook(callbackFn, [{...bidderRequests[0]}]);
+
+      expect(result).to.not.equal(null);
+      expect(result).to.not.deep.equal(bidRequests);
+      expect(result[0].bidLimit).to.equal(2);
+    });
+
+    it('does modify bidderRequest when multibid config exists using bidders array', function () {
+      let bidRequests = [{...bidderRequests[0]}];
+
+      config.setConfig({multibid: [{bidders: ['bidderA'], maxBids: 2}]});
 
       adjustBidderRequestsHook(callbackFn, [{...bidderRequests[0]}]);
 
@@ -199,11 +194,6 @@ describe('multibid adapter', function () {
 
     beforeEach(function() {
       result = null;
-      logWarnStub = sinon.stub(utils, 'logWarn');
-    });
-
-    afterEach(function() {
-      logWarnStub.restore();
     });
 
     it('adds original bids and does not modify', function () {
@@ -552,11 +542,6 @@ describe('multibid adapter', function () {
     beforeEach(function() {
       result = null;
       bidResult = null;
-      logWarnStub = sinon.stub(utils, 'logWarn');
-    });
-
-    afterEach(function() {
-      logWarnStub.restore();
     });
 
     it('it does not run filter on bidsReceived if no multibid configuration found', function () {

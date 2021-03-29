@@ -24,9 +24,18 @@ config.getConfig(MODULE_NAME, conf => {
   hasMultibid = true;
 
   conf.multibid.forEach(entry => {
-    multiConfig[entry.bidder] = {
-      maxbids: entry.maxBids,
-      prefix: entry.targetBiddercodePrefix
+    if (entry.bidder) {
+      multiConfig[entry.bidder] = {
+        maxbids: entry.maxBids,
+        prefix: entry.targetBiddercodePrefix
+      }
+    } else {
+      entry.bidders.forEach(key => {
+        multiConfig[key] = {
+          maxbids: entry.maxBids,
+          prefix: entry.targetBiddercodePrefix
+        }
+      });
     }
   });
 });
@@ -40,8 +49,8 @@ export function validateMultibid(conf) {
   let check = true;
   let duplicate = conf.filter(entry => {
     // Check if entry.bidder is not defined or typeof string, filter entry and reset configuration
-    if (!entry.bidder || typeof entry.bidder !== 'string') {
-      utils.logWarn('Filtering multibid entry due to missing required bidder property.');
+    if ((!entry.bidder || typeof entry.bidder !== 'string') && (!entry.bidders || !Array.isArray(entry.bidders))) {
+      utils.logWarn('Filtering multibid entry. Missing required bidder or bidders property.');
       check = false;
       return false;
     }
