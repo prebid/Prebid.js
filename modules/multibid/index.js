@@ -109,7 +109,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     if (utils.deepAccess(multibidUnits, `${adUnitCode}.${bid.bidderCode}`)) {
       // Store request id under new property originalRequestId, create new unique bidId,
       // and push bid into multibid stored bids for auction if max not reached and bid cpm above floor
-      if (!multibidUnits[adUnitCode][bid.bidderCode].maxReached && (!floor || floor < bid.cpm)) {
+      if (!multibidUnits[adUnitCode][bid.bidderCode].maxReached && (!floor || floor <= bid.cpm)) {
         bid.originalRequestId = bid.requestId;
 
         bid.requestId = utils.getUniqueIdentifierStr();

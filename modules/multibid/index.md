@@ -19,15 +19,18 @@ Allowing a single bidder to multi-bid into an auction has several use cases:
     pbjs.setConfig({
         multibid: [{
             bidder: "bidderA",
-            maxbids: 3,
-            targetbiddercodeprefix: "bidA"
+            maxBids: 3,
+            targetBiddercodePrefix: "bidA"
         },{
             bidder: "bidderB",
-            maxbids: 3,
-            targetbiddercodeprefix: "bidB"
+            maxBids: 3,
+            targetBiddercodePrefix: "bidB"
         },{
             bidder: "bidderC",
-            maxbids: 3
+            maxBids: 3
+        },{
+            bidders: ["bidderD", "bidderE"],
+            maxBids: 2
         }]
     });
 ```
