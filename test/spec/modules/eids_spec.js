@@ -90,7 +90,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'merkleinc.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -102,7 +102,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveramp.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -117,7 +117,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
-      uids: [{id: 'some-random-id-value', atype: 1}],
+      uids: [{id: 'some-random-id-value', atype: 3}],
       ext: {segments: ['s1', 's2']}
     });
   });
@@ -132,7 +132,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -144,7 +144,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'britepool.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 

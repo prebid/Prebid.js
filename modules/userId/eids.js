@@ -71,7 +71,7 @@ const USER_IDS_CONFIG = {
   // identityLink
   'idl_env': {
     source: 'liveramp.com',
-    atype: 1
+    atype: 3
   },
 
   // liveIntentId
@@ -80,7 +80,7 @@ const USER_IDS_CONFIG = {
       return data.lipbid;
     },
     source: 'liveintent.com',
-    atype: 1,
+    atype: 3,
     getEidExt: function(data) {
       if (Array.isArray(data.segments) && data.segments.length) {
         return {
@@ -93,7 +93,7 @@ const USER_IDS_CONFIG = {
   // britepoolId
   'britepoolid': {
     source: 'britepool.com',
-    atype: 1
+    atype: 3
   },
 
   // lotamePanoramaId
@@ -111,7 +111,7 @@ const USER_IDS_CONFIG = {
   // merkleId
   'merkleId': {
     source: 'merkleinc.com',
-    atype: 1
+    atype: 3
   },
 
   // NetId
@@ -161,7 +161,7 @@ const USER_IDS_CONFIG = {
   // Verizon Media ConnectID
   'connectid': {
     source: 'verizonmedia.com',
-    atype: 1
+    atype: 3
   },
 
   // Neustar Fabrick
