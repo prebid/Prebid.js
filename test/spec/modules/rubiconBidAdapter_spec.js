@@ -1498,7 +1498,7 @@ describe('the rubicon adapter', function () {
           // LiveIntent should exist
           expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
           expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
-          expect(post.user.ext.eids[0].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[0].uids[0].atype).to.equal(3);
           expect(post.user.ext.eids[0]).to.have.property('ext').that.is.an('object');
           expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
           expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
@@ -1506,7 +1506,7 @@ describe('the rubicon adapter', function () {
           // LiveRamp should exist
           expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
           expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
-          expect(post.user.ext.eids[1].uids[0].atype).to.equal(1);
+          expect(post.user.ext.eids[1].uids[0].atype).to.equal(3);
           // SharedId should exist
           expect(post.user.ext.eids[2].source).to.equal('sharedid.org');
           expect(post.user.ext.eids[2].uids[0].id).to.equal('1111');
