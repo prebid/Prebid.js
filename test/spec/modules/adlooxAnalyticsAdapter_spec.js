@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import events from 'src/events.js';
 import { EVENTS } from 'src/constants.json';
 import * as utils from 'src/utils.js';
-import * as adloader from '../../../src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 const analyticsAdapterName = 'adloox';
 
@@ -43,13 +43,6 @@ describe('Adloox Analytics Adapter', function () {
   adapterManager.registerAnalyticsAdapter({
     code: analyticsAdapterName,
     adapter: analyticsAdapter
-  });
-  let loadExternalScriptStub;
-  beforeEach(function () {
-    loadExternalScriptStub = sinon.stub(adloader, 'loadExternalScript');
-  });
-  afterEach(function () {
-    loadExternalScriptStub.restore();
   });
   describe('enableAnalytics', function () {
     describe('invalid options', function () {
