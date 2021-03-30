@@ -8,6 +8,8 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'tappx';
 const TTL = 360;
 const CUR = 'USD';
+const TAPPX_BIDDER_VERSION = '0.1.10329';
+const TYPE_CNN = 'prebidjs';
 var HOST;
 var hostDomain;
 
@@ -133,11 +135,15 @@ function interpretBannerBid(serverBid, request) {
 * @return response ad
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
+  utils.logMessage('---------- validBidRequests');
+  utils.logMessage(JSON.stringify(validBidRequests));
+  utils.logMessage('---------- bidderRequest');
+  utils.logMessage(JSON.stringify(bidderRequest));
+
   HOST = utils.deepAccess(validBidRequests, 'params.host');
   let hostInfo = getHostInfo(HOST)
-  utils.logMessage('-------- hostInfo ------------')
-  utils.logMessage(hostInfo)
-  hostDomain = HOST.split('/', 1)[0];
+  // hostDomain = HOST.split('/', 1)[0];
+  hostDomain = hostInfo.domain;
 
   const ENDPOINT = utils.deepAccess(validBidRequests, 'params.endpoint');
   const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
@@ -209,6 +215,13 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   imp.secure = 1;
 
   imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
+
+  let tappx = {};
+  tappx.tappxkey = TAPPXKEY;
+  tappx.endpoint = ENDPOINT;
+  tappx.host = hostInfo.url;
+
+  imp.ext = tappx;
   // < Imp object
 
   // > Device object
@@ -233,8 +246,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // > Params
   let params = {};
   params.host = 'tappx.com';
-  params.tappxkey = TAPPXKEY;
-  params.endpoint = ENDPOINT;
   params.bidfloor = BIDFLOOR;
   // < Params
 
@@ -258,9 +269,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   }
 
   // Universal ID
-  const userId = utils.deepAccess(validBidRequests, 'userId');
   const eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
-  
+
   let eids = [];
   eidsArr.forEach(eidsElement => {
     if (eidsElement.source && eidsElement.uids[0].id) {
@@ -291,13 +301,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  utils.logMessage('-------- PAYLOAD ------------')
-  utils.logMessage(JSON.stringify(payload))
-  utils.logMessage('-------- PAYLOAD ------------')
-
   return {
     method: 'POST',
-    url: `https://${HOST}/${ENDPOINT}?type_cnn=prebidjs`,
+    url: `https://${HOST}/${ENDPOINT}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
     data: JSON.stringify(payload),
     bids: validBidRequests
   };
