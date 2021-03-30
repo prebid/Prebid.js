@@ -483,13 +483,13 @@ describe('targeting tests', function () {
 
       it('targeting should include keys in default targeting keys', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_bidder_rubicon', 'hb_adid_rubicon', 'hb_pb_rubicon','hb_deal_rubicon');
+        expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_bidder_rubicon', 'hb_adid_rubicon', 'hb_pb_rubicon', 'hb_deal_rubicon');
         expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus', 'hb_deal_appnexus');
       });
 
       it('targeting should not include keys not in default targeting keys', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
-        expect(targeting['/123456/header-bid-tag-0']).to.not.have.all.keys(['hb_uuid_appnexus', 'hb_uuid_rubicon','hb_source_appnexus', 'hb_source_rubicon']);
+        expect(targeting['/123456/header-bid-tag-0']).to.not.have.all.keys(['hb_uuid_appnexus', 'hb_uuid_rubicon', 'hb_source_appnexus', 'hb_source_rubicon']);
         expect(targeting['/123456/header-bid-tag-0']).to.not.have.all.keys(['hb_uuid', 'hb_source']);
       });
     });
