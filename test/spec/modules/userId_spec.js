@@ -941,7 +941,7 @@ describe('User ID', function () {
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'liveramp.com',
-              uids: [{id: 'AiGNC8Z5ONyZKSpIPf', atype: 1}]
+              uids: [{id: 'AiGNC8Z5ONyZKSpIPf', atype: 3}]
             });
           });
         });
@@ -965,7 +965,7 @@ describe('User ID', function () {
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'liveramp.com',
-              uids: [{id: 'AiGNC8Z5ONyZKSpIPf', atype: 1}]
+              uids: [{id: 'AiGNC8Z5ONyZKSpIPf', atype: 3}]
             });
           });
         });
@@ -1035,7 +1035,7 @@ describe('User ID', function () {
             expect(bid.userId.lipb.lipbid).to.equal('random-ls-identifier');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'liveintent.com',
-              uids: [{id: 'random-ls-identifier', atype: 1}]
+              uids: [{id: 'random-ls-identifier', atype: 3}]
             });
           });
         });
@@ -1059,7 +1059,7 @@ describe('User ID', function () {
             expect(bid.userId.lipb.lipbid).to.equal('random-cookie-identifier');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'liveintent.com',
-              uids: [{id: 'random-cookie-identifier', atype: 1}]
+              uids: [{id: 'random-cookie-identifier', atype: 3}]
             });
           });
         });
@@ -1443,7 +1443,7 @@ describe('User ID', function () {
             expect(bid.userId.lipb.segments).to.include('123');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'liveintent.com',
-              uids: [{id: 'random-ls-identifier', atype: 1}],
+              uids: [{id: 'random-ls-identifier', atype: 3}],
               ext: {segments: ['123']}
             });
           });
@@ -1472,7 +1472,7 @@ describe('User ID', function () {
             expect(bid.userId.lipb.segments).to.include('123');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'liveintent.com',
-              uids: [{id: 'random-cookie-identifier', atype: 1}],
+              uids: [{id: 'random-cookie-identifier', atype: 3}],
               ext: {segments: ['123']}
             });
           });
@@ -1497,7 +1497,7 @@ describe('User ID', function () {
             expect(bid.userId.britepoolid).to.equal('279c0161-5152-487f-809e-05d7f7e653fd');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'britepool.com',
-              uids: [{id: '279c0161-5152-487f-809e-05d7f7e653fd', atype: 1}]
+              uids: [{id: '279c0161-5152-487f-809e-05d7f7e653fd', atype: 3}]
             });
           });
         });
@@ -1595,7 +1595,7 @@ describe('User ID', function () {
             expect(bid.userId.merkleId).to.equal('testmerkleId');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'merkleinc.com',
-              uids: [{id: 'testmerkleId', atype: 1}]
+              uids: [{id: 'testmerkleId', atype: 3}]
             });
           });
         });
