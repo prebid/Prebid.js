@@ -14,7 +14,7 @@ import { OUTSTREAM } from '../src/video.js';
 
 export const BIDDER_CODE = 'adagio';
 export const LOG_PREFIX = 'Adagio:';
-export const VERSION = '2.7.0';
+export const VERSION = '2.8.0';
 export const FEATURES_VERSION = '1';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
 export const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
@@ -23,7 +23,7 @@ export const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 export const GVLID = 617;
 export const storage = getStorageManager(GVLID, 'adagio');
 export const RENDERER_URL = 'https://script.4dex.io/outstream-player.js';
-
+export const MAX_SESS_DURATION = 30 * 60 * 1000;
 export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9el0+OEn6fvEh1RdVHQu4cnT0
 jFSzIbGJJyg3cKqvtE6A0iaz9PkIdJIvSSSNrmJv+lRGKPEyRA/VnzJIieL39Ngl
@@ -61,6 +61,8 @@ export const ORTB_VIDEO_PARAMS = {
 };
 
 let currentWindow;
+
+const EXT_DATA = {}
 
 export function adagioScriptFromLocalStorageCb(ls) {
   try {
@@ -108,6 +110,9 @@ export function getAdagioScript() {
       // It's an antipattern regarding the TCF2 enforcement logic
       // but it's the only way to respect the user choice update.
       window.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
+      // Extra data from external script.
+      // This key is removed only if localStorage is not accessible.
+      window.localStorage.removeItem('adagio');
     }
   });
 }
@@ -131,6 +136,37 @@ function isSafeFrameWindow() {
   return !!(ws.$sf && ws.$sf.ext);
 }
 
+// Get localStorage "adagio" data to be passed to the request
+export function prepareExchange(storageValue) {
+  const adagioStorage = JSON.parse(storageValue, function(name, value) {
+    if (!name.startsWith('_') || name === '') {
+      return value;
+    }
+  });
+  let random = utils.deepAccess(adagioStorage, 'session.rnd');
+  let newSession = false;
+
+  if (internal.isNewSession(adagioStorage)) {
+    newSession = true;
+    random = Math.random();
+  }
+
+  const data = {
+    session: {
+      new: newSession,
+      rnd: random
+    }
+  }
+
+  utils.mergeDeep(EXT_DATA, adagioStorage, data);
+
+  internal.enqueue({
+    action: 'session',
+    ts: Date.now(),
+    data: EXT_DATA
+  });
+}
+
 function initAdagio() {
   if (canAccessTopWindow()) {
     currentWindow = (canAccessTopWindow()) ? utils.getWindowTop() : utils.getWindowSelf();
@@ -145,6 +181,14 @@ function initAdagio() {
   w.ADAGIO.versions = w.ADAGIO.versions || {};
   w.ADAGIO.versions.adagioBidderAdapter = VERSION;
   w.ADAGIO.isSafeFrameWindow = isSafeFrameWindow();
+
+  storage.getDataFromLocalStorage('adagio', (storageData) => {
+    try {
+      internal.prepareExchange(storageData);
+    } catch (e) {
+      utils.logError(LOG_PREFIX, e);
+    }
+  });
 
   getAdagioScript();
 }
@@ -561,6 +605,21 @@ function isRendererPreferredFromPublisher(bidRequest) {
   );
 }
 
+/**
+ *
+ * @param {object} adagioStorage
+ * @returns {boolean}
+ */
+function isNewSession(adagioStorage) {
+  const now = Date.now();
+  const { lastActivityTime, vwSmplg } = utils.deepAccess(adagioStorage, 'session', {});
+  return (
+    !utils.isNumber(lastActivityTime) ||
+    !utils.isNumber(vwSmplg) ||
+    (now - lastActivityTime) > MAX_SESS_DURATION
+  )
+}
+
 export const internal = {
   enqueue,
   getOrAddAdagioAdUnit,
@@ -577,7 +636,9 @@ export const internal = {
   getCurrentWindow,
   supportIObs,
   canAccessTopWindow,
-  isRendererPreferredFromPublisher
+  isRendererPreferredFromPublisher,
+  isNewSession,
+  prepareExchange
 };
 
 function _getGdprConsent(bidderRequest) {
@@ -918,6 +979,7 @@ export const spec = {
           site: site,
           pageviewId: pageviewId,
           adUnits: groupedAdUnits[organizationId],
+          data: EXT_DATA,
           regs: {
             gdpr: gdprConsent,
             coppa: coppa,
