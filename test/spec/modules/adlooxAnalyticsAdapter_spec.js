@@ -5,6 +5,7 @@ import { expect } from 'chai';
 import events from 'src/events.js';
 import { EVENTS } from 'src/constants.json';
 import * as utils from 'src/utils.js';
+import * as adloader from '../../../src/adloader.js';
 
 const analyticsAdapterName = 'adloox';
 
@@ -43,7 +44,13 @@ describe('Adloox Analytics Adapter', function () {
     code: analyticsAdapterName,
     adapter: analyticsAdapter
   });
-
+  let loadExternalScriptStub;
+  beforeEach(function () {
+    loadExternalScriptStub = sinon.stub(adloader, 'loadExternalScript');
+  });
+  afterEach(function () {
+    loadExternalScriptStub.restore();
+  });
   describe('enableAnalytics', function () {
     describe('invalid options', function () {
       it('should require options', function (done) {
@@ -173,9 +180,12 @@ describe('Adloox Analytics Adapter', function () {
 
         events.emit(EVENTS.BID_WON, bid);
 
-        expect(script.src.substr(0, url.length)).to.equal(url);
-        expect(/[#&]creatype=2(&|$)/.test(script.src)).to.true; // prebid 'display' -> adloox '2'
-        expect(new RegExp('[#&]dummy3=' + encodeURIComponent('ERROR: ' + esplode) + '(&|$)').test(script.src)).to.true;
+        const [urlInserted, moduleCode] = loadExternalScriptStub.getCall(0).args;
+
+        expect(urlInserted.substr(0, url.length)).to.equal(url);
+        expect(moduleCode).to.equal(analyticsAdapterName);
+        expect(/[#&]creatype=2(&|$)/.test(urlInserted)).is.true; // prebid 'display' -> adloox '2'
+        expect(new RegExp('[#&]dummy3=' + encodeURIComponent('ERROR: ' + esplode) + '(&|$)').test(urlInserted)).is.true;
 
         done();
       });
