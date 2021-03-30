@@ -183,7 +183,7 @@ export function getSegAndCatsArray(data, minScore) {
     if (data && data.contextual_categories && minScore) {
       Object.entries(data.contextual_categories).forEach(([cat, value]) => {
         if (value >= minScore && sirdataData.categories.indexOf(cat) === -1) {
-          sirdataData.categories.push(cat);
+          sirdataData.categories.push(cat.toString());
         }
       });
     }
@@ -192,7 +192,7 @@ export function getSegAndCatsArray(data, minScore) {
     if (data && data.segments) {
       Object.entries(data.segments).forEach(([entry, segment]) => {
         if (sirdataData.segments.indexOf(sirdataData.segment) === -1) {
-          sirdataData.segments.push(segment);
+          sirdataData.segments.push(segment.toString());
         }
       });
     }
@@ -298,7 +298,6 @@ export function addSegmentData(adUnits, data, config, onDone, gobalConfig) {
                 if (ixLength < ixLimit) {
                   cappIxCategories.push(entry);
                   ixLength += entry.toString().length;
-                  utils.logInfo(ixLength);
                 }
               });
               if (cappIxCategories.length > 0) {
@@ -330,7 +329,7 @@ export function addSegmentData(adUnits, data, config, onDone, gobalConfig) {
             loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
           } else {
             // _set(bid, 'ortb2.user.ext.data', {segments: data.segments, contextual_categories: data.contextual_categories});
-            _set(bid, 'ortb2Imp.ext.data', {segments: data.segments, contextual_categories: data.contextual_categories});
+            _set(bid, 'ortb2Imp.ext.data', {segments: sirdataData.segments.concat(curationData.segments), categories: sirdataData.categories.concat(curationData.categories)});
           }
         }
       }
