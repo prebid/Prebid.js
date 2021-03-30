@@ -24,7 +24,7 @@ config.getConfig('mass', config => init(config.mass));
  * Module init.
  */
 export function init(userCfg) {
-  cfg = Object.assign({}, defaultCfg, userCfg);
+  cfg = Object.assign({}, defaultCfg, window.massConfig && window.massConfig.mass, userCfg);
 
   if (cfg.enabled === false) {
     if (isEnabled) {
