@@ -1,5 +1,5 @@
 import find from 'core-js-pure/features/array/find.js';
-import { expect } from 'chai';
+import { expect, util } from 'chai';
 import {
   _features,
   internal as adagio,
@@ -13,7 +13,8 @@ import {
 } from '../../../modules/adagioBidAdapter.js';
 import { loadExternalScript } from '../../../src/adloader.js';
 import * as utils from '../../../src/utils.js';
-import { config } from 'src/config.js';
+import { config } from '../../../src/config.js';
+import { NATIVE } from '../../../src/mediaTypes.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -331,7 +332,8 @@ describe('Adagio bid adapter', () => {
       'schain',
       'prebidVersion',
       'adapterVersion',
-      'featuresVersion'
+      'featuresVersion',
+      'data'
     ];
 
     it('groups requests by organizationId', function() {
@@ -877,6 +879,174 @@ describe('Adagio bid adapter', () => {
         expect(bidResponse.width).to.equal(300);
         expect(bidResponse.height).to.equal(250);
         expect(bidResponse.vastUrl).to.match(/^data:text\/xml;/)
+      });
+    });
+
+    describe('Response with native add', () => {
+      const serverResponseWithNative = utils.deepClone(serverResponse)
+      serverResponseWithNative.body.bids[0].mediaType = 'native';
+      serverResponseWithNative.body.bids[0].admNative = {
+        ver: '1.2',
+        link: {
+          url: 'https://i.am.a.click.url',
+          clickTrackers: [
+            'https://i.am.a.clicktracker.url'
+          ]
+        },
+        privacy: 'http://www.myprivacyurl.url',
+        ext: {
+          bvw: 'test'
+        },
+        eventtrackers: [
+          {
+            event: 1,
+            method: 1,
+            url: 'https://eventrack.local/impression'
+          },
+          {
+            event: 1,
+            method: 2,
+            url: 'https://eventrack.local/impression'
+          },
+          {
+            event: 2,
+            method: 1,
+            url: 'https://eventrack.local/viewable-mrc50'
+          }
+        ],
+        assets: [
+          {
+            required: 1,
+            title: {
+              text: 'My title'
+            }
+          },
+          {
+            img: {
+              url: 'https://images.local/image.jpg',
+              w: 100,
+              h: 250
+            }
+          },
+          {
+            img: {
+              type: 1,
+              url: 'https://images.local/icon.png',
+              w: 40,
+              h: 40
+            }
+          },
+          {
+            data: {
+              type: 1, // sponsored
+              value: 'Adagio'
+            }
+          },
+          {
+            data: {
+              type: 2, // desc / body
+              value: 'The super ad text'
+            }
+          },
+          {
+            data: {
+              type: 3, // rating
+              value: '10 from 10'
+            }
+          },
+          {
+            data: {
+              type: 11, // displayUrl
+              value: 'https://i.am.a.display.url'
+            }
+          }
+        ]
+      };
+
+      const bidRequestNative = utils.deepClone(bidRequest)
+      bidRequestNative.mediaTypes = {
+        native: {
+          sendTargetingKeys: false,
+
+          clickUrl: {
+            required: true,
+          },
+          title: {
+            required: true,
+          },
+          body: {
+            required: true,
+          },
+          sponsoredBy: {
+            required: false
+          },
+          image: {
+            required: true
+          },
+          icon: {
+            required: true
+          },
+          privacyLink: {
+            required: false
+          },
+          ext: {
+            adagio_bvw: {}
+          }
+        }
+      };
+
+      it('Should ignore native parsing due to missing raw admNative property', () => {
+        const alternateServerResponse = utils.deepClone(serverResponseWithNative);
+        delete alternateServerResponse.body.bids[0].admNative
+        const r = spec.interpretResponse(alternateServerResponse, bidRequestNative);
+        expect(r[0].mediaType).to.equal(NATIVE);
+        expect(r[0].native).not.ok;
+        utilsMock.expects('logError').once();
+      });
+
+      it('Should ignore native parsing due to invalid raw admNative.assets property', () => {
+        const alternateServerResponse = utils.deepClone(serverResponseWithNative);
+        alternateServerResponse.body.bids[0].admNative.assets = { title: { text: 'test' } };
+        const r = spec.interpretResponse(alternateServerResponse, bidRequestNative);
+        expect(r[0].mediaType).to.equal(NATIVE);
+        expect(r[0].native).not.ok;
+        utilsMock.expects('logError').once();
+      });
+
+      it('Should handle and return a formated Native ad', () => {
+        const r = spec.interpretResponse(serverResponseWithNative, bidRequestNative);
+        const expected = {
+          displayUrl: 'https://i.am.a.display.url',
+          sponsoredBy: 'Adagio',
+          body: 'The super ad text',
+          rating: '10 from 10',
+          clickUrl: 'https://i.am.a.click.url',
+          title: 'My title',
+          impressionTrackers: [
+            'https://eventrack.local/impression'
+          ],
+          javascriptTrackers: '<script src=\"https://eventrack.local/impression\"></script>',
+          clickTrackers: [
+            'https://i.am.a.clicktracker.url'
+          ],
+          image: {
+            url: 'https://images.local/image.jpg',
+            width: 100,
+            height: 250
+          },
+          icon: {
+            url: 'https://images.local/icon.png',
+            width: 40,
+            height: 40
+          },
+          ext: {
+            adagio_bvw: 'test'
+          },
+          privacyLink: 'http://www.myprivacyurl.url'
+        }
+        expect(r[0].mediaType).to.equal(NATIVE);
+        expect(r[0].native).ok;
+        expect(r[0].native).to.deep.equal(expected);
       });
     });
   });

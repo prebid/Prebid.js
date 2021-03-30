@@ -19,7 +19,10 @@
     "idxIdSystem",
     "fabrickIdSystem",
     "verizonMediaIdSystem",
-    "pubProvidedIdSystem"
+    "pubProvidedIdSystem",
+    "mwOpenLinkIdSystem",
+    "tapadIdSystem",
+    "novatiqIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",

@@ -24,7 +24,7 @@ export const spec = {
       bid.mediaTypes.hasOwnProperty('video');
   },
   isBidRequestValid: function(bid) {
-    const hasRequiredParams = bid && bid.params && bid.params.hasOwnProperty('placementId') && bid.params.hasOwnProperty('seatId');
+    const hasRequiredParams = bid && bid.params && (bid.params.hasOwnProperty('placementId') || bid.params.hasOwnProperty('tagId')) && bid.params.hasOwnProperty('seatId');
     const hasAdSizes = bid && getAdUnitSizes(bid).filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1).length > 0
     return !!(hasRequiredParams && hasAdSizes);
   },
@@ -61,7 +61,7 @@ export const spec = {
       } else {
         seatId = bid.params.seatId;
       }
-      const placementId = bid.params.placementId;
+      const tagIdOrplacementId = bid.params.tagId || bid.params.placementId;
       const bidFloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
       if (isNaN(bidFloor)) {
         logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
@@ -77,9 +77,9 @@ export const spec = {
 
       let imps = [];
       if (videoOrBannerKey === 'banner') {
-        imps = this.buildBannerImpressions(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey);
+        imps = this.buildBannerImpressions(adSizes, bid, tagIdOrplacementId, pos, bidFloor, videoOrBannerKey);
       } else if (videoOrBannerKey === 'video') {
-        imps = this.buildVideoImpressions(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey);
+        imps = this.buildVideoImpressions(adSizes, bid, tagIdOrplacementId, pos, bidFloor, videoOrBannerKey);
       }
       if (imps.length > 0) {
         imps.forEach(i => openRtbBidRequest.imp.push(i));
@@ -104,7 +104,7 @@ export const spec = {
     }
   },
 
-  buildBannerImpressions: function(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey) {
+  buildBannerImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, bidFloor, videoOrBannerKey) {
     let format = [];
     let imps = [];
     adSizes.forEach((size, i) => {
@@ -125,7 +125,7 @@ export const spec = {
           format,
           pos
         },
-        tagid: placementId,
+        tagid: tagIdOrPlacementId,
       };
       if (bidFloor !== null && !isNaN(bidFloor)) {
         imp.bidfloor = bidFloor;
@@ -135,7 +135,7 @@ export const spec = {
     return imps;
   },
 
-  buildVideoImpressions: function(adSizes, bid, placementId, pos, bidFloor, videoOrBannerKey) {
+  buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, bidFloor, videoOrBannerKey) {
     let imps = [];
     adSizes.forEach((size, i) => {
       if (!size || size.length != 2) {
@@ -145,7 +145,7 @@ export const spec = {
       const size1 = size[1];
       const imp = {
         id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
-        tagid: placementId
+        tagid: tagIdOrPlacementId
       };
       if (bidFloor !== null && !isNaN(bidFloor)) {
         imp.bidfloor = bidFloor;

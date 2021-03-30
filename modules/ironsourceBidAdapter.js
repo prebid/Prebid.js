@@ -211,7 +211,8 @@ function generateParameters(bid, bidderRequest) {
     bid_id: utils.getBidIdParameter('bidId', bid),
     bidder_request_id: utils.getBidIdParameter('bidderRequestId', bid),
     transaction_id: utils.getBidIdParameter('transactionId', bid),
-    session_id: utils.getBidIdParameter('auctionId', bid),
+    session_id: params.sessionId || utils.getBidIdParameter('auctionId', bid),
+    is_wrapper: !!params.isWrapper,
     publisher_name: domain,
     site_domain: domain,
     bidder_version: BIDDER_VERSION
@@ -243,7 +244,7 @@ function generateParameters(bid, bidderRequest) {
 
   if (bidderRequest && bidderRequest.refererInfo) {
     requestParams.referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-    requestParams.page_url = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
+    requestParams.page_url = config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
   }
 
   return requestParams;

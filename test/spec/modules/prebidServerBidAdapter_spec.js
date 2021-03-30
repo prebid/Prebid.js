@@ -26,6 +26,7 @@ const REQUEST = {
   'secure': 0,
   'url': '',
   'prebid_version': '0.30.0-pre',
+  's2sConfig': CONFIG,
   'ad_units': [
     {
       'code': 'div-gpt-ad-1460505748561-0',
@@ -80,6 +81,7 @@ const VIDEO_REQUEST = {
   'secure': 0,
   'url': '',
   'prebid_version': '1.4.0-pre',
+  's2sConfig': CONFIG,
   'ad_units': [
     {
       'code': 'div-gpt-ad-1460505748561-0',
@@ -110,6 +112,7 @@ const OUTSTREAM_VIDEO_REQUEST = {
   'secure': 0,
   'url': '',
   'prebid_version': '1.4.0-pre',
+  's2sConfig': CONFIG,
   'ad_units': [
     {
       'code': 'div-gpt-ad-1460505748561-0',
@@ -162,7 +165,7 @@ const OUTSTREAM_VIDEO_REQUEST = {
         }
       }
     }
-  ]
+  ],
 };
 
 let BID_REQUESTS;
@@ -267,6 +270,7 @@ const RESPONSE_OPENRTB = {
                 'win': 'http://wurl.org?id=333'
               }
             },
+            'dchain': { 'ver': '1.0', 'complete': 0, 'nodes': [ { 'asi': 'magnite.com', 'bsid': '123456789', } ] },
             'bidder': {
               'appnexus': {
                 'brand_id': 1,
@@ -497,11 +501,9 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should not add outstream without renderer', function () {
-      let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+    it('should not add outstrean without renderer', function () {
+      config.setConfig({ s2sConfig: CONFIG });
 
-      config.setConfig({ s2sConfig: ortb2Config });
       adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
@@ -535,10 +537,7 @@ describe('S2S Adapter', function () {
       });
 
       it('adds gdpr consent information to ortb2 request depending on presence of module', function () {
-        let ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-
-        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: ortb2Config };
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: CONFIG };
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
@@ -564,10 +563,7 @@ describe('S2S Adapter', function () {
       });
 
       it('adds additional consent information to ortb2 request depending on presence of module', function () {
-        let ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-
-        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: ortb2Config };
+        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: CONFIG };
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
@@ -608,7 +604,10 @@ describe('S2S Adapter', function () {
           gdprApplies: true
         };
 
-        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = cookieSyncConfig;
+
+        adapter.callBids(s2sBidRequest, gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.gdpr).is.equal(1);
@@ -624,20 +623,23 @@ describe('S2S Adapter', function () {
         let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: cookieSyncConfig };
         config.setConfig(consentConfig);
 
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = cookieSyncConfig;
+
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
         gdprBidRequest[0].gdprConsent = {
           consentString: 'xyz789abcc',
           gdprApplies: false
         };
 
-        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(s2sBidRequest, gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.gdpr).is.equal(0);
         expect(requestBid.gdpr_consent).is.undefined;
       });
 
-      it('checks gdpr info gets added to cookie_sync request: consent data unknown', function () {
+      it('checks gdpr info gets added to cookie_sync request: applies is false', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
         cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
@@ -647,13 +649,16 @@ describe('S2S Adapter', function () {
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
         gdprBidRequest[0].gdprConsent = {
           consentString: undefined,
-          gdprApplies: undefined
+          gdprApplies: false
         };
 
-        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = cookieSyncConfig;
+
+        adapter.callBids(s2sBidRequest, gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
-        expect(requestBid.gdpr).is.undefined;
+        expect(requestBid.gdpr).is.equal(0);
         expect(requestBid.gdpr_consent).is.undefined;
       });
     });
@@ -664,9 +669,7 @@ describe('S2S Adapter', function () {
       });
 
       it('is added to ortb2 request when in bidRequest', function () {
-        let ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-        config.setConfig({ s2sConfig: ortb2Config });
+        config.setConfig({ s2sConfig: CONFIG });
 
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
         uspBidRequest[0].uspConsent = '1NYN';
@@ -693,7 +696,10 @@ describe('S2S Adapter', function () {
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
         uspBidRequest[0].uspConsent = '1YNN';
 
-        adapter.callBids(REQUEST, uspBidRequest, addBidResponse, done, ajax);
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = cookieSyncConfig;
+
+        adapter.callBids(s2sBidRequest, uspBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.us_privacy).is.equal('1YNN');
@@ -708,9 +714,7 @@ describe('S2S Adapter', function () {
       });
 
       it('is added to ortb2 request when in bidRequest', function () {
-        let ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-        config.setConfig({ s2sConfig: ortb2Config });
+        config.setConfig({ s2sConfig: CONFIG });
 
         let consentBidRequest = utils.deepClone(BID_REQUESTS);
         consentBidRequest[0].uspConsent = '1NYN';
@@ -748,7 +752,10 @@ describe('S2S Adapter', function () {
           gdprApplies: true
         };
 
-        adapter.callBids(REQUEST, consentBidRequest, addBidResponse, done, ajax);
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = cookieSyncConfig
+
+        adapter.callBids(s2sBidRequest, consentBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.us_privacy).is.equal('1YNN');
@@ -806,11 +813,8 @@ describe('S2S Adapter', function () {
     });
 
     it('adds debugging value from storedAuctionResponse to OpenRTB', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-      });
       const _config = {
-        s2sConfig: s2sConfig,
+        s2sConfig: CONFIG,
         device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
         app: { bundle: 'com.test.app' }
       };
@@ -826,13 +830,104 @@ describe('S2S Adapter', function () {
       expect(requestBid.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
     });
 
-    it('adds device.w and device.h even if the config lacks a device object', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+    describe('price floors module', function () {
+      function runTest(expectedFloor, expectedCur) {
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        const requestBid = JSON.parse(server.requests[requestCount].requestBody);
+        expect(requestBid.imp[0].bidfloor).to.equal(expectedFloor);
+        expect(requestBid.imp[0].bidfloorcur).to.equal(expectedCur);
+        requestCount += 1;
+      }
+
+      let getFloorResponse, requestCount;
+      beforeEach(function () {
+        getFloorResponse = {};
+        requestCount = 0;
       });
 
+      it('should NOT pass bidfloor and bidfloorcur when getFloor not present or returns invalid response', function () {
+        const _config = {
+          s2sConfig: CONFIG,
+        };
+
+        config.setConfig(_config);
+
+        // if no get floor
+        runTest(undefined, undefined);
+
+        // if getFloor returns empty object
+        BID_REQUESTS[0].bids[0].getFloor = () => getFloorResponse;
+        sinon.spy(BID_REQUESTS[0].bids[0], 'getFloor');
+
+        runTest(undefined, undefined);
+        // make sure getFloor was called
+        expect(
+          BID_REQUESTS[0].bids[0].getFloor.calledWith({
+            currency: 'USD',
+          })
+        ).to.be.true;
+
+        // if getFloor does not return number
+        getFloorResponse = {currency: 'EUR', floor: 'not a number'};
+        runTest(undefined, undefined);
+
+        // if getFloor does not return currency
+        getFloorResponse = {floor: 1.1};
+        runTest(undefined, undefined);
+      });
+
+      it('should correctly pass bidfloor and bidfloorcur', function () {
+        const _config = {
+          s2sConfig: CONFIG,
+        };
+
+        config.setConfig(_config);
+
+        BID_REQUESTS[0].bids[0].getFloor = () => getFloorResponse;
+        sinon.spy(BID_REQUESTS[0].bids[0], 'getFloor');
+
+        // returns USD and string floor
+        getFloorResponse = {currency: 'USD', floor: '1.23'};
+        runTest(1.23, 'USD');
+        // make sure getFloor was called
+        expect(
+          BID_REQUESTS[0].bids[0].getFloor.calledWith({
+            currency: 'USD',
+          })
+        ).to.be.true;
+
+        // returns non USD and number floor
+        getFloorResponse = {currency: 'EUR', floor: 0.85};
+        runTest(0.85, 'EUR');
+      });
+
+      it('should correctly pass adServerCurrency when set to getFloor not default', function () {
+        config.setConfig({
+          s2sConfig: CONFIG,
+          currency: { adServerCurrency: 'JPY' },
+        });
+
+        // we have to start requestCount at 1 because a conversion rates fetch occurs when adServerCur is not USD!
+        requestCount = 1;
+
+        BID_REQUESTS[0].bids[0].getFloor = () => getFloorResponse;
+        sinon.spy(BID_REQUESTS[0].bids[0], 'getFloor');
+
+        // returns USD and string floor
+        getFloorResponse = {currency: 'JPY', floor: 97.2};
+        runTest(97.2, 'JPY');
+        // make sure getFloor was called with JPY
+        expect(
+          BID_REQUESTS[0].bids[0].getFloor.calledWith({
+            currency: 'JPY',
+          })
+        ).to.be.true;
+      });
+    });
+
+    it('adds device.w and device.h even if the config lacks a device object', function () {
       const _config = {
-        s2sConfig: s2sConfig,
+        s2sConfig: CONFIG,
         app: { bundle: 'com.test.app' },
       };
 
@@ -850,12 +945,8 @@ describe('S2S Adapter', function () {
     });
 
     it('adds native request for OpenRTB', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-      });
-
       const _config = {
-        s2sConfig: s2sConfig
+        s2sConfig: CONFIG
       };
 
       config.setConfig(_config);
@@ -909,12 +1000,8 @@ describe('S2S Adapter', function () {
     });
 
     it('adds site if app is not present', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-      });
-
       const _config = {
-        s2sConfig: s2sConfig,
+        s2sConfig: CONFIG,
         site: {
           publisher: {
             id: '1234',
@@ -949,10 +1036,7 @@ describe('S2S Adapter', function () {
     });
 
     it('adds appnexus aliases to request', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-      });
-      config.setConfig({ s2sConfig: s2sConfig });
+      config.setConfig({ s2sConfig: CONFIG });
 
       const aliasBidder = {
         bidder: 'brealtime',
@@ -965,26 +1049,21 @@ describe('S2S Adapter', function () {
       adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
-
-      expect(requestBid.ext).to.deep.equal({
-        prebid: {
-          aliases: {
-            brealtime: 'appnexus'
-          },
-          auctiontimestamp: 1510852447530,
-          targeting: {
-            includebidderkeys: false,
-            includewinners: true
-          }
+      expect(requestBid.ext).to.haveOwnProperty('prebid');
+      expect(requestBid.ext.prebid).to.deep.include({
+        aliases: {
+          brealtime: 'appnexus'
+        },
+        auctiontimestamp: 1510852447530,
+        targeting: {
+          includebidderkeys: false,
+          includewinners: true
         }
       });
     });
 
     it('adds dynamic aliases to request', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-      });
-      config.setConfig({ s2sConfig: s2sConfig });
+      config.setConfig({ s2sConfig: CONFIG });
 
       const alias = 'foobar';
       const aliasBidder = {
@@ -1000,12 +1079,71 @@ describe('S2S Adapter', function () {
       adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.ext).to.haveOwnProperty('prebid');
+      expect(requestBid.ext.prebid).to.deep.include({
+        aliases: {
+          [alias]: 'appnexus'
+        },
+        auctiontimestamp: 1510852447530,
+        targeting: {
+          includebidderkeys: false,
+          includewinners: true
+        }
+      });
+    });
+
+    it('skips pbs alias when skipPbsAliasing is enabled in adapter', function() {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({ s2sConfig: s2sConfig });
+
+      const aliasBidder = {
+        bidder: 'mediafuse',
+        params: { aid: 123 }
+      };
+
+      const request = utils.deepClone(REQUEST);
+      request.ad_units[0].bids = [aliasBidder];
+
+      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.ext).to.deep.equal({
         prebid: {
-          aliases: {
-            [alias]: 'appnexus'
-          },
+          auctiontimestamp: 1510852447530,
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
+          }
+        }
+      });
+    });
+
+    it('skips dynamic aliases to request when skipPbsAliasing enabled', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({ s2sConfig: s2sConfig });
+
+      const alias = 'foobar_1';
+      const aliasBidder = {
+        bidder: alias,
+        params: { aid: 123456 }
+      };
+
+      const request = utils.deepClone(REQUEST);
+      request.ad_units[0].bids = [aliasBidder];
+
+      // TODO: stub this
+      $$PREBID_GLOBAL$$.aliasBidder('appnexus', alias, { skipPbsAliasing: true });
+      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.ext).to.deep.equal({
+        prebid: {
           auctiontimestamp: 1510852447530,
           targeting: {
             includebidderkeys: false,
@@ -1049,10 +1187,13 @@ describe('S2S Adapter', function () {
       cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
       cookieSyncConfig.userSyncLimit = 1;
 
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = cookieSyncConfig;
+
       config.setConfig({ s2sConfig: cookieSyncConfig });
 
       let bidRequest = utils.deepClone(BID_REQUESTS);
-      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
       let requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
@@ -1065,8 +1206,11 @@ describe('S2S Adapter', function () {
       cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
       config.setConfig({ s2sConfig: cookieSyncConfig });
 
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = cookieSyncConfig;
+
       let bidRequest = utils.deepClone(BID_REQUESTS);
-      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
       let requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
@@ -1077,8 +1221,11 @@ describe('S2S Adapter', function () {
       config.resetConfig();
       config.setConfig({ s2sConfig: cookieSyncConfig });
 
+      const s2sBidRequest2 = utils.deepClone(REQUEST);
+      s2sBidRequest2.s2sConfig = cookieSyncConfig;
+
       bidRequest = utils.deepClone(BID_REQUESTS);
-      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      adapter.callBids(s2sBidRequest2, bidRequest, addBidResponse, done, ajax);
       requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
@@ -1088,7 +1235,6 @@ describe('S2S Adapter', function () {
 
     it('adds s2sConfig adapterOptions to request for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         adapterOptions: {
           appnexus: {
             key: 'value'
@@ -1101,8 +1247,11 @@ describe('S2S Adapter', function () {
         app: { bundle: 'com.test.app' },
       };
 
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
       config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.imp[0].ext.appnexus).to.haveOwnProperty('key');
       expect(requestBid.imp[0].ext.appnexus.key).to.be.equal('value')
@@ -1110,7 +1259,6 @@ describe('S2S Adapter', function () {
 
     describe('config site value is added to the oRTB request', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         adapterOptions: {
           appnexus: {
             key: 'value'
@@ -1122,6 +1270,9 @@ describe('S2S Adapter', function () {
         ip: '75.97.0.47'
       };
 
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
       it('and overrides publisher and page', function () {
         config.setConfig({
           s2sConfig: s2sConfig,
@@ -1132,7 +1283,8 @@ describe('S2S Adapter', function () {
           },
           device: device
         });
-        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+        adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
         const requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.site).to.exist.and.to.be.a('object');
@@ -1150,7 +1302,8 @@ describe('S2S Adapter', function () {
           },
           device: device
         });
-        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+        adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
 
         const requestBid = JSON.parse(server.requests[0].requestBody);
         expect(requestBid.site).to.exist.and.to.be.a('object');
@@ -1162,10 +1315,7 @@ describe('S2S Adapter', function () {
     });
 
     it('when userId is defined on bids, it\'s properties should be copied to user.ext.tpid properties', function () {
-      let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-
-      let consentConfig = { s2sConfig: ortb2Config };
+      let consentConfig = { s2sConfig: CONFIG };
       config.setConfig(consentConfig);
 
       let userIdBidRequest = utils.deepClone(BID_REQUESTS);
@@ -1207,17 +1357,14 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[1]).is.equal('segB');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].uids[0].id).is.equal('11111');
-      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].ext.linkType).is.equal('some-link-type');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'id5-sync.com')[0].uids[0].ext.linkType).is.equal('some-link-type');
       // LiveRamp should exist
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveramp.com')[0].uids[0].id).is.equal('0000-1111-2222-3333');
     });
 
     it('when config \'currency.adServerCurrency\' value is an array: ORTB has property \'cur\' value set to a single item array', function () {
-      let s2sConfig = utils.deepClone(CONFIG);
-      s2sConfig.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
       config.setConfig({
         currency: { adServerCurrency: ['USD', 'GB', 'UK', 'AU'] },
-        s2sConfig: s2sConfig
       });
 
       const bidRequests = utils.deepClone(BID_REQUESTS);
@@ -1228,11 +1375,8 @@ describe('S2S Adapter', function () {
     });
 
     it('when config \'currency.adServerCurrency\' value is a string: ORTB has property \'cur\' value set to a single item array', function () {
-      let s2sConfig = utils.deepClone(CONFIG);
-      s2sConfig.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
       config.setConfig({
         currency: { adServerCurrency: 'NZ' },
-        s2sConfig: s2sConfig
       });
 
       const bidRequests = utils.deepClone(BID_REQUESTS);
@@ -1243,9 +1387,7 @@ describe('S2S Adapter', function () {
     });
 
     it('when config \'currency.adServerCurrency\' is unset: ORTB should not define a \'cur\' property', function () {
-      let s2sConfig = utils.deepClone(CONFIG);
-      s2sConfig.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-      config.setConfig({ s2sConfig: s2sConfig });
+      config.setConfig({ s2sConfig: CONFIG });
 
       const bidRequests = utils.deepClone(BID_REQUESTS);
       adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
@@ -1256,7 +1398,6 @@ describe('S2S Adapter', function () {
 
     it('always add ext.prebid.targeting.includebidderkeys: false for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         adapterOptions: {
           appnexus: {
             key: 'value'
@@ -1270,7 +1411,11 @@ describe('S2S Adapter', function () {
       };
 
       config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.ext.prebid.targeting).to.haveOwnProperty('includebidderkeys');
@@ -1279,7 +1424,6 @@ describe('S2S Adapter', function () {
 
     it('always add ext.prebid.targeting.includewinners: true for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         adapterOptions: {
           appnexus: {
             key: 'value'
@@ -1291,9 +1435,12 @@ describe('S2S Adapter', function () {
         device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
         app: { bundle: 'com.test.app' },
       };
-
       config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.ext.prebid.targeting).to.haveOwnProperty('includewinners');
@@ -1302,7 +1449,6 @@ describe('S2S Adapter', function () {
 
     it('adds s2sConfig video.ext.prebid to request for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         extPrebid: {
           foo: 'bar'
         }
@@ -1313,13 +1459,16 @@ describe('S2S Adapter', function () {
         app: { bundle: 'com.test.app' },
       };
 
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
       config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.equal({
+      expect(requestBid.ext.prebid).to.deep.include({
         auctiontimestamp: 1510852447530,
         foo: 'bar',
         targeting: {
@@ -1331,7 +1480,6 @@ describe('S2S Adapter', function () {
 
     it('overrides request.ext.prebid properties using s2sConfig video.ext.prebid values for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         extPrebid: {
           targeting: {
             includewinners: false,
@@ -1345,13 +1493,16 @@ describe('S2S Adapter', function () {
         app: { bundle: 'com.test.app' },
       };
 
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
       config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.equal({
+      expect(requestBid.ext.prebid).to.deep.include({
         auctiontimestamp: 1510852447530,
         targeting: {
           includewinners: false,
@@ -1362,7 +1513,6 @@ describe('S2S Adapter', function () {
 
     it('overrides request.ext.prebid properties using s2sConfig video.ext.prebid values for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         extPrebid: {
           cache: {
             vastxml: 'vastxml-set-though-extPrebid.cache.vastXml'
@@ -1379,13 +1529,16 @@ describe('S2S Adapter', function () {
         app: { bundle: 'com.test.app' },
       };
 
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
       config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.ext.prebid).to.deep.equal({
+      expect(requestBid.ext.prebid).to.deep.include({
         auctiontimestamp: 1510852447530,
         cache: {
           vastxml: 'vastxml-set-though-extPrebid.cache.vastXml'
@@ -1454,23 +1607,44 @@ describe('S2S Adapter', function () {
 
       const expected = allowedBidders.map(bidder => ({
         bidders: [ bidder ],
-        config: { fpd: { site: context, user } }
+        config: {
+          ortb2: {
+            site: {
+              content: { userrating: 4 },
+              ext: {
+                data: {
+                  pageType: 'article',
+                  category: 'tools'
+                }
+              }
+            },
+            user: {
+              yob: '1984',
+              geo: { country: 'ca' },
+              ext: {
+                data: {
+                  registered: true,
+                  interests: ['cars']
+                }
+              }
+            }
+          }
+        }
       }));
+      const commonContextExpected = utils.mergeDeep({'page': 'http://mytestpage.com', 'publisher': {'id': '1'}}, commonContext);
 
       config.setConfig({ fpd: { context: commonContext, user: commonUser } });
       config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
-      expect(parsedRequestBody.site.ext.data).to.deep.equal(commonContext);
-      expect(parsedRequestBody.user.ext.data).to.deep.equal(commonUser);
+      expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
+      expect(parsedRequestBody.user).to.deep.equal(commonUser);
     });
 
     describe('pbAdSlot config', function () {
-      it('should not send \"imp.ext.context.data.pbadslot\" if \"fpd.context\" is undefined', function () {
-        const ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-        const consentConfig = { s2sConfig: ortb2Config };
+      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext\" is undefined', function () {
+        const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
 
@@ -1479,34 +1653,32 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.pbadslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
       });
 
-      it('should not send \"imp.ext.context.data.pbadslot\" if \"fpd.context.pbAdSlot\" is undefined', function () {
-        const ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-        const consentConfig = { s2sConfig: ortb2Config };
+      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" is undefined', function () {
+        const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {};
+        bidRequest.ad_units[0].ortb2Imp = {};
 
         adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
         const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.pbadslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
       });
 
-      it('should not send \"imp.ext.context.data.pbadslot\" if \"fpd.context.pbAdSlot\" is empty string', function () {
-        const ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-        const consentConfig = { s2sConfig: ortb2Config };
+      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" is empty string', function () {
+        const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            pbAdSlot: ''
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              pbadslot: ''
+            }
           }
         };
 
@@ -1515,18 +1687,18 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.pbadslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
       });
 
-      it('should send \"imp.ext.context.data.pbadslot\" if \"fpd.context.pbAdSlot\" value is a non-empty string', function () {
-        const ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-        const consentConfig = { s2sConfig: ortb2Config };
+      it('should send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" value is a non-empty string', function () {
+        const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            pbAdSlot: '/a/b/c'
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              pbadslot: '/a/b/c'
+            }
           }
         };
 
@@ -1535,16 +1707,14 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.pbadslot');
-        expect(parsedRequestBody.imp[0].ext.context.data.pbadslot).to.equal('/a/b/c');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.data.pbadslot');
+        expect(parsedRequestBody.imp[0].ext.data.pbadslot).to.equal('/a/b/c');
       });
     });
 
     describe('GAM ad unit config', function () {
-      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context\" is undefined', function () {
-        const ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-        const consentConfig = { s2sConfig: ortb2Config };
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext\" is undefined', function () {
+        const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
 
@@ -1553,35 +1723,33 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context.adserver.adSlot\" is undefined', function () {
-        const ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-        const consentConfig = { s2sConfig: ortb2Config };
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext.data.adserver.adslot\" is undefined', function () {
+        const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {};
+        bidRequest.ad_units[0].ortb2Imp = {};
 
         adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
         const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should not send \"imp.ext.context.data.adserver.adslot\" if \"fpd.context.adserver.adSlot\" is empty string', function () {
-        const ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-        const consentConfig = { s2sConfig: ortb2Config };
+      it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext.data.adserver.adslot\" is empty string', function () {
+        const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            adServer: {
-              adSlot: ''
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              adserver: {
+                adslot: ''
+              }
             }
           }
         };
@@ -1591,20 +1759,20 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.context.data.adslot');
+        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.adslot');
       });
 
-      it('should send both \"adslot\" and \"name\" from \"imp.ext.context.data.adserver\" if \"fpd.context.adserver.adSlot\" and \"fpd.context.adserver.name\" values are non-empty strings', function () {
-        const ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-        const consentConfig = { s2sConfig: ortb2Config };
+      it('should send both \"adslot\" and \"name\" from \"imp.ext.data.adserver\" if \"ortb2Imp.ext.data.adserver.adslot\" and \"ortb2Imp.ext.data.adserver.name\" values are non-empty strings', function () {
+        const consentConfig = { s2sConfig: CONFIG };
         config.setConfig(consentConfig);
         const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].fpd = {
-          context: {
-            adserver: {
-              adSlot: '/a/b/c',
-              name: 'adserverName1'
+        bidRequest.ad_units[0].ortb2Imp = {
+          ext: {
+            data: {
+              adserver: {
+                adslot: '/a/b/c',
+                name: 'adserverName1'
+              }
             }
           }
         };
@@ -1614,10 +1782,10 @@ describe('S2S Adapter', function () {
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.adserver.adslot');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.adserver.name');
-        expect(parsedRequestBody.imp[0].ext.context.data.adserver.adslot).to.equal('/a/b/c');
-        expect(parsedRequestBody.imp[0].ext.context.data.adserver.name).to.equal('adserverName1');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.data.adserver.adslot');
+        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.data.adserver.name');
+        expect(parsedRequestBody.imp[0].ext.data.adserver.adslot).to.equal('/a/b/c');
+        expect(parsedRequestBody.imp[0].ext.data.adserver.name).to.equal('adserverName1');
       });
     });
   });
@@ -1770,10 +1938,7 @@ describe('S2S Adapter', function () {
       };
       sinon.stub(adapterManager, 'getBidAdapter').returns(rubiconAdapter);
 
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-      });
-      config.setConfig({ s2sConfig });
+      config.setConfig({ CONFIG });
 
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
@@ -1784,10 +1949,7 @@ describe('S2S Adapter', function () {
     });
 
     it('handles OpenRTB responses and call BIDDER_DONE', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-      });
-      config.setConfig({ s2sConfig });
+      config.setConfig({ CONFIG });
 
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
@@ -1806,6 +1968,9 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('meta');
       expect(response.meta).to.have.property('advertiserDomains');
       expect(response.meta.advertiserDomains[0]).to.equal('appnexus.com');
+      expect(response.meta).to.have.property('dchain');
+      expect(response.meta.dchain.ver).to.equal('1.0');
+      expect(response.meta.dchain.nodes[0].asi).to.equal('magnite.com');
       expect(response).to.not.have.property('vastUrl');
       expect(response).to.not.have.property('videoCacheKey');
       expect(response).to.have.property('ttl', 60);
@@ -1813,12 +1978,13 @@ describe('S2S Adapter', function () {
 
     it('respects defaultTtl', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
         defaultTtl: 30
       });
-      config.setConfig({ s2sConfig });
 
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
       sinon.assert.calledOnce(events.emit);
@@ -1834,7 +2000,10 @@ describe('S2S Adapter', function () {
       });
       config.setConfig({ s2sConfig });
 
-      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+      s2sVidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB_VIDEO));
 
       sinon.assert.calledOnce(addBidResponse);
@@ -1862,7 +2031,10 @@ describe('S2S Adapter', function () {
         }
       });
 
-      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+      s2sVidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
@@ -1887,7 +2059,11 @@ describe('S2S Adapter', function () {
       cacheResponse.seatbid.forEach(item => {
         item.bid[0].ext.prebid.targeting = targetingTestData
       });
-      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+      s2sVidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
@@ -1913,7 +2089,11 @@ describe('S2S Adapter', function () {
           hb_cache_path: '/cache'
         }
       });
-      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+      s2sVidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
@@ -1940,7 +2120,10 @@ describe('S2S Adapter', function () {
           hb_cache_path: '/cache'
         }
       });
-      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+      s2sVidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
@@ -1966,7 +2149,11 @@ describe('S2S Adapter', function () {
           hb_bidid: '1234567890',
         }
       });
-      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+      s2sVidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
@@ -1986,7 +2173,10 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig });
       const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
 
-      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+      s2sVidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
       sinon.assert.calledOnce(addBidResponse);
@@ -2006,7 +2196,10 @@ describe('S2S Adapter', function () {
       });
       config.setConfig({ s2sConfig });
 
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB_NATIVE));
 
       sinon.assert.calledOnce(addBidResponse);
@@ -2307,10 +2500,11 @@ describe('S2S Adapter', function () {
       s2sConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
       s2sConfig.bidders = ['appnexus', 'rubicon-alias'];
 
-      const request = utils.deepClone(REQUEST);
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
 
       // Add another bidder, `rubicon-alias`
-      request.ad_units[0].bids.push({
+      s2sBidRequest.ad_units[0].bids.push({
         bidder: 'rubicon-alias',
         params: {
           accoundId: 14062,
@@ -2321,8 +2515,6 @@ describe('S2S Adapter', function () {
 
       // create an alias for the Rubicon Bid Adapter
       adapterManager.aliasBidAdapter('rubicon', 'rubicon-alias');
-
-      config.setConfig({ s2sConfig });
 
       const bidRequest = utils.deepClone(BID_REQUESTS);
       bidRequest.push({
@@ -2367,10 +2559,41 @@ describe('S2S Adapter', function () {
         'src': 's2s'
       });
 
-      adapter.callBids(request, bidRequest, addBidResponse, done, ajax);
+      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
+    });
+
+    it('should add cooperative sync flag to cookie_sync request if property is present', function () {
+      let s2sConfig = utils.deepClone(CONFIG);
+      s2sConfig.coopSync = false;
+      s2sConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.coopSync).to.equal(false);
+    });
+
+    it('should not add cooperative sync flag to cookie_sync request if property is not present', function () {
+      let s2sConfig = utils.deepClone(CONFIG);
+      s2sConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      s2sBidRequest.s2sConfig = s2sConfig;
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+
+      adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(server.requests[0].requestBody);
+
+      expect(requestBid.coopSync).to.be.undefined;
     });
   });
 });

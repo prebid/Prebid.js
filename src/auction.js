@@ -458,7 +458,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
 
   if (config.getConfig('cache.url') && context !== OUTSTREAM) {
-    if (!bidResponse.videoCacheKey) {
+    if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
       addBid = false;
       callPrebidCache(auctionInstance, bidResponse, afterBidAdded, bidderRequest);
     } else if (!bidResponse.vastUrl) {
@@ -519,7 +519,7 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bidObject);
 
   // a publisher-defined renderer can be used to render bids
-  const bidReq = bidderRequest.bids && find(bidderRequest.bids, bid => bid.adUnitCode == adUnitCode);
+  const bidReq = bidderRequest.bids && find(bidderRequest.bids, bid => bid.adUnitCode == adUnitCode && bid.bidId == bidObject.requestId);
   const adUnitRenderer = bidReq && bidReq.renderer;
 
   // a publisher can also define a renderer for a mediaType
@@ -533,9 +533,9 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   var renderer = null;
 
   // the renderer for the mediaType takes precendence
-  if (mediaTypeRenderer && mediaTypeRenderer.url && !(mediaTypeRenderer.backupOnly === true && mediaTypeRenderer.render)) {
+  if (mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
     renderer = mediaTypeRenderer;
-  } else if (adUnitRenderer && adUnitRenderer.url && !(adUnitRenderer.backupOnly === true && bid.renderer)) {
+  } else if (adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render && !(adUnitRenderer.backupOnly === true && bid.renderer)) {
     renderer = adUnitRenderer;
   }
 
@@ -627,6 +627,16 @@ export const getPriceByGranularity = (granularity) => {
 }
 
 /**
+ * This function returns a function to get first advertiser domain from bid response meta
+ * @returns {function}
+ */
+export const getAdvertiserDomain = () => {
+  return (bid) => {
+    return (bid.meta && bid.meta.advertiserDomains && bid.meta.advertiserDomains.length > 0) ? bid.meta.advertiserDomains[0] : '';
+  }
+}
+
+/**
  * @param {string} mediaType
  * @param {string} bidderCode
  * @param {BidRequest} bidReq
@@ -662,6 +672,7 @@ export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
       createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
       createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
       createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
+      createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
     ]
   }
 

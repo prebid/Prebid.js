@@ -18,7 +18,12 @@ describe('Zeta Bid Adapter', function() {
         uid: 12345,
         buyeruid: 12345
       },
-      ip: '111.222.33.44',
+      device: {
+        ip: '111.222.33.44',
+        geo: {
+          country: 'USA'
+        }
+      },
       definerId: 1,
       test: 1
     }
