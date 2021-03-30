@@ -27,7 +27,15 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: { requestId: bidderRequest.bidderRequestId, bids, referer: bidderRequest.refererInfo.referer },
+      data: {
+        requestId: bidderRequest.bidderRequestId,
+        bids,
+        referer: bidderRequest.refererInfo.referer,
+        gdprConsent: {
+          consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false,
+          consentString: bidderRequest.gdprConsent.consentString
+        }
+      },
       options: {
         contentType: 'application/json',
         customHeaders: {
