@@ -84,6 +84,9 @@ pbjs.setConfig({
                 partnerId: 0000,
                 uid: '12345xyz'
             }
+        }, {
+            name: 'uid2'
+        }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -161,7 +164,7 @@ pbjs.setConfig({
                  type: 'html5',
                  name: '_criteoId',
                  expires: 1
-              }
+        }
         }],
         syncDelay: 5000
     }
