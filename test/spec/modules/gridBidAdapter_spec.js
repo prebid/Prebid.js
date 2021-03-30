@@ -400,6 +400,16 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.site.content).to.deep.equal(jsContent);
     });
 
+    it('should contain the keyword values if it present in ortb2.(site/user)', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
+        arg => arg === 'ortb2.user' ? {'keywords': 'foo'} : (arg === 'ortb2.site' ? {'keywords': 'bar'} : null));
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.ext.keywords).to.deep.equal([{'key': 'user', 'value': ['foo']}, {'key': 'context', 'value': ['bar']}]);
+      getConfigStub.restore();
+    });
+
     it('shold be right tmax when timeout in config is less then timeout in bidderRequest', function() {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'bidderTimeout' ? 2000 : null);

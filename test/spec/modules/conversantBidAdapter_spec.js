@@ -483,7 +483,7 @@ describe('Conversant adapter tests', function() {
       const payload = spec.buildRequests(requests).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
         {source: 'adserver.org', uids: [{id: '223344', atype: 1, ext: {rtiPartner: 'TDID'}}]},
-        {source: 'liveramp.com', uids: [{id: '334455', atype: 1}]}
+        {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}
       ]);
     });
   });

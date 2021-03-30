@@ -247,7 +247,7 @@ function getStoredValue(storage, key = undefined) {
       }
     }
     // support storing a string or a stringified object
-    if (typeof storedValue === 'string' && storedValue.charAt(0) === '{') {
+    if (typeof storedValue === 'string' && storedValue.trim().charAt(0) === '{') {
       storedValue = JSON.parse(storedValue);
     }
   } catch (e) {

@@ -362,6 +362,7 @@ export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
       const height = bid.height || bid.playerHeight;
       return (width && height) ? {width, height} : undefined;
     },
+    'pbsBidId',
     'seatBidId',
     'floorValue', () => utils.deepAccess(bid, 'floorData.floorValue'),
     'floorRuleValue', () => utils.deepAccess(bid, 'floorData.floorRuleValue'),
@@ -482,8 +483,8 @@ function subscribeToGamSlots() {
             // these come in as `null` from Gpt, which when stringified does not get removed
             // so set explicitly to undefined when not a number
             'advertiserId', advertiserId => utils.isNumber(advertiserId) ? advertiserId : undefined,
-            'creativeId', creativeId => utils.isNumber(creativeId) ? creativeId : undefined,
-            'lineItemId', lineItemId => utils.isNumber(lineItemId) ? lineItemId : undefined,
+            'creativeId', creativeId => utils.isNumber(event.sourceAgnosticCreativeId) ? event.sourceAgnosticCreativeId : utils.isNumber(creativeId) ? creativeId : undefined,
+            'lineItemId', lineItemId => utils.isNumber(event.sourceAgnosticLineItemId) ? event.sourceAgnosticLineItemId : utils.isNumber(lineItemId) ? lineItemId : undefined,
             'adSlot', () => event.slot.getAdUnitPath(),
             'isSlotEmpty', () => event.isEmpty || undefined
           ]);

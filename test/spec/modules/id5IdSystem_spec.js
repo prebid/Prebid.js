@@ -449,7 +449,7 @@ describe('ID5 ID System', function() {
   describe('A/B Testing', function() {
     const expectedDecodedObjectWithIdAbOff = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE } } };
     const expectedDecodedObjectWithIdAbOn = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE, abTestingControlGroup: false } } };
-    const expectedDecodedObjectWithoutIdAbOn = { id5id: { uid: 0, ext: { linkType: 0, abTestingControlGroup: true } } };
+    const expectedDecodedObjectWithoutIdAbOn = { id5id: { uid: '', ext: { linkType: 0, abTestingControlGroup: true } } };
     let testConfig;
 
     beforeEach(function() {

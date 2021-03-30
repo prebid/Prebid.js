@@ -781,61 +781,45 @@ describe('Livewrapped adapter tests', function () {
     });
   });
 
-  it('should make use of Id5-Id if available', function() {
+  it('should make use of user ids if available', function() {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
     sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
     let testbidRequest = clone(bidderRequest);
     delete testbidRequest.bids[0].params.userId;
-    testbidRequest.bids[0].userId = {};
-    testbidRequest.bids[0].userId.id5id = { uid: 'id5-user-id' };
+    testbidRequest.bids[0].userIdAsEids = [
+      {
+        'source': 'id5-sync.com',
+        'uids': [{
+          'id': 'ID5-id',
+          'atype': 1,
+          'ext': {
+            'linkType': 2
+          }
+        }]
+      },
+      {
+        'source': 'pubcid.org',
+        'uids': [{
+          'id': 'publisher-common-id',
+          'atype': 1
+        }]
+      },
+      {
+        'source': 'sharedid.org',
+        'uids': [{
+          'id': 'sharedid',
+          'atype': 1,
+          'ext': {
+            'third': 'sharedid'
+          }
+        }]
+      }
+    ];
+
     let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
     let data = JSON.parse(result.data);
 
-    expect(data.rtbData.user.ext.eids).to.deep.equal([{
-      'source': 'id5-sync.com',
-      'uids': [{
-        'id': 'id5-user-id',
-        'atype': 1
-      }]
-    }]);
-  });
-
-  it('should make use of publisher common Id if available', function() {
-    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
-    let testbidRequest = clone(bidderRequest);
-    delete testbidRequest.bids[0].params.userId;
-    testbidRequest.bids[0].userId = {};
-    testbidRequest.bids[0].userId.pubcid = 'publisher-common-id';
-    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
-    let data = JSON.parse(result.data);
-
-    expect(data.rtbData.user.ext.eids).to.deep.equal([{
-      'source': 'pubcid.org',
-      'uids': [{
-        'id': 'publisher-common-id',
-        'atype': 1
-      }]
-    }]);
-  });
-
-  it('should make use of criteoId if available', function() {
-    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-    sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
-    let testbidRequest = clone(bidderRequest);
-    delete testbidRequest.bids[0].params.userId;
-    testbidRequest.bids[0].userId = {};
-    testbidRequest.bids[0].userId.criteoId = 'criteo-id';
-    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
-    let data = JSON.parse(result.data);
-
-    expect(data.rtbData.user.ext.eids).to.deep.equal([{
-      'source': 'criteo.com',
-      'uids': [{
-        'id': 'criteo-id',
-        'atype': 1
-      }]
-    }]);
+    expect(data.rtbData.user.ext.eids).to.deep.equal(testbidRequest.bids[0].userIdAsEids);
   });
 
   it('should send schain object if available', function() {
