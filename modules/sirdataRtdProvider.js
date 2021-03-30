@@ -15,11 +15,13 @@ import {ajax} from '../src/ajax.js';
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'SirdataRTDModule';
 
-const _set = (obj, path, val) => {
-  const keys = path.split('.');
-  const lastKey = keys.pop();
-  const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, obj);
-  lastObj[lastKey] = lastObj[lastKey] || val;
+const _set = (obj, path, val, override) => {
+  try {
+    const keys = path.split('.');
+    const lastKey = keys.pop();
+    const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, obj);
+    lastObj[lastKey] = (override !== true && lastObj[lastKey] ? lastObj[lastKey] : val);
+  } catch (e) {}
 };
 
 export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userConsent) {
@@ -99,7 +101,7 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userC
   });
 }
 
-export function setBidderOrtb2(bid, segments, categories, gobalConfig) {
+export function setGlobalOrtb2(segments, categories, gobalConfig) {
   var ortb2Valid = true;
 
   try {
@@ -110,26 +112,23 @@ export function setBidderOrtb2(bid, segments, categories, gobalConfig) {
 
   if (!ortb2Valid) {
     // do it with FPD
-    return setBidderFpd(bid, segments, categories, gobalConfig);
+    return setGlobalFpd(segments, categories, gobalConfig);
   }
 
   try {
-    gobalConfig.setBidderConfig({
-      bidders: [bid.bidder],
-      config: {
-        ortb2: {
-          site: {
-            ext: {
-              data: {
-                sd_rtd: categories
-              }
+    gobalConfig.setConfig({
+      ortb2: {
+        site: {
+          ext: {
+            data: {
+              sd_rtd: categories
             }
-          },
-          user: {
-            ext: {
-              data: {
-                sd_rtd: segments
-              }
+          }
+        },
+        user: {
+          ext: {
+            data: {
+              sd_rtd: segments
             }
           }
         }
@@ -142,21 +141,18 @@ export function setBidderOrtb2(bid, segments, categories, gobalConfig) {
   return true;
 }
 
-export function setBidderFpd(bid, segments, categories, gobalConfig) {
+export function setGlobalFpd(segments, categories, gobalConfig) {
   try {
-    gobalConfig.setBidderConfig({
-      bidders: [bid.bidder],
-      config: {
-        fpd: {
-          context: {
-            data: {
-              sd_rtd: categories
-            }
-          },
-          user: {
-            data: {
-              sd_rtd: segments
-            }
+    gobalConfig.setConfig({
+      fpd: {
+        context: {
+          data: {
+            sd_rtd: categories
+          }
+        },
+        user: {
+          data: {
+            sd_rtd: segments
           }
         }
       }
@@ -210,6 +206,10 @@ export function addSegmentData(adUnits, data, config, onDone, gobalConfig) {
   var curationData = {'segments': [], 'categories': []};
   var curationId = '1';
 
+  // Global ortb2
+  setGlobalOrtb2(sirdataData.segments, sirdataData.categories, gobalConfig);
+
+  // Google targeting
   if (typeof window.googletag !== 'undefined' && config.params.setGptKeyValues) {
     // For curation GG is pid 27449
     curationId = config.params.gptCurationId || '27449';
@@ -223,113 +223,147 @@ export function addSegmentData(adUnits, data, config, onDone, gobalConfig) {
     })
   }
 
+  // Bidder Targeting for FPD generic bidders
+  if (config.params && config.params.bidders) {
+    config.params.bidders.forEach(bidder => {
+      curationData = {'segments': [], 'categories': []};
+      if (bidder.bidder == 'ix') {
+        try {
+          var ixConfig = gobalConfig.getConfig('ix.firstPartyData') || {};
+          // For curation index is pid 27248
+          curationId = bidder.curationId || '27248';
+          if (data[curationId]) { curationData = getSegAndCatsArray(data[curationId], minScore); }
+          if (bidder.customFunction == 'function') {
+            loadCustomFunction(bidder.customFunction, null, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, null);
+          } else {
+            var cappIxCategories = [];
+            var ixLength = 0;
+            var ixLimit = bidder.sizeLimit || 1000;
+            // Push ids For publisher use and for curation if exists but limit size because the bidder uses GET parameters
+            sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
+              if (ixLength < ixLimit) {
+                cappIxCategories.push(entry);
+                ixLength += entry.toString().length;
+              }
+            });
+            if (cappIxCategories.length > 0) {
+              var newFpd = Object.assign(ixConfig, {'sd_rtd': cappIxCategories});
+              gobalConfig.setConfig({ix: {firstPartyData: newFpd}});
+            }
+          }
+        } catch (err) {
+          utils.logError(err.message)
+        }
+      }
+    })
+  }
+
+  // Bid taregting level for FPD non-generic biders
   var bidderIndex = '';
   adUnits.forEach(adUnit => {
+    if (adUnit.ortb2Imp && !adUnit.ortb2Imp.ext.data.sd_rtd) {
+      _set(adUnit, 'ortb2Imp.ext.data.sd_rtd', sirdataData.segments.concat(sirdataData.categories), true);
+    }
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
-      bidderIndex = config.params.bidders ? config.params.bidders.findIndex(i => i.bidder === bid.bidder) : null;
-
       if (!config.params.bidders) {
-        _set(bid, 'ortb2Imp.ext.data', {sd_rtd: sirdataData.segments.concat(sirdataData.categories)});
-        setBidderOrtb2(bid, sirdataData.segments, sirdataData.categories, gobalConfig);
-      } else if ((typeof bidderIndex == 'number' && bidderIndex >= 0 && (!config.params.bidders[bidderIndex].adUnitCodes || config.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
-        curationData = {'segments': [], 'categories': []};
-
-        if (['appnexus', 'appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'adasta', 'beintoo', 'gravity', 'msq_classic', 'msq_max', '366_apx'].indexOf(bid.bidder) !== -1) {
-          var keywords = {};
-          if (bid.params.keywords !== undefined) {
-            keywords = bid.params.keywords;
-          }
-          // For curation Xandr is pid 27446
-          curationId = config.params.bidders[bidderIndex].curationId || '27446';
-          if (data[curationId]) {
-            curationData = getSegAndCatsArray(data[curationId], minScore);
-          }
-          if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
-            loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
-          } else {
-            try {
-              keywords.sd_rtd = sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories);
-              _set(bid, 'params.keywords', keywords);
-              // _set(bid, 'params.user.segments', curationData.segments.concat(curationData.categories));
-            } catch (err) {
-              utils.logError(err.message)
-            }
-          }
-        } else if (['smartadserver', 'smart'].indexOf(bid.bidder) !== -1) {
-          var target = [];
-          if (typeof bid.params.target !== 'undefined') {
-            target.push(bid.params.target);
-          }
-          // For curation Smart is pid 27440
-          curationId = config.params.bidders[bidderIndex].curationId || '27440';
-          if (data[curationId]) {
-            curationData = getSegAndCatsArray(data[curationId], minScore);
-          }
-          if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
-            loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
-          } else {
-            try {
-              sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
-                if (target.indexOf('sd_rtd=' + entry) === -1) {
-                  target.push('sd_rtd=' + entry);
-                }
-              });
-              _set(bid, 'params.target', target.join(';'));
-            } catch (err) {
-              utils.logError(err.message);
-            }
-          }
-        } else if (bid.bidder == 'ix') {
-          try {
-            var ixConfig = gobalConfig.getConfig('ix.firstPartyData') || {};
-            // For curation index is pid 27248
-            curationId = config.params.bidders[bidderIndex].curationId || '27248';
+        _set(bid, 'ortb2.site.ext.data.sd_rtd', sirdataData.segments.concat(sirdataData.categories), true);
+      } else {
+        bidderIndex = config.params.bidders ? config.params.bidders.findIndex(i => i.bidder === bid.bidder) : null;
+        if ((typeof bidderIndex == 'number' && bidderIndex >= 0 && (!config.params.bidders[bidderIndex].adUnitCodes || config.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
+          curationData = {'segments': [], 'categories': []};
+          if (['appnexus', 'appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'adasta', 'beintoo', 'gravity', 'msq_classic', 'msq_max', '366_apx'].indexOf(bid.bidder) !== -1) {
+            /* var keywords = {};
+            if (bid.params.keywords !== undefined) {
+              keywords = bid.params.keywords;
+            } */
+            // For curation Xandr is pid 27446
+            curationId = config.params.bidders[bidderIndex].curationId || '27446';
             if (data[curationId]) {
               curationData = getSegAndCatsArray(data[curationId], minScore);
             }
             if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
               loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
             } else {
-              var cappIxCategories = [];
-              var ixLength = 0;
-              var ixLimit = config.params.bidders[bidderIndex].sizeLimit || 1000;
-              // Push ids For publisher use and for curation if exists
-              sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
-                if (ixLength < ixLimit) {
-                  cappIxCategories.push(entry);
-                  ixLength += entry.toString().length;
-                }
-              });
-              if (cappIxCategories.length > 0) {
-                var newFpd = Object.assign(ixConfig, {'sd_rtd': cappIxCategories});
-                gobalConfig.setConfig({ix: {firstPartyData: newFpd}});
+              try {
+                _set(bid, 'params.keywords.sd_rtd', sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), true);
+                /*
+                keywords.sd_rtd = sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories);
+                _set(bid, 'params.keywords', keywords);
+                */
+                // _set(bid, 'params.user.segments', curationData.segments.concat(curationData.categories));
+              } catch (err) {
+                utils.logError(err.message)
               }
             }
-          } catch (err) {
-            utils.logError(err.message)
-          }
-        } else if (bid.bidder == 'rubicon') {
-          // For curation Maginte is pid 27452
-          curationId = config.params.bidders[bidderIndex].curationId || '27452';
-          if (data[curationId]) {
-            curationData = getSegAndCatsArray(data[curationId], minScore);
-          }
-          if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
-            loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
-          } else {
-            setBidderOrtb2(bid, sirdataData.segments.concat(curationData.segments), sirdataData.categories.concat(curationData.categories), gobalConfig);
-          }
-        } else if (bid.bidder == 'proxistore') {
-          // For curation Maginte is pid 27452
-          curationId = config.params.bidders[bidderIndex].curationId || '27484';
-          if (data[curationId]) {
-            curationData = getSegAndCatsArray(data[curationId], minScore);
-          }
-          if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
-            loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
-          } else {
-            // _set(bid, 'ortb2.user.ext.data', {segments: data.segments, contextual_categories: data.contextual_categories});
-            _set(bid, 'ortb2Imp.ext.data', {segments: sirdataData.segments.concat(curationData.segments), categories: sirdataData.categories.concat(curationData.categories)});
+          } else if (['smartadserver', 'smart'].indexOf(bid.bidder) !== -1) {
+            var target = [];
+            if (bid.params && bid.params.target) {
+              target.push(bid.params.target);
+            }
+            // For curation Smart is pid 27440
+            curationId = config.params.bidders[bidderIndex].curationId || '27440';
+            if (data[curationId]) {
+              curationData = getSegAndCatsArray(data[curationId], minScore);
+            }
+            if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
+              loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
+            } else {
+              try {
+                sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
+                  if (target.indexOf('sd_rtd=' + entry) === -1) {
+                    target.push('sd_rtd=' + entry);
+                  }
+                });
+                _set(bid, 'params.target', target.join(';'), true);
+              } catch (err) {
+                utils.logError(err.message);
+              }
+            }
+          } else if (['criteo'].indexOf(bid.bidder) !== -1) {
+            // For curation Smart is pid 27443
+            curationId = config.params.bidders[bidderIndex].curationId || '27443';
+            if (data[curationId]) {
+              curationData = getSegAndCatsArray(data[curationId], minScore);
+            }
+            if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
+              loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
+            } else {
+              if (adUnit.ortb2Imp && adUnit.ortb2Imp.ext.data.sd_rtd) {
+                // Just add curation
+                _set(adUnit, 'ortb2Imp.ext.data.sd_rtd', adUnit.ortb2Imp.ext.data.sd_rtd.concat(curationData.segments).concat(curationData.categories), true);
+              } else {
+                _set(adUnit, 'ortb2Imp.ext.data.sd_rtd', sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), true);
+              }
+            }
+          } else if (bid.bidder == 'rubicon') {
+            // For curation Maginte is pid 27452
+            curationId = config.params.bidders[bidderIndex].curationId || '27452';
+            if (data[curationId]) {
+              curationData = getSegAndCatsArray(data[curationId], minScore);
+            }
+            if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
+              loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
+            } else {
+              if (adUnit.ortb2Imp && adUnit.ortb2Imp.ext.data.sd_rtd) {
+                // Just add curation
+                _set(adUnit, 'ortb2Imp.ext.data.sd_rtd', adUnit.ortb2Imp.ext.data.sd_rtd.concat(curationData.segments).concat(curationData.categories), true);
+              } else {
+                _set(adUnit, 'ortb2Imp.ext.data.sd_rtd', sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), true);
+              }
+            }
+          } else if (bid.bidder == 'proxistore') {
+            // For curation Proxistore is pid 27484
+            curationId = config.params.bidders[bidderIndex].curationId || '27484';
+            if (data[curationId]) {
+              curationData = getSegAndCatsArray(data[curationId], minScore);
+            }
+            if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
+              loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
+            } else {
+              // _set(bid, 'ortb2.user.ext.data', {segments: data.segments, contextual_categories: data.contextual_categories}, false);
+              _set(bid, 'ortb2.user.ext.data.sd_rtd', sirdataData.segments.concat(curationData.segments), false);
+              _set(bid, 'ortb2.site.ext.data.sd_rtd', sirdataData.categories.concat(curationData.categories), false);
+            }
           }
         }
       }
