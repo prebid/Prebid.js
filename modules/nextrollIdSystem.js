@@ -20,12 +20,12 @@ export const nextrollIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'nextroll',
+  name: 'nextrollId',
 
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @return {{nextroll: string} | undefined}
+   * @return {{nextrollId: string} | undefined}
    */
   decode(value) {
     return value;
@@ -35,15 +35,15 @@ export const nextrollIdSubmodule = {
    * performs action to obtain id and return a value.
    * @function
    * @param {SubmoduleConfig} [config]
-   * @returns {{id: {nextroll: string} | undefined}}
+   * @returns {{id: {nextrollId: string} | undefined}}
    */
   getId(config) {
     const key = KEY_PREFIX + deepAccess(config, 'params.partnerId', 'undefined');
     const dataString = storage.getDataFromLocalStorage(NEXTROLL_ID_LS_KEY) || '{}';
     const data = JSON.parse(dataString);
-    const nextrollId = deepAccess(data, `${key}.value`);
+    const idValue = deepAccess(data, `${key}.value`);
 
-    return { id: nextrollId ? {nextroll: nextrollId} : undefined };
+    return { id: idValue ? {nextrollId: idValue} : undefined };
   }
 };
 

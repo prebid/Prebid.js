@@ -149,7 +149,7 @@ pbjs.setConfig({
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             },
     }, {
-            name: 'nextroll',
+            name: 'nextrollId',
             params: {
                 partnerId: "1009",         // Set your real NextRoll partner ID here for production
             }

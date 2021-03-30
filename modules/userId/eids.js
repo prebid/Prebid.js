@@ -153,7 +153,7 @@ const USER_IDS_CONFIG = {
   },
 
   // nextroll
-  'nextroll': {
+  'nextrollId': {
     source: 'nextroll.com',
     atype: 1
   },

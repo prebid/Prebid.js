@@ -21,7 +21,7 @@ describe('NextrollId module', function () {
   const testCases = [
     {
       expect: {
-        id: {nextroll: 'id_value'},
+        id: {nextrollId: 'id_value'},
       },
       params: {partnerId: '1002'},
       localStorage: LS_VALUE
