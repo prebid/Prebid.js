@@ -214,10 +214,7 @@ export function validateFpd(obj) {
 */
 export const resetOrtb2 = () => { ortb2 = {} };
 
-/**
-* Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
-*/
-export function init() {
+function runEnrichments(shouldSkipValidate) {
   setReferer();
   setPage();
   setDomain();
@@ -225,6 +222,10 @@ export function init() {
   setKeywords();
   setCurrency();
 
+  if (shouldSkipValidate) config.setConfig({ortb2: utils.mergeDeep({}, ortb2, config.getConfig('ortb2'))});
+}
+
+function runValidations() {
   let conf = utils.mergeDeep({}, ortb2, validateFpd(config.getConfig('ortb2')));
 
   if (!utils.deepEqual(conf, globalConfig)) {
@@ -246,6 +247,18 @@ export function init() {
 
     if (Object.keys(modConf).length) config.setBidderConfig({bidders: [bidder], config: modConf});
   });
+}
+
+/**
+* Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
+*/
+export function init() {
+  let conf = config.getConfig('firstPartyData');
+  let skipValidations = (conf && conf.skipValidations) || false;
+  let skipEnrichments = (conf && conf.skipEnrichments) || false;
+
+  if (!skipEnrichments) runEnrichments(skipValidations);
+  if (!skipValidations) runValidations();
 }
 
 function addBidderRequestHook(fn, bidderRequests) {

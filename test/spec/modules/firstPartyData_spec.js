@@ -586,5 +586,61 @@ describe('the first party data module', function () {
       expect(validated.bidderA.ortb2.site.keywords).to.equal('other');
       expect(validated.bidderA.ortb2.site.ref).to.equal('https://domain.com');
     });
+
+    it('should not set default values if skipEnrichments is turned on', function () {
+      let validated;
+      config.setConfig({'firstPartyData': {skipEnrichments: true}});
+
+      let conf = {
+        site: {
+          keywords: 'other'
+        },
+        user: {
+          keywords: 'test',
+          data: [{
+            segment: [{id: 'data1_id'}],
+            name: 'data1'
+          }]
+        }
+      }
+      ;
+
+      config.setConfig({ortb2: conf});
+
+      init();
+
+      validated = config.getConfig();
+      expect(validated.ortb2).to.not.be.undefined;
+      expect(validated.ortb2.device).to.be.undefined;
+      expect(validated.ortb2.site.ref).to.be.undefined;
+      expect(validated.ortb2.site.page).to.be.undefined;
+      expect(validated.ortb2.site.domain).to.be.undefined;
+    });
+
+    it('should not validate ortb2 data if skipValidations is turned on', function () {
+      let validated;
+      config.setConfig({'firstPartyData': {skipValidations: true}});
+
+      let conf = {
+        site: {
+          keywords: 'other'
+        },
+        user: {
+          keywords: 'test',
+          data: [{
+            segment: [{id: 'nonfiltered'}]
+          }]
+        }
+      }
+      ;
+
+      config.setConfig({ortb2: conf});
+
+      init();
+
+      validated = config.getConfig();
+      expect(validated.ortb2).to.not.be.undefined;
+      expect(validated.ortb2.user.data).to.deep.equal([{segment: [{id: 'nonfiltered'}]}]);
+    });
   });
 });
