@@ -276,7 +276,7 @@ export function addSegmentData(adUnits, data, config, onDone, gobalConfig) {
               });
               _set(bid, 'params.target', target.join(';'));
             } catch (err) {
-              utils.logError(err.message)
+              utils.logError(err.message);
             }
           }
         } else if (bid.bidder == 'ix') {
@@ -290,13 +290,21 @@ export function addSegmentData(adUnits, data, config, onDone, gobalConfig) {
             if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
               loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
             } else {
+              var cappIxCategories = [];
+              var ixLength = 0;
+              var ixLimit = config.params.bidders[bidderIndex].sizeLimit || 1000;
               // Push ids For publisher use and for curation if exists
-              var newFpd = Object.assign(ixConfig, {'sd_rtd': sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories)});
-              gobalConfig.setConfig({
-                ix: {
-                  firstPartyData: newFpd
+              sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
+                if (ixLength < ixLimit) {
+                  cappIxCategories.push(entry);
+                  ixLength += entry.toString().length;
+                  utils.logInfo(ixLength);
                 }
               });
+              if (cappIxCategories.length > 0) {
+                var newFpd = Object.assign(ixConfig, {'sd_rtd': cappIxCategories});
+                gobalConfig.setConfig({ix: {firstPartyData: newFpd}});
+              }
             }
           } catch (err) {
             utils.logError(err.message)
@@ -321,7 +329,8 @@ export function addSegmentData(adUnits, data, config, onDone, gobalConfig) {
           if (bidderIndex && bidderIndex >= 0 && typeof config.params.bidders[bidderIndex].customFunction == 'function') {
             loadCustomFunction(config.params.bidders[bidderIndex].customFunction, adUnit, sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories), data, bid);
           } else {
-            _set(bid, 'ortb2.user.ext.data', {segments: data.segments, contextual_categories: data.contextual_categories});
+            // _set(bid, 'ortb2.user.ext.data', {segments: data.segments, contextual_categories: data.contextual_categories});
+            _set(bid, 'ortb2Imp.ext.data', {segments: data.segments, contextual_categories: data.contextual_categories});
           }
         }
       }
