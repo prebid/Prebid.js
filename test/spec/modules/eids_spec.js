@@ -82,28 +82,21 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('test hook from merkleId cookies', function (done) {
-    // simulate existing browser local storage values
-    coreStorage.setCookie('merkleId', JSON.stringify({'pam_id': {'id': 'testmerkleId', 'keyID': 1}}), (new Date(Date.now() + 5000).toUTCString()));
-
-    setSubmoduleRegistry([merkleIdSubmodule]);
-    init(config);
-    config.setConfig(getConfigMock(['merkleId', 'merkleId', 'cookie']));
-
-    requestBidsHook(function () {
-      adUnits.forEach(unit => {
-        unit.bids.forEach(bid => {
-          expect(bid).to.have.deep.nested.property('userId.merkleId');
-          expect(bid.userId.merkleId).to.deep.equal({'id': 'testmerkleId', 'keyID': 1});
-          expect(bid.userIdAsEids[0]).to.deep.equal({
-            source: 'merkleinc.com',
-            uids: [{id: 'testmerkleId', atype: 3, ext: {keyID: 1}}]
-          });
-        });
-      });
-      coreStorage.setCookie('merkleId', '', EXPIRED_COOKIE_DATE);
-      done();
-    }, {adUnits});
+  it('merkleId', function() {
+    const userId = {
+      merkleId: {
+        id: 'some-random-id-value', keyID: 1
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'merkleinc.com',
+      uids: [{id: 'some-random-id-value',
+        atype: 3,
+        ext: { keyID: 1
+        }}]
+    });
   });
 
   it('identityLink', function() {
