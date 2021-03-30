@@ -248,7 +248,7 @@ export function addSegmentData(adUnits, data, config, onDone, gobalConfig) {
             try {
               keywords.sd_rtd = sirdataData.segments.concat(sirdataData.categories).concat(curationData.segments).concat(curationData.categories);
               _set(bid, 'params.keywords', keywords);
-              //_set(bid, 'params.user.segments', curationData.segments.concat(curationData.categories));
+              // _set(bid, 'params.user.segments', curationData.segments.concat(curationData.categories));
             } catch (err) {
               utils.logError(err.message)
             }
