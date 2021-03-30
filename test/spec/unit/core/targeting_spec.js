@@ -456,7 +456,7 @@ describe('targeting tests', function () {
       });
     });
 
-    describe('targetingControls:default_targeting_keys', function () {
+    describe('targetingControls:only allow default_targeting_keys', function () {
       let bid4;
 
       beforeEach(function() {
@@ -487,7 +487,7 @@ describe('targeting tests', function () {
         expect(targeting['/123456/header-bid-tag-0']).to.include.all.keys('hb_bidder_appnexus', 'hb_adid_appnexus', 'hb_pb_appnexus', 'hb_deal_appnexus');
       });
 
-      it('targeting should not include keys prefixed by disallowed default targeting keys', function () {
+      it('targeting should not include keys not in default targeting keys', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         expect(targeting['/123456/header-bid-tag-0']).to.not.have.all.keys(['hb_uuid_appnexus', 'hb_uuid_rubicon','hb_source_appnexus', 'hb_source_rubicon']);
         expect(targeting['/123456/header-bid-tag-0']).to.not.have.all.keys(['hb_uuid', 'hb_source']);
