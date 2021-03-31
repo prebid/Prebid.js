@@ -161,6 +161,7 @@ describe('lemmaBidAdapter', function() {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.pubId.toString()); // publisher Id
         expect(data.imp[0].tagid).to.equal('1'); // tagid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
+        expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.floor);
       });
       it('Request params check without mediaTypes object', function() {
         var bidRequests = [{
@@ -192,6 +193,7 @@ describe('lemmaBidAdapter', function() {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.pubId.toString()); // publisher Id
         expect(data.imp[0].tagid).to.equal(undefined); // tagid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
+        expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.floor);
       });
       it('Request params multi size format object check', function() {
         var bidRequests = [{
