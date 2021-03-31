@@ -2,7 +2,7 @@
 
 Module Name: Smartico Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: 
+Maintainer: sk@smartico.eu
 
 # Description
 
