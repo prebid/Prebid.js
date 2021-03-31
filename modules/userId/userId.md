@@ -90,8 +90,7 @@ pbjs.setConfig({
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv',
-                endpoint:'http://127.0.0.1/m1'
+                sv_domain:'zxv'
             },
             storage: {
                 type: "cookie",
@@ -185,8 +184,7 @@ pbjs.setConfig({
                 vendor:'sdfg',
                 sv_cid:'dfg',
                 sv_pubid:'xcv',
-                sv_domain:'zxv',
-                endpoint:'http://127.0.0.1/m1'
+                sv_domain:'zxv'
             },
             storage: {
                 type: "html5",

@@ -12,6 +12,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'merkleId';
 const SESSION_COOKIE_NAME = '_svsid';
+const ID_URL = 'https://id2.sv.rkdms.com/identity/';
 
 export const storage = getStorageManager();
 
@@ -35,9 +36,9 @@ function readFromLocalStorage() {
 
 function constructUrl(configParams) {
   const session = getSession(configParams);
-  let url = `${configParams.endpoint}?vendor=${configParams.vendor}&sv_cid=${configParams.sv_cid}&sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}`;
+  let url = ID_URL + `?vendor=${configParams.vendor}&sv_cid=${configParams.sv_cid}&sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}`;
   if (session) {
-    url.append(`?sv_session=${session}`);
+    url.append(`&sv_session=${session}`);
   }
   utils.logInfo('Merkle url :' + url);
   return url;
@@ -87,11 +88,6 @@ export const merkleIdSubmodule = {
 
     if (typeof configParams.sv_domain !== 'string') {
       utils.logError('User ID - merkleId submodule requires a valid sv_domain string to be defined');
-      return;
-    }
-
-    if (typeof configParams.endpoint !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid endpoint string to be defined');
       return;
     }
 
