@@ -388,6 +388,10 @@ function interpretResponse (serverResponse, bidRequest) {
     },
     pag: {
       pvid: 0
+    },
+    meta: {
+      adomain: [],
+      mediaType: ''
     }
   }
   const {
@@ -401,7 +405,11 @@ function interpretResponse (serverResponse, bidRequest) {
     pag: {
       pvid
     },
-    jcsi
+    jcsi,
+    meta: {
+      adomain: advertiserDomains,
+      mediaType: type
+    }
   } = Object.assign(defaultResponse, serverResponseBody)
   let data = bidRequest.data || {}
   let product = data.pi
@@ -409,6 +417,10 @@ function interpretResponse (serverResponse, bidRequest) {
   let isTestUnit = (product === 3 && data.si === 9)
   let sizes = utils.parseSizesInput(bidRequest.sizes)
   let [width, height] = sizes[0].split('x')
+  let metaData = {
+    advertiserDomains: advertiserDomains || [],
+    mediaType: type || mediaType
+  }
 
   // return 1x1 when breakout expected
   if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
@@ -437,7 +449,8 @@ function interpretResponse (serverResponse, bidRequest) {
       netRevenue: true,
       requestId: bidRequest.id,
       ttl: TIME_TO_LIVE,
-      width
+      width,
+      meta: metaData
     })
   }
   return bidResponses

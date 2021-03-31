@@ -200,6 +200,7 @@ describe('Seedtag Adapter', function() {
       expect(data.url).to.equal('referer')
       expect(data.publisherToken).to.equal('0000-0000-01')
       expect(typeof data.version).to.equal('string')
+      expect(['fixed', 'mobile', 'unknown'].indexOf(data.connectionType)).to.be.above(-1)
     })
 
     describe('adPosition param', function() {

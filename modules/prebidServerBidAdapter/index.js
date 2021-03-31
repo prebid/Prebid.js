@@ -188,17 +188,14 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
   }
 
   if (gdprConsent) {
-    // only populate gdpr field if we know CMP returned consent information (ie didn't timeout or have an error)
-    if (typeof gdprConsent.consentString !== 'undefined') {
-      payload.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
-    }
+    payload.gdpr = (gdprConsent.gdprApplies) ? 1 : 0;
     // attempt to populate gdpr_consent if we know gdprApplies or it may apply
     if (gdprConsent.gdprApplies !== false) {
       payload.gdpr_consent = gdprConsent.consentString;
     }
   }
 
-  // US Privace (CCPA) support
+  // US Privacy (CCPA) support
   if (uspConsent) {
     payload.us_privacy = uspConsent;
   }
