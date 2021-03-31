@@ -171,7 +171,7 @@ function send(data, status) {
     });
     if (status == 'bidwon') {
       ajax(pubxaiAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/json' });
-    } else if (status == 'auctionEnd' && !auctionCache.includes(data.initOptions.auctionId)) {
+    } else if (status == 'auctionEnd' && auctionCache.indexOf(data.initOptions.auctionId) === -1) {
       ajax(pubxaiAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/json' });
       auctionCache.push(data.initOptions.auctionId);
     }
