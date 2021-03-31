@@ -105,7 +105,7 @@ function _setFloor(impObj, bid) {
   }
 
   // assign value only if bidFloor is > 0
-  impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
+  impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : undefined);
 }
 
 function parseRTBResponse(request, response) {
