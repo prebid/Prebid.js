@@ -266,22 +266,11 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   // Universal ID
   const eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
-
-  let eids = [];
-  eidsArr.forEach(eidsElement => {
-    if (eidsElement.source && eidsElement.uids[0].id) {
-      eids.push({
-        source: eidsElement.source,
-        userId: eidsElement.uids[0].id
-      });
+  payload.user = {
+    ext: {
+      eids: eidsArr
     }
-  });
-
-  let user = {};
-  user.ext = {};
-  user.ext.eids = eidsArr;
-  payload.user = user;
-
+  };
   // < GDPR
 
   // > Payload
