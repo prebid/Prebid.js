@@ -138,6 +138,14 @@ describe('Tappx bid adapter', function () {
       expect(data.imp[0].banner.h).to.be.oneOf([320, 50, 250, 480]);
     });
 
+    it('should set user eids array', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+
+      const data = JSON.parse(request[0].data);
+      expect(data.user.ext.eids, data).to.not.be.null;
+      expect(data.user.ext.eids[0]).to.have.keys(['source', 'uids']);
+    });
+
     it('should properly build a banner request with app params', function () {
       const request = spec.buildRequests(validAppBidRequests, bidderRequest);
       expect(request[0].url).to.match(/^(http|https):\/\/(.*)\.tappx\.com\/.+/);
