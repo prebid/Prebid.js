@@ -7,7 +7,6 @@ Maintainer: sk@smartico.eu
 # Description
 
 Module that connects to Smartico's demand sources.
-It requires setup and approval from Smartico team. Please reach out to sk@smartico.eu for more information.
 
 # Test Parameters
 
@@ -21,7 +20,7 @@ It requires setup and approval from Smartico team. Please reach out to sk@smarti
             },
             bids: [
                 {
-                    bidder: "smartico",
+                    bidder: 'smartico',
                     params: {
                            placementId: 'testPlacementId', 
                            token: "FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya"
