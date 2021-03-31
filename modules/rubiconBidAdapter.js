@@ -256,6 +256,21 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
+      const multibid = config.getConfig('multibid');
+      if (multibid) {
+        utils.deepSetValue(data, 'ext.prebid.multibid', multibid.reduce((result, i) => {
+          let obj = {};
+
+          Object.keys(i).forEach(key => {
+            obj[key.toLowerCase()] = i[key];
+          });
+
+          result.push(obj);
+
+          return result;
+        }, []));
+      }
+
       applyFPD(bidRequest, VIDEO, data);
 
       // if storedAuctionResponse has been set, pass SRID
@@ -510,6 +525,8 @@ export const spec = {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
+    data['rp_maxbids'] = bidderRequest.bidLimit || 1;
+
     applyFPD(bidRequest, BANNER, data);
 
     if (config.getConfig('coppa') === true) {
@@ -640,6 +657,8 @@ export const spec = {
     }
 
     let ads = responseObj.ads;
+    let lastImpId;
+    let multibid = 0;
 
     // video ads array is wrapped in an object
     if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest) === 'video' && typeof ads === 'object') {
@@ -652,12 +671,14 @@ export const spec = {
     }
 
     return ads.reduce((bids, ad, i) => {
+      (ad.impression_id && lastImpId === ad.impression_id) ? multibid++ : lastImpId = ad.impression_id;
+
       if (ad.status !== 'ok') {
         return bids;
       }
 
       // associate bidRequests; assuming ads matches bidRequest
-      const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i] : bidRequest;
+      const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i - multibid] : bidRequest;
 
       if (associatedBidRequest && typeof associatedBidRequest === 'object') {
         let bid = {
