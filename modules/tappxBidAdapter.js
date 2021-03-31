@@ -135,10 +135,6 @@ function interpretBannerBid(serverBid, request) {
 * @return response ad
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
-  utils.logMessage('---------- validBidRequests');
-  utils.logMessage(JSON.stringify(validBidRequests));
-  utils.logMessage('---------- bidderRequest');
-  utils.logMessage(JSON.stringify(bidderRequest));
 
   HOST = utils.deepAccess(validBidRequests, 'params.host');
   let hostInfo = getHostInfo(HOST)
@@ -216,12 +212,13 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
   imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
 
-  let tappx = {};
-  tappx.tappxkey = TAPPXKEY;
-  tappx.endpoint = ENDPOINT;
-  tappx.host = hostInfo.url;
+  let bidder = {};
+  bidder.tappxkey = TAPPXKEY;
+  bidder.endpoint = ENDPOINT;
+  bidder.host = hostInfo.url;
 
-  imp.ext = tappx;
+  imp.ext = {};
+  imp.ext.bidder = bidder;
   // < Imp object
 
   // > Device object
