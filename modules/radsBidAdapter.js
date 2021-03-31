@@ -169,10 +169,8 @@ function prepareExtraParams(params, payload, bidderRequest) {
 
   if (bidderRequest && bidderRequest.gdprConsent) {
     if (payload.pfilter !== undefined) {
-      if (!payload.pfilter.gdpr_consent) {
-        payload.pfilter.gdpr_consent = bidderRequest.gdprConsent.consentString;
-        payload.pfilter.gdpr = bidderRequest.gdprConsent.gdprApplies;
-      }
+      payload.pfilter.gdpr_consent = bidderRequest.gdprConsent.consentString;
+      payload.pfilter.gdpr = bidderRequest.gdprConsent.gdprApplies;
     } else {
       payload.pfilter = {
         'gdpr_consent': bidderRequest.gdprConsent.consentString,
