@@ -103,7 +103,9 @@ var sizeMap = {
   278: '320x500',
   282: '320x400',
   288: '640x380',
-  548: '500x1000'
+  548: '500x1000',
+  550: '980x480',
+  552: '300x200'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -254,46 +256,7 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
-      const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
-      const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
-      if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
-        const bidderData = {
-          bidders: [ bidderRequest.bidderCode ],
-          config: {
-            fpd: {}
-          }
-        };
-
-        if (!utils.isEmpty(siteData)) {
-          bidderData.config.fpd.site = siteData;
-        }
-
-        if (!utils.isEmpty(userData)) {
-          bidderData.config.fpd.user = userData;
-        }
-
-        utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
-      }
-
-      /**
-       * Prebid AdSlot
-       * @type {(string|undefined)}
-       */
-      const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-      if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(data.imp[0].ext, 'context.data.pbadslot', pbAdSlot);
-      }
-
-      /**
-       * Copy GAM AdUnit and Name to imp
-       */
-      ['name', 'adSlot'].forEach(name => {
-        /** @type {(string|undefined)} */
-        const value = utils.deepAccess(bidRequest, `fpd.context.adserver.${name}`);
-        if (typeof value === 'string' && value) {
-          utils.deepSetValue(data.imp[0].ext, `context.data.adserver.${name.toLowerCase()}`, value);
-        }
-      });
+      applyFPD(bidRequest, VIDEO, data);
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
@@ -460,7 +423,7 @@ export const spec = {
       'zone_id': params.zoneId,
       'size_id': parsedSizes[0],
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
-      'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
+      'rp_floor': (params.floor = parseFloat(params.floor)) >= 0.01 ? params.floor : undefined,
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
@@ -516,7 +479,7 @@ export const spec = {
           } else if (eid.source === 'sharedid.org') {
             data['eid_sharedid.org'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.third) || ''}`;
           } else if (eid.source === 'id5-sync.com') {
-            data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.ext && eid.ext.linkType) || ''}`;
+            data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.linkType) || ''}`;
           } else {
             // add anything else with this generic format
             data[`eid_${eid.source}`] = `${eid.uids[0].id}^${eid.uids[0].atype || ''}`;
@@ -547,49 +510,7 @@ export const spec = {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
-    // visitor properties
-    const visitorData = Object.assign({}, params.visitor, config.getConfig('fpd.user'));
-    Object.keys(visitorData).forEach((key) => {
-      if (visitorData[key] != null && key !== 'keywords') {
-        data[`tg_v.${key}`] = typeof visitorData[key] === 'object' && !Array.isArray(visitorData[key])
-          ? JSON.stringify(visitorData[key])
-          : visitorData[key].toString(); // initialize array;
-      }
-    });
-
-    // inventory properties
-    const inventoryData = Object.assign({}, params.inventory, config.getConfig('fpd.context'));
-    Object.keys(inventoryData).forEach((key) => {
-      if (inventoryData[key] != null && key !== 'keywords') {
-        data[`tg_i.${key}`] = typeof inventoryData[key] === 'object' && !Array.isArray(inventoryData[key])
-          ? JSON.stringify(inventoryData[key])
-          : inventoryData[key].toString();
-      }
-    });
-
-    // keywords
-    const keywords = (params.keywords || []).concat(
-      utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
-      utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
-    data.kw = Array.isArray(keywords) && keywords.length ? keywords.join(',') : '';
-
-    /**
-     * Prebid AdSlot
-     * @type {(string|undefined)}
-     */
-    const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
-    if (typeof pbAdSlot === 'string' && pbAdSlot) {
-      data['tg_i.pbadslot'] = pbAdSlot.replace(/^\/+/, '');
-    }
-
-    /**
-     * GAM Ad Unit
-     * @type {(string|undefined)}
-     */
-    const gamAdUnit = utils.deepAccess(bidRequest, 'fpd.context.adServer.adSlot');
-    if (typeof gamAdUnit === 'string' && gamAdUnit) {
-      data['tg_i.dfp_ad_unit_code'] = gamAdUnit.replace(/^\/+/, '');
-    }
+    applyFPD(bidRequest, BANNER, data);
 
     if (config.getConfig('coppa') === true) {
       data['coppa'] = 1;
@@ -947,6 +868,76 @@ function addVideoParameters(data, bidRequest) {
   const size = parseSizes(bidRequest, 'video')
   data.imp[0].video.w = size[0]
   data.imp[0].video.h = size[1]
+}
+
+function applyFPD(bidRequest, mediaType, data) {
+  const BID_FPD = {
+    user: {ext: {data: {...bidRequest.params.visitor}}},
+    site: {ext: {data: {...bidRequest.params.inventory}}}
+  };
+
+  if (bidRequest.params.keywords) BID_FPD.site.keywords = (utils.isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
+
+  let fpd = utils.mergeDeep({}, config.getConfig('ortb2') || {}, BID_FPD);
+  let impData = utils.deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
+  const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
+  const validate = function(prop, key) {
+    if (key === 'data' && Array.isArray(prop)) {
+      return prop.filter(name => name.segment && utils.deepAccess(name, 'ext.taxonomyname').match(/iab/i)).map(value => {
+        let segments = value.segment.filter(obj => obj.id).reduce((result, obj) => {
+          result.push(obj.id);
+          return result;
+        }, []);
+        if (segments.length > 0) return segments.toString();
+      }).toString();
+    } else if (typeof prop === 'object' && !Array.isArray(prop)) {
+      utils.logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
+    } else if (typeof prop !== 'undefined') {
+      return (Array.isArray(prop)) ? prop.filter(value => {
+        if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
+
+        utils.logWarn('Rubicon: Filtered value: ', value, 'for key', key, ': Expected value to be string, integer, or an array of strings/ints');
+      }).toString() : prop.toString();
+    }
+  };
+  const addBannerData = function(obj, name, key) {
+    let val = validate(obj, key);
+    let loc = (MAP[key]) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
+    data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
+  }
+
+  Object.keys(impData).forEach((key) => {
+    if (key === 'adserver') {
+      ['name', 'adslot'].forEach(prop => {
+        if (impData[key][prop]) impData[key][prop] = impData[key][prop].replace(/^\/+/, '');
+      });
+    } else if (key === 'pbadslot') {
+      impData[key] = impData[key].replace(/^\/+/, '');
+    }
+  });
+
+  if (mediaType === BANNER) {
+    ['site', 'user'].forEach(name => {
+      Object.keys(fpd[name]).forEach((key) => {
+        if (key !== 'ext') {
+          addBannerData(fpd[name][key], name, key);
+        } else if (fpd[name][key].data) {
+          Object.keys(fpd[name].ext.data).forEach((key) => {
+            addBannerData(fpd[name].ext.data[key], name, key);
+          });
+        }
+      });
+    });
+    Object.keys(impData).forEach((key) => {
+      (key === 'adserver') ? addBannerData(impData[key].adslot, name, key) : addBannerData(impData[key], 'site', key);
+    });
+  } else {
+    if (Object.keys(impData).length) {
+      utils.mergeDeep(data.imp[0].ext, {data: impData});
+    }
+
+    utils.mergeDeep(data, fpd);
+  }
 }
 
 /**

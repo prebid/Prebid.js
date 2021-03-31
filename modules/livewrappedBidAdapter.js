@@ -14,6 +14,7 @@ const VERSION = '1.4';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
+  gvlid: 919,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -221,6 +222,10 @@ function bidToAdRequest(bid) {
     options: bid.params.options
   };
 
+  if (bid.auc !== undefined) {
+    adRequest.auc = bid.auc;
+  }
+
   adRequest.native = utils.deepAccess(bid, 'mediaTypes.native');
 
   adRequest.video = utils.deepAccess(bid, 'mediaTypes.video');
@@ -254,33 +259,10 @@ function getAdblockerRecovered() {
   } catch (e) {}
 }
 
-function AddExternalUserId(eids, value, source, atype, rtiPartner) {
-  if (utils.isStr(value)) {
-    var eid = {
-      source,
-      uids: [{
-        id: value,
-        atype
-      }]
-    };
-
-    if (rtiPartner) {
-      eid.uids[0] = {ext: {rtiPartner}};
-    }
-
-    eids.push(eid);
-  }
-}
-
 function handleEids(bidRequests) {
-  let eids = [];
   const bidRequest = bidRequests[0];
-  if (bidRequest && bidRequest.userId) {
-    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1); // Also add this to eids
-    AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id.uid`), 'id5-sync.com', 1);
-  }
-  if (eids.length > 0) {
-    return {user: {ext: {eids}}};
+  if (bidRequest && bidRequest.userIdAsEids) {
+    return {user: {ext: {eids: bidRequest.userIdAsEids}}};
   }
 
   return undefined;

@@ -6,7 +6,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
-const ADAPTER_VERSION = '1.14';
+const ADAPTER_VERSION = '1.15';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -387,6 +387,7 @@ function createBannerRequestData(bids, bidderRequest) {
       slot: bid.adUnitCode,
       id: getBannerBidParam(bid, 'appId'),
       bidfloor: getBannerBidParam(bid, 'bidfloor'),
+      tagid: getBannerBidParam(bid, 'tagid'),
       sizes: getBannerSizes(bid)
     };
   });

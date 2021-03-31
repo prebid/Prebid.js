@@ -1,12 +1,14 @@
 import {
   id5IdSubmodule,
   ID5_STORAGE_NAME,
+  ID5_PRIVACY_STORAGE_NAME,
   getFromLocalStorage,
   storeInLocalStorage,
   expDaysStr,
   nbCacheName,
   getNbFromCache,
-  storeNbInCache
+  storeNbInCache,
+  isInControlGroup
 } from 'modules/id5IdSystem.js';
 import { init, requestBidsHook, setSubmoduleRegistry, coreStorage } from 'modules/userId/index.js';
 import { config } from 'src/config.js';
@@ -26,16 +28,19 @@ describe('ID5 ID System', function() {
   const ID5_NB_STORAGE_NAME = nbCacheName(ID5_TEST_PARTNER_ID);
   const ID5_STORED_ID = 'storedid5id';
   const ID5_STORED_SIGNATURE = '123456';
+  const ID5_STORED_LINK_TYPE = 1;
   const ID5_STORED_OBJ = {
     'universal_uid': ID5_STORED_ID,
-    'signature': ID5_STORED_SIGNATURE
+    'signature': ID5_STORED_SIGNATURE,
+    'link_type': ID5_STORED_LINK_TYPE
   };
   const ID5_RESPONSE_ID = 'newid5id';
   const ID5_RESPONSE_SIGNATURE = 'abcdef';
+  const ID5_RESPONSE_LINK_TYPE = 2;
   const ID5_JSON_RESPONSE = {
     'universal_uid': ID5_RESPONSE_ID,
     'signature': ID5_RESPONSE_SIGNATURE,
-    'link_type': 0
+    'link_type': ID5_RESPONSE_LINK_TYPE
   };
 
   function getId5FetchConfig(storageName = ID5_STORAGE_NAME, storageType = 'html5') {
@@ -143,6 +148,9 @@ describe('ID5 ID System', function() {
       expect(requestBody.s).to.eq('');
       expect(requestBody.provider).to.eq('');
       expect(requestBody.v).to.eq('$prebid.version$');
+      expect(requestBody.gdpr).to.exist;
+      expect(requestBody.gdpr_consent).to.exist
+      expect(requestBody.us_privacy).to.exist;
 
       request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
       expect(callbackSpy.calledOnce).to.be.true;
@@ -174,10 +182,10 @@ describe('ID5 ID System', function() {
     it('should call the ID5 server with pd field when pd config is set', function () {
       const pubData = 'b50ca08271795a8e7e4012813f23d505193d75c0f2e2bb99baa63aa822f66ed3';
 
-      let config = getId5FetchConfig();
-      config.params.pd = pubData;
+      let id5Config = getId5FetchConfig();
+      id5Config.params.pd = pubData;
 
-      let submoduleCallback = id5IdSubmodule.getId(config, undefined, ID5_STORED_OBJ).callback;
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -188,10 +196,10 @@ describe('ID5 ID System', function() {
     });
 
     it('should call the ID5 server with empty pd field when pd config is not set', function () {
-      let config = getId5FetchConfig();
-      config.params.pd = undefined;
+      let id5Config = getId5FetchConfig();
+      id5Config.params.pd = undefined;
 
-      let submoduleCallback = id5IdSubmodule.getId(config, undefined, ID5_STORED_OBJ).callback;
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
       submoduleCallback(callbackSpy);
 
       let request = server.requests[0];
@@ -230,6 +238,74 @@ describe('ID5 ID System', function() {
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(0);
     });
+
+    it('should call the ID5 server with ab feature = 1 when abTesting is turned on', function () {
+      let id5Config = getId5FetchConfig();
+      id5Config.params.abTesting = { enabled: true, controlGroupPct: 10 }
+
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+      let requestBody = JSON.parse(request.requestBody);
+      expect(requestBody.features.ab).to.eq(1);
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+    });
+
+    it('should call the ID5 server without ab feature when abTesting is turned off', function () {
+      let id5Config = getId5FetchConfig();
+      id5Config.params.abTesting = { enabled: false, controlGroupPct: 10 }
+
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+      let requestBody = JSON.parse(request.requestBody);
+      expect(requestBody.features).to.be.undefined;
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+    });
+
+    it('should call the ID5 server without ab feature when when abTesting is not set', function () {
+      let id5Config = getId5FetchConfig();
+
+      let submoduleCallback = id5IdSubmodule.getId(id5Config, undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+      let requestBody = JSON.parse(request.requestBody);
+      expect(requestBody.features).to.be.undefined;
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+    });
+
+    it('should store the privacy object from the ID5 server response', function () {
+      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+
+      let responseObject = utils.deepClone(ID5_JSON_RESPONSE);
+      responseObject.privacy = {
+        jurisdiction: 'gdpr',
+        id5_consent: true
+      };
+      request.respond(200, responseHeader, JSON.stringify(responseObject));
+      expect(getFromLocalStorage(ID5_PRIVACY_STORAGE_NAME)).to.be.eq(JSON.stringify(responseObject.privacy));
+      coreStorage.removeDataFromLocalStorage(ID5_PRIVACY_STORAGE_NAME);
+    });
+
+    it('should not store a privacy object if not part of ID5 server response', function () {
+      coreStorage.removeDataFromLocalStorage(ID5_PRIVACY_STORAGE_NAME);
+      let submoduleCallback = id5IdSubmodule.getId(getId5FetchConfig(), undefined, ID5_STORED_OBJ).callback;
+      submoduleCallback(callbackSpy);
+
+      let request = server.requests[0];
+
+      request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      expect(getFromLocalStorage(ID5_PRIVACY_STORAGE_NAME)).to.be.null;
+    });
   });
 
   describe('Request Bids Hook', function() {
@@ -263,10 +339,13 @@ describe('ID5 ID System', function() {
             expect(bid.userId.id5id.uid).to.equal(ID5_STORED_ID);
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: ID5_SOURCE,
-              uids: [{ id: ID5_STORED_ID, atype: 1 }],
-              ext: {
-                linkType: 0
-              }
+              uids: [{
+                id: ID5_STORED_ID,
+                atype: 1,
+                ext: {
+                  linkType: ID5_STORED_LINK_TYPE
+                }
+              }]
             });
           });
         });
@@ -303,7 +382,7 @@ describe('ID5 ID System', function() {
       config.setConfig(getFetchLocalStorageConfig());
 
       let innerAdUnits;
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(1);
     });
@@ -317,7 +396,7 @@ describe('ID5 ID System', function() {
       config.setConfig(getFetchLocalStorageConfig());
 
       let innerAdUnits;
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(2);
     });
@@ -335,7 +414,7 @@ describe('ID5 ID System', function() {
       config.setConfig(id5Config);
 
       let innerAdUnits;
-      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      requestBidsHook((adUnitConfig) => { innerAdUnits = adUnitConfig.adUnits }, {adUnits});
 
       expect(getNbFromCache(ID5_TEST_PARTNER_ID)).to.be.eq(2);
 
@@ -357,13 +436,199 @@ describe('ID5 ID System', function() {
   });
 
   describe('Decode stored object', function() {
-    const expectedDecodedObject = { id5id: { uid: ID5_STORED_ID, ext: { linkType: 0 } } };
+    const expectedDecodedObject = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE } } };
 
     it('should properly decode from a stored object', function() {
-      expect(id5IdSubmodule.decode(ID5_STORED_OBJ)).to.deep.equal(expectedDecodedObject);
+      expect(id5IdSubmodule.decode(ID5_STORED_OBJ, getId5FetchConfig())).to.deep.equal(expectedDecodedObject);
     });
     it('should return undefined if passed a string', function() {
-      expect(id5IdSubmodule.decode('somestring')).to.eq(undefined);
+      expect(id5IdSubmodule.decode('somestring', getId5FetchConfig())).to.eq(undefined);
+    });
+  });
+
+  describe('A/B Testing', function() {
+    const expectedDecodedObjectWithIdAbOff = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE } } };
+    const expectedDecodedObjectWithIdAbOn = { id5id: { uid: ID5_STORED_ID, ext: { linkType: ID5_STORED_LINK_TYPE, abTestingControlGroup: false } } };
+    const expectedDecodedObjectWithoutIdAbOn = { id5id: { uid: '', ext: { linkType: 0, abTestingControlGroup: true } } };
+    let testConfig;
+
+    beforeEach(function() {
+      testConfig = getId5FetchConfig();
+    });
+
+    describe('Configuration Validation', function() {
+      let logErrorSpy;
+      let logInfoSpy;
+
+      beforeEach(function() {
+        logErrorSpy = sinon.spy(utils, 'logError');
+        logInfoSpy = sinon.spy(utils, 'logInfo');
+      });
+      afterEach(function() {
+        logErrorSpy.restore();
+        logInfoSpy.restore();
+      });
+
+      // A/B Testing ON, but invalid config
+      let testInvalidAbTestingConfigsWithError = [
+        { enabled: true },
+        { enabled: true, controlGroupPct: 2 },
+        { enabled: true, controlGroupPct: -1 },
+        { enabled: true, controlGroupPct: 'a' },
+        { enabled: true, controlGroupPct: true }
+      ];
+      testInvalidAbTestingConfigsWithError.forEach((testAbTestingConfig) => {
+        it('should be undefined if ratio is invalid', () => {
+          expect(isInControlGroup('userId', testAbTestingConfig.controlGroupPct)).to.be.undefined;
+        });
+        it('should error if config is invalid, and always return an ID', function () {
+          testConfig.params.abTesting = testAbTestingConfig;
+          let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
+          expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOn);
+          sinon.assert.calledOnce(logErrorSpy);
+        });
+      });
+
+      // A/B Testing OFF, with invalid config (ignore)
+      let testInvalidAbTestingConfigsWithoutError = [
+        { enabled: false, controlGroupPct: -1 },
+        { enabled: false, controlGroupPct: 2 },
+        { enabled: false, controlGroupPct: 'a' },
+        { enabled: false, controlGroupPct: true }
+      ];
+      testInvalidAbTestingConfigsWithoutError.forEach((testAbTestingConfig) => {
+        it('should be undefined if ratio is invalid', () => {
+          expect(isInControlGroup('userId', testAbTestingConfig.controlGroupPct)).to.be.undefined;
+        });
+        it('should not error if config is invalid but A/B testing is off, and always return an ID', function () {
+          testConfig.params.abTesting = testAbTestingConfig;
+          let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
+          expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
+          sinon.assert.notCalled(logErrorSpy);
+          sinon.assert.notCalled(logInfoSpy);
+        });
+      });
+
+      // A/B Testing ON, with valid config
+      let testValidConfigs = [
+        { enabled: true, controlGroupPct: 0 },
+        { enabled: true, controlGroupPct: 0.5 },
+        { enabled: true, controlGroupPct: 1 }
+      ];
+      testValidConfigs.forEach((testAbTestingConfig) => {
+        it('should not be undefined if ratio is valid', () => {
+          expect(isInControlGroup('userId', testAbTestingConfig.controlGroupPct)).to.not.be.undefined;
+        });
+        it('should not error if config is valid', function () {
+          testConfig.params.abTesting = testAbTestingConfig;
+          id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
+          sinon.assert.notCalled(logErrorSpy);
+          sinon.assert.calledOnce(logInfoSpy);
+        });
+      });
+    });
+
+    describe('A/B Testing Config is not Set', function() {
+      let randStub;
+
+      beforeEach(function() {
+        randStub = sinon.stub(Math, 'random').callsFake(function() {
+          return 0;
+        });
+      });
+      afterEach(function () {
+        randStub.restore();
+      });
+
+      it('should expose ID when A/B config is not set', function () {
+        let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
+        expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
+      });
+
+      it('should expose ID when A/B config is empty', function () {
+        testConfig.params.abTesting = { };
+
+        let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
+        expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
+      });
+    });
+
+    describe('A/B Testing Config is Set', function() {
+      let randStub;
+
+      beforeEach(function() {
+        randStub = sinon.stub(Math, 'random').callsFake(function() {
+          return 0.25;
+        });
+      });
+      afterEach(function () {
+        randStub.restore();
+      });
+
+      describe('IsInControlGroup', function () {
+        it('Nobody is in a 0% control group', function () {
+          expect(isInControlGroup('dsdndskhsdks', 0)).to.be.false;
+          expect(isInControlGroup('3erfghyuijkm', 0)).to.be.false;
+          expect(isInControlGroup('', 0)).to.be.false;
+          expect(isInControlGroup(undefined, 0)).to.be.false;
+        });
+
+        it('Everybody is in a 100% control group', function () {
+          expect(isInControlGroup('dsdndskhsdks', 1)).to.be.true;
+          expect(isInControlGroup('3erfghyuijkm', 1)).to.be.true;
+          expect(isInControlGroup('', 1)).to.be.true;
+          expect(isInControlGroup(undefined, 1)).to.be.true;
+        });
+
+        it('Being in the control group must be consistant', function () {
+          const inControlGroup = isInControlGroup('dsdndskhsdks', 0.5);
+          expect(inControlGroup === isInControlGroup('dsdndskhsdks', 0.5)).to.be.true;
+          expect(inControlGroup === isInControlGroup('dsdndskhsdks', 0.5)).to.be.true;
+          expect(inControlGroup === isInControlGroup('dsdndskhsdks', 0.5)).to.be.true;
+        });
+
+        it('Control group ratio must be within a 10% error on a large sample', function () {
+          let nbInControlGroup = 0;
+          const sampleSize = 100;
+          for (let i = 0; i < sampleSize; i++) {
+            nbInControlGroup = nbInControlGroup + (isInControlGroup('R$*df' + i, 0.5) ? 1 : 0);
+          }
+          expect(nbInControlGroup).to.be.greaterThan(sampleSize / 2 - sampleSize / 10);
+          expect(nbInControlGroup).to.be.lessThan(sampleSize / 2 + sampleSize / 10);
+        });
+      });
+
+      describe('Decode', function() {
+        it('should expose ID when A/B testing is off', function () {
+          testConfig.params.abTesting = {
+            enabled: false,
+            controlGroupPct: 0.5
+          };
+
+          let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
+          expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOff);
+        });
+
+        it('should expose ID when no one is in control group', function () {
+          testConfig.params.abTesting = {
+            enabled: true,
+            controlGroupPct: 0
+          };
+
+          let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
+          expect(decoded).to.deep.equal(expectedDecodedObjectWithIdAbOn);
+        });
+
+        it('should not expose ID when everyone is in control group', function () {
+          testConfig.params.abTesting = {
+            enabled: true,
+            controlGroupPct: 1
+          };
+
+          let decoded = id5IdSubmodule.decode(ID5_STORED_OBJ, testConfig);
+          expect(decoded).to.deep.equal(expectedDecodedObjectWithoutIdAbOn);
+        });
+      });
     });
   });
 });

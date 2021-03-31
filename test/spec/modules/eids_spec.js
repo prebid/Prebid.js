@@ -57,10 +57,13 @@ describe('eids array generation for known sub-modules', function() {
       expect(newEids.length).to.equal(1);
       expect(newEids[0]).to.deep.equal({
         source: 'id5-sync.com',
-        uids: [{ id: 'some-random-id-value', atype: 1 }],
-        ext: {
-          linkType: 0
-        }
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1,
+          ext: {
+            linkType: 0
+          }
+        }]
       });
     });
   });
@@ -87,7 +90,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'merkleinc.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -99,7 +102,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveramp.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -114,7 +117,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
-      uids: [{id: 'some-random-id-value', atype: 1}],
+      uids: [{id: 'some-random-id-value', atype: 3}],
       ext: {segments: ['s1', 's2']}
     });
   });
@@ -129,7 +132,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -141,7 +144,7 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'britepool.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
+      uids: [{id: 'some-random-id-value', atype: 3}]
     });
   });
 
@@ -165,6 +168,18 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'criteo.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('tapadId', function() {
+    const userId = {
+      tapadId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'tapad.com',
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
@@ -258,6 +273,20 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{
         id: 'some-random-id-value',
         atype: 1
+      }]
+    });
+  });
+  it('uid2', function() {
+    const userId = {
+      uid2: {'id': 'Sample_AD_Token'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'uidapi.com',
+      uids: [{
+        id: 'Sample_AD_Token',
+        atype: 3
       }]
     });
   });

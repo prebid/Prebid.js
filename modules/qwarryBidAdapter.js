@@ -4,7 +4,7 @@ import { ajax } from '../src/ajax.js';
 import { VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'qwarry';
-export const ENDPOINT = 'https://ui-bidder.kantics.co/bid/adtag?prebid=true'
+export const ENDPOINT = 'https://bidder.qwarry.co/bid/adtag?prebid=true'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -27,7 +27,7 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT,
-      data: { requestId: bidderRequest.bidderRequestId, bids },
+      data: { requestId: bidderRequest.bidderRequestId, bids, referer: bidderRequest.refererInfo.referer },
       options: {
         contentType: 'application/json',
         customHeaders: {

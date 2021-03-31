@@ -35,7 +35,7 @@ const USER_IDS_CONFIG = {
     },
     source: 'id5-sync.com',
     atype: 1,
-    getEidExt: function(data) {
+    getUidExt: function(data) {
       if (data.ext) {
         return data.ext;
       }
@@ -71,7 +71,7 @@ const USER_IDS_CONFIG = {
   // identityLink
   'idl_env': {
     source: 'liveramp.com',
-    atype: 1
+    atype: 3
   },
 
   // liveIntentId
@@ -80,7 +80,7 @@ const USER_IDS_CONFIG = {
       return data.lipbid;
     },
     source: 'liveintent.com',
-    atype: 1,
+    atype: 3,
     getEidExt: function(data) {
       if (Array.isArray(data.segments) && data.segments.length) {
         return {
@@ -93,7 +93,7 @@ const USER_IDS_CONFIG = {
   // britepoolId
   'britepoolid': {
     source: 'britepool.com',
-    atype: 1
+    atype: 3
   },
 
   // lotamePanoramaId
@@ -111,7 +111,7 @@ const USER_IDS_CONFIG = {
   // merkleId
   'merkleId': {
     source: 'merkleinc.com',
-    atype: 1
+    atype: 3
   },
 
   // NetId
@@ -158,10 +158,40 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // Verizon Media
-  'vmuid': {
+  // Verizon Media ConnectID
+  'connectid': {
     source: 'verizonmedia.com',
+    atype: 3
+  },
+
+  // Neustar Fabrick
+  'fabrickId': {
+    source: 'neustar.biz',
     atype: 1
+  },
+  // MediaWallah OpenLink
+  'mwOpenLinkId': {
+    source: 'mediawallahscript.com',
+    atype: 1
+  },
+  'tapadId': {
+    source: 'tapad.com',
+    atype: 1
+  },
+  // Novatiq Snowflake
+  'novatiq': {
+    getValue: function(data) {
+      return data.snowflake
+    },
+    source: 'novatiq.com',
+    atype: 1
+  },
+  'uid2': {
+    source: 'uidapi.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
   }
 };
 
@@ -213,4 +243,26 @@ export function createEidsArray(bidRequestUserId) {
     }
   }
   return eids;
+}
+
+/**
+ * @param {SubmoduleContainer[]} submodules
+ */
+export function buildEidPermissions(submodules) {
+  let eidPermissions = [];
+  submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length)
+    .forEach(i => {
+      Object.keys(i.idObj).forEach(key => {
+        if (utils.deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
+          utils.deepAccess(USER_IDS_CONFIG, key + '.source')) {
+          eidPermissions.push(
+            {
+              source: USER_IDS_CONFIG[key].source,
+              bidders: i.config.bidders
+            }
+          );
+        }
+      });
+    });
+  return eidPermissions;
 }

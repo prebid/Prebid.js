@@ -204,9 +204,9 @@ describe('the spotx adapter', function () {
         eids: [{
           source: 'id5-sync.com',
           uids: [{
-            id: 'id5id_1'
-          }],
-          ext: {}
+            id: 'id5id_1',
+            ext: {}
+          }]
         },
         {
           source: 'adserver.org',
@@ -379,6 +379,32 @@ describe('the spotx adapter', function () {
 
       expect(request.data.site.page).to.equal('prebid.js');
     });
+
+    it('should set ext.wrap_response to 0 when cache url is set and ignoreBidderCacheKey is true', function() {
+      var request;
+
+      var origGetConfig = config.getConfig;
+      sinon.stub(config, 'getConfig').callsFake(function (key) {
+        if (key === 'cache') {
+          return {
+            url: 'prebidCacheLocation',
+            ignoreBidderCacheKey: true
+          };
+        }
+        if (key === 'cache.url') {
+          return 'prebidCacheLocation';
+        }
+        if (key === 'cache.ignoreBidderCacheKey') {
+          return true;
+        }
+        return origGetConfig.apply(config, arguments);
+      });
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.ext.wrap_response).to.equal(0);
+      config.getConfig.restore();
+    });
   });
 
   describe('interpretResponse', function() {
@@ -469,7 +495,6 @@ describe('the spotx adapter', function () {
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].ttl).to.equal(360);
       expect(responses[0].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
-      expect(responses[0].videoCacheKey).to.equal('cache123');
       expect(responses[0].width).to.equal(400);
       expect(responses[1].cache_key).to.equal('cache124');
       expect(responses[1].channel_id).to.equal(12345);
@@ -483,12 +508,11 @@ describe('the spotx adapter', function () {
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].ttl).to.equal(360);
       expect(responses[1].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache124');
-      expect(responses[1].videoCacheKey).to.equal('cache124');
       expect(responses[1].width).to.equal(200);
     });
   });
 
-  describe('oustreamRender', function() {
+  describe('outstreamRender', function() {
     var serverResponse, bidderRequestObj;
 
     beforeEach(function() {
@@ -545,7 +569,7 @@ describe('the spotx adapter', function () {
     it('should attempt to insert the EASI script', function() {
       var scriptTag;
       sinon.stub(window.document, 'getElementById').returns({
-        appendChild: sinon.stub().callsFake(function(script) { scriptTag = script })
+        appendChild: sinon.stub().callsFake(function(script) { scriptTag = script; })
       });
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
@@ -573,7 +597,7 @@ describe('the spotx adapter', function () {
         nodeName: 'IFRAME',
         contentDocument: {
           body: {
-            appendChild: sinon.stub().callsFake(function(script) { scriptTag = script })
+            appendChild: sinon.stub().callsFake(function(script) { scriptTag = script; })
           }
         }
       });
@@ -596,6 +620,43 @@ describe('the spotx adapter', function () {
       expect(scriptTag.getAttribute('data-spotx_digitrust_opt_out')).to.equal('1');
       expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('400');
       expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('300');
+      window.document.getElementById.restore();
+    });
+
+    it('should adjust width and height to match slot clientWidth if playersize_auto_adapt is used', function() {
+      var scriptTag;
+      sinon.stub(window.document, 'getElementById').returns({
+        clientWidth: 200,
+        appendChild: sinon.stub().callsFake(function(script) { scriptTag = script; })
+      });
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+
+      responses[0].renderer.render(responses[0]);
+
+      expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
+      expect(scriptTag.getAttribute('src')).to.equal('https://js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('200');
+      expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('150');
+      window.document.getElementById.restore();
+    });
+
+    it('should use a default 4/3 ratio if playersize_auto_adapt is used and response does not contain width or height', function() {
+      delete serverResponse.body.seatbid[0].bid[0].w;
+      delete serverResponse.body.seatbid[0].bid[0].h;
+
+      var scriptTag;
+      sinon.stub(window.document, 'getElementById').returns({
+        clientWidth: 200,
+        appendChild: sinon.stub().callsFake(function(script) { scriptTag = script; })
+      });
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+
+      responses[0].renderer.render(responses[0]);
+
+      expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
+      expect(scriptTag.getAttribute('src')).to.equal('https://js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('200');
+      expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('150');
       window.document.getElementById.restore();
     });
   });
