@@ -135,7 +135,6 @@ function interpretBannerBid(serverBid, request) {
 * @return response ad
 */
 function buildOneRequest(validBidRequests, bidderRequest) {
-
   HOST = utils.deepAccess(validBidRequests, 'params.host');
   let hostInfo = getHostInfo(HOST)
   // hostDomain = HOST.split('/', 1)[0];
