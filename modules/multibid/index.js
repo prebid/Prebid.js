@@ -100,8 +100,12 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   let floor = utils.deepAccess(bid, 'floorData.floorValue');
 
   if (!config.getConfig('multibid')) resetMultiConfig();
-  // Checks if multiconfig exists and bid bidderCode exists within config
-  if (hasMultibid && multiConfig[bid.bidderCode]) {
+  // Checks if multiconfig exists and bid bidderCode exists within config and is an adpod bid
+  // Else checks if multiconfig exists and bid bidderCode exists within config
+  // Else continue with no modifications
+  if (hasMultibid && multiConfig[bid.bidderCode] && utils.deepAccess(bid, 'video.context') === 'adpod') {
+    fn.call(this, adUnitCode, bid);
+  } else if (hasMultibid && multiConfig[bid.bidderCode]) {
     // Set property multibidPrefix on bid
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
     bid.originalBidder = bid.bidderCode;
