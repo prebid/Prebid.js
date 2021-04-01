@@ -105,16 +105,16 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
 
   const userIds = (getGlobal()).getUserIds();
 
-  let pubHaloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
-  if (isStr(pubHaloId)) {
-    userIds.pubHaloId = pubHaloId;
+  let haloId = storage.getDataFromLocalStorage(HALOID_LOCAL_NAME);
+  if (isStr(haloId)) {
+    userIds.haloId = haloId;
     getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
   } else {
     var script = document.createElement('script')
     script.type = 'text/javascript';
 
-    window.pubHaloCb = (pubHaloId) => {
-      userIds.pubHaloId = pubHaloId;
+    window.pubHaloCb = (haloId) => {
+      userIds.haloId = haloId;
       getRealTimeDataAsync(bidConfig, onDone, rtdConfig, userConsent, userIds);
     }
 

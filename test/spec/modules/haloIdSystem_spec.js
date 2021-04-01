@@ -1,7 +1,6 @@
-import { haloIdSubmodule } from 'modules/haloIdSystem.js';
-import * as utils from 'src/utils.js';
-
+import { haloIdSubmodule, storage } from 'modules/haloIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
+import * as utils from 'src/utils.js';
 
 describe('HaloIdSystem', function () {
   describe('getId', function() {
@@ -16,6 +15,17 @@ describe('HaloIdSystem', function () {
       expect(request.url).to.eq(`https://id.halo.ad.gt/api/v1/pbhid`);
       request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ haloId: 'testHaloId1' }));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({haloId: 'testHaloId1'});
+    });
+
+    it('gets a cached haloid', function() {
+      const config = {
+        params: {}
+      };
+      storage.setDataInLocalStorage('auHaloId', 'tstCachedHaloId1');
+      const callbackSpy = sinon.spy();
+      const callback = haloIdSubmodule.getId(config).callback;
+      callback(callbackSpy);
+      expect(callbackSpy.lastCall.lastArg).to.deep.equal({haloId: 'tstCachedHaloId1'});
     });
   });
 });

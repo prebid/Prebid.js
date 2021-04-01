@@ -353,7 +353,7 @@ describe('haloRtdProvider', function() {
       let request = server.requests[0];
       let postData = JSON.parse(request.requestBody);
       expect(postData.config).to.have.deep.property('publisherId', 'testPub1');
-      expect(postData.userIds).to.have.deep.property('pubHaloId', 'testHaloId1');
+      expect(postData.userIds).to.have.deep.property('haloId', 'testHaloId1');
 
       request.respond(200, responseHeader, JSON.stringify(data));
 
