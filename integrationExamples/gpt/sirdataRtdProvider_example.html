@@ -40,9 +40,19 @@
                 gdpr: {
                   cmpApi: 'iab',
                   timeout: 8000,
-                  defaultGdprScope: true
+                  defaultGdprScope: true,
+                  rules: [{
+                    purpose: "storage",
+                    enforcePurpose: true,
+                    enforceVendor: true,
+                    vendorExceptions: ["appnexus"] //Can work without consent for cookies
+                  },{
+                    purpose: "basicAds",
+                    enforcePurpose: true,
+                    enforceVendor: true,
+                    vendorExceptions: ["appnexus"]
+                  }]
                 },
-                
             }
         });
     });
@@ -118,21 +128,7 @@
 
 <article>
 <p>
-The BMW M4 is a high-performance coupe. Mechanically speaking, its pretty much identical to the M3 but was spun off a few years ago into its own model as a sleeker coupe version of the famous 3er. It’s back in a new form, with just as much punch as you’d expect from an M car, but brings a bit of a dilemma in design too.
-</p><p>
-You see, BMW has been a bit like your teenage son or daughter rebelliously sneaking out one afternoon to get a nose piercing you’ve told them not to. It was known BMW had plans for the snarling great grille you see at the front of the M4 but, despite widespread outcry not to do it, it went ahead and put it into production anyway.
-</p><p>
-Whether you love the looks or hate them, there’s more to the outlandish styling of the BMW M4 than just the ‘kidney’ (maybe lungs would be appropriate) grille. Huge intakes sit either side of the bottom of the front bumper, while down the side swollen wheel arches make it stand out from a regular 4 Series. In fact, the only bit of bodywork shared with the standard car is the boot lid — though here it has a spoiler tacked on top. You’ll see a quad-exit exhaust sat below a carbon fibre diffuser, and happily, those huge tailpipes are real.
-</p><p>
-You can choose between two alloy wheel designs as well, with the front pair 19-inches and the rear 20-inches in size.
-</p><p>
-You won’t mistake the BMW M4 for a run-of-the-mill 4 Series inside. It’s laden with M-coloured stitching, M-badges everywhere and if that wasn’t enough, it’s like somebody vomited carbon fibre everywhere. A thick model-specific steering wheel features as well as standard electrically-adjustable sports seats that come with illuminated M logos, though can opt for carbon fibre bucket seats if you want a more race car-akin feel.
-</p><p>
-This version of the BMW M4 is a bit longer than the old car as well, so there’s more room in the back. It’s pretty decent for legroom considering it’s a coupe, but headroom is pretty limited because of the sloping roofline.
-</p><p>
-For no extra cost in the BMW M4, you get a fantastic infotainment system on a 10.1-inch screen. It’s intuitive and dead easy to use, plus there’s finally support for Android Auto in addition to Apple CarPlay. Both can be connected wirelessly, as well.
-</p><p>
-In front of you, there’s a 12.3-inch digital drivers display for key driving info, and these have plenty of customisation to them too, including racy-looking M-specific displays.
+Give consent or make a choice in Europe. Module will add key/value pairs in ad calls. Check out for sd_rtd key in Google Ad call (https://securepubads.g.doubleclick.net/gampad/ads...) and in the payload sent to Xandr to endpoint https://ib.adnxs.com/ut/v3/prebid : tags[0].keywords.key[sd_rtd] should have an array of string as value. This array will mix user segments and/or page categories based on user's choices.
 </p>
 </article>
         <h2>Basic Prebid.js Example</h2>
