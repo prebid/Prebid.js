@@ -23,6 +23,7 @@ describe('lemmaBidAdapter', function() {
         pubId: 1001,
         adunitId: 1,
         currency: 'AUD',
+        bidFloor: 1.3,
         geo: {
           lat: '12.3',
           lon: '23.7',
@@ -46,6 +47,7 @@ describe('lemmaBidAdapter', function() {
       params: {
         pubId: 1001,
         adunitId: 1,
+        bidFloor: 1.3,
         video: {
           mimes: ['video/mp4', 'video/x-flv'],
           skippable: true,
@@ -310,6 +312,77 @@ describe('lemmaBidAdapter', function() {
         expect(data.imp[0]['video']['maxduration']).to.equal(videoBidRequests[0].params.video['maxduration']);
         expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
         expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
+      });
+      describe('setting imp.floor using floorModule', function() {
+        /*
+        Use the minimum value among floor from floorModule per mediaType
+        If params.bidFloor is set then take max(floor, min(floors from floorModule))
+        set imp.bidfloor only if it is more than 0
+        */
+
+        let newRequest;
+        let floorModuleTestData;
+        let getFloor = function(req) {
+          return floorModuleTestData[req.mediaType];
+        };
+
+        beforeEach(() => {
+          floorModuleTestData = {
+            'banner': {
+              'currency': 'USD',
+              'floor': 1.50
+            },
+            'video': {
+              'currency': 'USD',
+              'floor': 2.00
+            }
+          };
+          newRequest = utils.deepClone(bidRequests);
+          newRequest[0].getFloor = getFloor;
+        });
+
+        it('bidfloor should be undefined if calculation is <= 0', function() {
+          floorModuleTestData.banner.floor = 0; // lowest of them all
+          newRequest[0].params.bidFloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(undefined);
+        });
+
+        it('ignore floormodule o/p if floor is not number', function() {
+          floorModuleTestData.banner.floor = 'INR';
+          newRequest[0].params.bidFloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(2); // video will be lowest now
+        });
+
+        it('ignore floormodule o/p if currency is not matched', function() {
+          floorModuleTestData.banner.currency = 'INR';
+          newRequest[0].params.bidFloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(2); // video will be lowest now
+        });
+
+        it('bidFloor is not passed, use minimum from floorModule', function() {
+          newRequest[0].params.bidFloor = undefined;
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(1.5);
+        });
+
+        it('bidFloor is passed as 1, use min of fllorModule as it is highest', function() {
+          newRequest[0].params.bidFloor = '1.0';// yes, we want it as a string
+          let request = spec.buildRequests(newRequest);
+          let data = JSON.parse(request.data);
+          data = data.imp[0];
+          expect(data.bidfloor).to.equal(1.5);
+        });
       });
       describe('Response checking', function() {
         it('should check for valid response values', function() {
