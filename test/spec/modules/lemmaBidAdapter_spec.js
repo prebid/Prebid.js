@@ -163,7 +163,7 @@ describe('lemmaBidAdapter', function() {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.pubId.toString()); // publisher Id
         expect(data.imp[0].tagid).to.equal('1'); // tagid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
-        expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.floor);
+        expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.bidFloor);
       });
       it('Request params check without mediaTypes object', function() {
         var bidRequests = [{
@@ -195,7 +195,7 @@ describe('lemmaBidAdapter', function() {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.pubId.toString()); // publisher Id
         expect(data.imp[0].tagid).to.equal(undefined); // tagid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
-        expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.floor);
+        expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.bidFloor);
       });
       it('Request params multi size format object check', function() {
         var bidRequests = [{
@@ -376,12 +376,12 @@ describe('lemmaBidAdapter', function() {
           expect(data.bidfloor).to.equal(undefined);
         });
 
-        it('bidFloor is passed as 1, use min of fllorModule as it is highest', function() {
+        it('bidFloor is passed as 1, use min of floorModule as it is highest', function() {
           newRequest[0].params.bidFloor = '1.0';// yes, we want it as a string
           let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
-          expect(data.bidfloor).to.equal(1.5);
+          expect(data.bidfloor).to.equal(1);
         });
       });
       describe('Response checking', function() {
