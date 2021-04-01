@@ -251,16 +251,24 @@ describe('Zemanta Adapter', function () {
         expect(res.data).to.deep.equal(JSON.stringify(expectedData))
       })
 
-      it('should pass optional tagid in request', function () {
+      it('should pass optional parameters in request', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
         }
         bidRequest.params.tagid = 'test-tag'
+        bidRequest.params.publisher.name = 'test-publisher'
+        bidRequest.params.publisher.domain = 'test-publisher.com'
+        bidRequest.params.bcat = ['bad-category']
+        bidRequest.params.badv = ['bad-advertiser']
 
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         const resData = JSON.parse(res.data)
         expect(resData.imp[0].tagid).to.equal('test-tag')
+        expect(resData.site.publisher.name).to.equal('test-publisher')
+        expect(resData.site.publisher.domain).to.equal('test-publisher.com')
+        expect(resData.bcat).to.deep.equal(['bad-category'])
+        expect(resData.badv).to.deep.equal(['bad-advertiser'])
       });
 
       it('should pass bidder timeout', function () {
@@ -462,10 +470,11 @@ describe('Zemanta Adapter', function () {
   })
 
   describe('getUserSyncs', function () {
-    before(() => {
+    const usersyncUrl = 'https://usersync-url.com';
+    beforeEach(() => {
       config.setConfig({
         zemanta: {
-          usersyncUrl: 'https://usersync-url.com',
+          usersyncUrl: usersyncUrl,
         }
       }
       )
@@ -499,6 +508,30 @@ describe('Zemanta Adapter', function () {
       const ret = spec.getUserSyncs({pixelEnabled: true})
       expect(ret).to.be.an('array').that.is.empty
     })
+
+    it('should pass GDPR consent', function() {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}&gdpr=1&gdpr_consent=foo`
+      }]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}&gdpr=0&gdpr_consent=foo`
+      }]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}&gdpr=1&gdpr_consent=`
+      }]);
+    });
+
+    it('should pass US consent', function() {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}&us_privacy=1NYN`
+      }]);
+    });
+
+    it('should pass GDPR and US consent', function() {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
+      }]);
+    });
   })
 
   describe('onBidWon', function () {
