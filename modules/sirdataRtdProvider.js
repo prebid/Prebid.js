@@ -346,7 +346,6 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
             case 'msq_classic':
             case 'msq_max':
             case '366_apx':
-              utils.logInfo('XANDR');
               // For curation Xandr is pid 27446
               curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27446');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
@@ -490,7 +489,6 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
               break;
 
             default:
-              utils.logInfo('DEFAULT');
               if ((!biddersParamsExist || indexFound) && !hasOwnDeepProperty(bid, 'sd_rtd')) {
                 _set(bid, 'ortb2.site.ext.data.sd_rtd', sirdataList, false);
                 _set(bid, 'ortb2.user.ext.data.sd_rtd', sirdataList, false);
