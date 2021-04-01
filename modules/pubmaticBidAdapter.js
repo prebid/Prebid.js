@@ -101,7 +101,7 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
   }
 ]
 
-const NET_REVENUE = false;
+const NET_REVENUE = true;
 const dealChannelValues = {
   1: 'PMP',
   5: 'PREF',
@@ -203,6 +203,9 @@ function _parseSlotParam(paramName, paramValue) {
 function _cleanSlot(slotName) {
   if (utils.isStr(slotName)) {
     return slotName.replace(/^\s+/g, '').replace(/\s+$/g, '');
+  }
+  if (slotName) {
+    utils.logWarn(BIDDER_CODE + ': adSlot must be a string. Ignoring adSlot');
   }
   return '';
 }
@@ -847,7 +850,7 @@ export const spec = {
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric (wrap it in quotes in your config). Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
       // video ad validation
@@ -861,8 +864,8 @@ export const spec = {
             utils.logError(`${LOG_WARN_PREFIX}: no context specified in bid. Rejecting bid: `, bid);
             return false;
           }
-          if (bid.mediaTypes[VIDEO].context === 'outstream' && !utils.isStr(bid.params.outstreamAU)) {
-            utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids outstreamAU is required. Rejecting bid: `, bid);
+          if (bid.mediaTypes[VIDEO].context === 'outstream' && !utils.isStr(bid.params.outstreamAU) && !bid.hasOwnProperty('renderer') && !bid.mediaTypes[VIDEO].hasOwnProperty('renderer')) {
+            utils.logError(`${LOG_WARN_PREFIX}: for "outstream" bids either outstreamAU parameter must be provided or ad unit supplied renderer is required. Rejecting bid: `, bid);
             return false;
           }
         } else {
@@ -938,7 +941,7 @@ export const spec = {
     payload.ext.wrapper = {};
     payload.ext.wrapper.profile = parseInt(conf.profId) || UNDEFINED;
     payload.ext.wrapper.version = parseInt(conf.verId) || UNDEFINED;
-    payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
+    payload.ext.wrapper.wiid = conf.wiid || bidderRequest.auctionId;
     // eslint-disable-next-line no-undef
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;

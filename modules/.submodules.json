@@ -12,7 +12,19 @@
     "netIdSystem",
     "identityLinkIdSystem",
     "sharedIdSystem",
-    "intentIqIdSystem"
+    "intentIqIdSystem",
+    "zeotapIdPlusIdSystem",
+    "haloIdSystem",
+    "quantcastIdSystem",
+    "nextrollIdSystem",
+    "idxIdSystem",
+    "fabrickIdSystem",
+    "verizonMediaIdSystem",
+    "pubProvidedIdSystem",
+    "mwOpenLinkIdSystem",
+    "tapadIdSystem",
+    "novatiqIdSystem",
+    "uid2IdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
@@ -20,6 +32,9 @@
   ],
   "rtdModule": [
     "browsiRtdProvider",
-    "jwplayerRtdProvider"
+    "haloRtdProvider",
+    "jwplayerRtdProvider",
+    "reconciliationRtdProvider",
+    "geoedgeRtdProvider"
   ]
 }

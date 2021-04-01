@@ -18,6 +18,7 @@ This module connects web publishers to AMX RTB video and display demand.
 | --- | -------- | ------- | ----------- |
 | `testMode` | no | `true` | this will activate test mode / 100% fill with sample ads |
 | `tagId` | no | `"cHJlYmlkLm9yZw"` | can be used for more specific targeting of inventory. Your account manager will provide this ID if needed |
+| `adUnitId` | no | `"sticky_banner"` | optional. To override the bid.adUnitCode provided by prebid. For use in ad-unit level reporting |
 
 # Test Parameters
 

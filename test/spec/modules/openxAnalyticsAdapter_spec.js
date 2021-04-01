@@ -78,6 +78,7 @@ describe('openx analytics adapter', function() {
     const bidRequestedOpenX = {
       auctionId: 'test-auction-id',
       auctionStart: CURRENT_TIME,
+      timeout: 2000,
       bids: [
         {
           adUnitCode: AD_UNIT_CODE,
@@ -100,6 +101,7 @@ describe('openx analytics adapter', function() {
     const bidRequestedCloseX = {
       auctionId: 'test-auction-id',
       auctionStart: CURRENT_TIME,
+      timeout: 1000,
       bids: [
         {
           adUnitCode: AD_UNIT_CODE,
@@ -334,7 +336,7 @@ describe('openx analytics adapter', function() {
 
       it('should track values from query params when they exist', function () {
         sinon.stub(utils, 'getWindowLocation').returns({search: '?' +
-            'utm_campaign=test-campaign-name&' +
+            'utm_campaign=test%20campaign-name&' +
             'utm_source=test-source&' +
             'utm_medium=test-medium&'
         });
@@ -348,7 +350,8 @@ describe('openx analytics adapter', function() {
         clock.tick(SLOT_LOAD_WAIT_TIME);
         auction = JSON.parse(server.requests[0].requestBody)[0];
 
-        expect(auction.campaign.name).to.equal('test-campaign-name');
+        // ensure that value are URI decoded
+        expect(auction.campaign.name).to.equal('test campaign-name');
         expect(auction.campaign.source).to.equal('test-source');
         expect(auction.campaign.medium).to.equal('test-medium');
         expect(auction.campaign.content).to.be.undefined;
@@ -465,6 +468,11 @@ describe('openx analytics adapter', function() {
       it('should track the timeout', function () {
         expect(openxBidRequest.timedOut).to.equal(true);
         expect(closexBidRequest.timedOut).to.equal(true);
+      });
+
+      it('should track the timeout value ie timeLimit', function () {
+        expect(openxBidRequest.timeLimit).to.equal(2000);
+        expect(closexBidRequest.timeLimit).to.equal(1000);
       });
     });
 

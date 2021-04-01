@@ -7,7 +7,6 @@ const REQUEST = {
   'params': {
     'adslotId': '1111',
     'supplyId': '2222',
-    'adSize': '728x90',
     'targeting': {
       'key1': 'value1',
       'key2': 'value2',
@@ -30,7 +29,24 @@ const REQUEST = {
       'id': 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
       'atype': 1
     }]
-  }]
+  }],
+  'schain': {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'indirectseller.com',
+        'sid': '1',
+        'hp': 1
+      },
+      {
+        'asi': 'indirectseller2.com',
+        'name': 'indirectseller2 name with comma , and bang !',
+        'sid': '2',
+        'hp': 1
+      }
+    ]
+  }
 }
 
 const RESPONSE = {
@@ -40,6 +56,7 @@ const RESPONSE = {
   id: 1111,
   price: 1,
   pid: 2222,
+  adsize: '728x90',
   adtype: 'BANNER'
 }
 
@@ -71,8 +88,7 @@ describe('yieldlabBidAdapter', function () {
       const request = {
         'params': {
           'adslotId': '1111',
-          'supplyId': '2222',
-          'adSize': '728x90'
+          'supplyId': '2222'
         }
       }
       expect(spec.isBidRequestValid(request)).to.equal(true)
@@ -107,6 +123,10 @@ describe('yieldlabBidAdapter', function () {
       expect(request.url).to.include('extraParam=true&foo=bar')
     })
 
+    it('passes unencoded schain string to bid request', function () {
+      expect(request.url).to.include('schain=1.0,1!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,')
+    })
+
     const refererRequest = spec.buildRequests(bidRequests, {
       refererInfo: {
         canonicalUrl: undefined,
@@ -115,6 +135,12 @@ describe('yieldlabBidAdapter', function () {
         referer: 'https://www.yieldlab.de/test?with=querystring',
         stack: ['https://www.yieldlab.de/test?with=querystring']
       }
+    })
+
+    it('passes unencoded schain string to bid request when complete == 0', function () {
+      REQUEST.schain.complete = 0;
+      const request = spec.buildRequests([REQUEST])
+      expect(request.url).to.include('schain=1.0,0!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,')
     })
 
     it('passes encoded referer to bid request', function () {
@@ -153,7 +179,7 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(false)
       expect(result[0].ttl).to.equal(300)
       expect(result[0].referrer).to.equal('')
-      expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/728x90?ts=')
+      expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=')
       expect(result[0].ad).to.include('&id=abc')
     })
 
@@ -184,7 +210,7 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(false)
       expect(result[0].ttl).to.equal(300)
       expect(result[0].referrer).to.equal('')
-      expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/728x90?ts=')
+      expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/?ts=')
       expect(result[0].ad).to.include('&id=abc')
     })
 
@@ -201,7 +227,7 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].requestId).to.equal('2d925f27f5079f')
       expect(result[0].cpm).to.equal(0.01)
       expect(result[0].mediaType).to.equal('video')
-      expect(result[0].vastUrl).to.include('https://ad.yieldlab.net/d/1111/2222/728x90?ts=')
+      expect(result[0].vastUrl).to.include('https://ad.yieldlab.net/d/1111/2222/?ts=')
       expect(result[0].vastUrl).to.include('&id=abc')
     })
 
@@ -231,7 +257,7 @@ describe('yieldlabBidAdapter', function () {
       const result = spec.interpretResponse({body: [VIDEO_RESPONSE]}, {validBidRequests: [OUTSTREAM_REQUEST], queryParams: REQPARAMS})
 
       expect(result[0].renderer.id).to.equal('2d925f27f5079f')
-      expect(result[0].renderer.url).to.equal('https://ad2.movad.net/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event')
+      expect(result[0].renderer.url).to.equal('https://ad.adition.com/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event')
       expect(result[0].width).to.equal(640)
       expect(result[0].height).to.equal(480)
     })
