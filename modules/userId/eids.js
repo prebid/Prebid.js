@@ -152,6 +152,12 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // nextroll
+  'nextrollId': {
+    source: 'nextroll.com',
+    atype: 1
+  },
+
   // IDx
   'idx': {
     source: 'idx.lat',

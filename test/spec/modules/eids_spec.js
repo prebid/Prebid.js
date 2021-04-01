@@ -195,6 +195,18 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
+
+  it('NextRollId', function() {
+    const userId = {
+      nextrollId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'nextroll.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
   it('Sharedid', function() {
     const userId = {
       sharedid: {
