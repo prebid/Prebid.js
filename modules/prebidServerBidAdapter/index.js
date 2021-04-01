@@ -300,11 +300,20 @@ function doBidderSync(type, url, bidder, done) {
  *
  * @param {Array} bidders a list of bidder names
  */
-function doClientSideSyncs(bidders) {
+function doClientSideSyncs(bidders, gdprConsent, uspConsent) {
   bidders.forEach(bidder => {
     let clientAdapter = adapterManager.getBidAdapter(bidder);
     if (clientAdapter && clientAdapter.registerSyncs) {
-      clientAdapter.registerSyncs([]);
+      config.runWithBidder(
+        bidder,
+        utils.bind.call(
+          clientAdapter.registerSyncs,
+          clientAdapter,
+          [],
+          gdprConsent,
+          uspConsent
+        )
+      );
     }
   });
 }
@@ -992,6 +1001,15 @@ function getMatchingConsentUrl(urlProp, gdprConsent) {
   return hasPurpose1Consent(gdprConsent) ? urlProp.p1Consent : urlProp.noP1Consent;
 }
 
+function getConsentData(bidRequests) {
+  let gdprConsent, uspConsent;
+  if (Array.isArray(bidRequests) && bidRequests.length > 0) {
+    gdprConsent = bidRequests[0].gdprConsent;
+    uspConsent = bidRequests[0].uspConsent;
+  }
+  return { gdprConsent, uspConsent };
+}
+
 /**
  * Bidder adapter for Prebid Server
  */
@@ -1001,11 +1019,7 @@ export function PrebidServer() {
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const adUnits = utils.deepClone(s2sBidRequest.ad_units);
-    let gdprConsent, uspConsent;
-    if (Array.isArray(bidRequests) && bidRequests.length > 0) {
-      gdprConsent = bidRequests[0].gdprConsent;
-      uspConsent = bidRequests[0].uspConsent;
-    }
+    let { gdprConsent, uspConsent } = getConsentData(bidRequests);
 
     // at this point ad units should have a size array either directly or mapped so filter for that
     const validAdUnits = adUnits.filter(unit =>
@@ -1048,6 +1062,7 @@ export function PrebidServer() {
   function handleResponse(response, requestedBidders, bidderRequests, addBidResponse, done, s2sConfig) {
     let result;
     let bids = [];
+    let { gdprConsent, uspConsent } = getConsentData(bidderRequests);
 
     try {
       result = JSON.parse(response);
@@ -1074,7 +1089,7 @@ export function PrebidServer() {
     }
 
     done();
-    doClientSideSyncs(requestedBidders);
+    doClientSideSyncs(requestedBidders, gdprConsent, uspConsent);
   }
 
   // Listen for bid won to call wurl
