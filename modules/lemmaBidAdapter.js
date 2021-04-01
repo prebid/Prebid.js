@@ -376,7 +376,7 @@ function _getImpressionObject(bid) {
     secure: window.location.protocol === 'https:' ? 1 : 0,
     bidfloorcur: params.currency ? params.currency : DEFAULT_CURRENCY
   };
-  if(params.bidFloor){
+  if (params.bidFloor) {
     impression.bidfloor = params.bidFloor;
   }
   if (bid.hasOwnProperty('mediaTypes')) {
