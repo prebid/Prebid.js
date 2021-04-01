@@ -69,6 +69,9 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userC
         sirdataDomain = 'cookieless-data.com';
         sendWithCredentials = false;
       }
+    } else {
+      sirdataDomain = 'cookieless-data.com';
+      sendWithCredentials = false;
     }
   }
 
@@ -507,10 +510,10 @@ export function init(config) {
   return true;
 }
 
-export const subModuleObj = {
+export const sirdataSubmodule = {
   name: SUBMODULE_NAME,
   init: init,
   getBidRequestData: getSegmentsAndCategories
 };
 
-submodule(MODULE_NAME, subModuleObj);
+submodule(MODULE_NAME, sirdataSubmodule);
