@@ -376,9 +376,7 @@ function _getImpressionObject(bid) {
     secure: window.location.protocol === 'https:' ? 1 : 0,
     bidfloorcur: params.currency ? params.currency : DEFAULT_CURRENCY
   };
-  
   _setFloor(impression, bid);
-  
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
       switch (mediaTypes) {
