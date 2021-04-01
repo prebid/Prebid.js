@@ -1108,7 +1108,6 @@ export function hasValidVideoParams(bid) {
   var requiredParams = {
     mimes: arrayType,
     protocols: arrayType,
-    maxduration: numberType,
     linearity: numberType,
     api: arrayType
   }
