@@ -356,7 +356,7 @@ describe('lemmaBidAdapter', function() {
           let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
-          expect(data.bidfloor).to.equal(2); // video will be lowest now
+          expect(data.bidfloor).to.equal(undefined); // video will be lowest now
         });
 
         it('ignore floormodule o/p if currency is not matched', function() {
@@ -365,7 +365,7 @@ describe('lemmaBidAdapter', function() {
           let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
-          expect(data.bidfloor).to.equal(2); // video will be lowest now
+          expect(data.bidfloor).to.equal(undefined); // video will be lowest now
         });
 
         it('bidFloor is not passed, use minimum from floorModule', function() {
@@ -373,7 +373,7 @@ describe('lemmaBidAdapter', function() {
           let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
-          expect(data.bidfloor).to.equal(1.5);
+          expect(data.bidfloor).to.equal(undefined);
         });
 
         it('bidFloor is passed as 1, use min of fllorModule as it is highest', function() {
