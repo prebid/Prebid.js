@@ -1899,6 +1899,32 @@ describe('rubicon analytics adapter', function () {
       expect(message.auctions[0].adUnits[1].pattern).to.equal('1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile');
     });
 
+    it('should pass bidderDetail for multibid auctions', function () {
+      let bidResponse = utils.deepClone(MOCK.BID_RESPONSE[1]);
+      bidResponse.targetingBidder = 'rubi2';
+      bidResponse.originalRequestId = bidResponse.requestId;
+      bidResponse.requestId = '1a2b3c4d5e6f7g8h9';
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, bidResponse);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+
+      expect(message.auctions[0].adUnits[1].bids[1].bidder).to.equal('rubicon');
+      expect(message.auctions[0].adUnits[1].bids[1].bidderDetail).to.equal('rubi2');
+    });
+
     it('should successfully convert bid price to USD in parseBidResponse', function () {
       // Set the rates
       setConfig({
