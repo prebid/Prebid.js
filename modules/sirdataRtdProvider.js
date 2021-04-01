@@ -302,7 +302,7 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
   }
 
   // Google targeting
-  if (typeof window.googletag !== 'undefined' && (config.params.setGptKeyValues || !hasOwnProperty('setGptKeyValues'))) {
+  if (typeof window.googletag !== 'undefined' && (config.params.setGptKeyValues || !config.params.hasOwnProperty('setGptKeyValues'))) {
     // For curation GG is pid 27449
     curationId = (config.params.gptCurationId ? config.params.gptCurationId : '27449');
     if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
@@ -493,8 +493,8 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
 
             default:
               if ((!biddersParamsExist || indexFound) && !hasOwnDeepProperty(bid, 'sd_rtd')) {
-                _set(bid, 'ortb2.site.ext.data.sd_rtd', sirdataList, false);
-                _set(bid, 'ortb2.user.ext.data.sd_rtd', sirdataList, false);
+                _set(bid, 'ortb2.site.ext.data.sd_rtd', sirdataData.categories, false);
+                _set(bid, 'ortb2.user.ext.data.sd_rtd', sirdataData.segments, false);
               }
           }
         }
