@@ -376,7 +376,9 @@ function _getImpressionObject(bid) {
     secure: window.location.protocol === 'https:' ? 1 : 0,
     bidfloorcur: params.currency ? params.currency : DEFAULT_CURRENCY
   };
-  _setFloor(impression, bid);
+  if(params.bidFloor){
+    impression.bidfloor = params.bidFloor;
+  }
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
       switch (mediaTypes) {
@@ -412,7 +414,7 @@ function _getImpressionObject(bid) {
     }
     impression.banner = bObj;
   }
-
+  _setFloor(impression, bid);
   return impression.hasOwnProperty(BANNER) ||
         impression.hasOwnProperty(VIDEO) ? impression : undefined;
 }
