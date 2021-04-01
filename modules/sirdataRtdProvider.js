@@ -120,19 +120,6 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userC
 }
 
 export function setGlobalOrtb2(segments, categories, globalConfig) {
-  var ortb2Valid = true;
-
-  try {
-    if (parseFloat(globalConfig.version.substring(1)) < 4.3) {
-      ortb2Valid = false;
-    }
-  } catch (er) {}
-
-  if (!ortb2Valid) {
-    // do it with FPD
-    return setGlobalFpd(segments, categories, globalConfig);
-  }
-
   try {
     globalConfig.setConfig({
       ortb2: {
@@ -159,42 +146,7 @@ export function setGlobalOrtb2(segments, categories, globalConfig) {
   return true;
 }
 
-export function setGlobalFpd(segments, categories, globalConfig) {
-  try {
-    globalConfig.setConfig({
-      fpd: {
-        context: {
-          data: {
-            sd_rtd: categories
-          }
-        },
-        user: {
-          data: {
-            sd_rtd: segments
-          }
-        }
-      }
-    });
-  } catch (err) {
-    utils.logError(err.message)
-  }
-  return true;
-}
-
 export function setBidderOrtb2(bidder, segments, categories, globalConfig) {
-  var ortb2Valid = true;
-
-  try {
-    if (parseFloat(globalConfig.version.substring(1)) < 4.3) {
-      ortb2Valid = false;
-    }
-  } catch (er) {}
-
-  if (!ortb2Valid) {
-    // do it with FPD
-    return setBidderFpd(bidder, segments, categories, globalConfig);
-  }
-
   try {
     globalConfig.setBidderConfig({
       bidders: [bidder],
@@ -221,31 +173,6 @@ export function setBidderOrtb2(bidder, segments, categories, globalConfig) {
     utils.logError(err.message)
   }
 
-  return true;
-}
-
-export function setBidderFpd(bidder, segments, categories, globalConfig) {
-  try {
-    globalConfig.setBidderConfig({
-      bidders: [bidder],
-      config: {
-        fpd: {
-          context: {
-            data: {
-              sd_rtd: categories
-            }
-          },
-          user: {
-            data: {
-              sd_rtd: segments
-            }
-          }
-        }
-      }
-    });
-  } catch (err) {
-    utils.logError(err.message)
-  }
   return true;
 }
 
@@ -303,7 +230,7 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
 
   // Google targeting
   if (typeof window.googletag !== 'undefined' && (config.params.setGptKeyValues || !config.params.hasOwnProperty('setGptKeyValues'))) {
-    // For curation GG is pid 27449
+    // For curation Google is pid 27449
     curationId = (config.params.gptCurationId ? config.params.gptCurationId : '27449');
     if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
       curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
@@ -315,7 +242,7 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
     })
   }
 
-  // Bid taregting level for FPD non-generic biders
+  // Bid targeting level for FPD non-generic biders
   var bidderIndex = '';
   var indexFound = false;
 
@@ -337,7 +264,6 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
             case 'brealtime':
             case 'emxdigital':
             case 'pagescience':
-            case 'defymedia':
             case 'gourmetads':
             case 'matomy':
             case 'featureforward':
@@ -385,7 +311,7 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
               break;
 
             case 'rubicon':
-              // For curation Maginte is pid 27518
+              // For curation Magnite is pid 27518
               curationId = (indexFound && config.params.bidders[bidderIndex].hasOwnProperty('curationId') ? config.params.bidders[bidderIndex].curationId : '27452');
               if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
                 curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
