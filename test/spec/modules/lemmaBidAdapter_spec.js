@@ -329,11 +329,11 @@ describe('lemmaBidAdapter', function() {
         beforeEach(() => {
           floorModuleTestData = {
             'banner': {
-              'currency': 'USD',
+              'currency': 'AUD',
               'floor': 1.50
             },
             'video': {
-              'currency': 'USD',
+              'currency': 'AUD',
               'floor': 2.00
             }
           };
@@ -373,7 +373,7 @@ describe('lemmaBidAdapter', function() {
           let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
-          expect(data.bidfloor).to.equal(undefined);
+          expect(data.bidfloor).to.equal(1.5);
         });
 
         it('bidFloor is passed as 1, use min of floorModule as it is highest', function() {
@@ -381,7 +381,7 @@ describe('lemmaBidAdapter', function() {
           let request = spec.buildRequests(newRequest);
           let data = JSON.parse(request.data);
           data = data.imp[0];
-          expect(data.bidfloor).to.equal(1);
+          expect(data.bidfloor).to.equal(1.5);
         });
       });
       describe('Response checking', function() {
