@@ -24,6 +24,16 @@ const _set = (obj, path, val, override) => {
   } catch (e) { utils.logError(e); }
 };
 
+var findIndex = function(arr, fn) {
+  return arr.reduce(function(carry, item, idx) {
+    if (fn(item, idx)) {
+      return idx;
+    }
+
+    return carry;
+  }, -1);
+};
+
 export function hasOwnDeepProperty(obj, prop) {
   if (typeof obj === 'object' && obj !== null) { // only performs property checks on objects (taking care of the corner case for null as well)
     if (obj.hasOwnProperty(prop)) { // if this object already contains the property, we are done
@@ -185,7 +195,7 @@ export function getSegAndCatsArray(data, minScore) {
   var sirdataData = {'segments': [], 'categories': []};
   minScore = minScore && typeof minScore == 'number' ? minScore : 30;
   try {
-    if (data && data.contextual_categories && minScore) {
+    if (data && data.contextual_categories) {
       for (let catId in data.contextual_categories) {
         let value = data.contextual_categories[catId];
         if (value >= minScore && sirdataData.categories.indexOf(catId) === -1) {
@@ -247,7 +257,7 @@ export function addSegmentData(adUnits, data, config, onDone, globalConfig) {
     }
 
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
-      bidderIndex = (config.params.hasOwnProperty('bidders') ? config.params.bidders.findIndex(i => i.bidder === bid.bidder) : false);
+      bidderIndex = (config.params.hasOwnProperty('bidders') ? findIndex(config.params.bidders, function(i) { return i.bidder === bid.bidder; }) : false);
       indexFound = (!!(typeof bidderIndex == 'number' && bidderIndex >= 0));
       try {
         curationData = {'segments': [], 'categories': []};
