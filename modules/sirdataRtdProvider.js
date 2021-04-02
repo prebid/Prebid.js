@@ -10,6 +10,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import * as utils from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
+import findIndex from 'core-js-pure/features/array/find-index.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -22,16 +23,6 @@ const _set = (obj, path, val, override) => {
     const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, obj);
     lastObj[lastKey] = (override === true || !lastObj[lastKey] ? val : lastObj[lastKey]);
   } catch (e) { utils.logError(e); }
-};
-
-var findIndex = function(arr, fn) {
-  return arr.reduce(function(carry, item, idx) {
-    if (fn(item, idx)) {
-      return idx;
-    }
-
-    return carry;
-  }, -1);
 };
 
 export function hasOwnDeepProperty(obj, prop) {
