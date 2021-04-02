@@ -1,15 +1,7 @@
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
-import {
-  BANNER,
-  NATIVE,
-  VIDEO
-} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
-import {
-  config
-} from '../src/config.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'gothamads';
 const ACCOUNTID_MACROS = '[account_id]';
@@ -116,16 +108,16 @@ export const spec = {
         tmax: bidRequest.timeout,
         imp: [impObject],
       };
-      if (bidRequest) {
-        if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
-          utils.deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
-          utils.deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
-        }
 
-        if (bidRequest.uspConsent !== undefined) {
-          utils.deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
-        }
+      if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
+        utils.deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
+        utils.deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
       }
+
+      if (bidRequest.uspConsent !== undefined) {
+        utils.deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
+      }
+
       bids.push(data)
     }
     return {
@@ -143,10 +135,10 @@ export const spec = {
    */
   interpretResponse: (serverResponse) => {
     if (!serverResponse || !serverResponse.body) return []
-    let GothamAdskResponse = serverResponse.body;
+    let GothamAdsResponse = serverResponse.body;
 
     let bids = [];
-    for (let response of GothamAdskResponse) {
+    for (let response of GothamAdsResponse) {
       let mediaType = response.seatbid[0].bid[0].ext && response.seatbid[0].bid[0].ext.mediaType ? response.seatbid[0].bid[0].ext.mediaType : BANNER;
 
       let bid = {
@@ -162,16 +154,21 @@ export const spec = {
         mediaType: mediaType
       };
 
+      bid.meta = {};
+      if (response.seatbid[0].bid[0].adomain && response.seatbid[0].bid[0].adomain.length > 0) {
+        bid.meta.advertiserDomains = response.seatbid[0].bid[0].adomain;
+      }
+
       switch (mediaType) {
         case VIDEO:
-          bid.vastXml = response.seatbid[0].bid[0].adm
-          bid.vastUrl = response.seatbid[0].bid[0].ext.vastUrl
-          break
+          bid.vastXml = response.seatbid[0].bid[0].adm;
+          bid.vastUrl = response.seatbid[0].bid[0].ext.vastUrl;
+          break;
         case NATIVE:
-          bid.native = parseNative(response.seatbid[0].bid[0].adm)
-          break
+          bid.native = parseNative(response.seatbid[0].bid[0].adm);
+          break;
         default:
-          bid.ad = response.seatbid[0].bid[0].adm
+          bid.ad = response.seatbid[0].bid[0].adm;
       }
 
       bids.push(bid);
