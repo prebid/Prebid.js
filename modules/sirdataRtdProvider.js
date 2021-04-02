@@ -21,7 +21,7 @@ const _set = (obj, path, val, override) => {
     const lastKey = keys.pop();
     const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, obj);
     lastObj[lastKey] = (override === true || !lastObj[lastKey] ? val : lastObj[lastKey]);
-  } catch (e) {utils.logError(e);}
+  } catch (e) { utils.logError(e); }
 };
 
 export function hasOwnDeepProperty(obj, prop) {
@@ -74,11 +74,11 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userC
   var actualUrl = null;
   try {
     actualUrl = window.top.location.href;
-  } catch (e) {utils.logError(e);}
+  } catch (e) { utils.logError(e); }
   if (!actualUrl && config.params.actualUrl) {
     try {
       actualUrl = new URL(config.params.actualUrl);
-    } catch (err) {utils.logError(e);}
+    } catch (e) { utils.logError(e); }
   }
 
   const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + config.params.partnerId + '/d/' + config.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + actualUrl : '');
@@ -92,9 +92,9 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userC
           } else {
             onDone();
           }
-        } catch (err) {
+        } catch (e) {
           onDone();
-          utils.logError('unable to parse Sirdata data'+ err);
+          utils.logError('unable to parse Sirdata data' + e);
         }
       } else if (req.status === 204) {
         onDone();
@@ -135,8 +135,8 @@ export function setGlobalOrtb2(segments, categories, globalConfig) {
         }
       }
     });
-  } catch (err) {
-    utils.logError(err)
+  } catch (e) {
+    utils.logError(e)
   }
 
   return true;
@@ -165,8 +165,8 @@ export function setBidderOrtb2(bidder, segments, categories, globalConfig) {
         }
       }
     });
-  } catch (err) {
-    utils.logError(err)
+  } catch (e) {
+    utils.logError(e)
   }
 
   return true;
@@ -177,7 +177,7 @@ export function loadCustomFunction (todo, adUnit, list, data, bid) {
     if (typeof todo == 'function') {
       todo(adUnit, list, data, bid);
     }
-  } catch (er) { utils.logError(er); }
+  } catch (e) { utils.logError(e); }
   return true;
 }
 
@@ -193,14 +193,14 @@ export function getSegAndCatsArray(data, minScore) {
         }
       }
     }
-  } catch (e) {utils.logError(e);}
+  } catch (e) { utils.logError(e); }
   try {
     if (data && data.segments) {
       for (let segId in data.segments) {
         sirdataData.segments.push(data.segments[segId].toString());
       }
     }
-  } catch (e) {utils.logError(e);}
+  } catch (e) { utils.logError(e); }
   return sirdataData;
 }
 
