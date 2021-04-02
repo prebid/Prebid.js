@@ -302,6 +302,20 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+  it('originFloc', function() {
+    const userId = {
+      flocId: {'id': 'Sample_Token'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'floc.com',
+      uids: [{
+        id: 'Sample_Token',
+        atype: 1
+      }]
+    });
+  });
   it('pubProvidedId', function() {
     const userId = {
       pubProvidedId: [{

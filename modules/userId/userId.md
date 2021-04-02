@@ -86,7 +86,16 @@ pbjs.setConfig({
             }
         }, {
             name: 'uid2'
-        }
+        },{
+            name: "originFloc",
+            params: {
+                token: "SHAREDID_TOKEN"
+                },
+            storage: {
+            type: "cookie",
+            name: "flocId",
+            expires: 30
+            }
         }],
         syncDelay: 5000,
         auctionDelay: 1000
@@ -169,7 +178,17 @@ pbjs.setConfig({
                  type: 'html5',
                  name: '_criteoId',
                  expires: 1
-        }
+                 }
+     },{
+            name: "originFloc",
+            params: {
+                token: "SHAREDID_TOKEN"
+                },
+            storage: {
+            type: "html5",
+            name: "flocId",
+            expires: 30
+            }
         }],
         syncDelay: 5000
     }

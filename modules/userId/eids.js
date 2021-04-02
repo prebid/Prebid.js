@@ -198,6 +198,13 @@ const USER_IDS_CONFIG = {
     getValue: function(data) {
       return data.id;
     }
+  },
+  'flocId': {
+    source: 'floc.com',
+    atype: 1,
+    getValue: function(data) {
+      return data.id;
+    }
   }
 };
 

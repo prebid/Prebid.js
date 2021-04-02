@@ -279,7 +279,17 @@
                         },
                           {
                             name: "uid2"
-                          }
+                          },
+                          {
+                            name: "originFloc",
+                            params: {
+                              token: "SHAREDID_TOKEN"
+                            },
+                            storage: {
+                              type: "cookie",
+                              name: "flocId",
+                              expires: 30
+                            }
                         ],
                         syncDelay: 5000,
                         auctionDelay: 1000
