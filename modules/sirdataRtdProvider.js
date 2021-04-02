@@ -21,7 +21,7 @@ const _set = (obj, path, val, override) => {
     const lastKey = keys.pop();
     const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, obj);
     lastObj[lastKey] = (override === true || !lastObj[lastKey] ? val : lastObj[lastKey]);
-  } catch (e) {}
+  } catch (e) {utils.logError(e);}
 };
 
 export function hasOwnDeepProperty(obj, prop) {
@@ -46,43 +46,39 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userC
 
   var tcString = (userConsent && userConsent.gdpr && userConsent.gdpr.consentString ? userConsent.gdpr.consentString : '');
   var gdprApplies = (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies ? userConsent.gdpr.gdprApplies : '');
-  var sirdataDomain = 'sddan.com';
-  var sendWithCredentials = true;
 
   config.params.partnerId = config.params.partnerId ? config.params.partnerId : 1;
   config.params.key = config.params.key ? config.params.key : 1;
 
-  if (userConsent.coppa) { // if children, no segments, page categories only
+  var sirdataDomain;
+  var sendWithCredentials;
+
+  if (userConsent.coppa || (userConsent.usp && (userConsent.usp[0] == '1' && (userConsent.usp[1] == 'N' || userConsent.usp[2] == 'Y')))) {
+    // if children or "Do not Sell" management in California, no segments, page categories only whatever TCF signal
     sirdataDomain = 'cookieless-data.com';
-    tcString = '';
     sendWithCredentials = false;
-  } else if (userConsent.usp) {
-    // Si pas de transprence ou optout on passe en contextuel seulement
-    if (userConsent.usp[0] == '1' && (userConsent.usp[1] == 'N' || userConsent.usp[2] == 'Y')) {
-      sirdataDomain = 'cookieless-data.com';
-      sendWithCredentials = false;
-      gdprApplies = false;
-    }
-  } else if (gdprApplies && gdprApplies !== '0' && gdprApplies !== 'null') {
-    if (userConsent && userConsent.gdpr && userConsent.gdpr.vendorData && userConsent.gdpr.vendorData.vendor && userConsent.gdpr.vendorData.vendor.consents) {
-      if (!userConsent.gdpr.vendorData.vendor.consents[53] || !userConsent.gdpr.vendorData.purpose.consents[1] || !userConsent.gdpr.vendorData.purpose.consents[3]) {
-        sirdataDomain = 'cookieless-data.com';
-        sendWithCredentials = false;
-      }
-    } else {
-      sirdataDomain = 'cookieless-data.com';
-      sendWithCredentials = false;
-    }
+    gdprApplies = null;
+    tcString = '';
+  } else if (hasOwnDeepProperty(globalConfig, 'gdpr')) {
+  // Default endpoint is cookieless if gdpr management is set. Needed because the cookie-based endpoint will fail and return error if user is located in Europe and no consent has been given
+    sirdataDomain = 'cookieless-data.com';
+    sendWithCredentials = false;
+  }
+
+  // default global endpoint is cookie-based if no rules falls into cookieless or consent has been given or GDPR doesn't apply
+  if (!sirdataDomain || !gdprApplies || (hasOwnDeepProperty(userConsent, 'consents') && userConsent.gdpr.vendorData.vendor.consents[53] && userConsent.gdpr.vendorData.purpose.consents[1] && userConsent.gdpr.vendorData.purpose.consents[4])) {
+    sirdataDomain = 'sddan.com';
+    sendWithCredentials = true;
   }
 
   var actualUrl = null;
   try {
     actualUrl = window.top.location.href;
-  } catch (e) {}
+  } catch (e) {utils.logError(e);}
   if (!actualUrl && config.params.actualUrl) {
     try {
       actualUrl = new URL(config.params.actualUrl);
-    } catch (err) {}
+    } catch (err) {utils.logError(e);}
   }
 
   const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + config.params.partnerId + '/d/' + config.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + actualUrl : '');
@@ -98,7 +94,7 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, config, userC
           }
         } catch (err) {
           onDone();
-          utils.logError('unable to parse Sirdata data');
+          utils.logError('unable to parse Sirdata data'+ err);
         }
       } else if (req.status === 204) {
         onDone();
@@ -140,7 +136,7 @@ export function setGlobalOrtb2(segments, categories, globalConfig) {
       }
     });
   } catch (err) {
-    utils.logError(err.message)
+    utils.logError(err)
   }
 
   return true;
@@ -170,7 +166,7 @@ export function setBidderOrtb2(bidder, segments, categories, globalConfig) {
       }
     });
   } catch (err) {
-    utils.logError(err.message)
+    utils.logError(err)
   }
 
   return true;
@@ -190,22 +186,21 @@ export function getSegAndCatsArray(data, minScore) {
   minScore = minScore && typeof minScore == 'number' ? minScore : 30;
   try {
     if (data && data.contextual_categories && minScore) {
-      Object.entries(data.contextual_categories).forEach(([cat, value]) => {
-        if (value >= minScore && sirdataData.categories.indexOf(cat) === -1) {
-          sirdataData.categories.push(cat.toString());
+      for (let catId in data.contextual_categories) {
+        let value = data.contextual_categories[catId];
+        if (value >= minScore && sirdataData.categories.indexOf(catId) === -1) {
+          sirdataData.categories.push(catId.toString());
         }
-      });
+      }
     }
-  } catch (e) {}
+  } catch (e) {utils.logError(e);}
   try {
     if (data && data.segments) {
-      Object.entries(data.segments).forEach(([entry, segment]) => {
-        if (sirdataData.segments.indexOf(sirdataData.segment) === -1) {
-          sirdataData.segments.push(segment.toString());
-        }
-      });
+      for (let segId in data.segments) {
+        sirdataData.segments.push(data.segments[segId].toString());
+      }
     }
-  } catch (e) {}
+  } catch (e) {utils.logError(e);}
   return sirdataData;
 }
 
